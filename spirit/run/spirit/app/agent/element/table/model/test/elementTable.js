@@ -21,7 +21,7 @@ const FILE = path.join(__dirname, '..', 'elementTable.js');
 const SHARED = 'spirit/app/agent/element/table/tableElement.js';
 const ROW = 'spirit/app/agent/element/table/model/elementRow.js';
 const AGENT = familyPath('agent');
-const PARTS = ['spirit/element/search.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js'];
+const PARTS = ['spirit/element/search.js', 'spirit/element/rowForm.js'];
 
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -103,7 +103,8 @@ function world() {
 }
 const detail = { look: function (t) { return { icon: '🧠', name: t }; } };
 const E = {};
-const ask = function () { const b = W.busy[W.busy.length - 1]; return b && b.o && typeof b.o.run === 'function' ? b.o.run() : false; };
+// Ask pressed as the real rowForm presses it: its press, called on a click (spirit/element/rowForm.js).
+const ask = function () { const f = W.forms[W.forms.length - 1]; return f && f.o && typeof f.o.press === 'function' ? f.o.press() : false; };
 
 test.run('the file runs on a window of its own, with stand-ins for its parts placed as the page places them', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
@@ -132,8 +133,8 @@ test.run('create, handed a container and the detail pane, makes the tables\' sha
   E.t = W.tables[W.tables.length - 1];
   return (!!E.t && E.t.container !== E.box && !!E.box.querySelector('#' + E.t.container.id) && /list$/.test(E.t.container.id)) || false;
 }, test.limit.quick);
-// "WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search, the busyButton and the rowForm."
-test.run('it loads what it uses itself: the shared element, its row editor, the search, the busyButton and the rowForm', 0.2, function () {
+// "WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search and the rowForm."
+test.run('it loads what it uses itself: the shared element, its row editor, the search and the rowForm', 0.2, function () {
   if (!W.up) return false;
   const missing = [SHARED, ROW].concat(PARTS).filter(function (p) { return W.required.indexOf(p) === -1; });
   return missing.length === 0 || false;
@@ -181,11 +182,11 @@ test.run('the title row comes first, then the form and its note, moved in under 
   const kids = E.t.container.children.map(function (c) { return c.id ? c.id.replace(/^mt\d+-/, '') : c.className; });
   return JSON.stringify(kids) === JSON.stringify(['agent-title', 'form', 'said', 'agent-list']) || false;
 }, test.limit.quick);
-// ASK WAITS AS A BUSY BUTTON (goal/G41.23).
-test.run('Ask is a busy button on the rowForm\'s button', 0.2, function () {
+// ASK WAITS BUSY (goal/G41.23; goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes"):
+// Ask is the rowForm's press, whose button is a busy button already; a second busy button on it would fight the first.
+test.run('Ask is the rowForm\'s press, and no busy button of its own is attached', 0.2, function () {
   if (!E.f) return false;
-  const b = W.busy[W.busy.length - 1];
-  return (!!b && b.button === E.f.button && typeof b.o.run === 'function') || false;
+  return (typeof E.f.o.press === 'function' && W.busy.length === 0) || false;
 }, test.limit.quick);
 test.run('with no provider picked, Ask asks nothing', 0.2, function () {
   if (!E.d) return false;

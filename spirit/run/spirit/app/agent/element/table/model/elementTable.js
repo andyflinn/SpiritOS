@@ -18,10 +18,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       var table = null;
       var drop = null;
       var gone = false;
-      // WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search, the busyButton and the rowForm.
+      // WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search and the rowForm.
       Promise.all([spirit.require('spirit/app/agent/element/table/tableElement.js'), spirit.require('spirit/app/agent/element/table/model/elementRow.js'),
-        spirit.require('spirit/element/search.js'), spirit.require('spirit/element/busyButton.js'),
-        spirit.require('spirit/element/rowForm.js')]).then(function () {
+        spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowForm.js')]).then(function () {
         if (gone) return;
         // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
         container.innerHTML = '<div class="fill" style="overflow:hidden">' +
@@ -31,11 +30,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
         // A ROWFORM (goal/G41.27; Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]"): ❓, the
         // providerSelector:dropdown in its span, the same the job detail has (../tableElement.js, agentDetail.search), Ask
         // its button; "from" gone.
-        var form = window.spirit.element.spirit.element.rowForm.create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask' });
-        drop = window.spirit.element.spirit.app.agent.element.table.tableElement.search(form.span, { table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
-        var said = container.querySelector('#' + pre + 'said');
-        // ASK WAITS AS A BUSY BUTTON (goal/G41.23): its request the provider table's ask, which updates the model table.
-        window.spirit.element.spirit.element.busyButton.attach(form.button, { run: function () {
+        // ASK WAITS BUSY (goal/G41.23; goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer
+        // comes"): its request, the provider table's ask, which updates the model table, is the rowForm's press, so the
+        // rowForm's own busy button waits on it. A second busy button of its own on that button would fight the first.
+        var said = null;
+        var form = window.spirit.element.spirit.element.rowForm.create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask', press: function () {
           var id = drop && drop.value ? String(drop.value) : '';
           if (!id) return null;
           said.textContent = '';
@@ -43,6 +42,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
             if (!gone) said.textContent = window.spirit.element.spirit.app.agent.element.table.tableElement.whyOf(e);
           });
         } });
+        drop = window.spirit.element.spirit.app.agent.element.table.tableElement.search(form.span, { table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
+        said = container.querySelector('#' + pre + 'said');
         table = window.spirit.element.spirit.app.agent.element.table.tableElement.create(container.querySelector('#' + pre + 'list'), {
           table: 'model', detail: detail,
           row: function (box, id, added) { return window.spirit.element.spirit.app.agent.element.table.model.elementRow.create(box, id, added, detail); },

@@ -9,8 +9,8 @@ tables' `elementTable` tests, with the Ask form's parts.
 
 - Before it runs there is no `spirit.element.spirit.app.agent.element.table.model.elementTable`; once it has, it stands
   there with `create`.
-- `create(container, detail)` loads what it uses itself (rule/26): the shared element, its row editor, the search, the
-  busyButton and the rowForm. It makes the shared element in its list, told its table, `model`, and the detail pane.
+- `create(container, detail)` loads what it uses itself (rule/26): the shared element, its row editor, the search and
+  the rowForm. It makes the shared element in its list, told its table, `model`, and the detail pane.
 - No Add (Andy, on G41.18: *"get RID of [Add a Model] button in the left panes model mode. NOT required."*).
 - The list shows `[icon] "model-name"` (goal/G41.18, box v17): the provider's icon the server sends with the row
   (`providerIcon`), then the model, sorted as text.
@@ -19,7 +19,8 @@ tables' `elementTable` tests, with the Ask form's parts.
   providerSelector in dropdown mode in its span (the provider table's search, *"Pick a provider"*).
 - The title row comes first (Andy, on G41.26: *"the title row "🧠Models" must come before the "from [🛖 Unsloth Studio ▾]
   [Ask] row."*): the form, then its note, under the shared table's title.
-- Ask is a busy button (goal/G41.23). With no provider picked it asks nothing; with one, it asks `provider { op: 'ask',
+- Ask is the rowForm's press (goal/G41.23; goal/G47.1, Q20, Andy: *"mark the button busy from press until the mounter's
+  answer comes"*), so the rowForm's busy button waits on it; no busy button of its own is attached. With no provider picked it asks nothing; with one, it asks `provider { op: 'ask',
   id }`, which updates the model table (Andy: *"the [Ask] button will no longer spit out a list, and simply update the
   agent.model table"*). A refusal is said on one line, the provider's reason, as the shared element's `whyOf` words it;
   the next Ask clears it; after its destroy nothing is said.
@@ -28,5 +29,5 @@ tables' `elementTable` tests, with the Ask form's parts.
 
 ## What its test must try to break
 
-An Add button back; the form above the title row; Ask asking with no provider picked, or answering a list instead of
+An Add button back; a busy button of its own on Ask, fighting the rowForm's; the form above the title row; Ask asking with no provider picked, or answering a list instead of
 updating the table; a refusal not said, or said after its destroy; two tables on a page sharing ids.
