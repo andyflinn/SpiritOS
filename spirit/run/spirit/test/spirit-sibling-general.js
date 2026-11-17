@@ -2097,6 +2097,23 @@ function oneFile(P) {
       return !/\btmpdir\s*\(/.test(src) || false;
     }, test.limit.quick);
   }
+  // A SEARCH'S PARTS ARE NAMED BY THEIR WORD (goal/G47.4, the box: "A search's parts are named by their word: list.js, row.js
+  // and detail.js, in place of listElement.js, rowElement.js and detailElement.js"; "The guard first: the general test is red
+  // on any file named listElement.js, rowElement.js or detailElement.js, and on any code that still names them"). Its name
+  // read from its path; its code with its strings kept, so a require path or a place on the spirit object counts, and its
+  // comments left out.
+  // The old names are built from their parts, so this check's own titles do not name them in code.
+  const OLD_PARTS = ['list', 'row', 'detail'].map(function (w) { return w + 'Element'; });
+  if (/^spirit\/.+\.js$/.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
+    test.run('its file is named by its word: no ' + OLD_PARTS.map(function (n) { return n + '.js'; }).join(', '), 0.4, function () {
+      return !/^(?:list|row|detail)Element\.js$/.test(path.basename(rel)) || false;
+    }, test.limit.quick);
+    test.run('its code names no ' + OLD_PARTS.join(', '), 0.4, function () {
+      let src = '';
+      try { src = codeOf(fs.readFileSync(full, 'utf8'), false); } catch (e) { return false; }
+      return !/\b(?:list|row|detail)Element\b/.test(src) || false;
+    }, test.limit.quick);
+  }
   // <address>: every require path is a child, a sibling or an ancestor's file
   test.run('none of its require paths breaks the rule', 0.4, function () {
     return !moduleRules(full).bad.length;
