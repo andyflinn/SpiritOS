@@ -6,7 +6,7 @@ The -browser general test beside `spirit/element/search.js` (goal/G47.1, box v12
     node spirit/element/test/search-child-browser.js [<script> ...]
 
 Given scripts, the searches they are of (`search/<name>.js` or a file under `search/<name>/`); given none, or `search.js`
-itself, every search. valued is exempt, as in `search-child-general.js` (Andy: *"values doesn't count"*).
+itself, every search.
 
 ## Requirements (goal/G47.1, box v121)
 

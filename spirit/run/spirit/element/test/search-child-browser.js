@@ -4,8 +4,7 @@
 // "spirit/element/test/search-child-browser.js": "new, the page twin of search-child-general.js: every search (selector,
 // listElement, rowElement, detailElement) mounted in a page on a scratch node, more rows than fit"). Its contract:
 // ./search-child-browser.md. A -child- test beside search.js (../../test/TEST_SYSTEM.md): it judges search.js and search/ and
-// below. Given scripts, the searches they are of; given none, or search.js itself, every search. valued is exempt, as in
-// search-child-general.js (Andy: "values doesn't count").
+// below. Given scripts, the searches they are of; given none, or search.js itself, every search.
 //
 // HOW: a scratch node (the tracked files) and a headless Chrome on its face page, one fresh page per search. The selector is
 // mounted in a pane of a stated size; the probabilitySearch it makes is watched (spirit.element.spirit.element.search.create,
@@ -33,12 +32,11 @@ function runRel(a) {
 const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; }).map(runRel);
 
 const SEARCH = 'spirit/element/search';
-const EXEMPT = ['valued'];
 const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' })
   .split('\n').filter(Boolean).map(function (f) { return f.replace(/^spirit\/run\//, ''); }).filter(isFile);
 // Every search: its selector, search/<name>.js.
 const NAMES = TREE.map(function (f) { const m = new RegExp('^' + SEARCH + '/([^/]+)\\.js$').exec(f); return m ? m[1] : ''; })
-  .filter(function (n) { return n && EXEMPT.indexOf(n) === -1; }).sort();
+  .filter(Boolean).sort();
 const nameOf = function (f) { return (new RegExp('^' + SEARCH + '/([^/.]+)').exec(f) || [])[1] || ''; };
 const ALL = !GIVEN.length || GIVEN.some(function (f) { return f === 'spirit/element/search.js'; });
 const TARGETS = ALL ? NAMES : NAMES.filter(function (n) { return GIVEN.some(function (f) { return nameOf(f) === n; }); });

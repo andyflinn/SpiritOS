@@ -13,9 +13,6 @@ const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(
 
 const FILE = path.join(RUN, 'spirit', 'app', 'monitor', 'element.js');
 const JSON_FILE = path.join(RUN, 'spirit', 'app', 'monitor', 'monitor.json');
-// The box: "its 11 numbers", as old Stats names them, and its groups of counts: "Jobs by status replaces Active jobs".
-const NUMBERS = ['Memory (RSS)', 'Heap used', 'CPU', 'Uptime', 'Event loop mean', 'Event loop max', 'Event loop p99', 'Files', 'Folders', 'SSE connections', 'Requests total'];
-const GROUPS = ['Jobs by status', 'Files by MIME type', 'Requests by method', 'Requests by status class'];
 
 
 // element.js: the monitor, an app that reads and displays a stream (goal/G43.6). One test.run per test (goal/G47.2).
@@ -31,14 +28,7 @@ test.after(function () {
 function readJson() { try { return JSON.parse(fs.readFileSync(JSON_FILE, 'utf8')); } catch (e) { return {}; } }
 function readCode() { return fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, '') : ''; }
 const js = function (s) { return W.chrome.evaluate(s); };
-const read = async function () {
-  try {
-    return JSON.parse(await js('(function () { var c = window.__box; if (!c) return "{}"; var inputs = [].filter.call(c.querySelectorAll("input"), function (i) { return i.getClientRects().length && i.type !== "checkbox"; }); var cells = [].map.call(c.querySelectorAll("tr, [data-row], .row"), function (r) { return r.innerText.replace(/\\s+/g, " ").trim(); }).filter(Boolean); var best = null; c.querySelectorAll("*").forEach(function (e) { if (e.scrollHeight - e.clientHeight > 1 && /auto|scroll/.test(getComputedStyle(e).overflowY) && (!best || e.scrollHeight > best.scrollHeight)) best = e; }); return JSON.stringify({ text: c.innerText, inputs: inputs.length, word: inputs[0] ? inputs[0].value : "", rows: cells, scroll: best ? best.scrollTop : -1, canScroll: !!best }); })()'));
-  } catch (e) { return {}; }
-};
-const lineOf = function (r, word) { return (r.rows || []).filter(function (l) { return l.indexOf(word) !== -1; })[0] || ''; };
-// A probabilitySearch ranks, it does not filter (goal/G18.5): the row that fits comes first.
-const uptimeRow = function (r) { return (r.rows || []).filter(function (l) { return /group|name value/i.test(l) === false; })[0] || ''; };
+const read = async function () { try { return JSON.parse(await js('JSON.stringify({ text: window.__box ? window.__box.innerText : "" })')); } catch (e) { return {}; } };
 
 // monitor.json: "icon 🦻, label "Monitor", mount monitor.js, shell mount and tile true, node mount false." Since goal/G43.32 it mounts element.js (rule 4)
 test.run('its icon is 🦻 and its label is Monitor', 0.2, function () {
@@ -74,9 +64,10 @@ test.run('it reaches nothing through spirit.elements', 0.2, function () {
   const code = readCode();
   return code && !/\.elements\b/.test(code) ? true : false;
 }, test.limit.quick);
-test.run('it loads and uses the valued element', 0.2, function () {
+// Q24: it shows the spirit job's monitor, six tiles, and no value list (Andy: "throw out "valued" completely").
+test.run('it loads and shows the spirit job monitor element, and no valued', 0.2, function () {
   const code = readCode();
-  return code && /spirit\.element\.search.valued|element\.search.valued/.test(code) && /spirit\/element\/search\/valued\.js/.test(code) ? true : false;
+  return code && code.indexOf('spirit/element/monitor/spirit.js') !== -1 && code.indexOf('element.monitor.spirit.create') !== -1 && code.indexOf('valued') === -1 ? true : false;
 }, test.limit.quick);
 
 test.run('a scratch node comes up with a Chrome page on its face', 0.2, async function () {
@@ -108,88 +99,13 @@ test.run('the page has no spirit.app.monitor.createApp, nor any monitor on spiri
   return W.h.createApp === 'undefined' && W.h.old === 'undefined' ? true : false;
 }, test.limit.quick);
 
-// "Until the first reading, it says it is waiting, as old Stats does."
-test.run('with no reading it says it is waiting, before the first numbers', 0.2, async function () {
+// Its tiles are the element's, tested in spirit/element/monitor/test/spirit.js; here, that the app shows them.
+test.run('opened, it shows the six tiles', 0.2, async function () {
   if (!W.create) return false;
-  // No reading on the page: the job taken out of the page's data set; the next one the stream brings is its first.
-  await js('(function () { var J = ((window.spirit.data || {}).job || {}).data; var job = J.find(function (j) { return j && j.id === "spirit"; }); if (job) window.spirit.data.viewAt(null, "job").del("jobs/" + job.id); window.__job = job ? job.id : ""; var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__said = []; new MutationObserver(function () { var t = d.innerText; if (t) window.__said.push(/waiting/i.test(t) && !/Uptime/.test(t) ? "waiting" : "other"); }).observe(d, { childList: true, subtree: true, characterData: true }); window.__made = window.spirit.element.spirit.app.monitor.element.create(d); return true; })()');
+  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.element.spirit.app.monitor.element.create(d); return true; })()');
   W.made = true;
-  // WHAT IT SAID FIRST, watched as it is drawn: the stream's next reading can come at any moment after the job is taken out.
-  await until(function () { return js('window.__said.length > 0'); }, 8000);
-  const said = await js('window.__said[0] || ""');
-  return said === 'waiting' || false;
-}, test.limit.quick);
-
-// "It reads the node's server-stats job from the stream ... and shows its numbers."
-test.run('the stream\'s reading brings its 11 numbers and four groups of counts', 0.2, async function () {
-  if (!W.made) return false;
-  const came = await until(function () { return read().then(function (r) { return NUMBERS.every(function (n) { return String(r.text).indexOf(n) !== -1; }); }); }, 20000);
-  const shown = W.shown = await read();
-  const absent = NUMBERS.concat(GROUPS).filter(function (n) { return String(shown.text).indexOf(n) === -1; });
-  return came && !absent.length ? true : false;
-}, test.limit.slow);
-test.run('once the numbers are in, it no longer says waiting', 0.2, function () {
-  if (!W.shown) return false;
-  return !/waiting/i.test(String(W.shown.text)) || false;
-}, test.limit.quick);
-test.run('Jobs by status replaces Active jobs, which is no longer shown', 0.2, function () {
-  if (!W.shown) return false;
-  return String(W.shown.text).indexOf('Active jobs') === -1 || false;
-}, test.limit.quick);
-test.run('the monitor shows one search field', 0.2, function () {
-  if (!W.shown) return false;
-  return W.shown.inputs === 1 || false;
-}, test.limit.quick);
-test.run('a count is a row of its own, with its group, name and value', 0.2, async function () {
-  if (!W.made) return false;
-  const data = W.data = JSON.parse(await js('JSON.stringify(window.spirit.data.job.data.find(function (j) { return j && j.id === "spirit"; }).data.stats)'));
-  const method = Object.keys((data.requests || {}).byMethod || {})[0];
-  const live = W.live = await read();
-  return !!lineOf(live, 'Requests by method') && !!method && (live.rows || []).some(function (l) { return l.indexOf('Requests by method') !== -1 && l.indexOf(method) !== -1; }) ? true : false;
-}, test.limit.quick);
-test.run('a number is a row of its own', 0.2, function () {
-  if (!W.live) return false;
-  return !!lineOf(W.live, 'Memory (RSS)') || false;
-}, test.limit.quick);
-test.run('the page formats bytes', 0.2, async function () {
-  if (!W.data) return false;
-  const rss = await js('window.spirit.formatBytes(' + Number(W.data.memory.rss) + ')');
-  return typeof rss === 'string' && rss.length > 0 ? true : false;
-}, test.limit.quick);
-
-// "Each new reading repaints the numbers. A repaint keeps the search words and the scroll."
-test.run('a new reading changes the number on screen, with nothing asked', 0.2, async function () {
-  if (!W.live) return false;
-  const uptime = lineOf(W.live, 'Uptime');
-  const moved = await until(function () { return read().then(function (r) { return lineOf(r, 'Uptime') && lineOf(r, 'Uptime') !== uptime; }); }, 20000);
-  return moved ? true : false;
-}, test.limit.slow);
-test.run('the list scrolls in its box', 0.2, async function () {
-  if (!W.made) return false;
-  await js('(function () { var c = window.__box; var best = null; c.querySelectorAll("*").forEach(function (e) { if (e.scrollHeight - e.clientHeight > 1 && /auto|scroll/.test(getComputedStyle(e).overflowY) && (!best || e.scrollHeight > best.scrollHeight)) best = e; }); if (best) best.scrollTop = 40; return true; })()');
-  const scrolled = W.scrolled = await read();
-  return scrolled.canScroll && scrolled.scroll === 40 ? true : false;
-}, test.limit.quick);
-test.run('a repaint keeps the scroll', 0.2, async function () {
-  if (!W.scrolled) return false;
-  const up1 = lineOf(W.scrolled, 'Uptime');
-  const again = await until(function () { return read().then(function (r) { return lineOf(r, 'Uptime') !== up1; }); }, 20000);
-  const after = await read();
-  return again && after.scroll === 40 ? true : false;
-}, test.limit.slow);
-test.run('words typed in the one search field put the row that fits first', 0.2, async function () {
-  if (!W.made) return false;
-  await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; if (i) { i.value = "Uptime"; i.dispatchEvent(new Event("input", { bubbles: true })); } return true; })()');
-  await sleep(500);
-  const narrowed = W.narrowed = await read();
-  return narrowed.word === 'Uptime' && uptimeRow(narrowed).indexOf('Uptime') !== -1 ? true : false;
-}, test.limit.quick);
-test.run('a repaint keeps the words, and the row that fits first', 0.2, async function () {
-  if (!W.narrowed) return false;
-  const up2 = lineOf(W.narrowed, 'Uptime');
-  const third = await until(function () { return read().then(function (r) { return lineOf(r, 'Uptime') !== up2; }); }, 20000);
-  const kept = await read();
-  return third && kept.word === 'Uptime' && uptimeRow(kept).indexOf('Uptime') !== -1 ? true : false;
+  const n = await until(function () { return js('window.__box.querySelectorAll("[data-tile]").length === 6'); }, 20000);
+  return n ? true : false;
 }, test.limit.slow);
 
 // { destroy() }

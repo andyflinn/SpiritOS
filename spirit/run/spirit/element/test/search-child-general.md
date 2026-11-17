@@ -16,12 +16,11 @@ from the files and their code with comments left out.
 
 goal/G43.32. Andy: *"cw, we certainly want, in this item, uniformity, in the search elements and their folders, contain
 list, row an detail elements."*, *"all the others should adhere to the directory structure, as implied by MANY design
-decisions."* valued is exempt: *"values doesn't count"*, *"no need to fix valued in this item, it's kind of deprecated
-already."*
+decisions."*
 
 ### Requirements
 
-- A search is a `.js` in `spirit/element/search/` or a folder there holding scripts; `test/` and valued are none.
+- A search is a `.js` in `spirit/element/search/` or a folder there holding scripts; `test/` is none.
 - The job branch has its search, `spirit/element/search/job.js`; `spirit/element/job.js` and `jobDetail.js` are gone
   from `spirit/element/` (the box: *"The job search is made from spirit/element/job.js and jobDetail.js."*).
 - For each search `<name>`:
