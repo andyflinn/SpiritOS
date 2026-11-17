@@ -54,6 +54,17 @@ const outArg = flag('--out');
 
 function end(code, text) { (code ? console.error : console.log)(text); process.exit(code); }
 function say(text) { console.log('publishData: ' + text); }
+// ITS STEPS ARE ITS JOB'S PROGRESS (goal/G47.1; Andy: "if \"one-shot-script-apps\" (node:run:true) actually publish what
+// they're doing, like publishData should"): each step published as spirit.job.progress(done, STEPS, text), the text the
+// app detail's task row (spirit/element/monitor/task.js) shows while it runs. Started by hand, with no job, the node
+// refuses it, and the run goes on: a progress never stops a step.
+const STEPS = 4;
+function step(done, text) {
+  say(text);
+  const J = spirit.job;
+  if (!J || typeof J.progress !== 'function') return Promise.resolve();
+  return Promise.resolve(J.progress(done, STEPS, text)).catch(function () { /* not started as a job */ });
+}
 function git(args, cwd) { return spawnSync('git', args, { cwd: cwd, encoding: 'utf8', windowsHide: true }); }
 
 function ask(verb, args) {
@@ -213,6 +224,7 @@ async function main() {
   // measurePlatform.js with it): the test state comes from testicle (step 3).
 
   // 2. THE PACKET FIGURES: N read-only testicle asks, timed by this node's own traffic rows.
+  await step(1, 'timing ' + asks + ' asks of this node');
   const since = new Date(Date.now() - 1000).toISOString();
   for (let i = 0; i < asks; i++) await ask('testicle.busy', {});
   await new Promise(function (r) { setTimeout(r, 1500); });
@@ -246,12 +258,13 @@ async function main() {
     ].join('\n'));
   }
   // 3. THE TEST STATE, from this node's testicle.db (goal/G47.1: "publish Data uses testicle data.").
+  await step(2, 'reading the test state from testicle');
   try {
     const rep = writeTestState(out, platform, commit);
     say('testState: ' + rep.tests + ' tests, ' + rep.red + ' red');
   } catch (e) { say('testState not written: ' + ((e && e.message) || e)); }
   // 4. THE SUMMARY'S FIGURES, on lab nodes and a lab relay (measure.js), then the README.
-  say('measuring on lab nodes');
+  await step(3, 'measuring on lab nodes');
   let measured = null;
   try { measured = await spirit.require('spirit/app/publishData/measure.js').measure(say); }
   catch (e) { end(1, 'publishData: the measurements failed: ' + ((e && e.message) || e)); }
@@ -263,6 +276,7 @@ async function main() {
   // ZERO POSTS IS PUBLISHED TOO (Andy, to Q16, whether a run counting 0 posts should refuse: "publish it anyway. that's
   // what happened."). The figures say what the run met.
   if (!packets.posts) say('the testicle asks counted 0 posts; published as measured (is the node\'s testicle answering?)');
+  await step(4, 'committing and pushing platform/' + platform + '/');
   const rel = path.relative(clone, out).split(path.sep).join('/');
   // ITS ONE FOLDER AND NOTHING ELSE STAGED (goal/G19.6; Andy, 2026-10-12: "agreed to the whole thing as stated", the
   // box: "publishData commits its one file and nothing else staged."). A plain commit took whatever the agent had

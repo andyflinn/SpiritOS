@@ -121,6 +121,8 @@ const STUB = [
   // goal/G43.32, decided 3: on the node a script comes back at once, by its run-root path; a branch's api.js binds it.
   "  require: function (p) { if (!/\\/api\\.js$/.test(p)) return require(require('path').join(" + JSON.stringify(RUN) + ", p)); log({ require: p }); return Promise.resolve(family); },",
   "  outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
+  // Its job, as spirit.js's spirit.job: each progress it publishes is logged, in order.
+  "  job: { progress: function (done, total, text) { log({ progress: { done: done, total: total, text: String(text) } }); return Promise.resolve(true); } },",
   "};",
   "const realLoad = Module._load;",
   "Module._load = function (request, parent) {",
@@ -138,7 +140,7 @@ function publish(cwd, args) {
     env: ownWorld() });
   let asks = [];
   try { asks = fs.readFileSync(LOG, 'utf8').trim().split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { asks = []; }
-  return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim(), asks: asks.filter(function (a) { return a.verb; }), required: asks.filter(function (a) { return a.require; }) };
+  return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim(), asks: asks.filter(function (a) { return a.verb; }), required: asks.filter(function (a) { return a.require; }), progress: asks.filter(function (a) { return a.progress; }).map(function (a) { return a.progress; }) };
 }
 
 // The node's traffic log, as the node writes it: the rows publishData counts, and the rows it must not.
@@ -602,6 +604,19 @@ test.run('the origin then holds the new commit on top of the other clone\'s', 0.
 }, test.limit.quick);
 
 // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
+// ITS STEPS ARE ITS JOB'S PROGRESS (goal/G47.1; Andy: "if \"one-shot-script-apps\" (node:run:true) actually publish what
+// they're doing, like publishData should"; the task row, spirit/element/monitor/task.js, shows the text its job last
+// published): each step published as spirit.job.progress(done, total, text), in order, four steps in all.
+test.run('the whole run publishes its four steps as its job\'s progress, in order, each with words', 0.2, function () {
+  if (!WR.ready || !w) return false;
+  const pr = w.progress || [];
+  return (pr.length === 4 && pr.every(function (x, i) { return x.done === i + 1 && x.total === 4 && x.text.trim().length > 0; })) ? true : false;
+}, test.limit.quick);
+test.run('a look publishes the steps it takes, and not the commit', 0.2, function () {
+  if (!WR.ready || !r) return false;
+  const pr = r.progress || [];
+  return (pr.length === 3 && pr.every(function (x, i) { return x.done === i + 1 && x.total === 4; })) ? true : false;
+}, test.limit.quick);
 test.run('no summary line is posted to Desk', 0.2, function () {
   if (!WR.ready) return false;
   post = w.asks.filter(function (a) { return a.verb !== 'busy'; });

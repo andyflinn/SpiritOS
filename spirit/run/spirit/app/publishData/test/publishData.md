@@ -53,6 +53,10 @@ check's standing grant for `platform/<platform>/`.
 - **3, the test state**: `testState.json` and `testState.md` from testicle's current tests, read only; no suite run. Its
   counts are testicle's current rows: every current test, the failed ones its reds, each named with its script and suite.
 - The README beside them: its layout is box v170's, below.
+- ITS STEPS ARE ITS JOB'S PROGRESS (Andy: *"if "one-shot-script-apps" (node:run:true) actually publish what they're doing,
+  like publishData should"*): each step is published as `spirit.job.progress(done, 4, text)`, in order, the words the app
+  detail's task row shows while it runs: the asks, the test state, the lab measurements, and, on a publish, the commit and
+  push. A look publishes the first three. Started by hand, with no job, a progress the node refuses never stops a step.
 - With `--only packets` or `--out` it stops there: exit 0, `written to <out>`, nothing committed, nothing posted.
 - **4, otherwise**: zero posts is published too, and said; of `platform/<platform>/` only the files it wrote are committed, never a tool of his in that folder (`git commit --only`,
   so what he had staged stays staged and uncommitted), message `publish: <platform> at <commit> (platform/<platform>/,
