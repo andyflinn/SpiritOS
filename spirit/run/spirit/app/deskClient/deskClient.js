@@ -403,8 +403,8 @@ function meantForAgent(row) {
     return row.row.by === 'andy' && heldByMe(f) ? { text: 'DESK andy box.write ' + JSON.stringify({ id: String(row.id), version: row.row.version }) } : null;
   }
   // HIS CLEAR OF A RED Q THIS AGENT PLACED reaches it (goal/G21.2: "the agent that placed it is notified"), AND HIS GRANT
-  // OF THE CORE FILES IT LISTED (goal/G41.2; Andy: "file-core grants reference the agent who requests them, when granted,
-  // the agent must be woken to notice"): the desk names the asker as the grant's placer.
+  // OF A G IT PLACED (goal/G41.2; Andy: "file-core grants reference the agent who requests them, when granted, the agent
+  // must be woken to notice"). The desk opens no core grant since 2026-11-17, so a G is one an agent placed by hand.
   if (row.table === 'checks') {
     const c = row.row;
     const placed = SELF_KEY ? c.placedKey === SELF_KEY : c.placedBy === SELF;

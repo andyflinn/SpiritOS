@@ -135,8 +135,8 @@ const SEARCH_ROOM = Math.floor(ANSWER_ROOM / 2);
 // the decided ones, never the answered.
 function shownChecks(it) {
   // A Q he cleared (goal/G21.2) leaves the panel as an answered one does. A VOIDED GRANT LEAVES IT TOO (goal/G41.27; Andy:
-  // "cw, make that fix."): every core file added voids the core grant and opens a new one, so voided grants piled up on
-  // the panel until one more no longer fit an answer and the add was refused as line-too-large. It stays in the record.
+  // "cw, make that fix."): every core file added voided the core grant and opened a new one, while there were core grants,
+  // so voided grants piled up on the panel until one more no longer fit an answer. The record keeps them.
   return (it.checks || []).filter(function (c) { return c.state !== 'answered' && c.state !== 'cleared' && c.state !== 'voided'; });
 }
 // Every panel an item answers with, each measured as one answer: its facts (item.get, and its label in a search),
@@ -458,38 +458,9 @@ const NULL_PROTO = ['claims', 'takers', 'checkHigh', 'files'];
 function goalData(g) { const o = Object.assign({}, g); delete o.id; return o; }
 // Who made it: the key it was written with, else the label (the desk's own rows: desk).
 function madeBy(r) { return String((r && (r.key || r.by)) || 'desk'); }
-// ONE GRANT FOR THE LIST (goal/G40.3). Andy, 2026-10-24: "i will get no single file grant checks anymore, just all
-// in-one. and the grant request doesn't have to list them because i already have a visible list with the lock-icons
-// next to them.... The grand will simply be for the current/updated list.", "the grant is not valid if core files are
-// added after the grant is issued, if core files are added i must re-issue the grant for the whole list.", and "make
-// sure that the grant lives until i click 'done'". So an item holds at most one live core grant, naming no path: open
-// while it waits for his press, granted after it, for every core file on the list then. A core file added after it
-// voids it (state voided, the record kept) and opens a fresh one; a non-core add, a remove and a phase change leave it.
-// A list left with no core file drops an open one; a granted one stands.
-const CORE_GRANT = 'core grant: every core file on this item\'s list';
-function isCoreGrant(c) { return c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0; }
-function coreGrantAfter(it, r, added) {
-  const hasCore = filesOf(it).some(function (e) { return e.core; });
-  if (!hasCore) { it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); }); return; }
-  const granted = it.checks.filter(function (c) { return isCoreGrant(c) && c.state === 'granted'; });
-  if (granted.length) {
-    if (!added || spirit.require('spirit/coreFiles.js').isCore(added) !== true) return;
-    granted.forEach(function (c) { c.state = 'voided'; c.at = r.at; });
-  }
-  if (it.checks.some(function (c) { return isCoreGrant(c) && c.state === 'open'; })) return;
-  // A CORE GRANT NAMES WHO ASKED FOR IT (goal/G41.2). Andy, in the item's box: "file-core grants reference the agent who
-  // requests them, when granted, the agent must be woken to notice". The agent whose list brought the core file is its
-  // placer, as a red Q's is, so its deskClient knows the grant is its own.
-  const asker = r.by && r.by !== 'andy' && r.by !== 'desk' ? { placedBy: String(r.by), placedKey: String(r.key || '') } : {};
-  it.checks.push(Object.assign({ number: nextCheckNumber(it, 'G'), kind: 'G', words: CORE_GRANT, test: '', state: 'open', by: 'desk', at: r.at, made: 'desk' }, asker));
-}
-function grantOf(it, p, core) {
-  if (!core) return 'none';
-  const cg = it.checks.filter(isCoreGrant);
-  if (cg.some(function (c) { return c.state === 'open'; })) return 'open';
-  if (cg.some(function (c) { return c.state === 'granted'; })) return 'granted';
-  return 'owed';
-}
+// NO CORE GRANT (Andy, 2026-11-17: "the whold fucking process makes me give meaningess fucking grants for "core" files,
+// may as well toss that shit from desk"): a file added to an item opens no grant and voids none. A G check is one an agent
+// places by hand (check.add); the core grants already in the record stay as they are.
 // A chat line's JSON, kept per line while the fields a line can change after it is written (its take, its answer, its
 // Q mark) stay as they were: an item's whole chat is compared at each write, and its lines are rarely changed.
 const LINE_JSON = new WeakMap();
@@ -521,13 +492,10 @@ function rowsOf(s, it) {
   it.checks.forEach(function (c, i) {
     out.push({ key: 'checks|' + c.number, table: 'checks', id: c.number, cols: [c.number, i, String(c.made || c.placedKey || c.placedBy || c.by || 'desk'), JSON.stringify(c)], out: function () { return c; } });
   });
-  const core = spirit.require('spirit/coreFiles.js');
   Object.keys(it.files || {}).forEach(function (holder) {
     (Array.isArray(it.files[holder]) ? it.files[holder] : []).forEach(function (p, i) {
-      const isCore = core.isCore(String(p)) === true;
-      const grant = grantOf(it, String(p), isCore);
-      out.push({ key: 'files|' + holder + '|' + p, table: 'files', id: [holder, String(p)], cols: [holder, String(p), i, String(s.agentKey[holder] || holder), isCore ? 1 : 0, grant],
-        out: function () { const o = { path: String(p), by: holder, core: isCore, grant: grant }; if (isLate(it, holder, p)) o.late = true; return o; } });
+      out.push({ key: 'files|' + holder + '|' + p, table: 'files', id: [holder, String(p)], cols: [holder, String(p), i, String(s.agentKey[holder] || holder)],
+        out: function () { const o = { path: String(p), by: holder }; if (isLate(it, holder, p)) o.late = true; return o; } });
     });
   });
   Object.keys(it.claims || {}).forEach(function (label) {
@@ -548,8 +516,11 @@ const UPSERT = {
   olderBoxes: db.prepare('DELETE FROM box WHERE goal = ? AND item = ? AND version < ?'),
   checks: db.prepare('INSERT INTO checks (goal, item, number, pos, creator, data, change) VALUES (?, ?, ?, ?, ?, ?, ?)' +
     ' ON CONFLICT(goal, item, number) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, data = excluded.data, change = excluded.change'),
-  files: db.prepare('INSERT INTO files (goal, item, holder, path, pos, creator, core, grant_status, change) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)' +
-    ' ON CONFLICT(goal, item, holder, path) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, core = excluded.core, grant_status = excluded.grant_status, change = excluded.change'),
+  // NO CORE IN THE DESK (Andy, 2026-11-17: "may as well toss that shit from desk and make desk a little more simple", and
+  // of the two columns left: "b) and don't bother filling that field with anything"). core and grant_status stay in the
+  // table, which is never altered, and nothing reads them; NOT NULL makes a literal the least a new row can carry.
+  files: db.prepare('INSERT INTO files (goal, item, holder, path, pos, creator, core, grant_status, change) VALUES (?, ?, ?, ?, ?, ?, 0, \'\', ?)' +
+    ' ON CONFLICT(goal, item, holder, path) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, change = excluded.change'),
   claims: db.prepare('INSERT INTO claims (goal, item, claimer, creator, at, change) VALUES (?, ?, ?, ?, ?, ?)' +
     ' ON CONFLICT(goal, item, claimer) DO UPDATE SET creator = excluded.creator, at = excluded.at, change = excluded.change'),
 };
@@ -573,7 +544,7 @@ function writeRow(k, x, r) {
   else if (x.table === 'chat') UPSERT.chat.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n, r.n);
   else if (x.table === 'box') { UPSERT.box.run(k[0], k[1], c[0], c[1], c[2], c[3]); UPSERT.olderBoxes.run(k[0], k[1], c[0]); }
   else if (x.table === 'checks') UPSERT.checks.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n);
-  else if (x.table === 'files') UPSERT.files.run(k[0], k[1], c[0], c[1], c[2], c[3], c[4], c[5], r.n);
+  else if (x.table === 'files') UPSERT.files.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n);
   else if (x.table === 'claims') UPSERT.claims.run(k[0], k[1], c[0], c[1], c[2], r.n);
 }
 function deleteRow(k, key) {
@@ -1274,7 +1245,6 @@ function apply(s, r, b, item, goalOf) {
         // A FILE ADDED AFTER HIS GO IS MARKED LATE (goal/G41.11): allowed, and the item says so, as holder|path.
         if (it.go === true) { if (!Array.isArray(it.lateFiles)) it.lateFiles = []; if (it.lateFiles.indexOf(r.by + '|' + p) === -1) it.lateFiles.push(r.by + '|' + p); }
       });
-      adds.forEach(function (p) { coreGrantAfter(it, r, p); });
       return;
     }
     case 'item.files.remove': {
@@ -1282,7 +1252,6 @@ function apply(s, r, b, item, goalOf) {
       it.files[r.by] = it.files[r.by].filter(function (p) { return p !== String(b.path); });
       if (!it.files[r.by].length) delete it.files[r.by];
       if (Array.isArray(it.lateFiles)) it.lateFiles = it.lateFiles.filter(function (k) { return k !== r.by + '|' + String(b.path); });
-      coreGrantAfter(it, r, '');
       return;
     }
     // THE ATTACHED RULES, ONE ROW A WRITE (goal/G40.12, second set 1-3): a goal or an item keeps a list of rule keys;
@@ -1417,12 +1386,9 @@ function press(s, it, what, r, goalOf, b) {
   else if (what === 'reopen') {
     it.done = false; it.closed = false; it.alone = false; it.claims = Object.create(null);
     // REOPEN IS DESIGN AGAIN (goal/G40.3; Andy: "oh, re-open should put an item back to design mode."): it waits for his
-    // End design and a fresh Go. Its grant lived until his Done ("make sure that the grant lives until i click 'done'"),
-    // so a granted one is spent and the list asks again.
+    // End design and a fresh Go.
     if (!it.goal) {
       it.design = true; it.go = false; it.went = false;
-      it.checks.forEach(function (c) { if (isCoreGrant(c) && c.state === 'granted') { c.state = 'voided'; c.at = r.at; } });
-      coreGrantAfter(it, r, '');
     }
     // A REOPENED GOAL WAITS AFRESH (goal/G19.2). Its emptied mark survived the reopen, so Done came straight back.
     // Andy, 2026-10-12, to the four fixes that hold back an unearned Done: "yes. with my addendum." It goes here, in the
@@ -1762,15 +1728,14 @@ function fileRows(it) {
   });
   return out;
 }
-// THE ITEM'S FILE LIST, FLATTENED (goal/G8.8): every writer's paths as one list of { path, by, core }, sorted by path
-// so the Details draws it the same way twice. core is coreFiles.isCore, never a second list of its own.
+// THE ITEM'S FILE LIST, FLATTENED (goal/G8.8): every writer's paths as one list of { path, by }, sorted by path so the
+// Details draws it the same way twice. No core mark (Andy, 2026-11-17: "toss that shit from desk").
 function filesOf(it) {
-  const core = spirit.require('spirit/coreFiles.js');
   const held = it.files || {};
   const out = [];
   Object.keys(held).forEach(function (by) {
     (Array.isArray(held[by]) ? held[by] : []).forEach(function (p) {
-      const e = { path: String(p), by: by, core: core.isCore(String(p)) === true };
+      const e = { path: String(p), by: by };
       // goal/G41.11: added after his Go; a file listed before it carries no mark.
       if (isLate(it, by, p)) e.late = true;
       out.push(e);
@@ -2296,12 +2261,11 @@ appServer.serve({
       return { box: it.box, version: it.version };
     },
   },
-  // THE FILES TOUCHED, ITS OWN ANSWER (goal/G32.2), as item.chat is: { path, by, core } (goal/G8.8; core read from
-  // spirit/coreFiles.js, the one list of core files), core files first, then by path; as many as fit one answer, and
-  // filesMore says there were more. Nothing pages. under, when given, keeps the paths that start with it, so a caller
-  // asking for one folder is not crowded out by a long list of core files.
+  // THE FILES TOUCHED, ITS OWN ANSWER (goal/G32.2), as item.chat is: { path, by } (goal/G8.8), by path; as many as fit
+  // one answer, and filesMore says there were more. Nothing pages. under, when given, keeps the paths that start with
+  // it, so a caller asking for one folder is not crowded out by a long list.
   'item.files': {
-    request: { id: '', under: '' }, reply: { files: [{ path: '', by: '', core: false }], filesMore: false },
+    request: { id: '', under: '' }, reply: { files: [{ path: '', by: '' }], filesMore: false },
     // under is optional: {id} alone answers the whole list, as the Details ask it.
     accepts: function (x) {
       return !!x && typeof x === 'object' && !Array.isArray(x) && typeof x.id === 'string' &&
@@ -2311,8 +2275,7 @@ appServer.serve({
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
       const under = typeof a.under === 'string' ? a.under : '';
-      const all = fileRows(it).filter(function (e) { return !under || e.path.indexOf(under) === 0; });
-      const order = all.filter(function (e) { return e.core; }).concat(all.filter(function (e) { return !e.core; }));
+      const order = fileRows(it).filter(function (e) { return !under || e.path.indexOf(under) === 0; });
       const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ filesMore: true }), 'utf8');
       const found = walked(order.map(function (e, i) { return i; }), function (i) { return { key: String(i), label: JSON.stringify(order[i]) }; }, room);
       const files = found.items.map(function (p) { return JSON.parse(p.label); });
@@ -2983,7 +2946,7 @@ appServer.serve({
     },
   },
   // NO AGENT SCOPES (goal/G10.8). Andy, 2026-10-12: "all agents in desk have "/" file scope". What fences an agent is
-  // the desk itself: Go, its item, the core grants.
+  // the desk itself: Go and its item.
   // AGENT PROFILES (goal/G4.23). Andy: "so two more fields for repo-root-agents: name <agent-name> nick: <wc | wsl |
   // ubi>", "build them now.", "the profiles are for me, in desk. a dataset that deskServer stores for me and let's you
   // see." profile.set is his alone; profile.get answers any agent's ('' the caller). A name passes the label rule
@@ -3059,8 +3022,7 @@ appServer.serve({
   // and the testing agent should be adding files they test/touch in a list that can be fetched per item.", "the list
   // should be owned by the item. so updates to it are available to all participants.", and "all files that need a
   // grant should get one 'grant' button together." So: each writer keeps its own list on the item; the list is
-  // item.files' own answer (item.get carries only fileCount); and if it holds core files, ONE core grant covers them
-  // all (coreGrantAfter). A desk verb, and his ruling of
+  // item.files' own answer (item.get carries only fileCount). No core grant (Andy, 2026-11-17). A desk verb, and his ruling of
   // 2026-10-09 is that a desk verb needs no grant of his "until i rule this app 'intrinsic'".
   // ONE ROW A WRITE (goal/G40.3; the verbs Andy approved: "yes to the named verbs"): item.files.add and .remove take one
   // path of the writer's own list. Each refuses a path already there or not there, naming it.

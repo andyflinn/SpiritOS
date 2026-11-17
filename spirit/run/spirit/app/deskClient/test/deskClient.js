@@ -192,7 +192,7 @@ test.run('it serves its verbs and follows the desk\'s stream', 0.2, async functi
   await call('setDesk', { key: DESK });
   desk.answers['work.open'] = { items: [], more: false };
   // What the desk holds of the item from the start: its file list and its checks.
-  desk.answers['item.files'] = function (a) { return a.id === ITEM ? { files: [{ path: 'spirit/run/a.js', by: OTHER, core: false, grant: '' }], filesMore: false } : { files: [], filesMore: false }; };
+  desk.answers['item.files'] = function (a) { return a.id === ITEM ? { files: [{ path: 'spirit/run/a.js', by: OTHER, grant: '' }], filesMore: false } : { files: [], filesMore: false }; };
   desk.answers['item.checks'] = function (a) { return a.id === ITEM ? { checks: [{ number: 'G1', kind: 'G', state: 'open', placedBy: OTHER, placedKey: OTHER_KEY }] } : { checks: [] }; };
   // The current goal, pushed whole: the goal's row, then its item's facts.
   await push({ verb: 'goal.whole', goal: 9, item: { id: GOAL, goal: '', title: 'the goal', version: 1 } });
@@ -274,7 +274,7 @@ test.run('deskClient writes no cache file of its own, whatever the caller names:
 // The cache, whole from the first push: the agent's reads ask the desk nothing.
 test.run('item.files of a current-goal item is answered from the cache, the desk not asked', 0.2, async function () {
   // The desk's side rows for the item, as it publishes them.
-  await push({ table: 'files', id: ITEM, goal: 9, row: { path: 'spirit/run/a.js', by: OTHER, core: false } });
+  await push({ table: 'files', id: ITEM, goal: 9, row: { path: 'spirit/run/a.js', by: OTHER } });
   await push({ table: 'checks', id: ITEM, goal: 9, row: { number: 'G1', kind: 'G', state: 'open', placedBy: OTHER, placedKey: OTHER_KEY } });
   await settle();
   const filesAsked = asksOf('item.files').length;
@@ -332,7 +332,7 @@ test.run('after the desk moves the box to v6, item.box answers v6 from the cache
   return (first && first.version === 5 && box && box.version === 6 && box.box === 'box text v6' && asksOf('item.box').length === boxAsked) || false;
 }, test.limit.quick);
 test.run('a file the desk adds later is in the kept list', 0.2, async function () {
-  await push({ table: 'files', id: ITEM, goal: 9, row: { path: 'spirit/run/b.js', by: OTHER, core: true } });
+  await push({ table: 'files', id: ITEM, goal: 9, row: { path: 'spirit/run/b.js', by: OTHER } });
   await settle();
   const files2 = await ask('item.files', { id: ITEM });
   return (files2 && Array.isArray(files2.files) && files2.files.some(function (f) { return f.path === 'spirit/run/b.js'; })) || false;

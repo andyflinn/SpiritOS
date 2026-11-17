@@ -18,3 +18,11 @@ Moved here from `spirit/test/appServer.js`, being about the desk itself, not the
 
 - The desk server has no `bundled()` of its own (box v15, what goes).
 - Nothing in the desk folder (its scripts and json, tests aside) names `DEPENDENCIES` or hands `serve()` a dependencies list (goal/G41.24, Andy: *"DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself."*).
+
+## No core in the desk (2026-11-17)
+
+Andy: *"The stupid core designation is worthless in desk anyway, EVERY FUCKING FILE is pretty much core, and the whold fucking process makes me give meaningess fucking grants for "core" files, may as well toss that shit from desk and make desk a little more simple"*; of the two columns left in desk.db: *"b) and don't bother filling that field with anything"*.
+
+- Nothing in the desk folder (its scripts and json, tests aside) works out whether a file is core: no `coreFiles`, no `isCore`, no core grant, no core mark on a file.
+- The desk's api says `item.files` answers each file as `path` and `by`, with no `core` and no `grant`.
+- desk.db's `files` table keeps its `core` and `grant_status` columns, never altered; nothing reads them, and a new row carries a literal, NOT NULL allowing no less. The core grants already in the record stay.

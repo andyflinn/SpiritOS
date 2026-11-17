@@ -48,6 +48,17 @@ test.run('nothing in the desk folder names DEPENDENCIES or hands serve() a depen
   return named.length === 0 || false;
 }, test.limit.quick);
 
+// NO CORE IN THE DESK (Andy, 2026-11-17: "The stupid core designation is worthless in desk anyway ... may as well toss that
+// shit from desk and make desk a little more simple"; measured that day on his node, every search, write and subscribe of
+// the desk checked each listed file with coreFiles.isCore, an app's json read from disc each time, 3.2 s a pass).
+test.run('nothing in the desk folder works out whether a file is core: no coreFiles, no isCore, no core mark on a file', 0.2, function () {
+  const named = deskFiles(DESK).filter(function (f) {
+    const t = code(f);
+    return /coreFiles|isCore|data-core|CORE_GRANT|coreGrant/.test(t) || /\bcore:\s*(true|false|isCore|e\.core|o\.row\.core)/.test(t);
+  });
+  return named.length === 0 || false;
+}, test.limit.quick);
+
 // Andy: "removal of plugin folders."
 test.run('the desk app\'s plugins folder is gone', 0.2, function () { return folderGone('spirit/run/spirit/app/desk/plugins'); }, test.limit.quick);
 test.run('the desk element\'s plugins folder is gone', 0.2, function () { return folderGone('spirit/run/spirit/app/desk/element/desk/plugins'); }, test.limit.quick);
@@ -81,7 +92,8 @@ test.run('a scratch desk answers api with its verbs, item.get among them', 0.2, 
   const until = Date.now() + 15000;
   // Asked until the desk listens: before that the client answers app-not-running for it.
   while (Date.now() < until) { const r = await ask('api'); const b = r && r.body && (r.body.desk || r.body); if (b && typeof b === 'object' && b.ok !== false && Object.keys(b).length) { api = b; break; } await new Promise(function (r2) { setTimeout(r2, 200); }); }
-  const verbs = W.verbs = Object.keys(api.desk || api);
+  W.api = api.desk || api;
+  const verbs = W.verbs = Object.keys(W.api);
   return (verbs.length > 5 && verbs.indexOf('item.get') !== -1) || false;
 }, test.limit.slow);
 test.run('its api serves no verb of a plugin', 0.2, function () {
@@ -93,6 +105,13 @@ test.run('its api serves no verb of a plugin', 0.2, function () {
 test.run('its api serves no search of an item\'s box versions', 0.2, function () {
   const verbs = W.verbs || [];
   return (verbs.length > 5 && verbs.indexOf('item.box.search') === -1 && verbs.indexOf('item.box') !== -1) || false;
+}, test.limit.quick);
+// The files an item lists answer {path, by} alone: no core, no grant (Andy, 2026-11-17).
+test.run('its api says item.files answers each file as path and by, with no core and no grant', 0.2, function () {
+  const verbs = W.verbs || [];
+  const api = W.api || {};
+  const files = JSON.stringify((api['item.files'] || {}).reply || {});
+  return (verbs.indexOf('item.files') !== -1 && files.indexOf('"path"') !== -1 && !/"core"|"grant"/.test(files)) || false;
 }, test.limit.quick);
 test.run('a fresh desk holds no goal/G0', 0.2, async function () {
   const verbs = W.verbs || [];

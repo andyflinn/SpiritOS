@@ -28,7 +28,7 @@ var ddFacts = null;          // the item's facts, as the server last said them
 var ddBox = '';
 var ddVersion = 0;
 var ddChecks = [];
-var ddFiles = [];            // item.files, its own answer (goal/G32.2): core first, as many as fit
+var ddFiles = [];            // item.files, its own answer (goal/G32.2): by path, as many as fit
 var ddFilesMore = false;
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
@@ -129,7 +129,7 @@ function ddSecondPress(b) {
 // holder first, so the inputs are in the frame from the start; the workBench, once spirit.require brings it, takes them.
 // goal/G41.23: its panels' icons stand alone on the bench's strip, which paints them through the icon element; the panel
 // loads that element too, as it draws with it (Andy: "this element will replace icons painting all shell elements and
-// apps."). The lock before a core file's path is a glyph among words, and stays text.
+// apps.").
 var ddBenchParts = typeof spirit !== 'undefined' && spirit.require
   ? Promise.all([spirit.require('spirit/element/workBench.js'), spirit.require('spirit/element/icon.js')])
   : Promise.resolve(null);
@@ -504,9 +504,8 @@ function ddLinksHtml() {
     (blocking ? '<div><span class="label">Blocking</span> ' + blocking + '</div>' : '') + add + '</div>';
 }
 
-// THE FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "that file list should be visible in desk ui per item, core files
-// market as requiring grants." One line per path with the agent that wrote it; a core path is marked data-core="1"
-// and says it needs his grant. The server decides which is core (spirit/run/spirit/coreFiles.js), never this page.
+// THE FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "that file list should be visible in desk ui per item". One line per
+// path with the agent that wrote it. No core mark (Andy, 2026-11-17: "toss that shit from desk").
 function ddFilesHtml() {
   // ONE ROW A PATH (goal/G43.3; Andy, the box: "file list should not show duplicates"): a list row answered or a row the
   // stream brought, each writer's, is shown once, with all who added it.
@@ -520,10 +519,9 @@ function ddFilesHtml() {
   });
   if (!files.length) return '';
   return '<div class="stat-tile wide"><div class="label">Files touched</div>' + files.map(function (e) {
-    var core = e && e.core === true;
-    return '<div data-file="' + ddEsc(e.path) + '"' + (core ? ' data-core="1" title="a core file: it needs your grant"' : '') + '>' +
-      (core ? '🔒 ' : '') + ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.writers.map(ddName).join(', ')) + ')</span></div>';
-  }).join('') + (ddFilesMore ? '<div class="job-manifest-note">' + ddEsc(String((ddFacts && ddFacts.fileCount) || '')) + ' files in all; the core ones are shown first.</div>' : '') + '</div>';
+    return '<div data-file="' + ddEsc(e.path) + '">' +
+      ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.writers.map(ddName).join(', ')) + ')</span></div>';
+  }).join('') + (ddFilesMore ? '<div class="job-manifest-note">' + ddEsc(String((ddFacts && ddFacts.fileCount) || '')) + ' files in all.</div>' : '') + '</div>';
 }
 
 // CHAT LINES DRAWN READABLY (desk/G1.10): line breaks kept, short times

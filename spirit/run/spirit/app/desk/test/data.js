@@ -163,7 +163,7 @@ test.run('item.chat is kept as chat and chatMore, beside what was kept', 0.2, fu
 test.run('item.checks and item.files are kept too', 0.2, function () {
   if (!wt) return false;
   wt.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [{ number: '1', state: 'open' }] });
-  wt.X.took('item.files', { id: 'goal/G9.1' }, { files: [{ path: 'b.js', by: 'cw', core: false, grant: '' }], filesMore: true });
+  wt.X.took('item.files', { id: 'goal/G9.1' }, { files: [{ path: 'b.js', by: 'cw' }], filesMore: true });
   return (wt.part('goal/G9.1').checks.length === 1 && wt.part('goal/G9.1').files.length === 1 && wt.part('goal/G9.1').filesMore === true) ? true : false;
 }, test.limit.quick);
 test.run('an item of another goal, or one with no row, keeps nothing', 0.2, function () {
@@ -249,36 +249,37 @@ test.run('a cleared check goes, and so does a removed one, by its number at', 0.
   return (checks.length === 0) ? true : false;
 }, test.limit.quick);
 
-// side rows: files, one agent's path each, core first, and the late mark (goal/G41.11)
+// side rows: files, one agent's path each, by path, and the late mark (goal/G41.11); no core mark and no grant (Andy,
+// 2026-11-17: "may as well toss that shit from desk")
 test.run('a file added late keeps its late mark set to true', 0.2, function () {
   wf = world();
   wf.job(whole(it('goal/G9.1', 'goal/G9')));
   wf.X.took('item.files', { id: 'goal/G9.1' }, { files: [], filesMore: false });
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'cw', core: false, grant: '', late: true } });
-  return (JSON.stringify(wf.part('goal/G9.1').files) === JSON.stringify([{ path: 'x.js', by: 'cw', core: false, grant: '', late: true }])) ? true : false;
+  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'cw', late: true } });
+  return (JSON.stringify(wf.part('goal/G9.1').files) === JSON.stringify([{ path: 'x.js', by: 'cw', late: true }])) ? true : false;
 }, test.limit.quick);
-test.run('a file row without late true gets no late key, gets core only when true, and carries nothing else', 0.2, function () {
+test.run('a file row without late true gets no late key, and carries nothing else: no core, no grant, nothing extra', 0.2, function () {
   if (!wf) return false;
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'b.js', by: 'cw', core: 'yes', grant: 'g1', late: 'yes', extra: 1 } });
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'wsl', core: true, grant: '' } });
+  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'b.js', by: 'cw', core: true, grant: 'g1', late: 'yes', extra: 1 } });
+  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'wsl' } });
   files = wf.part('goal/G9.1').files;
   b = files.filter(function (f) { return f.path === 'b.js'; })[0];
-  return (b && !('late' in b) && b.core === false && b.grant === 'g1' && !('extra' in b)) ? true : false;
+  return (b && !('late' in b) && !('core' in b) && !('grant' in b) && !('extra' in b)) ? true : false;
 }, test.limit.quick);
-test.run('the files are listed core files first, then by path, with filesMore false', 0.2, function () {
+test.run('the files are listed by path, with filesMore false', 0.2, function () {
   if (!wf) return false;
   return (JSON.stringify(files.map(function (f) { return f.path; })) === '["a.js","b.js","x.js"]' && wf.part('goal/G9.1').filesMore === false) ? true : false;
 }, test.limit.quick);
 test.run('the same agent\'s path again replaces its entry', 0.2, function () {
   if (!wf) return false;
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'cw', core: false, grant: 'g2' } });
+  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'cw' } });
   files = wf.part('goal/G9.1').files;
   x = files.filter(function (f) { return f.path === 'x.js'; });
-  return (x.length === 1 && x[0].grant === 'g2' && !('late' in x[0])) ? true : false;
+  return (x.length === 1 && !('late' in x[0])) ? true : false;
 }, test.limit.quick);
 test.run('another agent\'s same path is its own entry', 0.2, function () {
   if (!wf) return false;
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'wsl', core: false } });
+  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'wsl' } });
   return (wf.part('goal/G9.1').files.filter(function (f) { return f.path === 'x.js'; }).length === 2) ? true : false;
 }, test.limit.quick);
 test.run('a removed file goes by its holder and path, and the other agent\'s stays', 0.2, function () {

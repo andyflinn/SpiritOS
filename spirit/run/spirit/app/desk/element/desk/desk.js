@@ -271,7 +271,7 @@ function deskAgentDraw() {
   var el = document.getElementById('desk-agent');
   if (!el) return;
   var label = document.getElementById('desk-agent-label');
-  if (label) label.textContent = deskNameOf(deskAgentName) + ': every agent may commit anywhere in the repo; core files still need your grant';
+  if (label) label.textContent = deskNameOf(deskAgentName) + ': every agent may commit anywhere in the repo';
   el.innerHTML = (deskAgentKey() ? '' : '<div class="job-start-error">No key known for ' + deskEsc(deskAgentName) + '.</div>') +
     (deskAgentNote ? '<div class="job-start-error">' + deskEsc(deskAgentNote) + '</div>' : '');
 }

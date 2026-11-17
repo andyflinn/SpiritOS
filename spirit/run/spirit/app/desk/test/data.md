@@ -47,8 +47,8 @@ parts read so far, `current()` the goal last pushed whole, `change()` the newest
   - `chat` adds a line, or replaces the same line (by, at, text); a removed or row-less one changes nothing;
   - `checks` adds or replaces by number; answered and cleared go; removed goes by `at`;
   - `files` one agent's path each: the same holder and path replaces, removed goes by `holder|path`; the entry is
-    rebuilt as `{path, by, core (true only when true), grant}` plus `late: true` only when the row carries it
-    (goal/G41.11); core first, then by path; `filesMore` false.
+    rebuilt as `{path, by}` plus `late: true` only when the row carries it (goal/G41.11), nothing else, no core and
+    no grant (Andy, 2026-11-17: *"may as well toss that shit from desk"*); by path; `filesMore` false.
 
 ## What its test must try to break
 

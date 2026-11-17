@@ -115,12 +115,12 @@
         // A FILE ADDED AFTER GO KEEPS ITS MARK (goal/G41.11): the desk marks it late: true (desk.js isLate), and the entry
         // rebuilt here carries it, as item.files answers it.
         if (!o.removed && o.row) {
-          var entry = { path: String(o.row.path), by: String(o.row.by), core: o.row.core === true, grant: String(o.row.grant || '') };
+          var entry = { path: String(o.row.path), by: String(o.row.by) };
           if (o.row.late === true) entry.late = true;
           files.push(entry);
         }
-        // Core files first, then by path (desk.js item.files).
-        files.sort(function (a, b) { return a.core !== b.core ? (a.core ? -1 : 1) : a.path < b.path ? -1 : a.path > b.path ? 1 : 0; });
+        // By path (desk.js item.files). No core mark (Andy, 2026-11-17: "toss that shit from desk").
+        files.sort(function (a, b) { return a.path < b.path ? -1 : a.path > b.path ? 1 : 0; });
         keep(id, { files: files, filesMore: false });
       }
     }
