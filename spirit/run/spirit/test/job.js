@@ -56,10 +56,27 @@ const RC = {};
 const refused = function (k) { return RC[k] ? (RC[k].refused ? true : false) : false; };
 const neverRan = function (k) { return RC[k] ? (!RC[k].ran ? true : false) : false; };
 
-test.run('a scratch node comes up with desk and icons switched on at boot', 0.2, async function () {
+// APPS OF ITS OWN (goal/G47.4; Andy: "you make bloody well sure that such stupid hard-coded tests move", of tests that took
+// the tree's real apps as their fixtures): a permanent server, zzserve, and a one-shot app, zzshot (the box, 2: "a one-shot
+// app is an app with api.js and data.js at its top, node mount false or missing"), planted in each scratch tree this test
+// boots, so no app of the tree coming or going ever changes what it judges.
+const PLANTED = {
+  'zzserve/zzserve.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Serve', intrinsic: false }, mount: { 'zzserve.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }),
+  'zzserve/zzserve.js': ["'use strict';", "require('../../spirit.js');", "spirit.require('spirit/appServer.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
+  'zzserve/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').require('spirit/app/zzserve/data.js'); else window.spirit.require('spirit/app/zzserve/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
+  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data; if (!D) return; D.makeFamily('zzserve', function () { return {}; }); }());", ''].join('\n'),
+  'zzshot/zzshot.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Shot', intrinsic: false }, mount: { 'zzshot.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: false } }),
+  'zzshot/zzshot.js': ["'use strict';", "require('../../spirit.js');", ''].join('\n'),
+  'zzshot/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').require('spirit/app/zzshot/data.js'); else window.spirit.require('spirit/app/zzshot/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
+  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data; if (!D) return; D.makeFamily('zzshot', function () { return {}; }); }());", ''].join('\n'),
+};
+function plantApps(run) {
+  Object.keys(PLANTED).forEach(function (rel) { const p = path.join(run, 'spirit', 'app', rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, PLANTED[rel]); });
+}
+test.run('a scratch node comes up with its planted server and one-shot app switched on at boot', 0.2, async function () {
   J.marks = ownTemp('spirit-jobs-marks-');
-  // Icons, the first one-shot app (goal/G43.19), switched on at boot beside desk.
-  J.node = await scratchNode({ servers: ['desk', 'icons'] });
+  // Its one-shot app switched on at boot beside its server, both planted in the scratch tree before the node starts.
+  J.node = await scratchNode({ servers: ['zzserve', 'zzshot'], before: plantApps });
   if (!J.node.up) return false;
   J.run = path.join(J.node.root, 'spirit', 'run');
   return true;
@@ -96,7 +113,7 @@ test.run('a script outside spirit/app is refused with a code', 0.8, async functi
 test.run('a script outside spirit/app never ran', 0.8, function () { return neverRan('outside'); }, test.limit.quick);
 test.run('a path climbing out of spirit/app is refused with a code', 0.8, async function () {
   plant('zz-climbed.js', mark('climbed'));
-  RC.climbed = await refusedCase('a path climbing out of spirit/app', mark('climbed'), { command: process.execPath, args: ['spirit/app/desk/../../../zz-climbed.js'] });
+  RC.climbed = await refusedCase('a path climbing out of spirit/app', mark('climbed'), { command: process.execPath, args: ['spirit/app/zzserve/../../../zz-climbed.js'] });
   return refused('climbed');
 }, test.limit.slow);
 test.run('a path climbing out of spirit/app never ran', 0.8, function () { return neverRan('climbed'); }, test.limit.quick);
@@ -261,49 +278,49 @@ test.run('with DEBUG on, zzErrLine is in the job\'s log', 0.2, function () {
 // writes a marker, so "it ran" is read from the disc.
 // the box, 4: a one-shot app switched on at boot is registered with the permanent ones
 const branches = async function () { const t = await door('api', {}); return t.status === 200 && t.body ? Object.keys(t.body) : []; };
-test.run('icons\'s api.js names its verbs', 0.2, function () {
+test.run('the one-shot app\'s api.js names its verbs', 0.2, function () {
   J.iconVerbs = [];
-  try { J.iconVerbs = Object.keys(require(path.join(J.run, 'spirit', 'app', 'icons', 'api.js')).verbs || {}); } catch (e) { J.iconVerbs = []; }
+  try { J.iconVerbs = Object.keys(require(path.join(J.run, 'spirit', 'app', 'zzshot', 'api.js')).verbs || {}); } catch (e) { J.iconVerbs = []; }
   return J.iconVerbs.length >= 1 ? true : false;
 }, test.limit.quick);
-test.run('icons, on in its node.json at boot, is in the api tree with no app.active asked', 0.2, async function () {
-  return (await branches()).indexOf('icons') !== -1 ? true : false;
+test.run('the one-shot app, on in its node.json at boot, is in the api tree with no app.active asked', 0.2, async function () {
+  return (await branches()).indexOf('zzshot') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('desk, a permanent server, is in the api tree beside icons', 0.2, async function () {
-  return (await branches()).indexOf('desk') !== -1 ? true : false;
+test.run('the planted server, a permanent one, is in the api tree beside the one-shot app', 0.2, async function () {
+  return (await branches()).indexOf('zzserve') !== -1 ? true : false;
 }, test.limit.quick);
 
 // the box, 4: "Switched off, its row goes, and a call to it answers app-not-served"; on again, it is back
-test.run('icons is switched off', 0.2, async function () {
-  return (await door('app.active', { key: 'icons', active: false })).status === 200 ? true : false;
+test.run('the one-shot app is switched off', 0.2, async function () {
+  return (await door('app.active', { key: 'zzshot', active: false })).status === 200 ? true : false;
 }, test.limit.quick);
-test.run('switched off, icons.icon answers app-not-served', 0.2, async function () {
+test.run('switched off, a call to the one-shot app answers app-not-served', 0.2, async function () {
   await sleep(WAIT_MS);
-  const offCall = J.iconVerbs && J.iconVerbs.length ? await door('icons.' + J.iconVerbs[0], {}) : { text: '' };
+  const offCall = J.iconVerbs && J.iconVerbs.length ? await door('zzshot.' + J.iconVerbs[0], {}) : { text: '' };
   return /app-not-served/.test(offCall.text) ? true : false;
 }, test.limit.slow);
-test.run('switched off, icons is not in the api tree', 0.2, async function () {
-  return (await branches()).indexOf('icons') === -1 ? true : false;
+test.run('switched off, the one-shot app is not in the api tree', 0.2, async function () {
+  return (await branches()).indexOf('zzshot') === -1 ? true : false;
 }, test.limit.quick);
-test.run('icons is switched on again', 0.2, async function () {
-  return (await door('app.active', { key: 'icons', active: true })).status === 200 ? true : false;
+test.run('the one-shot app is switched on again', 0.2, async function () {
+  return (await door('app.active', { key: 'zzshot', active: true })).status === 200 ? true : false;
 }, test.limit.quick);
-test.run('switched on again, icons is back in the tree, no restart of the node', 0.2, async function () {
-  return (await until(function () { return branches().then(function (b) { return b.indexOf('icons') !== -1; }); }, 10000)) ? true : false;
+test.run('switched on again, the one-shot app is back in the tree, no restart of the node', 0.2, async function () {
+  return (await until(function () { return branches().then(function (b) { return b.indexOf('zzshot') !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 
-// the box, 2: "node mount false or missing": an icons.json with no node part is still one-shot
-test.run('with node mount missing, icons is served', 0.2, async function () {
-  const iconsJson = path.join(J.run, 'spirit', 'app', 'icons', 'icons.json');
-  const kept = fs.readFileSync(iconsJson, 'utf8');
+// the box, 2: "node mount false or missing": a one-shot app's json with no node part is still one-shot
+test.run('with node mount missing, the one-shot app is served', 0.2, async function () {
+  const shotJson = path.join(J.run, 'spirit', 'app', 'zzshot', 'zzshot.json');
+  const kept = fs.readFileSync(shotJson, 'utf8');
   const noNode = JSON.parse(kept); delete noNode.node;
-  fs.writeFileSync(iconsJson, JSON.stringify(noNode, null, 2));
+  fs.writeFileSync(shotJson, JSON.stringify(noNode, null, 2));
   try {
-    await door('app.active', { key: 'icons', active: false });
+    await door('app.active', { key: 'zzshot', active: false });
     await sleep(WAIT_MS);
-    await door('app.active', { key: 'icons', active: true });
-    return (await until(function () { return branches().then(function (b) { return b.indexOf('icons') !== -1; }); }, 10000)) ? true : false;
-  } finally { fs.writeFileSync(iconsJson, kept); }
+    await door('app.active', { key: 'zzshot', active: true });
+    return (await until(function () { return branches().then(function (b) { return b.indexOf('zzshot') !== -1; }); }, 10000)) ? true : false;
+  } finally { fs.writeFileSync(shotJson, kept); }
 }, test.limit.slow);
 
 // the attacker: what is not a one-shot app is never run as one
@@ -368,14 +385,14 @@ const rask = function (call, args) {
 // routes: every job id is a route in the spirit tree, one job per id, and job.create starts only a run app (goal/G43.20)
 test.run('the scratch node for the job routes comes up', 0.2, async function () {
   stop(J.node); J.node = null;
-  RT.node = await H.scratchNode();
+  RT.node = await H.scratchNode({ before: plantApps });
   if (!RT.node.up) return false;
   RT.run = path.join(RT.node.root, 'spirit', 'run');
   return true;
 }, test.limit.slow);
 test.after(function () { if (RT.node && RT.node.child) RT.node.child.kill(); });
-test.run('desk, an app server, is switched on', 0.2, async function () {
-  const on = await rask('app.active', { key: 'desk', active: true });
+test.run('the planted app server is switched on', 0.2, async function () {
+  const on = await rask('app.active', { key: 'zzserve', active: true });
   await H.sleep(5000);
   return on.status === 200 ? true : false;
 }, test.limit.slow);
@@ -395,8 +412,8 @@ test.run('every job id is a route, spirit followed by names joined by dots', 0.2
   const notRoutes = ids.filter(function (id) { return !ROUTE.test(id); });
   return ids.length > 0 && !notRoutes.length ? true : false;
 }, test.limit.quick);
-test.run('the desk app server\'s job id is its route, spirit.app.desk', 0.2, function () {
-  return (RT.ids || []).indexOf('spirit.app.desk') !== -1 ? true : false;
+test.run('the planted app server\'s job id is its route, spirit.app.zzserve', 0.2, function () {
+  return (RT.ids || []).indexOf('spirit.app.zzserve') !== -1 ? true : false;
 }, test.limit.quick);
 
 // one job per family (Q1, Q2): the node's own jobs are spirit, spirit.fs, spirit.app, spirit.contact, spirit.auth
@@ -645,11 +662,14 @@ const layoutHolds = function () {
   return !bad ? true : false;
 };
 // the attacker: an app switched off and on again
-test.run('after backup is switched off and on, the state layout holds with nothing out of place', 0.2, async function () {
-  await sask('app.active', { key: 'backup', active: false });
+// The attacked server is the first the tree's manifests give (SL.servers), so no app is named here.
+test.run('after an app server is switched off and on, the state layout holds with nothing out of place', 0.2, async function () {
+  const one = SL.servers[0];
+  if (!one) return false;
+  await sask('app.active', { key: one, active: false });
   await H.sleep(2000);
-  await sask('app.active', { key: 'backup', active: true });
-  await answersApi('backup');
+  await sask('app.active', { key: one, active: true });
+  await answersApi(one);
   return layoutHolds();
 }, test.limit.slow);
 
@@ -670,7 +690,7 @@ test.run('after a kill and a restart, the state layout holds with nothing out of
 
 // the attacker: names that would put the node's state elsewhere
 test.run('app.active refuses every name of no app', 0.2, async function () {
-  const evil = ['..', '../..', 'relay-state', 'process', '../relay-state', 'desk/../../x', '.', '', 'con', 'desk/', 'a b', '__proto__'];
+  const evil = ['..', '../..', 'relay-state', 'process', '../relay-state', 'zzserve/../../x', '.', '', 'con', 'zzserve/', 'a b', '__proto__'];
   const took = [];
   for (const k of evil) {
     const r = await sask('app.active', { key: k, active: true });
@@ -686,8 +706,9 @@ test.run('no folder appeared at the run root after the bad names', 0.2, async fu
 test.run('after the bad names, the state layout holds with nothing out of place', 0.2, function () { return layoutHolds(); }, test.limit.quick);
 
 // the attacker: an app's folder taken away while it runs
-test.run('the node still answers with backup\'s folder gone under it', 0.2, async function () {
-  fs.rmSync(path.join(SL.run, 'spirit', 'app', 'backup'), { recursive: true, force: true });
+test.run('the node still answers with an app server\'s folder gone under it', 0.2, async function () {
+  if (!SL.servers[0]) return false;
+  fs.rmSync(path.join(SL.run, 'spirit', 'app', SL.servers[0]), { recursive: true, force: true });
   await H.sleep(4000);
   const alive = await sask('api', {});
   return alive.status === 200 ? true : false;
@@ -821,6 +842,14 @@ test.run('the fs-watcher job hears a file made.txt created in its folder', 0.2, 
 // send, it read an app's <name>.json once per file of that app, on the node's one thread (17 of 45 s on Andy's node).
 // The fs-watcher job on this checkout's run folder; then the tree asked twice, every read of an app's json counted.
 let treeSent = null;
+// An app of the checkout whose <name>.json says intrinsic false, and its <name>.js: the first found, never named.
+const NOT_INTRINSIC = (function () {
+  const apps = path.join(RUN, 'spirit', 'app');
+  const name = fs.readdirSync(apps).filter(function (a) {
+    try { const m = JSON.parse(fs.readFileSync(path.join(apps, a, a + '.json'), 'utf8')); return !!(m.identity && m.identity.intrinsic === false) && fs.existsSync(path.join(apps, a, a + '.js')); } catch (e) { return false; }
+  })[0];
+  return name ? { file: 'spirit/app/' + name + '/' + name + '.js', json: 'spirit/app/' + name + '/' + name + '.json' } : {};
+}());
 test.run('the fs-watcher job watches the run folder, the tree is asked twice, and reads of the app jsons are counted', 0.2, function () {
   // Not child(): it empties the folder it is given, and this one is the checkout's run folder, only read here.
   const run = function (src) { const r = spawnSync(process.execPath, ['-e', src, RUN], { cwd: RUN, encoding: 'utf8', timeout: 60000 }); return r.stderr ? '' : String(r.stdout || '').trim(); };
@@ -833,7 +862,7 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
     "const first = jobs.fsTreeCommands(); const second = jobs.fsTreeCommands();",
     "fs.readFileSync = read;",
     "const of = function (p) { return first.filter(function (c) { return c.path === p; })[0] || null; };",
-    "console.log(JSON.stringify({ reads: reads, files: first.length, again: second.length, spirit: of('spirit/spirit.js'), noCore: of('spirit/app/icons/icons.js'), ownJson: of('spirit/app/icons/icons.json') }));",
+    "console.log(JSON.stringify({ reads: reads, files: first.length, again: second.length, spirit: of('spirit/spirit.js'), noCore: of(" + JSON.stringify(String(NOT_INTRINSIC.file || '')) + "), ownJson: of(" + JSON.stringify(String(NOT_INTRINSIC.json || '')) + ") }));",
     "job._stop(); process.exit(0);",
   ].join('\n'));
   try { treeSent = JSON.parse(String(out).trim().split('\n').pop()); } catch (e) { treeSent = null; }
@@ -847,12 +876,14 @@ test.run('a core file, spirit/spirit.js, comes with the core flag', 0.2, functio
   if (!treeSent) return false;
   return (!!treeSent.spirit && treeSent.spirit.core === true) || false;
 }, test.limit.quick);
-// coreFiles.js: an app's folder is core unless its <name>.json says intrinsic false, the json itself always core. icons says false.
-test.run('a file of an app whose json says intrinsic false, spirit/app/icons/icons.js, comes without the core flag', 0.2, function () {
+// coreFiles.js: an app's folder is core unless its <name>.json says intrinsic false, the json itself always core. The app is
+// found in the checkout by its json, never named (goal/G47.4).
+test.run('a file of an app whose json says intrinsic false comes without the core flag', 0.2, function () {
+  if (!NOT_INTRINSIC.file) return false;
   if (!treeSent) return false;
   return (!!treeSent.noCore && treeSent.noCore.core === undefined) || false;
 }, test.limit.quick);
-test.run('that app\'s own json, spirit/app/icons/icons.json, comes with the core flag', 0.2, function () {
+test.run('that app\'s own json comes with the core flag', 0.2, function () {
   if (!treeSent) return false;
   return (!!treeSent.ownJson && treeSent.ownJson.core === true) || false;
 }, test.limit.quick);
@@ -1344,7 +1375,11 @@ function mountPart() {
   };
   test.run('in a process, requiring a tree app\'s api.js loads its data.js', 0.2, function () {
     if (!s) return false;
-    return inNode('deskClient').stands === true || false;
+    // A tree app with an api.js, the first found, never named (goal/G47.4).
+    const apps = path.join(RUN, 'spirit', 'app');
+    const one = fs.readdirSync(apps).filter(function (a) { return a !== 'test' && a !== NAME && fs.existsSync(path.join(apps, a, 'api.js')); })[0];
+    if (!one) return false;
+    return inNode(one).stands === true || false;
   }, test.limit.quick);
   test.run('in a process, requiring the new family\'s api.js loads and runs its data.js', 0.2, function () {
     if (!s) return false;

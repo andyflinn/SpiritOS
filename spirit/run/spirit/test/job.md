@@ -38,9 +38,11 @@ it on. A crash is no exception: the exit code is enough to tell us to fix it, an
 
 The box, 2: *"a one-shot app is an app with api.js and data.js at its top, node mount false or missing, and switched on. icons is the first."*; 4: *"the node registers each one-shot app where it reads the manifests and starts the permanent ones ... Switched off, its row goes, and a call to it answers app-not-served"*.
 
-- Icons, on in its `node.json` at boot, is in the api tree with no `app.active` asked, desk beside it.
-- Switched off, `icons.<verb>` answers `app-not-served` and the tree holds no icons; on again, it is back with no restart.
-- With no node part in `icons.json`, icons is still served.
+The apps judged are the test's own, planted in the scratch tree before the node starts (goal/G47.4; Andy: *"you make bloody well sure that such stupid hard-coded tests move"*): `zzshot`, a one-shot app (`api.js`, `data.js`, node mount false), and `zzserve`, a permanent server answering one verb. No app of the tree is named.
+
+- The one-shot app, on in its `node.json` at boot, is in the api tree with no `app.active` asked, the planted server beside it.
+- Switched off, a call to it answers `app-not-served` and the tree holds it no more; on again, it is back with no restart.
+- With no node part in its json, the one-shot app is still served.
 - The attacker: an app with `api.js` and no `data.js`, one with `data.js` and no `api.js`, and one with both never switched on are not served, and their script never runs (a marker on the disc).
 
 ## A job's id is a route
@@ -50,13 +52,13 @@ goal/G43.20, its box. Andy: *"they're supposed to identify a "route" in the spir
 (spirit.app.<name>)"*, *"a job cannot start if it is already running"*, and *"cw, box that only jobs in the app folder
 with node:run:true can be started with jobs.create"*.
 
-A real node on a lab node reset to the files under test (goal/G47.3), desk switched on; throwaway apps planted in that copy (`zzRun`, a run
+A real node on a lab node reset to the files under test (goal/G47.3), its planted server `zzserve` switched on; throwaway apps planted in that copy (`zzRun`, a run
 app; `zzMount`, an app without node run) and a script in no app folder. Never a live node.
 
 ### Requirements
 
 - No job id is a minted number (`job_<n>`); every job id is a route, `spirit` then names, dot by dot; an app server's job
-  is its route, `spirit.app.desk`.
+  is its route, `spirit.app.zzserve`.
 - One job per family (Q1, Q2, the box): the node's own jobs (kind `permanent`) are exactly `spirit`, `spirit.app`,
   `spirit.auth`, `spirit.contact`, `spirit.fs`, each id of at most two parts.
 - A job carries no `type` field.
@@ -117,10 +119,10 @@ Never a live node.
 
 After each, the layout holds (every app's folder only `node.json`, `cache/`, `data/`, `door.sock`; no `run:/relay-state`,
 no `run:/process`):
-- an app switched off and on again;
+- an app server switched off and on again (the first the tree's manifests give, none named);
 - the node killed (SIGKILL) and started again on the same tree, every app server starting again;
-- `app.active` with names of no app (`..`, `../..`, `relay-state`, `process`, `../relay-state`, `desk/../../x`, `.`,
-  empty, `con`, `desk/`, `a b`, `__proto__`): every one refused, and no folder appears at the run root;
+- `app.active` with names of no app (`..`, `../..`, `relay-state`, `process`, `../relay-state`, `zzserve/../../x`, `.`,
+  empty, `con`, `zzserve/`, `a b`, `__proto__`): every one refused, and no folder appears at the run root;
 - an app's folder taken away while it runs: the node still answers.
 
 ## No run://node_modules/: chokidar and readdirp in spirit/job/
@@ -139,8 +141,8 @@ The tree is read as it is. The watcher runs in a child process on a scratch fold
 - **The file watcher works as before:** the node's fs-watcher job hears a file made in its folder as a createFile.
 - **The core flag is kept on the file list** (goal/G47.1; Andy: *"stick that flag on the fucking file list, then you have to
   check each file once with isCore()"*): the fs-watcher job on the run folder, its tree asked twice, reads no app's
-  <name>.json from disc; spirit/spirit.js comes with core, spirit/app/icons/icons.js (its json says intrinsic false)
-  without, icons.json itself with. The flag follows an app's json: on a lab node reset to the files under test (goal/G47.3), a planted app
+  <name>.json from disc; spirit/spirit.js comes with core, the `<name>.js` of an app whose json says intrinsic false
+  (the first found in the checkout, none named) without, that json itself with. The flag follows an app's json: on a lab node reset to the files under test (goal/G47.3), a planted app
   zzKept whose json says intrinsic false has zzKept.js without core; the json changed to intrinsic true, zzKept.js comes
   with core; changed back, without again.
 - **No file names spirit/run/node_modules.** That covers the .gitignore exception and the two installers.
@@ -176,7 +178,7 @@ Andy: *"JUST loading functional server and associating the <name> as "familiy" n
 
 - A page binds the family by its name, and its verb answers.
 - `data.js` beside `<name>.js` is loaded and run by its api.js, the one script that requires it (goal/G47.1), on a page
-  (binding the family) and in a process (requiring the api.js; a tree app's, deskClient's, too), and found for a client's cache: what a client kept of a sender in the new family comes back at its start, as it does for a node family (contact).
+  (binding the family) and in a process (requiring the api.js; a tree app's too, the first with an api.js found, none named), and found for a client's cache: what a client kept of a sender in the new family comes back at its start, as it does for a node family (contact).
 - The one `<name>.js` also runs on a page.
 
 #### The start rule (goal/G43.20: "jobs.create starts only an app's own script, spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true")
