@@ -28,7 +28,7 @@
 
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit/spirit.js');
+require('../../spirit.js');
 const USAGE = 'usage: node deskAgentEar.js <port of your own node> [--read <key> | <desk verb> | deskClient.<verb>] [json]';
 const NODE_WAIT_MS = 20000;
 const PAUSE_MS = 250;

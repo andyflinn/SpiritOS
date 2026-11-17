@@ -25,7 +25,7 @@
 // the probability bucket, and says so with more (tableSearch, below).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit/spirit.js');
+require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');

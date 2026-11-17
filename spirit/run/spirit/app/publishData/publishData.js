@@ -28,7 +28,7 @@
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit/spirit.js');
+require('../../spirit.js');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
