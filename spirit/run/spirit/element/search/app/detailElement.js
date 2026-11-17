@@ -64,16 +64,17 @@
     S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
       var j = JSON.parse(String(text));
       if (runGone || !(j.node && j.node.run === true)) return;
-      var form = S.element.spirit.element.rowForm.create(runBox, { icon: '▶️', button: 'Run' });
-      form.span.textContent = 'Run ' + String(row.label || key);
       var said = document.createElement('div');
-      runBox.appendChild(said);
-      form.button.addEventListener('click', function () {
+      // ITS PRESS IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+      // comes"): the request is handed to rowForm as press, so the button is busy until the node answers.
+      var form = S.element.spirit.element.rowForm.create(runBox, { icon: '▶️', button: 'Run', press: function () {
         said.textContent = '';
-        S.ready.then(function (s) { return s.job.create({ command: 'node', args: ['spirit/app/' + key + '/' + key + '.js'], type: key }); }).then(function () {
+        return S.ready.then(function (s) { return s.job.create({ command: 'node', args: ['spirit/app/' + key + '/' + key + '.js'] }); }).then(function () {
           if (!runGone) said.textContent = 'started';
         }, function (e) { if (!runGone) said.textContent = String((e && e.message) || e); });
-      });
+      } });
+      form.span.textContent = 'Run ' + String(row.label || key);
+      runBox.appendChild(said);
     }).then(null, function () { /* a face that may not read the file: nothing to run */ });
     return { destroy: function () { runGone = true; icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); homeShell.destroy(); faceShell.destroy(); host.innerHTML = ''; } };
   }

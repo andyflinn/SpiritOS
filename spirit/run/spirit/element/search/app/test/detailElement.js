@@ -18,6 +18,16 @@ let node, chrome, loaded, made, t;
 const text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
 const html = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerHTML || "")'); };
 const R = JSON.stringify(ROW);
+// A RUN APP OF ITS OWN (goal/G43.21, goal/G47.1): an app whose <name>.json says node.run, planted in the scratch tree, its script
+// doing nothing and ending, so a press of Run is pressed for real and starts nothing that reaches anywhere.
+const RUN_ROW = { key: 'zzrun', label: 'Zz Run Label', icon: '🏃' };
+function plantRunApp(run) {
+  const dir = path.join(run, 'spirit', 'app', 'zzrun');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'zzrun.json'), JSON.stringify({ identity: { icon: RUN_ROW.icon, label: RUN_ROW.label, intrinsic: false }, mount: { 'zzrun.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: false, run: true } }));
+  fs.writeFileSync(path.join(dir, 'zzrun.js'), ["'use strict';", 'setTimeout(function () {}, 200);', ''].join('\n'));
+}
+const runText = function () { return chrome.evaluate('String((document.getElementById("under-run") || {}).innerText || "")'); };
 
 test.after(function () {
   try { if (chrome && chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
@@ -28,7 +38,7 @@ test.after(function () {
 
 test.run('a scratch node comes up, and Chrome opens its face page', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
-  node = await scratchNode();
+  node = await scratchNode({ before: plantRunApp });
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
@@ -57,4 +67,41 @@ test.run('destroy empties its host', 0.2, async function () {
   if (made !== true) return false;
   const empty = await chrome.evaluate('(function () { window.detail.destroy(); return document.getElementById("under-test").children.length === 0; }())');
   return empty === true ? true : false;
+}, test.limit.quick);
+
+// RUN (goal/G43.21; Andy, the box: "the app detail will show a run button."), in the panel, only for an app whose <name>.json
+// says node.run. ITS BUTTON IS BUSY FROM PRESS UNTIL THE NODE ANSWERS (goal/G47.1, Q20; Andy: "mark the button busy from press
+// until the mounter's answer comes").
+let runMade, pressed;
+test.run('in the panel, an app whose json says node.run shows its Run row: Run <label>, and a Run button', 0.2, async function () {
+  if (loaded !== 'loaded') return false;
+  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "under-run"; document.body.appendChild(c); window.runDetail = spirit.element.spirit.element.search.app.detailElement.create(c, { row: ' + JSON.stringify(RUN_ROW) + ', panel: true }); return true; }())');
+  runMade = !!(await until(function () { return chrome.evaluate('[].some.call(document.querySelectorAll("#under-run button"), function (b) { return b.textContent.trim() === "Run"; })'); }, 8000));
+  return runMade && String(await runText()).indexOf('Run ' + RUN_ROW.label) !== -1 ? true : false;
+}, test.limit.quick);
+test.run('in the panel, an app with no node.run shows no Run button', 0.2, async function () {
+  if (!runMade) return false;
+  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "under-norun"; document.body.appendChild(c); window.noRunDetail = spirit.element.spirit.element.search.app.detailElement.create(c, { row: ' + R + ', panel: true }); return true; }())');
+  await new Promise(function (r) { setTimeout(r, 1500); });
+  const any = await chrome.evaluate('[].some.call(document.querySelectorAll("#under-norun button"), function (b) { return b.textContent.trim() === "Run"; })');
+  return any === false ? true : false;
+}, test.limit.quick);
+// Read once the press itself is done (a turn of the page's clock later), while the node is still asked: a button with no
+// request of its own handed to it is a plain button again by then.
+test.run('pressed, the Run button stays busy while the node is asked: disabled, with its turning mark', 0.2, async function () {
+  if (!runMade) return false;
+  pressed = JSON.parse(await chrome.evaluate('(function () { var b = [].filter.call(document.querySelectorAll("#under-run button"), function (x) { return x.textContent.trim() === "Run"; })[0]; b.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); }); }())'));
+  return pressed.disabled === true && pressed.mark === true ? true : false;
+}, test.limit.quick);
+test.run('once the node answers, the line under it says started, and the button is a plain button again', 0.2, async function () {
+  if (!pressed) return false;
+  const said = await until(function () { return runText().then(function (t) { return /started/.test(String(t)); }); }, 10000);
+  const plain = await chrome.evaluate('(function () { var b = [].filter.call(document.querySelectorAll("#under-run button"), function (x) { return x.textContent.trim() === "Run"; })[0]; return !!b && !b.disabled && !b.querySelector(".shell-busy"); }())');
+  return said && plain === true ? true : false;
+}, test.limit.quick);
+// A job's id is its route (spirit/job.js, goal/G43.20): an app's run is spirit.app.<name>.
+test.run('the press started the app on the node: its job, spirit.app.zzrun, running its script', 0.2, async function () {
+  if (!pressed) return false;
+  const job = await until(function () { return chrome.evaluate('(function () { var j = window.spirit.data.job.data.job("spirit.app.zzrun"); return !!(j && j.data && (j.data.args || []).indexOf("spirit/app/zzrun/zzrun.js") !== -1); }())'); }, 10000);
+  return job ? true : false;
 }, test.limit.quick);
