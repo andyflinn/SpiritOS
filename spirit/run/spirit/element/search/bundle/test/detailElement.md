@@ -37,6 +37,8 @@ the code draws no title row (the tab's label, its mounter's, names the bundle), 
     the verb `''` when left at All Verbs;
   - an answered add makes the list search again;
   - a refused add is said in the page, in the node's words (a duplicate is `already-in-bundle`).
+  - it is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer
+    comes"*): the press settles only once the node has answered, so Add is busy until then.
 
 ## What its test must try to break
 

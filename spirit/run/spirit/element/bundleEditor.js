@@ -45,14 +45,15 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       box.appendChild(own);
       // AT THE TOP, A ROWFORM (goal/G41.27; Andy: "bundleEditor:\n[➕] [label] [Add]"): ➕, the label input in its span,
       // Add its button. What Add did is said below it.
-      var form = E.spirit.element.rowForm.create(own, { icon: '➕', button: 'Add' });
+      // ITS ADD IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+      // comes"): handed as press, so Add is busy until the node answers.
+      var form = E.spirit.element.rowForm.create(own, { icon: '➕', button: 'Add', press: function () { return addBundle(); } });
       form.root.className += ' bundle-editor-add';
       var input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'label';
       window.spirit.required.spirit.element.fieldInput.attach(input, 'name');
       form.span.appendChild(input);
-      var add = form.button;
       var said = document.createElement('div');
       said.className = 'job-manifest-note';
       own.appendChild(said);
@@ -71,16 +72,16 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
         input.value = '';
         say('added');
       });
-      add.addEventListener('click', function () {
+      function addBundle() {
         var got = labelOf(input.value);
-        if (got.why) { say(got.why); return; }
+        if (got.why) { say(got.why); return null; }
         say('');
         waitingFor = got.value;
-        spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value }); }).then(null, function (e) {
+        return spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value }); }).then(null, function (e) {
           waitingFor = '';
           say((e && (e.message || e.refusal)) || 'not added');
         });
-      });
+      }
     });
     return {
       destroy: function () { gone = true; if (stop) stop(); stop = null; if (bundles) bundles.destroy(); bundles = null; box.innerHTML = ''; },

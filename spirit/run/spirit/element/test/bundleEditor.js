@@ -52,7 +52,10 @@ test.run('the bundle editor requires the field input and the bundle selector thr
     // one does, its root appended to the container it is given, its button saying the words it was handed.
     'spirit/element/rowForm.js': function (E) { E.rowForm = { create: function (c, o) {
       const f = { container: c, opts: o || {}, root: node('div'), span: node('span'), button: node('button') };
-      f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); forms.push(f); return f;
+      f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); forms.push(f);
+      // A press calls press, the mounter's request, and keeps what it answered, as the real one's busyButton waits on it.
+      f.button.addEventListener('click', function () { if (typeof f.opts.press === 'function') f.pressed = f.opts.press(); });
+      return f;
     } }; },
     'spirit/element/fieldInput.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'fieldInput.js'), 'utf8'), { filename: 'fieldInput.js' }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
@@ -189,8 +192,17 @@ test.run('a refused add is said in the panel, in the node\'s words, and the labe
   answer = function () { return Promise.reject(Object.assign(new Error('label refused'), { refusal: 'bad-request' })); };
   input.value = 'Writer';
   add.dispatchEvent({ type: 'click' });
+  const p = rf && rf.pressed;
+  pressedSaid = null;
+  if (p && typeof p.then === 'function') p.then(function () { pressedSaid = text(box); });
   await settle();
   return (/label refused|bad-request/.test(text(box)) && input.value === 'Writer') ? true : false;
+}, test.limit.quick);
+let pressedSaid = null;
+// goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": Add is the rowForm's press, and
+// what it hands the rowForm settles only once the node has answered, so the button is busy until then.
+test.run('its Add is handed to the rowForm as press, and the press settles only once the node has answered', 0.2, function () {
+  return (!!rf && typeof rf.opts.press === 'function' && /label refused|bad-request/.test(String(pressedSaid))) ? true : false;
 }, test.limit.quick);
 test.run('create answers an object with destroy', 0.2, function () {
   // destroy

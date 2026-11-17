@@ -30,6 +30,8 @@ opens. So the editor names no description and no api-branch selector.
     bundle it asked for is there, the input is emptied for the next and the add is said. Another bundle arriving
     leaves the label as it is. It asks its pane to search nothing again: the pane is a view of that branch;
   - refused, the node's words are said in the panel and the label stays in the input.
+  - it is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer
+    comes"*): the press settles only once the node has answered, so Add is busy until then.
 - Below it, filling the space left (a `fill` box, shell.css): the bundleSelector, `spirit.element.search.bundle.create(its own box, …)` (the shell's element
   shape, goal/G41.19), a pane, columns `label` and `owner` (goal/G41.25: the owner *"right after the bundles label"*), its labels shown only (goal/G41.26: *"the Label should now just be an output"*; no `editable`). What a row does is the row element's
   (`spirit/element/search/bundle/rowElement.js`).

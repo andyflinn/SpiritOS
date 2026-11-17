@@ -42,10 +42,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     // THE ADD FORM, A ROWFORM (goal/G41.27; Andy: "branchEditor:\n\n[➕] [choose a family… ▾] [Add]", and "careful,
     // there's a hidden verb selector there that only displays when a family is selected... !\n[➕] [choose a family… ▾]
     // [All Verbs ▾] [Add]"): ➕, the family selector in its span, its verb half with it, Add its button.
-    var form = E.spirit.element.rowForm.create(box, { icon: '➕', button: 'Add' });
+    // ITS ADD IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+    // comes"): handed as press, so Add is busy until the node answers.
+    var form = E.spirit.element.rowForm.create(box, { icon: '➕', button: 'Add', press: function () { return addBranch(); } });
     form.root.className += ' branch-editor-add';
     var family = E.spirit.element.search.api.create(form.span, { all: 'choose a family…' });
-    var add = form.button;
     var said = document.createElement('div');
     said.className = 'job-manifest-note';
     // Each note keeps its words inside (spirit-sibling-browser.js: overflow not visible).
@@ -64,15 +65,15 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       if (!waiting || !v) return;
       if (Number(v.bundle) === waiting.bundle && String(v.family) === waiting.family && String(v.verb || '') === waiting.verb) { waiting = null; say('added'); }
     }) : null;
-    add.addEventListener('click', function () {
-      if (!family.family) { say('choose a family first'); return; }
+    function addBranch() {
+      if (!family.family) { say('choose a family first'); return null; }
       say('');
       var ask = { op: 'add', bundle: Number(o.bundle), family: family.family, verb: family.verb || '' };
       waiting = { bundle: ask.bundle, family: ask.family, verb: ask.verb };
-      spirit.ready.then(function (s) { return s.auth.branch(ask); }).then(function () {
+      return spirit.ready.then(function (s) { return s.auth.branch(ask); }).then(function () {
         branches.refresh();
       }, function (e) { waiting = null; say((e && (e.message || e.refusal)) || 'not added'); });
-    });
+    }
     // AT THE BOTTOM, THE BUNDLE'S DELETE (goal/G41.32; Andy: "i need the branchEditor to have a rowForm at the bottom: [❌]
     // "Delete <bundle-name> bundle and branches " [Delete (armingButton)]."): the bundle and every branch that names it, in one
     // transaction at the node, and what closes this is hearing it. A refusal is said below it, in the node's words.
