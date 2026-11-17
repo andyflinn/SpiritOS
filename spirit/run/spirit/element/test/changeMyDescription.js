@@ -35,6 +35,7 @@ function node(tag) {
     },
     appendChild: function (c) { n.kids.push(c); c.parentNode = n; return c; },
     addEventListener: function (t, fn) { (heard[t] = heard[t] || []).push(fn); },
+    click: function () { n.fire('click'); },
     fire: function (t, e) { (heard[t] || []).slice().forEach(function (fn) { fn(e || {}); }); },
   };
   return n;
@@ -52,6 +53,8 @@ function world(answer) {
       rowForm: { create: function (c, o) {
         const f = { container: c, opts: o || {}, root: node('<div>'), span: node('<span>'), button: node('<button>') };
         f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button);
+        // A press calls press, the mounter's request, and keeps what it answered, as the real one's busyButton waits on it.
+        f.button.addEventListener('click', function () { if (typeof f.opts.press === 'function') f.pressed = f.opts.press(); });
         if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
         w.forms.push(f); return f;
       } } } } },
@@ -203,6 +206,19 @@ test.run('Enter saves as Save does', 0.2, async function () {
   input.fire('keydown', { key: 'Enter', preventDefault: function () {} });
   await settle();
   return (w.calls.length === 2 && w.calls[1].args.description === 'Carl') ? true : false;
+}, test.limit.quick);
+// goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": Save is the rowForm's press, and
+// what it hands the rowForm settles only once the node has answered, so the button is busy until then.
+test.run('its Save is handed to the rowForm as press, and the press settles only once the node has answered', 0.2, async function () {
+  if (!rf || typeof rf.opts.press !== 'function') return false;
+  input.value = 'Dora';
+  save.fire('click');
+  const p = rf.pressed;
+  let at = null;
+  if (p && typeof p.then === 'function') p.then(function () { at = said.textContent; });
+  await settle();
+  const asked = w.calls.length;
+  return (asked === 3 && at === 'saved') ? true : false;
 }, test.limit.quick);
 test.run('the node\'s refusal is said beside the field', 0.2, async function () {
   // a refusal is said, and the field keeps what was typed

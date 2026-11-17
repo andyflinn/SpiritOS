@@ -22,7 +22,7 @@ its test folder"): one shell element, the Description field, its Save and the by
 - **Save is refused while the rule says no** (`fieldRules.describeProblem`), and the field says why; nothing goes on
   the wire.
 - **Save asks the node**, `node.setDescription` with the field as typed, through the spirit object itself, no api handed (goal/G43.24), and then shows what the node stored (rule/19),
-  says saved, and keeps the stored description in the node card. Enter in the field saves as Save does.
+  says saved, and keeps the stored description in the node card. Enter in the field presses Save. Its Save is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): the press settles only once the node has answered, so the button is busy until then.
 - **What it changes, it listens for** (goal/G41.28): it requires the node family's interface (`spirit.require('spirit/node/api.js')`), which brings its data.js, and no
   data script itself (goal/G47.1),
   and draws the field from `spirit.data.node.data.card.watch`; a description changed in the card from elsewhere redraws the

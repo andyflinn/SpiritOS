@@ -35,7 +35,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
       '<div class="stack" style="overflow:hidden"><div data-description="form"></div>' +
       '<div data-description="left" class="job-manifest-note"></div>' +
       '<div data-description="said" class="job-start-error"></div></div>';
-    var form = E.spirit.element.rowForm.create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save' });
+    var form = E.spirit.element.rowForm.create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save', press: function () { return save(); } });
+    // ITS SAVE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+    // comes"): handed as press, so Save is busy until the node answers; Return presses it.
     form.span.innerHTML = '<input type="text" data-field="description" placeholder="' + esc('a sentence somebody who has just found you would want to read') + '">';
     var input = host.querySelector('[data-field="description"]');
     var left = host.querySelector('[data-description="left"]');
@@ -93,9 +95,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     input.addEventListener('keydown', function (e) {
       if (!e || e.key !== 'Enter') return;
       if (typeof e.preventDefault === 'function') e.preventDefault();
-      save();
+      if (typeof form.button.click === 'function') form.button.click(); else save();
     });
-    form.button.addEventListener('click', save);
     count();
 
     return {
