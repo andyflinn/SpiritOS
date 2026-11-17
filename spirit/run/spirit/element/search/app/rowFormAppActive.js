@@ -23,8 +23,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     function row() { var A = S.data.app && S.data.app.data; return A ? A.rows()[key] || null : null; }
     function press() {
       var r = row();
-      if (!r) return;
-      S.ready.then(function (s) { return s.app.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
+      if (!r) return null;
+      // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
+      return S.ready.then(function (s) { return s.app.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
     }
     var t = S.element.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;

@@ -13,7 +13,7 @@ A server's DEBUG, as a rowFormToggle (goal/G43.15). Its test is `./serverDEBUG.j
 
 ### What it switches
 
-- A press switches the server's own DEBUG verb: `<name>.DEBUG {}` then answers true.
+- A press switches the server's own DEBUG verb: `<name>.DEBUG {}` then answers true. Its press answers the request, so the toggle's button is busy until the server answers (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*).
 - DEBUG is on the server's job, in its data: `debug` true or false, kept past the server's next call.
 - Switched from elsewhere, the page follows with no reload.
 

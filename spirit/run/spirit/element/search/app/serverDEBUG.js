@@ -36,7 +36,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     function on() { var j = job(); return j ? !!(j.data && j.data.debug === true) : asked === true; }
     function press() {
       var want = !on();
-      Promise.resolve(S.require(S.familyPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
+      // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
+      return Promise.resolve(S.require(S.familyPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
     }
     var t = S.element.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;

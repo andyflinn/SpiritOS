@@ -78,6 +78,19 @@ test.run('a press on the redrawn button calls press again', 0.2, async function 
   const n = await chrome.evaluate('window.__pressed');
   return n === 2 ? true : false;
 }, test.limit.quick);
+// goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": a press whose answer has not
+// come leaves the button busy, read once the press itself is done; once it comes, the button is plain again.
+let waited = null;
+test.run('a press whose answer has not come leaves its button busy: disabled, with its turning mark', 0.2, async function () {
+  if (made !== true) return false;
+  waited = JSON.parse(await chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "tw"; document.body.appendChild(b); window.__tw = spirit.element.spirit.element.search.app.rowFormToggle.create(b, { on: false, words: "zz waits", press: function () { return new Promise(function (r) { window.__letGo = r; }); } }); var btn = b.querySelector("button"); btn.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: btn.disabled, mark: !!btn.querySelector(".shell-busy") }); }); }())'));
+  return waited.disabled === true && waited.mark === true ? true : false;
+}, test.limit.quick);
+test.run('once that answer comes, the button is plain again', 0.2, async function () {
+  if (!waited) return false;
+  const plain = await chrome.evaluate('(function () { window.__letGo(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { var btn = document.querySelector("#tw button"); return !btn.disabled && !btn.querySelector(".shell-busy"); }); }())');
+  return plain === true ? true : false;
+}, test.limit.quick);
 test.run('destroy empties its host', 0.2, async function () {
   if (made !== true) return false;
   const empty = await chrome.evaluate('(function () { window.__t.destroy(); return document.getElementById("t").children.length === 0; }())');

@@ -60,10 +60,17 @@ test.run('for the Agent, off, it says Activate and the app\'s label', 0.2, async
   await make('agent');
   return (await until(function () { return view('agent').then(function (v) { return /Activate/.test(v.text) && !/Deactivate/.test(v.text) && v.text.indexOf('Agent') !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
+let busyAt = null;
 test.run('pressed, the Agent is active', 0.2, async function () {
   if (loaded !== true) return false;
-  await chrome.evaluate('document.querySelector("#a-agent button").click(); 1');
+  try { busyAt = JSON.parse(await chrome.evaluate('(function () { var b = document.querySelector("#a-agent button"); b.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); }); }())')); } catch (e) { busyAt = null; }
   return (await until(function () { return activeOf('agent').then(function (a) { return a === true; }); }, 10000)) ? true : false;
+}, test.limit.quick);
+// goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": read once the press itself is
+// done, while the node is still asked.
+test.run('pressed, its button stays busy while the node is asked: disabled, with its turning mark', 0.2, function () {
+  if (!busyAt) return false;
+  return busyAt.disabled === true && busyAt.mark === true ? true : false;
 }, test.limit.quick);
 test.run('once the Agent is active it says Deactivate', 0.2, async function () {
   if (loaded !== true) return false;
