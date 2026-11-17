@@ -86,9 +86,9 @@ test.run('publishData posts nothing to the desk', 0.2, function () {
 // ── THE RUN PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
 // The tests of spirit/app/publishData/publishData.js run whole, as an agent runs it, and of no other module (spec:
 // ./publishData.md, section "run"; the box's red is ./publishData.js; goal/G41.11). The
-// script runs as an agent runs it, its own process, in a scratch clone of the test's own with a bare origin beside it
+// script runs as Andy's Run starts it, its own process, in a scratch clone of the test's own with a bare origin beside it
 // and a traffic log (spirit/state/node.db) the test writes. A preload of the test's own stands in for the spirit object:
-// its deskClient family answers profile.get with the agent's name and logs every ask. No harness step runs (it went
+// its testicle family answers busy and logs every ask. No harness step runs (it went
 // with the old harness). No node, no port, no real remote.
 const { DatabaseSync } = require('node:sqlite');
 // Its scratch folder is outside the tree (Andy: "an empty folder keeps showing up in my run:// folder"): under run/test
@@ -99,8 +99,10 @@ const LOG = path.join(TMP, 'asks.jsonl');
 const ORIGIN = path.join(TMP, 'origin.git');
 const CLONE = path.join(TMP, 'clone');
 const BARE_CLONE = path.join(TMP, 'nolog');
-const AGENT = 'test-agent';
-// The spirit object, whose one family path function names the deskClient's family (goal/G41.12).
+// THE PLATFORM, NOT AN AGENT (goal/G47.1; Andy: "publishData needs to work without \"agent\" and with testicle instead of
+// deskVerify."): the reports are named by the machine's platform, as their folder is.
+const PLATFORM = process.platform === 'win32' ? 'windows' : (function () { try { return /microsoft/i.test(fs.readFileSync('/proc/version', 'utf8')) ? 'wsl' : 'ubuntu'; } catch (e) { return 'ubuntu'; } }());
+// The spirit object, whose one family path function names the testicle family (goal/G41.12).
 const SPIRIT = path.join(RUN, 'spirit', 'spirit.js');
 function git(cwd, args) { const r = spawnSync('git', args, { cwd: cwd, encoding: 'utf8', windowsHide: true }); return { status: r.status, out: String(r.stdout || '').trim() }; }
 
@@ -109,10 +111,9 @@ const STUB = [
   "const fs = require('fs');",
   "const Module = require('module');",
   "const log = function (x) { fs.appendFileSync(process.env.PD_LOG, JSON.stringify(x) + '\\n'); };",
-  "const family = { desk: function (a) {",
-  "  log({ verb: 'desk', args: a });",
-  "  if (a.name === 'profile.get') return Promise.resolve({ ok: true, name: process.env.PD_NAME, nick: '' });",
-  "  return Promise.resolve({ ok: true });",
+  "const family = { busy: function (a) {",
+  "  log({ verb: 'busy', args: a });",
+  "  return Promise.resolve({ busy: false });",
   "} };",
   "const familyPath = require(" + JSON.stringify(SPIRIT) + ").familyPath;",
   "globalThis.spirit = {",
@@ -128,11 +129,11 @@ const STUB = [
   "};",
 ].join('\n');
 
-function publish(cwd, args, name) {
+function publish(cwd, args) {
   try { fs.unlinkSync(LOG); } catch (e) { /* none */ }
   // THE TEST'S OWN WORLD (goal/G43.21): run under a node, as the verifier runs it, this suite has the node's address and job in
   // its env, which publishData would take for its own; the script is handed neither, only what each case gives it.
-  const ownWorld = function () { const e = Object.assign({}, process.env, { PD_LOG: LOG, PD_NAME: name === undefined ? AGENT : name }); delete e.SPIRIT_CALLBACK_URL; delete e.SPIRIT_JOB_ID; return e; };
+  const ownWorld = function () { const e = Object.assign({}, process.env, { PD_LOG: LOG }); delete e.SPIRIT_CALLBACK_URL; delete e.SPIRIT_JOB_ID; return e; };
   const r = spawnSync(process.execPath, ['-r', PRELOAD, FILE].concat(args), { cwd: cwd, encoding: 'utf8', windowsHide: true, timeout: 280000,
     env: ownWorld() });
   let asks = [];
@@ -183,33 +184,28 @@ function setup() {
 const WR = {};
 test.after(function () { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
-// run: one measurement run per agent
+// run: one measurement run per platform
 test.run('a scratch clone is made with a bare origin beside it and a traffic log', 0.2, function () {
-  // The deskClient's family as the one family path function names it (goal/G41.12).
-  WR.FAMILY = require(SPIRIT).familyPath('deskClient');
+  // The testicle family as the one family path function names it (goal/G41.12).
+  WR.FAMILY = require(SPIRIT).familyPath('testicle');
   setup();
   WR.COMMIT = git(__dirname, ['rev-parse', '--short', 'HEAD']).out;
   WR.ready = fs.existsSync(PRELOAD) && fs.existsSync(path.join(CLONE, 'README.md')) && !!WR.COMMIT;
   return WR.ready || false;
 }, test.limit.quick);
 
-let u, nogit, noname, nolog, OUT, headBefore, r, pg, p, pmd, plat, ts, tsmd, readmeMd, origDb, rowsNow, before, w, head, files, post;
+let u, nogit, nolog, OUT, headBefore, r, pg, p, pmd, plat, ts, tsmd, readmeMd, origDb, rowsNow, before, w, head, files, post;
 
 // its usage, and what it needs
 test.run('with no port given or handed by its node, publishData exits 2 with its usage and asks nothing', 0.2, function () {
   if (!WR.ready) return false;
   u = publish(CLONE, []);
-  return (u.status === 2 && /^usage: node publishData.js \[<port of the agent's own node>\]/.test(u.err) && u.asks.length === 0) ? true : false;
+  return (u.status === 2 && /^usage: node publishData.js \[<port of its node>\]/.test(u.err) && u.asks.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('run outside a git clone, publishData exits 1 saying so and asks nothing', 0.2, function () {
   if (!WR.ready) return false;
   nogit = publish(os.tmpdir(), ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')]);
   return (nogit.status === 1 && nogit.err === 'publishData: not in a git clone' && nogit.asks.length === 0) ? true : false;
-}, test.limit.quick);
-test.run('for an agent with no name at the desk, publishData exits 1 saying so', 0.2, function () {
-  if (!WR.ready) return false;
-  noname = publish(CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')], '');
-  return (noname.status === 1 && /^publishData: this agent has no name at the desk yet/.test(noname.err)) ? true : false;
 }, test.limit.quick);
 test.run('in a clone with no traffic log, publishData exits 1 naming where it looked', 0.2, function () {
   if (!WR.ready) return false;
@@ -217,7 +213,7 @@ test.run('in a clone with no traffic log, publishData exits 1 naming where it lo
   return (nolog.status === 1 && nolog.err.indexOf('publishData: no traffic log at ' + path.join(BARE_CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db')) === 0) ? true : false;
 }, test.limit.slow);
 
-// --only packets --out: N read-only desk asks, timed by the node's own traffic log
+// --only packets --out: N read-only testicle asks, timed by the node's own traffic log
 test.run('run with --only packets and --out, publishData exits 0 saying it wrote to the out folder', 0.2, function () {
   if (!WR.ready) return false;
   OUT = path.join(TMP, 'look');
@@ -225,24 +221,25 @@ test.run('run with --only packets and --out, publishData exits 0 saying it wrote
   r = publish(CLONE, ['45440', '--only', 'packets', '--out', OUT, '--asks', '3']);
   return (r.status === 0 && r.out.split('\n').pop() === 'publishData: written to ' + OUT) ? true : false;
 }, test.limit.long);
-test.run('publishData names its agent by the name in its profile, and its commit by the tree it runs from', 0.2, function () {
+test.run('publishData names its platform, and its commit by the tree it runs from', 0.2, function () {
   if (!WR.ready) return false;
-  return (r.out.indexOf('publishData: agent ' + AGENT + ', commit ' + WR.COMMIT + ', into ' + OUT) !== -1) ? true : false;
+  return (r.out.indexOf('publishData: platform ' + PLATFORM + ', commit ' + WR.COMMIT + ', into ' + OUT) !== -1) ? true : false;
 }, test.limit.quick);
-test.run('publishData asks one profile.get for its name, then 3 more read-only, and asks nothing else', 0.2, function () {
+// Andy: "with testicle instead of deskVerify": its read-only asks are testicle's busy, which every node's testicle answers.
+test.run('publishData asks testicle busy 3 times, read-only, and asks nothing else', 0.2, function () {
   if (!WR.ready) return false;
-  pg = r.asks.filter(function (a) { return a.args.name === 'profile.get'; });
-  return (pg.length === 4 && pg.every(function (a) { return a.args.json === '{"agent":""}'; }) && r.asks.length === 4) ? true : false;
+  pg = r.asks.filter(function (a) { return a.verb === 'busy'; });
+  return (pg.length === 3 && pg.every(function (a) { return JSON.stringify(a.args) === '{}'; }) && r.asks.length === 3) ? true : false;
 }, test.limit.quick);
-test.run('every ask goes through its deskClient\'s family, on the spirit object', 0.2, function () {
+test.run('every ask goes through the testicle family, on the spirit object', 0.2, function () {
   if (!WR.ready) return false;
   return (r.required.every(function (a) { return a.require === WR.FAMILY; })) ? true : false;
 }, test.limit.quick);
-test.run('packets.json names the agent, the commit, the asks and when', 0.2, function () {
+test.run('packets.json names the platform, no agent, the commit, the asks and when', 0.2, function () {
   if (!WR.ready) return false;
   p = null;
   try { p = JSON.parse(fs.readFileSync(path.join(OUT, 'packets.json'), 'utf8')); } catch (e) { p = null; }
-  return (p && p.agent === AGENT && p.commit === WR.COMMIT && p.asks === 3 && !isNaN(Date.parse(p.measuredAt))) ? true : false;
+  return (p && p.platform === PLATFORM && !('agent' in p) && p.commit === WR.COMMIT && p.asks === 3 && !isNaN(Date.parse(p.measuredAt))) ? true : false;
 }, test.limit.quick);
 test.run('packets.json counts as posts the closing rows since it began: replies in, and requests out refused or unanswered', 0.2, function () {
   if (!WR.ready) return false;
@@ -267,18 +264,18 @@ test.run('packets.json counts refusals by code, else by outcome', 0.2, function 
 test.run('packets.md says the same as packets.json', 0.2, function () {
   if (!WR.ready) return false;
   pmd = fs.existsSync(path.join(OUT, 'packets.md')) ? fs.readFileSync(path.join(OUT, 'packets.md'), 'utf8') : '';
-  return (pmd.indexOf('# Packets: ' + AGENT) === 0 && pmd.indexOf('| queue wait (ms) | 10 | 20 |') !== -1 && pmd.indexOf('| flight (ms) | 30 | 35 |') !== -1 && pmd.indexOf('4 posts, 1 needed more than one try, refusals: {"not-granted":1,"no-answer":1}.') !== -1) ? true : false;
+  return (pmd.indexOf('# Packets: ' + PLATFORM) === 0 && pmd.indexOf('| queue wait (ms) | 10 | 20 |') !== -1 && pmd.indexOf('| flight (ms) | 30 | 35 |') !== -1 && pmd.indexOf('4 posts, 1 needed more than one try, refusals: {"not-granted":1,"no-answer":1}.') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('platform.md names the agent, the commit and the box', 0.2, function () {
+test.run('platform.md names the platform, no agent, the commit and the box', 0.2, function () {
   if (!WR.ready) return false;
   plat = fs.existsSync(path.join(OUT, 'platform.md')) ? fs.readFileSync(path.join(OUT, 'platform.md'), 'utf8') : '';
-  return (plat.indexOf('# ' + AGENT) === 0 && plat.indexOf('| agent | ' + AGENT + ' |') !== -1 && plat.indexOf('`' + WR.COMMIT + '`') !== -1 && plat.indexOf('| node | ' + process.version + ' |') !== -1) ? true : false;
+  return (plat.indexOf('# ' + PLATFORM) === 0 && plat.indexOf('| agent |') === -1 && plat.indexOf('`' + WR.COMMIT + '`') !== -1 && plat.indexOf('| node | ' + process.version + ' |') !== -1) ? true : false;
 }, test.limit.quick);
 test.run('testState.json holds testicle\'s current tests, read only, with no suite run', 0.2, function () {
   if (!WR.ready) return false;
   ts = null;
   try { ts = JSON.parse(fs.readFileSync(path.join(OUT, 'testState.json'), 'utf8')); } catch (e) { ts = null; }
-  return (ts && ts.agent === AGENT && ts.commit === WR.COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from) && /testicle/.test(ts.from) && !/verify/i.test(ts.from)) ? true : false;
+  return (ts && ts.platform === PLATFORM && !('agent' in ts) && ts.commit === WR.COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from) && /testicle/.test(ts.from) && !/verify/i.test(ts.from)) ? true : false;
 }, test.limit.quick);
 test.run('the counts in testState.json are testicle\'s current rows: every current test, the failed ones its reds, each with its script and suite', 0.2, function () {
   if (!ts) return false;
@@ -293,12 +290,11 @@ test.run('the counts in testState.json are testicle\'s current rows: every curre
 test.run('testState.md holds the suites\' table and the reds', 0.2, function () {
   if (!WR.ready) return false;
   tsmd = fs.existsSync(path.join(OUT, 'testState.md')) ? fs.readFileSync(path.join(OUT, 'testState.md'), 'utf8') : '';
-  return (tsmd.indexOf('# Test state: ' + AGENT) === 0 && tsmd.indexOf('| suite | tests | green | red | newest |') !== -1 && tsmd.indexOf('## Red') !== -1) ? true : false;
+  return (tsmd.indexOf('# Test state: ' + PLATFORM) === 0 && tsmd.indexOf('| suite | tests | green | red | newest |') !== -1 && tsmd.indexOf('## Red') !== -1) ? true : false;
 }, test.limit.quick);
 // ── BOX v170, publishData: the platform's README (goal/G47.1; Andy: "platform/<name>/README.md", "the title: \"# Info and
 // Measurements on <platform-name>\"", "about the box: \"## The Machine the Measurements come from\"", "Then come the
 // measurements under the title \"## Summary\""; the box: "in this order"). Judged on the README the run above wrote.
-const PLATFORM = process.platform === 'win32' ? 'windows' : (function () { try { return /microsoft/i.test(fs.readFileSync('/proc/version', 'utf8')) ? 'wsl' : 'ubuntu'; } catch (e) { return 'ubuntu'; } }());
 let RL = [];
 // The README's lines, blank ones left out, and the bullets that follow a heading, up to the next heading.
 const bulletsUnder = function (heading) {
@@ -526,7 +522,7 @@ test.run('the whole run leaves no worktree behind', 0.2, function () {
 }, test.limit.quick);
 test.run('a count of zero posts is published, and said aloud', 0.2, function () {
   if (!WR.ready) return false;
-  return (w.out.indexOf('the desk asks counted 0 posts; published as measured') !== -1) ? true : false;
+  return (w.out.indexOf('the testicle asks counted 0 posts; published as measured') !== -1) ? true : false;
 }, test.limit.quick);
 test.run('the whole run makes one commit on its clone', 0.2, function () {
   if (!WR.ready) return false;
@@ -535,7 +531,8 @@ test.run('the whole run makes one commit on its clone', 0.2, function () {
 }, test.limit.quick);
 test.run('the commit carries the standing grant\'s message', 0.2, function () {
   if (!WR.ready) return false;
-  return (git(CLONE, ['log', '-1', '--format=%s', head]).out.indexOf('platform/' + PLATFORM + '/') !== -1) ? true : false;
+  // Named by the platform, no agent (Andy: "publishData needs to work without \"agent\"").
+  return (git(CLONE, ['log', '-1', '--format=%s', head]).out.indexOf('publish: ' + PLATFORM + ' at ' + WR.COMMIT + ' (platform/' + PLATFORM + '/') === 0) ? true : false;
 }, test.limit.quick);
 // Box v170: "on the platform it runs on, it adds that platform's folder and files, and its line in platform/README.md".
 test.run('the commit\'s files all lie in platform/<platform>/, but for platform/README.md, and none in a folder named after the agent', 0.2, function () {
@@ -607,6 +604,6 @@ test.run('the origin then holds the new commit on top of the other clone\'s', 0.
 // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
 test.run('no summary line is posted to Desk', 0.2, function () {
   if (!WR.ready) return false;
-  post = w.asks.filter(function (a) { return a.args.name === 'chat.add'; });
+  post = w.asks.filter(function (a) { return a.verb !== 'busy'; });
   return (w.asks.length > 0 && post.length === 0) ? true : false;
 }, test.limit.quick);

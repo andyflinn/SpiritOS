@@ -11,6 +11,10 @@ Andy: *"spirit/app/publishData/publishData will be fixed to point at the correct
   uses testicle data."*), and no other test database.
 - `agentReadme.js` stands beside it in `spirit/app/publishData/` and loads.
 - No agent starts it: `deskClient.js` names no publishData.
+- NO AGENT AT ALL (goal/G47.1; Andy: *"publishData needs to work without "agent" and with testicle instead of deskVerify."*,
+  and *"MAKE SURE THESE OLD DECISIION ARE IN THE TESTS FOR publishData!"*): it runs from any node, Andy's own included, which
+  runs no deskClient. It asks no one for a name; every report and its commit message are named by the platform; its
+  read-only asks are testicle's, which every node runs.
 
 ## The noSummary part: spirit/app/publishData/publishData.js
 
@@ -24,7 +28,7 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 
 ## The run part: spirit/app/publishData/publishData.js, run whole
 
-One measurement run per agent, its data in `platform/<platform>/` (`windows`, `wsl` or `ubuntu`, by the machine; goal/G47.1,
+One measurement run per platform, its data in `platform/<platform>/` (`windows`, `wsl` or `ubuntu`, by the machine; goal/G47.1,
 box v104-105: *"folders identifying the platform, NOT the agent"*, *"repo://platform/windows/, repo://platform/wsl/,
 repo://platform/ubuntu/, depending on where publishData runs...."*; goal/G4.33; Andy: "so one single script for all of you
 puts the data into the repo"). Run in a clone with its node up; since goal/G43.21 Andy starts it with Run in its app
@@ -36,22 +40,22 @@ check's standing grant for `platform/<platform>/`.
 ### Requirements
 
 - Without a positive whole port, given first or handed by the node that starts it (`SPIRIT_CALLBACK_URL`, goal/G43.21), it exits 2 with its usage. Outside a git clone (from the working folder): exit 1, `not
-  in a git clone`. An agent with no name at the desk (`profile.get {agent: ''}`, through deskClient.desk on the spirit
-  object): exit 1. A clone with no `spirit/run/spirit/state/node.db`: exit 1, naming where it looked.
+  in a git clone`. A clone with no `spirit/run/spirit/state/node.db`: exit 1, naming where it looked.
 - The output folder is `--out`, else `<clone>/platform/<platform>/`; the commit is the short HEAD of the tree the script
   runs from.
 - **1, gone**: the harness step went with the old harness (Andy's commit "KILL!", e9c6cb8c, removed
   `spirit/test/measurePlatform.js`); nothing runs a harness and no worktree is made.
-- **2, the packet figures**: N read-only desk asks (profile.get, `--asks`, 20 by default), then the closing rows since
+- **2, the packet figures**: N read-only testicle asks (`busy {}`, through the testicle family on
+  the spirit object, and nothing else asked; `--asks`, 20 by default), then the closing rows since
   just before them, from a read-only copy of node.db (the node holds it open): replies in, and requests out refused or
-  unanswered. `packets.json` {agent, commit, measuredAt, asks, posts, waitMs {median, max}, flight {median, max} (ms
-  less wait), retried (attempts > 1), refusals (by code, else outcome)} and `packets.md`. `platform.md` is written every run.
+  unanswered. `packets.json` {platform, commit, measuredAt, asks, posts, waitMs {median, max}, flight {median, max} (ms
+  less wait), retried (attempts > 1), refusals (by code, else outcome)} and `packets.md`. `platform.md` is written every run, titled by the platform, with no agent row.
 - **3, the test state**: `testState.json` and `testState.md` from testicle's current tests, read only; no suite run. Its
   counts are testicle's current rows: every current test, the failed ones its reds, each named with its script and suite.
 - The README beside them: its layout is box v170's, below.
 - With `--only packets` or `--out` it stops there: exit 0, `written to <out>`, nothing committed, nothing posted.
 - **4, otherwise**: zero posts is published too, and said; of `platform/<platform>/` only the files it wrote are committed, never a tool of his in that folder (`git commit --only`,
-  so what the agent had staged stays staged and uncommitted), message `publish: <agent> at <commit> (platform/<platform>/,
+  so what he had staged stays staged and uncommitted), message `publish: <platform> at <commit> (platform/<platform>/,
   the standing grant of goal/G4.33)`; pushed through pushOrigin; nothing posted to Desk (goal/G43.22: Andy, *"publishData
   summary is no longer needed, i only check on github."*); exit 0.
 
@@ -60,6 +64,7 @@ check's standing grant for `platform/<platform>/`.
 - A row counted that is not a closing row, or one from before the run.
 - Medians, worsts, retries or refusals miscounted.
 - A look (--out, --only packets) that commits or posts.
+- An agent's name asked for or written anywhere; an ask of the desk or of deskClient.
 - A publish that commits his staged work, or anything outside platform/<platform>/ but platform/README.md, or a tool of his there.
 - The node's own traffic log written.
 
