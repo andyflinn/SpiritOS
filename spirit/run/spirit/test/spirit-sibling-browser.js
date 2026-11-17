@@ -1055,7 +1055,7 @@ function oneFile(P) {
     test.run('with no element installed, nothing it runs throws', 0.8, function () { return !noMount() && !P.thrown.length; }, test.limit.quick);
     test.run('with no element installed, every file it asks for is there', 0.4, function () { return !noMount() && !P.missing.length; }, test.limit.quick);
     test.run('with no element installed, it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
-    test.run('with no element installed, it does not pollute the window namespace: no name of its own lands on the window', 0.8, function () { return Array.isArray(P.leaked) && !P.leaked.length; }, test.limit.quick);
+    test.run('with no element installed, it does not pollute the window namespace: no name of its own lands on the window', 0.7, function () { return Array.isArray(P.leaked) && !P.leaked.length; }, test.limit.quick);
     pageAfter(P);
     return;
   }
@@ -1068,7 +1068,7 @@ function oneFile(P) {
   test.run('every file it asks for is there', 0.4, function () { return !noMount() && !P.missing.length; }, test.limit.quick);
   test.run('it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
   // <address>: it does not pollute the window namespace. Not judged (the probe frame did not load) is red, never green.
-  test.run('it does not pollute the window namespace: no name of its own lands on the window', 0.8, function () { return Array.isArray(P.leaked) && !P.leaked.length; }, test.limit.quick);
+  test.run('it does not pollute the window namespace: no name of its own lands on the window', 0.7, function () { return Array.isArray(P.leaked) && !P.leaked.length; }, test.limit.quick);
   const mounted = P.stage === 'done';
   const notDrawn = function () { return noMount() || !mounted; };
   // MOUNTED EMPTY (goal/G47.1, box v121): the four element rules, judged as drawn before any press.
