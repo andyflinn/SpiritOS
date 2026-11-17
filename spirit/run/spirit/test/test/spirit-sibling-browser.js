@@ -150,3 +150,35 @@ test.run('spirit-sibling-browser.js holds no fixed sleep', 0.4, function () {
   });
   return bad.length === 0 || false;
 }, test.limit.quick);
+
+// A ROW OF TRUE OR FALSE FIELDS ALONE IS PROBED TOO (goal/G47.1; wsl, of testicle's settings panel: "it rewrites only the
+// text fields of a row, the preferences row holds only interactive, true or false, so it writes the same row back and
+// nothing can redraw"). A planted element draws a row that holds one true or false field and nothing else; the probe
+// flips it, so the element's redraw is seen.
+const FLAG = 'spirit/element/zzBrowserFlag.js';
+test.after(function () { try { fs.rmSync(path.join(RUN, FLAG), { force: true }); } catch (e) { /* scratch */ } });
+test.run('a change written into a row of true or false fields alone redraws the element that draws it', 0.4, async function () {
+  fs.writeFileSync(path.join(RUN, FLAG), [
+    '\'use strict\';',
+    '// planted by spirit/test/test/spirit-sibling-browser.js: it draws a row that holds one true or false field alone',
+    '(function () {',
+    '  var S = window.spirit;',
+    '  function create(container) {',
+    '    var D = S.data;',
+    '    var V = (typeof D.viewAt === \'function\' ? D.viewAt : D.at)(null, \'zzflag\');',
+    '    var el = document.createElement(\'div\'); container.appendChild(el);',
+    '    try { V.set(\'zz/flag\', { on: false }); } catch (e) { /* kept */ }',
+    // Redrawn only when what it shows changes, as a real panel is: the same row written back draws nothing.
+    '    var paint = function () { var r = V.get(\'zz/flag\'); var t = r && r.on ? \'on\' : \'off\'; if (el.textContent !== t) el.textContent = t; };',
+    '    var un = V.watch(\'zz/flag\', paint); paint();',
+    '    return { destroy: function () { if (typeof un === \'function\') un(); el.remove(); } };',
+    '  }',
+    '  S.require(\'spirit/element/installSpiritElement.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + FLAG + '\', { create: create }); });',
+    '})();', ''].join('\n'));
+  let out = '';
+  const kid = spawn(process.execPath, [SUBJECT, FLAG], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
+  kid.stdout.on('data', function (d) { out += d; });
+  kid.stderr.on('data', function (d) { out += d; });
+  await new Promise(function (r) { kid.on('close', r); });
+  return out.split('\n').some(function (l) { return l.indexOf('a change written into what it watches redraws it \u2705') !== -1; }) || false;
+}, test.limit.long);

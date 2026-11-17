@@ -14,3 +14,7 @@ goal/G47.1, box v144, *"this cycle, first: the browser tests on one page"*. Its 
 - No fixed sleep in `spirit/test/spirit-sibling-browser.js` (box: *"no fixed sleeps in the checks: each wait ends the moment the page has settled"*).
 
 The processes are counted on Linux only.
+
+## A row of true or false fields alone is probed
+
+goal/G47.1; wsl, of testicle's settings panel: *"the preferences row holds only interactive, true or false, so it writes the same row back and nothing can redraw"*. A planted `spirit/element/zzBrowserFlag.js` (removed after) draws a row that holds one true or false field and nothing else, through a family's view, and redraws only when what it shows changes. Run on it alone, the rule's check "a change written into what it watches redraws it" is green. Red on the rule before, which marked only text fields.

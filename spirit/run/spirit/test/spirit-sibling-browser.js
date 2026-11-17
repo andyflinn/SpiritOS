@@ -314,12 +314,14 @@ const WATCH = String.raw`(function () {
         var redrawn = null;
         var mo = new MutationObserver(function (l) { changed += l.length; if (redrawn) redrawn(); });
         mo.observe(box, { subtree: true, childList: true, attributes: true, characterData: true });
-        // A row that is there keeps its shape, each of its text fields marked, so a reader that checks its fields still
-        // takes it; a new row is the marked fields alone.
+        // A row that is there keeps its shape, each of its text fields marked and each true or false field flipped, so a
+        // reader that checks its fields still takes it; a new row is the marked fields alone. Flipped (goal/G47.1; wsl, of
+        // testicle's settings panel: "the preferences row holds only interactive, true or false, so it writes the same row
+        // back and nothing can redraw").
         var probe = { key: whole ? undefined : 'zz-probe-' + i, label: mark, name: mark, title: mark, text: mark, id: whole ? undefined : 'zz-probe-' + i };
         if (whole && before && typeof before === 'object') {
           probe = Object.assign({}, before);
-          Object.keys(probe).forEach(function (k) { if (typeof probe[k] === 'string') probe[k] = mark; });
+          Object.keys(probe).forEach(function (k) { if (typeof probe[k] === 'string') probe[k] = mark; else if (typeof probe[k] === 'boolean') probe[k] = !probe[k]; });
         }
         try { D.setPath(at, probe); } catch (e) { /* the branch refused it */ }
         return new Promise(function (r) { redrawn = r; setTimeout(r, PROBE_LIMIT_MS); }).then(function () {

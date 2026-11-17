@@ -250,7 +250,7 @@ box is its own check, named by the element's path and the box's id chain."*
     `spirit.data` never held;
   - its watching redraws it: a marked row written into each `spirit.data` path it watches must change its box within a
     second. A path is by server node first (goal/G41.28), `<node>/<family>/<branch>[/<row>]`, a watch of the home node
-    holding `~` for the page's node: a branch gets a row of its own, a row path is set and put back. A watch that redraws nothing is not
+    holding `~` for the page's node: a branch gets a row of its own, a row path is set and put back: its text fields marked, its true or false fields flipped (goal/G47.1; wsl: a row of true or false fields alone was written back the same, so nothing could redraw). A watch that redraws nothing is not
     listening. A box that shows nothing at all (a selector hidden until its family is chosen) has nothing to redraw,
     and is not judged. **A closed dropdown draws its list when it opens**: while nothing it watches has redrawn, each
     closed dropdown on the page is opened in turn, what it watches written again, and shut. **A redraw proved in its own test** (Andy, Q24: *"Shall deskDetails' own test be the proof that it
