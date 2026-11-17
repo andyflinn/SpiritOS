@@ -179,6 +179,9 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     rowForm: { create: function (c, o) {
       const f = { container: c, opts: o || {}, root: part('<div>', ''), span: part('<span>', ''), button: part('<button>', '') };
       f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button);
+      // As the real one: a click calls its press, and what the press answers is what its busy button waits on.
+      f.answers = [];
+      f.button.addEventListener('click', function () { if (typeof f.opts.press === 'function') f.answers.push(f.opts.press()); });
       if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
       made.forms.push(f); return f;
     } },
@@ -258,10 +261,10 @@ test.run('nothing loads the Update model list pane', 0.2, function () {
   if (!X.made) return false;
   return X.made.required.indexOf('spirit/app/agent/table/model/updatePanel.js') === -1 && !X.E.modelUpdate ? true : false;
 }, test.limit.quick);
-test.run('the model list loads what its Ask form uses itself: the search element, the busyButton and the rowForm', 0.2, function () {
+test.run('the model list loads what its Ask form uses itself: the search element and the rowForm', 0.2, function () {
   if (!X.made) return false;
   const made = X.made;
-  return made.required.indexOf('spirit/element/search.js') !== -1 && made.required.indexOf('spirit/element/busyButton.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1 ? true : false;
+  return made.required.indexOf('spirit/element/search.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1 ? true : false;
 }, test.limit.quick);
 // goal/G41.27, Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]": the form is a rowForm, ❓, the
 // providerSelector:dropdown in its span, Ask its button; the word from at its start goes, as new and grant did.
@@ -311,13 +314,15 @@ test.run('Ask spits out no list: the model table it updated is the list below', 
   const after = shown(X.pane);
   return after.indexOf('claude-alpha') === -1 && after.indexOf('claude-beta') === -1 && after.indexOf('model list updated') === -1 ? true : false;
 }, test.limit.quick);
-test.run('the Ask button is a busyButton, and the ask is its request', 0.2, function () {
+// ASK IS THE ROWFORM'S PRESS (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer comes"):
+// the rowForm's button is a busy button already, so no second one is attached to it.
+test.run('the ask is the rowForm\'s press, and no busyButton of its own is attached to Ask', 0.2, function () {
   if (!X.askBtn || !X.drop) return false;
-  const ab = X.ab = X.made.busy.filter(function (x) { return x.button === X.askBtn; }).pop();
-  return !!ab && typeof ab.opts.run === 'function' ? true : false;
+  const ab = X.ab = X.rf;
+  return !!ab && typeof ab.opts.press === 'function' && !X.made.busy.some(function (x) { return x.button === X.askBtn; }) ? true : false;
 }, test.limit.quick);
 const W8 = { letGo: null, settled: false };
-test.run('the request it hands the button waits while the provider has not answered', 0.2, async function () {
+test.run('the request it hands the rowForm waits while the provider has not answered', 0.2, async function () {
   const ab = X.ab;
   if (!ab) return false;
   X.made.answer = function () { return new Promise(function (r) { W8.letGo = r; }); };
@@ -327,7 +332,7 @@ test.run('the request it hands the button waits while the provider has not answe
   await settle();
   return !W8.settled ? true : false;
 }, test.limit.quick);
-test.run('the request the Ask button is handed settles once the provider answers', 0.2, async function () {
+test.run('the request the rowForm is handed settles once the provider answers', 0.2, async function () {
   if (!X.ab) return false;
   if (W8.letGo) W8.letGo({ models: [], updated: false });
   await settle();

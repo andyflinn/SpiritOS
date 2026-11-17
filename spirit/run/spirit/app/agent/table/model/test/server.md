@@ -37,12 +37,13 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
     - the form is one rowForm (goal/G41.27; Andy: *"agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]"*), its icon ❓
       and its button Ask; its span holds the providerSelector:dropdown (a probabilitySearch dropdown of the provider
       table, Pick a provider) and nothing else; the word `from` is gone, and the pane draws no Ask button of its own;
-      the model list is drawn below the form, never over it. It loads the search element, the busyButton and the
+      the model list is drawn below the form, never over it. It loads the search element and the
       rowForm itself;
     - the list is handed no `provider models` button; `./updatePanel.js` and its test are gone, and nothing loads it;
     - Ask with no provider chosen asks nothing; with one, it calls `provider { op: 'ask', id }` and shows no list: the
       model table it updated is the list below;
-    - Ask is a busyButton, its request waiting until the provider answers (goal/G41.23).
+    - Ask is the rowForm's press, its request waiting until the provider answers (goal/G41.23; goal/G47.1, Q20), and no
+      busyButton of its own is attached to it.
   - A row it opens is a `modelRow`.
 - `elementRow.js` registers `spirit.element.spirit.app.agent.element.table.model.elementRow.create(container, id, added, detail)`, handed no api:
   - It builds on `agentRow` with the model table's look.
