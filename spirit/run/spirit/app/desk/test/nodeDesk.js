@@ -31,6 +31,23 @@ function folderGone(dir) {
   return (!left.length && !fs.existsSync(path.join(REPO, dir))) || false;
 }
 
+// WHAT WENT, NOW IN THE DESK'S OWN TEST (goal/G47.4; Andy: "you make bloody well sure that such stupid hard-coded tests move to
+// app-child-* immediately, or whatever is fucking appropriate"; cw: these "are about desk and deskClient themselves, not about
+// the app server"): moved here from spirit/test/appServer.js. Box v15, what goes: the desk keeps no bundled() of its own;
+// goal/G41.24, Andy: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself."
+function deskFiles(dir) { const out = []; (function walk(d) { fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) { const f = path.join(d, e.name); if (e.isDirectory()) { if (e.name !== 'test' && e.name !== 'node_modules') walk(f); } else if (/\.(js|json)$/.test(e.name)) out.push(f); }); }(dir)); return out; }
+test.run('the desk server has no bundled() of its own', 0.2, function () {
+  const deskJs = code(path.join(DESK, 'nodeDesk.js'));
+  return (!!deskJs && !/function\s+bundled\s*\(/.test(deskJs)) || false;
+}, test.limit.quick);
+test.run('nothing in the desk folder names DEPENDENCIES or hands serve() a dependencies list', 0.2, function () {
+  const named = deskFiles(DESK).filter(function (f) {
+    const t = code(f);
+    return /DEPENDENCIES/.test(t) || /\bdependencies\s*:/.test(t) || /opts\.dependencies|withDependencies|checkDependencies/.test(t);
+  });
+  return named.length === 0 || false;
+}, test.limit.quick);
+
 // Andy: "removal of plugin folders."
 test.run('the desk app\'s plugins folder is gone', 0.2, function () { return folderGone('spirit/run/spirit/app/desk/plugins'); }, test.limit.quick);
 test.run('the desk element\'s plugins folder is gone', 0.2, function () { return folderGone('spirit/run/spirit/app/desk/element/desk/plugins'); }, test.limit.quick);
