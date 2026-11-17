@@ -6,11 +6,16 @@
 // as pushOrigin's test does. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/pullOrigin/test/pullOrigin/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/pullOrigin/test/pullOrigin'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
 function git(args, cwd) { return spawnSync('git', args, { cwd: cwd, encoding: 'utf8' }); }
 const FILE = path.join(RUN, 'spirit', 'app', 'pullOrigin', 'pullOrigin.js');
@@ -21,7 +26,7 @@ test.after(function () { W.tmps.forEach(function (t) { try { fs.rmSync(t, { recu
 
 // origin with one commit of shared.txt; clone (the owner's) and other (somebody else's) both on master.
 function world() {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pullorigin-'));
+  const tmp = ownTemp('spirit-pullorigin');
   W.tmps.push(tmp);
   const origin = path.join(tmp, 'origin.git'), clone = path.join(tmp, 'clone'), other = path.join(tmp, 'other');
   git(['init', '-q', '--bare', '-b', 'master', origin], tmp);
@@ -52,7 +57,7 @@ function world() {
 
 test.run('given no repo, or a folder that is no clone, it answers ok false with a reason and throws nothing', 0.4, async function () {
   const p = lib(); if (!p) return false;
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pullorigin-')); W.tmps.push(tmp);
+  const tmp = ownTemp('spirit-pullorigin'); W.tmps.push(tmp);
   for (const a of [undefined, {}, { repo: '' }, { repo: tmp }]) {
     let r; try { r = await p(a); } catch (e) { return false; }
     if (!r || r.ok !== false || !r.reason) return false;

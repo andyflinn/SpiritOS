@@ -14,6 +14,12 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/element/table/test/rowElement/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/agent/element/table/test/rowElement'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 
 const FILE = path.join(__dirname, '..', 'rowElement.js');
@@ -477,8 +483,7 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
   // ../model/server.js) on a scratch agent.db, two providers with a model each, the model table's search seated in the
   // page's branch as the list seats it (spirit.data.seatRows).
   const { DatabaseSync } = require('node:sqlite');
-  const os = require('os');
-  N.scratchDb = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-tableElement-'));
+  N.scratchDb = ownTemp('spirit-tableElement');
   // The servers check their arguments through the one spirit object's rules (spirit.check), as in the agent process.
   global.window.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;
   N.sctx = { db: new DatabaseSync(path.join(N.scratchDb, 'agent.db')), dbFile: path.join(N.scratchDb, 'agent.db'), tables: {}, publish: function () {} };

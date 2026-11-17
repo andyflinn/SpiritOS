@@ -6,11 +6,16 @@
 // called as the server calls it; what it publishes is kept.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/test/rowTable/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/agent/table/test/rowTable'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { DatabaseSync } = require('node:sqlite');
 
 const FILE = path.join(__dirname, '..', 'rowTable.js');
@@ -36,7 +41,7 @@ test.run('it exports the function rowTable, which takes the database, the table\
 }, test.limit.quick);
 test.run('it answers its verb, has, label and icon', 0.2, function () {
   if (!X.mod || typeof X.mod.rowTable !== 'function') return false;
-  X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-rowTable-'));
+  X.scratch = ownTemp('spirit-rowTable');
   X.dbFile = path.join(X.scratch, 'agent.db');
   X.db = new DatabaseSync(X.dbFile);
   X.def = {

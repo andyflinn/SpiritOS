@@ -11,8 +11,14 @@ const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/publishData/test/agentReadme/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/publishData/test/agentReadme'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const FILE = path.join(__dirname, '..', 'agentReadme.js');
-const TMP = path.join(os.tmpdir(), 'agentReadme-' + process.pid);
+const TMP = ownTemp('agentReadme');
 const relay = require(path.join(RUN, 'spirit', 'relay.js'));
 
 const MB = 1048576;

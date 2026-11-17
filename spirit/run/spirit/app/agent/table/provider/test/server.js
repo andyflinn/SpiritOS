@@ -9,12 +9,17 @@
 
 const fs = require('fs');
 const http = require('http');
-const os = require('os');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/provider/test/server/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/agent/table/provider/test/server'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { DatabaseSync } = require('node:sqlite');
 
 const TABLE = 'provider';
@@ -43,7 +48,7 @@ test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s 
 // ── server.js: the table in agent.db ──
 test.run('server.js, handed its context, answers the table, its verb and its has', 0.2, function () {
   if (!fs.existsSync(path.join(DIR, 'server.js'))) return false;
-  X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-'));
+  X.scratch = ownTemp('spirit-provider');
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
   const ctx = X.ctx = { db: db, dbFile: path.join(X.scratch, 'agent.db'), tables: {}, publish: function (x) { X.published.push(x); } };
   const t = X.t = ctx.tables.provider = require(path.join(DIR, 'server.js'))(ctx);
@@ -524,7 +529,7 @@ test.after(function () {
   try { if (PK.pdir) fs.rmSync(PK.pdir, { recursive: true, force: true }); } catch (e) { /* left */ }
 });
 test.run('the page server-picker.html draws the provider\'s detail with the real elements in Chrome, on a scratch node with its DEBUG on', 0.2, async function () {
-  PK.pdir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-picker-'));
+  PK.pdir = ownTemp('spirit-provider-picker');
   // The servers check their arguments through the one spirit object's rules, as in the agent process; the page section
   // above put a stand-in in its place.
   global.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;

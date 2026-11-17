@@ -15,6 +15,12 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/publishData/test/publishData/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/publishData/test/publishData'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 const HERE = path.join(RUN, 'spirit', 'app', 'publishData');
@@ -32,7 +38,7 @@ const W = {};
 test.run('run with no argument, publishData does not stop at its usage', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   const port = await freePort();
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publishdata-'));
+  const tmp = ownTemp('spirit-publishdata');
   try {
     const env = Object.assign({}, process.env, { SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit' });
     const r = spawnSync(process.execPath, [FILE], { cwd: tmp, env: env, encoding: 'utf8', timeout: 30000 });
@@ -93,7 +99,7 @@ test.run('publishData posts nothing to the desk', 0.2, function () {
 const { DatabaseSync } = require('node:sqlite');
 // Its scratch folder is outside the tree (Andy: "an empty folder keeps showing up in my run:// folder"): under run/test
 // the cleanup took the scratch folder and left run/test behind, empty.
-const TMP = path.join(os.tmpdir(), 'publishData-' + process.pid);
+const TMP = ownTemp('run');
 const PRELOAD = path.join(TMP, 'spiritStub.js');
 const LOG = path.join(TMP, 'asks.jsonl');
 const ORIGIN = path.join(TMP, 'origin.git');
@@ -206,7 +212,7 @@ test.run('with no port given or handed by its node, publishData exits 2 with its
 }, test.limit.quick);
 test.run('run outside a git clone, publishData exits 1 saying so and asks nothing', 0.2, function () {
   if (!WR.ready) return false;
-  nogit = publish(os.tmpdir(), ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')]);
+  nogit = publish(ownTemp('nogit'), ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')]);
   return (nogit.status === 1 && nogit.err === 'publishData: not in a git clone' && nogit.asks.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('in a clone with no traffic log, publishData exits 1 naming where it looked', 0.2, function () {

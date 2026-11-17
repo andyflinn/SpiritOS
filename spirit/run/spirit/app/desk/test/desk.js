@@ -7,13 +7,18 @@
 // subscribed deskClient, and answers a family's interface the way a node's door does.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const http = require('http');
 const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/desk/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/desk/test/desk'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 const packet = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
@@ -261,7 +266,9 @@ const deskLines = async function (ask, id) { return (((await ask('item.chat', { 
 const waitFor = async function (cond, ms) { for (let i = 0; i < ms / 100; i++) { if (await cond()) return true; await sleep(100); } return !!(await cond()); };
 
 test.run('a desk server starts for this suite', 0.2, async function () {
-  const scratch = W.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desk-product-'));
+  // A ONE-LETTER NAME: each desk of the cases below listens on a unix socket under <scratch>/<its name>/, and a socket's
+  // path is short (108 bytes); under this suite's route a longer name put desk-grants' socket past it.
+  const scratch = W.scratch = ownTemp('d');
   const state = path.join(scratch, 'state');
   seed(state, [
     { goal: OTHER, items: OTHER_ITEMS.map(function (id) { return { id: id, title: 'Other ' + id, blocks: [OTHER.id] }; }) },

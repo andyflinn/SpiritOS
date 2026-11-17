@@ -6,11 +6,16 @@
 // asks is a recorder that answers what the test says and writes down every ask.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/deskAgentEar/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/desk/test/deskAgentEar'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const EAR = path.join(__dirname, '..', 'deskAgentEar.js');
 
 // The scratch folder and the stand-in, made on the first ear() a test runs, so a failure to make them lands on that test.
@@ -18,7 +23,7 @@ let DIR = '';
 let PRELOAD = '';
 function prepare() {
   if (DIR) return;
-  DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'deskAgentEar-test-'));
+  DIR = ownTemp('deskAgentEar-test');
   PRELOAD = path.join(DIR, 'preload.js');
   // The stand-in: spirit.js answers a spirit object whose deskClient family records each ask (ASK_LOG) and answers from
   // ANSWERS, a JSON object of verb -> list of answers, each used once in turn, the last one again.

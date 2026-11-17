@@ -8,11 +8,16 @@
 // naming a spiritHome. HOME points into the scratch too, so a fallback home never reaches a real one. No node runs.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/backup/test/backup/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/backup/test/backup'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const SCRIPT = path.join(RUN, 'spirit', 'app', 'backup', 'backup.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -37,7 +42,7 @@ function dbMark(file) {
 // backup.js: the backup server copies the node's state, to the spiritHome of spirit/state/config.json (goal/G43.23, item 5)
 // One test.run per test (goal/G47.2). What the world made, for the tests after it.
 const W = {};
-W.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'bk-'));
+W.scratch = ownTemp('bk');
 W.run = path.join(W.scratch, 'run');
 W.state = path.join(W.run, 'spirit', 'state');
 W.own = path.join(W.state, 'backup', 'data');

@@ -7,11 +7,16 @@
 // One test.run per test (goal/G47.2).
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/pushOrigin/test/pushOrigin/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/pushOrigin/test/pushOrigin'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
 function git(args, cwd) { return spawnSync('git', args, { cwd: cwd, encoding: 'utf8' }); }
 const FILE = path.join(RUN, 'spirit', 'app', 'pushOrigin', 'pushOrigin.js');
@@ -22,7 +27,7 @@ test.after(function () { if (W.tmp) { try { fs.rmSync(W.tmp, { recursive: true, 
 
 test.run('a clone is made with one commit its bare origin does not hold', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
-  const tmp = W.tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pushorigin-'));
+  const tmp = W.tmp = ownTemp('spirit-pushorigin');
   const origin = W.origin = path.join(tmp, 'origin.git');
   const clone = path.join(tmp, 'clone');
   git(['init', '-q', '--bare', '-b', 'master', origin], tmp);
@@ -67,7 +72,7 @@ test.run('origin now holds the commit of the repo it lives in', 0.2, function ()
 // Each case its own clone with a bare origin, in the temp folder; the function is the module's own, required.
 const lib = function () { try { return require(FILE).pushOrigin; } catch (e) { return null; } };
 function world() {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pushorigin-'));
+  const tmp = ownTemp('spirit-pushorigin');
   (W.more = W.more || []).push(tmp);
   const origin = path.join(tmp, 'origin.git'), clone = path.join(tmp, 'clone'), other = path.join(tmp, 'other');
   git(['init', '-q', '--bare', '-b', 'master', origin], tmp);
@@ -93,7 +98,7 @@ const answered = function (r) { return !!r && r.ok === false && typeof r.reason 
 // Given nothing, or what is no clone, it answers ok false with its reason, and never throws.
 test.run('given no repo, or one that is no clone, it answers ok false with a reason and throws nothing', 0.4, async function () {
   const p = lib(); if (!p) return false;
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pushorigin-')); (W.more = W.more || []).push(tmp);
+  const tmp = ownTemp('spirit-pushorigin'); (W.more = W.more || []).push(tmp);
   const bad = [];
   for (const a of [undefined, null, {}, { repo: '' }, { repo: path.join(tmp, 'not-there') }, { repo: tmp }]) {
     let r; try { r = await p(a); } catch (e) { bad.push(a); continue; }

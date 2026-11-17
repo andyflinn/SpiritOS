@@ -9,11 +9,16 @@
 // their own, are sections at its end, run after the checks above and counted with them.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const Module = require('module');
 const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/deskClient/test/deskClient/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/deskClient/test/deskClient'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const FILE = path.join(__dirname, '..', 'deskClient.js');
 // The family paths, as the one function names them (goal/G41.12).
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
@@ -45,7 +50,7 @@ const deskFamily = new Proxy({}, { get: function (t, verb) { if (typeof verb !==
 const asksOf = function (verb) { return desk.asks.filter(function (a) { return a.verb === verb; }); };
 
 // ── THE STUBS ────────────────────────────────────────────────────────
-const STATE = fs.mkdtempSync(path.join(os.tmpdir(), 'deskClient-test-'));
+const STATE = ownTemp('deskClient-test');
 const D = require(path.join(RUN, 'spirit', 'data.js'));
 let served = null;
 let subscribes = 0;   // each time deskClient asks its node's appServer to subscribe it to the desk

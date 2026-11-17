@@ -7,12 +7,17 @@
 // keep what they were handed. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
+// its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
+const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/persona/test/server/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/agent/table/persona/test/server'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { DatabaseSync } = require('node:sqlite');
 
 const DIR = path.join(__dirname, '..');
@@ -38,7 +43,7 @@ test.run('it has server.js, and elementTable.js and elementRow.js in the app\'s 
 // ── server.js: the table in agent.db ──
 test.run('server.js, given its context, answers the table with its verb and its has function', 0.2, function () {
   if (!fs.existsSync(path.join(DIR, 'server.js'))) return false;
-  X.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-persona-'));
+  X.scratch = ownTemp('spirit-persona');
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
   const ctx = { db: db, dbFile: path.join(X.scratch, 'agent.db'), tables: {}, publish: function () {} };
   ctx.tables.grant = { dropJob: function (id) { X.dropped.push(id); } };
