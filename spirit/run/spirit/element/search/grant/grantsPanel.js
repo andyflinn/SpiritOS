@@ -19,7 +19,7 @@
 //   never falls back to one caller's setting.
 //
 // One panel: the one-row grant form, a rowForm, ➕ [ID selector] [bundle selector] [Grant] (goal/G41.13, G41.27); then the grant list
-// (its search's 🪣 row the ID filter and the family selector, its 🗜 row deprecated) (../grant.js), the one box that
+// (its search's 🪣 row the ID filter and the branch selector, its 🗜 row deprecated), and below it the delete row, ❌ [ID] [branch] [verb] [Delete] (../grant.js), the one box that
 // fills (rule/16). Deprecated is a REPORT read from the node's api tree (a server is away or the verb is gone, and the
 // grant waits for the owner, intact: suspend/repair, G1.4), following the stream, its filter off by default.
 // A BUNDLE IS NOT GRANTED BY REFERENCE (G41.13, box v7): the node's bundles are the one dictionary both kinds of grant are
@@ -31,7 +31,7 @@
   // And the jobs family's cache manager, the servers' jobs it follows (goal/G41.28), and the auth family's, which nodeGrants
   // (below) reads.
   var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
-    'spirit/element/search/grant.js', 'spirit/element/rowForm.js', 'spirit/client/apiTreeIndex.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
+    'spirit/element/search/grant.js', 'spirit/element/rowForm.js', 'spirit/element/armingButton.js', 'spirit/client/apiTreeIndex.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
     .concat([window.spirit.require('spirit/job/api.js'), window.spirit.require('spirit/auth/api.js')]));
 
   // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.ready holds it,
@@ -106,8 +106,11 @@
     var idSel = null;         // the grant form's ID selector
     var bundleSel = null;     // and its bundle selector
     var form = null;          // the grant form, a rowForm holding both
-    var filterId = null;      // the list's filters: an ID, and a family with its verb (the family selector)
+    var filterId = null;      // the list's filters: an ID, and a branch with its verb (the api selector)
     var filterFamily = null;
+    var del = null;           // the delete row below the list: ❌ [ID] [branch] [verb] [Delete]
+    var delId = null;         // its ID selector
+    var delApi = null;        // and its api selector, the branch and verb dropdowns
     var said = '';            // what the panel says a press did
     var saidError = false;
     var gone = false;
@@ -133,7 +136,7 @@
     function selectors() {
       return [{ name: 'id', element: filterId,
         test: function (row) { var id = filterId ? filterId.value : ''; return !id || (row && row[g.key] === id) ? 1 : 0; } },
-      { name: 'family', element: filterFamily,
+      { name: 'branch', element: filterFamily,
         test: function (row) {
           var family = filterFamily ? filterFamily.family : '';
           var verb = filterFamily ? filterFamily.verb : '';
@@ -153,6 +156,64 @@
       { name: 'deprecated', word: 'deprecated', toggle: true,
         test: function (row, on) { return on === true || serves(String((row && row.path) || '')) ? 1 : 0; } },
     ];
+
+    // A FILTER CHOSEN ASKS THE NODE AGAIN (goal/G47.4, the box: "the search therefore must find any user that has grants for
+    // any branch/verb combination"; Andy: "the more i modify the search, the more records will be cached"): the grants table
+    // answers one packet, so the ID, branch and verb chosen go to its search as its text, and what comes is seated in the
+    // list's branch of spirit.data, where the list draws it and the exact filters pick from it.
+    function chosenText() {
+      return [filterId ? filterId.value : '', filterFamily ? filterFamily.family : '', filterFamily ? filterFamily.verb : '']
+        .filter(function (w) { return !!w; }).join(' ');
+    }
+    function askAgain() {
+      return Promise.resolve(g.search(chosenText())).then(function (got) {
+        var D = window.spirit.data;
+        if (!gone && D && typeof D.seatRows === 'function' && got && Array.isArray(got.items)) D.seatRows(String(g.branch), got.items);
+        redraw();
+      }, function () { /* the cache stands; the next choice asks again */ });
+    }
+    // THE DELETE ROW (goal/G47.4, the box: "a rowForm for delete: ❌ [ID-dropdown] [branch-dropdown] [verb-dropdown]
+    // [Delete-armingButton]. It acts on what is chosen in it, not on what the list shows"): a contact alone, every grant of
+    // that contact; a contact and a branch, every grant of that branch for that contact; all three, the one grant row.
+    // "No new verb: the node revokes one exact grant, so the panel searches the chosen contact, branch and verb, revokes
+    // each match, and asks again until none is left." A grant no server serves today (deprecated) is a grant like any other.
+    function chosenForDelete() {
+      return { id: delId ? String(delId.value || '') : '', branch: delApi ? String(delApi.family || '') : '', verb: delApi ? String(delApi.verb || '') : '' };
+    }
+    function isChosen(c, row) {
+      if (!row || String(row[g.key]) !== c.id) return false;
+      var p = String(row.path || '');
+      var dot = p.indexOf('.');
+      var branch = dot === -1 ? p : p.slice(0, dot);
+      if (c.branch && branch !== c.branch) return false;
+      return !c.verb || p === c.branch + '.' + c.verb;
+    }
+    function rowsOf(got) {
+      return ((got && got.items) || []).map(function (it) { try { return JSON.parse(it.label); } catch (e) { return null; } }).filter(Boolean);
+    }
+    function deleteChosen() {
+      var c = chosenForDelete();
+      if (!c.id) { say('choose a contact to delete grants of', true); return Promise.resolve(); }
+      var done = 0;
+      var failed = 0;
+      var text = [c.id, c.branch, c.verb].filter(function (w) { return !!w; }).join(' ');
+      // One round: search, revoke each match; again while a round revoked any, since one answer holds one packet.
+      function round() {
+        return Promise.resolve(g.search(text)).then(function (got) {
+          var hits = rowsOf(got).filter(function (row) { return isChosen(c, row); });
+          var before = done;
+          return hits.reduce(function (p, row) {
+            return p.then(function () {
+              return Promise.resolve(g.revoke(String(row[g.key]), String(row.path))).then(function (a) { if (a && a.ok === true) done += 1; else failed += 1; }, function () { failed += 1; });
+            });
+          }, Promise.resolve()).then(function () { return done > before ? round() : null; });
+        });
+      }
+      return round().then(function () {
+        say(failed ? 'revoked ' + done + ' grants; ' + failed + ' refused' : 'revoked ' + done + ' grants', failed > 0);
+        if (done) askAgain();
+      }, function () { say('the search for the grants to delete was refused', true); });
+    }
 
     // DEPRECATED FOLLOWS THE STREAM (Andy: "so show deprecated, but CHANGE AS SOON AS STREMED DATA SAYS OTHERWISE."): a
     // node's servers are jobs of kind server on its stream, their status changing as each starts and ends; such a job
@@ -273,6 +334,8 @@
         '</div>';
       host.querySelector('[data-grants="line"]').appendChild(form.root);
       host.appendChild(listHost);
+      // Last, below the list, so it stays at the bottom however long the list grows (the box: "sticky, at the bottom").
+      if (del) host.appendChild(del.root);
     }
 
     parts.then(function () {
@@ -286,7 +349,8 @@
       idSel = P.spirit.element.search.contact.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
       bundleSel = P.spirit.element.search.bundle.create(slot(), { placeholder: 'choose a bundle…' });
       filterId = P.spirit.element.search.contact.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
-      filterFamily = P.spirit.element.search.api.create(slot(), { all: 'every family' });
+      filterFamily = P.spirit.element.search.api.create(slot(), { all: 'every branch' });
+      [filterId, filterFamily].forEach(function (s) { if (s && typeof s.addEventListener === 'function') s.addEventListener('change', askAgain); });
       // THE GRANT FORM IS A ROWFORM (goal/G41.27; Andy: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]"):
       // ➕, the ID and the bundle selector in its span, Grant its button; made once, paint putting it back. What a press
       // did is said below it, not in it.
@@ -297,6 +361,15 @@
       form = P.spirit.element.rowForm.create(slot(), { icon: '➕', button: 'Grant', press: function () { return grantBundle(); } });
       form.span.appendChild(idSel);
       form.span.appendChild(bundleSel);
+      // ❌ [ID] [branch] [verb] [Delete-armingButton] (goal/G47.4, the box): a rowForm with no press of its own, its span an
+      // ID selector of the ID table it was handed and an api selector (the branch dropdown, its verb half once a branch is
+      // chosen); its button arms on the first press, and the second revokes what is chosen in it (deleteChosen).
+      del = P.spirit.element.rowForm.create(slot(), { icon: '❌', button: 'Delete' });
+      delId = P.spirit.element.search.contact.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
+      delApi = P.spirit.element.search.api.create(slot(), { all: 'every branch' });
+      del.span.appendChild(delId);
+      del.span.appendChild(delApi);
+      P.spirit.element.armingButton.attach(del.button, { label: 'Delete', run: deleteChosen });
       paint();
       watchGrants();
       // The servers followed first, so the jobs the page already holds are taken as the tree about to be read.
@@ -316,9 +389,10 @@
         unfollow = null;
         if (list) list.destroy();
         list = null;
-        // Its four selectors each watch their branch (rule/8: what it made, its destroy lets go).
-        [idSel, bundleSel, filterId, filterFamily].forEach(function (s) { if (s && typeof s.destroy === 'function') s.destroy(); });
-        idSel = bundleSel = filterId = filterFamily = null;
+        [filterId, filterFamily].forEach(function (s) { if (s && typeof s.removeEventListener === 'function') s.removeEventListener('change', askAgain); });
+        // Its six selectors each watch their branch (rule/8: what it made, its destroy lets go).
+        [idSel, bundleSel, filterId, filterFamily, delId, delApi].forEach(function (s) { if (s && typeof s.destroy === 'function') s.destroy(); });
+        idSel = bundleSel = filterId = filterFamily = delId = delApi = null;
         host.innerHTML = '';
       },
     };
