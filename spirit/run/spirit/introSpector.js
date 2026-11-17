@@ -24,8 +24,8 @@ const path = require('path');
 // The node's file system: its write gate for a path under spirit/run (goal/G40.6).
 const fileSystem = spirit.require('spirit/fileSystem.js');
 // The probability modules (goal/G29.19): FS.search ranks with them.
-const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
 
 const AGENTS_FILE = 'AGENTS.md';
 // A verb name as the server takes it, without the family's own uppercase.

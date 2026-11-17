@@ -638,7 +638,7 @@ let published = 0;
 const log = [];                  // { run, n, row }, oldest first, bounded by publisher.logMax
 // A server family's interface: the one family path function (spirit.js, goal/G41.12), handed out by this file too.
 function familyPath(name) { return spirit.familyPath(name); }
-const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
+const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
 // One answer's room, as the desk's lists were cut (ANSWER_ROOM): half a sealed packet less 512 bytes for its envelope,
 // less the bytes the bundle's JSON gains as the json string of its request.
 const BUNDLE_ROOM = Math.floor(limits.SEALED_MAX / 2) - 512;

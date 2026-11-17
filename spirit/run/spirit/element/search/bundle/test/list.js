@@ -201,7 +201,7 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
     require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
     win.window = win;
     vm.createContext(win);
-    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/search.js'].forEach(function (rel) {
+    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'].forEach(function (rel) {
       vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
     });
     return ((win.spirit.element.spirit || {}).element || {}).search;

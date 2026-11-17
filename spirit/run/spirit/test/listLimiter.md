@@ -1,4 +1,4 @@
-# spirit/probabilityBucket.js — its own test
+# spirit/listLimiter.js — its own test
 
 The best objects by probability, seated as they come and serialized to a byte ceiling (goal/G18.4, the third of the
 probabilit* modules). Andy, 2026-10-12: *"the ONLY job of probabilityBucket is inserting by highest-probability at the

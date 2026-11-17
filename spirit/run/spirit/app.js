@@ -27,8 +27,8 @@ require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 const limits = spirit.require('spirit/limits.js');
-const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
-const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
 
 const ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
 // A plugin's own file, or its folder: what changes the table.

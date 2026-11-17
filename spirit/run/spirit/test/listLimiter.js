@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/probabilityBucket.js
-// The tests of spirit/probabilityBucket.js, and of no other module (spec: ./probabilityBucket.md). Its own test, owed
+// spirit/run/spirit/test/listLimiter.js
+// The tests of spirit/listLimiter.js, and of no other module (spec: ./probabilityBucket.md). Its own test, owed
 // since the rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // createProbabilityBucket(capacity): the best objects by probability, seated as they come and serialized to a byte
@@ -12,7 +12,7 @@ const fs = require('fs');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const B = require(path.join(RUN, 'spirit', 'probabilityBucket.js'));
+const B = require(path.join(RUN, 'spirit', 'listLimiter.js'));
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function names(bucket) { return bucket.serialize().items.map(function (o) { return o.n; }); }
@@ -142,7 +142,7 @@ test.run('the module answers createProbabilityBucket alone', 0.2, function () {
 test.run('in a page too, loaded as a plain script, it is found on window.spirit.probability, and its names stay its own', 0.2, function () {
   const win = { spirit: { probability: { other: 1 } } };
   const ctx = { window: win };
-  vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'probabilityBucket.js'), 'utf8'), ctx);
+  vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'listLimiter.js'), 'utf8'), ctx);
   const f = win.spirit.probability.createProbabilityBucket;
   if (typeof f !== 'function') return false;
   const leaked = Object.keys(ctx).filter(function (k) { return k !== 'window'; });

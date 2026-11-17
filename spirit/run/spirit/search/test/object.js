@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/probabilityStringObjectMatch.js
-// The tests of spirit/probabilityStringObjectMatch.js, and of no other module (spec: ./probabilityStringObjectMatch.md).
+// spirit/run/spirit/search/test/object.js
+// The tests of spirit/search/object.js, and of no other module (spec: ./probabilityStringObjectMatch.md).
 // Its own test, owed since the rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // probabilityStringObjectMatch(string, object): how likely a string is what an object holds (goal/G18.3), a weighted sum
@@ -11,9 +11,9 @@
 const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const FILE = path.join(RUN, 'spirit', 'probabilityStringObjectMatch.js');
+const FILE = path.join(RUN, 'spirit', 'search', 'object.js');
 const O = require(FILE);
 const p = O.probabilityStringObjectMatch;
 

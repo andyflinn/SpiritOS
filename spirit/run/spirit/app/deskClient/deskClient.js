@@ -36,8 +36,8 @@ const { DatabaseSync } = require('node:sqlite');
 const appServer = spirit.require('spirit/appServer.js');
 const limits = spirit.require('spirit/limits.js');
 const VENDORED_FOLDERS = spirit.require('spirit/fileSystem.js').VENDORED_FOLDERS;
-const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }

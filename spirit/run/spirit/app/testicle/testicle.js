@@ -31,8 +31,8 @@ const { DatabaseSync } = require('node:sqlite');
 const WORDS = spirit.require('spirit/app/testicle/words.js');
 const appServer = spirit.require('spirit/appServer.js');
 const { VENDORED_FOLDERS } = spirit.require('spirit/fileSystem.js');
-const { createProbabilityBucket } = spirit.require('spirit/probabilityBucket.js');
-const { probabilityStringObjectMatch } = spirit.require('spirit/probabilityStringObjectMatch.js');
+const { createProbabilityBucket } = spirit.require('spirit/listLimiter.js');
+const { probabilityStringObjectMatch } = spirit.require('spirit/search/object.js');
 const limits = spirit.require('spirit/limits.js');
 // What one search answer holds once its frame is counted (as the agent's tables count it, rowTable.js).
 const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');

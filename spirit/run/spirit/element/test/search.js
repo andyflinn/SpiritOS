@@ -87,8 +87,8 @@ function markup(k) {
   return '<' + t + a + '>' + k.innerHTML + '</' + t + '>';
 }
 global.window = { spirit: { probability: {
-  probabilityStringObjectMatch: require(path.join(RUN, 'spirit', 'probabilityStringObjectMatch.js')).probabilityStringObjectMatch,
-  createProbabilityBucket: require(path.join(RUN, 'spirit', 'probabilityBucket.js')).createProbabilityBucket,
+  probabilityStringObjectMatch: require(path.join(RUN, 'spirit', 'search', 'object.js')).probabilityStringObjectMatch,
+  createProbabilityBucket: require(path.join(RUN, 'spirit', 'listLimiter.js')).createProbabilityBucket,
 } } };
 // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
 require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
@@ -1006,7 +1006,7 @@ test.run('without the all option the field shows the placeholder', 0.2, function
   PS.create(c9, { face: 'dropdown', placeholder: 'pick one' });
   return (/pick one/.test(c9.get('field').innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('it requires probabilityStringMatch.js, probabilityStringObjectMatch.js and probabilityBucket.js', 0.2, async function () {
+test.run('it requires spirit/search/string.js, spirit/search/object.js and spirit/listLimiter.js', 0.2, async function () {
   // it loads the spirit's probability files itself (rule/26; goal/G41.18)
   // Found by the shell's general rules on a bare page (spirit/test/spirit-sibling-browser.js): the Apps and Grants
   // lists threw "createProbabilityBucket is not a function", since only boot loaded these files. rule/26: every element
@@ -1023,14 +1023,14 @@ test.run('it requires probabilityStringMatch.js, probabilityStringObjectMatch.js
     const delay = (wait = Math.max(0, wait - 20));
     return new Promise(function (resolve) {
       setTimeout(function () {
-        if (/^spirit\/probability\w*\.js$/.test(rel)) vm.runInThisContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), { filename: rel });
+        if (/^spirit\/(search\/(string|object)|listLimiter)\.js$/.test(rel)) vm.runInThisContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), { filename: rel });
         resolve(true);
       }, delay);
     });
   };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await new Promise(function (r) { setTimeout(r, 300); });
-  NEED = ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js'];
+  NEED = ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js'];
   return (NEED.every(function (n) { return asked10.indexOf(n) !== -1; })) ? true : false;
 }, test.limit.quick);
 test.run('once loaded, with nothing preloaded, it draws and ranks: typing ze puts zed first', 0.2, function () {
@@ -1567,7 +1567,7 @@ async function tilesPart() {
   const RUN = path.resolve(__dirname, '..', '..', '..');
   const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
   const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-  const match = require(path.join(RUN, 'spirit', 'probabilityStringObjectMatch.js'));
+  const match = require(path.join(RUN, 'spirit', 'search', 'object.js'));
 
   // What the tests make, shared by the tests after them.
   let table, node, chrome, loaded, plain, nest, searching, nest2, best, expected, probe, missed, none, order, picked1,

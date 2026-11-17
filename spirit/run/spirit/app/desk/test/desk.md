@@ -25,7 +25,7 @@ THEY SHOULD NOT EXIST."*
 
 - **Bundles, for Desk only** (Andy: "agreed to publishing lists, FOR DESK ONLY, this is NOT a general rule"):
   - `item.files.add` takes a list of paths, `{ id, paths: [...] }`, the caller's list cut at one payload by a sized
-    probabilityBucket; every path of it lands on the caller's list of the item in one write.
+    list limiter (spirit/listLimiter.js); every path of it lands on the caller's list of the item in one write.
   - The desk's list publishes go out the same way: a goal pushed whole (made current, or a client subscribing) reaches
     a subscribed deskClient as bundles of rows, several rows a post, each post within one payload, not one post a row.
 - **Files known in design**: a code item is not green while its file list is empty (its facts say `green: false`),

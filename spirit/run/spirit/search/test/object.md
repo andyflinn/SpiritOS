@@ -1,4 +1,4 @@
-# spirit/probabilityStringObjectMatch.js — its own test
+# spirit/search/object.js — its own test
 
 How likely a string is what an object holds (goal/G18.3, the second of the probabilit* modules): every string the object
 holds is matched by probabilityStringMatch and weighted, the shortest heaviest, the weights adding up to 1. Owed since

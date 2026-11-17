@@ -190,9 +190,9 @@ function walked(walk, pairOf, room) {
 // into the bucket. at the end calls serialize, done."
 //
 // With no text every probability is 0 and the bucket keeps the walk's order.
-const probabilityStringMatch = spirit.require('spirit/probabilityStringMatch.js').probabilityStringMatch;
-const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
-const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringMatch = spirit.require('spirit/search/string.js').probabilityStringMatch;
+const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
 const MAX_SCANNED_ITEMS = 1000;
 function lineProbability(text, line) { return text ? probabilityStringMatch(text, String(line.text)) : 0; }
 // THE WHOLE ROW, AS ITS GET SERVES IT (goal/G41.28; Andy, box v15: "a probability search of a dataBase table must ALWAYS

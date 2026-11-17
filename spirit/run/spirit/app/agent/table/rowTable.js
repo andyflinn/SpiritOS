@@ -24,8 +24,8 @@ require('../../../spirit.js');
 //   search {text}      the rows ranked against the words, best first, cut to one answer; answers { items, more }
 // Any other op is refused. Every change is published as { agent: { table, row } } or { agent: { table, id, removed } }.
 const { generateIdentity } = spirit.require('spirit/relayAuth.js');
-const { createProbabilityBucket } = spirit.require('spirit/probabilityBucket.js');
-const { probabilityStringObjectMatch } = spirit.require('spirit/probabilityStringObjectMatch.js');
+const { createProbabilityBucket } = spirit.require('spirit/listLimiter.js');
+const { probabilityStringObjectMatch } = spirit.require('spirit/search/object.js');
 const limits = spirit.require('spirit/limits.js');
 
 const KEYSET = ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey'];

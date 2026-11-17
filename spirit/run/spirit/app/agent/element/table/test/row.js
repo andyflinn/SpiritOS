@@ -473,7 +473,7 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
     const win = { window: null, spirit: require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit({ element: {} }), console: console };
     win.window = win;
     vm.createContext(win);
-    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/search.js'].forEach(function (rel) {
+    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'].forEach(function (rel) {
       vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
     });
     return ((win.spirit.element.spirit || {}).element || {}).search;

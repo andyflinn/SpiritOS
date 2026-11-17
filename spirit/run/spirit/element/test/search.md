@@ -14,8 +14,8 @@ the spirit.
 
 **It loads those files itself** (rule/26: every element loads its own parts via spirit.require; nothing is preloaded;
 goal/G41.18, found by the shell's general rules on a bare page, where the Apps and Grants lists threw
-`createProbabilityBucket is not a function`). Through `spirit.require` it asks for `spirit/probabilityStringMatch.js`,
-`spirit/probabilityStringObjectMatch.js` and `spirit/probabilityBucket.js`, and `spirit/element/icon.js` and
+`createProbabilityBucket is not a function`). Through `spirit.require` it asks for `spirit/search/string.js`,
+`spirit/search/object.js` and `spirit/listLimiter.js`, and `spirit/element/icon.js` and
 `spirit/element/fieldInput.js`. Loaded on a window with nothing
 preloaded, whose loader answers in the reverse of the order asked (as a page's fetches may), once its files are in, it
 draws and ranks.

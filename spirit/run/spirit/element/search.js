@@ -65,7 +65,7 @@
   // fieldInput's load is kept: a search made before it is in attaches its words to it once it is (below).
   var fieldInputIn = null;
   if (window.spirit && typeof window.spirit.require === 'function') {
-    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/icon.js',
+    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/icon.js',
       'spirit/element/fieldInput.js', 'spirit/limits.js'].forEach(function (p) { var got = window.spirit.require(p); if (p === 'spirit/element/fieldInput.js') fieldInputIn = got; });
   }
   function P() { return window.spirit.probability || {}; }

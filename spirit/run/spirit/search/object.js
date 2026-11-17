@@ -3,7 +3,7 @@
 // ONE SCOPE OF ITS OWN (goal/G27.14): loaded into a page as a plain script, its names stay its own.
 (function () {
 
-// spirit/run/spirit/probabilityStringObjectMatch.js
+// spirit/run/spirit/search/object.js
 // HOW LIKELY A STRING IS WHAT AN OBJECT HOLDS, AS A PROBABILITY — goal/G18.3, the second of the probabilit* modules.
 //
 //   Andy, 2026-10-12, the item: "1. the input must be valid string and object, empty string will return 0", "2. We
@@ -29,7 +29,7 @@
 // In node the module beside it; in a page the one on window.spirit.probability, read when it is called (goal/G41.18): a
 // part that loads both itself may have this one run first, so nothing is read from the page as this file loads.
 var nodeStringMatch = typeof require === 'function' && typeof module !== 'undefined' && module
-  ? require('./spirit.js').require('spirit/probabilityStringMatch.js').probabilityStringMatch
+  ? require('../spirit.js').require('spirit/search/string.js').probabilityStringMatch
   : null;
 function probabilityStringMatch(a, b) {
   var f = nodeStringMatch || (window.spirit && window.spirit.probability && window.spirit.probability.probabilityStringMatch);

@@ -4,7 +4,7 @@ if (typeof require === 'function') require('./spirit.js'); // node only: a page 
 // ONE SCOPE OF ITS OWN (goal/G27.14): loaded into a page as a plain script, its names stay its own.
 (function () {
 
-// spirit/run/spirit/probabilityBucket.js
+// spirit/run/spirit/listLimiter.js
 // THE BEST OBJECTS BY PROBABILITY, SEATED AS THEY COME AND SERIALIZED TO A CEILING — goal/G18.4, the third of the
 // probabilit* modules.
 //
@@ -52,7 +52,7 @@ function createProbabilityBucket(capacity) {
     // THE OBJECTS ALONE, BEST FIRST, through map, measured in bytes against the ceiling; stopping at the first that
     // will not fit, never skipping it for a smaller one further down (the order is the probability's). `more` when
     // something was turned away or cut; `truncated` when cut. UNBOUNDED BY DEFAULT (goal/G27.14, Andy, 2026-10-17: "in
-    // probabilityBucket.js use serialize: function (map, maxBytes = 0) where 0 means unbounded."): a caller that sends
+    // listLimiter.js use serialize: function (map, maxBytes = 0) where 0 means unbounded."): a caller that sends
     // nothing over the wire, as a page ranking its own cache, leaves maxBytes out; with a bucket made with Infinity it
     // gets every object seated.
     serialize: function (map, maxBytes = 0) {
@@ -83,7 +83,7 @@ function createProbabilityBucket(capacity) {
   };
 }
 
-// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as probabilityStringMatch.js: a page finds it on window.spirit.probability.
+// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as spirit/search/string.js: a page finds it on window.spirit.probability.
 if (typeof module !== 'undefined' && module && module.exports) module.exports = { createProbabilityBucket: createProbabilityBucket };
 if (typeof window !== 'undefined' && window) {
   (window.spirit = window.spirit || {}).probability = window.spirit.probability || {};

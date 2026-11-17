@@ -85,8 +85,8 @@ const peerFile = require('./spirit.js').require('spirit/peerFile.js');
 const nodeCard = require('./spirit.js').require('spirit/nodeCard.js');
 const limits = require('./spirit.js').require('spirit/limits.js');
 // goal/G29.6: contact.search ranks with the probability modules.
-const probabilityStringObjectMatch = require('./spirit.js').require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
-const createProbabilityBucket = require('./spirit.js').require('spirit/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('./spirit.js').require('spirit/search/object.js').probabilityStringObjectMatch;
+const createProbabilityBucket = require('./spirit.js').require('spirit/listLimiter.js').createProbabilityBucket;
 const MAX_SEARCHED_PEOPLE = 1000;
 // Every label checked at one point (Andy, 2026-10-03, goal/G4.16: "all
 // occurrences of label and description must validate at a central

@@ -34,8 +34,8 @@ const appServer = spirit.require('spirit/appServer.js');
 const packet = spirit.require('spirit/client/packet.js');
 const limits = spirit.require('spirit/limits.js');
 // The probability modules (goal/G29.18).
-const createProbabilityBucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }

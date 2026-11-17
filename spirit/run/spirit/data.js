@@ -361,8 +361,8 @@
   var SEARCH_SCANNED = 1000;
   function ranking() {
     if (typeof require === 'function' && typeof module !== 'undefined' && module) {
-      return { match: require('./spirit.js').require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch,
-        bucket: require('./spirit.js').require('spirit/probabilityBucket.js').createProbabilityBucket, limits: require('./spirit.js').require('spirit/limits.js') };
+      return { match: require('./spirit.js').require('spirit/search/object.js').probabilityStringObjectMatch,
+        bucket: require('./spirit.js').require('spirit/listLimiter.js').createProbabilityBucket, limits: require('./spirit.js').require('spirit/limits.js') };
     }
     var p = (root.spirit && root.spirit.probability) || {};
     return { match: p.probabilityStringObjectMatch, bucket: p.createProbabilityBucket, limits: root.spirit && root.spirit.limits };

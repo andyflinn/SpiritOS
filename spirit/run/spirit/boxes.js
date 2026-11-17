@@ -111,8 +111,8 @@ function createBoxes(opts) {
   function search(q) {
     const words = String(q == null ? '' : q).trim();
     const text = words === '*' ? '' : words;
-    const bucket = spirit.require('spirit/probabilityBucket.js').createProbabilityBucket(Infinity);
-    const match = spirit.require('spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+    const bucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket(Infinity);
+    const match = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
     list().forEach(function (g) {
       const p = text ? match(text, { label: boxLabel(g), fingerprint: String(g.fingerprint || '') }) : 0;
       bucket.seatFor(p, { key: g.fingerprint, label: boxLabel(g) });

@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/probabilityStringMatch.js
-// The tests of spirit/probabilityStringMatch.js, and of no other module (spec: ./probabilityStringMatch.md). Its own
+// spirit/run/spirit/search/test/string.js
+// The tests of spirit/search/string.js, and of no other module (spec: ./probabilityStringMatch.md). Its own
 // test, owed since the rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // probabilityStringMatch(A, B): how likely two strings mean the same thing, as a number from 0 to 1 (goal/G18.2), with
@@ -10,9 +10,9 @@
 const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const M = require(path.join(RUN, 'spirit', 'probabilityStringMatch.js'));
+const M = require(path.join(RUN, 'spirit', 'search', 'string.js'));
 const p = M.probabilityStringMatch;
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -121,7 +121,7 @@ test.run('the module answers probabilityStringMatch alone', 0.2, function () {
 test.run('loaded in a page as a plain script, it is found on window.spirit.probability, and it keeps its names to itself', 0.2, function () {
   const win = { spirit: { probability: { other: 1 } } };
   const ctx = { window: win };
-  vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'probabilityStringMatch.js'), 'utf8'), ctx);
+  vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'search', 'string.js'), 'utf8'), ctx);
   const f = win.spirit.probability.probabilityStringMatch;
   if (typeof f !== 'function') return false;
   const leaked = Object.keys(ctx).filter(function (k) { return k !== 'window'; });
