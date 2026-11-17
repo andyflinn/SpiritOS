@@ -115,6 +115,16 @@ test.run('a request that answers no promise leaves it plain', 0.2, function () {
   if (!m) return false;
   return (plain(m.atOnce, 'Now')) ? true : false;
 }, test.limit.quick);
+// goal/G47.1 (Q25; Andy: "sure.", for every arming button busy after its confirming press; wsl: "with no press given it still
+// disables itself, so a mounter wiring its own click loses quick presses"): a request with no promise to wait for marks nothing.
+test.run('a request that answers no promise marks nothing, not even in the instant of its press', 0.2, function () {
+  if (!m) return false;
+  return (plain(m.atOnceNow, 'Now')) ? true : false;
+}, test.limit.quick);
+test.run('a second press at once, on a request that answers no promise, runs it again', 0.2, function () {
+  if (!m) return false;
+  return (m.nowRuns === 2) ? true : false;
+}, test.limit.quick);
 test.run('a refusal and a throw reach no further: nothing unhandled in the page', 0.2, function () {
   if (!m) return false;
   return (m.heard.unhandled === 0 && m.heard.errors === 0) ? true : false;

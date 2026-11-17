@@ -93,8 +93,14 @@ window.pressed = function () {
       return wait(150).then(function () { out.thrown = look(t); });
     }).then(function () {
       // No promise: run answers at once.
-      var n = E.create(host, { label: 'Now', run: function () { return 'done'; } });
+      var nowRuns = 0;
+      var n = E.create(host, { label: 'Now', run: function () { nowRuns += 1; return 'done'; } });
       n.click();
+      // In the same instant as the press, before anything could settle: nothing to wait for, so nothing marked (goal/G47.1, Q25).
+      out.atOnceNow = look(n);
+      // A second press at once is a press of its own: no busy mark of a request with no answer to wait for swallows it.
+      n.click();
+      out.nowRuns = nowRuns;
       return wait(150).then(function () { out.atOnce = look(n); });
     }).then(function () {
       // attach: a button already in the page, its own text the label.

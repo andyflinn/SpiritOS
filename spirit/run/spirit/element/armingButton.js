@@ -8,7 +8,8 @@
 //
 //   armingButton.attach(button, { label, armedLabel, run }) -> the button, carrying disarm() and armed()
 //     A button already in the page made an arming one. label is what it says unarmed (by default its own text),
-//     armedLabel what it says armed (by default "<label>? Press again"), run what the second press does.
+//     armedLabel what it says armed (by default "<label>? Press again"), run what the second press does; a run that
+//     answers a promise leaves the button busy, disabled with its turning mark, until it settles.
 //   armingButton.create(container, { label, armedLabel, run, title, className }) -> a new <button type="button">,
 //     appended to the container, attached
 //
@@ -61,7 +62,17 @@
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       if (!on) { arm(e); return; }
       disarm();
-      if (typeof o.run === 'function') o.run();
+      if (typeof o.run !== 'function') return;
+      var answer = o.run();
+      // BUSY AFTER ITS CONFIRMING PRESS, UNTIL THE ANSWER (goal/G47.1, Q25; Andy: "sure."): a run that answers a promise greys
+      // the button out, the shell's turning mark left of its label (class shell-busy, as busyButton draws it), until it settles.
+      if (!answer || typeof answer.then !== 'function') return;
+      button.disabled = true;
+      var mark = document.createElement('span');
+      mark.className = 'shell-busy';
+      button.insertBefore(mark, button.firstChild);
+      var plain = function () { if (mark.parentNode === button) button.removeChild(mark); button.disabled = false; };
+      answer.then(plain, plain);
     });
     button.disarm = disarm;
     button.armed = function () { return on; };

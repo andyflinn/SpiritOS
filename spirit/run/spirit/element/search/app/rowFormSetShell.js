@@ -62,8 +62,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       said.className = 'job-manifest-note';
       host.appendChild(said);
       E.spirit.element.armingButton.attach(form.button, { label: 'Set', run: function () {
-        if (!picked) { said.textContent = 'Choose a shell first.'; return; }
-        S.ready.then(function (s) { return s.node.shell({ at: at, name: picked }); }).then(function (r) {
+        if (!picked) { said.textContent = 'Choose a shell first.'; return null; }
+        // Its answer is the arming button's to wait on, busy (goal/G47.1, Q25).
+        return S.ready.then(function (s) { return s.node.shell({ at: at, name: picked }); }).then(function (r) {
           named = String((r && r.name) || picked);
           said.textContent = '';
           paint();

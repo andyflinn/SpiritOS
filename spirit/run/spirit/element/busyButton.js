@@ -11,7 +11,8 @@
 //   busyButton.create(container, { label, run, title, className }) -> a new <button type="button">, appended, attached
 //
 // Pressed, it is disabled and a turning mark (class shell-busy, its turn shell.css's, so every app spins the same) stands
-// left of its label until run's answer comes: success, refusal or throw, it is a plain button again. A SECOND PRESS WHILE
+// left of its label until run's answer comes: success, refusal or throw, it is a plain button again. A request that answers
+// no promise, or throws as it is called, marks nothing at all. A SECOND PRESS WHILE
 // IT WAITS DOES NOTHING (Andy, goal/G41.23: "yes."), so no request is sent twice. A refusal goes no further than the
 // button: saying it is the app's, in its own request.
 (function () {
@@ -29,13 +30,17 @@
     button.addEventListener('click', function (e) {
       if (busy) { if (e && e.stopImmediatePropagation) e.stopImmediatePropagation(); return; }
       busy = true;
+      var answer;
+      try { answer = typeof o.run === 'function' ? o.run() : null; } catch (err) { busy = false; return; }
+      // ONLY AN ANSWER TO WAIT FOR MARKS IT BUSY (goal/G47.1, Q25; Andy: "sure.", every arming button busy after its confirming
+      // press; wsl: "with no press given it still disables itself"): a request that answers no promise, or a rowForm handed no
+      // press, leaves the button as it is, so it never wipes a mark another element put on the same button.
+      if (!answer || typeof answer.then !== 'function') { busy = false; return; }
       button.disabled = true;
       var mark = document.createElement('span');
       mark.className = 'shell-busy';
       button.insertBefore(mark, button.firstChild);
-      var answer;
-      try { answer = typeof o.run === 'function' ? o.run() : null; } catch (err) { done(); return; }
-      Promise.resolve(answer).then(done, done);
+      answer.then(done, done);
     });
     return button;
   }

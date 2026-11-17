@@ -74,15 +74,23 @@ test.run('one press only arms it: nothing is revoked', 0.2, async function () {
   await sleep(300);
   return (await js('window.__revoked.length')) === 0 ? true : false;
 }, test.limit.slow);
+let busyAt = null;
 test.run('the second press revokes that grant, by its ID and its path', 0.2, async function () {
   if (!js) return false;
-  await press();
+  // The button as it is in the instant after that press (goal/G47.1, Q25).
+  try { busyAt = JSON.parse(await js('(function () { var b = Array.prototype.slice.call(document.getElementById("zzOne").querySelectorAll("button")).filter(function (x) { return /Revoke/.test(x.textContent); })[0]; if (!b) return "null"; b.click(); return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); })()')); } catch (e) { busyAt = null; }
   return (await until(function () { return js('window.__revoked.join("|")').then(function (v) { return v === 'KEYZZ zz/thing'; }); }, 5000)) ? true : false;
 }, test.limit.slow);
 test.run('the detail says below the bubble that the grant is revoked', 0.2, async function () {
   if (!js) return false;
   return (await until(function () { return text('zzOne').then(function (t) { return /revoked/.test(t); }); }, 5000)) ? true : false;
 }, test.limit.slow);
+
+// goal/G47.1, Q25 (Andy: "sure."): busy after its confirming press, until the answer, read in the instant of that press.
+test.run('the second press of Revoke leaves it busy until the grant is revoked: disabled, with its turning mark', 0.2, function () {
+  if (!busyAt) return false;
+  return busyAt.disabled === true && busyAt.mark === true ? true : false;
+}, test.limit.quick);
 
 // "who paints, listens": its row, as its table's watch hands it
 test.run('a new label of its own grant repaints it, and another grant\'s does not', 0.2, async function () {

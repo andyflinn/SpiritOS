@@ -16,7 +16,7 @@ table of the test's own, so nothing of a node is revoked.
 - It says whose grant it is (the row's field the table names as its label) and its path; a path `serves` says no to is
   marked deprecated.
 - Revoke is an armingButton: the first press arms it, the second asks the table's `revoke(id, path)` and says what came of
-  it below the bubble.
+  it below the bubble. Its second press answers the revoke, so Revoke is busy until it is answered (goal/G47.1, Q25; Andy: *"sure."*).
 - Who paints, listens (Andy, G41.32): it follows its own row through its table's `watch`, keyed `<id>\n<path>`; a new
   label repaints it, another grant's does not, and its grant gone, revoked anywhere, it says so. `destroy()` lets the watch go.
 - It fills its host and scrolls its own body, so the panel's title bar above it stays (Q21: the panel itself never scrolls);

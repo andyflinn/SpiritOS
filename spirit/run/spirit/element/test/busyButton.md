@@ -28,6 +28,9 @@ gets a container and appends itself"*).
   click, and not by a click event a script dispatches.
 - **Answered, it is a plain button again**: success or refusal (the promise rejects), a throw as `run` is called, or a
   value that is no promise: enabled, no element in it, its label alone. The next press runs it again.
+- **Only an answer to wait for marks it busy** (goal/G47.1, Q25; Andy: *"sure."*): a request that answers no promise, or throws as it is called,
+  marks nothing, not even in the instant of its press, and a second press at once runs it again. So a rowForm handed no
+  press leaves its button as it is, and never wipes a mark another element put on the same button.
 - **A refusal and a throw reach no further** than the button: nothing unhandled in the page. Saying the refusal is
   the app's, in its own request.
 

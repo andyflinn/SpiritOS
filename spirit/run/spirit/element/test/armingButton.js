@@ -26,6 +26,11 @@ function element(tag) {
     // A press is a click on the button that then bubbles to the document, as a page's does.
     press: function () { const e = { type: 'click', target: el, preventDefault: function () {} }; (heard.click || []).slice().forEach(function (fn) { fn(e); }); bubble(e); },
     contains: function (t) { return t === el; },
+    // A busy mark goes in first and comes out again (goal/G47.1, Q25).
+    disabled: false,
+    insertBefore: function (c) { el.children.unshift(c); c.parentNode = el; return c; },
+    removeChild: function (c) { el.children = el.children.filter(function (k) { return k !== c; }); c.parentNode = null; return c; },
+    get firstChild() { return el.children[0] || null; },
   };
   Object.defineProperty(el, 'dataset', { get: function () { const d = {}; Object.keys(attrs).forEach(function (k) { if (k.indexOf('data-') === 0) d[k.slice(5).replace(/-(\w)/g, function (m, c) { return c.toUpperCase(); })] = attrs[k]; }); return d; } });
   return el;
@@ -186,6 +191,28 @@ test.run('an attached button and a made one are one loaded at a time too', 0.2, 
   other.press();
   await settle();
   return (!isArmed(drawn) && isArmed(other)) ? true : false;
+}, test.limit.quick);
+// goal/G47.1, Q25 (Andy: "sure."): busy after its confirming press, until the answer: disabled, with the shell's turning mark.
+let held = null, waits = null;
+const marked = function (x) { return x.children.some(function (c) { return /\bshell-busy\b/.test(c.className); }); };
+test.run('a run that answers a promise leaves it busy after its confirming press: disabled, with its turning mark', 0.2, async function () {
+  other.disarm();
+  waits = E.create(element('div'), { label: 'Wait', run: function () { return new Promise(function (r) { held = r; }); } });
+  waits.press();
+  await settle();
+  const plainArmed = !waits.disabled && !marked(waits);
+  waits.press();
+  await settle();
+  return (plainArmed && waits.disabled === true && marked(waits) && !isArmed(waits)) ? true : false;
+}, test.limit.quick);
+test.run('once that answer comes, it is plain again, its label said', 0.2, async function () {
+  if (!held) return false;
+  held();
+  await settle();
+  return (waits.disabled === false && !marked(waits) && waits.textContent === 'Wait') ? true : false;
+}, test.limit.quick);
+test.run('a run that answers no promise marks nothing', 0.2, function () {
+  return (!drawn.disabled && !marked(drawn)) ? true : false;
 }, test.limit.quick);
 test.run('its code names no api, as no hook is handed to it', 0.2, function () {
   other.disarm();

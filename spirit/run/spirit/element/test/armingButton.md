@@ -25,6 +25,9 @@ gets a container and appends itself"*).
 - **The first press arms it** and runs nothing: the button carries `data-armed` (the shell paints it red,
   shell.css) and says `armedLabel`; armed, it listens for clicks on the document itself.
 - **The second press runs it**: it disarms first, then calls `run()` once.
+- **Busy after its confirming press, until the answer** (goal/G47.1, Q25; Andy: *"sure."*): a `run()` that answers a promise leaves it disabled,
+  the shell's turning mark (class `shell-busy`) left of its label, until it settles; then it is plain again, its label
+  said. A `run()` that answers no promise marks nothing.
 - **A click anywhere else puts it back**, heard by the button itself (goal/G43.24; Andy: *"every element that accesses ANY
   api must require them themselves ... that way anybody can mount any element without knowing what it actually
   needs...."*): armed, it adds a click listener to the document, which disarms it on any click but the press that armed

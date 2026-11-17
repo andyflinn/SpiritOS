@@ -41,6 +41,9 @@ let node, chrome, loaded;
 const make = function (id, key, at) { return chrome.evaluate('(function () { var b = document.createElement("div"); b.id = ' + JSON.stringify(id) + '; b.style.cssText = "position:relative;width:900px;min-height:40px;"; document.body.appendChild(b); window[' + JSON.stringify(id) + '] = spirit.element.spirit.element.search.app.rowFormSetShell.create(b, { key: ' + JSON.stringify(key) + ', at: ' + JSON.stringify(at) + ' }); var m = window[' + JSON.stringify(id) + ']; return !!m && typeof m.destroy === "function"; }())'); };
 const view = function (id) { return chrome.evaluate('(function () { var b = document.getElementById(' + JSON.stringify(id) + '); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), forms: b.querySelectorAll(".shell-row-form").length, set: b.querySelector(".shell-row-form > button") ? String(b.querySelector(".shell-row-form > button").textContent).trim() : null, html: b.innerHTML.length }; }())'); };
 const pressSet = function (id) { return chrome.evaluate('(function () { var s = document.getElementById(' + JSON.stringify(id) + ').querySelector(".shell-row-form > button"); if (!s) return false; s.click(); return true; }())'); };
+// The second press of Set, and the button as it is in the instant after: busy or not (goal/G47.1, Q25).
+let busyAt = null;
+const confirmSet = function (id) { return chrome.evaluate('(function () { var s = document.getElementById(' + JSON.stringify(id) + ').querySelector(".shell-row-form > button"); if (!s) return "null"; s.click(); return JSON.stringify({ disabled: s.disabled, mark: !!s.querySelector(".shell-busy") }); }())').then(function (t) { try { busyAt = JSON.parse(t); } catch (e) { busyAt = null; } }); };
 const openList = function (id) { return chrome.evaluate('(function () { var f = document.getElementById(' + JSON.stringify(id) + ').querySelector("button[id$=\\"field\\"]"); if (!f) return false; f.click(); return true; }())'); };
 const listed = function (id) { return chrome.evaluate('(function () { var out = []; Array.prototype.forEach.call(document.getElementById(' + JSON.stringify(id) + ').querySelectorAll("[id$=\\"popup\\"] [data-key]"), function (r) { if (r.getClientRects().length && out.indexOf(r.getAttribute("data-key")) === -1) out.push(r.getAttribute("data-key")); }); return out.sort(); }())'); };
 const pick = function (id, key) { return chrome.evaluate('(function () { var r = Array.prototype.filter.call(document.getElementById(' + JSON.stringify(id) + ').querySelectorAll("[id$=\\"popup\\"] tr[data-key]"), function (x) { return x.getAttribute("data-key") === ' + JSON.stringify(key) + '; })[0]; if (!r) return false; r.click(); return true; }())'); };
@@ -130,11 +133,16 @@ test.run('the first press of Set asks nothing, the second asks node.shell with a
   if (loaded !== true) return false;
   await pressSet('face'); await sleep(300);
   const first = JSON.parse(await chrome.evaluate('JSON.stringify(window.shellAsks)')).filter(function (a) { return a.name; }).length;
-  await pressSet('face');
+  await confirmSet('face');
   const ok = await until(function () { return (kept() || {}).face === SHELL; }, 5000);
   const sets = JSON.parse(await chrome.evaluate('JSON.stringify(window.shellAsks)')).filter(function (a) { return a.name; });
   return (first === 0 && !!ok && sets.length === 1 && sets[0].at === 'face' && sets[0].name === SHELL) || false;
 }, test.limit.slow);
+// goal/G47.1, Q25 (Andy: "sure."): busy after its confirming press, until the answer, read in the instant of that press.
+test.run('the second press of Set leaves it busy until the node answers: disabled, with its turning mark', 0.2, function () {
+  if (!busyAt) return false;
+  return busyAt.disabled === true && busyAt.mark === true ? true : false;
+}, test.limit.quick);
 // "the row says what the node answered"
 test.run('a refused set says so in the row', 0.2, async function () {
   if (loaded !== true) return false;

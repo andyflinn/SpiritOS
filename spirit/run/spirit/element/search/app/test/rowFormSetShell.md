@@ -15,7 +15,7 @@ from the scratch node's `spirit/state/shell.json`.
   test plants one, zzshell, on its scratch node, to be listed and picked.
 - Set with nothing chosen asks nothing and says *"Choose a shell first."*; a pick is held until Set; Set is an arming
   button, its first press asks nothing, its second `node.shell({ at, name })`, and the node keeps it; a refusal is said in
-  the row (*"Not set: ..."*).
+  the row (*"Not set: ..."*). Its second press answers the request, so Set is busy until the node answers (goal/G47.1, Q25; Andy: *"sure."*).
 - `destroy` leaves its host empty.
 
 ## What its test must try to break
