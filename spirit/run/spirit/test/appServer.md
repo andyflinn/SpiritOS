@@ -58,17 +58,24 @@ stream"); Desk and deskClient move onto it.
   and it reads back to the sender's key.
 - **Its cache in spirit.data by sender node** (box v19: *"The RAM-CACHE-is organized BY SERVER-NODE-ID at it's lowest
   level. IE: spirit.data.<server-public-key-in-base64>.<api-family>...."*): the data set holds at its top the sender's
-  key in base64url and nothing beside it, and under it the family (`<key>.desk`). The test reads what the cache holds through the
-  family's data.js (`spirit.data.desk.data`), never by a branch's name.
+  key in base64url and nothing beside it, and under it the family (`<key>.<family>`). The test reads what the cache holds through the
+  family's data.js (`spirit.data.<family>.data`), never by a branch's name.
 - **It keeps every goal the sender sends**, no filtering on the client side, within its limit.
 - **A sender whose family has no folder on this node** (`familyPath` of it resolved from the run root) is not cached.
 - **The cache keeps to its limit, and the sender's family api.js on the client's node does the shedding**, declaring
   nothing (Andy, Q2: "it sits at the receiving end of the stream, it owns the cache, it knows the default cache limit,
-  IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE"). For the desk: **the goal untouched longest goes whole**
-  (Andy, Q2: "THE LONGEST UNTOUCHED GOAL GOES, LOCK, STOCK AND BARREL"); with one goal left, the item untouched
-  longest goes whole, its chat with it; with one goal of one item, the oldest chat lines go (Andy, Q2: "when there is
-  only one goal, then you shed the longest untouched item, LOCK, stock and barrel, when there is only one goal with one
-  item you shed the oldest chat line").
+  IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE"). **A family with a shed of its own is shed by it**; **a
+  family with none loses its oldest rows first**, the app server's default. The desk's own rules (the goal untouched
+  longest goes whole, then items, then the oldest chat lines) are judged in the desk's own test, not here (goal/G47.4).
+
+### Its fixtures are its own (goal/G47.4)
+
+- **No app of the tree is a fixture** (Andy: *"you make bloody well sure that such stupid hard-coded tests move"*; wsl:
+  *"keep there only what is the app server's own, on your planted family"*). The stream checks follow two families
+  planted in `spirit/app/` for the run and removed after: `zzstream`, a translator filing each row's item by its id
+  and no cache rules; `zzshed`, a shed of its own that drops the newest rows. The family path is judged on `zzstream`;
+  "no `family/` folder is left" over every app folder of the tree, read from the folder. The stateCache part plants
+  `zzkept` in its scratch tree as the sender's family.
 
 ### What goes (goal/G41.12)
 
@@ -117,7 +124,7 @@ stream"); Desk and deskClient move onto it.
 - A subscribe again answered with a bootstrap, a cache swept by it, missed rows not handed, a row for another key
   handed, or a full push that leaves old rows.
 - A cache file missing, misnamed, not read back, kept without the switch or for a sender with no family folder, or
-  past its limit.
+  past its limit; a family's own shed passed over, or the default shedding the newest.
 
 ## The agentsFile part: AGENTS.md through spirit.fs.loadFile
 
@@ -140,7 +147,7 @@ goal/G43.20, its box. Its test, once `./appServer-stateCache.js`, is a section o
 spirit/state/<name>/cache/"*, and *"NO FUCKING RESCUE CODE, MOVE YOUR OWN deskClient cache where it belongs."*
 
 A throwaway follower app planted in a lab node reset to the files under test (goal/G47.3), run as the node runs a server: a stream with
-its cache on, following a sender whose family has a data.js here (desk). What it kept is read back at its start; then its
+its cache on, following a sender whose family has a data.js here (`zzkept`, planted beside it). What it kept is read back at its start; then its
 `saveCaches` (deskClient's `cache.dump`) writes it again. Never a live node.
 
 ### Requirements

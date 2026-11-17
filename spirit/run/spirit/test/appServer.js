@@ -22,8 +22,41 @@ const RUN = path.resolve(__dirname, '../..');
 const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'appServer.js');
 const SELF_FILE = __filename;
-const TRANSLATOR = path.join(RUN, 'spirit', 'app', 'desk', 'data.js');
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
+// THE FAMILIES IT FOLLOWS ARE ITS OWN, PLANTED IN THE TREE FOR THE RUN AND REMOVED AFTER (goal/G47.4; Andy: "you make
+// bloody well sure that such stupid hard-coded tests move"; wsl: the desk's own rules are judged in the desk's own test,
+// "keep there only what is the app server's own, on your planted family"). zzstream: a translator filing each row's item
+// by its id, and no cache rules, so the app server's own default sheds (the oldest rows first). zzshed: a cache rule of its
+// own, a shed that drops the newest rows instead, so the family's own shed is seen to be the one asked.
+const FAMILY = 'zzstream';
+const SHED_FAMILY = 'zzshed';
+const TRANSLATOR = path.join(RUN, 'spirit', 'app', FAMILY, 'data.js');
+function plantFamilies() {
+  const at = function (n) { const d = path.join(RUN, 'spirit', 'app', n); fs.mkdirSync(d, { recursive: true }); return d; };
+  const head = "'use strict';\n// Planted by spirit/test/appServer.js for its stream checks, and removed when it ends.\n";
+  fs.writeFileSync(path.join(at(FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
+  fs.writeFileSync(path.join(at(FAMILY), 'data.js'), head + [
+    "const D = require('../../spirit.js').require('spirit/data.js');",
+    "D.makeFamily('" + FAMILY + "', function () {",
+    "  const HOME = D.viewAt(null, '" + FAMILY + "');",
+    "  D.addTranslator({ onJob: function (job) {",
+    "    if (!(job && job.module === 'spirit.app." + FAMILY + "' && job.app && job.app.item && job.app.item.id)) return;",
+    "    D.viewAt(job.fromNode || null, '" + FAMILY + "').set('rows/' + job.app.item.id, job.app.item);",
+    "  } });",
+    "  return { item: function (id) { return id ? HOME.get('rows/' + id) || null : null; } };",
+    "});",
+    "module.exports = {};",
+  ].join('\n') + '\n');
+  fs.writeFileSync(path.join(at(SHED_FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
+  fs.writeFileSync(path.join(at(SHED_FAMILY), 'data.js'), head + [
+    "module.exports = { cache: { shed: function (rows, limit, bytes) {",
+    "  const kept = rows.slice();",
+    "  while (kept.length > 1 && bytes(kept) > limit) kept.pop();",
+    "  return kept;",
+    "} } };",
+  ].join('\n') + '\n');
+}
+function removeFamilies() { [FAMILY, SHED_FAMILY].forEach(function (n) { try { fs.rmSync(path.join(RUN, 'spirit', 'app', n), { recursive: true, force: true }); } catch (e) { /* none */ } }); }
 const test = CHILD ? null : require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends (by the parent; a child is handed its folder).
@@ -71,7 +104,7 @@ function release() { gate.held = false; const w = gate.waiting.splice(0); w.forE
 const asked = [];
 // The one family path function (goal/G41.12), spirit.js's own, read before the stand-in takes spirit.js's place. spirit.js
 // loads the data set as it is required, onto the real spirit object; it is let go again, so appServer's own load of it
-// puts it on the stand-in, where the desk's translator finds it.
+// puts it on the stand-in, where the planted family's translator finds it.
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 delete require.cache[require.resolve(path.join(RUN, 'spirit', 'data.js'))];
 const fake = {
@@ -115,9 +148,10 @@ process.argv = [process.argv[0], path.join(TMP, NAME + '.js'), '--pipe', PIPE];
 
 let bootstrap = [];
 let bootstraps = 0;
-const GOAL = { id: 'goal/G9', goal: '', title: 'the goal', version: 1 };
-const item = function (n, extra) { return Object.assign({ id: 'goal/G9.' + n, goal: 'goal/G9', title: 'item ' + n, version: 1 }, extra || {}); };
-const row = function (f) { return { verb: 'goal.whole', goal: 9, item: f }; };
+// The planted family's rows: an item each, filed by its id. Group a (a1, a2 ...) and group b, for a cache holding two.
+const GOAL = { id: 'head', title: 'the head row' };
+const item = function (n, extra, group) { return Object.assign({ id: (group || 'a') + n, title: 'item ' + n }, extra || {}); };
+const row = function (f) { return { item: f }; };
 // The client's cache file for the publisher (goal/G41.28, box v19; Andy: "this way an appServer in client-mode can derive
 // the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"): in spirit/state/<client server>/cache/
 // (goal/G43.20: "cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"),
@@ -136,22 +170,21 @@ const cacheFile = function (name) {
 function start(streamOpts, publisherOpts) {
   const A = require(FILE);
   const s = A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {
-    stream: Object.assign({ module: 'spirit.app.desk', translator: TRANSLATOR }, streamOpts || {}),
+    stream: Object.assign({ module: 'spirit.app.' + FAMILY, translator: TRANSLATOR }, streamOpts || {}),
     publisher: Object.assign({ family: NAME, bootstrap: function () { bootstraps += 1; return bootstrap.slice(); }, waitMs: 5000 }, publisherOpts || {}),
   });
   return { A: A, s: s, D: A.data };
 }
-// What the client's cache holds, asked of the desk's data.js, which alone names its branches (goal/G41.28; Andy:
-// "the client manager should keep that cache"): spirit.data.desk.data, attached by appServer to the process's spirit.
-const kept = function () { return (globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) || null; };
+// What the client's cache holds, asked of the family's data.js, which alone names its branches (goal/G41.28; Andy:
+// "the client manager should keep that cache"): spirit.data.<family>.data, attached by appServer to the process's spirit.
+const kept = function () { return (globalThis.spirit && ((globalThis.spirit.data || {})[FAMILY] || {}).data) || null; };
 const itemOf = function (id) { const K = kept(); return K ? K.item(id) : null; };
-const partOf = function (id) { const K = kept(); return K ? K.part(id) : null; };
-const hasIn = function (D, n) { return !!itemOf('goal/G9.' + n); };
+const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 
 // ── a child: one process of a restart, or of a cache switch ────────────────────────────────────────────────────────
 async function child(mode) {
   const out = {};
-  const FAM = childArgv[6] || 'desk';
+  const FAM = childArgv[6] || FAMILY;
   if (mode === 'first') {
     // Cache on: the first run of a client, its push landed.
     const { s, D } = start({ cache: true });
@@ -175,7 +208,7 @@ async function child(mode) {
     bootstrap = [row(GOAL), row(item(1, { title: 'item 1, renamed', version: 2 }))];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(400);
-    out.title = itemOf('goal/G9.1') && itemOf('goal/G9.1').title;
+    out.title = itemOf('a1') && itemOf('a1').title;
     out.two = hasIn(D, 2);
   } else if (mode === 'off' || mode === 'nofamily') {
     // off: no cache switch; nofamily: the switch on, but the sender's family has no folder on this node.
@@ -185,62 +218,42 @@ async function child(mode) {
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(400);
   } else if (mode === 'every') {
-    // The default limit: two goals, both kept, every row of each (box v15: "every goal, no filtering on the client side").
-    const { A, s, D } = start({ cache: true });
+    // The default limit: two groups of rows, both kept, every row of each (box v15: "The cache keeps everything the
+    // server sends, every goal, no filtering on the client side").
+    const { A, s } = start({ cache: true });
     await tick(100);
     bootstrap = [row(GOAL)];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(200);
     for (let i = 1; i <= 3; i++) A.publish(row(item(i)));
     await tick(200);
-    for (let i = 1; i <= 3; i++) A.publish({ verb: 'goal.whole', goal: 10, item: { id: 'goal/G10.' + i, goal: 'goal/G10', title: 'item ' + i, version: 1 } });
+    for (let i = 1; i <= 3; i++) A.publish(row(item(i, {}, 'b')));
     await tick(800);
-    out.g9 = []; out.g10 = [];
-    for (let i = 1; i <= 3; i++) { if (itemOf('goal/G9.' + i)) out.g9.push(i); if (itemOf('goal/G10.' + i)) out.g10.push(i); }
-  } else if (mode === 'items' || mode === 'chat') {
-    // One goal (Andy, Q2: "when there is only one goal, then you shed the longest untouched item, LOCK, stock and
-    // barrel, when there is only one goal with one item you shed the oldest chat line").
-    const { A, s, D } = start({ cache: { limit: mode === 'items' ? 1500 : 2500 } });
-    await tick(100);
-    bootstrap = [row(GOAL)];
-    out.subscribed = await s.subscribe(PUBLISHER, FAM);
-    await tick(200);
-    const long = function (n) { return 'a row long enough to fill a small cache quickly, number ' + n + ' '.repeat(140) + '.'; };
-    const line = function (id, n) { return { table: 'chat', id: id, row: { at: '2026-10-28T05:00:' + String(n).padStart(2, '0') + '.000Z', by: 'andy', text: long(n) } }; };
-    if (mode === 'items') {
-      A.publish(row(item(1)));
-      A.publish(line('goal/G9.1', 0));
-      for (let i = 2; i <= 10; i++) { await tick(30); A.publish(row(item(i, { title: long(i) }))); }
-    } else {
-      A.publish(row(item(1)));
-      for (let i = 1; i <= 30; i++) { await tick(10); A.publish(line('goal/G9.1', i)); }
-    }
-    await tick(1500);
-    out.goal = !!itemOf('goal/G9');
-    out.items = []; for (let i = 1; i <= 10; i++) if (itemOf('goal/G9.' + i)) out.items.push(i);
-    const whole = partOf('goal/G9.1');
-    out.chat = whole && Array.isArray(whole.chat) ? whole.chat.map(function (l) { return Number(String(l.at).slice(17, 19)); }) : [];
+    out.a = []; out.b = [];
+    for (let i = 1; i <= 3; i++) { if (itemOf('a' + i)) out.a.push(i); if (itemOf('b' + i)) out.b.push(i); }
   } else if (mode === 'limit') {
-    // Two goals, ten rows each: goal/G9 first and untouched since, goal/G10 after. Together past the limit, either alone
-    // within it: the desk's family api.js (Andy, Q2: "THE LONGEST UNTOUCHED GOAL GOES, LOCK, STOCK AND BARREL").
-    const { A, s, D } = start({ cache: { limit: 3500 } });
+    // Ten rows of group a, then ten of group b: together past the limit, the newest alone within it. The family it follows
+    // (FAM) sheds: zzstream has no cache rules, so the app server's own default sheds the oldest first; zzshed's own shed
+    // drops the newest. What stays is read from the cache file, which holds the kept rows, the family's translator or not.
+    const { A, s } = start({ cache: { limit: 3500 } });
     await tick(100);
     bootstrap = [row(GOAL)];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(200);
     const long = function (n) { return 'a row long enough to fill a small cache quickly, number ' + n + ' '.repeat(140) + '.'; };
-    for (let i = 1; i <= 10; i++) A.publish(row(item(i, { title: long(i) })));
+    for (let i = 1; i <= 10; i++) { await tick(10); A.publish(row(item(i, { title: long(i) }))); }
     await tick(300);
-    for (let i = 1; i <= 10; i++) A.publish({ verb: 'goal.whole', goal: 10, item: { id: 'goal/G10.' + i, goal: 'goal/G10', title: long(i), version: 1 } });
+    for (let i = 1; i <= 10; i++) { await tick(10); A.publish(row(item(i, { title: long(i) }, 'b'))); }
     await tick(1500);
-    out.g9 = []; out.g10 = [];
-    for (let i = 1; i <= 10; i++) { if (itemOf('goal/G9.' + i)) out.g9.push(i); if (itemOf('goal/G10.' + i)) out.g10.push(i); }
+    let file = null;
+    try { file = JSON.parse(fs.readFileSync(cacheFile(NAME), 'utf8')); } catch (e) { file = null; }
+    out.kept = file && Array.isArray(file.rows) ? file.rows.map(function (r) { return r && r.item ? r.item.id : ''; }) : [];
   }
   process.stdout.write('RESULT ' + JSON.stringify(out) + '\n');
   process.exit(0);
 }
 function runChild(mode, name, fam) {
-  const r = spawnSync(process.execPath, [SELF_FILE, '--child', mode, TMP, name, fam || 'desk'], { encoding: 'utf8', timeout: 30000 });
+  const r = spawnSync(process.execPath, [SELF_FILE, '--child', mode, TMP, name, fam || FAMILY], { encoding: 'utf8', timeout: 30000 });
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('RESULT ') === 0; })[0];
   try { return JSON.parse(line.slice(7)); } catch (e) { return {}; }
 }
@@ -441,9 +454,10 @@ function stateCachePart() {
 
   function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
   const NAME = 'follower';
-  // A sender whose family has a data.js on the node: desk's (spirit/app/desk/data.js), so what is kept of it comes back.
+  // A sender whose family has a data.js on the node, so what is kept of it comes back: zzkept, planted in the scratch tree
+  // beside the follower (goal/G47.4: a test names no app of the tree as its fixture).
   const SENDER = 'MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=';
-  const FAMILY = 'desk';
+  const FAMILY = 'zzkept';
 
   // appServer-stateCache: appServer reads and writes its cache in spirit/state/<name>/cache/, and nowhere else (goal/G43.20)
   let root = '', run = '', id = '', state = '', cache = '';
@@ -480,6 +494,10 @@ function stateCachePart() {
     run = path.join(root, 'spirit', 'run');
     const app = path.join(run, 'spirit', 'app', NAME);
     fs.mkdirSync(app, { recursive: true });
+    const fam = path.join(run, 'spirit', 'app', FAMILY);
+    fs.mkdirSync(fam, { recursive: true });
+    fs.writeFileSync(path.join(fam, 'api.js'), 'module.exports = { verbs: {} };\n');
+    fs.writeFileSync(path.join(fam, 'data.js'), 'module.exports = {};\n');
     // The follower: a server of spirit/app/ following a stream with its cache on. Its translator says by a file what came
     // back; once read back, it saves its caches (saveCaches) and says which files it wrote.
     fs.writeFileSync(path.join(app, 'rows.js'), [
@@ -576,17 +594,18 @@ function ownPart() {
   }, test.limit.quick);
   test.run('the familyPath of an app named <name> is spirit/app/<name>/api.js', 0.2, function () {
     const A0 = require(FILE);
-    const fp = typeof A0.familyPath === 'function' ? A0.familyPath('testicle') : null;
-    return fp === 'spirit/app/testicle/api.js' || false;
+    // The planted family, an app of spirit/app/ for this run (goal/G47.4: no app of the tree named as a fixture).
+    const fp = typeof A0.familyPath === 'function' ? A0.familyPath(FAMILY) : null;
+    return fp === 'spirit/app/' + FAMILY + '/api.js' || false;
   }, test.limit.quick);
-  // Apps of spirit/app/ since goal/G43.27 (Andy: "cw, you bring deskClient and ... into spirit/app/ under their old
-  // names, do the backup as well"): the family's interface at the top of the app folder, no family/ left.
-  const moved = function (n) {
-    const app = path.join(RUN, 'spirit', 'app', n);
-    return (fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family'))) || false;
-  };
-  test.run('the interface of backup is spirit/app/backup/api.js, and no family/ folder is left', 0.2, function () { return moved('backup'); }, test.limit.quick);
-  test.run('the interface of deskClient is spirit/app/deskClient/api.js, and no family/ folder is left', 0.2, function () { return moved('deskClient'); }, test.limit.quick);
+  // Apps of spirit/app/ since goal/G43.27: the family's interface at the top of the app folder, no family/ left. Every
+  // app folder of the tree, read from the folder, so a new one is judged the day it lands.
+  test.run('no app folder of spirit/app/ holds a family/ folder', 0.2, function () {
+    const apps = path.join(RUN, 'spirit', 'app');
+    let names = [];
+    try { names = fs.readdirSync(apps, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; }); } catch (e) { names = []; }
+    return (names.length > 0 && !names.some(function (n) { return fs.existsSync(path.join(apps, n, 'family')); })) || false;
+  }, test.limit.quick);
   // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
   test.run('no file names the deskAgent server', 0.2, function () {
     const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); });
@@ -632,7 +651,7 @@ function ownPart() {
   // wsl at 2b6b8b30), not here.
 
   // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
-  // goal/G41.24: the desk's translator is its family's data.js; the stream checks below follow it.
+  // goal/G41.24: a stream's translator is its family's data.js; the stream checks below follow the planted family's.
   const O = { A: null, s: null, D: null };
   const has = function (n) { return hasIn(O.D, n); };
   const noServer = function () { return !O.D || !O.s || typeof O.s.subscribe !== 'function'; };
@@ -733,7 +752,7 @@ function ownPart() {
   }, test.limit.slow);
   test.run('the push takes precedence, so a row it carries replaces the one kept', 0.2, function () {
     if (noServer()) return false;
-    const one1 = itemOf('goal/G9.1');
+    const one1 = itemOf('a1');
     return (!!one1 && one1.title === 'item 1, pushed') || false;
   }, test.limit.quick);
   test.run('the push drops nothing it does not carry, so items the push leaves out stay kept', 0.2, function () {
@@ -815,9 +834,9 @@ function ownPart() {
     const one = C.one || {};
     return (!!one.byNode && one.byNode.length === 1 && !!one.top && one.top.length === 1) || false;
   }, test.limit.quick);
-  test.run('under the sender\'s key its spirit.data holds the family, as <key>.desk', 0.2, function () {
+  test.run('under the sender\'s key its spirit.data holds the family, as <key>.<family>', 0.2, function () {
     const one = C.one || {};
-    return (Array.isArray(one.family) && one.family.indexOf('desk') !== -1) || false;
+    return (Array.isArray(one.family) && one.family.indexOf(FAMILY) !== -1) || false;
   }, test.limit.quick);
   test.run('started again, it reads its cache back before it subscribes', 0.2, function () {
     C.two = runChild('restart', 'cacheProbe');
@@ -837,10 +856,10 @@ function ownPart() {
     runChild('nofamily', 'cacheNoFam', 'noSuchServer');
     return !fs.existsSync(cacheFile('cacheNoFam')) || false;
   }, test.limit.quick);
-  test.run('within the limit the cache keeps every goal the sender sends, no filtering on the client side', 0.2, function () {
+  test.run('within the limit the cache keeps every row the sender sends, no filtering on the client side', 0.2, function () {
     clearCache('cacheEvery');
     const every = runChild('every', 'cacheEvery');
-    return (Array.isArray(every.g9) && every.g9.length === 3 && Array.isArray(every.g10) && every.g10.length === 3) || false;
+    return (Array.isArray(every.a) && every.a.length === 3 && Array.isArray(every.b) && every.b.length === 3) || false;
   }, test.limit.slow);
   test.run('the cache keeps to the limit the client sets', 0.2, function () {
     clearCache('cacheLimit');
@@ -849,29 +868,26 @@ function ownPart() {
     try { size = fs.statSync(cacheFile('cacheLimit')).size; } catch (e) { size = -1; }
     return (size > 0 && size <= 3500) || false;
   }, test.limit.slow);
-  test.run('past the limit the goal untouched longest goes whole, and the other is kept whole', 0.2, function () {
-    const full = C.full || {};
-    return (Array.isArray(full.g9) && full.g9.length === 0 && Array.isArray(full.g10) && full.g10.length === 10) || false;
+  // The family's own rules do the shedding (Andy, Q2: "it sits at the receiving end of the stream, it owns the cache ...
+  // IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE"); the desk's are judged in the desk's own test (goal/G47.4).
+  // A family with none: the oldest rows go first (appServer's shedOldest). The rows kept are the newest, in order, and
+  // the last row sent is among them.
+  const tail = function (kept, last) { return kept.length > 1 && kept.length < 21 && kept[kept.length - 1] === last && kept.indexOf('head') === -1; };
+  test.run('past the limit, a family with no cache rules of its own loses its oldest rows first, and the newest stay', 0.2, function () {
+    const kept = Array.isArray((C.full || {}).kept) ? C.full.kept : [];
+    return (tail(kept, 'b10') && kept.indexOf('b1') !== -1) || false;
   }, test.limit.quick);
-  // One goal: the item untouched longest goes, its chat with it; the newest stay (Andy, Q2).
-  test.run('with one goal past the limit, the items untouched longest go whole, the newest stay, and the goal stays', 0.2, function () {
-    clearCache('cacheItems');
-    C.items = runChild('items', 'cacheItems');
-    const kept = Array.isArray(C.items.items) ? C.items.items : [];
-    const prefixGone = kept.length > 0 && kept.length < 10 && kept.every(function (n, i) { return n === 10 - kept.length + 1 + i; });
-    return (!!C.items.goal && prefixGone) || false;
-  }, test.limit.slow);
-  test.run('an item shed goes lock, stock and barrel, its chat with it', 0.2, function () {
-    const items = C.items || {};
-    const kept = Array.isArray(items.items) ? items.items : [];
-    return (kept.indexOf(1) === -1 && Array.isArray(items.chat) && items.chat.length === 0) || false;
-  }, test.limit.quick);
-  test.run('with one goal and one item past the limit, the oldest chat lines go, and the item and the newest lines stay', 0.2, function () {
-    clearCache('cacheChat');
-    const chat = runChild('chat', 'cacheChat');
-    const lines = Array.isArray(chat.chat) ? chat.chat : [];
-    const newest = lines.length > 0 && lines.length < 30 && lines.every(function (n, i) { return n === 30 - lines.length + 1 + i; });
-    return (!!chat.goal && Array.isArray(chat.items) && chat.items.length === 1 && newest) || false;
+  test.run('past the limit, a family with a shed of its own is shed by it, never by the app server\'s default', 0.2, function () {
+    clearCache('cacheShed');
+    const shed = runChild('limit', 'cacheShed', SHED_FAMILY);
+    const kept = Array.isArray(shed.kept) ? shed.kept : [];
+    // zzshed drops the newest: what stays is the first rows sent, in order, from the head row on, and the last row sent is
+    // not among them. The app server's default would have kept the last and lost the head.
+    const sent = ['head'];
+    for (let i = 1; i <= 10; i++) sent.push('a' + i);
+    for (let i = 1; i <= 10; i++) sent.push('b' + i);
+    const prefix = kept.length > 1 && kept.length < sent.length && kept.every(function (id, i) { return id === sent[i]; });
+    return (prefix && kept.indexOf('b10') === -1) || false;
   }, test.limit.slow);
 }
 
@@ -879,8 +895,10 @@ if (CHILD) {
   child(CHILD).catch(function () { process.stdout.write('RESULT ' + JSON.stringify({}) + '\n'); process.exit(1); });
 } else {
   // appServer.js: one stream protocol for every server (goal/G41.11, goal/G41.12). Its own checks first, then the parts.
+  plantFamilies();
   test.after(function () {
-    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit', 'cacheItems', 'cacheChat'].forEach(clearCache);
+    removeFamilies();
+    ['cacheProbe', 'cacheOff', 'cacheNoFam', 'cacheEvery', 'cacheLimit', 'cacheShed'].forEach(clearCache);
     try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* a temp folder left is no failure */ }
   });
   gateSection();
