@@ -25,7 +25,6 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
 // Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/element/fieldInput.js')).catch(function () {});
 var deskOpts = {};
@@ -975,7 +974,10 @@ function deskLoad() {
 // The backup server's status.get: its last check and last copy, marked red
 // when something was closed after the last check. Kept by the backup family's
 // cache manager (goal/G41.28), spirit.data.backup.data; the line follows its watch.
-var DESK_BACKUP_DATA = '/spirit/app/backup/data.js';
+// THROUGH ITS INTERFACE (goal/G47.1; Andy: "every api.js requires it's companion data.js, and is the only script to require
+// that data.js"): the backup family's api.js, which brings its data.js. A node with no backup server serves no interface
+// for it: then nothing is asked and no line is drawn.
+var DESK_BACKUP_API = '/spirit/app/backup/api.js';
 var deskBackupWatched = null;
 function deskBackupPaint() {
   // Its own line alone once the page is drawn (goal/G27.9: one change, one element repainted).
@@ -983,13 +985,14 @@ function deskBackupPaint() {
   if (el && deskLoaded) el.innerHTML = deskBackupHtml(); else deskDraw();
 }
 function deskAskBackup() {
-  return deskNeed(DESK_BACKUP_DATA).then(function () {
+  return deskNeed(DESK_BACKUP_API).then(function () {
     var B = ((window.spirit.data || {}).backup || {}).data;
+    if (!B) return;
     if (!deskBackupWatched) deskBackupWatched = B.watch(deskBackupPaint);
     return Promise.resolve(deskVia.verb('backup.status.get', {})).then(function (r) {
       B.keep(r && r.status === 200 ? r.body : null);
     }, function () { B.keep(null); });
-  });
+  }, function () { /* no backup server on this node: no line */ });
 }
 function deskBackupHtml() {
   var B = typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).backup || {}).data;
@@ -1016,6 +1019,9 @@ function deskHeaderMove() {
   var head = AH.create(old.parentNode);
   old.parentNode.insertBefore(head, old);
   head.id = 'desk-bars';
+  // ITS OWN HEIGHT, ALWAYS (goal/G47.1, -browser: "it keeps its height and its width when given far more than it holds"):
+  // a full list below it never squeezes the bars; the panes take only what they leave.
+  head.style.flex = 'none';
   while (old.firstChild) head.appendChild(old.firstChild);
   old.parentNode.removeChild(old);
 }
@@ -1036,12 +1042,16 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       // and stay sticky below those title bars". The shell's app header does the sticking (goal/G6.1): this block is
       // moved into it right after this markup lands (deskHeader).
       // THE BLINK, DECLARED ONCE (goal/G2.4): a working agent's bubble border blinks; the mark is data-working.
+      // ONE BOX, KEEPING WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: every box it puts into its container declares
+      // overflow not visible, and it keeps the size it is given): the blink, the bars and the panes in one fill box, which is
+      // also what a panel covers while it is open.
+      '<div class="fill" style="overflow:hidden">' +
       '<style>@keyframes desk-blink { 50% { border-color: transparent; } } ' +
         '#desk-tabs [data-bubble][data-working="1"] { animation: desk-blink 1s step-start infinite; }</style>' +
       // FLAT AND JOINED TO THE TITLE BAR (goal/G9.6). Andy: "the header area should not contain rounded corners. and
       // its container should have no margins and no padding." No goal bubble either: the List's goal row opens the
       // goal (his answer to G9.6 Q1).
-      '<div id="desk-bars">' +
+      '<div id="desk-bars" style="flex:none">' +
         // GO ALL at the right of the tab bar, on the List tab only (desk/G3.4).
         '<div style="display:flex;align-items:center"><div id="desk-tabs" style="flex:1;display:flex;flex-wrap:wrap;align-items:center"></div>' +
           '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
@@ -1083,6 +1093,7 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
           '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
         '</div>' +
+      '</div>' +
       '</div>';
     // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11), the
     // rule's label the label rule and its text a paragraph (rule.add.json).
