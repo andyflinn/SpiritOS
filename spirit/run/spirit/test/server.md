@@ -24,7 +24,7 @@ passing: the server MUST not CRASH or HANG."*
 
 ### How
 
-- A scratch copy of `spirit/run` on a node of its own (`spirit/test/headLessChrome.js`), its app servers turned on at home
+- A scratch copy of `spirit/run` on a node of its own (`spirit/test/headLessChrome.js`), its app servers turned on at home, every one of the tree, each app folder whose `<name>.json` says `node.mount` true and holds its `<name>.js`, read from the folders and none named in the test (goal/G47.4)
   by a `face.home` sidecar each (desk, backup, chat; the file server, intrinsic, runs on every node).
   The list names agent too, but agent is an app of `spirit/app/` now, started by `active` in its `node.json`, which a
   sidecar does not set. Neither Andy's node nor an agent's is touched.

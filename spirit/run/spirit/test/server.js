@@ -86,8 +86,17 @@ test.run('the page at "/" loads face.html\'s own scripts first', 0.2, async func
 // the shape of their arguments; then garbage goes in raw, over HTTP and over a bare socket, never through spirit.js.
 
 // The app servers turned on on the scratch node, by active in spirit/state/<name>/node.json, which scratchNode writes for
-// each (goal/G43.12, G43.20).
-const SERVERS = ['agent', 'desk', 'backup', 'chat'];
+// each (goal/G43.12, G43.20). EVERY APP SERVER OF THE TREE, READ FROM ITS OWN MANIFEST (the box: "all appServers are
+// systematically tested for dealing with bad arguments"; goal/G47.4, Andy: "you make bloody well sure that such stupid
+// hard-coded tests move"): each app folder whose <name>.json says node.mount true and holds its <name>.js, so no app named
+// here, and a new server is attacked the day it lands.
+const SERVERS = (function () {
+  const apps = path.join(RUN, 'spirit', 'app');
+  return fs.readdirSync(apps).filter(function (n) {
+    try { const m = JSON.parse(fs.readFileSync(path.join(apps, n, n + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(apps, n, n + '.js')); }
+    catch (e) { return false; }
+  });
+}());
 // A throw is answered within this, or it hung; the plain call after a batch within PLAIN_MS.
 const ASK_MS = 10000;
 const PLAIN_MS = 3000;

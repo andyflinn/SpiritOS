@@ -35,12 +35,9 @@ if (test) test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/
 const tick = function (ms) { return new Promise(function (r) { setTimeout(r, ms || 20); }); };
 
 // The publisher's key, base64 as a node key is. It holds a + and a /, as real keys do (goal/G41.28), so only base64url
-// names its cache file and its branch (cacheFile below). PUBLISHER_HEX is left from the hex name of box v15; nothing reads it.
+// names its cache file and its branch (cacheFile below).
 const PUBLISHER = Buffer.from('KEY-DESK\xfb\xef\xbf\xfe', 'latin1').toString('base64');
-const PUBLISHER_HEX = Buffer.from(PUBLISHER, 'base64').toString('hex');
 const SELF = 'KEY-CLIENT';
-// The server families (box v15, Family folders); deskAgent killed on goal/G41.28 (Andy: "all, KILL deskAgent!").
-const FAMILIES = ['backup', 'deskClient', 'testicle'];
 
 const TMP = CHILD ? String(process.argv[4]) : ownTemp('appServer-test-');
 // A server name of the test's own, so its cache folder (spirit/state/<name>/) is no real server's.
