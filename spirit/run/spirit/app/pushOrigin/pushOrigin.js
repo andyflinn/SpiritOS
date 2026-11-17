@@ -33,7 +33,10 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-function git(args, cwd) { return spawnSync('git', args, { cwd: cwd, encoding: 'utf8', timeout: 60000 }); }
+// GIT SPEAKS ENGLISH HERE (goal/G47.1): a git in another language says nothing this file reads ("without --index"), so its
+// words are asked in English, on every machine.
+const GIT_ENV = Object.assign({}, process.env, { LC_ALL: 'C', LANG: 'C', LANGUAGE: 'C' });
+function git(args, cwd) { return spawnSync('git', args, { cwd: cwd, encoding: 'utf8', timeout: 60000, env: GIT_ENV }); }
 function out(r) { return ((r && (r.stdout || '') + (r.stderr || '')) || '').trim(); }
 
 function currentBranch(repo) {
@@ -67,7 +70,8 @@ function pushOrigin(opts) {
   // STASH ONCE, so an unsaved edit does not derail the rebase, under a label of its own, found again by it below.
   const stashLabel = 'pushOrigin ' + Date.now() + ' ' + process.pid;
   const stash = git(['stash', 'push', '-u', '-m', stashLabel], repo);
-  const stashed = stash.status === 0 && /Saved working directory/i.test(stash.stdout + stash.stderr);
+  // Stashed when git stash list holds its label, not when git says so in words: nothing to stash makes no entry.
+  const stashed = stash.status === 0 && (git(['stash', 'list', '--format=%gs'], repo).stdout || '').split('\n').some(function (l) { return l.trim().slice(-(': ' + stashLabel).length) === ': ' + stashLabel; });
   // '' once its own stash is back (or there was none); else what went wrong, for the answer.
   const popStash = function () {
     if (!stashed) return '';
