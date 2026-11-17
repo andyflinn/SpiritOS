@@ -95,19 +95,21 @@ what it answers.
 
 Box: *"the dropdown filters are include ID (contact), branch (not fucking family) and verb (if a branch is selected)"*,
 *"for any dropdown the default is (unselected==ALL)"*, *"the search therefore must find any user that has grants for any
-branch/verb combination"*, *"every row still has a revoke button."*, *"sticky, at the bottom, a rowForm: ❌ \"Delete all
-Grants you see\" [Delete-armingButton]"*. Andy, on its chat: *"the more i modify the search, the more records will be
-cached i'll be able to zero in on things i can delete.. if i delete the first few of your grants invisible ones will become
-visible"*. So the answer stays one packet, and each filter asks the node again. The verb half showing only once a branch
-is chosen is the api selector's, tested in its own folder.
+branch/verb combination"*, *"every row still has a revoke button."*, and *"sticky, at the bottom, a rowForm for delete: ❌
+[ID-dropdown] [branch-dropdown] [verb-dropdown] [Delete-armingButton]. It acts on what is chosen in it, not on what the
+list shows"*: a contact alone revokes every grant of that contact, a contact and a branch every grant of that branch for
+that contact, all three only that one grant; *"No new verb: the node revokes one exact grant, so the panel searches the
+chosen contact, branch and verb, revokes each match, and asks again until none is left."* Andy, on its chat: *"the more i
+modify the search, the more records will be cached"*. So the answer stays one packet, and each filter asks the node again.
+The verb half showing only once a branch is chosen is the api selector's, tested in its own folder.
 
 - Its branch filter says *every branch* when none is chosen, and none of its words says family.
 - Choosing an ID, a branch, or a branch and verb asks the grants table's search again, with what was chosen in its text.
-- A second rowForm, its icon ❌, its words *Delete all Grants you see*, its button Delete, an arming button (loaded by
-  the panel itself), with no `press` of the rowForm; it stands last in the panel, below the grant list.
-- Its first press arms it and revokes nothing; the second revokes, through the grants table, each grant the filters let
-  through: only the chosen ID's, only the chosen branch's, or with nothing chosen every grant shown, and none deprecated
-  while deprecated is off.
+- A second rowForm, its icon ❌, its span an ID selector of the handed ID table then an api selector, its button Delete,
+  an arming button (loaded by the panel itself), with no `press` of the rowForm; it stands last, below the grant list.
+- Its first press arms it and revokes nothing. The second revokes, through the grants table, exactly the grants the row's
+  choice names, even when the table answers two rows at a time and says more (a revoked grant gone from it): a contact
+  alone, all of that contact's; with a branch, that branch's; with a verb too, that one; the list's filters change nothing.
 
 ## What its test must try to break
 
