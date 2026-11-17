@@ -34,7 +34,7 @@
     // stops the running suite and runs it first, as a top-10 fix does; the detail shows its full script and suite path"; Andy:
     // "the testicle detail doesn't show the full script name"): the script's and the suite's path in full under the title, and
     // the busy button the script tab's rows have, asking testicle.run for this script and suite.
-    container.innerHTML = '<div class="testicle-history fill"><div class="testicle-title" data-history="title"></div>' +
+    container.innerHTML = '<div class="testicle-history fill" style="overflow:auto"><div class="testicle-title" data-history="title"></div>' +
       '<div class="testicle-paths"><span data-history="run"></span> <span data-history="script"></span><br><span data-history="suite"></span></div>' +
       '<table class="testicle-flips" data-history="rows"><thead><tr><th>Flipped</th><th>Result</th><th>Severity</th><th>Title</th><th>Script</th><th>Suite</th></tr></thead><tbody></tbody></table></div>';
     container.querySelector('[data-history="title"]').textContent = test;

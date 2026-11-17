@@ -36,7 +36,7 @@
     var script = String(o.script || '');
     var gone = false;
     var list = null;
-    container.innerHTML = '<div data-suites="list" class="fill"></div>';
+    container.innerHTML = '<div data-suites="list" class="fill" style="overflow:hidden"></div>';
 
     parts.then(function () {
       if (gone) return;

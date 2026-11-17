@@ -46,7 +46,7 @@
     var list = null;
     var scriptList = null;
     var suiteList = null;
-    container.innerHTML = '<div data-tests="list" class="fill"></div>';
+    container.innerHTML = '<div data-tests="list" class="fill" style="overflow:hidden"></div>';
     // THE TWO SELECTORS, mounted in the search's 🪣 row: each holds what is chosen as its value, '' for all.
     var scriptSel = document.createElement('span');
     scriptSel.className = 'testicle-script-selector';
