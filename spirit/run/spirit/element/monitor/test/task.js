@@ -49,7 +49,9 @@ test.run('a scratch node comes up with three apps planted, and Chrome opens its 
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
-}, test.limit.quick);
+  // Slow, not quick: a scratch node booted, Chrome started and up to 20 s for the page cannot fit 10 s; on Andy's node,
+  // loaded by his testicle run, it did not (2026-11-17, red at 0.7, every row after it with it).
+}, test.limit.slow);
 test.run('it loads through spirit.require', 0.2, async function () {
   if (!chrome || chrome.error) return false;
   loaded = await chrome.evaluate('spirit.require("spirit/element/monitor/task.js").then(function () { return spirit.element.spirit.element.monitor.task && typeof spirit.element.spirit.element.monitor.task.create === "function" ? "loaded" : "no create"; })');
