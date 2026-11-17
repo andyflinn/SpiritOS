@@ -26,6 +26,14 @@ const API = path.join(__dirname, '..', 'api.js');
 
 const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
 
+// NO CORE IN deskClient EITHER (Andy, 2026-11-17: "The stupid core designation is worthless in desk anyway ... may as well toss
+// that shit from desk"; "wsl, if this fix works, then you need to catch up with the respective tests, otherwise someone will
+// build the core shit back into desk and deskClient"): it never works out whether a file is core, nor carries a core mark.
+test.run('deskClient never works out whether a file is core: no coreFiles, no isCore, no core mark on a file', 0.2, function () {
+  let t = '';
+  try { t = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return false; }
+  return (!!t && !/coreFiles|isCore|coreGrant|CORE_GRANT/.test(t) && !/\bcore\s*:/.test(t)) || false;
+}, test.limit.quick);
 const SELF = 'wsl-claude';
 const SELF_KEY = 'KEY-WSL';
 const OTHER = 'claude-windows';
