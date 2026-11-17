@@ -26,3 +26,13 @@ node with its app's server on, is red unless it loaded its own app's api.js and 
   mounter. One title, reported for each script.
 - A script that installs no element, or an app with neither file, is said as a comment, never green.
 - No made-up data: nothing is planted (box v113).
+
+## Each app does what its own manifest says (goal/G47.4)
+
+Andy: *"THIS IS something that belongs in fucking app-child-browser"*, *"that fucking test is useless, it fucking assumes settings in fucking spirit/app/<name>/<name>.json"*, *"you make bloody well sure that such stupid hard-coded tests move to app-child-* immediately"*. Every judged app is read from its own `<name>.json`; no app's settings are written in this test. After the scripts, one face page on the same scratch node:
+
+- Every app saying no `shell.mount: true` and not `node.run` is made active first, by the verb, else on its disc in the scratch run, so only its manifest can keep its tile away. The app selector mounted as boot.js mounts a shell, with no options, shows no tile of it.
+- An app saying `shell.mount: true`: its `spirit/app/<name>/element.js` is there (red under its script if not), and, filed under that element.js when this run judges it, it mounted alone on its bare page.
+- An app saying `node.run`: the app search as a pane lists it, as a dropdown pressed open does not, and its detail shows a Run button and no Activate.
+- Each app's results are filed under its `<name>.js`, else its `element.js`, whichever the run judges; the app selector itself is not judged as drawn. When the world or this phase did not run, each check is said red.
+- Not judged here: that an app saying `shell.mount: true` shows its tile, which would make every such app active on the scratch node.

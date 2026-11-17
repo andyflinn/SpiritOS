@@ -442,8 +442,8 @@ test.after(stopAll);
   // folders and makes sure that app search complies with the spec, and doesn't show tiles for ANY app with shell:mound:false?".
   // Every app is made active first, so "only activated apps" cannot be what keeps a tile away.
   {
-  let APPS, tree, treeOff, treeOn, keys, r, runs, LABELS, flipped;
-  test.run('the test\'s apps are planted, and the tree has apps without shell.mount true', 0.2, async function () {
+  let APPS, keys, r, runs, LABELS, flipped;
+  test.run('the test\'s apps are planted', 0.2, async function () {
     if (!W1.up) return false;
     APPS = path.join(node.root, 'spirit', 'run', 'spirit', 'app');
     const monitor = fs.readFileSync(path.join(APPS, 'monitor', 'element.js'), 'utf8');
@@ -458,14 +458,10 @@ test.after(stopAll);
       fs.writeFileSync(path.join(dir, k + '.json'), JSON.stringify(j, null, 2));
       fs.writeFileSync(path.join(dir, 'element.js'), monitor.split('spirit/app/monitor/element.js').join('spirit/app/' + k + '/element.js'));
     });
-    // The tree's own apps that do not say shell.mount true: none of them may show a tile either.
-    tree = fs.readdirSync(APPS).filter(function (n) { return !PLANT[n] && fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) {
-      let j = {};
-      try { j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); } catch (e) { j = {}; }
-      return { key: n, label: String((j.identity && j.identity.label) || n), mount: !!(j.shell && j.shell.mount === true), run: !!(j.node && j.node.run === true) };
-    });
-    treeOff = tree.filter(function (a) { return !a.mount && a.key !== 'app'; });
-    return (treeOff.length >= 1) ? true : false;
+    // THE TREE'S OWN APPS ARE JUDGED BY THEIR OWN MANIFESTS, in spirit/test/app-child-browser.js (goal/G47.4; Andy: "THIS IS
+    // something that belongs in fucking app-child-browser", "that fucking test is useless, it fucking assumes settings in
+    // fucking spirit/app/<name>/<name>.json"): this test judges only the apps it plants.
+    return Object.keys(PLANT).every(function (k) { return fs.existsSync(path.join(APPS, k, k + '.json')); }) || false;
   }, test.limit.quick);
 
   let loaded;
@@ -482,7 +478,7 @@ test.after(stopAll);
   const rows = function () { return chrome.evaluate('(function () { var r = (spirit.data.app && spirit.data.app.data) ? spirit.data.app.data.rows() : {}; var out = {}; ' + JSON.stringify(keys) + '.forEach(function (k) { out[k] = r[k] ? { active: r[k].active === true } : null; }); return JSON.stringify(out); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return {}; } }); };
   test.run('every app, planted and the tree\'s, is made active', 0.2, async function () {
     if (!W1.loaded) return false;
-    keys = Object.keys(PLANT).concat(treeOff.map(function (a) { return a.key; }));
+    keys = Object.keys(PLANT);
     await chrome.evaluate('(function () { var a = spirit.app && spirit.app.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
     await until(function () { return rows().then(function (r) { return keys.every(function (k) { return r[k] && r[k].active; }); }); }, 10000);
     // A row the node would not make active through the verb is made active on its disc, as a user's earlier press left it.
@@ -492,7 +488,7 @@ test.after(stopAll);
     if (notYet.length) { await until(function () { return rows().then(function (x) { return notYet.every(function (k) { return x[k] && x[k].active; }); }); }, 10000); r = await rows(); }
     // AN APP THAT SAYS node.run IS RUN, NEVER ACTIVE (goal/G43.21): it is a row, held inactive whatever its node.json says, so
     // two things keep its tile away; for every other app only shell.mount can.
-    runs = Object.keys(PLANT).filter(function (k) { return PLANT[k].run; }).concat(treeOff.filter(function (a) { return a.run; }).map(function (a) { return a.key; }));
+    runs = Object.keys(PLANT).filter(function (k) { return PLANT[k].run; });
     W1.rows = true;
     return true;
   }, test.limit.long);
@@ -529,22 +525,6 @@ test.after(stopAll);
     if (!W1.rows) return false;
     return (!!r['zzrunonly']) ? true : false;
   }, test.limit.quick);
-  test.run('backup is an active row', 0.2, async function () {
-    if (!W1.rows) return false;
-    return (!!(r['backup'] && r['backup'].active)) ? true : false;
-  }, test.limit.quick);
-  test.run('deskClient is an active row', 0.2, async function () {
-    if (!W1.rows) return false;
-    return (!!(r['deskClient'] && r['deskClient'].active)) ? true : false;
-  }, test.limit.quick);
-  test.run('publishData is a row that is run only, never active', 0.2, async function () {
-    if (!W1.rows) return false;
-    return (!!r['publishData']) ? true : false;
-  }, test.limit.quick);
-  test.run('pushOrigin is a row that is run only, never active', 0.2, async function () {
-    if (!W1.rows) return false;
-    return (!!r['pushOrigin']) ? true : false;
-  }, test.limit.quick);
 
   const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.app.element.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
   // The labels drawn as tiles: every visible leaf under the tiles whose text is a label of the test's.
@@ -565,24 +545,10 @@ test.after(stopAll);
     if (!J) return false;
     return J.d.indexOf(PLANT[k].label) === -1;
   };
-  const ofTheTree = function (how, key) {
-    const J = judged[how];
-    if (!J) return false;
-    const a = treeOff.filter(function (x) { return x.key === key; })[0];
-    if (!a) return false;
-    return J.d.indexOf(a.label) === -1;
-  };
-  test.run('every app of the tree without shell.mount true has a line of its own in this test', 0.2, function () {
-    if (!treeOff) return false;
-    const lined = ['backup', 'deskClient', 'publishData', 'pushOrigin'];
-    const unlined = treeOff.filter(function (a) { return lined.indexOf(a.key) === -1; }).map(function (a) { return a.key; });
-    return !unlined.length || false;
-  }, test.limit.quick);
-
   // Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!": tiles from the start
   test.run('on the tiles from the start, the app that says shell.mount true shows its tile', 0.2, async function () {
     if (!W1.rows) return false;
-    LABELS = Object.keys(PLANT).map(function (k) { return PLANT[k].label; }).concat(treeOff.map(function (a) { return a.label; }));
+    LABELS = Object.keys(PLANT).map(function (k) { return PLANT[k].label; });
     await mount({ face: 'tiles' });
     return look('tiles');
   }, test.limit.slow);
@@ -606,18 +572,6 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('on the tiles from the start, zzrunonly, which is run only with shell.mount false, shows no tile', 0.2, async function () {
     return planted('tiles', 'zzrunonly');
-  }, test.limit.quick);
-  test.run('on the tiles from the start, the tree\'s backup shows no tile', 0.2, async function () {
-    return ofTheTree('tiles', 'backup');
-  }, test.limit.quick);
-  test.run('on the tiles from the start, the tree\'s deskClient shows no tile', 0.2, async function () {
-    return ofTheTree('tiles', 'deskClient');
-  }, test.limit.quick);
-  test.run('on the tiles from the start, the tree\'s publishData shows no tile', 0.2, async function () {
-    return ofTheTree('tiles', 'publishData');
-  }, test.limit.quick);
-  test.run('on the tiles from the start, the tree\'s pushOrigin shows no tile', 0.2, async function () {
-    return ofTheTree('tiles', 'pushOrigin');
   }, test.limit.quick);
 
   // the same, tiles reached by the toggle from the pane
@@ -653,18 +607,6 @@ test.after(stopAll);
   test.run('on the tiles reached by the toggle, zzrunonly, which is run only with shell.mount false, shows no tile', 0.2, async function () {
     return planted('toggled tiles', 'zzrunonly');
   }, test.limit.quick);
-  test.run('on the tiles reached by the toggle, the tree\'s backup shows no tile', 0.2, async function () {
-    return ofTheTree('toggled tiles', 'backup');
-  }, test.limit.quick);
-  test.run('on the tiles reached by the toggle, the tree\'s deskClient shows no tile', 0.2, async function () {
-    return ofTheTree('toggled tiles', 'deskClient');
-  }, test.limit.quick);
-  test.run('on the tiles reached by the toggle, the tree\'s publishData shows no tile', 0.2, async function () {
-    return ofTheTree('toggled tiles', 'publishData');
-  }, test.limit.quick);
-  test.run('on the tiles reached by the toggle, the tree\'s pushOrigin shows no tile', 0.2, async function () {
-    return ofTheTree('toggled tiles', 'pushOrigin');
-  }, test.limit.quick);
 
   // the app app's own tiles, as boot.js mounts it: no options (goal/G43.32)
   test.run('on the app app\'s own tiles, the app that says shell.mount true shows its tile', 0.2, async function () {
@@ -692,18 +634,6 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('on the app app\'s own tiles, zzrunonly, which is run only with shell.mount false, shows no tile', 0.2, async function () {
     return planted('the app app\'s tiles', 'zzrunonly');
-  }, test.limit.quick);
-  test.run('on the app app\'s own tiles, the tree\'s backup shows no tile', 0.2, async function () {
-    return ofTheTree('the app app\'s tiles', 'backup');
-  }, test.limit.quick);
-  test.run('on the app app\'s own tiles, the tree\'s deskClient shows no tile', 0.2, async function () {
-    return ofTheTree('the app app\'s tiles', 'deskClient');
-  }, test.limit.quick);
-  test.run('on the app app\'s own tiles, the tree\'s publishData shows no tile', 0.2, async function () {
-    return ofTheTree('the app app\'s tiles', 'publishData');
-  }, test.limit.quick);
-  test.run('on the app app\'s own tiles, the tree\'s pushOrigin shows no tile', 0.2, async function () {
-    return ofTheTree('the app app\'s tiles', 'pushOrigin');
   }, test.limit.quick);
 
   // never: an app that loses shell.mount on its disc loses its tile, no reload
@@ -733,373 +663,7 @@ test.after(stopAll);
     const back = await until(function () { return drawn().then(function (d) { return d.indexOf(PLANT.zzmounted.label) !== -1; }); }, 8000);
     return (back) ? true : false;
   }, test.limit.slow);
-
-  // AN APP THAT CLAIMS A FACE SUPPLIES ONE (Andy: "where is the test that verifies that an app who claims to have a face,
-  // also actually supplies a fucking face?"): every app of the tree whose json says shell.mount true, its tile pressed, draws
-  // something in the layer it opens. The app app is left out: it hides itself from the tiles (goal/G43.18, G43.32).
-  // Andy: "an app who claims to have a face, also actually supplies a fucking face"
-  test.run('the tree has apps that say shell.mount true', 0.2, async function () {
-    if (!tree) return false;
-    treeOn = tree.filter(function (a) { return a.mount && a.key !== 'app'; });
-    return (treeOn.length >= 1) ? true : false;
-  }, test.limit.quick);
-  const ON = ['agent', 'chat', 'contact', 'desk', 'file', 'grants', 'hearing', 'icons', 'info', 'introSpector', 'job', 'join', 'media', 'monitor', 'starter', 'testicle', 'text'];
-  test.run('every app of the tree that says shell.mount true has a line of its own in this test', 0.2, function () {
-    if (!treeOn) return false;
-    const unlined = treeOn.filter(function (a) { return ON.indexOf(a.key) === -1; }).map(function (a) { return a.key; });
-    return !unlined.length || false;
-  }, test.limit.quick);
-  const faceScript = function (key) {
-    const a = (treeOn || []).filter(function (x) { return x.key === key; })[0];
-    if (!a) return false;
-    // Its main element, spirit/app/<name>/element.js (goal/G43.32, rule 4).
-    const f = path.join(APPS, a.key, 'element.js');
-    return fs.existsSync(f);
-  };
-  test.run('the agent app\'s face script, spirit/app/agent/element.js, is there', 0.2, async function () {
-    return faceScript('agent');
-  }, test.limit.quick);
-  test.run('the chat app\'s face script, spirit/app/chat/element.js, is there', 0.2, async function () {
-    return faceScript('chat');
-  }, test.limit.quick);
-  test.run('the contact app\'s face script, spirit/app/contact/element.js, is there', 0.2, async function () {
-    return faceScript('contact');
-  }, test.limit.quick);
-  test.run('the desk app\'s face script, spirit/app/desk/element.js, is there', 0.2, async function () {
-    return faceScript('desk');
-  }, test.limit.quick);
-  test.run('the file app\'s face script, spirit/app/file/element.js, is there', 0.2, async function () {
-    return faceScript('file');
-  }, test.limit.quick);
-  test.run('the grants app\'s face script, spirit/app/grants/element.js, is there', 0.2, async function () {
-    return faceScript('grants');
-  }, test.limit.quick);
-  test.run('the hearing app\'s face script, spirit/app/hearing/element.js, is there', 0.2, async function () {
-    return faceScript('hearing');
-  }, test.limit.quick);
-  test.run('the icons app\'s face script, spirit/app/icons/element.js, is there', 0.2, async function () {
-    return faceScript('icons');
-  }, test.limit.quick);
-  test.run('the info app\'s face script, spirit/app/info/element.js, is there', 0.2, async function () {
-    return faceScript('info');
-  }, test.limit.quick);
-  test.run('the introSpector app\'s face script, spirit/app/introSpector/element.js, is there', 0.2, async function () {
-    return faceScript('introSpector');
-  }, test.limit.quick);
-  test.run('the job app\'s face script, spirit/app/job/element.js, is there', 0.2, async function () {
-    return faceScript('job');
-  }, test.limit.quick);
-  test.run('the join app\'s face script, spirit/app/join/element.js, is there', 0.2, async function () {
-    return faceScript('join');
-  }, test.limit.quick);
-  test.run('the media app\'s face script, spirit/app/media/element.js, is there', 0.2, async function () {
-    return faceScript('media');
-  }, test.limit.quick);
-  test.run('the monitor app\'s face script, spirit/app/monitor/element.js, is there', 0.2, async function () {
-    return faceScript('monitor');
-  }, test.limit.quick);
-  test.run('the starter app\'s face script, spirit/app/starter/element.js, is there', 0.2, async function () {
-    return faceScript('starter');
-  }, test.limit.quick);
-  test.run('the testicle app\'s face script, spirit/app/testicle/element.js, is there', 0.2, async function () {
-    return faceScript('testicle');
-  }, test.limit.quick);
-  test.run('the text app\'s face script, spirit/app/text/element.js, is there', 0.2, async function () {
-    return faceScript('text');
-  }, test.limit.quick);
-  let shown;
-  test.run('every app that says shell.mount true is made active, and the tiles are mounted', 0.2, async function () {
-    if (!treeOn) return false;
-    await chrome.evaluate('(function () { ' + JSON.stringify(treeOn.map(function (a) { return a.key; })) + '.forEach(function (k) { try { spirit.app.activeApp({ key: k, active: true }); } catch (e) { /* the tile says */ } }); return true; }())');
-    const onKeys = JSON.stringify(treeOn.map(function (a) { return a.key; }));
-    const allOn = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows(); return ' + onKeys + '.every(function (k) { return !!r[k] && r[k].active === true; }); }())'); }, 10000);
-    await mount({ face: 'tiles' });
-    shown = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-container"), function (c) { return c.offsetParent !== null; })[0]';
-    W1.allOn = true;
-    return (allOn) ? true : false;
-  }, test.limit.slow);
-  const faceDraws = async function (key) {
-    if (!W1.allOn) return false;
-    const a = treeOn.filter(function (x) { return x.key === key; })[0];
-    if (!a) return false;
-    const tile = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf(' + JSON.stringify(a.label) + ') !== -1; })[0]';
-    const there = await until(function () { return chrome.evaluate('!!' + tile); }, 8000);
-    if (!there) return false;
-    await chrome.evaluate('(function () { var t = ' + tile + '; t.click(); return true; }())');
-    // A face is drawn: the opened layer's pane holds a visible element of some size, beyond the bare pane itself.
-    const drew = await until(function () { return chrome.evaluate('(function () { var c = ' + shown + '; if (!c) return false; var p = c.querySelector(".app-container-pane"); if (!p) return false; var all = p.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var r = all[i].getBoundingClientRect(); if (r.width > 4 && r.height > 4 && (String(all[i].innerText || "").trim() || /^(CANVAS|SVG|IMG|VIDEO|INPUT|TEXTAREA|BUTTON|IFRAME)$/i.test(all[i].tagName))) return true; } return false; }())'); }, 10000);
-    await chrome.evaluate('(function () { var c = ' + shown + '; var x = c && c.querySelector(".app-container-close"); if (x) x.click(); return !!x; }())');
-    await until(function () { return chrome.evaluate('!' + shown); }, 5000);
-    return drew ? true : false;
-  };
-  test.run('the agent app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('agent');
-  }, test.limit.long);
-  test.run('the chat app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('chat');
-  }, test.limit.long);
-  test.run('the contact app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('contact');
-  }, test.limit.long);
-  test.run('the desk app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('desk');
-  }, test.limit.long);
-  test.run('the file app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('file');
-  }, test.limit.long);
-  test.run('the grants app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('grants');
-  }, test.limit.long);
-  test.run('the hearing app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('hearing');
-  }, test.limit.long);
-  test.run('the icons app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('icons');
-  }, test.limit.long);
-  test.run('the info app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('info');
-  }, test.limit.long);
-  test.run('the introSpector app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('introSpector');
-  }, test.limit.long);
-  test.run('the job app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('job');
-  }, test.limit.long);
-  test.run('the join app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('join');
-  }, test.limit.long);
-  test.run('the media app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('media');
-  }, test.limit.long);
-  test.run('the monitor app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('monitor');
-  }, test.limit.long);
-  test.run('the starter app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('starter');
-  }, test.limit.long);
-  test.run('the testicle app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('testicle');
-  }, test.limit.long);
-  test.run('the text app\'s tile opens a face that draws', 0.2, async function () {
-    return faceDraws('text');
-  }, test.limit.long);
   }
-}
-
-// ── THE nodeRun PART ───────────────────────────────────────────────────────────────────────────────────────────
-{
-  // The nodeRun part of ./element.js.
-  // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21; spec: ./element.md, its nodeRun section). Andy, the box: "spirit app search will list these jobs
-  // (node:run) only in pane mode, bacause it they have no shell-mount. the app detail will show a run button.", and "the Andy
-  // user on each box will run those scripts when he feels like it". A real Chrome on a scratch node's face page, the two
-  // apps of the tree that say node.run, pushOrigin and publishData; neither Andy's node nor an agent's is touched. The scratch
-  // tree is no git clone, so a pushOrigin started there pushes nothing.
-  const APPS = path.join(RUN, 'spirit', 'app');
-  const W2 = {};
-  let own, runs, mounts, PUSH, node, chrome, ask, loaded, LABELS, inPane, inDrop, plain, only;
-  const byKey = function (list, key) { return (list || []).filter(function (a) { return a.key === key; })[0]; };
-
-  // nodeRun: an app that says node.run is listed in pane mode only, and its detail runs it (goal/G43.21)
-  test.run('publishData and pushOrigin say node.run, and other apps mount in the shell', 0.2, async function () {
-    // The part before is done: its scratch node and Chrome stop here.
-    stopAll();
-    // The tree's apps, from each <name>.json: which say node.run, and which mount as a shell app.
-    own = fs.readdirSync(APPS).filter(function (n) { return fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) {
-      let j = {};
-      try { j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); } catch (e) { j = {}; }
-      return { key: n, label: String((j.identity && j.identity.label) || n), icon: String((j.identity && j.identity.icon) || ''), run: !!(j.node && j.node.run === true), shell: !!(j.shell && j.shell.mount === true) };
-    });
-    runs = own.filter(function (a) { return a.run; });
-    mounts = own.filter(function (a) { return a.shell && !a.run; });
-    PUSH = own.filter(function (a) { return a.key === 'pushOrigin'; })[0];
-    LABELS = JSON.stringify(own.map(function (a) { return a.label; }));
-    return (runs.length >= 2 && mounts.length >= 1) ? true : false;
-  }, test.limit.quick);
-  test.run('every app that says node.run has a line of its own in this test', 0.2, function () {
-    if (!runs) return false;
-    const unlined = runs.filter(function (a) { return ['publishData', 'pushOrigin'].indexOf(a.key) === -1; }).map(function (a) { return a.key; });
-    return !unlined.length || false;
-  }, test.limit.quick);
-  test.run('a scratch node comes up, and the app search and the app detail load on its face page', 0.2, async function () {
-    if (!runs || !runs.length || !mounts || !mounts.length) return false;
-    node = await scratchNode();
-    chrome = await chromePage(findChrome());
-    LIVE.push({ node: node, chrome: chrome });
-    if (!node.up || chrome.error) return false;
-    ask = async function (verb, args) { const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return JSON.parse(await r.text()); } catch (e) { return null; } };
-    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    loaded = await chrome.evaluate('window.spirit.ready.then(function () { return Promise.all([spirit.require("spirit/element/search/app.js"), spirit.require("spirit/element/search/app/detailElement.js")]); }).then(function () { return "loaded"; }, function () { return false; })');
-    W2.up = loaded === 'loaded';
-    return (loaded === 'loaded') ? true : false;
-  }, test.limit.long);
-  // The app labels drawn anywhere under an element: its leaves whose text is an app's label.
-  const drawnUnder = function (expr) { return chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return []; var want = ' + LABELS + '; var out = []; var all = root.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return out.sort(); }())'); };
-  const has = function (list, a) { return list.indexOf(a.label) !== -1; };
-
-  // Andy: "spirit app search will list these jobs (node:run) only in pane mode"
-  const listedInPane = function (key) {
-    const a = byKey(runs, key);
-    if (!a) return false;
-    return has(inPane, a);
-  };
-  test.run('the pane lists Publish Data', 0.2, async function () {
-    if (!W2.up) return false;
-    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "pane"; document.body.appendChild(c); window.pane = spirit.element.spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
-    await until(function () { return drawnUnder('document.getElementById("pane")').then(function (d) { return runs.every(function (a) { return has(d, a); }); }); }, 8000);
-    inPane = await drawnUnder('document.getElementById("pane")');
-    return listedInPane('publishData');
-  }, test.limit.slow);
-  test.run('the pane lists Push Origin', 0.2, async function () {
-    if (!inPane) return false;
-    try {
-      return listedInPane('pushOrigin');
-    } finally {
-      await chrome.evaluate('(function () { window.pane.destroy(); var c = document.getElementById("pane"); if (c) c.remove(); return true; }())');
-    }
-  }, test.limit.quick);
-  // The dropdown, pressed open: its list floats, so the whole page is read, with nothing else of the test on it.
-  test.run('pressed open, the dropdown lists the apps that mount', 0.2, async function () {
-    if (!W2.up) return false;
-    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "drop"; document.body.appendChild(c); window.drop = spirit.element.spirit.element.search.app.create(c, { face: "dropdown" }); return true; }())');
-    await sleep(800);
-    await chrome.evaluate('(function () { var d = window.drop, f = (d && d.list && d.list.field) || document.querySelector("#drop input, #drop [tabindex], #drop button"); if (f) f.click(); return !!f; }())');
-    await until(function () { return drawnUnder('document.body').then(function (d) { return mounts.some(function (a) { return has(d, a); }); }); }, 8000);
-    inDrop = await drawnUnder('document.body');
-    return (mounts.some(function (a) { return has(inDrop, a); })) ? true : false;
-  }, test.limit.slow);
-  const notInDrop = function (key) {
-    const a = byKey(runs, key);
-    if (!a) return false;
-    return !has(inDrop, a);
-  };
-  test.run('the dropdown does not list Publish Data', 0.2, async function () {
-    if (!inDrop) return false;
-    return notInDrop('publishData');
-  }, test.limit.quick);
-  test.run('the dropdown does not list Push Origin', 0.2, async function () {
-    if (!inDrop) return false;
-    try {
-      return notInDrop('pushOrigin');
-    } finally {
-      await chrome.evaluate('(function () { window.drop.destroy(); var c = document.getElementById("drop"); if (c) c.remove(); return true; }())');
-    }
-  }, test.limit.quick);
-
-  // Andy: "the app detail will show a run button"
-  // A Run button: a button whose own text is Run.
-  const runButton = 'Array.prototype.filter.call(document.querySelectorAll("#detail button"), function (b) { return /\\bRun\\b/.test(String(b.textContent || "")); })[0]';
-  const detailOf = function (a) { return chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.element.spirit.element.search.app.detailElement.create(c, { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())'); };
-  const runShown = async function (key) {
-    if (!W2.up) return false;
-    const a = byKey(runs, key);
-    if (!a) return false;
-    await detailOf(a);
-    const shown = await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
-    return shown ? true : false;
-  };
-  test.run('Publish Data\'s detail shows a Run button', 0.2, async function () {
-    return runShown('publishData');
-  }, test.limit.slow);
-  test.run('Push Origin\'s detail shows a Run button', 0.2, async function () {
-    return runShown('pushOrigin');
-  }, test.limit.slow);
-  test.run('Agent, which mounts and says no node.run, shows no Run', 0.2, async function () {
-    if (!W2.up) return false;
-    plain = mounts[0];
-    await detailOf(plain);
-    await sleep(1500);
-    const drew = await chrome.evaluate('String(document.getElementById("detail").innerText || "").indexOf(' + JSON.stringify(plain.label) + ') !== -1');
-    const noRun = await chrome.evaluate('!(' + runButton + ')');
-    return (drew && noRun) ? true : false;
-  }, test.limit.slow);
-
-  // Andy: "in the app list and details: an app that only has node:run and no node:mount or shell:mount cannot be "activated"
-  // show rowForms should knows that.", and "and the node should know it, too."
-  // Andy: "an app that only has node:run and no node:mount or shell:mount cannot be "activated""
-  // An Activate or Deactivate row seen under an element: a leaf whose words start so (rowFormAppActive's "Activate <label> ...").
-  const activateUnder = function (expr) { return chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return null; return Array.prototype.filter.call(root.querySelectorAll("*"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length; }())'); };
-  // The row of an app in a pane list: the smallest element holding its label and a button, or its label alone.
-  const rowOf = function (label) { return '(function () { var all = document.querySelectorAll("#rows tr, #rows .list-row"); for (var i = 0; i < all.length; i++) { if (String(all[i].innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1) return all[i]; } return null; }())'; };
-  test.run('Agent\'s row in the app list shows Activate', 0.2, async function () {
-    if (!W2.up) return false;
-    only = runs.filter(function (a) { return !own.filter(function (o) { return o.key === a.key; }).some(function (o) { return o.shell; }); });
-    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "rows"; document.body.appendChild(c); window.rows = spirit.element.spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
-    await until(function () { return activateUnder(rowOf(plain.label)).then(function (n) { return n > 0; }); }, 8000);
-    return ((await activateUnder(rowOf(plain.label))) > 0) ? true : false;
-  }, test.limit.slow);
-  const rowNoActivate = async function (key) {
-    if (!W2.up) return false;
-    const a = byKey(only, key);
-    if (!a) return false;
-    // What it mounts is read from its <name>.json after the row is drawn: given the time that takes.
-    await until(function () { return activateUnder(rowOf(a.label)).then(function (n) { return n === 0; }); }, 4000);
-    const n = await activateUnder(rowOf(a.label));
-    return n === 0;
-  };
-  test.run('Publish Data\'s row in the app list shows no Activate', 0.2, async function () {
-    return rowNoActivate('publishData');
-  }, test.limit.slow);
-  test.run('Push Origin\'s row in the app list shows no Activate', 0.2, async function () {
-    try {
-      return await rowNoActivate('pushOrigin');
-    } finally {
-      if (W2.up) await chrome.evaluate('(function () { if (window.rows) window.rows.destroy(); var c = document.getElementById("rows"); if (c) c.remove(); return true; }())');
-    }
-  }, test.limit.slow);
-  test.run('Agent\'s detail shows Activate', 0.2, async function () {
-    if (!W2.up) return false;
-    await detailOf(plain);
-    return (await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000)) ? true : false;
-  }, test.limit.slow);
-  const detailNoActivate = async function (key) {
-    if (!W2.up) return false;
-    const a = byKey(only, key);
-    if (!a) return false;
-    await detailOf(a);
-    await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
-    await sleep(800);
-    const n = await activateUnder('document.getElementById("detail")');
-    return n === 0;
-  };
-  test.run('Publish Data\'s detail shows no Activate', 0.2, async function () {
-    return detailNoActivate('publishData');
-  }, test.limit.slow);
-  test.run('Push Origin\'s detail shows no Activate', 0.2, async function () {
-    return detailNoActivate('pushOrigin');
-  }, test.limit.slow);
-
-  // a press runs it, active or not
-  // Every job the node holds, each read whole, its module with it.
-  const jobsOf = async function () { const got = await ask('job.search', { q: '' }); const out = []; for (const i of ((got && got.items) || [])) out.push(await ask('job.get', { key: i.key })); return JSON.stringify(out); };
-  test.run('no job of pushOrigin is there before the press', 0.2, async function () {
-    if (!W2.up) return false;
-    if (!PUSH || !PUSH.run) return false;
-    const before = await jobsOf();
-    return (before.indexOf('spirit.app.pushOrigin') === -1) ? true : false;
-  }, test.limit.quick);
-  test.run('pushOrigin is not active on this node', 0.2, async function () {
-    if (!W2.up) return false;
-    const activeNow = await ask('app.search', { q: '' });
-    const pushRow = ((activeNow && activeNow.items) || []).filter(function (i) { return i.key === 'pushOrigin'; })[0];
-    let pushActive;
-    try { pushActive = JSON.parse(pushRow.label).active; } catch (e) { pushActive = undefined; }
-    return (pushActive !== true) ? true : false;
-  }, test.limit.quick);
-  test.run('its Run can be pressed', 0.2, async function () {
-    if (!W2.up || !PUSH) return false;
-    await detailOf(PUSH);
-    await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
-    const pressed = await chrome.evaluate('(function () { var b = ' + runButton + '; if (!b) return false; b.click(); return true; }())');
-    return (pressed === true) ? true : false;
-  }, test.limit.slow);
-  test.run('the press starts spirit/app/pushOrigin/pushOrigin.js, a job of spirit.app.pushOrigin, though the app is not active', 0.2, async function () {
-    if (!W2.up || !PUSH) return false;
-    const started = await until(function () { return jobsOf().then(function (j) { return j.indexOf('spirit.app.pushOrigin') !== -1; }); }, 10000);
-    return (started) ? true : false;
-  }, test.limit.slow);
-
-  // That the node refuses app.active for such an app is the app family's: spirit/test/app.js (goal/G47.1).
 }
 
 // ── THE shell PART ───────────────────────────────────────────────────────────────────────────────────────────
