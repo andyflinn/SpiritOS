@@ -131,3 +131,17 @@ test.run('it hands STATUS_ICON, a status\'s glyph, to the detail\'s layer', 0.2,
   if (!R || typeof R.create !== 'function') return false;
   return R.STATUS_ICON && R.STATUS_ICON.failed === '❌' ? true : false;
 }, test.limit.quick);
+// goal/G47.1; wsl: "the Jobs detail already decides Cancel against Delete from a job's state, so task.js should take that rule
+// from there, not write a second one": the rule is handed out here, for the jobs detail and the task row.
+test.run('it hands actionOf: Cancel for a running process or a user-operated server, Delete for an ended job, else nothing', 0.4, function () {
+  if (!R || typeof R.actionOf !== 'function') return false;
+  const cases = [
+    [{ kind: 'process', status: 'running' }, 'cancel'],
+    [{ kind: 'server', status: 'running', data: { operated: 'user' } }, 'cancel'],
+    [{ kind: 'server', status: 'running', data: { operated: 'node' } }, ''],
+    [{ kind: 'permanent', status: 'running' }, ''],
+    [{ kind: 'process', status: 'failed' }, 'delete'],
+    [{ kind: 'server', status: 'stopped' }, 'delete'],
+  ];
+  return cases.every(function (c) { return R.actionOf(c[0]) === c[1]; }) || false;
+}, test.limit.quick);

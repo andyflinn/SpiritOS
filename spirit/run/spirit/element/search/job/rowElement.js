@@ -12,6 +12,7 @@
 //     leaves would keep it)
 //   .kindOf(job)    node, server or transient
 //   .STATUS_ICON    a status's glyph
+//   .actionOf(job)  'cancel', 'delete' or '': the one button a job offers, for the jobs detail and the task row
 //
 // The list watches the branch and draws its rows again from it (spirit/element/search.js), so a row has no dispatch.
 (function () {
@@ -30,8 +31,19 @@
     stopped: '🟠',
     error: '⚠️',
   };
-  // The canonical set lives in spirit/run/spirit/job.js (TERMINAL_STATUSES), node-side; ./detailElement.js keeps the same copy.
+  // The canonical set lives in spirit/run/spirit/job.js (TERMINAL_STATUSES), node-side; its copy here is the only one on a page.
   var TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
+
+  // CANCEL OR DELETE, ONE RULE (goal/G47.1; wsl: "the Jobs detail already decides Cancel against Delete from a job's state, so
+  // task.js should take that rule from there, not write a second one"; moved here from ./detailElement.js, which uses it, as
+  // spirit/element/monitor/task.js does). Cancel for a one-shot process and for a user-operated server, never for a
+  // node-operated one, which lives and dies with the node (Andy: "would allow cancel for servers - user but not for servers -
+  // node"); Delete once the job is terminal; else nothing.
+  function actionOf(job) {
+    var j = job || {};
+    if (TERMINAL.indexOf(j.status) !== -1) return 'delete';
+    return j.kind === 'process' || (j.kind === 'server' && j.data && j.data.operated === 'user') ? 'cancel' : '';
+  }
 
   function nameOf(job) { return String(job.module || job.id); }
 
@@ -94,5 +106,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/rowElement.js', { create: create, kindOf: kindOf, STATUS_ICON: STATUS_ICON, mark: mark }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/rowElement.js', { create: create, kindOf: kindOf, STATUS_ICON: STATUS_ICON, mark: mark, actionOf: actionOf }); });
 }());

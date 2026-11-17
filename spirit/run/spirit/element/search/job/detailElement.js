@@ -28,16 +28,14 @@
 // came meanwhile. It repaints when its job changes there.
 (function () {
   var S = window.spirit = window.spirit || {};
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the Extract box's codeMirror, the jobs family's cache manager, and the
-  // jobs family's interface, spirit/job/api.js, whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the Extract box's codeMirror, the job row element whose actionOf picks its
+  // button, and the jobs family's interface, spirit/job/api.js (it loads the cache manager), whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
   // branches are intrinsic doesn't fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT
   // REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS").
-  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.require('spirit/job/api.js'), S.require('spirit/job/api.js')]);
+  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.require('spirit/job/api.js'), S.require('spirit/element/search/job/rowElement.js')]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
-  // The canonical set lives in spirit/run/spirit/job.js (TERMINAL_STATUSES), node-side; ./rowElement.js keeps the same copy.
-  var TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
   var STATUS_ICON = {
     pending: '⏳',
     running: '🏃‍♂️',
@@ -57,13 +55,12 @@
     }).join('') + '</div>';
   }
 
-  // Cancel for a one-shot process and for a user-operated server, never for a node-operated one, which lives and dies with the
-  // node (Andy: "would allow cancel for servers - user but not for servers - node"); Delete once the job is terminal.
+  // CANCEL OR DELETE, decided by the job row element's actionOf (goal/G47.1, one rule for this detail and the task row,
+  // spirit/element/monitor/task.js): Cancel for a one-shot process and a user-operated server, Delete once the job is terminal.
   function buttonsHtml(job) {
-    var isTerminal = TERMINAL.indexOf(job.status) !== -1;
-    var canCancel = !isTerminal && (job.kind === 'process' || (job.kind === 'server' && job.data && job.data.operated === 'user'));
-    if (canCancel) return '<button type="button" class="cancel-btn" data-job="cancel">Cancel</button>';
-    if (isTerminal) return '<button type="button" class="cancel-btn" data-job="delete">Delete</button>';
+    var a = S.element.spirit.element.search.job.rowElement.actionOf(job);
+    if (a === 'cancel') return '<button type="button" class="cancel-btn" data-job="cancel">Cancel</button>';
+    if (a === 'delete') return '<button type="button" class="cancel-btn" data-job="delete">Delete</button>';
     return '';
   }
 

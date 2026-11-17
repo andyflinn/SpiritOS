@@ -5,7 +5,7 @@ detail elements."*): the row the job list drew itself before (`spirit/element/jo
 `./rowElement.js`: the browser file run in node on a bare window, the shared row element, the icon element and the
 progress bar stand-ins, so what is judged is what this file says a job is.
 
-`spirit.element.spirit.element.search.job.rowElement.create(job, { latest })`; also `.kindOf(job)`, `.STATUS_ICON` and `.mark(id)`.
+`spirit.element.spirit.element.search.job.rowElement.create(job, { latest })`; also `.kindOf(job)`, `.STATUS_ICON`, `.mark(id)` and `.actionOf(job)`.
 
 ## Requirements
 
@@ -22,6 +22,7 @@ progress bar stand-ins, so what is judged is what this file says a job is.
   - updated: its time, or nothing.
 - What it paints is escaped.
 - Its rows share one index; `kindOf` and `STATUS_ICON` are what the list's filter and the detail's layer read.
+- `actionOf(job)` is the one rule for the button a job offers (goal/G47.1; wsl: *"task.js should take that rule from there, not write a second one"*), read by the jobs detail and the task row (spirit/element/monitor/task.js): `cancel` for a running process or a user-operated server, `delete` for an ended job, else `''` (a node-operated server, the node's own jobs).
 - `mark(id)` repaints the dot of every row of that job, and of no other: the list marks the job the dot leaves and the one it
   goes to, since a row repaints only what changed in its own job. No id, nothing.
 

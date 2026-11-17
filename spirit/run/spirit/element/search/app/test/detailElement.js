@@ -73,11 +73,11 @@ test.run('destroy empties its host', 0.2, async function () {
 // says node.run. ITS BUTTON IS BUSY FROM PRESS UNTIL THE NODE ANSWERS (goal/G47.1, Q20; Andy: "mark the button busy from press
 // until the mounter's answer comes").
 let runMade, pressed;
-test.run('in the panel, an app whose json says node.run shows its Run row: Run <label>, and a Run button', 0.2, async function () {
+test.run('in the panel, an app whose json says node.run shows its task row: its label and a Run button', 0.2, async function () {
   if (loaded !== 'loaded') return false;
   await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "under-run"; document.body.appendChild(c); window.runDetail = spirit.element.spirit.element.search.app.detailElement.create(c, { row: ' + JSON.stringify(RUN_ROW) + ', panel: true }); return true; }())');
   runMade = !!(await until(function () { return chrome.evaluate('[].some.call(document.querySelectorAll("#under-run button"), function (b) { return b.textContent.trim() === "Run"; })'); }, 8000));
-  return runMade && String(await runText()).indexOf('Run ' + RUN_ROW.label) !== -1 ? true : false;
+  return runMade && String(await runText()).indexOf(RUN_ROW.label) !== -1 ? true : false;
 }, test.limit.quick);
 test.run('in the panel, an app with no node.run shows no Run button', 0.2, async function () {
   if (!runMade) return false;
@@ -93,11 +93,10 @@ test.run('pressed, the Run button stays busy while the node is asked: disabled, 
   pressed = JSON.parse(await chrome.evaluate('(function () { var b = [].filter.call(document.querySelectorAll("#under-run button"), function (x) { return x.textContent.trim() === "Run"; })[0]; b.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); }); }())'));
   return pressed.disabled === true && pressed.mark === true ? true : false;
 }, test.limit.quick);
-test.run('once the node answers, the line under it says started, and the button is a plain button again', 0.2, async function () {
+test.run('once the node answers, the button is a plain button again', 0.2, async function () {
   if (!pressed) return false;
-  const said = await until(function () { return runText().then(function (t) { return /started/.test(String(t)); }); }, 10000);
-  const plain = await chrome.evaluate('(function () { var b = [].filter.call(document.querySelectorAll("#under-run button"), function (x) { return x.textContent.trim() === "Run"; })[0]; return !!b && !b.disabled && !b.querySelector(".shell-busy"); }())');
-  return said && plain === true ? true : false;
+  const plain = await until(function () { return chrome.evaluate('(function () { var b = document.querySelector("#under-run button"); return !!b && !b.disabled && !b.querySelector(".shell-busy"); }())'); }, 10000);
+  return plain === true ? true : false;
 }, test.limit.quick);
 // A job's id is its route (spirit/job.js, goal/G43.20): an app's run is spirit.app.<name>.
 test.run('the press started the app on the node: its job, spirit.app.zzrun, running its script', 0.2, async function () {

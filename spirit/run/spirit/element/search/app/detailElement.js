@@ -16,8 +16,8 @@
   window.spirit.require('spirit/element/search/app/rowFormSetShell.js');
   window.spirit.require('spirit/element/search/app/changeAppIcon.js');
   window.spirit.require('spirit/element/search/app/changeAppLabel.js');
-  // goal/G43.21: the Run row is a rowForm.
-  window.spirit.require('spirit/element/rowForm.js');
+  // goal/G43.21, goal/G47.1: the Run row is the task row.
+  window.spirit.require('spirit/element/monitor/task.js');
 
   // THE PANEL'S FORM (goal/G43.9, as Andy drew it), rowForms under the title bar. What the node chose comes on the row, and follows
   // it; what <name>.json describes, whether it mounts a face or a server, is read by the switch from the file, again each time its row changes, so it stays off the rows.
@@ -57,26 +57,11 @@
     // <name>.json says shell:true:true; the RULE: a shell must be able to replace itself.
     var homeShell = S.element.spirit.element.search.app.rowFormSetShell.create(homeShellBox, { key: key, at: 'home' });
     var faceShell = S.element.spirit.element.search.app.rowFormSetShell.create(faceShellBox, { key: key, at: 'face' });
-    // RUN (goal/G43.21; Andy, the box: "the app detail will show a run button."): only for an app whose <name>.json says node.run,
-    // read from the file as the switches read theirs. A press asks the node to start spirit/app/<name>/<name>.js; what it did is
-    // said below the bubble, the mounter's line (rowForm).
-    var runGone = false;
-    S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
-      var j = JSON.parse(String(text));
-      if (runGone || !(j.node && j.node.run === true)) return;
-      var said = document.createElement('div');
-      // ITS PRESS IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
-      // comes"): the request is handed to rowForm as press, so the button is busy until the node answers.
-      var form = S.element.spirit.element.rowForm.create(runBox, { icon: '▶️', button: 'Run', press: function () {
-        said.textContent = '';
-        return S.ready.then(function (s) { return s.job.create({ command: 'node', args: ['spirit/app/' + key + '/' + key + '.js'] }); }).then(function () {
-          if (!runGone) said.textContent = 'started';
-        }, function (e) { if (!runGone) said.textContent = String((e && e.message) || e); });
-      } });
-      form.span.textContent = 'Run ' + String(row.label || key);
-      runBox.appendChild(said);
-    }).then(null, function () { /* a face that may not read the file: nothing to run */ });
-    return { destroy: function () { runGone = true; icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); homeShell.destroy(); faceShell.destroy(); host.innerHTML = ''; } };
+    // RUN IS THE TASK ROW (goal/G43.21; Andy, the box: "the app detail will show a run button."; goal/G47.1: "yes make it an
+    // improvement on the current run-rowForm in app and isolate it as spirit/element/monitor/task.js"): it shows only for an app
+    // whose <name>.json says node.run, and offers Run, Cancel or Delete as its job stands.
+    var task = S.element.spirit.element.monitor.task.create(runBox, { id: 'spirit.app.' + key });
+    return { destroy: function () { task.destroy(); icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); homeShell.destroy(); faceShell.destroy(); host.innerHTML = ''; } };
   }
 
   function create(host, opts) {
