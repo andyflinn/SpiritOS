@@ -11,7 +11,7 @@
 // THE ELEMENTS IT LAYS OUT, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1): a require made while this file runs is part of its tree.
 (function () {
   var S = window.spirit = window.spirit || {};
-  var TILES = ['memory', 'cpu', 'uptime', 'delay', 'connections', 'jobs'];
+  var TILES = ['memory', 'cpu', 'uptime', 'delay', 'connections', 'running'];
   var parts = Promise.all(TILES.map(function (n) { return S.require('spirit/element/monitor/job/' + n + '.js'); }));
 
   function create(container) {

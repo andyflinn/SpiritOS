@@ -14,7 +14,7 @@ const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 's
 const FILE = path.join(RUN, 'spirit', 'element', 'monitor', 'job.js');
 const OLD = path.join(RUN, 'spirit', 'element', 'monitor', 'spirit.js');
 // The six, in this order (the box: "it lays out the six job tiles").
-const NAMES = ['memory', 'cpu', 'uptime', 'delay', 'connections', 'jobs'];
+const NAMES = ['memory', 'cpu', 'uptime', 'delay', 'connections', 'running'];
 const TILES = ['Memory', 'CPU', 'Uptime', 'Event loop delay', 'Connections', 'Jobs running'];
 
 const W = {};

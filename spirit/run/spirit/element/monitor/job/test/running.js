@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/monitor/job/test/jobs.js
-// The tests of spirit/element/monitor/job/jobs.js, and of no other module (spec: ./jobs.md; goal/G47.1, the box, the monitor
+// spirit/run/spirit/element/monitor/job/test/running.js
+// The tests of spirit/element/monitor/job/running.js, and of no other module (spec: ./running.md; goal/G47.1, the box, the monitor
 // tiles). A real Chrome on a scratch node's face page, the node's own spirit job on the real stream; neither Andy's node nor
 // an agent's is touched.
 
@@ -11,7 +11,7 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
-const FILE = path.join(RUN, 'spirit', 'element', 'monitor', 'job', 'jobs.js');
+const FILE = path.join(RUN, 'spirit', 'element', 'monitor', 'job', 'running.js');
 // Its value, worked out from the stats the spirit job published: the number of jobs of the node running now.
 const EXPECTED = "String(((d.jobs || {}).byStatus || {}).running || 0)";
 const SHAPE = /^\d+$/;
@@ -38,9 +38,9 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.ready)'); }, 20000));
   return W.page || false;
 }, test.limit.slow);
-test.run('it loads through spirit.require, at spirit.element.spirit.element.monitor.job.jobs, with a create', 0.2, async function () {
+test.run('it loads through spirit.require, at spirit.element.spirit.element.monitor.job.running, with a create', 0.2, async function () {
   if (!W.page) return false;
-  W.loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/monitor/job/jobs.js"); }).then(function () { var m = window.spirit.element.spirit.element.monitor.job; return !!(m && m.jobs && typeof m.jobs.create === "function"); }, function () { return false; })');
+  W.loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/monitor/job/running.js"); }).then(function () { var m = window.spirit.element.spirit.element.monitor.job; return !!(m && m.running && typeof m.running.create === "function"); }, function () { return false; })');
   return W.loaded === true || false;
 }, test.limit.quick);
 // The box: "Each requires the jobs family's interface".
@@ -50,7 +50,7 @@ test.run('it requires the jobs family\'s interface and the value tile itself', 0
 }, test.limit.quick);
 test.run('mounted, it is a value tile: its icon 🏃 drawn by the icon element, and its label Jobs running', 0.4, async function () {
   if (!W.loaded) return false;
-  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:300px;height:200px"; window.__box = d; window.__made = window.spirit.element.spirit.element.monitor.job.jobs.create(d); return true; })()');
+  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:300px;height:200px"; window.__box = d; window.__made = window.spirit.element.spirit.element.monitor.job.running.create(d); return true; })()');
   W.made = !!(await until(function () { return read().then(function (r) { return r.icon; }); }, 8000));
   const r = await read();
   return W.made && r.glyph && r.label === "Jobs running" && r.mode === 'tile' ? true : false;

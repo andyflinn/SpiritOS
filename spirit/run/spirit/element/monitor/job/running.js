@@ -1,10 +1,10 @@
 'use strict';
-// spirit/run/spirit/element/monitor/job/jobs.js
+// spirit/run/spirit/element/monitor/job/running.js
 // JOBS RUNNING, A VALUE TILE OF THE NODE'S SPIRIT JOB (goal/G47.1, the box, the monitor tiles: "spirit/element/monitor/job/: six
 // variants of the value tile ... Each requires the jobs family's interface and fills itself from the stats the node's spirit
-// job publishes."). Its contract and its test: ./test/jobs.md and ./test/jobs.js.
+// job publishes."). Its contract and its test: ./test/running.md and ./test/running.js.
 //
-//   spirit.element.spirit.element.monitor.job.jobs.create(container, { mode }) -> { destroy() }
+//   spirit.element.spirit.element.monitor.job.running.create(container, { mode }) -> { destroy() }
 //     mode   handed on to the value tile (../value.js): tile, the default
 //
 // Its value: the node's jobs running now (stats.jobs.byStatus.running). Until the first reading, a dash. It watches the one row it reads, the spirit job of the
@@ -42,5 +42,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/job/a
     };
   }
 
-  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/job/jobs.js', { create: create }); });
+  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/job/running.js', { create: create }); });
 }());

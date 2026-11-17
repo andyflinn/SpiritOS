@@ -2,7 +2,7 @@
 
 goal/G47.1, the box, the monitor tiles: spirit/element/monitor/job.js replaces spirit/element/monitor/spirit.js; it lays out the six job tiles. The monitor app's wrapper mounts it, and the old file goes.
 
-`spirit.element.spirit.element.monitor.job.create(container)` answers `{ destroy() }`. The six tiles are elements of their own in `./job/` (memory, cpu, uptime, delay, connections, jobs), each filling itself from the node's spirit job; it reads no stats itself.
+`spirit.element.spirit.element.monitor.job.create(container)` answers `{ destroy() }`. The six tiles are elements of their own in `./job/` (memory, cpu, uptime, delay, connections, running; no file named jobs, Andy's rule of the singular), each filling itself from the node's spirit job; it reads no stats itself.
 
 Its test is `./job.js`: a real Chrome on a scratch node's page, the node's own spirit job on the real stream.
 
