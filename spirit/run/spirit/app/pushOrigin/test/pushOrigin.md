@@ -11,7 +11,7 @@ Andy, Q1: *"it will push the repo it's in."*
 
 ## pushOrigin({repo}), tried on what can go wrong
 
-Each case its own clone with a bare origin in the temp folder; the module's own function, required.
+Each case its own clone with a bare origin in the temp folder; the module's own function, required. The clones keep line endings as written (`core.autocrlf` false, set on the second clone at its `git clone`, before its checkout): under Git for Windows' `autocrlf` true, files came back in CRLF and the second clone committed one, so the three cases with an unsaved edit were red on Windows alone (goal/G47.1).
 
 - Given no repo, or one that is no clone, it answers `{ ok: false, reason }` and throws nothing.
 - A detached HEAD is refused, saying so (goal/G19.6, the box: *"it refuses a detached HEAD"*): the clone and origin as they were, and no branch called HEAD on origin.

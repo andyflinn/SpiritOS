@@ -72,10 +72,15 @@ function world() {
   const origin = path.join(tmp, 'origin.git'), clone = path.join(tmp, 'clone'), other = path.join(tmp, 'other');
   git(['init', '-q', '--bare', '-b', 'master', origin], tmp);
   git(['clone', '-q', origin, clone], tmp);
-  [clone].forEach(function (c) { git(['config', 'user.email', 'test@example.invalid'], c); git(['config', 'user.name', 'test'], c); git(['checkout', '-q', '-b', 'master'], c); });
+  // LINE ENDINGS AS WRITTEN (goal/G47.1): a git set to core.autocrlf true, as Git for Windows is, writes files back with
+  // CRLF, so an unsaved edit came back as 'line one, edited unsaved\r\n' and the three checks below that read it were red
+  // on Windows alone, pushOrigin having done its work. The scratch clones keep what the test writes, on every machine.
+  [clone].forEach(function (c) { git(['config', 'core.autocrlf', 'false'], c); git(['config', 'user.email', 'test@example.invalid'], c); git(['config', 'user.name', 'test'], c); git(['checkout', '-q', '-b', 'master'], c); });
   fs.writeFileSync(path.join(clone, 'shared.txt'), 'line one\n');
   git(['add', '-A'], clone); git(['commit', '-q', '-m', 'base'], clone); git(['push', '-q', 'origin', 'master'], clone);
-  git(['clone', '-q', origin, other], tmp);
+  // Set at the clone, before its checkout: set after, the checkout's CRLF files read as edited, and the next add -A
+  // committed shared.txt in CRLF, a real clash with the unsaved edit.
+  git(['clone', '-q', '-c', 'core.autocrlf=false', origin, other], tmp);
   git(['config', 'user.email', 'test@example.invalid'], other); git(['config', 'user.name', 'other'], other);
   const head = function (dir) { return (git(['rev-parse', 'HEAD'], dir).stdout || '').trim(); };
   const originHead = function () { return (git(['rev-parse', 'master'], origin).stdout || '').trim(); };
