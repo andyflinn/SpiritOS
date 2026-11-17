@@ -796,6 +796,31 @@ async function session() {
     .map(function () { return true; });
   P.missing = page.heard.filter(function (m) { return m.method === 'Network.responseReceived' && m.params.response.status >= 400 && !notFile(m.params.response.url); }).map(function () { return true; })
     .concat(page.heard.filter(function (m) { return m.method === 'Network.loadingFailed' && !m.params.canceled; }).map(function () { return true; }));
+  // IT DOES NOT POLLUTE THE WINDOW NAMESPACE (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!",
+  // and "if fucking spirit allready holds motherfucking spirit.required, for motherfucking scripts"): a page loads each file
+  // by a plain script tag, so a name it declares outside a function of its own lands on the whole window, or in its global
+  // scope (let, const, class). What it shares belongs on the spirit object. Judged on this one file alone: in a frame of
+  // the same origin that loads spirit.js and nothing else, its spirit.require held so none of its parts load, the file is
+  // loaded, and the frame's own window names and global lexical names after it are held against those before it.
+  // Judged after the page's errors are counted, so what the file does in that frame, its parts held back, is never taken
+  // for the page's.
+  P.leaked = await (async function () {
+    const FRAME = 'zz-window-probe';
+    await page.evaluate('new Promise(function (r) { var f = document.createElement("iframe"); f.id = ' + JSON.stringify(FRAME) + '; f.style.display = "none"; f.src = "about:blank"; f.onload = function () { r(true); }; document.body.appendChild(f); })');
+    const loaded = await page.evaluate('new Promise(function (r) { var w = document.getElementById(' + JSON.stringify(FRAME) + ').contentWindow; var s = w.document.createElement("script"); s.src = "/spirit/spirit.js"; s.onload = function () { r(true); }; s.onerror = function () { r(false); }; w.document.head.appendChild(s); })');
+    if (loaded !== true) return null;
+    const tree = await page.send('Page.getFrameTree');
+    const kids = ((tree.result && tree.result.frameTree && tree.result.frameTree.childFrames) || []).map(function (c) { return c.frame; });
+    const frameId = (kids.filter(function (f) { return f.name === FRAME || /about:blank/.test(f.url); }).pop() || {}).id;
+    const ctx = (page.heard.filter(function (m) { return m.method === 'Runtime.executionContextCreated' && m.params.context.auxData && m.params.context.auxData.frameId === frameId && m.params.context.auxData.isDefault; }).pop() || { params: { context: {} } }).params.context.id;
+    const lexical = async function () { if (!ctx) return null; const r = await page.send('Runtime.globalLexicalScopeNames', { executionContextId: ctx }); return (r.result && r.result.names) || null; };
+    const lexBefore = await lexical();
+    const own = await page.evaluate('new Promise(function (r) { var w = document.getElementById(' + JSON.stringify(FRAME) + ').contentWindow; if (w.spirit) w.spirit.require = function () { return new Promise(function () {}); }; var before = Object.getOwnPropertyNames(w); var s = w.document.createElement("script"); s.src = ' + JSON.stringify('/' + rel) + '; var done = function () { r(JSON.stringify(Object.getOwnPropertyNames(w).filter(function (k) { return before.indexOf(k) === -1; }))); }; s.onload = done; s.onerror = function () { r(null); }; w.document.head.appendChild(s); })');
+    const lexAfter = await lexical();
+    await page.evaluate('(function () { var f = document.getElementById(' + JSON.stringify(FRAME) + '); if (f) f.remove(); return true; }())');
+    if (own === null || lexBefore === null || lexAfter === null) return null;
+    return JSON.parse(own).concat(lexAfter.filter(function (k) { return lexBefore.indexOf(k) === -1; }));
+  }());
   // NO ELEMENT INSTALLED, KNOWN BY THE PAGE, NOT BY READING ITS CODE (goal/G47.1, box v121: "no code reading: after
   // loading, the page looks at window.spirit.element at the script's own path, where installSpiritElement puts an element
   // with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
@@ -1030,6 +1055,7 @@ function oneFile(P) {
     test.run('with no element installed, nothing it runs throws', 0.8, function () { return !noMount() && !P.thrown.length; }, test.limit.quick);
     test.run('with no element installed, every file it asks for is there', 0.4, function () { return !noMount() && !P.missing.length; }, test.limit.quick);
     test.run('with no element installed, it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
+    test.run('with no element installed, it does not pollute the window namespace: no name of its own lands on the window', 0.8, function () { return Array.isArray(P.leaked) && !P.leaked.length; }, test.limit.quick);
     pageAfter(P);
     return;
   }
@@ -1041,6 +1067,8 @@ function oneFile(P) {
   test.run('nothing it runs throws', 0.8, function () { return !noMount() && !P.thrown.length; }, test.limit.quick);
   test.run('every file it asks for is there', 0.4, function () { return !noMount() && !P.missing.length; }, test.limit.quick);
   test.run('it says no error on the console', 0.4, function () { return !noMount() && !P.errors.length; }, test.limit.quick);
+  // <address>: it does not pollute the window namespace. Not judged (the probe frame did not load) is red, never green.
+  test.run('it does not pollute the window namespace: no name of its own lands on the window', 0.8, function () { return Array.isArray(P.leaked) && !P.leaked.length; }, test.limit.quick);
   const mounted = P.stage === 'done';
   const notDrawn = function () { return noMount() || !mounted; };
   // MOUNTED EMPTY (goal/G47.1, box v121): the four element rules, judged as drawn before any press.

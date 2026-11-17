@@ -18,3 +18,9 @@ The processes are counted on Linux only.
 ## A row of true or false fields alone is probed
 
 goal/G47.1; wsl, of testicle's settings panel: *"the preferences row holds only interactive, true or false, so it writes the same row back and nothing can redraw"*. A planted `spirit/element/zzBrowserFlag.js` (removed after) draws a row that holds one true or false field and nothing else, through a family's view, and redraws only when what it shows changes. Run on it alone, the rule's check "a change written into what it watches redraws it" is green. Red on the rule before, which marked only text fields.
+
+## It does not pollute the window namespace (goal/G47.1)
+
+Andy: *"a test "does NOT pullute the windows namespace" NOW!!!!"*. Three planted elements, alike but for what they leave
+on the window: one with a top-level `var`, one with a top-level `const`, both judged red by the check *"it does not
+pollute the window namespace"*; the same code with every name inside its one function, judged green.

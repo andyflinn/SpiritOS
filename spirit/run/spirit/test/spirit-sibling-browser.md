@@ -162,7 +162,16 @@ box is its own check, named by the element's path and the box's id chain."*
   - nothing it runs throws;
   - every file it asks for is there: no file request answers 4xx or fails. The door's answers and the browser's own
     favicon request are not files the page asked for;
-  - it says no error on the console.
+  - it says no error on the console;
+  - **it does not pollute the window namespace** (goal/G47.1; Andy: *"a test "does NOT pullute the windows namespace"
+    NOW!!!!"*, *"if fucking spirit allready holds motherfucking spirit.required, for motherfucking scripts"*): no name of
+    its own lands on the window or in the page's global scope (`var`, `function`, `let`, `const`, `class` outside a
+    function of its own); what it shares belongs on the spirit object. Judged on the file alone: in a frame of the same
+    origin that loads `spirit.js` and nothing else, its `spirit.require` held so none of its parts load, the file is
+    loaded, and the frame's own window names and global lexical names (Chrome's `Runtime.globalLexicalScopeNames`) after
+    it are held against those before it. A frame that did not load is red, never green. Judged after the page's errors
+    are counted, so what the file does there is not taken for the page's. Also for a file that installs no element.
+    Its test must try to break it with a top-level `var`, a top-level `const`, and a clean file wrapped in one function.
 - **Every box inside it bounded, tall and wide** (rule/16; Andy: *"any container that mounts unknown stuff inside it
   should be bounded in vertically and horizontally"*):
   - every tool and tab button it draws (`[data-tool]`, `[data-tab]`) is pressed in turn, and its boxes judged after

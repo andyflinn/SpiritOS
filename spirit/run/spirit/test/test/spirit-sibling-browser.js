@@ -182,3 +182,36 @@ test.run('a change written into a row of true or false fields alone redraws the 
   await new Promise(function (r) { kid.on('close', r); });
   return out.split('\n').some(function (l) { return l.indexOf('a change written into what it watches redraws it \u2705') !== -1; }) || false;
 }, test.limit.long);
+
+// IT DOES NOT POLLUTE THE WINDOW NAMESPACE (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"):
+// three planted elements, alike but for what they leave on the window: a top-level var, a top-level const, and the same
+// code wrapped in one function. The first two are red, the wrapped one green.
+const LEAK = 'spirit/element/zzBrowserLeak.js';
+test.after(function () { try { fs.rmSync(path.join(RUN, LEAK), { force: true }); } catch (e) { /* scratch */ } });
+const POLLUTE = 'it does not pollute the window namespace: no name of its own lands on the window';
+function planted(top, wrapped) {
+  const body = [
+    '  var S = window.spirit;',
+    '  function create(container) { var el = document.createElement(\'div\'); el.style.overflow = \'hidden\'; container.appendChild(el); return { destroy: function () { el.remove(); } }; }',
+    '  S.require(\'spirit/element/installSpiritElement.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + LEAK + '\', { create: create }); });'];
+  return ['\'use strict\';', '// planted by spirit/test/test/spirit-sibling-browser.js: what it leaves on the window', top]
+    .concat(wrapped ? ['(function () {'].concat(body, ['}());']) : ['(function () {'].concat(body, ['}());'])).concat(['']).join('\n');
+}
+async function judged(src) {
+  fs.writeFileSync(path.join(RUN, LEAK), src);
+  let out = '';
+  const kid = spawn(process.execPath, [SUBJECT, LEAK], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
+  kid.stdout.on('data', function (d) { out += d; });
+  kid.stderr.on('data', function (d) { out += d; });
+  await new Promise(function (r) { kid.on('close', r); });
+  return out.split('\n').filter(function (l) { return l.indexOf(POLLUTE) !== -1; }).map(function (l) { return /✅\s*$/.test(l) ? 'green' : /❌\s*$/.test(l) ? 'red' : ''; })[0] || '';
+}
+test.run('an element that declares a var outside any function is judged red for polluting the window', 0.4, async function () {
+  return (await judged(planted('var zzLeakVar = 1;', false))) === 'red' || false;
+}, test.limit.long);
+test.run('an element that declares a const outside any function is judged red for polluting the window', 0.4, async function () {
+  return (await judged(planted('const zzLeakConst = 1;', false))) === 'red' || false;
+}, test.limit.long);
+test.run('the same element with every name inside its one function is judged green', 0.4, async function () {
+  return (await judged(planted('', true))) === 'green' || false;
+}, test.limit.long);
