@@ -49,7 +49,8 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
       // Its whole app area is one workBench, in a box of a stated size (rule/16). THE APP BOOTSTRAPS ITS OWN COMPONENTS
       // (goal/G41.1; Andy: "the shell should not know that. every app needs to bootstrap its own components."): the
       // element is loaded here, through spirit.require, never put on the face's own list of parts.
-      container.innerHTML = '<div id="agent-bench" class="fill"></div>';
+      // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
+      container.innerHTML = '<div id="agent-bench" class="fill" style="overflow:hidden"></div>';
       var benchBox = container.querySelector('#agent-bench');
       // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
       // apps."), painted by the workBench's strip through spirit/element/icon.js, loaded here with it.

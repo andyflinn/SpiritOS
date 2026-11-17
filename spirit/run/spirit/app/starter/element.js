@@ -28,7 +28,10 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
   function create(container) {
     var gone = false;
     var box = document.createElement('div');
-    box.className = 'stack';
+    // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT, AT THE SIZE IT IS GIVEN (goal/G47.1, -browser: overflow not visible, and it
+    // never grows its box): a fill box (rule/16), a long card scrolling inside it.
+    box.className = 'fill stack';
+    box.style.overflow = 'auto';
     box.textContent = 'asking this node what it is…';
     container.innerHTML = '';
     container.appendChild(box);

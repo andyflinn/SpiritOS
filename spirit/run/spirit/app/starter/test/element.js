@@ -19,7 +19,8 @@ const settle = async function () { for (let i = 0; i < 20; i++) await new Promis
 
 function node(tag) {
   let html = '';
-  const n = { tag: tag || '', kids: [], className: '', own: '',
+  // A style, as every element has one: the box states its overflow (goal/G47.1, -browser).
+  const n = { tag: tag || '', kids: [], className: '', own: '', style: {},
     get textContent() { return n.own + n.kids.map(function (k) { return k.textContent; }).join(''); },
     set textContent(v) { n.own = String(v); n.kids = []; },
     get innerHTML() { return html; },
@@ -85,9 +86,11 @@ test.run('it asks node.card once', 0.2, async function () {
   await settle();
   return W.w.asked.length === 1 && W.w.asked[0].verb === 'node.card' ? true : false;
 }, test.limit.quick);
-test.run('it requires nothing', 0.2, function () {
+// goal/G47.1, Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS": the node's interface for
+// node.card; nothing else.
+test.run('it requires the node interface, and nothing else', 0.2, function () {
   if (!W.w) return false;
-  return W.w.required.length === 0 || false;
+  return W.w.required.length === 1 && W.w.required[0] === 'spirit/node/api.js' || false;
 }, test.limit.quick);
 
 // 3. it shows what the card says

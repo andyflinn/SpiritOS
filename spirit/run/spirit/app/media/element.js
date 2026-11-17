@@ -92,7 +92,10 @@
     var title = typeof o.title === 'function' ? o.title : function () {};
     container.innerHTML = '';
     var box = document.createElement('div');
-    box.className = 'fill';
+    // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible), and spaces its
+    // blocks by .stack (rule/2), never by a margin in a style attribute.
+    box.className = 'fill stack';
+    box.style.overflow = 'hidden';
     container.appendChild(box);
     parts.then(function () {
       if (gone) return;
@@ -110,7 +113,6 @@
       row.appendChild(pick);
       var area = document.createElement('div');
       area.className = 'fill';
-      area.style.marginTop = '1em';
       box.appendChild(row);
       box.appendChild(area);
       picker = S.element.spirit.element.search.file.create(pick, {

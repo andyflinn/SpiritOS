@@ -42,7 +42,8 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     var o = options || {};
     // UNCONFIGURED, IT SAYS SO and throws nothing (goal/G41.19, box v23: "no throw even unconfigured").
     if (!o.table) {
-      container.innerHTML = '<div class="job-manifest-note">not configured: a table of the agent server is required</div>';
+      // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible), the note's too.
+      container.innerHTML = '<div class="job-manifest-note" style="overflow:hidden">not configured: a table of the agent server is required</div>';
       return { destroy: function () { container.innerHTML = ''; } };
     }
     var pre = 'ar' + (++made) + '-';

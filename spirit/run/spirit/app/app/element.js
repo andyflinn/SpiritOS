@@ -45,6 +45,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     var root = document.createElement('div');
     // A LIST GETS A BOX OF A STATED SIZE (rule/16): the pane face fills the box it is mounted in, its list scrolling inside.
     root.className = 'app-selector ' + (isPane ? 'app-selector-face-pane fill' : 'app-selector-face-dropdown');
+    // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible); the list scrolls itself.
+    if (isPane) root.style.overflow = 'hidden';
     root.value = '';
     root.row = null;
     var listBox = document.createElement('div');

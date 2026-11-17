@@ -23,7 +23,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
         spirit.require('spirit/element/search.js'), spirit.require('spirit/element/busyButton.js'),
         spirit.require('spirit/element/rowForm.js')]).then(function () {
         if (gone) return;
-        container.innerHTML = '<div class="fill">' +
+        // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
+        container.innerHTML = '<div class="fill" style="overflow:hidden">' +
           '<div id="' + pre + 'form"></div>' +
           '<div id="' + pre + 'said" class="job-manifest-note"></div>' +
           '<div id="' + pre + 'list" class="fill"></div></div>';

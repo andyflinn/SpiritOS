@@ -27,11 +27,13 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     // One column filling the centre: the title at its top, the input row at its bottom, the log between them taking
     // what is left and scrolling in itself.
     var root = document.createElement('div');
-    root.style.cssText = 'flex:1 1 auto;min-height:0;height:100%;display:flex;flex-direction:column';
+    // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible); the log scrolls.
+    root.style.cssText = 'flex:1 1 auto;min-height:0;height:100%;display:flex;flex-direction:column;overflow:hidden';
     root.innerHTML =
       '<div id="' + pre + 'title" style="flex:none"></div>' +
       '<div id="' + pre + 'log" style="flex:1 1 0;min-height:0;overflow-y:auto"></div>' +
-      '<div id="' + pre + 'row" style="flex:none;display:flex;align-items:flex-end;gap:1em">' +
+      // Its line and Send 1em apart by shell.css's .agent-chat-row, no spacing in a style attribute (goal/G47.1, -browser).
+      '<div id="' + pre + 'row" class="agent-chat-row">' +
         '<textarea id="' + pre + 'line" rows="1" style="flex:1 1 0;min-width:0;resize:none"></textarea>' +
         '<button type="button" id="' + pre + 'send">Send</button>' +
       '</div>';

@@ -1180,6 +1180,8 @@ details.stat-tile > summary {
 .agent-block { margin-top: 1em; }
 /* spirit/element/search/api.js: the server and verb selectors side by side (goal/G47.1, box v109). */
 .api-family-selector { gap: 1em; }
+/* The agent chat's line and its Send, side by side (spirit/app/agent/element/chatPane.js, goal/G47.1). */
+.agent-chat-row { flex: none; display: flex; align-items: flex-end; gap: 1em; }
 /* introSpector's line, the party and the api path side by side (spirit/element/introSpector.js, goal/G47.1, box v109). */
 .introspector-line { display: flex; flex-wrap: wrap; align-items: center; gap: 1em; }
 /* A TAB CONTAINER'S CONTENT (spirit/element/tabContainer.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy

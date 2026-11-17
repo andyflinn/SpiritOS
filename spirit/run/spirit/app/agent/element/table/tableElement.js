@@ -147,7 +147,8 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     var o = options || {};
     // UNCONFIGURED, IT SAYS SO and throws nothing (goal/G41.19, box v23: "no throw even unconfigured").
     if (!o.table) {
-      container.innerHTML = '<div class="job-manifest-note">not configured: a table of the agent server is required</div>';
+      // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible), the note's too.
+      container.innerHTML = '<div class="job-manifest-note" style="overflow:hidden">not configured: a table of the agent server is required</div>';
       return { refresh: function () {}, destroy: function () { container.innerHTML = ''; } };
     }
     var pre = 'at' + (++made) + '-';
@@ -155,7 +156,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     var list = null;
     var look = o.detail && o.detail.look ? o.detail.look(o.table) : { name: o.table };
     var buttons = Array.isArray(o.buttons) ? o.buttons : [];
-    container.innerHTML = '<div class="fill">' + titleRow(look, [look.title || look.name || o.table]) +
+    container.innerHTML = '<div class="fill" style="overflow:hidden">' + titleRow(look, [look.title || look.name || o.table]) +
       '<div class="agent-block">' + (o.add === false ? '' : '<button type="button" id="' + pre + 'add">Add a ' + esc(o.table) + '</button> ') +
       buttons.map(function (b, i) { return '<button type="button" id="' + pre + 'button' + i + '">' + esc(b.label) + '</button> '; }).join('') +
       '<span id="' + pre + 'note"></span></div>' +

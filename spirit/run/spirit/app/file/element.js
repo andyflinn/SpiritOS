@@ -27,6 +27,8 @@
     container.innerHTML = '';
     var box = document.createElement('div');
     box.className = 'fill';
+    // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible); the list scrolls itself.
+    box.style.overflow = 'hidden';
     var listBox = document.createElement('div');
     listBox.className = 'fill';
     box.appendChild(listBox);

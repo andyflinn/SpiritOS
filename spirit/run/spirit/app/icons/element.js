@@ -40,7 +40,8 @@
     var openOver = typeof o.open === 'function' ? o.open : function (k, spec) { return stack ? stack.open(k, spec) : Promise.resolve(null); };
     container.innerHTML =
       // Its list column takes its pane: the add row fixed on top, what a press said, an opened icon, the list's box the rest.
-      '<div data-icons="list" class="fill">' +
+      // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
+      '<div data-icons="list" class="fill" style="overflow:hidden">' +
         '<div data-icons="form"></div>' +
         '<div data-icons="added" class="job-manifest-note"></div>' +
         '<div data-icons="pane" class="fill"></div>' +

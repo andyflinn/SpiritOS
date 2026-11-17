@@ -36,6 +36,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     container.innerHTML = '';
     var box = document.createElement('div');
     box.className = 'fill';
+    // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
+    box.style.overflow = 'hidden';
     container.appendChild(box);
 
     parts.then(function () {
