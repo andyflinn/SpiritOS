@@ -13,7 +13,7 @@ const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
-let node, chrome, loaded, made, v0, glyph, key;
+let node, chrome, loaded, made, v0, glyph, key, busyAt;
 const ask = async function (verb, args) { const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
 const iconOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).icon : undefined; };
 const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("i"); var bs = b.querySelectorAll("button"); return { forms: b.querySelectorAll(".shell-row-form").length, text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), last: bs.length ? String(bs[bs.length - 1].textContent || "").trim() : null }; }())'); };
@@ -72,8 +72,15 @@ test.run('the dropdown opens on the icon set', 0.2, async function () {
 test.run('Change writes the picked glyph, and the app\'s row says it', 0.2, async function () {
   if (made !== true) return false;
   key = await chrome.evaluate('(function () { var rows = Array.prototype.filter.call(document.querySelectorAll("#i tr[data-key]"), function (r) { return r.getAttribute("data-key") !== "🤖"; }); if (!rows.length) return ""; rows[0].click(); return rows[0].getAttribute("data-key"); }())');
-  await chrome.evaluate('(function () { var bs = document.querySelectorAll("#i button"); bs[bs.length - 1].click(); return 1; }())');
+  try { busyAt = JSON.parse(await chrome.evaluate('(function () { var bs = document.querySelectorAll("#i button"); var b = bs[bs.length - 1]; b.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); }); }())')); } catch (e) { busyAt = null; }
   return !!key && await until(function () { return iconOf('agent').then(function (g) { return g === key; }); }, 10000) ? true : false;
+}, test.limit.quick);
+
+// goal/G47.1, Q20, Andy: "mark the button busy from press until the mounter's answer comes": read once the press itself is
+// done, while the node is still asked.
+test.run('pressed with a glyph picked, Change stays busy while the node is asked: disabled, with its turning mark', 0.2, function () {
+  if (!busyAt) return false;
+  return busyAt.disabled === true && busyAt.mark === true ? true : false;
 }, test.limit.quick);
 
 // an icon changed elsewhere shows, with no reload

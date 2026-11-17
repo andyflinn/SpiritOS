@@ -24,17 +24,18 @@
     // configured"): it watches no row and asks nothing.
     if (!key) { host.textContent = 'No app named: not configured.'; return { destroy: function () { host.innerHTML = ''; } }; }
     function row() { var A = S.data.app && S.data.app.data; return A ? A.rows()[key] || null : null; }
-    var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change' });
+    // ITS CHANGE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+    // comes"): handed as press, so Change is busy until the node answers.
+    var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change', press: function () {
+      if (!picked) return null;
+      return S.ready.then(function (s) { return s.app.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
+    } });
     form.span.appendChild(document.createTextNode('Icon '));
     var shown = document.createElement('span');
     form.span.appendChild(shown);
     var listHost = document.createElement('span');
     form.span.appendChild(listHost);
     var list = E.spirit.element.search.icon.listElement.create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
-    form.button.addEventListener('click', function () {
-      if (!picked) return;
-      S.ready.then(function (s) { return s.app.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
-    });
     function paint() {
       if (gone) return;
       var r = row();

@@ -21,15 +21,17 @@
     // configured"): it watches no row and asks nothing.
     if (!key) { host.textContent = 'No app named: not configured.'; return { destroy: function () { host.innerHTML = ''; } }; }
     function row() { var A = S.data.app && S.data.app.data; return A ? A.rows()[key] || null : null; }
-    var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change' });
-    var input = document.createElement('input');
+    // ITS CHANGE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
+    // comes"): handed as press, so Change is busy until the node answers.
+    var input = null;
+    var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change', press: function () {
+      return S.ready.then(function (s) { return s.app.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
+    } });
+    input = document.createElement('input');
     input.type = 'text';
     form.span.appendChild(document.createTextNode('Label '));
     form.span.appendChild(input);
     if (window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(input, 'name');
-    form.button.addEventListener('click', function () {
-      S.ready.then(function (s) { return s.app.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
-    });
     function paint() {
       if (gone) return;
       var r = row();
