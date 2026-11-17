@@ -1884,6 +1884,62 @@ async function tilesPart() {
     back = JSON.parse(await seen());
     return (back.tiles === 0 && back.headers > 0 && back.words === 'Nest' && JSON.stringify(back.faces) === '["tiles","pane"]') ? true : false;
   }, test.limit.quick);
+  // ── TILE MODE IS A SEARCH'S OWN (goal/G47.4, the box: "Tile mode is a search's own: a search that has a tile.js, beside its
+  // row.js, has tile mode. Its tile.js draws its tile and decides what a press does"; "The shared search shows the list or
+  // tiles switch beside its Search button for a search that has a tile part; a search without one is a list only, with no
+  // switch and no tiles. The mounter's toggle option and the shared search's own plain tile go"; "the mounter still picks which
+  // face a search opens in"). Its part is handed as tile(row, key), answering the tile's node, as element(row, key) answers a
+  // row's (wsl and cw, agreed under the item); the node takes its own press. ──
+  const makeT = function (o) {
+    return js('(function () { if (window.__t) window.__t.remove(); var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__tilePressed = []; window.__tPicked = []; ' +
+      'var o = Object.assign({ rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__tPicked.push(key); } }, ' + JSON.stringify(o) + '); ' +
+      (o.withTile ? 'o.tile = function (row, key) { var n = document.createElement("div"); n.className = "zz-tile"; n.setAttribute("data-key", key); n.textContent = "tile " + key; n.addEventListener("click", function () { window.__tilePressed.push(key); }); return n; }; ' : '') +
+      'delete o.withTile; window.__tl = window.spirit.element.spirit.element.search.create(d, o); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()');
+  };
+  const own = function () { return js('JSON.stringify({ toggles: window.__t.querySelectorAll(".list-toggle").length, plain: window.__t.querySelectorAll(".app-icon").length, mine: window.__t.querySelectorAll(".zz-tile").length, headers: window.__t.querySelectorAll("th").length })'); };
+  let tp = null, noPart = null, noPartTiles = null;
+  test.run('a search handed a tile part shows the list or tiles switch, with no toggle option asked', 0.4, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return false;
+    await makeT({ face: 'pane', withTile: true });
+    tp = JSON.parse(await own());
+    return (tp.toggles === 1) ? true : false;
+  }, test.limit.quick);
+  test.run('the switch of a search handed a tile part follows the Search button', 0.4, async function () {
+    if (!tp) return false;
+    const after = await js('(function () { var t = window.__t.querySelector(".list-toggle"); if (!t) return null; var b = [].filter.call(window.__t.querySelectorAll("button"), function (x) { return x.textContent === "Search"; })[0]; return b && t.previousElementSibling === b ? "after" : null; })()');
+    return (after === 'after') ? true : false;
+  }, test.limit.quick);
+  test.run('a search handed no tile part shows no switch, even with the toggle option', 0.4, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return false;
+    await makeT({ face: 'pane', toggle: true });
+    noPart = JSON.parse(await own());
+    return (noPart.toggles === 0) ? true : false;
+  }, test.limit.quick);
+  test.run('a search handed no tile part draws no tiles, even asked to open as tiles: it is a list', 0.4, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return false;
+    await makeT({ face: 'tiles' });
+    noPartTiles = JSON.parse(await own());
+    return (noPartTiles.plain === 0 && noPartTiles.mine === 0 && noPartTiles.headers > 0) ? true : false;
+  }, test.limit.quick);
+  let asOwn = null;
+  test.run('handed a tile part and asked to open as tiles, it opens as tiles: the mounter picks the face', 0.4, async function () {
+    if (!node || !node.up || !chrome || chrome.error) return false;
+    await makeT({ face: 'tiles', withTile: true });
+    await until(function () { return js('window.__t.querySelectorAll(".zz-tile").length > 0'); }, 3000);
+    asOwn = JSON.parse(await own());
+    return (asOwn.mine > 0 && asOwn.headers === 0) ? true : false;
+  }, test.limit.quick);
+  test.run('as tiles, each row is drawn by the tile part: one node of it per row, and no plain tile of the shared search', 0.4, function () {
+    if (!asOwn) return false;
+    return (asOwn.mine === 3 && asOwn.plain === 0) ? true : false;
+  }, test.limit.quick);
+  test.run('a press on a tile is the tile part\'s: its node hears it, and the shared search picks nothing itself', 0.4, async function () {
+    if (!asOwn) return false;
+    const pressed = await js('(function () { var t = window.__t.querySelector(".zz-tile[data-key=nest]"); if (!t) return null; t.click(); return JSON.stringify({ pressed: window.__tilePressed, picked: window.__tPicked }); })()');
+    const p = pressed ? JSON.parse(pressed) : null;
+    return (!!p && JSON.stringify(p.pressed) === '["nest"]' && p.picked.length === 0) ? true : false;
+  }, test.limit.quick);
+  await js('(function () { if (window.__t) window.__t.remove(); return true; })()');
   await drop();
   const free = async function () {
     if (free.done) return;

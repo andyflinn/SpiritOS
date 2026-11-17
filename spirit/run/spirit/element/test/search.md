@@ -267,3 +267,12 @@ drew; a hidden row taken out of the page; a new record that redraws its neighbou
 
 goal/G43.18, the box: *"apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too"*. `search/api.js` and branch (`search/branch.js` or `search/branch/listElement.js`) load the one `search/api/verb.js` in their code, never a copy of their own.
 
+
+## Tile mode is a search's own (goal/G47.4)
+
+The box: *"Tile mode is a search's own: a search that has a tile.js, beside its row.js, has tile mode. Its tile.js draws its tile and decides what a press does"*; *"The shared search shows the list or tiles switch beside its Search button for a search that has a tile part; a search without one is a list only, with no switch and no tiles. The mounter's toggle option and the shared search's own plain tile go"*; the mounter still picks which face a search opens in. The part is handed as `tile(row, key)`, answering the tile's node, as `element(row, key)` answers a row's, and the node takes its own press (wsl and cw, agreed under the item).
+
+- A search handed a tile part shows the switch with no toggle option asked, right after the Search button.
+- A search handed none shows no switch, even with the toggle option, and draws no tiles even asked to open as tiles: it is a list, with its headers.
+- Handed a tile part and asked to open as tiles, it opens as tiles; each row is drawn by the tile part, one node per row, and no plain tile of the shared search.
+- A press on a tile is the tile part's: its node hears it, and the shared search picks nothing itself.
