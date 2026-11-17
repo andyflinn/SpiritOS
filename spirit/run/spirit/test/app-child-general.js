@@ -236,9 +236,8 @@ function appRules(all) {
 }
 
 // The sub-folders.
-test.run('there are twenty or more sub-folders of spirit/app/', 0.2, function () {
-  return APPS.length >= 20 ? true : false;
-}, test.limit.quick);
+// No count of the tree's apps is written here (goal/G47.4; Andy: "you make bloody well sure that such stupid hard-coded
+// tests move"): the app folders are judged each from its own manifest, however many there are.
 test.run('spirit/app/test/ is the app branch\'s own test folder, the one sub-folder with no manifest', 0.4, function () {
   return (isDir('spirit/app/' + BRANCH_TESTS) && !isFile('spirit/app/' + BRANCH_TESTS + '/' + BRANCH_TESTS + '.json')) ? true : false;
 }, test.limit.quick);

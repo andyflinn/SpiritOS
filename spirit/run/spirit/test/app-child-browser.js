@@ -73,11 +73,14 @@ async function world() {
   // Every app server judged answers its interface before any page is opened (Andy: "a server MUST be mounted if a
   // mountable server exists in that app folder before a test is conducted").
   const silent = [];
+  // Which answered, kept for each app's own check below (goal/G47.4: the jobs test's per-app lines moved here).
+  W.answered = {};
   for (const a of apps) {
     const ok = await until(function () {
       return fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { family: a } }) })
         .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
     }, 30000);
+    W.answered[a] = !!ok;
     if (!ok) silent.push(a);
   }
   if (silent.length) { W.fail = true; return; }
@@ -147,7 +150,7 @@ function scriptOf(app) {
 const judgedApps = function () { return Array.from(new Set(TARGETS.map(appOf))).filter(function (a) { return a !== 'app' && !!manifestOf(a) && !!scriptOf(a); }); };
 function declared(app) {
   const m = manifestOf(app) || {};
-  return { label: String((m.identity && m.identity.label) || app), icon: String((m.identity && m.identity.icon) || ''), shell: !!(m.shell && m.shell.mount === true), run: !!(m.node && m.node.run === true) };
+  return { label: String((m.identity && m.identity.label) || app), icon: String((m.identity && m.identity.icon) || ''), shell: !!(m.shell && m.shell.mount === true), run: !!(m.node && m.node.run === true), mount: hasServer(app) };
 }
 async function appsPhase(chrome) {
   const apps = judgedApps();
@@ -220,6 +223,21 @@ function judgeApp(a) {
     }, test.limit.quick);
   });
   test.forScript(scriptOf(a.key), function () {
+    // A SERVER IT CLAIMS, IT HAS (goal/G47.4; Andy: "where is the test that verifies that an app who claims to be mountable,
+    // ACTUALLY can be mounted?", then, of the jobs test that kept its own list of the tree's servers: "you make bloody well sure
+    // that such stupid hard-coded tests move to app-child-* immediately"): judged from its own manifest, on the scratch node
+    // this run switched its server on in.
+    if (a.mount) {
+      test.run('its manifest says node.mount true: its server starts on the node and answers its interface', 0.4, function () {
+        return (!!W.answered && W.answered[a.key] === true) || false;
+      }, test.limit.quick);
+      test.run('its manifest says node.mount true: its folder in spirit/state/ holds only node.json, cache/, data/ and on Linux door.sock', 0.4, function () {
+        const dir = W.node && W.node.run ? path.join(W.node.run, 'spirit', 'state', a.key) : '';
+        if (!dir || !fs.existsSync(dir)) return false;
+        const may = ['node.json', 'cache', 'data'].concat(process.platform === 'win32' ? [] : ['door.sock']);
+        return fs.readdirSync(dir).every(function (e) { return may.indexOf(e) !== -1; }) || false;
+      }, test.limit.quick);
+    }
     if (!a.shell) {
       test.run('its manifest says no shell.mount true: the app selector, mounted with no options, shows no tile of it, though it is made active', 0.4, function () {
         if (!ok() || !Array.isArray(W.tiles)) return false;

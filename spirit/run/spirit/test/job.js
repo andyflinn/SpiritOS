@@ -593,45 +593,15 @@ test.run('there are apps that say node.mount true', 0.2, async function () {
   for (const name of SL.servers) await sask('app.active', { key: name, active: true });
   return SL.servers.length >= 1 ? true : false;
 }, test.limit.quick);
-const mounts = async function (name) {
-  if (SL.servers.indexOf(name) === -1) return false;
-  return (await answersApi(name)) ? true : false;
-};
-test.run('agent says node.mount true, starts, and answers its api', 0.2, function () { return mounts('agent'); }, test.limit.quick);
-test.run('backup says node.mount true, starts, and answers its api', 0.2, function () { return mounts('backup'); }, test.limit.quick);
-test.run('chat says node.mount true, starts, and answers its api', 0.2, function () { return mounts('chat'); }, test.limit.quick);
-test.run('desk says node.mount true, starts, and answers its api', 0.2, function () { return mounts('desk'); }, test.limit.quick);
-test.run('deskClient says node.mount true, starts, and answers its api', 0.2, function () { return mounts('deskClient'); }, test.limit.quick);
-test.run('testicle says node.mount true, starts, and answers its api', 0.2, function () { return mounts('testicle'); }, test.limit.quick);
-const JUDGED = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'testicle'];
-test.run('every app that says node.mount true has a line of its own in this test', 0.2, async function () {
-  const unjudged = SL.servers.filter(function (n) { return JUDGED.indexOf(n) === -1; });
-  await H.sleep(3000);
-  return !unjudged.length ? true : false;
-}, test.limit.slow);
+// EACH APP SERVER STARTS AND ANSWERS ITS INTERFACE, AND ITS STATE FOLDER HOLDS ONLY WHAT IT MAY: rules about each app, so they
+// are judged per app from its own manifest in spirit/test/app-child-browser.js (goal/G47.4; Andy: "you make bloody well sure
+// that such stupid hard-coded tests move to app-child-* immediately"). This file keeps what is about the job system.
 
 // spirit/state/<name>/ holds node.json, cache/, data/ and on Linux door.sock, nothing else
 const stateFolders = function () { return fs.readdirSync(SL.state).filter(function (n) { return fs.statSync(path.join(SL.state, n)).isDirectory(); }); };
 test.run('each app switched on has its folder in spirit/state/', 0.2, function () {
   const folders = stateFolders();
   return SL.servers.every(function (n) { return folders.indexOf(n) !== -1; }) ? true : false;
-}, test.limit.quick);
-const holdsOnly = function (n) {
-  if (!fs.existsSync(path.join(SL.state, n))) return false;
-  const extra = fs.readdirSync(path.join(SL.state, n)).filter(function (e) { return MAY.indexOf(e) === -1; });
-  return !extra.length ? true : false;
-};
-// Each folder its own test, so each title is its own (they were one title said once per folder).
-test.run('spirit/state/agent/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('agent'); }, test.limit.quick);
-test.run('spirit/state/backup/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('backup'); }, test.limit.quick);
-test.run('spirit/state/chat/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('chat'); }, test.limit.quick);
-test.run('spirit/state/desk/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('desk'); }, test.limit.quick);
-test.run('spirit/state/deskClient/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('deskClient'); }, test.limit.quick);
-test.run('spirit/state/testicle/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () { return holdsOnly('testicle'); }, test.limit.quick);
-const NAMED_FOLDERS = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'testicle'];
-test.run('every other folder of spirit/state/ holds only node.json, cache/, data/ and on Linux door.sock', 0.2, function () {
-  const bad = stateFolders().filter(function (n) { return NAMED_FOLDERS.indexOf(n) === -1; }).map(holdsOnly).filter(function (v) { return v !== true; });
-  return !bad.length ? true : false;
 }, test.limit.quick);
 // each app server's door
 test.run('each app server\'s door.sock is spirit/state/<name>/door.sock', 0.2, function () {

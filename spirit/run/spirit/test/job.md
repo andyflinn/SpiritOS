@@ -99,11 +99,12 @@ Never a live node.
 
 ### Requirements
 
-- The node starts on a tree with no `run:/process` folder, and every app server switched on starts and answers its
-  family.
-- Each app switched on has its folder in `spirit/state/`, and every folder there holds only `node.json`, `cache/`,
-  `data/` and, on Linux, `door.sock` (the box: "spirit/state/<name>/ holds node.json, cache/, data/, and on Linux
-  door.sock"; Andy: "so far, so good."). On Linux each server's `door.sock` is `spirit/state/<name>/door.sock`.
+- The node starts on a tree with no `run:/process` folder, and every app server switched on starts again after a kill.
+- Each app switched on has its folder in `spirit/state/` (the box: "spirit/state/<name>/ holds node.json, cache/, data/,
+  and on Linux door.sock"; Andy: "so far, so good."). On Linux each server's `door.sock` is `spirit/state/<name>/door.sock`.
+- That each app server starts and answers its interface, and that its own folder holds only `node.json`, `cache/`,
+  `data/` and, on Linux, `door.sock`, is judged per app from its own manifest in `./app-child-browser.md` (goal/G47.4):
+  this test keeps no list of the tree's apps.
 - Every server is handed `spirit/state/<name>/data` as its `--state`.
 - The node makes no `spirit/run/relay-state/` and no `spirit/run/process/`.
 
