@@ -14,12 +14,17 @@
 // with none. The rule runs there as its own process; with no environment.json, its reporter reports to no node.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/spirit-sibling-general/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/spirit-sibling-general'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
 
 const RULE = path.join(RUN, 'spirit', 'test', 'spirit-sibling-general.js');
@@ -56,6 +61,10 @@ const CLEAN = 'spirit/zzGlobal/clean.js';
 const GLOBALS = 'loaded in a node, it adds nothing to the global object or to process but spirit';
 PLANT[LEAKY] = ["'use strict';", "require('../spirit.js');", 'global.zzLeaked = 1;', 'module.exports = {};', ''].join('\n');
 PLANT[CLEAN] = ["'use strict';", "require('../spirit.js');", 'const zzKept = 1;', 'module.exports = { zzKept: zzKept };', ''].join('\n');
+// A script that builds a temp path of its own (goal/G47.1, the box: "nothing else builds a temp path").
+const OWN_TEMP = 'spirit/zzGlobal/ownTemp.js';
+const TEMP_CHECK = 'it builds no temp path of its own: its temp folder comes from spirit/tempFolder.js';
+PLANT[OWN_TEMP] = ["'use strict';", "require('../spirit.js');", "const os = require('os');", "module.exports = { where: os.tmpdir() };", ''].join('\n');
 
 let root = null, run = null;
 // The rule run in the scratch tree, handed arg or nothing: its check as printed (spirit/test/testReport.js prints each test
@@ -77,7 +86,7 @@ function lineOf(arg, check, env) {
 test.after(function () { try { if (root) fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
 test.run('a scratch tree is made of the tracked files and the planted scripts, in a git index of its own', 0.2, function () {
-  root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-garbage-'));
+  root = ownTemp('spirit-garbage-');
   execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
     .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
@@ -152,6 +161,18 @@ test.run('a node script that assigns a name onto global is red on the global obj
 test.run('a node script that hands out its value through module.exports alone is green on the global object check', 0.4, function () {
   if (!run) return false;
   const l = lineOf(CLEAN, GLOBALS, { SPIRIT_MOUNT_BASE: 'http://127.0.0.1:9', SPIRIT_MOUNT_RUN: run });
+  return (!!l && !l.red) || false;
+}, test.limit.slow);
+// The box: "nothing else builds a temp path. Guard: the general test is red on a product script or test that calls the
+// system temp folder directly."
+test.run('a script that calls the system temp folder directly is red on the temp check', 0.4, function () {
+  if (!run) return false;
+  const l = lineOf(OWN_TEMP, TEMP_CHECK);
+  return (!!l && l.red && l.script.indexOf(OWN_TEMP) !== -1) || false;
+}, test.limit.slow);
+test.run('a script that builds no temp path is green on the temp check', 0.4, function () {
+  if (!run) return false;
+  const l = lineOf(CLEAN, TEMP_CHECK);
   return (!!l && !l.red) || false;
 }, test.limit.slow);
 

@@ -10,12 +10,17 @@
 // address assertRelayUrl refuses is refused before any socket opens, which is counted on http.request and https.request.
 
 const fs = require('fs');
-const os = require('os');
 const http = require('http');
 const https = require('https');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayRequest/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayRequest'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 const pipePathFor = require(path.join(RUN, 'spirit', 'appClient.js')).pipePathFor;
 const R = require(path.join(RUN, 'spirit', 'relayRequest.js'));
@@ -57,7 +62,7 @@ test.run('a relay is planted on 127.0.0.1 port 0, with an app server on its pipe
   W.relay = http.createServer(handler(W.seen));
   await new Promise(function (r) { W.relay.listen(0, '127.0.0.1', r); });
   W.base = 'http://127.0.0.1:' + W.relay.address().port;
-  W.root = fs.mkdtempSync(path.join(os.tmpdir(), 'rr-'));
+  W.root = ownTemp('rr-');
   W.pipe = pipePathFor(W.root, 'reqtest', process.platform);
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(W.pipe), { recursive: true });
   W.pipeServer = http.createServer(handler(W.pipeSeen));

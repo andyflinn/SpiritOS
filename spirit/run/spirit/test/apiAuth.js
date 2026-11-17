@@ -6,11 +6,16 @@
 // node.db is the test's alone, and the live tree is the test's stand-in.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/apiAuth/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/apiAuth'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { DatabaseSync } = require('node:sqlite');
 
 const FILE = path.join(RUN, 'spirit', 'apiAuth.js');
@@ -56,7 +61,7 @@ test.run('spirit/auth/bundle.json names the owner in its request and its descrip
 
 test.run('createApiAuth answers a bundle function and a branch function beside grant and revoke', 0.2, async function () {
   createApiAuth = require(FILE).createApiAuth;
-  root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-'));
+  root = ownTemp('spirit-apiAuth-');
   // goal/G41.25: agent is an app server of the tree, so a bundle it owns names a server the node has.
   tree = { files: { read: {}, list: {} }, desk: { 'chat.add': {}, 'item.get': {} }, agent: { job: {} } };
   auth = createApiAuth({ rootDir: root, tree: function () { return Promise.resolve(tree); } });
@@ -475,7 +480,7 @@ test.run('an empty owner narrows nothing', 0.2, async function () {
 // app folder holds such a file makes no bundle of it, and writes no record of it anywhere.
 test.run('a <name>Bundles.json in an app folder makes no bundle at boot', 0.2, async function () {
   if (!auth) return false;
-  bootRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-boot-'));
+  bootRoot = ownTemp('spirit-apiAuth-boot-');
   probeDir = path.join(bootRoot, 'spirit', 'app', 'probe');
   fs.mkdirSync(probeDir, { recursive: true });
   fs.writeFileSync(path.join(probeDir, 'probeBundles.json'), JSON.stringify({ probeAgent: { label: 'Probe agent', branches: [{ family: 'probe', verb: 'ping' }] } }));
@@ -611,7 +616,7 @@ test.run('on a scratch node with no FS verb, a branch naming a verb the family s
   // Andy: "those owner only FS verbs are no longer needed, because not the api ID spirit.fs or spirit.api.desk ARE the path
   // to all those files". The node's tree holds no FS verb, so a branch or a grant naming one names a
   // verb nobody serves, and is refused as any such verb is.
-  fsRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-fs-'));
+  fsRoot = ownTemp('spirit-apiAuth-fs-');
   fsTree = { desk: { 'chat.add': {} } };
   fsAuth = createApiAuth({ rootDir: fsRoot, tree: function () { return Promise.resolve(fsTree); } });
   fsBundle = await call(fsAuth, 'bundle', { op: 'add', label: 'FS probe' });

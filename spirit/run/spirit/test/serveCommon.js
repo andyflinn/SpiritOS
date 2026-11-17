@@ -15,6 +15,12 @@ const path = require('path');
 const { EventEmitter } = require('events');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/serveCommon/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/serveCommon'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const C = require(path.join(RUN, 'spirit', 'serveCommon.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 
@@ -49,7 +55,7 @@ function withExit(fn) {
   try { fn(); } finally { process.exit = was.exit; console.error = was.error; }
   return got;
 }
-const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-serveCommon-'));
+const HOME = ownTemp('spirit-serveCommon-');
 process.on('exit', function () { try { fs.rmSync(HOME, { recursive: true, force: true }); } catch (e) { /* gone */ } });
 
 // ── the command line ──

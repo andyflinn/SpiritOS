@@ -60,3 +60,11 @@ goal/G47.1; Andy: *"no developer will want to use a system that pollutes global 
 - Handed `leaky.js`, "loaded in a node, it adds nothing to the global object or to process but spirit" is red, under that script.
 - Handed `clean.js`, the same check is green.
 - Both red on the rule before, which had no such check.
+
+## No temp path of its own
+
+goal/G47.1, the box: *"nothing else builds a temp path"*. In the same scratch tree, a planted `spirit/zzGlobal/ownTemp.js` that calls the system temp folder itself.
+
+- Handed `ownTemp.js`, "it builds no temp path of its own: its temp folder comes from spirit/tempFolder.js" is red, under that script.
+- Handed `clean.js`, the same check is green.
+- Both red on the rule before, which had no such check.

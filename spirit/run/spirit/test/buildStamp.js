@@ -9,18 +9,23 @@
 // `git ls-files` would leave behind. Each test makes its own scratch repository or bare tree in the temp folder.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/buildStamp/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/buildStamp'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const S = require(path.join(RUN, 'spirit', 'buildStamp.js'));
 
 function put(file, text) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text); }
 function git(repo, args) { return execFileSync('git', ['-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false'].concat(args), { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
 // A scratch repository holding spirit/run/spirit/a.js, committed: { repo, run } where run is its spirit/run.
 function repository() {
-  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-buildstamp-'));
+  const repo = ownTemp('spirit-buildstamp-');
   git(repo, ['init', '-q']);
   put(path.join(repo, 'spirit', 'run', 'spirit', 'a.js'), 'one\n');
   git(repo, ['add', '-A']);
@@ -29,12 +34,12 @@ function repository() {
 }
 // A tree in no repository (the temp folder is checked to be none), as labMaster's copies are.
 function bareTree() {
-  const run = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-buildstamp-')), 'spirit', 'run');
+  const run = path.join(ownTemp('spirit-buildstamp-'), 'spirit', 'run');
   fs.mkdirSync(run, { recursive: true });
   return run;
 }
 let inRepo = false;
-try { git(os.tmpdir(), ['rev-parse', '--git-dir']); inRepo = true; } catch (e) { inRepo = false; }
+try { git(ownTemp('repoProbe'), ['rev-parse', '--git-dir']); inRepo = true; } catch (e) { inRepo = false; }
 
 // ── git first ──
 let R = null;

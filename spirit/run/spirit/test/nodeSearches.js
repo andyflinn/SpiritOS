@@ -8,10 +8,15 @@
 // table is planted (listJobs, getJob, fsTreeEntries), and the files a contents search reads are in a scratch folder.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/nodeSearches/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/nodeSearches'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const { createNodeSearches } = require(path.join(RUN, 'spirit', 'nodeSearches.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
@@ -25,7 +30,7 @@ const JOBS = [
   { id: 'desk.loop', status: 'running' },
 ];
 // A scratch run folder, and the tree entries the watcher would hold for it.
-const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-nodesearches-'));
+const ROOT = ownTemp('spirit-nodesearches-');
 function put(rel, text) { fs.mkdirSync(path.dirname(path.join(ROOT, rel)), { recursive: true }); fs.writeFileSync(path.join(ROOT, rel), text); }
 put('app/notes.txt', 'nothing here\nthe quokka sleeps\nanother quokka line\n');
 put('app/quokka.txt', 'no such animal in this file\n');

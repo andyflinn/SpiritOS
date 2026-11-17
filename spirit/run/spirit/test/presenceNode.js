@@ -10,10 +10,15 @@
 // calling the onOpen, onEvent and onClose its connect was handed, which is what a relay does to this module.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/presenceNode/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/presenceNode'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const PN = require(path.join(RUN, 'spirit', 'presenceNode.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
@@ -71,7 +76,7 @@ function dot(key) { const t = W.p.table(); return t[key] ? (t[key].present ? 'gr
 
 // ── the construction ──
 test.run('createPresence refuses to be built without the router it posts from (half an interface)', 0.2, function () {
-  try { PN.createPresence({ rootDir: os.tmpdir() }); return false; }
+  try { PN.createPresence({ rootDir: ownTemp('noRouter') }); return false; }
   catch (e) { return /router/.test(e.message) || false; }
 }, test.limit.quick);
 test.run('streamUrl is the relay\'s stream door with the key in its query, a trailing slash dropped', 0.2, function () {
@@ -81,7 +86,7 @@ test.run('streamUrl is the relay\'s stream door with the key in its query, a tra
 
 // ── the world ──
 test.run('a scratch node with an identity, seated on two relays, is started', 0.2, async function () {
-  W.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-presencenode-'));
+  W.home = ownTemp('spirit-presencenode-');
   auth.saveIdentity(W.home, auth.generateIdentity('presencenode-test'));
   W.me = auth.loadIdentity(W.home);
   [[URL_A, KEY_RA], [URL_B, KEY_RB]].forEach(function (r) { relayKeys.list(W.home, r[0], r[0], r[1]); relayKeys.seat(W.home, r[0]); });

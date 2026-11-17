@@ -13,7 +13,6 @@
 // the section before, as the old run did, and test.after stops whatever is left.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawn, execSync, spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
@@ -21,6 +20,12 @@ const RUN = path.resolve(__dirname, '..', '..');
 const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/job/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/job'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const { scratchNode, sleep, until } = H;
 
@@ -52,7 +57,7 @@ const refused = function (k) { return RC[k] ? (RC[k].refused ? true : false) : f
 const neverRan = function (k) { return RC[k] ? (!RC[k].ran ? true : false) : false; };
 
 test.run('a scratch node comes up with desk and icons switched on at boot', 0.2, async function () {
-  J.marks = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-jobs-marks-'));
+  J.marks = ownTemp('spirit-jobs-marks-');
   // Icons, the first one-shot app (goal/G43.19), switched on at boot beside desk.
   J.node = await scratchNode({ servers: ['desk', 'icons'] });
   if (!J.node.up) return false;

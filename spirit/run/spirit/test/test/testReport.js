@@ -27,12 +27,17 @@
 // every testicle.testicle.set it is sent. Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testReport/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testReport'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // THE PLANTED SUITES, each a file of the scratch tree, its tests through test.run.
@@ -74,7 +79,7 @@ const GENERAL_TWO = [
 ].join('\n');
 
 function scratchTree(port) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'g472-report-'));
+  const root = ownTemp('g472-report-');
   const run = path.join(root, 'run');
   const SKIP = ['state', 'test'];
   (function copy(from, to) {

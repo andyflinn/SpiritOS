@@ -13,7 +13,6 @@
 // and never in a --child process.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const http = require('http');
 const Module = require('module');
@@ -26,6 +25,12 @@ const SELF_FILE = __filename;
 const TRANSLATOR = path.join(RUN, 'spirit', 'app', 'desk', 'data.js');
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
 const test = CHILD ? null : require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends (by the parent; a child is handed its folder).
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/appServer/' + name + tempAsked); }
+if (test) test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/appServer'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
 const tick = function (ms) { return new Promise(function (r) { setTimeout(r, ms || 20); }); };
 
@@ -37,7 +42,7 @@ const SELF = 'KEY-CLIENT';
 // The server families (box v15, Family folders); deskAgent killed on goal/G41.28 (Andy: "all, KILL deskAgent!").
 const FAMILIES = ['backup', 'deskClient', 'testicle'];
 
-const TMP = CHILD ? String(process.argv[4]) : fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
+const TMP = CHILD ? String(process.argv[4]) : ownTemp('appServer-test-');
 // A server name of the test's own, so its cache folder (spirit/state/<name>/) is no real server's.
 const NAME = CHILD ? String(process.argv[5]) : 'streamProbe';
 let PIPE = path.join(TMP, NAME + '.sock');
@@ -471,7 +476,7 @@ function stateCachePart() {
   test.run('the sender\'s file name is its node id', 0.2, function () {
     putBackTheRealSpirit();
     ({ until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')));
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-state-cache-'));
+    root = ownTemp('spirit-state-cache-');
     execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
       .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
       .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });

@@ -8,10 +8,15 @@
 // word; only the button, at home, sets or takes the star. On a scratch folder.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayKeys/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayKeys'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 
@@ -23,7 +28,7 @@ const W = { home: null, a: null, b: null };
 
 // a report from a relay calling this node its owner
 test.run('a relay row is there to report on', 0.2, function () {
-  W.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaykeys-'));
+  W.home = ownTemp('spirit-relaykeys-');
   return relayKeys.accept(W.home, URL_A, KEY_A) === true || false;
 }, test.limit.quick);
 test.run('it notes the seat the relay says this node holds', 0.2, function () {

@@ -7,9 +7,13 @@
 // (spirit/test/DEBUG.md), in the same browser on the same kind of node. Never Andy's node nor an agent's.
 
 const fs = require('fs');
-const os = require('os');
 const net = require('net');
 const path = require('path');
+// CHROME PROFILES FROM THE ONE TEMP HELPER (goal/G47.1, the box: "nothing else builds a temp path"): each under a route of
+// this file's own, spirit/test/headLessChrome, named by a random suffix (never a process id), so a profile its watcher removes
+// after the test has ended is no suite's leftover.
+const tempFolder = require('../tempFolder.js');
+const PROFILES = 'spirit/test/headLessChrome';
 const { spawn, execSync } = require('child_process');
 
 const RUN = path.join(__dirname, '..', '..');
@@ -379,7 +383,7 @@ function watchChrome(kid, profile) {
     w.unref();
   } catch (e) { /* no watcher: the test's own cleanup is all there is */ }
 }
-// THE PROFILES LEFT BEFORE, SWEPT (the same finding): once per test process, a process apart deletes every spirit-chrome-*
+// THE PROFILES LEFT BEFORE, SWEPT (the same finding): once per test process, a process apart deletes every chrome-*
 // profile older than an hour. No test's Chrome lives that long (a job is killed at two minutes); a locked one stays for the
 // next sweep.
 let swept = false;
@@ -388,10 +392,10 @@ function sweepProfiles() {
   swept = true;
   const code = 'const fs = require("fs"); const path = require("path"); const dir = process.argv[1]; const old = Date.now() - 3600000;' +
     ' let names = []; try { names = fs.readdirSync(dir); } catch (e) {}' +
-    ' names.forEach(function (n) { if (n.indexOf("spirit-chrome-") !== 0) return; const p = path.join(dir, n);' +
+    ' names.forEach(function (n) { if (n.indexOf("chrome-") !== 0) return; const p = path.join(dir, n);' +
     ' try { if (fs.statSync(p).mtimeMs < old) fs.rmSync(p, { recursive: true, force: true }); } catch (e) {} });';
   try {
-    const w = spawn(process.execPath, ['-e', code, os.tmpdir()], { stdio: 'ignore', detached: true, windowsHide: true });
+    const w = spawn(process.execPath, ['-e', code, tempFolder.path(PROFILES)], { stdio: 'ignore', detached: true, windowsHide: true });
     w.unref();
   } catch (e) { /* swept by the next test */ }
 }
@@ -459,7 +463,7 @@ async function attach(url) {
 async function chromePage(chrome) {
   if (process.env.SPIRIT_CHROME_PORT) return pageOf(process.env.SPIRIT_CHROME_PORT);
   sweepProfiles();
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-chrome-'));
+  const profile = tempFolder(PROFILES + '/chrome-' + require('crypto').randomBytes(6).toString('hex'));
   const kid = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check',
     '--window-size=1280,800', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
   watchChrome(kid, profile);

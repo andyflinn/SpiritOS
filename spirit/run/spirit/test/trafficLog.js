@@ -10,15 +10,20 @@
 
 require('../spirit.js');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/trafficLog/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/trafficLog'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const T = require(path.join(RUN, 'spirit', 'trafficLog.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 
 const ROOTS = [];
-function scratch() { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-trafficlog-')); ROOTS.push(d); return d; }
+function scratch() { const d = ownTemp('spirit-trafficlog-'); ROOTS.push(d); return d; }
 function hasDb(root) { return fs.existsSync(nodeStore.dbPath(root)); }
 // The same object, whatever order its keys came in.
 function canon(x) {

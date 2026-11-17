@@ -10,17 +10,22 @@
 // identity.json of its own.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/nodeCard/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/nodeCard'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const C = require(path.join(RUN, 'spirit', 'nodeCard.js'));
 const auth = spirit.require('spirit/relayAuth.js');
 
 // A scratch node home with an identity named as given.
 function home(name) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-card-'));
+  const root = ownTemp('nr-card-');
   auth.saveIdentity(root, auth.generateIdentity(name));
   return root;
 }

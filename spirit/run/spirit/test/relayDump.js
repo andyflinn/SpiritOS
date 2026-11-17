@@ -8,10 +8,15 @@
 // `out`. A relay.db is made on a scratch root under the temp folder with this tree's relayStore.js, owner.json beside it.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayDump/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayDump'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const relayStore = require(path.join(RUN, 'spirit', 'relayStore.js'));
 const D = require(path.join(RUN, 'spirit', 'relayDump.js'));
 
@@ -23,8 +28,8 @@ const W = { root: null, empty: null };
 
 test.run('a relay.db holds 12 members with the label "crowd", one "solo" and the owner, and two invites', 0.2, function () {
   if (!relayStore.available()) return false;
-  W.root = fs.mkdtempSync(path.join(os.tmpdir(), 'relayDump-'));
-  W.empty = fs.mkdtempSync(path.join(os.tmpdir(), 'relayDump-empty-'));
+  W.root = ownTemp('relayDump-');
+  W.empty = ownTemp('relayDump-empty-');
   const s = relayStore.open(W.root);
   for (let i = 0; i < 12; i += 1) s.members.put({ publicKey: key('m' + i), publicLabel: 'crowd', claimedAt: '2026-11-0' + (i % 9 + 1) + 'T00:00:00.000Z' });
   s.members.put({ publicKey: key('solo'), publicLabel: 'solo', claimedAt: '2026-11-10T00:00:00.000Z' });

@@ -9,14 +9,19 @@
 // temp home"), and a planted clock stamps each note.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/seenPeers/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/seenPeers'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const P = require(path.join(RUN, 'spirit', 'seenPeers.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 
-const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-seenPeers-'));
+const HOME = ownTemp('spirit-seenPeers-');
 const opened = [];
 process.on('exit', function () {
   opened.forEach(function (s) { try { s.close(); } catch (e) { /* closed */ } });

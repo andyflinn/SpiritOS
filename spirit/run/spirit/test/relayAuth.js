@@ -12,18 +12,23 @@
 // In a child process of its own, on a scratch state folder: the reads of identity.json counted.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayAuth/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayAuth'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const AUTH = path.join(RUN, 'spirit', 'relayAuth.js');
 
 let root = '', seen = null;
 test.after(function () { try { if (root) fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
 test.run('a scratch node identity is asked fifty times, saved anew and asked again, with every read of identity.json counted', 0.2, function () {
-  root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relayAuth-'));
+  root = ownTemp('spirit-relayAuth-');
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   const src = [
     "const fs = require('fs'), path = require('path');",

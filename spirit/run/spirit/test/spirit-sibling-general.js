@@ -1746,6 +1746,10 @@ function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElem
 // nothing called. Never loaded, as the classifier never loads them (spirit/test/scriptClassify.js): the node and the relay
 // themselves.
 const NODE_NEVER_LOADED = ['spirit/server.js', 'spirit/relayServer.js'];
+// The one door to a temp folder, and its own test (judged in oneFile below); and the lab's own test, which reads the system
+// temp folder's top to find that no copy of the tree was made there ("no copy of the tree is made for the lab node in the
+// temp folder"): it builds no temp path.
+const TEMP_DOOR = ['spirit/tempFolder.js', 'spirit/test/tempFolder.js', 'spirit/test/test/headLessChrome.js'];
 // The scratch run a script is loaded in: the one testicle hands (SPIRIT_MOUNT_RUN), else a tree of lab's with no node on it,
 // taken for this one load and freed right after (handed a list, the rule runs this part once a script, so a tree kept here
 // would be one more lab node each script, and the lab's six are gone by the seventh). The script as judged, the working copy,
@@ -2080,6 +2084,18 @@ function oneFile(P) {
       const g = await nodeGlobalsOf(rel, full);
       return !!g && Array.isArray(g.leaks) && !g.leaks.length || false;
     }, test.limit.slow);
+  }
+  // ITS TEMP FOLDER FROM THE ONE HELPER (goal/G47.1, the box, no pollution: names and folders: "One helper on the spirit
+  // object hands a process its temp folder, made empty when asked; nothing else builds a temp path. Guard: the general test
+  // is red on a product script or test that calls the system temp folder directly."). Read in its code, strings and
+  // comments left out: a call of tmpdir(). The helper itself, spirit/tempFolder.js, and its own test, which checks the
+  // helper's paths against the system temp folder, are the two that may.
+  if (/^spirit\/.+\.js$/.test(rel) && !VENDORED_FOLDERS.holds(rel) && TEMP_DOOR.indexOf(rel) === -1) {
+    test.run('it builds no temp path of its own: its temp folder comes from spirit/tempFolder.js', 0.4, function () {
+      let src = '';
+      try { src = codeOf(fs.readFileSync(full, 'utf8'), true); } catch (e) { return false; }
+      return !/\btmpdir\s*\(/.test(src) || false;
+    }, test.limit.quick);
   }
   // <address>: every require path is a child, a sibling or an ancestor's file
   test.run('none of its require paths breaks the rule', 0.4, function () {

@@ -13,6 +13,12 @@ const RUN = path.resolve(__dirname, '..', '..');
 // that reads the global spirit (arrivals.js) finds it only when the suite loaded it before the reporter.
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/hub/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/hub'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const HUB = path.join(RUN, 'spirit', 'hub.js');
 
 function code(file) {
@@ -56,7 +62,7 @@ const PEER_KEY = 'MCowBQYDK2VwAyEAROUTEROUTEROUTEROUTEROUTEROUTEROUTEROUTEROU=';
 let chosen = null;
 test.run('on a scratch node that once heard a route for a peer, chooseRoute asked for that peer with one relay held sends the post to that relay', 0.2, function () {
   const os = require('os');
-  W.routeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hub-route-'));
+  W.routeHome = ownTemp('spirit-hub-route-');
   fs.mkdirSync(path.join(W.routeHome, 'spirit', 'state'), { recursive: true });
   try {
     const store = require(path.join(RUN, 'spirit', 'nodeStore.js')).open(W.routeHome);

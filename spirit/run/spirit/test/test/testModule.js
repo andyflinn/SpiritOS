@@ -12,6 +12,12 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testModule/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testModule'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { testsFor } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
 
 // The general tests in spirit/test/, beside spirit/spirit.js (goal/G43.32), of the three kinds since goal/G47.1, box v94, 2:
@@ -57,7 +63,7 @@ test.run('spirit/test/spirit-sibling-browser.js judges spirit/apiDoor.js on its 
 // one test file per script: no <name>-<what>.js is read
 const ONE = { zz: null, part: null };
 test.run('a script\'s one test file runs with it, and with the scripts below it', 0.2, function () {
-  const planted = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-onefile-'));
+  const planted = ownTemp('spirit-onefile-');
   try {
     const put = function (rel, text) { const f = path.join(planted, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text || '\n'); };
     put('spirit/zz.js'); put('spirit/test/zz.js'); put('spirit/test/zz-extra.js'); put('spirit/zz/part.js'); put('spirit/zz/test/part.js'); put('spirit/zz/test/part-more.js');
@@ -78,7 +84,7 @@ test.run('no test file named after a script with a dash and more is read, on its
 // a general test judges a module with no test of its own
 const OPT = { whole: null, lone: null };
 test.run('on the whole list a general test judges a module with its own test', 0.2, function () {
-  const planted = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-optin-'));
+  const planted = ownTemp('spirit-optin-');
   try {
     const put = function (rel) { const f = path.join(planted, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, '\n'); };
     put('spirit/spirit.js'); put('spirit/test/spirit-sibling-zzRules.js'); put('spirit/lone.js'); put('spirit/sub/deep.js'); put('spirit/owned.js'); put('spirit/test/owned.js');

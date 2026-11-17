@@ -7,10 +7,15 @@
 // BELONG"): beside the file whose code it reads. Each file's code is read with its comments left out. No node, no port.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/peerPost/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/peerPost'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
 // A file's code, comments blanked (line numbers kept); null when the file is not there.
 function code(file) {
@@ -48,7 +53,7 @@ test.run('peerPost.js\'s code names no admitted mark', 0.2, function () {
 let posted = null;
 test.run('a post is handed hints, and the body that leaves for the relay is kept', 0.2, async function () {
   const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-peerpost-hints-'));
+  const home = ownTemp('spirit-peerpost-hints-');
   try {
     fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
     auth.saveIdentity(home, auth.generateIdentity('sender'));

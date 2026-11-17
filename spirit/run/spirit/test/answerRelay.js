@@ -9,10 +9,15 @@
 // The relay's answer is planted (askKey), the pin lives in a scratch folder, and the statements are signed in process.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/answerRelay/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/answerRelay'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { createAnswerer } = require(path.join(RUN, 'spirit', 'answerRelay.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
 const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
@@ -31,7 +36,7 @@ function answerer(root, answers, extra) {
   }, extra || {}));
   return said;
 }
-const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-answerrelay-'));
+const ROOT = ownTemp('spirit-answerrelay-');
 const URL_A = 'https://relay-a.example';
 const URL_B = 'https://relay-b.example';
 const A = auth.generateIdentity('relay-a');
@@ -75,14 +80,14 @@ test.run('a seal key is never learned on its own: a relay not yet asked, an unkn
 
 // ── an answer that does not verify yields no key at all ──
 test.run('a statement whose seal key was swapped after signing yields no key, no pin and no seal key', 0.2, async function () {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-answerrelay-'));
+  const root = ownTemp('spirit-answerrelay-');
   const forged = Object.assign(statement(A, 'a'), { relaySealKey: B.sealPublicKey });
   const s = answerer(root, { [URL_A]: forged });
   const k = await s.a.relayKey(URL_A);
   return (k === '' && !relayKeys.pinned(root, URL_A) && s.a.relaySealKey(URL_A) === '' && s.a.relaySealKeyByKey(A.publicKey) === '') || false;
 }, test.limit.quick);
 test.run('an unsigned statement, one with its label changed, and one with no key each yield no key', 0.2, async function () {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-answerrelay-'));
+  const root = ownTemp('spirit-answerrelay-');
   const unsigned = statement(A, 'a'); delete unsigned.keySig;
   const relabelled = Object.assign(statement(A, 'a'), { relayLabel: 'not-a' });
   const s = answerer(root, { 'https://u.example': unsigned, 'https://l.example': relabelled, 'https://n.example': { ok: true } });
@@ -90,7 +95,7 @@ test.run('an unsigned statement, one with its label changed, and one with no key
   return r.every(function (x) { return x === ''; }) || false;
 }, test.limit.quick);
 test.run('a relay that does not answer, its key ask rejecting or throwing, yields no key, and relayKey never rejects', 0.2, async function () {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-answerrelay-'));
+  const root = ownTemp('spirit-answerrelay-');
   const s = answerer(root, { 'https://down.example': function () { return Promise.reject(new Error()); }, 'https://boom.example': function () { throw new Error(); } });
   let r;
   try { r = [await s.a.relayKey('https://down.example'), await s.a.relayKey('https://boom.example')]; }

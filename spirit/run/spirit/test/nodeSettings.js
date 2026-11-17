@@ -8,15 +8,20 @@
 // the node. Each test writes node.json into a scratch home of its own.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/nodeSettings/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/nodeSettings'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const S = require(path.join(RUN, 'spirit', 'nodeSettings.js'));
 
 // A scratch home, holding node.json with the text given (or none).
 function home(text) {
-  const h = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-nodesettings-'));
+  const h = ownTemp('spirit-nodesettings-');
   if (text !== undefined) { fs.mkdirSync(path.join(h, 'spirit', 'state'), { recursive: true }); fs.writeFileSync(path.join(h, 'spirit', 'state', 'node.json'), text); }
   return h;
 }

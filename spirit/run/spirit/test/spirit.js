@@ -15,7 +15,6 @@
 // Reported in the format of the current test system.
 
 const fs = require('fs');
-const os = require('os');
 const vm = require('vm');
 const http = require('http');
 const path = require('path');
@@ -23,6 +22,12 @@ const { spawn, spawnSync } = require('child_process');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
 const RUN = path.join(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/spirit/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/spirit'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const SOURCE = fs.readFileSync(path.join(RUN, 'spirit', 'spirit.js'), 'utf8');
 const COMPONENT = 'spirit/relayUrl.js';
 const PAGE_COMPONENT = 'spirit/fieldRules.js';   // written for both node and a page, as the face's parts are
@@ -98,7 +103,7 @@ function fakeNode() {
 }
 // A scratch run root: its spirit/ folder, spirit.js in it (goal/G43.18), and an environment.json naming port (or none).
 function scratchRoot(port) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-root-'));
+  const root = ownTemp('spirit-root-');
   fs.cpSync(path.join(RUN, 'spirit'), path.join(root, 'spirit'), { recursive: true, filter: function (src) { return src !== path.join(RUN, 'spirit', 'state'); } });
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   if (port) fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: port }));

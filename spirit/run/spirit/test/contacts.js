@@ -7,10 +7,15 @@
 // star; the button's verb, on a scratch node over a raw POST, does.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/contacts/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/contacts'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const contacts = require(path.join(RUN, 'spirit', 'contacts.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 const nodeCard = require(path.join(RUN, 'spirit', 'nodeCard.js'));
@@ -29,7 +34,7 @@ const W = {};
 
 // A signed card naming this node as its owner.
 test.run('a signed card naming this node as its owner is kept', 0.2, function () {
-  W.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-contacts-'));
+  W.home = ownTemp('spirit-contacts-');
   fs.mkdirSync(path.join(W.home, 'spirit', 'state'), { recursive: true });
   // This node, as its identity file holds it (relayAuth.loadIdentity reads it from here).
   W.me = auth.generateIdentity('me');

@@ -13,11 +13,16 @@
 // missing fails, saying so, never skips. A refusal that keeps a relay out is a security check, 0.8.
 
 const fs = require('fs');
-const os = require('os');
 const http = require('http');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/faceHome/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/faceHome'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
 const seal = require(path.join(RUN, 'spirit', 'seal.js'));
 const { createFaceHome } = require(path.join(RUN, 'spirit', 'faceHome.js'));
@@ -639,7 +644,7 @@ test.after(function () {
 
 // faceHome-star: the star on a real node, a real relay and a real face (goal/G41.30).
 test.run('the node says its key', 0.2, async function () {
-  S.marks = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-star-marks-'));
+  S.marks = ownTemp('spirit-star-marks-');
   const N = S.N = await scratchNode();
   if (!N.up) return false;
   const run = S.run = path.join(N.root, 'spirit', 'run');

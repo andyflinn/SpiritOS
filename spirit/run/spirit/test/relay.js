@@ -6,15 +6,20 @@
 // on a scratch folder of its own, its mailer a stand-in that keeps what it was handed; nothing is sent.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relay/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relay'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
 // A relay on a scratch folder: its identity planted as the relay keeps it (relayAuth beside it), its face domain
 // relay.example, its mail kept.
 function scratchRelay() {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-'));
+  const home = ownTemp('spirit-relay-');
   const js = path.join(home, 'spirit');
   fs.mkdirSync(js, { recursive: true });
   // goal/G43.32: relayAuth.js takes the spirit object first and loads the rest through it, so the relay's home holds the
@@ -140,7 +145,7 @@ const GAP_MS = 250;
 // a search as long as the wire carries does not stop the relay answering others
 const LS = { home: null, box: null, asker: null, heard: [], seated: 0, len: 0, posted: null, worst: 0, answered: false, ran: false };
 test.run('500 members are seated and connected', 0.2, function () {
-  LS.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-search-'));
+  LS.home = ownTemp('spirit-relay-search-');
   fs.mkdirSync(path.join(LS.home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(LS.home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
@@ -303,7 +308,7 @@ test.run('the home node\'s updates reach the face again, with no reload', 0.2, a
 // B answers; what each stream hears from the answer on is kept.
 const RX = { home: null, after: null, replied: null };
 test.run('two members are on their streams, and one posts to the other, who answers', 0.2, async function () {
-  RX.home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-route-'));
+  RX.home = ownTemp('spirit-relay-route-');
   fs.mkdirSync(path.join(RX.home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(RX.home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');

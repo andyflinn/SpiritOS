@@ -8,11 +8,16 @@
 // with it." So this suite is red on purpose while a reserved word has no home.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/word/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/word'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
@@ -71,7 +76,7 @@ const cases = [
 ].concat(HARD.map(function (w) { return ['hard-coded: ' + w, 'spirit', w, w]; }));
 
 test.run('word.js runs from a scratch copy of the run tree with word.json files planted, and answers the checks', 0.2, function () {
-  W.scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-word-'));
+  W.scratch = ownTemp('spirit-word-');
   W.run = path.join(W.scratch, 'run');
   const SKIP = ['relay-state', 'app-state', 'media', 'published', 'brains', 'test'];
   fs.cpSync(RUN, W.run, { recursive: true, filter: function (src) {

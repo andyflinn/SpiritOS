@@ -10,10 +10,15 @@
 // fetch that keeps what it was asked.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/sendMail/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/sendMail'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const M = require(path.join(RUN, 'spirit', 'sendMail.js'));
 
 // The platform fetch never reaches past this machine: a mail that would leave it is a thrown error instead.
@@ -26,7 +31,7 @@ globalThis.fetch = function (url, init) {
   return Promise.reject(new Error());
 };
 
-const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-sendMail-'));
+const HOME = ownTemp('spirit-sendMail-');
 process.on('exit', function () { try { fs.rmSync(HOME, { recursive: true, force: true }); } catch (e) { /* gone */ } });
 // A scratch home whose mail.json is the value given (a string is written as it is; undefined writes none).
 let n = 0;

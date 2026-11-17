@@ -208,7 +208,7 @@ function createFaceHome(opts) {
   function dropUpload(id) {
     const u = uploads.get(id);
     uploads.delete(id);
-    if (u) { try { require('fs').rmSync(u.file, { force: true }); } catch (e) { /* the temp folder keeps it */ } }
+    if (u) { try { require('fs').rmSync(u.dir || u.file, { recursive: true, force: true }); } catch (e) { /* the temp folder keeps it */ } }
   }
   // A transfer with no new part for an hour is dropped, its work file deleted.
   function sweepUploads() {
@@ -230,9 +230,12 @@ function createFaceHome(opts) {
     const fsm = require('fs');
     if (n === 0) {
       dropUpload(id);
-      const file = require('path').join(require('os').tmpdir(), 'spirit-upload-' + id);
+      // ITS WORK FILE FROM THE ONE TEMP HELPER (goal/G47.1, the box: "nothing else builds a temp path"): a folder of its own
+      // per transfer, spirit/upload/<id> under the node's own temp folder (the node's job is spirit), removed with the transfer.
+      const dir = spirit.require('spirit/tempFolder.js')('spirit/upload/' + id);
+      const file = require('path').join(dir, 'part');
       try { fsm.writeFileSync(file, ''); } catch (e) { json(res, 500, { ok: false, code: 'not-saved', error: 'the work file could not be made: ' + e.message }); return; }
-      uploads.set(id, { file: file, path: rel, size: size, of: of, next: 0, written: 0, at: nowMs() });
+      uploads.set(id, { file: file, dir: dir, path: rel, size: size, of: of, next: 0, written: 0, at: nowMs() });
     }
     const u = uploads.get(id);
     if (!u || n !== u.next || of !== u.of || size !== u.size || rel !== u.path) {
@@ -248,10 +251,10 @@ function createFaceHome(opts) {
     u.at = nowMs();
     if (u.next < u.of) { json(res, 202, { ok: true, more: true, part: n }); return; }
     uploads.delete(id);
-    if (u.written !== u.size) { try { fsm.rmSync(u.file, { force: true }); } catch (e) { /* the temp folder keeps it */ } json(res, 400, { ok: false, code: 'bad-part', error: u.written + ' bytes came, ' + u.size + ' were named' }); return; }
+    if (u.written !== u.size) { try { fsm.rmSync(u.dir, { recursive: true, force: true }); } catch (e) { /* the temp folder keeps it */ } json(res, 400, { ok: false, code: 'bad-part', error: u.written + ' bytes came, ' + u.size + ' were named' }); return; }
     let out = null;
     try { out = typeof o.saveFrom === 'function' ? o.saveFrom(u.file, u.path) : { ok: false, reason: 'error' }; } catch (e) { out = { ok: false, reason: 'error' }; }
-    try { fsm.rmSync(u.file, { force: true }); } catch (e) { /* the temp folder keeps it */ }
+    try { fsm.rmSync(u.dir, { recursive: true, force: true }); } catch (e) { /* the temp folder keeps it */ }
     if (out && out.ok) json(res, 200, { ok: true });
     else json(res, out && out.reason === 'forbidden' ? 403 : 500, { ok: false, code: (out && out.reason) || 'error', reason: (out && out.reason) || 'error', error: 'not saved: ' + ((out && out.reason) || 'error') });
   }

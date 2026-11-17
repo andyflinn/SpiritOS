@@ -6,15 +6,20 @@
 // temp dir: a real node.db, every row written and read back through the store's own functions.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/nodeStore/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/nodeStore'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 const { DatabaseSync } = require('node:sqlite');
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-nodestore-'));
+const TMP = ownTemp('spirit-nodestore-');
 let homes = 0;
 function home() { homes += 1; return path.join(TMP, 'h' + homes); }
 const DAY = 24 * 60 * 60 * 1000;

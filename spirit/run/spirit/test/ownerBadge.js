@@ -9,15 +9,20 @@
 // is kept in a scratch home of its own, and probe's request is planted: it answers a card's text per url.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/ownerBadge/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/ownerBadge'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const B = require(path.join(RUN, 'spirit', 'ownerBadge.js'));
 const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-function scratch() { return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ownerbadge-')); }
+function scratch() { return ownTemp('spirit-ownerbadge-'); }
 const KEPT = 'https://noderoutes.net';
 const MINE = 'https://mine.example';
 const OTHER = 'https://other.example';

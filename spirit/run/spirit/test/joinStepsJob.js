@@ -9,10 +9,15 @@
 // temp folder; the jobs table is a planted one that records each ownNews it is asked.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/joinStepsJob/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/joinStepsJob'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const J = require(path.join(RUN, 'spirit', 'joinStepsJob.js'));
 const relayKeys = spirit.require('spirit/relayKeys.js');
@@ -32,7 +37,7 @@ const RELAY_KEY = 'relay-key-' + process.pid;
 const W = { root: null, jobs: null, made: null, me: '' };
 
 test.run('a scratch node root is made with an identity of its own and nothing else', 0.2, function () {
-  W.root = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-join-'));
+  W.root = ownTemp('nr-join-');
   try { auth.saveIdentity(W.root, auth.generateIdentity('joiner')); W.me = auth.loadIdentity(W.root).publicKey; } catch (e) { W.root = null; return false; }
   return !!W.me || (W.root = null, false);
 }, test.limit.quick);
@@ -95,6 +100,6 @@ test.run('the made job\'s facts() reads the records now, as facts(rootDir) does'
 }, test.limit.quick);
 test.run('facts never throw, and a root with no records answers the empty facts', 0.2, function () {
   let f;
-  try { f = J.facts(path.join(os.tmpdir(), 'nr-join-none-' + process.pid)); } catch (e) { return false; }
+  try { f = J.facts(tempFolder.path('spirit/test/joinStepsJob/none')); } catch (e) { return false; }
   return (f.seated === false && f.contact === false && f.relayUrl === '') || false;
 }, test.limit.quick);

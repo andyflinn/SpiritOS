@@ -8,11 +8,16 @@
 // (keyColumn, path), one row per grant, as node's grants are (peer_id, path; spirit/nodeStore.js:502).
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/authTableInterface/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/authTableInterface'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const FILE = path.join(__dirname, '..', 'authTableInterface.js');
 
 // What the tests share: the module, its scratch folder and the table opened on it.
@@ -22,7 +27,7 @@ test.run('it exports open, taking a database file, a table and a key column', 0.
   try { W.A = require(FILE); } catch (e) { W.A = null; }
   const A = W.A;
   if (!(!!A && typeof A.open === 'function')) return false;
-  W.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'authTable-'));
+  W.dir = ownTemp('authTable-');
   W.file = path.join(W.dir, 'agent.db');
   return true;
 }, test.limit.quick);

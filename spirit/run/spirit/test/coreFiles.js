@@ -9,6 +9,12 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/coreFiles/' + name + tempAsked); }
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/test/coreFiles'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
 
 // What was core before goal/G41.29.
@@ -50,12 +56,11 @@ test.run('spirit/run/spirit/app/desk/element/desk/test/desk.md is not core, beca
 
 // goal/G43.14: <name>.json says whether an app of spirit/app/ is intrinsic.
 const W = {};
-const os = require('os');
 const fsx = require('fs');
 const at = function (name, f) { return 'spirit/run/spirit/app/' + name + '/' + f; };
 const is = function (p) { return core.isCore(p, W.root); };
 test.run('a tree of this test\'s own is planted, with apps saying intrinsic true, intrinsic false and nothing', 0.2, function () {
-  W.root = fsx.mkdtempSync(path.join(os.tmpdir(), 'spirit-core-'));
+  W.root = ownTemp('spirit-core-');
   const plant = function (name, identity) {
     const dir = path.join(W.root, 'spirit', 'run', 'spirit', 'app', name);
     fsx.mkdirSync(path.join(dir, 'test'), { recursive: true });

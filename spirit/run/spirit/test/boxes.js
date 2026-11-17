@@ -10,14 +10,19 @@
 // in as arrivals.js hands them, the envelope already read.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../tempFolder.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/boxes/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/boxes'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const B = require(path.join(RUN, 'spirit', 'boxes.js'));
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-function scratch() { return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-boxes-')); }
+function scratch() { return ownTemp('spirit-boxes-'); }
 function mine(root, keys) { const f = path.join(root, 'spirit', 'state', B.SERVERS); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify({ keys: keys })); }
 // A box report from a server, as arrivals.js hands it over: a system packet, no app, the box in its body.
 function report(from, box, extra) { return Object.assign({ fromKey: from, envelope: { v: 1, id: 'x', body: { box: box } } }, extra || {}); }
