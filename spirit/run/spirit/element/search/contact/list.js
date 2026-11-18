@@ -61,20 +61,24 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
   // ONE ROW OF FILTERS (box v8; Andy: "KILL that [all] AND KILL [book], put [network] at the very and as a toggle, when
   // its on then it shows peers from the network ALSO").
   var FILTERS = [
-    // As the contact selector had it (goal/G30.7; Andy, 2026-10-20: "Gimme 3 Buttons: [all] [⭐ my puppets] [relays]
-    // where all 3 are mutually exclusive"): all, then each kind the list holds any of.
+    // THE FOUR KINDS, ONE AT A TIME (goal/G47.4, box v29: "👨‍👩‍👧‍👦 People (nodes only, includes node-puppets, excludes relays and
+    // blocked) - ⭐ Puppets (starred/owned nodes or relays ...) - 📡 Relays - ❌ Blocked are mutualy exclusive, only one active
+    // at the time. The default is "People", when the app first opens. the all button must go."): one filter of choices, a
+    // list, so the shared search starts it at its first, People. The star is the row's mine flag.
     { name: 'show',
-      choices: function (all) {
-        var out = [{ value: 'all', word: 'all' }];
-        if (all.some(is('mine'))) out.push({ value: 'mine', icon: '⭐', word: 'my puppets' });
-        if (all.some(is('blocked'))) out.push({ value: 'blocked', icon: '❌', word: 'blocked' });
-        if (all.some(is('relay'))) out.push({ value: 'relay', word: 'relays' });
-        return out;
-      },
-      test: function (row, v) { return !v || v === 'all' || is(v)(row) ? 1 : 0; },
-      when: function (all) { return ['mine', 'blocked', 'relay'].some(function (n) { return all.some(is(n)); }); } },
-    // At its very end. Off, the rows the owner has decided about and this node's relays; on, the network's finds as well.
-    { name: 'network', word: 'network', toggle: true,
+      choices: [
+        { value: 'people', icon: '👨‍👩‍👧‍👦', word: 'People' },
+        { value: 'mine', icon: '⭐', word: 'Puppets' },
+        { value: 'relay', icon: '📡', word: 'Relays' },
+        { value: 'blocked', icon: '❌', word: 'Blocked' },
+      ],
+      test: function (row, v) {
+        if (!v || v === 'people') return row && row.relay !== true && row.blocked !== true ? 1 : 0;
+        return is(v)(row) ? 1 : 0;
+      } },
+    // At its very end, a toggle of its own (box: "🔍 Search Network is a separate toggle, independent of the other
+    // filters"). Off, the rows the owner has decided about and this node's relays; on, the network's finds as well.
+    { name: 'network', icon: '🔍', word: 'Search Network', toggle: true,
       test: function (row, on) { return undecided(row) ? (on ? 1 : 0) : 1; } },
     // NO NAMELESS ROWS (goal/G40.10, box v15): the presence data marks every key a relay reports present, the relay's own
     // and this node's among them; a key with nothing but its presence is no row until a search or the book names it.
