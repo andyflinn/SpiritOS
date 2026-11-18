@@ -1186,7 +1186,8 @@ appServer.serve({
   // ITS ROWS ON THE NODE'S JOB STREAM (goal/G47.1, the UI cycle), as the agent's tables publish theirs: { testicle: { table,
   // row, change, busy } }, and busy alone when it turns (tell and told, above). A page starts with no rows and asks
   // suite.search for what it shows.
-  publisher: { family: 'testicle', bootstrap: function () { return []; } },
+  // No branch named (goal/G47.5): each subscriber names its own, and appServer keeps it (clientListeners.json).
+  publisher: { bootstrap: function () { return []; } },
   codes: {
   'not-a-production-script': { status: 400, text: 'not a production script' },
   'no-such-file': { status: 404, text: 'no such file' },

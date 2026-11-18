@@ -47,5 +47,6 @@ appServer.serve(verbs, {
   // A PUBLISHER, ITS subscribe AND unsubscribe DECLARED IN ./api.js (goal/G43.32; Andy: "for now, it needs to declare them in
   // api.js"): agent moves toward being a client or a server, and a peer's agent subscribes here. Its rows also reach its own
   // pages on the node's job stream, appServer.publish's.
-  publisher: { family: 'agent', bootstrap: function () { return []; } },
+  // No branch named (goal/G47.5): each subscriber names its own, and appServer keeps it (clientListeners.json).
+  publisher: { bootstrap: function () { return []; } },
 });

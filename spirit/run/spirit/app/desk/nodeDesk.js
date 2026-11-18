@@ -2955,9 +2955,11 @@ appServer.serve(withDeskOwners({
 // shared register the node and the relay load; appServer puts "desk: " in
 // front of each text, so the origin of a refusal is plain and no other app
 // can wear this name.
-// goal/G33.8: the desk publishes (opts.publisher: its subscribers are deskClients, each handed deskBootstrap first), and
-// no opts.stream: the desk follows no stream (box v42).
-{ publisher: { family: 'deskClient', bootstrap: function () { return deskBootstrap(); }, waitMs: CLIENT_WAIT_MS }, codes: {
+// goal/G33.8: the desk publishes (opts.publisher: each subscriber handed deskBootstrap first), and no opts.stream: the
+// desk follows no stream (box v42). It names no subscriber's branch (goal/G47.5; Andy: "so desk hard-codes the deskClient
+// app as listener? how can that be if it is the appServer.js that does the publishing???"): each subscriber names its
+// own, and appServer keeps it (clientListeners.json).
+{ publisher: { bootstrap: function () { return deskBootstrap(); }, waitMs: CLIENT_WAIT_MS }, codes: {
   // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
   // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
   'taken': { status: 409, text: 'taken by another agent' },

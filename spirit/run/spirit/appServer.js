@@ -618,10 +618,10 @@ function withStreamListener(verbs, stream, followed, name) {
 //   always has and to the connected peer id's via peerPosts to ID-family-listener"; "Subscribe and unsubscribe are
 //   verbs of the streamPublisher in js/appServer.js, approved and granted."
 //
-// A server that publishes a stream hands serve() opts.publisher = { family, bootstrap, waitMs, logMax }: the family its
-// subscribers listen as when it has nothing else to go by (after a restart), bootstrap(key) -> the rows a full push
-// hands (the server's own best set), how long one delivery may take, and how many published rows its log keeps. serve()
-// then adds two verbs:
+// A server that publishes a stream hands serve() opts.publisher = { bootstrap, waitMs, logMax }: bootstrap(key) -> the
+// rows a full push hands (the server's own best set), how long one delivery may take, and how many published rows its
+// log keeps. It names no subscriber's branch: each subscriber names its own (clientListeners.json, below). serve() then
+// adds two verbs:
 //   subscribe {family, run?, since?}   the caller's key subscribes as family (its listener), from its position
 //   unsubscribe {}                     the caller's key stops being sent anything
 // Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
@@ -636,11 +636,32 @@ function withStreamListener(verbs, stream, followed, name) {
 // answering, and dropped live subscribers (traced 2026-10-30: one row through every 16 s). A bundle answered no, or not
 // answered within the publisher's own wait, drops its subscriber and its queue; it is sent nothing more until it
 // subscribes again, with its position, and is handed what it missed then.
-// Past QUEUE_MAX waiting rows it is dropped the same way, so nothing it is owed is lost on the way. NO LIST BEYOND THE
-// GRANTS (box v8: "No subscriber list is kept beyond the grants"): at its start the server's subscribers are the keys the
-// node grants it to (auth.search), each as the server's family; nothing else persists.
+// Past QUEUE_MAX waiting rows it is dropped the same way, so nothing it is owed is lost on the way.
+// EACH SUBSCRIBER'S BRANCH IS KEPT (goal/G47.5; Andy: "it only lacks persistence, it probably needs to be stored in the
+// server-apps node-owned state? spirit/state/<server-app>/clientListeners.json", "go!"; this supersedes box v8's "No
+// subscriber list is kept beyond the grants", which sent every restored key to one hard-coded branch, deskClient):
+// clientListeners.json holds { <key>: <branch> }, written at each subscribe and unsubscribe, and at a switch to client
+// mode, which drops the peers. A subscriber dropped as away keeps its line: it is where it asked to be sent. At start the
+// server's subscribers are the keys the node still grants it to (auth.search) that the file names, each sent to its own
+// branch; a granted key the file does not name is sent nothing until it subscribes itself.
 let publisher = null;
 const subscribers = new Map();   // key -> { family, busy, rows: [entry] }
+let listenersName = '';          // the server's name, its state folder's
+let listeners = {};              // key -> branch, as clientListeners.json holds it
+function listenersFile() { return path.join(RUN_ROOT, 'spirit', 'state', listenersName, 'clientListeners.json'); }
+function readListeners() {
+  let held = null;
+  try { held = JSON.parse(fs.readFileSync(listenersFile(), 'utf8')); } catch (e) { held = null; }
+  listeners = {};
+  if (isPlain(held)) Object.keys(held).forEach(function (k) { if (k && typeof held[k] === 'string' && /^[A-Za-z]\w*$/.test(held[k])) listeners[k] = held[k]; });
+}
+function saveListeners() {
+  if (!listenersName) return;
+  try {
+    fs.mkdirSync(path.dirname(listenersFile()), { recursive: true });
+    fs.writeFileSync(listenersFile(), JSON.stringify(listeners));
+  } catch (e) { /* kept for this run */ }
+}
 const QUEUE_MAX = 1000;
 const LOG_MAX = 1000;
 // This run of the sender, and the number of the newest row it published in it.
@@ -723,7 +744,7 @@ function subscribe(key, family, run, since) {
 function withPublisher(verbs, opts) {
   if (!opts || typeof opts !== 'object') return verbs;
   publisher = {
-    family: String(opts.family || ''), bootstrap: typeof opts.bootstrap === 'function' ? opts.bootstrap : null,
+    bootstrap: typeof opts.bootstrap === 'function' ? opts.bootstrap : null,
     waitMs: Number(opts.waitMs) || 10000, logMax: Number(opts.logMax) > 0 ? Math.floor(Number(opts.logMax)) : LOG_MAX,
   };
   const all = Object.assign({}, verbs);
@@ -740,6 +761,7 @@ function withPublisher(verbs, opts) {
       if (!caller || !caller.key) throw refusedNoKey();
       if (!/^[A-Za-z]\w*$/.test(String(a.family || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its listener\'s' } });
       subscribe(caller.key, String(a.family), a.run, a.since);
+      if (listeners[String(caller.key)] !== String(a.family)) { listeners[String(caller.key)] = String(a.family); saveListeners(); }
       return { subscribed: true };
     },
   };
@@ -748,14 +770,17 @@ function withPublisher(verbs, opts) {
     handler: function (a, caller) {
       if (!caller || !caller.key) throw refusedNoKey();
       subscribers.delete(String(caller.key));
+      if (Object.prototype.hasOwnProperty.call(listeners, String(caller.key))) { delete listeners[String(caller.key)]; saveListeners(); }
       return { unsubscribed: true };
     },
   };
   return all;
 }
-// AFTER A RESTART THE SUBSCRIBERS ARE THE GRANTS (box v8): every key the node grants this server to, or its subscribe.
+// AFTER A RESTART THE SUBSCRIBERS ARE THE GRANTED KEYS clientListeners.json NAMES (above): every key the node grants
+// this server to, or its subscribe, sent to the branch it asked for.
 function subscribersFromGrants(name) {
   if (!publisher) return Promise.resolve(0);
+  readListeners();
   return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.search({ text: name }); })).then(function (r) {
     // auth.search answers the new search (goal/G29.7): items {key, label}, each label {name, key, path} as JSON. Read as
     // records, as it once answered, it restored nobody, and after every restart the desk sent its clients nothing
@@ -767,8 +792,10 @@ function subscribersFromGrants(name) {
     records.forEach(function (g) {
       const p = String(g.path || '');
       if (!g.key || (p !== name && p !== name + '.subscribe') || subscribers.has(String(g.key))) return;
+      const branch = listeners[String(g.key)];
+      if (!branch) return;
       // Each handed a full push, as a new run's subscriber is; one that does not answer subscribes again itself.
-      subscribe(String(g.key), publisher.family);
+      subscribe(String(g.key), branch);
       n += 1;
     });
     return n;
@@ -943,6 +970,8 @@ function switchRemote(id) {
   if (clientMode()) {
     // The peers it served are dropped; this node's own subscription is not a peer's.
     subscribers.forEach(function (q, key) { if (key !== me) subscribers.delete(key); });
+    Object.keys(listeners).forEach(function (key) { if (key !== me) delete listeners[key]; });
+    saveListeners();
     listenToSibling();
   }
   publishRemote();
@@ -1006,9 +1035,10 @@ function serve(verbs, opts) {
   try {
     // goal/G33.8: both halves, the stream it publishes (withPublisher) and the streams it listens to (withStreamListener).
     // THE PUBLISHER AND THE LISTENER ON EVERY SERVER (goal/G47.5; Andy: "both: \"publisher\" and \"listener\" belong in
-    // spirit/appServer.js"): a server that names no publisher publishes as its own family, with no bootstrap, so any server
-    // can be a sibling that a remote in client mode subscribes to; withRemote gives every server its listener.
-    verbs = withDebug(withRemote(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), (opts && opts.publisher) || { family: name }), argv[1]), name));
+    // spirit/appServer.js"): a server that names no publisher publishes with no bootstrap, so any server can be a sibling
+    // that a remote in client mode subscribes to; withRemote gives every server its listener.
+    listenersName = name;
+    verbs = withDebug(withRemote(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), (opts && opts.publisher) || {}), argv[1]), name));
   } catch (e) {
     console.error(e.message);
     process.exit(2);
