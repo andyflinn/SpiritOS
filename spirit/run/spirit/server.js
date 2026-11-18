@@ -1565,6 +1565,10 @@ catch (e) {
       const data = { table: String(c.table || ''), row: c.row || {}, gone: c.gone === true };
       try { jobs.ownNews('spirit.auth', 'row', data); } catch (e) { /* the next change publishes again */ }
     });
+    // A CONTACT FORGOTTEN TAKES ITS GRANTS (goal/G47.4, Q3): each the hub revoked is news here as a revoke is.
+    hub.grantsRevoked.subscribe(function (g) {
+      try { jobs.ownNews('spirit.auth', 'row', { table: 'grant', row: { key: String(g.key), path: String(g.path) }, gone: true }); } catch (e) { /* the next change publishes again */ }
+    });
   } catch (e) { /* no job, no stream: the lists still search */ }
   function authVerb(work) {
     return function (rq, rs) {

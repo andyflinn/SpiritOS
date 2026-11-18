@@ -571,6 +571,10 @@ function createHub(rootDir) {
   // family's stream carries it as contact.rename). The same seam shape as
   // arrivals: the hub notes, the stream fans out, neither knows the other.
   var contactRenames = require('./spirit.js').require('spirit/arrivals.js').createFanOut();
+  // A grant revoked because its contact was forgotten (goal/G47.4, Q3; Andy: "When you forget a contact, should the node
+  // revoke all of its grants at once?" "yes. it should."), { key, path }, on its way to the auth tables' job as a revoked
+  // grant (server.js), so every open grants list lets it go.
+  var grantsRevoked = require('./spirit.js').require('spirit/arrivals.js').createFanOut();
   function fail(res, status, msg) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: msg }));
@@ -1277,6 +1281,11 @@ function createHub(rootDir) {
         // simply the answer. We act on what we find (Andy).
         var gone = contactBook.forget(rootDir, publicKey);
         if (!gone) { fail(res, 404, 'no row for that key'); return; }
+        // EVERY GRANT OF THE KEY GOES WITH IT (goal/G47.4, Q3: "yes. it should."), one exact grant row at a time, each told.
+        try {
+          var grantTable = require('./spirit.js').require('spirit/nodeStore.js').open(rootDir).auth;
+          grantTable.paths(publicKey).forEach(function (p) { if (grantTable.revoke(publicKey, p)) grantsRevoked.note({ key: publicKey, path: p }); });
+        } catch (e) { /* the contact is forgotten; a grant left is the grants list's to revoke */ }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
           publicKey: publicKey,
@@ -2226,6 +2235,7 @@ function createHub(rootDir) {
     handleNodeName: handleNodeName,
     handleNodeDescription: handleNodeDescription,
     contactRenames: contactRenames,
+    grantsRevoked: grantsRevoked,
   };
 }
 
