@@ -128,3 +128,56 @@ test.run('forgetting a contact leaves another key\'s grants', 0.2, function () {
   if (!W.store) return false;
   return JSON.stringify(W.store.paths(KEPT_KEY)) === '["desk.chat"]' || false;
 }, test.limit.quick);
+
+// A STAR ON A NODE ONLY WHEN THE NODE SAYS IT IS OURS (goal/G47.4; Andy: "can we please only allow stars on nodes that say
+// we own them??? with relays I'll accept the ambiguity...", "can we please only allow stars for nodes, only when they're
+// actually owned? now."). A node's card is signed by that node and names its owner (spirit/nodeCard.js, owner). On a
+// scratch node: a node whose card names this node is starred; one whose card names nobody, or another key, is refused;
+// a star always comes off.
+const ownCardOf = function (id, owner) {
+  const fields = { name: 'a node', description: 'd', publicKey: id.publicKey, sealKey: id.sealPublicKey || 'SEAL', at: 1, owner: owner };
+  return JSON.stringify({ v: 1, body: Object.assign({ ok: true }, fields, { sig: require(path.join(RUN, 'spirit', 'relayAuth.js')).sign(id.privateKey, require(path.join(RUN, 'spirit', 'nodeCard.js')).signable(fields)) }) });
+};
+const ownAsk = function (key, own) {
+  return new Promise(function (resolve) {
+    const res = { status: 0, body: '', writeHead: function (s) { res.status = s; }, setHeader: function () {}, end: function (b) { res.body = String(b || ''); resolve(res); } };
+    W.ownHub.handleOwn({}, res, function () { return Promise.resolve({ key: key, own: own }); });
+    setTimeout(function () { resolve(res); }, 2000);
+  });
+};
+test.run('on a scratch node, a node whose card names this node its owner takes the star', 0.2, async function () {
+  try {
+    W.ownHome = ownTemp('own');
+    fs.mkdirSync(path.join(W.ownHome, 'spirit', 'state'), { recursive: true });
+    const relayAuth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
+    const me = relayAuth.generateIdentity();
+    relayAuth.saveIdentity(W.ownHome, me);
+    const book = require(path.join(RUN, 'spirit', 'contacts.js'));
+    W.ours = relayAuth.generateIdentity(); W.free = relayAuth.generateIdentity(); W.theirs = relayAuth.generateIdentity();
+    const someoneElse = relayAuth.generateIdentity().publicKey;
+    const planted = [book.setCard(W.ownHome, W.ours.publicKey, ownCardOf(W.ours, me.publicKey)),
+      book.setCard(W.ownHome, W.free.publicKey, ownCardOf(W.free, '')),
+      book.setCard(W.ownHome, W.theirs.publicKey, ownCardOf(W.theirs, someoneElse))];
+    if (!planted.every(function (p) { return p && p.ok; })) return false;
+    W.ownHub = require(HUB).createHub(W.ownHome);
+    const a = await ownAsk(W.ours.publicKey, true);
+    let body = null; try { body = JSON.parse(a.body); } catch (e) { body = null; }
+    return (a.status === 200 && !!body && body.own === true) || false;
+  } catch (e) { return false; }
+}, test.limit.quick);
+test.run('a node whose card names no owner is refused the star', 0.2, async function () {
+  if (!W.ownHub) return false;
+  const a = await ownAsk(W.free.publicKey, true);
+  return (a.status >= 400 && a.status < 500) || false;
+}, test.limit.quick);
+test.run('a node whose card names another owner is refused the star', 0.2, async function () {
+  if (!W.ownHub) return false;
+  const a = await ownAsk(W.theirs.publicKey, true);
+  return (a.status >= 400 && a.status < 500) || false;
+}, test.limit.quick);
+test.run('a star always comes off', 0.2, async function () {
+  if (!W.ownHub) return false;
+  const off = await ownAsk(W.ours.publicKey, false);
+  const offFree = await ownAsk(W.free.publicKey, false);
+  return (off.status === 200 && offFree.status === 200) || false;
+}, test.limit.quick);

@@ -22,3 +22,13 @@ Andy: *"When you forget a contact, should the node revoke all of its grants at o
   forget: it answers 200, forgotten.
 - Then the node's grants table holds no grant of that key.
 - Another key's grant stands.
+
+## A star on a node only when the node says it is ours (goal/G47.4)
+
+Andy: *"can we please only allow stars on nodes that say we own them??? with relays I'll accept the ambiguity..."*, *"can
+we please only allow stars for nodes, only when they're actually owned? now."* A node's card is signed by that node and
+names its owner (spirit/nodeCard.js). On a scratch node with an identity of its own:
+
+- a node whose card names this node its owner takes the star (200, own true);
+- a node whose card names no owner, or another key, is refused the star (a 4xx);
+- a star always comes off, on either.
