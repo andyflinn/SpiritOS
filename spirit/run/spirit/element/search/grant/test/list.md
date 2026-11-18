@@ -35,3 +35,8 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./grant.js`.
 
 Andy: *"get rid of that deprecated filter and the field in the database if it's there as well, what the hell is it
 even for?"* list.js, its comments left out, names no deprecated and takes no `serves`. A row is handed nothing that judges whether a server serves its path.
+
+## The revoke column stays at the right edge (goal/G47.4)
+
+Andy: *"can you make the revoke-button column stick to the right edge so the button doesn't jump out my way when i try
+to revoke haiku's grants?"* The revoke column is the rightmost, of a fixed width (px, em, rem or ch), aligned right.

@@ -179,3 +179,12 @@ test.run('list.js names no deprecated and takes no serves, its comments left out
   try { src = fs.readFileSync(path.join(RUN, 'spirit/element/search/grant/list.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return false; }
   return (src.length > 0 && !/deprecated/i.test(src) && !/\bserves\b/.test(src)) ? true : false;
 }, test.limit.quick);
+
+// THE REVOKE COLUMN STAYS AT THE RIGHT EDGE (goal/G47.4; Andy: "can you make the revoke-button column stick to the right edge
+// so the button doesn't jump out my way when i try to revoke haiku's grants?"): it is the rightmost column, of a fixed
+// width, its button aligned right, so a row going away moves no other row's Revoke.
+test.run('the revoke column has a fixed width and aligns its button to the right edge', 0.2, function () {
+  if (!l) return false;
+  const rv = (o.columns || [])[(o.columns || []).length - 1] || {};
+  return rv.field === 'revoke' && /^\d+(\.\d+)?(px|em|rem|ch)$/.test(String(rv.width || '')) && rv.align === 'right' ? true : false;
+}, test.limit.quick);
