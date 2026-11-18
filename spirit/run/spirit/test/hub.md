@@ -23,12 +23,15 @@ Andy: *"When you forget a contact, should the node revoke all of its grants at o
 - Then the node's grants table holds no grant of that key.
 - Another key's grant stands.
 
-## A star on a node only when the node says it is ours (goal/G47.4)
+## 😏 faceable, and the star from ownership alone (goal/G47.4, box v33)
 
-Andy: *"can we please only allow stars on nodes that say we own them??? with relays I'll accept the ambiguity..."*, *"can
-we please only allow stars for nodes, only when they're actually owned? now."* A node's card is signed by that node and
-names its owner (spirit/nodeCard.js). On a scratch node with an identity of its own:
+Box: *"the star is shown as before on nodes and relays and is set only by true ownership (the signed card names this node
+as owner); no button or verb changes it"*, *"😏 is the row field faceable, set by the new verb contact.faceable {key,
+faceable}, for a relay this node holds a seat on only; it does what own did"*, *"contact.own goes"*. On a scratch node with
+a seated relay, a relay with no seat, and two nodes whose signed cards name this node and nobody:
 
-- a node whose card names this node its owner takes the star (200, own true);
-- a node whose card names no owner, or another key, is refused the star (a 4xx);
-- a star always comes off, on either.
+- the hub has a handler named for faceable, and no handleOwn;
+- the seated relay takes 😏 (200) and its row says faceable;
+- the relay with no seat, and a node (even one whose card names this node), are refused 😏 (a 4xx);
+- 😏 always comes off;
+- the node whose card names this node has the star with no verb asked; the one whose card names nobody has none.

@@ -129,55 +129,73 @@ test.run('forgetting a contact leaves another key\'s grants', 0.2, function () {
   return JSON.stringify(W.store.paths(KEPT_KEY)) === '["desk.chat"]' || false;
 }, test.limit.quick);
 
-// A STAR ON A NODE ONLY WHEN THE NODE SAYS IT IS OURS (goal/G47.4; Andy: "can we please only allow stars on nodes that say
-// we own them??? with relays I'll accept the ambiguity...", "can we please only allow stars for nodes, only when they're
-// actually owned? now."). A node's card is signed by that node and names its owner (spirit/nodeCard.js, owner). On a
-// scratch node: a node whose card names this node is starred; one whose card names nobody, or another key, is refused;
-// a star always comes off.
+// A node's card, signed by that node, naming its owner (spirit/nodeCard.js, owner): what the star is read from (below).
 const ownCardOf = function (id, owner) {
   const fields = { name: 'a node', description: 'd', publicKey: id.publicKey, sealKey: id.sealPublicKey || 'SEAL', at: 1, owner: owner };
   return JSON.stringify({ v: 1, body: Object.assign({ ok: true }, fields, { sig: require(path.join(RUN, 'spirit', 'relayAuth.js')).sign(id.privateKey, require(path.join(RUN, 'spirit', 'nodeCard.js')).signable(fields)) }) });
 };
-const ownAsk = function (key, own) {
+
+// 😏 FACEABLE, AND THE STAR FROM OWNERSHIP ALONE (goal/G47.4, box v33: "the star is shown as before on nodes and relays and
+// is set only by true ownership (the signed card names this node as owner); no button or verb changes it", "😏 is the row
+// field faceable, set by the new verb contact.faceable {key, faceable}, for a relay this node holds a seat on only; it does
+// what own did", "contact.own goes"; Andy: "green? then go."). On a scratch node: a seated relay, a relay with no seat, and
+// two nodes whose signed cards name this node and nobody. The hub's handler for faceable is found by its name.
+const faceAsk = function (key, on) {
   return new Promise(function (resolve) {
     const res = { status: 0, body: '', writeHead: function (s) { res.status = s; }, setHeader: function () {}, end: function (b) { res.body = String(b || ''); resolve(res); } };
-    W.ownHub.handleOwn({}, res, function () { return Promise.resolve({ key: key, own: own }); });
+    try { W.faceHub[W.faceName]({}, res, function () { return Promise.resolve({ key: key, faceable: on }); }); } catch (e) { resolve(res); }
     setTimeout(function () { resolve(res); }, 2000);
   });
 };
-test.run('on a scratch node, a node whose card names this node its owner takes the star', 0.2, async function () {
+test.run('on a scratch node, the hub has a handler for faceable and none for own', 0.2, function () {
   try {
-    W.ownHome = ownTemp('own');
-    fs.mkdirSync(path.join(W.ownHome, 'spirit', 'state'), { recursive: true });
+    W.faceHome = ownTemp('faceable');
+    fs.mkdirSync(path.join(W.faceHome, 'spirit', 'state'), { recursive: true });
     const relayAuth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
-    const me = relayAuth.generateIdentity();
-    relayAuth.saveIdentity(W.ownHome, me);
+    W.faceMe = relayAuth.generateIdentity();
+    relayAuth.saveIdentity(W.faceHome, W.faceMe);
+    const seen = require(path.join(RUN, 'spirit', 'seenPeers.js')).createSeenPeers({ rootDir: W.faceHome });
+    W.seatedRelay = relayAuth.generateIdentity().publicKey; W.loneRelay = relayAuth.generateIdentity().publicKey;
+    seen.set(W.seatedRelay, { relay: true, seated: true, label: 'seated' });
+    seen.set(W.loneRelay, { relay: true, label: 'lone' });
     const book = require(path.join(RUN, 'spirit', 'contacts.js'));
-    W.ours = relayAuth.generateIdentity(); W.free = relayAuth.generateIdentity(); W.theirs = relayAuth.generateIdentity();
-    const someoneElse = relayAuth.generateIdentity().publicKey;
-    const planted = [book.setCard(W.ownHome, W.ours.publicKey, ownCardOf(W.ours, me.publicKey)),
-      book.setCard(W.ownHome, W.free.publicKey, ownCardOf(W.free, '')),
-      book.setCard(W.ownHome, W.theirs.publicKey, ownCardOf(W.theirs, someoneElse))];
-    if (!planted.every(function (p) { return p && p.ok; })) return false;
-    W.ownHub = require(HUB).createHub(W.ownHome);
-    const a = await ownAsk(W.ours.publicKey, true);
-    let body = null; try { body = JSON.parse(a.body); } catch (e) { body = null; }
-    return (a.status === 200 && !!body && body.own === true) || false;
+    W.ownedNode = relayAuth.generateIdentity(); W.freeNode = relayAuth.generateIdentity();
+    book.setCard(W.faceHome, W.ownedNode.publicKey, ownCardOf(W.ownedNode, W.faceMe.publicKey));
+    book.setCard(W.faceHome, W.freeNode.publicKey, ownCardOf(W.freeNode, ''));
+    W.faceHub = require(HUB).createHub(W.faceHome);
+    W.faceName = Object.keys(W.faceHub).filter(function (k) { return /faceable/i.test(k) && typeof W.faceHub[k] === 'function'; })[0] || '';
   } catch (e) { return false; }
+  return (!!W.faceName && !('handleOwn' in W.faceHub)) || false;
 }, test.limit.quick);
-test.run('a node whose card names no owner is refused the star', 0.2, async function () {
-  if (!W.ownHub) return false;
-  const a = await ownAsk(W.free.publicKey, true);
+test.run('a relay this node holds a seat on takes 😏, and its row says faceable', 0.2, async function () {
+  if (!W.faceName) return false;
+  const a = await faceAsk(W.seatedRelay, true);
+  const row = require(path.join(RUN, 'spirit', 'contacts.js')).byPublicKey(W.faceHome, W.seatedRelay) || {};
+  return (a.status === 200 && row.faceable === true) || false;
+}, test.limit.quick);
+test.run('a relay with no seat is refused 😏', 0.2, async function () {
+  if (!W.faceName) return false;
+  const a = await faceAsk(W.loneRelay, true);
   return (a.status >= 400 && a.status < 500) || false;
 }, test.limit.quick);
-test.run('a node whose card names another owner is refused the star', 0.2, async function () {
-  if (!W.ownHub) return false;
-  const a = await ownAsk(W.theirs.publicKey, true);
+test.run('a node is refused 😏, even one whose card names this node', 0.2, async function () {
+  if (!W.faceName) return false;
+  const a = await faceAsk(W.ownedNode.publicKey, true);
   return (a.status >= 400 && a.status < 500) || false;
 }, test.limit.quick);
-test.run('a star always comes off', 0.2, async function () {
-  if (!W.ownHub) return false;
-  const off = await ownAsk(W.ours.publicKey, false);
-  const offFree = await ownAsk(W.free.publicKey, false);
-  return (off.status === 200 && offFree.status === 200) || false;
+test.run('😏 always comes off', 0.2, async function () {
+  if (!W.faceName) return false;
+  const off = await faceAsk(W.seatedRelay, false);
+  const row = require(path.join(RUN, 'spirit', 'contacts.js')).byPublicKey(W.faceHome, W.seatedRelay) || {};
+  return (off.status === 200 && row.faceable !== true) || false;
+}, test.limit.quick);
+test.run('the star stands on a node whose card names this node, with no verb asked', 0.2, function () {
+  if (!W.faceHome) return false;
+  const row = require(path.join(RUN, 'spirit', 'contacts.js')).byPublicKey(W.faceHome, W.ownedNode.publicKey) || {};
+  return row.mine === true || false;
+}, test.limit.quick);
+test.run('a node whose card names no owner has no star', 0.2, function () {
+  if (!W.faceHome) return false;
+  const row = require(path.join(RUN, 'spirit', 'contacts.js')).byPublicKey(W.faceHome, W.freeNode.publicKey) || {};
+  return row.mine !== true || false;
 }, test.limit.quick);
