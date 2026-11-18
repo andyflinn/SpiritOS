@@ -307,17 +307,26 @@
     }
     // The page's own rows, when the app has them (rows()); each joins the cache by its key.
     var pageKeys = Object.create(null);
+    // Each as { id, row }. A VIEW'S ROW IS FILED BY ITS ID IN THE BRANCH, never by a field of its own (goal/G47.4; Andy, of
+    // the grants list: "i want to see every single fucking grant row that matches the fucking search"): rowsOf answers
+    // { key: id, ...fields }, and a row with a field named key (a grant's, the contact's key) overwrote its id, so every
+    // grant of one contact landed on one entry, one row per user. The row keeps its own fields as they are.
     function pageRows() {
-      if (o.data && window.spirit.data) return window.spirit.data.rowsOf(o.data);
-      return typeof o.rows === 'function' ? o.rows() : null;
+      if (o.data && window.spirit.data) {
+        var held = window.spirit.data.branchAt(o.data) || {};
+        return Object.keys(held).map(function (id) { return { id: id, row: Object.assign({ key: id }, held[id]) }; });
+      }
+      var own = typeof o.rows === 'function' ? o.rows() : null;
+      return Array.isArray(own) ? own.map(function (r) { return { id: r ? r.key : null, row: r }; }) : null;
     }
     function takePage() {
       var page = pageRows();
       if (!page) return;
       var now = Object.create(null);
-      page.forEach(function (r, i) {
-        if (!r || r.key == null) return;
-        var key = String(r.key);
+      page.forEach(function (e, i) {
+        var r = e.row;
+        if (!r || e.id == null) return;
+        var key = String(e.id);
         now[key] = true;
         if (byKey[key]) { byKey[key].row = r; byKey[key].gone = false; byKey[key].at = i; if (byKey[key].el) byKey[key].el.apply(r); return; }
         byKey[key] = { key: key, row: r, at: i };

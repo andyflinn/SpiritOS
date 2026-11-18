@@ -913,7 +913,9 @@ test.run('with data its rows are the branch\'s, drawn at once', 0.2, function ()
   watched = [];
   seatedIn = [];
   unwatched = 0;
-  window.spirit.data = { rowsOf: function (type) { return type === 'people' ? [{ key: 'p1', name: 'pia' }] : []; },
+  // The branch as spirit/data.js holds it, id -> fields: the search reads a view's rows by branchAt (goal/G47.4), each filed
+  // by its id there.
+  window.spirit.data = { branchAt: function (type) { return type === 'people' ? { p1: { name: 'pia' } } : {}; },
     seatRows: function (type, items) { seatedIn.push([type, items]); },
     watchPath: function (type, fn) { watched.push([type, fn]); return function () { unwatched += 1; }; } };
   c7 = container();
@@ -932,7 +934,7 @@ test.run('an answer is seated into the branch, not into the list\'s own cache', 
   return (seatedIn.length === 1 && seatedIn[0][0] === 'people' && seatedIn[0][1][0].key === 'p2' && c7.shown().indexOf('p2') === -1) ? true : false;
 }, test.limit.quick);
 test.run('a write to the branch redraws the list', 0.2, function () {
-  window.spirit.data.rowsOf = function () { return [{ key: 'p1', name: 'pia' }, { key: 'p2', name: 'per' }]; };
+  window.spirit.data.branchAt = function () { return { p1: { name: 'pia' }, p2: { name: 'per' } }; };
   watched[0][1]('people/p2', {});
   return (c7.shown().length === 2) ? true : false;
 }, test.limit.quick);
