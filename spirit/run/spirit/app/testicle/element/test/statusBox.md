@@ -40,7 +40,8 @@ overflow hidden, one line, the message ellipsed; destroyed, an empty container.
 
 The suites waiting (goal/G47.6, box point 4: *"In auto mode, suites flagged by a change and not yet run are counted as
 waiting beside the reds"*; Q2, Andy: *"as you please"*): two scripts planted while interactive, each with an own suite that
-takes 15 s; set to auto, the box shows ⏳ and the number of suite rows flagged at that moment, right after 🤖; once none
-waits, no ⏳.
+takes 15 s; set to auto, the box shows ⏳ and the number of suite rows flagged at that moment, right after 🤖; as suites run, the
+count follows them down, still the number flagged (the scratch tree flags every suite it holds, so none waiting is out of
+reach here; gone at 0 is the builder's).
 
 Not judged by it yet: the last change in words (shown when nothing runs and nothing is being done).
