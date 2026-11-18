@@ -18,13 +18,13 @@ Asked of a real browser, the real rowForm composed: `./faceForm-laid.html`, open
 - **It loads the rowForm itself** (rule/26).
 - **One rowForm**, its icon ❓ and its button Ask.
 - **Its span holds the relay dropdown, then the face name input**, and nothing else; the dropdown offers the relays this
-  node is seated on and has starred (Beta, Gamma; not Delta, seated with no star), or, fixed, its one relay, disabled.
+  node is seated on and that are faceable (Beta, Gamma; not Delta, seated and not faceable), or, fixed, its one relay, disabled.
 - **The words Relay and Face name are gone** from the bubble.
 - **Its title**, A face name on one relay, stands above the bubble; **what this node holds** on the relay stands below
   it, not in it.
 - **Its Ask is the rowForm's button**, the only one.
-- **A face only on a starred relay** (goal/G43.18, box v29: *"At home, faceForm offers a face only on a starred relay"*, turning round G41.32's "not starred"): `offers` answers true for a seated relay with the star and false for one without.
-- **With no relay this node is seated on and has starred, it draws nothing** (Andy: *"doesn't show up if the user has zero verified
+- **A face only on a faceable relay** (goal/G47.4, box v33: 😏 faceable *"is what opens the face and the face forms"*; it was the star, goal/G43.18): `offers` answers true for a seated faceable relay and false for one that is not.
+- **With no relay this node is seated on and faceable, it draws nothing** (Andy: *"doesn't show up if the user has zero verified
   emails anywhere"*); this was asked of the old markup in `spirit/test/spiritInUse.js` until goal/G41.27.
 - **A press with no face name** says so on a line below the bubble, not in it.
 - **A press with a face name** asks the relay through the rowForm's `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): Ask stays busy, disabled with its turning mark, while the relay is asked. Enter in the name presses Ask.
