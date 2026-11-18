@@ -233,13 +233,13 @@ function classify(rel, broken) {
 const broken = SCRIPTS.filter(function (rel) { return !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)) && !compiles(rel); });
 const toLoad = SCRIPTS.filter(function (rel) { return broken.indexOf(rel) === -1 && !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)); });
 broken.forEach(function (rel) { classify(rel, true); });
-SCRIPTS.filter(function (rel) { return neverLoaded(rel) || !fs.existsSync(path.join(RUN, rel)); }).forEach(classify);
+SCRIPTS.filter(function (rel) { return neverLoaded(rel) || !fs.existsSync(path.join(RUN, rel)); }).forEach(function (rel) { classify(rel, false); });
 if (toLoad.length) {
   // The scratch node and Chrome first, the run held meanwhile; the scripts that compile are judged only once both are up.
   test.hold();
   world().then(function (w) {
     if (w.error) process.on('exit', function () { process.exitCode = TOOL_DOWN; });
-    else toLoad.forEach(classify);
+    else toLoad.forEach(function (rel) { classify(rel, false); });
     test.release();
   }, function () { process.on('exit', function () { process.exitCode = TOOL_DOWN; }); test.release(); });
 }
