@@ -118,9 +118,10 @@ function createApiAuth(opts) {
   // desk does NOT own those verbs, the node, maybe appServer.js all \"server bundles that are owned by the <appname>\"",
   // "maybe appServer can add this bundles as \"enableRemote\", belonging to <appServerName>?"; Q4, "yes."; "nope apiAuth
   // still needs to do that automatically."): in the same passes, every family the live tree serves that serves remote, the
-  // auto-verb every appServer has, gets one bundle enableRemote owned by its name, holding a branch for every verb it
-  // serves and nothing else: made if missing, a new verb added, one gone dropped, each change told. Owned by the server,
-  // a user sees it read-only (auth.bundle and auth.branch refuse it); granting it is still his.
+  // auto-verb every appServer has, gets one bundle enableRemote owned by its name, holding one branch, its family with no
+  // verb (Andy: "if the bundle contains a branch only that can go into grants as branch, since the auth system recognizes
+  // that when only a branch is named, it applies to all it's verbs."): made if missing, any other branch dropped, each
+  // change told. Owned by the server, a user sees it read-only (auth.bundle and auth.branch refuse it); granting it is his.
   const OWN_LABEL = 'enableRemote';
   function keepServerBundles() {
     return Promise.resolve(servedTree()).then(function (tree) {
@@ -132,17 +133,11 @@ function createApiAuth(opts) {
         const mine = B.all().filter(function (b) { return b.owner === family && b.label === OWN_LABEL; });
         let id = mine.length ? mine[0].id : 0;
         if (!id) { id = B.add(OWN_LABEL, family); told({ table: 'bundle', row: owned(B.get(id)) }); }
-        const verbs = Object.keys(fam);
-        const held = R.all().filter(function (r) { return r.bundle === id; });
-        held.forEach(function (r) {
-          if (r.family === family && r.verb && verbs.indexOf(r.verb) !== -1) return;
+        R.all().filter(function (r) { return r.bundle === id; }).forEach(function (r) {
+          if (r.family === family && !r.verb) return;
           if (R.del(r.id)) told({ table: 'branch', row: { id: r.id }, gone: true });
         });
-        verbs.forEach(function (v) {
-          if (R.same(id, family, v, 0)) return;
-          const made = R.add(id, family, v);
-          told({ table: 'branch', row: R.get(made) });
-        });
+        if (!R.same(id, family, '', 0)) told({ table: 'branch', row: R.get(R.add(id, family, '')) });
       });
     }).catch(function () { /* the next pass tries again */ });
   }
