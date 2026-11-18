@@ -313,10 +313,6 @@ function wakeOnHeld(row, change) {
 function streamed(row) {
   if (!row || typeof row !== 'object') return;
   heardAt = Date.now();
-  // A RULE, KEPT AS IT COMES (goal/G41.2): every active rule with the bootstrap, then each rule write, kept in deskRules
-  // by the desk's translator (spirit.data.desk.data), so the cache brings them back after a restart. A wake reads its rules from
-  // there and asks the desk for none; a rule row wakes nobody.
-  if (row.rule && row.row && typeof row.row === 'object') return;
   wakeOnHeld(row, keepSinceWake(row));
   const facts = row.item && typeof row.item === 'object' ? row.item : null;
   if (facts && !row.removed) keepWhole(facts);
@@ -605,8 +601,6 @@ function readWake(read) {
   // A trigger read back after a restart is its key and text (saveWake).
   waiting.unshift.apply(waiting, was.items.filter(function (x) { return x.trigger; }).map(function (x) { return x.trigger === true ? { key: x.key, text: x.text } : x.trigger; }));
   sinceWake.unshift.apply(sinceWake, was.items.filter(function (x) { return !x.trigger; }).map(function (x) { return { key: x.key, text: x.text, unread: true }; }));
-  // A rule's text it handed comes again too.
-  was.rules.forEach(function (tag) { rulesHanded.delete(tag); });
   again = { key: was.key, texts: was.items.map(function (x) { return x.text; }).join('\n') };
   owed = true;
   saveWake();
@@ -616,7 +610,7 @@ function readWake(read) {
   let kept = null;
   try { const row = getSetting.get('wake'); kept = row && row.value ? JSON.parse(row.value) : null; } catch (e) { kept = null; }
   if (!kept) return;
-  if (kept.unread && kept.unread.key && Array.isArray(kept.unread.items)) unread = { key: String(kept.unread.key), items: kept.unread.items, rules: [] };
+  if (kept.unread && kept.unread.key && Array.isArray(kept.unread.items)) unread = { key: String(kept.unread.key), items: kept.unread.items };
   (Array.isArray(kept.waiting) ? kept.waiting : []).forEach(function (w) { if (w && w.text) waiting.push({ key: String(w.key || ''), text: String(w.text) }); });
   owed = waiting.length > 0;
 }());
@@ -658,61 +652,17 @@ function handOver(to, t0) {
   // The unread wake handed again keeps its key while it holds the same lines; anything else is a new wake.
   const same = !!again && again.texts === sent.map(function (x) { return x.text; }).join('\n');
   wakeCount += 1;
-  const flight = { key: same ? again.key : Date.now().toString(36) + '.' + wakeCount, items: sent, rules: [] };
+  const flight = { key: same ? again.key : Date.now().toString(36) + '.' + wakeCount, items: sent };
   again = null;
   unread = flight;
   saveWake();
-  const rulesBefore = new Set(rulesHanded);
-  // THE RULES NEVER COST THE WAKE ITS LINES (goal/G41.2). Andy: "WHAT ABOUT THE FUCKING WAKE-UP MANAGEMENT in
-  // deskClient?", and "the deskClient is already supposed to have every fucking applicable rule in it's cache". The
-  // lines are taken off the queue above, so an answer later than the node's wait (12 s) would lose them: the rules come
-  // from the stream (rulesOfWake), and nothing is asked of the desk for them.
-  return rulesOfWake(to, lines).then(function (rules) {
-    rulesHanded.forEach(function (tag) { if (!rulesBefore.has(tag)) flight.rules.push(tag); });
-    const room = function (l) { return Buffer.byteLength(JSON.stringify({ lines: lines.concat([l]), more: true, key: flight.key }), 'utf8') <= ANSWER_ROOM; };
-    rules.forEach(function (l) { if (room(l)) lines.push(l); });
-    const answer = cut ? { lines: lines, more: true, key: flight.key } : { lines: lines, key: flight.key };
-    // "working" is said behind the answer, never waited for: a slow desk holds no wake (goal/G41.11). One that does not
-    // land is said again on the next change (say).
-    say(to, 'working');
-    return answer;
-  });
-}
-
-// THE RULES WITH EVERY WAKE (goal/G40.12, box v7, second set 4-6 and 8): a wake names, for each item its lines are about,
-// the rules of the phase that item is in, its goal's and its own, each once (the facts' phaseRules, kept from the desk's
-// push, so nothing is asked of the desk for them): "RULES <id>: rule/n@v ...". A rule's text comes once, the first time
-// this deskClient hands that version over ("RULE rule/n@v <type>: <label>: <text>"), from the rules the stream brought (goal/G41.2); after that
-// the key is enough. Kept for the life of this process.
-const rulesHanded = new Set();
-function rulesOfWake(to, lines) {
-  const ids = [];
-  lines.forEach(function (l) {
-    const m = /"id":"(goal\/G[0-9.]+)"/.exec(String(l));
-    if (m && ids.indexOf(m[1]) === -1) ids.push(m[1]);
-  });
-  const out = [];
-  const texts = [];
-  ids.forEach(function (id) {
-    const row = keptItem(id);
-    const rules = row && Array.isArray(row.phaseRules) ? row.phaseRules : [];
-    if (!rules.length) return;
-    out.push('RULES ' + id + ': ' + rules.map(function (r) { return r.key + '@' + r.version; }).join(' '));
-    rules.forEach(function (r) {
-      const tag = r.key + '@' + r.version;
-      if (rulesHanded.has(tag) || texts.some(function (t) { return t.tag === tag; })) return;
-      texts.push({ tag: tag, key: r.key });
-    });
-  });
-  // From the rules the stream brought (goal/G41.2): nothing is asked of the desk. A rule not kept yet is named by its key
-  // alone, and its text comes on a later wake once its row has arrived.
-  const said = texts.map(function (t) {
-    const g = kept() ? kept().rule(t.key) : null;
-    if (!g || !g.text) return '';
-    rulesHanded.add(t.tag);
-    return 'RULE ' + t.tag + ' ' + g.type + ': ' + g.label + ': ' + String(g.text).replace(/\s+$/, '');
-  });
-  return Promise.resolve(out.concat(said.filter(Boolean)));
+  // NO RULES RIDE ON A WAKE (goal/G47.4, box v36: "Desk no longer sends the agents a rule list when they wake."): its
+  // lines alone.
+  const answer = cut ? { lines: lines, more: true, key: flight.key } : { lines: lines, key: flight.key };
+  // "working" is said behind the answer, never waited for: a slow desk holds no wake (goal/G41.11). One that does not
+  // land is said again on the next change (say).
+  say(to, 'working');
+  return Promise.resolve(answer);
 }
 
 // THE CHAT GATE (goal/G27.6): a chat write is allowed on an item the agent holds, or where it took a line. The desk's
@@ -873,11 +823,10 @@ const server = appServer.serve({
       if (said !== 'listening') say(to, 'listening');
       // A JOB AT ONCE (goal/G5.8). Andy: "will the deskAgentEar return immediately with a job to do if one is available?"
       // One read first, so lines waiting are handed before a job; then a job open to this agent comes back as a JOB
-      // line, with the rules recorded on its item at his Go; else the wait goes on as before.
+      // line; else the wait goes on as before.
       // Asked only when a job may have opened since the last ask (jobsMaybe): a quiet wait asks the desk nothing.
       // NO WAKE IS LOST TO A SLOW ASK (goal/G41.2): the job ask gets the time the answer has left, and one not answered
       // by then is asked again on the next wait (jobsMaybe stays up), so the agent's ask never outlives the node's wait.
-      // The job's rules are its facts' phaseRules, kept from the desk's push: nothing more is asked for them.
       function firstJob() {
         if (!jobsMaybe) return Promise.resolve('');
         jobsMaybe = false;
@@ -886,10 +835,7 @@ const server = appServer.serve({
           const jobs = ((got && got.items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean);
           if (!jobs.length) return '';
           const j = jobs[0];
-          const fx = keptItem(String(j.id)) || {};
-          // THE RULES OF THE PHASE IT IS IN (goal/G40.12): its goal's and its own, each once (facts.phaseRules).
-          const keys = (Array.isArray(fx.phaseRules) ? fx.phaseRules : []).map(function (r) { return r.key + '@' + r.version; });
-          return 'JOB ' + j.id + ' ' + j.phase + (keys.length ? ' rules: ' + keys.join(' ') : '');
+          return 'JOB ' + j.id + ' ' + j.phase;
         }).catch(function () { return ''; });
         return within(asked, Math.max(0, t0 + LEAVE_BY_MS - Date.now())).then(function (job) {
           if (job === undefined) { jobsMaybe = true; return ''; }

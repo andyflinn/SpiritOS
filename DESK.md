@@ -57,7 +57,7 @@ Andy, 2026-10-01: *"ideally agents just listen do desk in a loop. this loop ends
 2. **When it exits with 0, read every line it printed** (rule 18):
    - `DESK <who> <verb> <json>`: this one is yours to act on.
    - `NEWS <who> <verb> <json>`: this happened, so know it.
-   - `RULES`, `RULE`: the rules of the item. Follow them.
+   - `JOB <item> <phase>`: a job open to you.
    - `next: node deskAgentEar.js <port> --read <key>`: always the last line.
 3. **Answer each `DESK` line under its item.** Take the line first, with `line.take {"id":"<item>"}`, then
    answer with `chat.add {"id":"<item>","text":"..."}`. Keep a post to three lines at most, with any question

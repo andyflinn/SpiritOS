@@ -40,7 +40,7 @@ let values = {};
 try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
 // THE CHECKOUT THIS DESK SITS IN (goal/G43.28, box line 5): the first folder up from this file with a .git, the one a
 // claim pulls (pullOwnRepo, goal/G41.22). A desk run from a folder that is no checkout (a suite's scratch copy) pulls
-// nothing. The goal and the rules are not shared into git any more: Andy, goal/G43.28, removed that share altogether,
+// nothing. The goal is not shared into git any more: Andy, goal/G43.28, removed that share altogether,
 // from desk and from the repo, and every agent gets them down the stream.
 const GOAL_REPO = (function () {
   for (let d = __dirname; ; d = path.dirname(d)) {
@@ -308,23 +308,6 @@ function filesAddVerb(one) {
     },
   };
 }
-function ruleRowVerb(verb, adding) {
-  return {
-    request: { id: '', rule: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      // HIS ALONE (Andy, 2026-10-26: "it is I, the USER who controls auto-attach and the rules, NOT the agents").
-      ownerOnly(caller);
-      const w = writerOf(caller);
-      const it = itemFor(walkState(), a);
-      const key = String(a.rule || '');
-      if (!newestRule.get(key)) throw refused('no-such-item');
-      const there = Array.isArray(it.attached) && it.attached.indexOf(key) !== -1;
-      if (adding && there) throw refusedWhy('bad-request', key + ' is attached to ' + it.id + ' already');
-      if (!adding && !there) throw refusedWhy('bad-request', key + ' is not attached to ' + it.id);
-      return { change: write(verb, { id: it.id, rule: key, by: w.by, key: w.key }).change };
-    },
-  };
-}
 // The item a table's search is about: by id, refused when there is none.
 function itemFor(st, a) {
   const it = st.items[String((a && a.id) || '')];
@@ -364,20 +347,10 @@ const GOAL_RE = /^goal\/G(\d+)(?:\.(\d+))?$/;
 function numbersOf(id) { const m = GOAL_RE.exec(String(id || '')); return m ? [Number(m[1]), Number(m[2] || 0)] : null; }
 function idOf(goal, item) { return 'goal/G' + goal + (item ? '.' + item : ''); }
 
-// THE RULES, A TABLE OF THEIR OWN (goal/G5.5), KEYED BY RULE NUMBER (goal/G33.4: "the desk rules by their rule number").
-//   Andy: "rules remain static and apply to all items. ... so rules don't worry about items, items need to worry
-//   about rules.", and on keeping the old texts: "might be a good idea to have a history of legal standards, it's a
-//   form of proof, too." NO HISTORY IS KEPT since (goal/G47.1, Q16; Andy, of the old rule versions among the unread
-//   logs: "ALL OF THEM. KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."): a version is a row of `rules`,
-//   numbered n across all rules (the version an item's Go recorded, which keeps counting), and writing it deletes the
-//   rule's older rows in the same write, so the one row per rule is the rule. His draft between versions is one row per
-//   rule in `rule_drafts`; a rule's chat lines are rows of `rule_chat`. A rule's key stays rule/<number> at every verb.
 db.exec(
-  'CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL, autoAttach INTEGER NOT NULL DEFAULT 0);' +
-  'CREATE INDEX IF NOT EXISTS rules_rule ON rules (rule);' +
-  'CREATE TABLE IF NOT EXISTS rule_drafts (rule INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL);' +
-  'CREATE TABLE IF NOT EXISTS rule_chat (rule INTEGER NOT NULL, seq INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, creator TEXT NOT NULL, text TEXT NOT NULL, born INTEGER NOT NULL, PRIMARY KEY (rule, seq));' +
-  'CREATE INDEX IF NOT EXISTS rule_chat_born ON rule_chat (born);' +
+  // THE RULES ARE GONE FROM THE DESK (goal/G47.4, box v36; Andy: "Next we kill rules from desk. nobody observes them",
+  // "box the rule tables auto-kill"): their three tables are not made, and an old desk.db's are dropped here at start.
+  'DROP TABLE IF EXISTS rules; DROP TABLE IF EXISTS rule_drafts; DROP TABLE IF EXISTS rule_chat;' +
   // THE KEYED TABLES (goal/G33.4).
   "CREATE TABLE IF NOT EXISTS items (goal INTEGER NOT NULL, item INTEGER NOT NULL, creator TEXT NOT NULL, special INTEGER NOT NULL DEFAULT 0, at TEXT NOT NULL DEFAULT '', data TEXT NOT NULL," +
   " change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item));" +
@@ -394,39 +367,6 @@ db.exec(
   " profile TEXT NOT NULL DEFAULT '');" +
   'CREATE TABLE IF NOT EXISTS desk_state (k TEXT PRIMARY KEY, v TEXT NOT NULL);'
 );
-// THE TEST TYPE AND autoAttach (goal/G40.12, box v7, first set 4): "the rules get a new \"test\" type. all rules get a
-// field that indicates \"auto-attach-at-goal-creation-time\"". autoAttach is false until he sets it (Q1, Andy:
-// "autoAttach is false by default.", "rule.version? carries the full rule."). It is in the rules table as it is made.
-const RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
-const RULE_STATUSES = ['proposed', 'active', 'deleted'];
-// A rule as the verbs answer it: key rule/<number>, as before goal/G33.4.
-function ruleOut(r) { return r ? Object.assign({}, r, { key: 'rule/' + r.rule, autoAttach: r.autoAttach === 1 }) : r; }
-function ruleNumber(key) { const m = /^rule\/(\d+)$/.exec(String(key)); return m ? Number(m[1]) : -1; }
-const addRuleRowAt = db.prepare('INSERT INTO rules (rule, at, by, type, label, status, text, autoAttach) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-// The rule's older rows go in the same write as its new one (goal/G47.1, Q16, above): only the newest row is kept.
-const olderRuleRows = db.prepare('DELETE FROM rules WHERE rule = ? AND n < ?');
-const addRuleRow = { run: function (key, at, by, type, label, status, text, autoAttach) {
-  db.exec('BEGIN');
-  try {
-    const r = addRuleRowAt.run(ruleNumber(key), at, by, type, label, status, text, autoAttach ? 1 : 0);
-    olderRuleRows.run(ruleNumber(key), Number(r.lastInsertRowid));
-    db.exec('COMMIT');
-    return r;
-  } catch (e) { db.exec('ROLLBACK'); throw e; }
-} };
-const ruleCount = db.prepare('SELECT COUNT(DISTINCT rule) AS c FROM rules');
-const newestRuleRow = db.prepare('SELECT n, rule, at, by, type, label, status, text, autoAttach FROM rules WHERE rule = ? ORDER BY n DESC LIMIT 1');
-const newestRulesRows = db.prepare('SELECT n, rule, at, by, type, label, status, text, autoAttach FROM rules WHERE n IN (SELECT MAX(n) FROM rules GROUP BY rule) ORDER BY n DESC');
-const newestRule = { get: function (key) { return ruleOut(newestRuleRow.get(ruleNumber(key))); } };
-const newestRules = { all: function () { return newestRulesRows.all().map(ruleOut); } };
-const getDraftRow = db.prepare('SELECT text FROM rule_drafts WHERE rule = ?');
-const putDraftRow = db.prepare('INSERT INTO rule_drafts (rule, at, text) VALUES (?, ?, ?) ON CONFLICT(rule) DO UPDATE SET at = excluded.at, text = excluded.text');
-const getDraft = { get: function (key) { return getDraftRow.get(ruleNumber(key)); } };
-const putDraft = { run: function (key, at, text) { return putDraftRow.run(ruleNumber(key), at, text); } };
-const ruleChatOf = db.prepare('SELECT at, by, creator, text FROM rule_chat WHERE rule = ? ORDER BY seq');
-const ruleChatNext = db.prepare('SELECT COALESCE(MAX(seq), -1) + 1 AS seq FROM rule_chat WHERE rule = ?');
-const addRuleChat = db.prepare('INSERT INTO rule_chat (rule, seq, at, by, creator, text, born) VALUES (?, ?, ?, ?, ?, ?, ?)');
-
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
 const LIVE_MS = 10 * 60 * 1000;
 
@@ -1173,9 +1113,6 @@ function apply(s, r, b, item, goalOf) {
       if (!gi.made) gi.made = madeBy(r);
       gi.title = String(b.title || gi.title);
       gi.at = r.at;
-      // THE RULES IT WAS BORN WITH (goal/G40.12): every active autoAttach rule at its creation, by key, in the record, so
-      // a replay attaches the same.
-      if (Array.isArray(b.rules) && !Array.isArray(gi.attached)) gi.attached = b.rules.map(String);
       // goal/G29.21: an agent's goal spends his "add goal".
       if (r.by !== 'andy' && r.by !== 'desk' && s.goalGrant > 0) s.goalGrant -= 1;
       return;
@@ -1254,17 +1191,6 @@ function apply(s, r, b, item, goalOf) {
       if (Array.isArray(it.lateFiles)) it.lateFiles = it.lateFiles.filter(function (k) { return k !== r.by + '|' + String(b.path); });
       return;
     }
-    // THE ATTACHED RULES, ONE ROW A WRITE (goal/G40.12, second set 1-3): a goal or an item keeps a list of rule keys;
-    // item.rules.add puts one on, item.rules.remove takes it off.
-    case 'item.rules.add':
-      if (!it) return;
-      if (!Array.isArray(it.attached)) it.attached = [];
-      if (it.attached.indexOf(String(b.rule)) === -1) it.attached.push(String(b.rule));
-      return;
-    case 'item.rules.remove':
-      if (!it || !Array.isArray(it.attached)) return;
-      it.attached = it.attached.filter(function (k) { return k !== String(b.rule); });
-      return;
     case 'press': press(s, it, String(b.what), r, goalOf, b); return;
     // A CLAIM CARRIES ITS COMMIT (goal/G19.13). Andy, 2026-10-12: "these push things, when you report a claim on code,
     // it should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet...
@@ -1564,39 +1490,6 @@ function mayTake(s, it, phase, who) {
   return 'bad-request';
 }
 
-// WHICH RULES APPLY (goal/G40.12, second set; it replaced goal/G5.8's rules stamped at his Go from the paths a box
-// named, typesOf and rulesForGo). Andy: "each goal and item gets a list of attached rules", and the rules of an agent's
-// work are "the combination of the goals applicable phase rules (test/design/code) the current items applicable phase
-// rules", each once: design rules in design, test rules in red and verify, code rules in build; and "desk rules apply
-// to ALL phases....". Only rules active now.
-// The active auto-attach rules at goal creation, every type but ui (goal/G40.13, box v22, point 7: "Auto-attach ui rules
-// never come at goal creation: a new goal cannot tell yet whether it will touch the UI"). A file list brings none either:
-// the shell/ files that did are gone since G43.30, and that code went (goal/G47.1, box v121: "delete the desk's dead
-// ui-rule code"); ui rules are enforced by the general tests instead (spirit/test/spirit-sibling-browser.js).
-function autoAttachKeys() {
-  return newestRules.all().filter(function (r) {
-    return r.status === 'active' && r.autoAttach === true && r.type !== 'ui';
-  }).map(function (r) { return r.key; });
-}
-function phaseKind(s, it) {
-  const g = s.goals[it.goal ? it.id : it.goalId];
-  if (it.design || (g && g.design)) return 'design';
-  if (it.phase === 'red' || it.phase === 'verify') return 'test';
-  if (it.phase === 'build') return 'code';
-  return '';
-}
-function phaseRulesOf(s, it) {
-  const kind = phaseKind(s, it);
-  const gi = s.items[it.goal ? it.id : it.goalId];
-  const keys = [];
-  [gi, it].forEach(function (x) { ((x && x.attached) || []).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); }); });
-  return keys.filter(function (k) {
-    const r = newestRule.get(k);
-    // Desk rules and the ui rules attached ride on every take and wake (goal/G40.12 point 9, goal/G40.13 point 7).
-    return r && r.status === 'active' && (r.type === 'desk' || r.type === 'ui' || (kind && r.type === kind));
-  }).map(function (k) { return { key: k, version: newestRule.get(k).n }; });
-}
-
 // AN OPEN RED QUESTION (goal/G6.8). Andy: "i want mechanical tracking of design-greens. Yes i want opens to light up my
 // list with ERROR icons." An item is design-green when none is open; his End design and a Go wait for green.
 function openQ(it) { return !!it && it.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open'; }); }
@@ -1776,11 +1669,7 @@ function facts(s, it) {
     // goal/G19.13: the commits it was claimed at, the build's and the red's, '' while none was claimed with one.
     claimCommit: it.claimCommit || '', redCommit: it.redCommit || '',
     // goal/G2.22: whether the phase rules are lifted on it, so the dialog knows to stop offering Waive.
-    waived: it.waived === true,
-    // goal/G40.12: the rules attached to it, each { key }, and the rules its work carries now (phaseRules): its goal's
-    // and its own for the phase it is in, each once, each { key, version }.
-    rules: (Array.isArray(it.attached) ? it.attached : []).map(function (k) { return { key: k }; }),
-    phaseRules: phaseRulesOf(s, it) };
+    waived: it.waived === true };
   // ITS AGENTS BY NAME (goal/G21.1): every label these facts show, mapped to its name where its key has one.
   // goal/G21.6: every agent with an open take of one of his lines.
   f.names = namesFor(s, [it.with, it.boxTakenBy, it.red, it.builder, it.verifier, it.phaseWith]
@@ -1819,10 +1708,8 @@ function facts(s, it) {
     Object.keys(shown).sort().forEach(function (a) { f.agents[a] = shown[a]; });
   }
   // A ROW ALWAYS FITS ONE ANSWER (goal/G33.4, box v46: "Bound the facts themselves ... so a row always fits"). Measured
-  // as it travels in item.get, JSON inside the answer's JSON; past FACTS_ROOM the lists that can grow give way, the
-  // attached rules first, each saying more.
+  // as it travels in item.get, JSON inside the answer's JSON; past FACTS_ROOM the lists that can grow give way.
   const travel = function () { return Buffer.byteLength(JSON.stringify({ item: JSON.stringify(f), version: 0, change: 0 }), 'utf8'); };
-  while (travel() > FACTS_ROOM && f.rules.length) { f.rules = f.rules.slice(0, -1); f.rulesMore = true; }
   // A goal's agents (goal/G4.29: every agent the desk knows) give way too, the one heard from longest ago first, and
   // agentsMore says agents.search has them all (the approved list: "a goal row's lists of every agent ever seen").
   if (f.agents) {
@@ -1954,16 +1841,11 @@ function publishOne(o) {
 // (box v8: "for the desk that may be no more than the bare goal row"). The desk never acts as a client of its clients
 // and keeps nothing from them; it follows no stream itself (box v42).
 const CLIENT_WAIT_MS = 10000;
-// THE RULES COME WITH IT (goal/G41.2). Andy: "the deskClient is already supposed to have every fucking applicable rule
-// in it's cache", as goal/G40.12's box has it: "The desk client caches ... the desk pushes them only when an attachment
-// changes, so a wake carries no rule text it already holds." So a subscriber is handed every active rule first, each as
-// the publish its writes make ({rule, row}), and from then on hears each rule write; it never asks for a rule's text.
 function deskBootstrap() {
   if (!S || !S.current || !S.goals[S.current]) return [];
-  const rules = newestRules.all().filter(function (r) { return r.status === 'active'; }).map(function (r) { return { rule: r.key, row: ruleRow(r.key) }; });
   const ids = [S.current].concat(S.goals[S.current].members).filter(function (id) { return !!S.items[id]; });
   // goal/G41.12: one row each; appServer bundles what it hands.
-  return rules.concat(ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }));
+  return ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); });
 }
 // An item's facts as a List row publish.
 function rowPublish(s, id, verb, change) {
@@ -2022,7 +1904,6 @@ function write(verb, a, check) {
   const body = Object.assign({}, a);
   delete body.by;
   delete body.key;
-  if (verb === 'rule.chat') return writeRuleChat(s, body, a);
   const by = String(a.by || '');
   const key = String(a.key || '');
   const sessGoal = verb === 'session.set' && body.session && body.session.goal ? String(body.session.goal.id) : '';
@@ -2103,20 +1984,6 @@ function write(verb, a, check) {
   shed();
   return s;
 }
-// A LINE UNDER A RULE (goal/G5.5): a row of rule_chat, numbered like any write (the desk's change); its publish
-// names its rule, as rule.add, rule.draft and rule.version do: the open rule dialog repaints on it (goal/G2.18).
-function writeRuleChat(s, body, a) {
-  const rule = ruleNumber(body.rule);
-  s.change += 1;
-  db.exec('BEGIN');
-  try {
-    addRuleChat.run(rule, Number(ruleChatNext.get(rule).seq), new Date().toISOString(), String(a.by || ''), madeBy(a), String(body.text), s.change);
-    persistDeskState(s);
-    db.exec('COMMIT');
-  } catch (e) { db.exec('ROLLBACK'); s.change -= 1; throw e; }
-  publishOne({ change: s.change, verb: 'rule.chat', item: null, rule: String(body.rule) });
-  return s;
-}
 
 // A CLAIM PULLS THE DESK'S OWN CHECKOUT (goal/G41.22, box v22; Andy: "when the desk gets a claim red/build done. it pulls
 // it's repo automatically"; agreed: "it never pulls a checkout with edits of its own, or while a test run is going on in
@@ -2171,14 +2038,6 @@ function newGoal(w) {
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
-// A RULE AS rule.get ANSWERS IT, and as its writes publish it (goal/G27.9, S1: "rule writes publish the rule row"); null
-// when there is none.
-function ruleRow(key) {
-  const r = newestRule.get(String(key));
-  if (!r) return null;
-  const d = getDraft.get(r.key);
-  return { key: r.key, label: r.label, type: r.type, status: r.status, text: r.text, draft: d ? d.text : '', at: r.at, by: r.by, autoAttach: r.autoAttach === true };
-}
 const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
@@ -2334,11 +2193,6 @@ appServer.serve({
     handler: function (a) {
       const st = walkState();
       let it = st.items[String(a.id)];
-      // A rule's chat (goal/G5.5) is read the same way, from its rule_chat rows.
-      if (!it && /^rule\/\d+$/.test(String(a.id)) && newestRule.get(String(a.id))) {
-        const lines = ruleChatOf.all(ruleNumber(a.id)).map(function (r) { return { by: r.by, at: r.at, text: String(r.text), taken: '', key: r.creator === r.by ? '' : String(r.creator) }; });
-        it = { chat: lines };
-      }
       if (!it) throw refused('no-such-item');
       it = { chat: it.chat.map(function (l) { return shownLine(st, l); }) };
       // goal/G29.21: newest first through walked() in CHAT_ROOM; a line too big for the room on its own is never
@@ -2420,7 +2274,6 @@ appServer.serve({
         // goal/G29.21, decided by Andy: an agent creates a goal only under his "add goal": one goal, no items.
         if (w.by !== 'andy' && !(st.goalGrant > 0)) throw refusedWhy('not-granted', 'an agent creates a goal only while Andy\'s newest line says "add goal"; propose it to him instead');
         args.minted = nextGoalId(st);
-        args.rules = autoAttachKeys();
       });
       return { id: args.minted, change: r.change };
     },
@@ -2602,14 +2455,6 @@ appServer.serve({
     request: { id: '', text: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      // A RULE'S CHAT (goal/G5.5): Andy: "in this chat, the agents may propose alterations to parts of the rule, or
-      // advocate for status changes for this rule." A record of its own, no item.
-      if (/^rule\/\d+$/.test(String(a.id))) {
-        if (!newestRule.get(String(a.id))) throw refused('no-such-item');
-        const lineBytes = chatLineBytes(0, { by: w.by, at: new Date().toISOString(), text: String(a.text), taken: '' });
-        if (lineBytes > CHAT_ROOM) throw tooLarge(lineBytes, CHAT_ROOM);
-        return { change: write('rule.chat', { rule: String(a.id), text: String(a.text), by: w.by, key: w.key }).change };
-      }
       // MAX_PAYLOAD AT THE DOOR (desk/G3.3). Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD".
       // A line that could not come back whole in one answer is refused here; the sender slices it.
       const st0 = walkState();
@@ -2807,95 +2652,6 @@ appServer.serve({
       return walked(jobs, function (j) { return { key: j.id + ':' + j.phase, label: JSON.stringify(j) }; });
     },
   },
-  // ── THE RULES' VERBS (goal/G5.5) ─────────────────────────────────
-  // Andy: "only changes/upgrades in the faceless parts, so that the UI doesn't have to come back to the faceless
-  // parts." Anyone may add a rule, proposed ("why not?"); a new version is his one button ("i prefer to negotiate,
-  // and create an updated version with one button/verb that belongs to me."), activate and delete being versions
-  // too; his draft is kept here ("yes to all of it").
-  'rule.add': {
-    request: { type: '', label: '', text: '', autoAttach: false }, reply: { key: '' },
-    // autoAttach optional (goal/G40.12): left out, false.
-    accepts: function (x) {
-      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
-      const known = ['type', 'label', 'text', 'autoAttach'];
-      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) && typeof x.type === 'string' &&
-        typeof x.label === 'string' && typeof x.text === 'string' && (x.autoAttach === undefined || typeof x.autoAttach === 'boolean');
-    },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      mayWrite(walkState(), w);
-      const fr = spirit.require('spirit/fieldRules.js');
-      if (RULE_TYPES.indexOf(a.type) === -1) throw refusedWhy('bad-request', 'a rule type is one of ' + RULE_TYPES.join(', '));
-      // AUTO-ATTACH IS HIS (goal/G40.12; Andy, 2026-10-26: "it is I, the USER who controls auto-attach and the rules, NOT
-      // the agents, not the desk"): an agent may propose a rule, never one that attaches itself.
-      if (a.autoAttach === true && !(caller && caller.owner === true)) throw refusedWhy('not-owner', 'autoAttach is set by Andy alone');
-      if (fieldWhy('label', a.label)) throw refusedWhy('bad-request', fieldWhy('label', a.label));
-      if (fieldWhy('text', a.text, true)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
-      const key = 'rule/' + (Number(ruleCount.get().c) + 1);
-      addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text), a.autoAttach === true);
-      appServer.publish({ rule: key, row: ruleRow(key) });
-      return { key: key };
-    },
-  },
-  'rule.get': {
-    request: { key: '' }, reply: { key: '', label: '', type: '', status: '', text: '', draft: '', at: '', by: '', autoAttach: false },
-    handler: function (a) {
-      const row = ruleRow(String(a.key));
-      if (!row) throw refused('no-such-item');
-      return row;
-    },
-  },
-  'rule.draft': {
-    request: { key: '', text: '' }, reply: { key: '' },
-    handler: function (a, caller) {
-      ownerOnly(caller);
-      const fr = spirit.require('spirit/fieldRules.js');
-      if (!newestRule.get(String(a.key))) throw refused('no-such-item');
-      if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
-      putDraft.run(String(a.key), new Date().toISOString(), fr.normalizeParagraph(a.text));
-      appServer.publish({ rule: String(a.key), row: ruleRow(String(a.key)) });
-      return { key: String(a.key) };
-    },
-  },
-  'rule.version': {
-    request: { key: '', text: '', status: '', autoAttach: false }, reply: { key: '' },
-    // THE FULL RULE (goal/G40.12, Q1, Andy: "rule.version? carries the full rule."): autoAttach with it, optional; left
-    // out, the rule keeps what it had.
-    accepts: function (x) {
-      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
-      const known = ['key', 'text', 'status', 'autoAttach'];
-      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) && typeof x.key === 'string' &&
-        typeof x.text === 'string' && typeof x.status === 'string' && (x.autoAttach === undefined || typeof x.autoAttach === 'boolean');
-    },
-    handler: function (a, caller) {
-      ownerOnly(caller);
-      const fr = spirit.require('spirit/fieldRules.js');
-      const r = newestRule.get(String(a.key));
-      if (!r) throw refused('no-such-item');
-      if (RULE_STATUSES.indexOf(a.status) === -1) throw refusedWhy('bad-request', 'a rule status is one of ' + RULE_STATUSES.join(', '));
-      if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
-      addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text),
-        typeof a.autoAttach === 'boolean' ? a.autoAttach : r.autoAttach === true);
-      appServer.publish({ rule: r.key, row: ruleRow(r.key) });
-      return { key: r.key };
-    },
-  },
-  // No rule.history (goal/G33.7, the approved verb list: nothing calls it).
-  // THE LIST'S SEARCH (FACE.md): "searchable for deskClient and UI, with the type and status values as filters,
-  // and label and text being searched. search results with bring back key, label, type and status."
-  'rules.search': tableSearch({
-    request: { types: [''], statuses: [''] },
-    rows: function (a) {
-      // goal/G29.21: the text ranks the rules by title and text, the types and statuses still filter; newest first among
-      // equals, so no words reads every rule newest first.
-      const types = (Array.isArray(a.types) ? a.types : []).filter(Boolean);
-      const statuses = (Array.isArray(a.statuses) ? a.statuses : []).filter(Boolean);
-      return newestRules.all().filter(function (r) {
-        if (types.length && types.indexOf(r.type) === -1) return false;
-        return !(statuses.length && statuses.indexOf(r.status) === -1);
-      }).map(function (r) { return { key: r.key, row: ruleRow(String(r.key)) || r, label: { label: r.label, type: r.type, status: r.status } }; });
-    },
-  }),
   // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
   // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
   // row with its working list, so the agent bubbles paint from the publish (goal/G2.4).
@@ -3029,11 +2785,6 @@ appServer.serve({
   // goal/G41.11: or a list of paths in one write (filesAddVerb).
   'item.files.add': filesAddVerb(listRowVerb('item.files.add', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, true)),
   'item.files.remove': listRowVerb('item.files.remove', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, false),
-  // THE RULES ATTACHED TO A GOAL OR AN ITEM (goal/G40.12, second set 1-3; the names Andy approved: "yes, that moves me
-  // on"): item.rules.add {id, rule} puts one rule on, by its key, item.rules.remove takes it off; on a goal's id as on an
-  // item's; his alone. Each refuses a rule that does not exist, one already there, or one not there.
-  'item.rules.add': ruleRowVerb('item.rules.add', true),
-  'item.rules.remove': ruleRowVerb('item.rules.remove', false),
   // LETTING IT GO WITHOUT A WRITE (goal/G9.3). Andy, 2026-10-07: "When the user clicks outside of that text box, and
   // deactivates the input, also by leaving the details dialog, the box input is released from the take." Only the
   // holder releases: another caller is refused taken, so nobody takes a box out of somebody's hands.

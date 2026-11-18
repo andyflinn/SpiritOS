@@ -15,11 +15,10 @@ const FILE = path.join(__dirname, '..', 'cacheRules.js');
 
 // Names of this test's own: the rules take whatever data.js hands them.
 const N = { items: 'tItems', parts: 'tParts', state: 'tState' };
-// The rows as the desk sends them: an item's facts, a side row of one of its parts, a rule.
+// The rows as the desk sends them: an item's facts, a side row of one of its parts (no rule rows since goal/G47.4).
 const facts = function (goal, item, more) { return Object.assign({ key: { goal: goal, item: item }, item: { id: 'goal/G' + goal + (item ? '.' + item : '') } }, more || {}); };
 const chat = function (goal, item, at, by, text) { return { table: 'chat', id: 'goal/G' + goal + '.' + item, goal: goal, item: item, row: { at: at, by: by || 'wsl', text: text || 'x' } }; };
 const side = function (table, goal, item, row) { return { table: table, id: 'goal/G' + goal + '.' + item, goal: goal, item: item, row: row }; };
-const rule = function (name, text) { return { rule: name, text: text || '' }; };
 const count = function (rows) { return rows.length; };
 // A data set as the desk's translator keeps it: get(path) and nothing else.
 const dataSet = function (map) { return { get: function (p) { return map[p]; } }; };
@@ -63,11 +62,6 @@ test.run('a check is kept by its number, a file by its author and path', 0.2, fu
   const files = out.length === 2 && out[0].row.by === 'cw' && out[1].row.n === 2;
   return (checks && files) || false;
 }, test.limit.quick);
-test.run('a rule kept again takes the old rule out', 0.2, function () {
-  if (!C.keep) return false;
-  const out = C.keep([rule('r1', 'old'), rule('r2')], rule('r1', 'new'));
-  return (out.length === 2 && out[0].rule === 'r2' && out[1].text === 'new') || false;
-}, test.limit.quick);
 test.run('a row of a part keep does not know takes nothing out', 0.2, function () {
   if (!C.keep) return false;
   const out = C.keep([side('weird', 1, 1, { a: 1 })], side('weird', 1, 1, { a: 1 }));
@@ -77,20 +71,20 @@ test.run('a row of a part keep does not know takes nothing out', 0.2, function (
 // ── shed: Andy's order (Q2) ──
 // "FIRST YOU shed the longest untouched goal, lock, stock and barrel / when there is only one goal, then you shed the
 // longest untouched item, LOCK, stock and barrel, / when there is only one goal with one item you shed the oldest chat
-// line." Rows of no goal (the rules) are never shed. Here a row's size is one: the limit counts rows.
+// line." Here a row's size is one: the limit counts rows.
 test.run('within its limit shed sheds nothing', 0.2, function () {
   if (!C.shed) return false;
-  const rows = [facts(1, 1), facts(2, 1), rule('r')];
-  const out = C.shed(rows, 3, count);
-  return (out.length === 3 && out !== rows) || false;
+  const rows = [facts(1, 1), facts(2, 1)];
+  const out = C.shed(rows, 2, count);
+  return (out.length === 2 && out !== rows) || false;
 }, test.limit.quick);
 test.run('past its limit, with two goals or more, shed sheds the longest untouched goal whole, lock, stock and barrel', 0.2, function () {
   if (!C.shed) return false;
   // Goal 1 was touched last by its chat line at index 3; goal 2 at index 4: goal 1 is the longest untouched.
-  const rows = [facts(1, 0), facts(1, 1), facts(2, 1), chat(1, 1, 't1'), chat(2, 1, 't2'), rule('r')];
-  const out = C.shed(rows, 4, count);
+  const rows = [facts(1, 0), facts(1, 1), facts(2, 1), chat(1, 1, 't1'), chat(2, 1, 't2')];
+  const out = C.shed(rows, 3, count);
   const left = out.filter(function (r) { return (r.goal || (r.key && r.key.goal)) === 1; });
-  return (left.length === 0 && out.length === 3) || false;
+  return (left.length === 0 && out.length === 2) || false;
 }, test.limit.quick);
 test.run('the touched one stays: a goal touched last is kept over an older one', 0.2, function () {
   if (!C.shed) return false;
@@ -110,12 +104,6 @@ test.run('with one goal of one item, shed sheds the oldest chat line', 0.2, func
   const rows = [facts(1, 1), chat(1, 1, 't1', 'wsl', 'oldest'), chat(1, 1, 't2', 'wsl', 'newer'), chat(1, 1, 't3', 'wsl', 'newest')];
   const out = C.shed(rows, 3, count);
   return (out.length === 3 && out.filter(function (r) { return r.table === 'chat'; }).map(function (r) { return r.row.text; }).join() === 'newer,newest') || false;
-}, test.limit.quick);
-test.run('the rules are never shed, and with nothing of a goal left to shed, shed stops', 0.2, function () {
-  if (!C.shed) return false;
-  const rows = [rule('r1'), rule('r2'), facts(1, 1), chat(1, 1, 't1')];
-  const out = C.shed(rows, 0, count);
-  return (out.length === 3 && out.filter(function (r) { return r.rule; }).length === 2) || false;
 }, test.limit.quick);
 test.run('shed sheds by the size it is handed, the cache file\'s bytes', 0.2, function () {
   if (!C.shed) return false;

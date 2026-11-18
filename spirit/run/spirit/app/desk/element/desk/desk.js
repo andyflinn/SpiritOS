@@ -7,7 +7,7 @@
 //   organized, too" — "my input will be queued, any agent can adress
 //   issues in the table, respons to me under that heading".
 //
-// The face of the desk server (spirit/run/spirit/app/desk): two tabs, List and Rules, then one bubble per agent the
+// The face of the desk server (spirit/run/spirit/app/desk): the List tab, then one bubble per agent the
 // goal row names. Every read and every press is a desk.<verb> ask on the flat
 // apiDoor (deskAsk); what changes arrives as the desk server's publish, kept by the desk family's cache manager in
 // spirit.data.desk.data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
@@ -66,8 +66,8 @@ function deskHear(fn) {
 // ONE LAYER PER KIND, FILLED AGAIN FOR EACH ROW (Andy: "after i closed "Fix api branches" the other items won't open for me",
 // "all i see, when opening another item is the titlebar of that item"): a closed layer is hidden, not destroyed (panel.js,
 // goal/G43.17 Q2/Q3), and the details find their parts by id on the page, so a second layer of the same kind drew into the
-// first one's hidden parts and showed only its title bar. So every item opens in the one 'item' layer, every rule in the
-// one 'rule' layer, and opening another row fills that layer again with it.
+// first one's hidden parts and showed only its title bar. So every item opens in the one 'item' layer, and opening
+// another row fills that layer again with it.
 var deskPanes = {};
 // An element by its place, spirit.element.<its path> (goal/G43.32): undefined while any part of the path is not there yet.
 function deskElementAt(place) {
@@ -116,8 +116,7 @@ var deskVia = {
   escapeHtml: function (t) { return window.spirit.escapeHtml(t); },
   onPublished: function (fn) { return deskHear(fn); },
   callDialog: function (target, params) {
-    if (/deskDetails$/.test(target)) return deskDialog('item', String(params && params.id), 'spirit/app/desk/element/deskDetails/deskDetails.js', 'deskDetails', params);
-    return deskDialog('rule', String(params && params.key), 'spirit/app/desk/element/ruleDetails/ruleDetails.js', 'ruleDetails', params);
+    return deskDialog('item', String(params && params.id), 'spirit/app/desk/element/deskDetails/deskDetails.js', 'deskDetails', params);
   },
 };
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the
@@ -351,7 +350,7 @@ function deskAgentProfileSave() {
   }, function (e) { deskAgentNote = 'Profile not saved: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 
-// Drawn whole, as markup: List | Rules, the design button, then the bubbles. No Team or
+// Drawn whole, as markup: List, the design button, then the bubbles. No Rules tab (goal/G47.4, box v36). No Team or
 // Apps tab (goal/G43.22; Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
@@ -360,7 +359,6 @@ function deskDrawTabs() {
   var design = deskDesignOn();
   strip.innerHTML =
     deskTabButton('data-tab="list"', deskTab === 'list', 'List' + (waiting ? ' (' + waiting + ')' : '')) +
-    deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
     // ON EVERY TAB, AFTER THE TAB HEADERS (goal/G9.8; Andy: "The [Start/End design] buttons should be displayed always").
     // Its own colour, so it looms (Andy: "so it loooms over the proceedings").
     // ITS COLOUR IS shell.css's, AND ONLY WHILE UNARMED (goal/G41.9, box v3: armed is red): an inline colour won over the
@@ -460,13 +458,6 @@ function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
   // What is kept of the current goal took this publish first: the desk family's own cache manager hears the stream
   // (spirit/app/desk/data.js, goal/G33.3), so the page does not feed it again.
-  // A RULE CHANGED (goal/G6.5): the desk server publishes {rule: key}; the Rules tab, if shown, asks again.
-  // goal/G27.9 (S1): the rule's row travels with it, so the list takes it without asking again; the rule list's own
-  // element repaints it. A search typed in the Rules box still asks, since the server ranks by text.
-  if (obj.rule && !obj.item && !obj.verb) {
-    if (deskRulesList) deskRulesList.refresh();
-    return;
-  }
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: ask again for what is shown.
   if (obj.dropped) { deskSearchItems(); return; }
   var change = Number(obj.change) || 0;
@@ -844,104 +835,12 @@ function deskDraw() {
   if (deskList) deskList.redraw(); else deskMountList();
 }
 
-// ── THE RULES TAB (goal/G6.5) ─────────────────────────────────────────
-//
-//   The tab after List: 1. the new bubble: type, label, text, autoAttach and rule.add (the rule comes in proposed;
-//   agents may add one too). 2. The search: words, a type filter (ui, code, design, desk, test) and a status filter
-//   (proposed, active, deleted): rules.search {text, types, statuses}. 3. The list, a row per rule: status (proposed
-//   ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails (goal/G6.4).
-//
-// THE PROBABILITY SEARCH (goal/G40.12, box v7, first set 3: "all searches in desk are of the new probability variety"):
-// the list is spirit/element/search.js over rules.search, ranking as he types with the matched words marked, a type
-// filter and a status filter beside the words; a row opens ruleDetails. A rule's publish asks it again.
-// The types, the test type included (goal/G40.12, box v7, first set 4), as the desk server's RULE_TYPES.
-var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
-var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
-var DESK_RULE_ICON = { proposed: '✏️', active: '🔒', deleted: '💀' };
-var deskRulesNote = '';
-var deskRulesList = null;
+// The List's search element and the row it draws rows with, through the one loader (it loads each once).
 var DESK_SEARCH = '/spirit/element/search.js';
-function deskRulesSearch() {
-  if (deskRulesList) { deskRulesList.refresh(); return; }
-  var el = document.getElementById('desk-rule-list');
-  if (!el) return;
-  var make = function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create ? window.spirit.element.spirit.element.search : null;
-    var K = deskKept();
-    if (!P || typeof P.create !== 'function' || deskRulesList || !K) return;
-    // THE TOGGLES OF THE RULES LIST, as they always were (goal/G6.5): a button per type and per status, each on until he
-    // presses it off (probabilitySearch's multi filter, which keeps the ones pressed off); all on asks every rule.
-    var choices = function (values) { return values.map(function (v) { return { value: v, word: v }; }); };
-    var kept = function (all, off) { var on = all.filter(function (v) { return !(off || {})[v]; }); return on.length === all.length ? [] : on; };
-    deskRulesList = P.create(el, {
-      // A VIEW OF THE RULES THE CACHE MANAGER KEEPS (goal/G41.28): every rule the push brought and every answer, seated.
-      data: K.rulesBranch,
-      // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api): desk.<verb>, and the desk's
-      // publishes, which ask again.
-      search: function (args, verb) { return deskVia.verb('desk.' + verb, args); },
-      published: function (fn) { return typeof deskVia.onPublished === 'function' ? deskVia.onPublished(fn, 'desk') : function () {}; },
-      server: 'desk', verb: 'rules.search',
-      args: function (text, values) {
-        var v = values || {};
-        return { text: text, types: kept(DESK_RULE_TYPES, v.type), statuses: kept(DESK_RULE_STATUSES, v.status) };
-      },
-      // A RULE ROW IS A ROW ELEMENT (spirit/element/row.js, the element's own element(row, key)): it paints its status as
-      // its icon, as the Rules list always drew it (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), and its key.
-      columns: [{ field: 'status', label: '', sort: 'text' }, { field: 'label', label: 'Label', sort: 'text' },
-        { field: 'type', label: 'Type', sort: 'text' }, { field: 'key', label: 'Key' }],
-      element: function (row, key) { return deskRuleElement(row, key); },
-      filters: [
-        { name: 'type', multi: true, choices: choices(DESK_RULE_TYPES), test: function (row, off) { return (off || {})[row.type] ? 0 : 1; } },
-        { name: 'status', multi: true, choices: choices(DESK_RULE_STATUSES), test: function (row, off) { return (off || {})[row.status] ? 0 : 1; } },
-      ],
-      details: function (row, key) { deskOpenRule(key); },
-      empty: 'No rule matches.',
-    });
-    deskRulesList.refresh();
-  };
-  deskLoadSearch(function () { deskNeed(DESK_DATA).then(make); });
-}
-// One rule row's element: its four cells, the status drawn as its icon.
-var deskRuleIndex = null;
-function deskRuleElement(row, key) {
-  var E = window.spirit.element;
-  deskRuleIndex = deskRuleIndex || E.spirit.element.row.index(function () { /* the list asks again on a rule's publish */ });
-  return E.spirit.element.row.create({
-    kind: 'rule', key: key, index: deskRuleIndex,
-    row: { status: String((row && row.status) || ''), label: String((row && row.label) || ''), type: String((row && row.type) || ''), key: String(key) },
-    fields: [
-      { name: 'status', paint: function (v) { return DESK_RULE_ICON[v.status] ? deskGlyph(DESK_RULE_ICON[v.status], v.status) : '<span title="' + deskEsc(v.status) + '"></span>'; } },
-      { name: 'label', paint: function (v) { return deskEsc(v.label); } },
-      { name: 'type', paint: function (v) { return deskEsc(v.type); } },
-      { name: 'key', paint: function (v) { return deskEsc(v.key); } },
-    ],
-  });
-}
-// probabilitySearch.js and the row it draws rule rows with, through the one loader (it loads each once).
 var DESK_ROW_ELEMENT = '/spirit/element/row.js';
 function deskLoadSearch(done) {
   Promise.all([deskNeed(DESK_ROW_ELEMENT), deskNeed(DESK_SEARCH)]).then(function () { done(); }, function () { /* no search on this page */ });
 }
-function deskDrawRules() {
-  var note = document.getElementById('desk-rule-error');
-  if (note) note.textContent = deskRulesNote;
-}
-// The text as he typed it: a rule is a paragraph with its line breaks (goal/G5.5); the server normalizes and limits it.
-function deskRuleAdd() {
-  var val = function (id) { var el = document.getElementById(id); return el ? String(el.value || '') : ''; };
-  var type = val('desk-rule-type');
-  var label = val('desk-rule-label');
-  var text = val('desk-rule-text');
-  if (!label.trim() || !text.trim()) { deskRulesNote = 'A rule needs a label and a text.'; deskDrawRules(); return; }
-  var autoBox = document.getElementById('desk-rule-auto');
-  deskAsk('rule.add', { type: type, label: label, text: text, autoAttach: !!(autoBox && autoBox.checked) }).then(function () {
-    ['desk-rule-label', 'desk-rule-text'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
-    if (autoBox) autoBox.checked = false;
-    deskRulesNote = '';
-    deskRulesSearch();
-  }, function (e) { deskRulesNote = 'Not added: ' + e.message; deskDrawRules(); });
-}
-function deskOpenRule(key) { deskVia.callDialog('spirit/app/desk/element/ruleDetails', { key: key }).then(function () { deskRulesSearch(); }, function () {}); }
 
 // ONE ROW'S DIALOG, from the List.
 function deskOpenRow(id) {
@@ -1059,7 +958,7 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
         '<div style="display:flex;align-items:center"><div id="desk-tabs" style="flex:1;display:flex;flex-wrap:wrap;align-items:center"></div>' +
           '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
       '</div>' +
-      // EVERY LIST IN A BOX OF A STATED SIZE (goal/G41.11, rule/16): the List and the Rules list each in a fill box, and
+      // EVERY LIST IN A BOX OF A STATED SIZE (goal/G41.11, rule/16): the List in a fill box, and
       // every box up to the app a fill box too.
       '<div id="desk-root" class="fill">' +
         // THE SEARCH BAR TOPS THE LIST (desk/G2.6). Andy: "all list displays in
@@ -1078,19 +977,6 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
           // face over items.search, its toggles the element's filters in the row above the box, each row a row element
           // (deskMountList). The error line above it.
           '<div id="desk-top" class="fill"><div id="desk-list-error"></div><div id="desk-list" class="fill"></div></div></div>' +
-        // THE RULES TAB (goal/G6.5): the new bubble, the search bubble, the list. #desk-rules takes every click and input.
-        '<div data-pane="rules" class="fill" hidden><div id="desk-rules" class="fill">' +
-          '<div class="start-job-form card">' +
-            '<label class="field-label">Type<select id="desk-rule-type">' +
-              DESK_RULE_TYPES.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join('') + '</select></label>' +
-            '<label class="field-label grow">Label<input id="desk-rule-label" placeholder="the rule in a few words"></label>' +
-            '<label class="field-label grow">Text<textarea id="desk-rule-text" rows="3" placeholder="the rule; up to 2048 bytes, line breaks kept"></textarea></label>' +
-            // goal/G40.12: autoAttach, off unless ticked: the rule is attached to every goal made from then on.
-            '<label class="field-label"><input type="checkbox" id="desk-rule-auto"> auto-attach to new goals</label>' +
-            '<button type="button" id="desk-rule-add">New</button></div>' +
-          '<div id="desk-rule-error" class="job-start-error"></div>' +
-          '<div id="desk-rule-list" class="fill"></div>' +
-        '</div></div>' +
         // AN AGENT'S PROFILE (goal/G4.23), opened from its bubble.
         '<div data-pane="agent" hidden>' +
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
@@ -1098,10 +984,9 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
         '</div>' +
       '</div>' +
       '</div>';
-    // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11), the
-    // rule's label the label rule and its text a paragraph (rule.add.json).
+    // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11).
     var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
-    if (FI) [['desk-goal-title', 'name'], ['desk-rule-label', 'name'], ['desk-rule-text', 'paragraph']].forEach(function (f) {
+    if (FI) [['desk-goal-title', 'name']].forEach(function (f) {
       var el = container.querySelector('#' + f[0]);
       if (el) FI.attach(el, f[1]);
     });
@@ -1121,7 +1006,6 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
       deskDrawGoAll();
-      if (tab === 'rules') deskRulesSearch();
       deskDrawTabs();
     }
     // The strip is redrawn, so one listener on it, and the click may
@@ -1155,11 +1039,6 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
     document.getElementById('desk-goal-add').addEventListener('click', function () { deskAddGoal(); });
     deskDrawToggles();
     deskMountList();
-    document.getElementById('desk-rules').addEventListener('click', function (e) {
-      var t = e && e.target;
-      if (!t) return;
-      if (t.id === 'desk-rule-add') { deskRuleAdd(); return; }
-    });
     deskArming(document.getElementById('desk-go-all'), 'Go all: sure?', deskGoAll);
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
     // what the desk server publishes. A shell whose api carries no onPublished (the face's) mounts it all the same,

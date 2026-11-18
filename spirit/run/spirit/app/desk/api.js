@@ -7,10 +7,7 @@
 // the handler needs it, optional only where the verb's own accepts() lets it be left out; each rule is the tightest
 // that every value the handler takes still passes ('text' where '' is a real value, 'id' where it must name something,
 // the field rules where the handler applies them). The server checks everything again. A verb added to the server is
-// added here, in the same commit. DEBUG is appServer's, not listed here. item.rules.add and item.rules.remove, which
-// desk.js serves (goal/G40.12, his alone), are not listed here, so the spirit object has no checked call for them; nor
-// is the optional autoAttach that desk.js's rule.add and rule.version take, so a call through the spirit object that
-// sends it is refused before it leaves.
+// added here, in the same commit. DEBUG is appServer's, not listed here. No rule verb is served (goal/G47.4, box v36).
 // ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
 // data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
 // (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
@@ -74,11 +71,6 @@ module.exports = {
     'profile.get': { agent: 'text' },
     // His alone. A name or nick left '' is no name or no nick; a name otherwise passes the label rule.
     'profile.set': { agent: 'id', name: 'name', nick: 'text', included: 'bool?', cap: 'bool?' },
-    'rule.add': { type: 'id', label: 'name', text: 'paragraph' },
-    'rule.draft': { key: 'id', text: 'paragraph' },
-    'rule.get': { key: 'id' },
-    'rule.version': { key: 'id', text: 'paragraph', status: 'id' },
-    'rules.search': { text: 'text', types: 'list', statuses: 'list' },
     // goal/G33.7: seen per item, the arrival time of the newest thing he looked at under it.
     'seen.get': { id: 'id' },
     'seen.set': { id: 'id', at: 'text' },

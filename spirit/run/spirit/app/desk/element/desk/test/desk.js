@@ -57,12 +57,6 @@ test.run('it draws 📁 as written', 0.2, function () { return readCode().indexO
 test.run('it draws ❌ as written', 0.2, function () { return readCode().indexOf('❌') !== -1 || false; }, test.limit.quick);
 test.run('it draws 💻 as written', 0.2, function () { return readCode().indexOf('💻') !== -1 || false; }, test.limit.quick);
 test.run('it draws ⚔️ as written', 0.2, function () { return readCode().indexOf('⚔️') !== -1 || false; }, test.limit.quick);
-test.run('a rule\'s status is drawn as its glyph: proposed ✏️, active 🔒, deleted 💀', 0.2, function () {
-  const rule = /var DESK_RULE_ICON = (\{[^}]*\});/.exec(readCode());
-  let icons = null;
-  try { icons = rule ? (new Function('return ' + rule[1]))() : null; } catch (e) { icons = null; }
-  return (!!icons && icons.proposed === '✏️' && icons.active === '🔒' && icons.deleted === '💀') || false;
-}, test.limit.quick);
 
 // ── THE PAGE THESE TESTS DRIVE (goal/G41.9) ─────────────────────────────────────────────────────────────────────────
 // A small forgiving page: markup parsed into elements, with ids, attributes, closest and simple selectors, and a click

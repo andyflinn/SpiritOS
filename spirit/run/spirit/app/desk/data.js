@@ -29,7 +29,6 @@
   var ITEMS = 'desk';
   var PARTS = 'deskItem';
   var STATE = 'deskState';
-  var RULES = 'deskRules';
   var DOORS = 'deskDoors';
   var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
@@ -128,11 +127,6 @@
       if (!o || typeof o !== 'object') return;
       // The newest change heard, as item.get answers it. No position: the stream keeps its own (appServer, goal/G41.12).
       if (typeof o.change === 'number' && o.change > (Number(V.get(STATE + '/change')) || 0)) V.set(STATE + '/change', o.change);
-      // A RULE (goal/G41.2): every active rule comes with the push, then each rule write, kept by its key.
-      if (o.rule && o.row && typeof o.row === 'object') { V.set(RULES + '/' + String(o.rule), o.row); return; }
-      // A LINE SAID UNDER A RULE (rule.chat) comes without the line: the rule's chat read so far is dropped, so whoever
-      // watches it reads it again.
-      if (o.verb === 'rule.chat' && o.rule) { V.del(PARTS + '/' + String(o.rule)); return; }
       // A STACK-FRAME DOOR CHANGED (a publish naming plugin stackFrameChecks, { what, id }, carries no row): its run kept is
       // dropped, and for any change but a run the door kept too, so whoever watches them reads them again.
       // DISCREPANCY WITH ANDY's RULES: goal/G43.22, Andy: "the apps and plugin system goes.", "removal of plugin support.".
@@ -179,14 +173,13 @@
       },
     });
     // THE READS, ANSWERED HERE (goal/G41.28): what the cache holds of the desk, by what it is, never by branch name.
-    //   branch     the trunk's whole path, for a list that is a view of it (probabilitySearch's data); rulesBranch the rules'
+    //   branch     the trunk's whole path, for a list that is a view of it (probabilitySearch's data)
     //   item(id)   an item's facts;  items()  every item kept, id -> facts
     //   part(id)   the parts of an item read so far;  keepPart(id, fields)  more of them;  forget(id)  one item's
     //   parts dropped;  forgetAll()  every item's parts dropped
-    //   current()  the goal last pushed whole;  change()  the newest change number heard;  rule(key)  a rule kept
+    //   current()  the goal last pushed whole;  change()  the newest change number heard
     //   answer(verb, args, room)  a desk read answered from what is kept, or null
-    //   rules.keep(row)  a rule as rule.get answered it;  rules.watch(key, fn)  fn(row) on every change of that rule
-    //   parts.watch(id, fn)  fn(parts) on every change of an item's (or a rule's) parts, undefined once dropped
+    //   parts.watch(id, fn)  fn(parts) on every change of an item's parts, undefined once dropped
     //   doors.keep(door), doorRuns.keep(id, run)  a stack-frame door and its run state (no reader left; see the
     //   doors.watch(id, fn), doorRuns.watch(id, fn)  DISCREPANCY above): fn(row) on every change, undefined once dropped
     // Each watch answers its release.
@@ -195,21 +188,17 @@
         watch: function (id, fn) { return HOME.watch(branch + '/' + String(id), function (whole, v) { if (typeof fn === 'function') fn(v); }); },
       };
     }
-    var rules = rowTable(RULES);
-    rules.keep = function (row) { if (row && row.key) V.set(RULES + '/' + String(row.key), row); };
     var doors = rowTable(DOORS);
     doors.keep = function (door) { if (door && door.id) V.set(DOORS + '/' + String(door.id), door); };
     var doorRuns = rowTable(DOOR_RUNS);
     doorRuns.keep = function (id, run) { if (id && run && typeof run === 'object') V.set(DOOR_RUNS + '/' + String(id), run); };
     var deskReads = {
-      rules: rules,
       parts: rowTable(PARTS),
       doors: doors,
       doorRuns: doorRuns,
       published: published, took: took,
       // Whole paths, the home node's, asked when a list is made.
       get branch() { return HOME.path(ITEMS); },
-      get rulesBranch() { return HOME.path(RULES); },
       item: function (id) { return id ? V.get(ITEMS + '/' + id) || null : null; },
       items: function () { return V.branch(ITEMS); },
       part: function (id) { return id ? V.get(PARTS + '/' + id) || null : null; },
@@ -217,7 +206,6 @@
       forget: function (id) { if (id) V.del(PARTS + '/' + id); },
       forgetAll: function () { Object.keys(V.branch(PARTS)).forEach(function (id) { V.del(PARTS + '/' + id); }); },
       current: function () { return String(V.get(STATE + '/current') || ''); },
-      rule: function (key) { return key ? V.get(RULES + '/' + key) || null : null; },
       change: function () { return Number(V.get(STATE + '/change')) || 0; },
       // A desk read answered from what is kept, as the desk would answer it, or null (cache.answer, on the home node).
       answer: function (verb, args, room) { return cache ? cache.answer(verb, args, HOME, room) : null; },

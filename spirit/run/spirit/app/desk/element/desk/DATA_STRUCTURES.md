@@ -26,7 +26,6 @@ An id is two numbers, goal and item (0 for the goal itself), shown as
 | `files (goal, item, holder, path)` | one file an agent listed, with its grant status | `item.files`, `item.files.search`, `item.files.add`, `item.files.remove` |
 | `claims (goal, item, claimer)` | one agent's claim | `item.claims.search`, `claim` |
 | `agents (agent)` | by key: its label, its last write, its word, Andy's profile of it | `agents.search`, `profile.get`, `profile.set` |
-| `rules`, `rule_drafts`, `rule_chat` | the newest version of every rule (a new version deletes the older rows, goal/G47.1, Q16), his draft between versions, a rule's chat | `rules.search`, `rule.get`, `rule.add`, `rule.draft`, `rule.version` |
 | `desk_state (k)` | the desk's own few values: the change number, the current goal, the grants | — |
 
 Every row carries its creator. Every write takes the next change number,

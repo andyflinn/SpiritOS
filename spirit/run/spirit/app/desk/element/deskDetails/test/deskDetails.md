@@ -1,14 +1,14 @@
 # spirit/app/desk/element/deskDetails/deskDetails.js
 
-An item's details page in the Desk app: the box, the red Qs, the blocks, the files and the rules, each a
+An item's details page in the Desk app: the box, the red Qs, the blocks and the files, each a
 panel behind an icon on its left strip. This test covers what goal/G41.1 (box v19-v20), G41.9, G41.11, G41.22,
 G43.3 and G43.22 require of it, and the verifier's removal.
 
 ## Requirements (goal/G41.1)
 
 - **Icons are glyphs** (Andy: the icon set is the only source of icons on the face): each panel of `DD_PANELS` names
-  its icon as the glyph itself. Its panels are five, in this order: the box, the red Qs, the blocks, the files, the
-  rules. The strip is the workBench's (goal/G41.22), handed each glyph as it is; that is checked
+  its icon as the glyph itself. Its panels are four, in this order: the box, the red Qs, the blocks, the files (no
+  rules panel since goal/G47.4). The strip is the workBench's (goal/G41.22), handed each glyph as it is; that is checked
   on what it is handed (below).
 - It reads no icon table (`iconIndex`, `ICON`).
 
@@ -74,11 +74,6 @@ first displayed."
 - A rename field that opens empty, on an item or a goal.
 - A chat line drawn again by a new line or by a repaint that is no chat line.
 
-## goal/G41.11: the rules panel scrolls inside its own box
-
-The left pane hides its overflow; the first box that bounds the rules panel scrolls (overflow auto), so a long list of
-rules is never cut off unseen. Its dropdowns stand inline, as every dropdown in the tree does.
-
 ## Requirements (goal/G41.22, box v15)
 
 Andy: *"the item panel drops appHeader"*, *"the items ID and title, including status is shown in the shells title bar
@@ -114,8 +109,8 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - The chat is scrolled to its end, and the newest line is its last, shown whole above the chat's bottom.
 - At open a left panel shows.
 - **Every left panel uses all the height** (Andy: *"the box must use the full vertical space"*, *"all left side panels
-  must fucking use all available vertical space, especially the lists"*): the box, the red Qs (60), the files (150, with
-  three open grants) and the rules (60), each shown in turn, the first time its icon is pressed (Andy:
+  must fucking use all available vertical space, especially the lists"*): the box, the red Qs (60) and the files (150,
+  with three open grants), each shown in turn, the first time its icon is pressed (Andy:
   *"i want to see the panel content THE FIRST  TIME i pop in a panel, NOT the second time."*). The pane itself never
   scrolls; the panel's own list, or the box's text, scrolls in itself, its bottom at the pane's bottom. The blocks are a
   few links, not a list, and are not asked.
@@ -134,13 +129,11 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
   its pane; a list as tall as nothing, cut off unseen, or the pane scrolling instead of the list; grant buttons that
   scroll away with the files.
 
-## goal/G43.3: the box panel, who asked, the rules panel
+## goal/G43.3: the box panel, who asked
 
 - *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers. There is no search field beside it (goal/G43.22; Andy: *"take out your search of the items text, the codeMirror search works better for editing purposes."*). No server is asked. Going into the box takes it, and leaving it changed writes his text on the version it read, as the textarea did.
 - *"above the box i want to see the the last-stored version number of the box."* The version the desk answered stands above the box.
 - *"red Q's should indicate who posted them."* The Qs panel shows the question and who placed it.
-- *"when i add a rule to an item or goal, it will not immediately display in the rule-list."* With the rules panel open on an item or a goal, a row naming a new rule shows it at once, with no read asked.
-- *"when i manually add rules to an item, the rule-picker should default to all filters off. Now i always have to turn of all but one search filter to actually find the rule I'm looking for."* In a real browser: the picker opens with no type filter on, and one type pressed is the only one on, the search asking for that type.
 
 ## Requirements (goal/G43.30)
 

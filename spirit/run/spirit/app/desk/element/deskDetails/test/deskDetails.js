@@ -305,14 +305,15 @@ async function opened(subject, checks, o) { const g = ddWorld(subject, checks ||
 async function goalPress(id, armedSays, want) { const w = await opened(GOAL); return pressed(await twoPress(w, byId(w, id), armedSays, want)); }
 
 // ── THE PANELS NAME THEIR ICONS AS GLYPHS ───────────────────────────────────────────────────────────────────────────
-test.run('the details list five panels: the box, the red Qs, the blocks, the files and the rules', 0.2, function () {
+// goal/G47.4, box v36: "The rules list on each goal and item goes": no rules panel among them.
+test.run('the details list four panels: the box, the red Qs, the blocks and the files', 0.2, function () {
   S.raw = fs.readFileSync(FILE, 'utf8');
   S.code = S.raw.replace(/\/\/[^\n]*/g, '');
   S.plain = S.code;
   const at = /var DD_PANELS = (\[[\s\S]*?\n\]);/.exec(S.code);
   try { S.panels = at ? (new Function('return ' + at[1]))() : null; } catch (e) { S.panels = null; }
   const keys = Array.isArray(S.panels) ? S.panels.map(function (p) { return p.key; }) : null;
-  return (!!keys && JSON.stringify(keys) === JSON.stringify(['box', 'qs', 'blocks', 'files', 'rules'])) || false;
+  return (!!keys && JSON.stringify(keys) === JSON.stringify(['box', 'qs', 'blocks', 'files'])) || false;
 }, test.limit.quick);
 test.run('every panel names its icon as the glyph itself', 0.2, function () {
   const keyed = (S.panels || []).filter(function (p) { return !p.icon || KEY.test(p.icon); });
@@ -608,19 +609,6 @@ test.run('a change that is no chat line (a check) repaints the panel and leaves 
   const afterOther = shownNow();
   return (afterOther.length === 3 && afterOther[0] === before[0] && afterOther[1] === before[1] && afterOther[2] === afterLine[2]) || false;
 }, test.limit.quick);
-// goal/G41.11: the rules panel scrolls inside its own box, the frame never cuts it off.
-// Andy: "the rules list is NOT placed properly in a size-limited container". The left pane hides its overflow; what
-// bounds the rules is a box of its own that scrolls, so a long list is never cut off unseen.
-test.run('the first box that bounds the rules scrolls (overflow auto), not the frame\'s hidden overflow', 0.2, async function () {
-  const rf = await opened(Object.assign({}, ITEM, { id: 'goal/G9.6', rules: Array.from({ length: 30 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) }));
-  const icon = panelIcon(rf, 'rules');
-  if (icon) { rf.document.click(icon); await settle(); }
-  const firstRuleRow = rf.document.querySelector('[data-rule-remove]');
-  let bound = null;
-  for (let n = firstRuleRow; n; n = n.parentNode) { const st = String((n.attrs && n.attrs.style) || ''); if (/overflow\s*:\s*(hidden|auto|scroll)/.test(st)) { bound = { id: n.id, style: st }; break; } }
-  return (!!bound && /overflow\s*:\s*(auto|scroll)/.test(bound.style)) || false;
-}, test.limit.quick);
-
 // ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────
 // The page above has no layout, so what fills and what scrolls is asked of Chrome (a chat short of its bottom, no left
 // panel at open, or a box a third of its pane, pass the page above):
@@ -698,17 +686,6 @@ test.run('leaving the box changed writes his text, on the version it read', 0.2,
   const t = S.take;
   return (!!t && !!t.wrote && t.wrote.text === 'his new text' && t.wrote.version === 37) || false;
 }, test.limit.quick);
-// goal/G43.3: Andy: "the rule-picker should default to all filters off."
-test.run('the rule picker opens with all its type filters off', 0.2, async function () {
-  if (!S.m) return false;
-  const rp = S.rp = await pageAnswer('window.rulePick()');
-  return (!!rp && rp.buttons > 0 && rp.on.length === 0) || false;
-}, test.limit.slow);
-test.run('with one type pressed, that filter alone is on and the search asks for that type', 0.2, function () {
-  if (!S.m) return false;
-  const rp = S.rp;
-  return (!!rp && JSON.stringify(rp.afterOn) === '["code"]' && JSON.stringify(rp.afterTypes) === '["code"]') || false;
-}, test.limit.quick);
 // EVERY LEFT PANEL USES ALL THE HEIGHT (Andy, on G41.22: "the box must use the full vertical space", "all left
 // side panels must fucking use all available vertical space, especially the lists"): given long content, the
 // pane never scrolls itself; the panel's own list (the box's text) scrolls, its bottom at the pane's.
@@ -726,12 +703,11 @@ test.run('the files panel, the first time its icon is pressed, uses all the heig
 test.run('in the files panel, the grant buttons stay pinned above the file list as it scrolls', 0.2, function () {
   if (!S.m) return false;
   const p = S.panel;
-  return (!!p && p.grantInList === false && p.grantBefore === p.grantAfter && !!p.scroller && p.grantBefore < p.scroller.top) || false;
+  const pinned = (!!p && p.grantInList === false && p.grantBefore === p.grantAfter && !!p.scroller && p.grantBefore < p.scroller.top) || false;
+  // The last check on the opened page closes it.
+  stopOpened();
+  return pinned;
 }, test.limit.quick);
-test.run('the rules panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () {
-  const r = fullHeight('rules');
-  return Promise.resolve(r).then(function (v) { stopOpened(); return v; });
-}, test.limit.slow);
 
 // ── goal/G43.30: ON THE REAL PAGE, A DELETE OR A CLOSE PRESSED ONCE DOES NOTHING ─────────────────────────────────
 // The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk on, a goal and two items: one pressed done, whose detail

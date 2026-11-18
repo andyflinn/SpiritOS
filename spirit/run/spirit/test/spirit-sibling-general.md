@@ -97,8 +97,8 @@ A scratch node; an app branch switched on first (`app.active`), as its server mu
   server.js familyDir looks for `spirit/app/<name>/api.js`; appServer.js takes the app folder itself as the family folder).
 - **It serves exactly the verbs its `api.js` declares** (goal/G43.20; Andy: *"IN THIS ONE, OR WE'LL NEVER GET FUCKING
   DONE."*, *"WSL, NOTE AND ASSERT THIS IN YOUR TESTS, IN THE PROPER PLACE, DILIGENTLY WITHOUT FUCKING CHEATING."*), beyond it
-  only what was decided: appServer's `DEBUG` (desk/G2.5: *"DEBUG auto-verb supplied by appServer is approved."*), and desk's
-  `item.rules.add` and `item.rules.remove` (goal/G40.12). **No FS set** among them.
+  only what was decided: appServer's `DEBUG` (desk/G2.5: *"DEBUG auto-verb supplied by appServer is approved."*). **No FS
+  set** among them.
 - **Every broken call is refused at the door** (goal/G41.30; Andy: *"this needs fixing in this item."*; an app's in its own
   process, decided 9): from its declaration, a raw call over http breaks each verb's arguments three ways, an argument of
   the wrong type, a required one left out, one the verb does not name; each answers a 4xx with a `code`, never a 2xx, a

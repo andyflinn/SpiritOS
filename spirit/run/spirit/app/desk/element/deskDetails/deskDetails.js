@@ -13,7 +13,7 @@
 // `buttons`, and a press goes to the server as a press, the screen waiting
 // for the server's publish. The id, title and status ride in the shell's title
 // bar; under it the button row, then a workBench: the left strip of panels (box,
-// red Qs and checks, blocks, files and grants, rules), the chat in the
+// red Qs and checks, blocks, files and grants), the chat in the
 // centre, the right side blank.
 
 // THE INTERFACE IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -156,10 +156,6 @@ function ddFrame() {
       // The left pane's content, a box of its own that scrolls (goal/G41.11: a long list is never cut off unseen).
       // The left pane's content: its rows on top, the panel taking the rest (each panel scrolls in itself, ddPanelHtml).
       '<div id="dd-left" class="fill" style="min-height:0;overflow:hidden">' +
-        // ATTACH A RULE, ON TOP OF THE RULES (goal/G41.11; Andy: "the add-rule dropdown is at the bottom of a (sometimes
-        // LONG) list, and it must be on top"): a probability search of the rules as a dropdown; a pick attaches it. In
-        // the frame, so the search survives every repaint; it shows with the rules panel only.
-        '<div class="start-job-form card" id="dd-rule-add-row" style="display:none"><div id="dd-rule-pick" style="flex:1"></div></div>' +
         '<div id="dd-panel" class="fill" style="min-height:0"></div>' +
     // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "\"Title\" [Title String, subject to label rules]
     // [add-button]. When the user presses the [add-button], The desk will add a blocking item with the entered title
@@ -211,7 +207,6 @@ function ddMakeBench(n) {
       ddPanelSel = name;
       ddPaint();
       if (name === 'blocks') ddLoadTargets();
-      if (name === 'rules') { ddLoadRuleNames(); ddMountRulePick(); }
     },
   });
   ddBench.center.appendChild(centre);
@@ -306,8 +301,6 @@ var DD_PANELS = [
   { key: 'qs', icon: '❌', title: 'red Qs and checks' },
   { key: 'blocks', icon: '🪠', title: 'blocks' },
   { key: 'files', icon: '📂', title: 'files and grants' },
-  // goal/G40.12, second set 2: "the icons strip to the left of a goal has an icon for the list of attached rules".
-  { key: 'rules', icon: '📖', title: 'the rules attached' },
 ];
 function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
 // The workBench draws the strip and marks the shown tool (goal/G41.22); a waiting icon on it blinks.
@@ -362,7 +355,6 @@ function ddScrolls(html) { return '<div class="fill" style="min-height:0;overflo
 function ddPanelHtml() {
   if (ddPanelSel === 'qs') return ddScrolls(ddQsHtml());
   if (ddPanelSel === 'blocks') return ddScrolls(ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>');
-  if (ddPanelSel === 'rules') return ddScrolls(ddRulesHtml());
   // Andy: "the file panel must have the red gran button row pinned to the top and the file list only using the
   // remaining vertical space".
   if (ddPanelSel === 'files') return '<div style="flex:none">' + ddGrantsHtml(true) + '</div>' +
@@ -641,10 +633,6 @@ function ddPaint() {
   // The add-blocking form stands in the frame, so what he types survives; it shows with the blocks panel only.
   var addRow = document.getElementById('dd-add-row');
   if (addRow && addRow.style) addRow.style.display = ddPanelSel === 'blocks' ? '' : 'none';
-  var ruleRow = document.getElementById('dd-rule-add-row');
-  if (ruleRow && ruleRow.style) ruleRow.style.display = ddPanelSel === 'rules' ? '' : 'none';
-  // Whenever the rules panel shows, its dropdown is there: made for this frame if it has none yet.
-  if (ddPanelSel === 'rules') ddMountRulePick();
   ddChatSync();
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
@@ -723,79 +711,12 @@ function ddTakeRow(obj) {
 }
 var ddFilesAt = -1;
 
-// THE RULES PANEL (goal/G40.12, second set 1-3): the rules attached to this goal or item, each named and with its
-// delete (item.rules.remove), read from the facts; their names from the rules search, asked when the icon is pressed. The
-// add is the dropdown in the frame (dd-rule-pick), a probability search of rules.search; a pick is item.rules.add.
-var ddRuleNames = Object.create(null);
-var DD_SEARCH = 'spirit/element/search.js';
-var ddRulePick = null;
-var ddRulePickHost = null;   // the box the dropdown was made in: a frame drawn again is a new box, so a new dropdown
-// The rule types, as the desk server's RULE_TYPES (goal/G40.12 added test).
-var DD_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
-var ddRulePressed = {};
-// EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21, and Andy, of the add-rule dropdown: "Sometimes the dropdown
-// does NOT appear at ALL!"): spirit.require, never a script tag of its own. It loads a part once and answers once it ran.
+// EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21, and Andy, of a dropdown: "Sometimes the dropdown does NOT
+// appear at ALL!"): spirit.require, never a script tag of its own. It loads a part once and answers once it ran.
 function ddNeed(p) {
   var req = typeof window !== 'undefined' && window.spirit && window.spirit.require;
   if (typeof req !== 'function') return Promise.reject(new Error('no spirit.require on this page'));
   return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
-}
-function ddLoadRuleNames() {
-  return ddAsk('rules.search', { text: '', types: [], statuses: [] }).then(function (r) {
-    (r.items || []).forEach(function (i) { try { var l = JSON.parse(i.label); ddRuleNames[i.key] = l.label + ' (' + l.type + ')'; } catch (e) { /* named by its key */ } });
-    ddPaint();
-  }, function () { /* the keys stand for the names */ });
-}
-function ddRulesHtml() {
-  var rules = (ddFacts && Array.isArray(ddFacts.rules)) ? ddFacts.rules : [];
-  if (!rules.length) return '<div class="job-manifest-note">No rule is attached here.</div>';
-  return rules.map(function (r) {
-    var key = String((r && r.key) || r);
-    return '<div>' + ddEsc(key) + ' ' + ddEsc(ddRuleNames[key] || '') + ' <button type="button" data-rule-remove="' + ddEsc(key) + '" title="take this rule off">delete</button></div>';
-  }).join('') + (ddFacts && ddFacts.rulesMore ? '<div class="job-manifest-note">More rules than shown.</div>' : '');
-}
-// MADE EVERY TIME THE RULES PANEL SHOWS IN A FRAME THAT HAS NONE (goal/G41.11): the dropdown made for an earlier frame is
-// no dropdown in this one, so a new frame gets its own.
-function ddMountRulePick() {
-  var el = document.getElementById('dd-rule-pick');
-  if (!el) return;
-  if (ddRulePick && ddRulePickHost === el) return;
-  if (ddRulePick && typeof ddRulePick.destroy === 'function') ddRulePick.destroy();
-  ddRulePick = null;
-  ddRulePickHost = el;
-  var make = function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create ? window.spirit.element.spirit.element.search : null;
-    if (!P || typeof P.create !== 'function' || ddRulePickHost !== el || ddRulePick) return;
-    ddRulePick = P.create(el, {
-      // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api).
-      search: function (args, verb) { return ddApi.verb('desk.' + verb, args); },
-      published: function (fn) { return typeof ddApi.onPublished === 'function' ? ddApi.onPublished(fn, 'desk') : function () {}; },
-      server: 'desk', verb: 'rules.search',
-      // A TYPE FILTER BESIDE THE WORDS, as the Rules list has (Andy: "where are my type filters, when i search for rules
-      // to attach to a goal or item?"). Active rules only: a proposed rule is not yet a rule to attach.
-      // ALL OFF UNTIL PRESSED (goal/G43.3; Andy, the box: "when i manually add rules to an item, the rule-picker should
-      // default to all filters off. Now i always have to turn of all but one search filter to actually find the rule I'm
-      // looking for."): a toggle per type, as [Include Closed] is. None pressed asks every type; pressed, those types.
-      args: function (text, values) {
-        var v = values || {};
-        return { text: text, types: DD_RULE_TYPES.filter(function (t) { return v['type-' + t] === true; }), statuses: ['active'] };
-      },
-      // Each toggle says whether it is pressed; the last filter, which draws nothing, judges the row by them all.
-      filters: DD_RULE_TYPES.map(function (t) {
-        return { name: 'type-' + t, toggle: true, word: t, test: function (row, on) { ddRulePressed[t] = on === true; return 1; } };
-      }).concat([{ name: 'types', when: function () { return false; }, test: function (row) {
-        var pressed = DD_RULE_TYPES.filter(function (t) { return ddRulePressed[t]; });
-        return !pressed.length || pressed.indexOf(row.type) !== -1 ? 1 : 0;
-      } }]),
-      columns: [{ field: 'label', label: 'Rule', sort: 'text' }, { field: 'type', label: 'Type', sort: 'text' }],
-      face: 'dropdown', placeholder: 'attach a rule…',
-      pick: function (row, key) { if (key) ddWrite('item.rules.add', { id: ddId, rule: String(key) }); },
-      empty: 'No rule matches.',
-    });
-    ddRulePick.refresh();
-  };
-  if (window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create) { make(); return; }
-  ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 
 // The files panel's list, asked on its own (goal/G32.2), and again when a write changed it.
@@ -963,13 +884,6 @@ var ddApp = {
         return;
       }
       // THE STRIP IS THE workBench's (goal/G41.22): an icon shows its panel through the bench's changed (ddMakeBench).
-      var attr = function (name) {
-        if (t && t.getAttribute && t.getAttribute(name) != null) return t.getAttribute(name);
-        var up = t && t.closest ? t.closest('[' + name + ']') : null;
-        return up && up.getAttribute ? up.getAttribute(name) : null;
-      };
-      var ruleOff = attr('data-rule-remove');
-      if (ruleOff) { ddWrite('item.rules.remove', { id: ddId, rule: ruleOff }); return; }
       if (t && t.getAttribute && t.getAttribute('data-fold') === 'blocks') { ddBlocksFolded = !ddBlocksFolded; ddPaint(); return; }
       // Leaving for another item: Desk opens it once this one is closed.
       var link = t && t.closest && t.closest('[data-open],[data-open-item]');

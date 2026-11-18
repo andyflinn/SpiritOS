@@ -6,7 +6,7 @@ goal/G41.1 (box v19-v20), goal/G41.9, goal/G41.11, goal/G43.22, goal/G43.3 and t
 ## Requirements (goal/G41.1)
 
 - **Icons are glyphs** (Andy: the icon set is the only source of icons on the face): every icon desk.js draws is written as the glyph itself: a goal's 📁, an item's ❌ while it asks Andy and
-  💻 otherwise, the battle mark ⚔️, and a rule's status (proposed ✏️, active 🔒, deleted 💀).
+  💻 otherwise, and the battle mark ⚔️.
 - It reads no icon table (`iconIndex`, `ICON`) and has no lookup of a name into one (`deskIcon`).
 
 ## What its test must try to break
