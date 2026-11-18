@@ -1,0 +1,17 @@
+{
+  "platform": "windows",
+  "commit": "8418708d4",
+  "measuredAt": "2026-11-18T16:08:31.339Z",
+  "asks": 20,
+  "posts": 1,
+  "waitMs": {
+    "median": 25,
+    "max": 25
+  },
+  "flight": {
+    "median": 396,
+    "max": 396
+  },
+  "retried": 0,
+  "refusals": {}
+}
