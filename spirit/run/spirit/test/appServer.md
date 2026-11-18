@@ -214,3 +214,11 @@ node-owned state? spirit/state/<server-app>/clientListeners.json"*, *"go!"*. The
 
 - a subscribe writes its key and the branch it names to spirit/state/<server>/clientListeners.json;
 - an unsubscribe takes its key out.
+
+## In client mode it stays connected (goal/G47.5)
+
+Andy: *"while my server runs in client mode it sould make every effort to stay connected..."*, *"agreed. let's ensure a bit
+more stability by reconnecting if the server side goes down for a few minutes..."*. A stand-in sibling, KEY-FLAKY, does not
+take its first subscribe and takes every later one:
+
+- switched to it, the server asks it again by itself, within 30 s, until one is taken.

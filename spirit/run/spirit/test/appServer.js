@@ -91,6 +91,8 @@ function post(verb, args, callerKey) {
 // Every delivery the publisher makes, parsed; held while gate.held, refused while gate.refuse.
 const gate = { held: false, refuse: false, waiting: [] };
 const posts = [];
+// Every subscribe the flaky sibling was asked (goal/G47.5, reconnect).
+const flaky = [];
 function deliver(json) {
   let parsed = null;
   try { parsed = JSON.parse(json); } catch (e) { parsed = null; }
@@ -130,6 +132,15 @@ const fake = {
     if (key === 'KEY-NOGRANT' && /\/api\.js$/.test(q)) {
       const no = function () { return Promise.reject({ status: 403, body: { ok: false, code: 'not-granted' } }); };
       return Promise.resolve({ ping: no, subscribe: no, remote: no });
+    }
+    // A sibling down for a while (goal/G47.5, reconnect): its first subscribe is not taken, every later one is.
+    if (key === 'KEY-FLAKY' && /\/api\.js$/.test(q)) {
+      return Promise.resolve({
+        subscribe: function (a) { flaky.push(a); return flaky.length === 1 ? Promise.reject({ status: 0, body: { ok: false, code: 'no-answer' } }) : Promise.resolve({ subscribed: true }); },
+        listener: function (a) { return deliver(a.json); },
+        ping: function () { return Promise.resolve({ pong: 'flaky' }); },
+        remote: function () { return Promise.reject({ status: 403, body: { ok: false, code: 'owner-only' } }); },
+      });
     }
     if (key && /^spirit\/(?:app\/)?[^/]+\/api\.js$/.test(q)) {
       return Promise.resolve({
@@ -1020,6 +1031,20 @@ function ownPart() {
     let held = ''; try { held = fs.readFileSync(remoteFile, 'utf8'); } catch (e) { held = ''; }
     return (held.indexOf('KEY-PEER') !== -1 && held.indexOf('KEY-NOGRANT') === -1) || false;
   }, test.limit.quick);
+
+  // IN CLIENT MODE IT STAYS CONNECTED (goal/G47.5; Andy: "while my server runs in client mode it sould make every effort to
+  // stay connected...", "agreed. let's ensure a bit more stability by reconnecting if the server side goes down for a few
+  // minutes..."): switched to a sibling whose first subscribe is not taken (down, or still restarting), the server asks it
+  // again by itself until one is taken; it is not left waiting for the next switch or start.
+  test.run('in client mode, a subscribe the sibling did not take is asked again by itself until one is taken', 0.2, async function () {
+    if (noServer()) return false;
+    const sw = await asOwner('remote', { id: 'KEY-FLAKY' });
+    if (!(sw.status === 200 && sw.body && sw.body.current === 'KEY-FLAKY')) return false;
+    for (let i = 0; i < 60 && flaky.length < 2; i++) await new Promise(function (r) { setTimeout(r, 500); });
+    const again = flaky.length >= 2;
+    await asOwner('remote', { id: SELF });
+    return again || false;
+  }, test.limit.long);
 
   // THE LISTENER AND THE PUBLISHER'S VERBS ARE AUTO-VERBS OF EVERY appServer (goal/G47.5; Andy: "the streamListener must be
   // an auto-verb of spirit/appServer.js!", "both: \"publisher\" and \"listener\" belong in spirit/appServer.js", "they're both
