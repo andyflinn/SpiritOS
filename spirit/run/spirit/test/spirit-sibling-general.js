@@ -441,7 +441,8 @@ if (served.length) {
   // It serves exactly the verbs its own api.js declares (goal/G43.20; Andy: "IN THIS ONE, OR WE'LL NEVER GET FUCKING
   // DONE.", "WSL, NOTE AND ASSERT THIS IN YOUR TESTS, IN THE PROPER PLACE, DILIGENTLY WITHOUT FUCKING CHEATING."), no
   // FS set among them. Beyond an api.js only by decision: appServer's DEBUG on every server (desk/G2.5: "DEBUG
-  // auto-verb supplied by appServer is approved."). Desk's item.rules verbs went with the rules (goal/G47.4, box v36).
+  // auto-verb supplied by appServer is approved."), and appServer's remote on every server (goal/G47.5, box v12: "it created an
+  // auto-verb called \"remote\""). Desk's item.rules verbs went with the rules (goal/G47.4, box v36).
   test.run('it serves exactly the verbs of its api.js', 0.4, function () {
     if (!up()) return false;
     return overAll(served, function (b) {
@@ -449,7 +450,7 @@ if (served.length) {
       if (!branch) return false;
       const declared = Object.keys(b.verbs);
       const offered = Object.keys(branch);
-      const decided = ['DEBUG'];
+      const decided = ['DEBUG', 'remote'];
       const extra = offered.filter(function (v) { return declared.indexOf(v) === -1 && decided.indexOf(v) === -1; });
       const missing = declared.filter(function (v) { return offered.indexOf(v) === -1; });
       return (!extra.length && !missing.length) ? true : false;

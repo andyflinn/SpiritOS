@@ -776,6 +776,9 @@ define('not-granted', { status: 403, texts: ['not granted to this caller'] });
 define('already-granted', { status: 409, texts: ['already granted'] });
 // goal/G33.10: the fs family is the owner's, hard-coded; no peer reaches it and no grant names it.
 define('owner-only', { status: 403, texts: ['the owner\'s alone'] });
+// goal/G47.5, box v12: an appServer in client mode "rejects every peerPost, other than the publishings of the chosen
+// sibling server"; peers dropped at the switch are "refused with a code saying it is in client mode".
+define('client-mode', { status: 409, texts: ['this server is in client mode: it serves its own node alone'] });
 define('unknown-path', { status: 404, texts: ['no server serves that path, and no grant names it'] });
 define('not-a-path', { status: 400, texts: ['not an app or app.verb path'] });
 // goal/G41.14: auth.bundle's and auth.branch's. A bundle or branch id its table does not hold; a branch's family the

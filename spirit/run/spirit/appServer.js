@@ -163,6 +163,9 @@ function checkVerbs(verbs) {
 function createAppServer(verbs, opts) {
   checkVerbs(verbs);
   const fallback = opts && typeof opts.fallback === 'function' ? opts.fallback : null;
+  // THE MODE'S GATE (goal/G47.5, withRemote below): gate(verb, args, caller) answers a promise of { status, body } for a
+  // call client mode takes away from this server's own verbs (sent on to the sibling, or refused), or null to go on.
+  const gate = opts && typeof opts.gate === 'function' ? opts.gate : null;
   const tree = {};
   Object.keys(verbs).forEach(function (name) { tree[name] = { request: verbs[name].request, reply: verbs[name].reply }; });
   // Verbs born after start (fileTransfer goal/G1.3): a hash-verb appears when
@@ -177,6 +180,8 @@ function createAppServer(verbs, opts) {
     if (req === 'api') return Promise.resolve({ status: 200, body: tree });
     if (!isPlain(req) || Object.keys(req).length !== 1) return Promise.resolve(refusal('bad-request', { why: 'one verb per call, as {verb: {args}}' }));
     const name = Object.keys(req)[0];
+    const gated = gate ? gate(name, req[name], caller) : null;
+    if (gated) return gated;
     if (!Object.prototype.hasOwnProperty.call(verbs, name)) return Promise.resolve(refusal('no-such-verb', { verb: name }));
     const args = req[name];
     const fits = typeof verbs[name].accepts === 'function' ? verbs[name].accepts(args) : matches(verbs[name].request, args);
@@ -815,6 +820,118 @@ function withChecked(verbs, script) {
   return out;
 }
 
+// ── remote: ONE SERVER, TWO MODES (goal/G47.5, box v12) ────────────────────────────────────────────────────────────
+//   Andy: "for a always-on server it would always run in one of two modes. by default it runs in server mode.", "it
+//   created an auto-verb called \"remote\"", "this selection persists in the appservers state at
+//   spirit/state/<appServerName>/remote.json and belongs to the node".
+// remote {} answers { current, items: [{ key, label }], more }: the id it runs on now (this node's own in server mode) and
+// the peers that let this node into this app, this node first, from what remote.json holds; asking them again happens in
+// the background (refreshRemote), so an empty call never waits on a peer. remote { id } switches and answers { current }:
+// this node's id is server mode, any other client mode on that peer's sibling server. The owner's alone.
+// In client mode (gateRemote) the owner's calls go to the sibling and its answer comes back; a peer's post is refused
+// client-mode, other than the chosen sibling's stream deliveries; the subscribers it had are dropped at the switch. The
+// subscribe a server makes to another kind of server (deskClient to desk) is untouched: remote routes toward its own kind.
+const remote = { name: '', current: '', known: [], refreshing: false, server: null };
+function remoteFile() { return path.join(RUN_ROOT, 'spirit', 'state', remote.name, 'remote.json'); }
+function selfKey() { return String((spirit.node && typeof spirit.node.key === 'string' && spirit.node.key) || ''); }
+function selfLabel() { return String((spirit.node && (spirit.node.label || spirit.node.name)) || ''); }
+function clientMode() { return !!remote.current && remote.current !== selfKey(); }
+function readRemote() {
+  let held = null;
+  try { held = JSON.parse(fs.readFileSync(remoteFile(), 'utf8')); } catch (e) { held = null; }
+  remote.current = held && typeof held.current === 'string' ? held.current : '';
+  remote.known = held && Array.isArray(held.known) ? held.known.filter(function (r) { return isPlain(r) && typeof r.key === 'string' && r.key; })
+    .map(function (r) { return { key: r.key, label: String(r.label || '') }; }) : [];
+}
+function saveRemote() {
+  try {
+    fs.mkdirSync(path.dirname(remoteFile()), { recursive: true });
+    fs.writeFileSync(remoteFile(), JSON.stringify({ current: remote.current, known: remote.known }));
+  } catch (e) { /* the choice holds for this run */ }
+}
+// The list, this node first, cut to fit one answer.
+function remoteList() {
+  const me = selfKey();
+  const rows = [{ key: me, label: selfLabel() }].concat(remote.known.filter(function (r) { return r.key !== me; }));
+  const out = [];
+  let more = false;
+  for (let i = 0; i < rows.length; i++) {
+    if (Buffer.byteLength(JSON.stringify({ current: remote.current || me, items: out.concat([rows[i]]), more: true }), 'utf8') > ANSWER_ROOM) { more = true; break; }
+    out.push(rows[i]);
+  }
+  return { current: remote.current || me, items: out, more: more };
+}
+// TO ITS OWN LOOPBACK CLIENTS AND ITS RELAY-FACE ONLY (Andy, box v12): on the node's stream for its pages, never to the
+// peers subscribed to this server.
+function publishRemote() {
+  try { spirit.event.publish({ remote: remoteList() }); } catch (e) { /* no page listens */ }
+}
+// THE LIST CHECKED AGAIN AT LEISURE (box v12: "the appServer then leisurely asks again in the background whether the list
+// is still current"): each kept contact is asked this server's interface under its key; a peer counts when it answers it,
+// not when it refuses or stays silent. One check at a time; what changed is kept and published.
+const REMOTE_ASK_MAX = 32;
+function refreshRemote() {
+  if (remote.refreshing) return;
+  remote.refreshing = true;
+  const me = selfKey();
+  Promise.resolve(spirit.require('spirit/contact/api.js')).then(function (c) {
+    return c && typeof c.search === 'function' ? c.search({ q: '', keep: 'yes' }) : { items: [] };
+  }).then(function (got) {
+    const people = ((got && got.items) || []).filter(function (i) { return i && i.key && i.key !== me; }).slice(0, REMOTE_ASK_MAX);
+    return Promise.all(people.map(function (p) {
+      return Promise.resolve(spirit.require(familyPath(remote.name), String(p.key), { waitMs: 5000 })).then(function (fam) {
+        return fam && Object.keys(fam).length ? { key: String(p.key), label: String(p.name || p.label || '') } : null;
+      }, function () { return null; });
+    }));
+  }).then(function (rows) {
+    const known = rows.filter(Boolean);
+    if (JSON.stringify(known) !== JSON.stringify(remote.known)) { remote.known = known; saveRemote(); publishRemote(); }
+  }, function () { /* the list stands as it was */ }).then(function () { remote.refreshing = false; });
+}
+function switchRemote(id) {
+  const me = selfKey();
+  remote.current = id === me ? '' : id;
+  saveRemote();
+  if (clientMode()) {
+    // The peers it served are dropped; this node's own subscription is not a peer's.
+    subscribers.forEach(function (q, key) { if (key !== me) subscribers.delete(key); });
+    if (remote.server && typeof remote.server.subscribe === 'function') remote.server.subscribe(remote.current, remote.name).catch(function () { return false; });
+  }
+  publishRemote();
+  return { current: remote.current || me };
+}
+function withRemote(verbs, name) {
+  remote.name = String(name || '');
+  readRemote();
+  const all = Object.assign({}, verbs);
+  all.remote = {
+    request: { id: '' }, reply: { current: '' },
+    // Called empty, or with the id to switch to.
+    accepts: function (x) { return isPlain(x) && Object.keys(x).every(function (k) { return k === 'id'; }) && (x.id === undefined || (typeof x.id === 'string' && !!x.id)); },
+    handler: function (a, caller) {
+      if (!caller || caller.owner !== true) throw Object.assign(new Error('owner-only'), { refusal: 'owner-only', extra: { why: 'remote is the owner\'s alone' } });
+      if (a.id === undefined) { refreshRemote(); return remoteList(); }
+      return switchRemote(String(a.id));
+    },
+  };
+  return all;
+}
+// In client mode: the owner's call goes to the sibling; a peer's is refused, other than the chosen sibling's deliveries.
+// remote and DEBUG stay this server's own. Server mode passes everything on.
+function gateRemote(verb, args, caller) {
+  if (!clientMode() || verb === 'remote' || verb === 'DEBUG') return null;
+  const key = String((caller && caller.key) || '');
+  if (caller && caller.owner === true) {
+    return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), remote.current, { waitMs: 10000 })).then(function (p) {
+      if (!p || typeof p[verb] !== 'function') throw Object.assign(new Error('the sibling serves no verb ' + verb), { code: 'no-such-verb' });
+      return p[verb](args);
+    })).then(function (r) { return { status: r.status, body: r.body }; });
+  }
+  if (verb === 'streamListener' && key === remote.current) return null;
+  if (key && key === selfKey()) return null;
+  return Promise.resolve(refusal('client-mode', { verb: verb }));
+}
+
 function serve(verbs, opts) {
   const argv = process.argv;
   const at = argv.indexOf('--pipe');
@@ -836,7 +953,7 @@ function serve(verbs, opts) {
   if (debugAt !== -1) spirit.debug(argv[debugAt + 1] === 'true');
   try {
     // goal/G33.8: both halves, the stream it publishes (withPublisher) and the streams it listens to (withStreamListener).
-    verbs = withDebug(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), opts && opts.publisher), argv[1]));
+    verbs = withDebug(withRemote(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), opts && opts.publisher), argv[1]), name));
   } catch (e) {
     console.error(e.message);
     process.exit(2);
@@ -848,7 +965,8 @@ function serve(verbs, opts) {
     process.exit(2);
   }
   verbs = withChecked(verbs, argv[1]);
-  const s = createAppServer(verbs, opts && typeof opts.fallback === 'function' ? { fallback: opts.fallback } : undefined);
+  const s = createAppServer(verbs, { fallback: opts && typeof opts.fallback === 'function' ? opts.fallback : null, gate: gateRemote });
+  remote.server = s;
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a
   // nicely formatted overview of it's api." Published, not printed (desk/G2.3).
@@ -857,6 +975,8 @@ function serve(verbs, opts) {
       return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };
     }) } });
     subscribersFromGrants(name);
+    // AT START, THE MODE remote.json HOLDS (box v12): in client mode it connects to that one sibling and asks nobody else.
+    if (clientMode()) s.subscribe(remote.current, name).catch(function () { return false; });
     reportDebug();
   });
   srv.on('error', function (e) {
