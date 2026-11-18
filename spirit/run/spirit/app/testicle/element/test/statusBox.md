@@ -38,4 +38,9 @@ testicle streams it (the result an icon since Andy's *"why are the results in st
 spirit/app/testicle/words.js); the node set to auto and back, 🤖 then 🖖 by itself (box v143, *"subscribe to the data they display"*);
 overflow hidden, one line, the message ellipsed; destroyed, an empty container.
 
+The suites waiting (goal/G47.6, box point 4: *"In auto mode, suites flagged by a change and not yet run are counted as
+waiting beside the reds"*; Q2, Andy: *"as you please"*): two scripts planted while interactive, each with an own suite that
+takes 15 s; set to auto, the box shows ⏳ and the number of suite rows flagged at that moment, right after 🤖; once none
+waits, no ⏳.
+
 Not judged by it yet: the last change in words (shown when nothing runs and nothing is being done).

@@ -158,6 +158,38 @@ test.run('with the node set to auto the box shows 🤖 by itself, and set back t
   const back = await H.until(function () { return ev('window.zz.mode').then(function (m) { return m === '🖖'; }); }, H.WAIT);
   return (!!auto && !!back) || false;
 }, test.limit.long);
+// THE SUITES WAITING, COUNTED BESIDE THE MODE (goal/G47.6, box point 4: "In auto mode, suites flagged by a change and not yet
+// run are counted as waiting beside the reds."; Q2, Andy: "as you please": ⏳ and the count right after the mode, gone at 0).
+// Two scripts planted while interactive, each with an own suite that takes 15 s, wait flagged; set to auto, the box shows ⏳
+// and the number of suite rows flagged at that moment, as the page's own data holds them; once all ran, no ⏳.
+const W1 = 'spirit/zzBox/zzWait1.js', W1S = 'spirit/zzBox/test/zzWait1.js', W2 = 'spirit/zzBox/zzWait2.js', W2S = 'spirit/zzBox/test/zzWait2.js';
+const WAITING = '(function () { var s = document.querySelector("#zzA .testicle-status"); var t = s ? s.textContent : "";' +
+  ' var D = window.spirit.data.testicle.data; var b = window.spirit.data.getPath(D.branch("suite")) || {};' +
+  ' var flagged = Object.keys(b).filter(function (k) { var r = b[k]; return r && r.test && !r.deleted; }).length;' +
+  ' var m = /⏳\\s*(\\d+)/.exec(t); return { shown: m ? Number(m[1]) : null, flagged: flagged, has: t.indexOf("⏳") !== -1 }; }())';
+test.run('in auto mode the box shows ⏳ and the number of suites waiting to run, right after the mode', 0.4, async function () {
+  if (!W.ok) return false;
+  await idle(60000);
+  const run = path.join(W.node.root, 'spirit', 'run');
+  fs.writeFileSync(path.join(run, W1), "'use strict';\n// zzWait1\n");
+  fs.writeFileSync(path.join(run, W2), "'use strict';\n// zzWait2\n");
+  [W1S, W2S].forEach(function (f) { fs.writeFileSync(path.join(run, f), SUITE_HEAD + "test.run('it waits a while', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 15000); }); }, test.limit.slow);\n"); });
+  await H.until(function () { return ask('testicle.suite.search', { script: W2, text: '' }).then(function (r) { return !!(r && (r.items || []).length); }); }, 60000);
+  const a = await ask('testicle.preferences', { interactive: false });
+  if (!a) return false;
+  let seen = null;
+  await H.until(function () { return ev(WAITING).then(function (w) { if (w && w.shown >= 1 && w.shown === w.flagged) seen = w; return !!seen; }); }, 60000);
+  W.waitSeen = !!seen;
+  const mode = await ev('(function () { var s = document.querySelector("#zzA .testicle-status"); var t = s ? s.textContent : ""; return t.indexOf("🤖") !== -1 && t.indexOf("⏳") > t.indexOf("🤖"); }())');
+  return (!!seen && mode === true) || false;
+}, test.limit.long);
+test.run('once no suite waits, the box shows no ⏳', 0.4, async function () {
+  if (!W.waitSeen) return false;
+  await idle(280000);
+  const gone = await H.until(function () { return ev(WAITING).then(function (w) { return !!w && !w.has; }); }, H.WAIT);
+  await ask('testicle.preferences', { interactive: true });
+  return !!gone || false;
+}, test.limit.long);
 test.run('once the box is destroyed, its container is empty', 0.2, async function () {
   if (!W.ok) return false;
   const r = await ev('(function () { window.m_zzA.destroy(); return document.getElementById("zzA").innerHTML; }())');
