@@ -208,9 +208,11 @@ function compiles(rel) {
 // the scratch node and Chrome are up. When they cannot come up, it gets no test at all, and the run ends with TOOL_DOWN, so
 // testicle leaves it unjudged and waiting for classification (../app/testicle/testicle.js, classifyEnded).
 const TOOL_DOWN = 3;
-function classify(rel) {
+function classify(rel, broken) {
   // "its severity is 0.8", written as the number it is (titleRules wants a severity as a number in the call).
   test.run('it loads, so it can be classified', 0.8, async function () {
+    // One that does not compile is red at once, before any scratch node.
+    if (broken) return false;
     let k = null;
     let node = null;
     try {
@@ -230,7 +232,7 @@ function classify(rel) {
 }
 const broken = SCRIPTS.filter(function (rel) { return !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)) && !compiles(rel); });
 const toLoad = SCRIPTS.filter(function (rel) { return broken.indexOf(rel) === -1 && !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)); });
-broken.forEach(function (rel) { test.run('it loads, so it can be classified', 0.8, function () { return false; }, test.limit.quick, { script: rel }); });
+broken.forEach(function (rel) { classify(rel, true); });
 SCRIPTS.filter(function (rel) { return neverLoaded(rel) || !fs.existsSync(path.join(RUN, rel)); }).forEach(classify);
 if (toLoad.length) {
   // The scratch node and Chrome first, the run held meanwhile; the scripts that compile are judged only once both are up.
