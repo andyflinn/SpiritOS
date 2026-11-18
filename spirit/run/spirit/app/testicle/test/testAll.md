@@ -9,4 +9,6 @@ testicle's own folder ... npm test runs it."*).
 - Judged in minutes, not on the whole tree: on a scratch tree with no node running on it, one planted script whose own
   suite holds and one whose own suite fails. testAll given both exits other than 0; given the holding one alone, it exits 0.
 
-How it runs the suites, through testicle's queue, is the builder's.
+Given scripts it runs only their own suites; given none, every suite of the tree (cw and wsl, 2026-11-18: the red judges the
+exit code, not the general rules a planted two-line file would fail). It runs them with testicle's own selection and
+runner, started by testAll itself; no live node is needed. How is the builder's.
