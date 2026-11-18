@@ -46,6 +46,18 @@ test.run('deskClient never works out whether a file is core: no coreFiles, no is
   try { t = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return false; }
   return (!!t && !/coreFiles|isCore|coreGrant|CORE_GRANT/.test(t) && !/\bcore\s*:/.test(t)) || false;
 }, test.limit.quick);
+// RULES GO OUT OF DESK (goal/G47.4, box v36: "Desk no longer sends the agents a rule list when they wake."; Andy: "go!"):
+// a wake carries no RULES line, no rule's text and no rules on its JOB line, and deskClient reads no rule from its cache.
+test.run('a wake names no rules: deskClient builds no RULES line, no RULE text and no rules on a JOB line', 0.2, function () {
+  let t = '';
+  try { t = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return false; }
+  return (!!t && !/'RULES |'RULE |' rules: '/.test(t) && !/phaseRules/.test(t)) || false;
+}, test.limit.quick);
+test.run('deskClient reads no rule from its cache', 0.2, function () {
+  let t = '';
+  try { t = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return false; }
+  return (!!t && !/\.rule\(/.test(t)) || false;
+}, test.limit.quick);
 const SELF = 'wsl-claude';
 const SELF_KEY = 'KEY-WSL';
 const OTHER = 'claude-windows';

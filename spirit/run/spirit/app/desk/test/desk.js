@@ -79,6 +79,21 @@ function seed(stateDir, sessions) {
   state.run('current', JSON.stringify(sessions.length ? String(sessions[sessions.length - 1].goal.id) : ''));
   db.close();
 }
+function plantOldRules(stateDir) {
+  const db = new DatabaseSync(path.join(stateDir, 'desk.db'));
+  try {
+    // As the desk made them before rules went out (spirit/app/desk/nodeDesk.js, before goal/G47.4).
+    db.exec('CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL, autoAttach INTEGER NOT NULL DEFAULT 0);' +
+      'CREATE INDEX IF NOT EXISTS rules_rule ON rules (rule);' +
+      'CREATE TABLE IF NOT EXISTS rule_drafts (rule INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL);' +
+      'CREATE TABLE IF NOT EXISTS rule_chat (rule INTEGER NOT NULL, seq INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, creator TEXT NOT NULL, text TEXT NOT NULL, born INTEGER NOT NULL, PRIMARY KEY (rule, seq));' +
+      'CREATE INDEX IF NOT EXISTS rule_chat_born ON rule_chat (born);');
+    const at = new Date().toISOString();
+    db.prepare('INSERT INTO rules (rule, at, by, type, label, status, text, autoAttach) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(1, at, 'andy', 'code', 'an old rule', 'active', 'an old rule', 0);
+    db.prepare('INSERT INTO rule_drafts (rule, at, text) VALUES (?, ?, ?)').run(1, at, 'an old draft');
+    db.prepare('INSERT INTO rule_chat (rule, seq, at, by, creator, text, born) VALUES (?, ?, ?, ?, ?, ?, ?)').run(1, 1, at, 'andy', 'andy', 'an old line', 1);
+  } finally { db.close(); }
+}
 // A SCRATCH GIT WORLD, never this checkout's (goal/G41.22): a bare origin, the desk's checkout cloned from it, and another
 // clone that pushes new commits onto origin the way an agent's push does.
 function git(cwd, args) {
@@ -274,6 +289,9 @@ test.run('a desk server starts for this suite', 0.2, async function () {
     { goal: OTHER, items: OTHER_ITEMS.map(function (id) { return { id: id, title: 'Other ' + id, blocks: [OTHER.id] }; }) },
     { goal: GOAL, items: ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [GOAL.id] }; }) },
   ]);
+  // AN OLD DESK DATABASE'S RULE TABLES (goal/G47.4, box v36: "The old rule tables in an existing desk database: dropped by
+  // the node at start"): the three, each with a row, as a desk made before rules went out wrote them.
+  plantOldRules(state);
   // THE PIPE BY appClient.pipePathFor ALONE (Andy, 2026-10-27: "don't use unix sockets in tests, use
   // appClient.pipePathFor"): a \\.\pipe\ name on Windows, the door's own place under the scratch folder elsewhere.
   const pipe = appClient.pipePathFor(scratch, 'desk', process.platform, 'process');
@@ -313,52 +331,30 @@ test.run('adding a list of paths to an item lands every path of the list on the 
     false;
 }, test.limit.quick);
 
-// THE DEAD UI-RULE CODE GOES (goal/G47.1, box v121: "delete the desk's dead ui-rule code: it attaches ui rules only for
-// files under shell/, gone since G43.30"; Andy: "delete the desk dead ui-rule."): a file listed under spirit/run/shell/
-// brings no ui rule, by a single path or in a list, though an active auto-attach ui rule stands.
-let uiRule = '';
-const rulesOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); let it = r.item; try { if (typeof it === 'string') it = JSON.parse(it); } catch (e) { it = null; } return it && Array.isArray(it.rules) ? it.rules.map(function (x) { return x.key; }) : null; };
-// Written into the desk's own rules table, as his rule.version writes it: the door takes no autoAttach from a call
-// (spirit/app/desk/api.js), and the desk reads the table at each write.
-test.run('an active ui rule set to attach itself is written into the desk\'s rules', 0.2, async function () {
+// RULES GO OUT OF DESK (goal/G47.4, box v36; Andy: "Next we kill rules from desk. nobody observes them", "are we ready to
+// strip rules out of desk now?", "go!"): "The rules list on each goal and item goes", "The part that works out which rules
+// apply in which phase goes", "The three rule tables in the desk database (the rules, their drafts, their chat) are no
+// longer made", and the old ones are "dropped by the node at start". This world's desk.db had the three planted before it
+// started (plantOldRules, above).
+const tablesOf = function () {
+  const db = new DatabaseSync(path.join(W.scratch, 'state', 'desk.db'), { readOnly: true });
+  try { return db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; }); } finally { db.close(); }
+};
+test.run('once the desk runs, its database has no rules, rule_drafts or rule_chat table, though an old one had them', 0.2, function () {
   if (!W.up) return false;
-  const db = new DatabaseSync(path.join(W.scratch, 'state', 'desk.db'));
-  try { db.prepare('INSERT INTO rules (rule, at, by, type, label, status, text, autoAttach) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(9001, new Date().toISOString(), 'andy', 'ui', 'zz ui rule', 'active', 'A ui rule of the test.', 1); } finally { db.close(); }
-  const found = await call('rule.get', { key: 'rule/9001' }, ANDY);
-  if (found.status === 'active' && found.autoAttach === true && found.type === 'ui') uiRule = 'rule/9001';
-  return !!uiRule || false;
+  const t = tablesOf();
+  return (t.indexOf('items') !== -1 && ['rules', 'rule_drafts', 'rule_chat'].every(function (n) { return t.indexOf(n) === -1; })) || false;
 }, test.limit.quick);
-// goal/G47.1, Q16 (Andy, of the old rule versions: "ALL OF THEM. KILL THEM."): two new versions of a rule leave one row of
-// it in the table, the newest, its version number past the one before.
-test.run('after two new versions of a rule the desk keeps only its newest row, numbered past the old one', 0.2, async function () {
-  if (!uiRule) return false;
-  const rowsOf = function () {
-    const db = new DatabaseSync(path.join(W.scratch, 'state', 'desk.db'), { readOnly: true });
-    try { return db.prepare('SELECT n FROM rules WHERE rule = 9001').all().map(function (r) { return Number(r.n); }); } finally { db.close(); }
-  };
-  const before = rowsOf();
-  const a = await call('rule.version', { key: uiRule, text: 'A ui rule of the test.', status: 'active' }, ANDY);
-  const b = await call('rule.version', { key: uiRule, text: 'A ui rule of the test.', status: 'active' }, ANDY);
-  const after = rowsOf();
-  const kept = await call('rule.get', { key: uiRule }, ANDY);
-  return (a.key === uiRule && b.key === uiRule && before.length === 1 && after.length === 1 && after[0] > before[0] &&
-    kept.status === 'active' && kept.autoAttach === true && kept.type === 'ui') || false;
+const itemOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); let it = r.item; try { if (typeof it === 'string') it = JSON.parse(it); } catch (e) { it = null; } return it; };
+test.run('an item answers no rules and no phase rules', 0.2, async function () {
+  if (!W.up) return false;
+  const it = await itemOf(ITEMS[0]);
+  return (!!it && !('rules' in it) && !('phaseRules' in it)) || false;
 }, test.limit.quick);
-test.run('adding a single file under spirit/run/shell/ to an item attaches no ui rule', 0.2, async function () {
-  if (!uiRule) return false;
-  await call('item.take', { id: 'goal/G100.5' }, CW);
-  const added = await call('item.files.add', { id: 'goal/G100.5', path: 'spirit/run/shell/zzOld.js' }, CW);
-  const rules = await rulesOf('goal/G100.5');
-  if (!rules) return false;
-  return rules.indexOf(uiRule) === -1 || false;
-}, test.limit.quick);
-test.run('adding a list of paths with a file under spirit/run/shell/ to an item attaches no ui rule', 0.2, async function () {
-  if (!uiRule) return false;
-  await call('item.take', { id: 'goal/G100.6' }, CW);
-  const added = await call('item.files.add', { id: 'goal/G100.6', paths: ['spirit/run/zzNew.js', 'spirit/run/shell/zzOld.js'] }, CW);
-  const rules = await rulesOf('goal/G100.6');
-  if (!rules) return false;
-  return rules.indexOf(uiRule) === -1 || false;
+test.run('a goal answers no rules and no phase rules', 0.2, async function () {
+  if (!W.up) return false;
+  const g = await itemOf(GOAL.id);
+  return (!!g && !('rules' in g) && !('phaseRules' in g)) || false;
 }, test.limit.quick);
 
 // bundles: a goal pushed whole reaches a subscribed client as bundles of rows
@@ -774,22 +770,6 @@ test.run('two agents add one path: it is one row, and the other file stays', 0.2
   return (twice.filter(function (p) { return p === 'spirit/run/twice.js'; }).length === 1 && twice.indexOf('spirit/run/once.js') !== -1) || false;
 }, test.limit.quick);
 
-// goal/G43.3: Andy: "when i add a rule to an item or goal, it will not immediately display in the rule-list."
-test.run('a rule is added to the desk', 0.2, async function () {
-  if (!W.askS) return false;
-  W.made = await W.askS('rule.add', { type: 'code', label: 'A rule to attach', text: 'the text of a rule' }, ANDY);
-  return !!W.made.key || false;
-}, test.limit.quick);
-// A rule attached to id: the row naming it published to his page.
-const attachedReaches = async function (id) {
-  if (!W.askS || !W.made || !W.made.key) return false;
-  const fromP = W.node.pages.length;
-  const attached = await W.askS('item.rules.add', { id: id, rule: W.made.key }, ANDY);
-  const reached = await waitFor(function () { return W.node.pages.slice(fromP).some(function (o) { return o && o.item && o.item.id === id && (o.item.rules || []).some(function (r) { return r.key === W.made.key; }); }); }, 3000);
-  return (!!attached.change && reached) || false;
-};
-test.run('a new rule attached to an item publishes the item\'s row naming it to his page', 0.2, function () { return attachedReaches('goal/G400.2'); }, test.limit.quick);
-test.run('a new rule attached to a goal publishes the goal\'s row naming it to his page', 0.2, function () { return attachedReaches(LIST_GOAL.id); }, test.limit.quick);
 
 // ── goal/G43.3, THE AGENT BUBBLES FOLLOW THE GRANTS. Andy: "the real thing would be: the desk listens to the grants and
 // adds/removes thos bubbles accordingly", and "if the ID has grants to desk, desk should list it as one of it's agents, it

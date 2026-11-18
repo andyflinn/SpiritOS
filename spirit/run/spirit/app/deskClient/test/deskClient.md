@@ -116,3 +116,11 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 - Andy (Q5): *"G0 goes, from ui and server, kept in database."*: `deskClient.js` names no `goal/G0`.
 
 - NO CORE IN deskClient (Andy, 2026-11-17: *"may as well toss that shit from desk"*, *"wsl, if this fix works, then you need to catch up with the respective tests, otherwise someone will build the core shit back into desk and deskClient"*): its code names no `coreFiles`, `isCore`, core grant, nor puts a core mark on a file.
+
+## Rules go out of Desk (goal/G47.4, box v36)
+
+Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to strip rules out of desk now?"*, *"go!"*.
+
+- A wake names no rules: deskClient.js builds no RULES line, no RULE text, no rules on a JOB line, and reads no
+  phaseRules.
+- deskClient reads no rule from its cache.

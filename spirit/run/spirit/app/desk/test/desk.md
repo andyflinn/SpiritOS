@@ -96,3 +96,12 @@ From the item's box, in Andy's words. Each of these runs on a desk of its own.
 - *"when i add a rule to an item or goal, it will not immediately display in the rule-list."* The row naming the rule is published to his page, on an item and on a goal.
 - *"the search filter [include closed] doesn't mean "exclude open ones"!!!!"* With 40 closed items older than 5 open ones, the filter off shows the open only. On, every open item is in the answer, ahead of the closed ones, and closed ones show.
 - *"if the ID has grants to desk, desk should list it as one of it's agents, it keeps all agent rows in its db, to preserve label and nick, but without grant, no matter how small, there's no point showing an agent bubble."*, and *"the desk listens to the grants and adds/removes thos bubbles accordingly"*. At start the desk reads the node's grants (`auth.search`, over loopback, needing no grant), then follows the node's `bundles` job. The goal row's `agents` and `live` hold each key with a grant that is exactly `desk`, or `desk.` then a verb, whether or not it has written, and no other: a key that has written with no grant has none, and a grant on `deskClient` is no grant to desk. A grant given brings the bubble at once. The last grant revoked takes it away, one of two does not, and the row stays in the desk with its nick.
+
+## Rules go out of Desk (goal/G47.4, box v36)
+
+Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to strip rules out of desk now?"*, *"go!"*.
+
+- The three old rule tables (rules, rule_drafts, rule_chat), planted with a row each in the desk.db before the desk
+  starts, are gone once it runs, and none is made.
+- An item and a goal answer no rules and no phaseRules.
+- The dead ui-rule checks and the rule-attach checks go with the verbs.

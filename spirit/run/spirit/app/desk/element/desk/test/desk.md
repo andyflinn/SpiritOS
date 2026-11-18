@@ -115,3 +115,10 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 ### Requirements
 
 - Andy (Q5): *"G0 goes, from ui and server, kept in database."*: the desk page names no `goal/G0` and no plugin, and draws no Apps tab and no plugin tab.
+
+## Rules go out of Desk (goal/G47.4, box v36)
+
+Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to strip rules out of desk now?"*, *"go!"*.
+
+- The rule panel element, spirit/app/desk/element/ruleDetails/, is gone.
+- Desk draws no Rules tab and mounts no rules list (the Rules fill-box check goes).

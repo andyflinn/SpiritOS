@@ -168,12 +168,10 @@ test.run('item.files.remove takes one path, never a list', 0.2, function () {
   if (!W.api) return false;
   return (oneRow('item.files.remove')) ? true : false;
 }, test.limit.quick);
-test.run('rules.search takes types and statuses as lists', 0.2, function () {
+// RULES GO OUT OF DESK (goal/G47.4, box v36: "The seven rule verbs go: rule.add, rule.draft, rule.get, rule.version,
+// rules.search, item.rules.add, item.rules.remove."; Andy: "go!").
+test.run('none of the seven rule verbs is declared', 0.2, function () {
   if (!W.api) return false;
-  return (passes('rules.search', { text: '', types: [], statuses: [] }) && refusedAs('rules.search', { text: '', types: 'a', statuses: [] }) === 'bad-request') ? true : false;
-}, test.limit.quick);
-test.run('the text of rule.add passes the paragraph rule', 0.2, function () {
-  if (!W.api) return false;
-  return (refusedAs('rule.add', { type: 't', label: 'l', text: 'x'.repeat(100000) }) === 'bad-request') ? true : false;
+  return !['rule.add', 'rule.draft', 'rule.get', 'rule.version', 'rules.search', 'item.rules.add', 'item.rules.remove'].some(function (v) { return v in W.verbs; }) || false;
 }, test.limit.quick);
 

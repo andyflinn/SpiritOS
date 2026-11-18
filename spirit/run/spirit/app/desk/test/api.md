@@ -36,3 +36,10 @@ the handlers (Andy, 2026-10-22: "request validation worth a damn?").
 The other direction of "a verb added to the server is added here": desk.js serves `item.rules.add` and
 `item.rules.remove`, which this file does not list, and its `rule.add` and `rule.version` take an optional
 `autoAttach` this file does not list. The test does not assert it, since the current code would go red.
+
+## Rules go out of Desk (goal/G47.4, box v36)
+
+Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to strip rules out of desk now?"*, *"go!"*.
+
+- None of the seven rule verbs is declared (rule.add, rule.draft, rule.get, rule.version, rules.search, item.rules.add,
+  item.rules.remove); the rules.search and rule.add checks go.

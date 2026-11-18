@@ -167,3 +167,9 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 ## The noSharedLeftovers part: dropped
 
 The plugin leftovers once in `shell/shared` (goal/G43.23, item 10): `shell/` is gone with all it held, and a require of a file that is not there is `spirit/test/spirit-sibling-general.js`'s. Their checks are dropped (goal/G47.1).
+
+## Rules go out of Desk (goal/G47.4, box v36)
+
+Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to strip rules out of desk now?"*, *"go!"*.
+
+- The details panel has no rules icon, so no rule list can be opened; the add-rule dropdown and rule-row checks go.

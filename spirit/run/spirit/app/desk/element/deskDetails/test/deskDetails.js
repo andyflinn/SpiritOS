@@ -461,36 +461,12 @@ const ruleWorld = function () {
   r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.element.spirit.element.search = make; return req(p); };
   return r;
 };
-const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
-const rulesIcon = function (r) { return panelIcon(r, 'rules'); };
-test.run('pressing the rules icon shows the add-rule dropdown, its search brought by spirit.require', 0.2, async function () {
+// RULES GO OUT OF DESK (goal/G47.4, box v36: "The rules list on each goal and item goes"; Andy: "go!"): the details panel
+// has no rules icon, so no rule list can be opened, even for an item that still names rules.
+test.run('the details panel has no rules icon', 0.2, async function () {
   const rw = ruleWorld(); await rw.open();
   S.rw = rw;
-  if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
-  const pick = S.pick = rulePick(rw);
-  S.firstRule = rw.document.querySelector('[data-rule-remove]');
-  S.order = walk(rw.document.root, []);
-  return (!!pick && inPage(rw, pick.host) && shown(pick.host)) || false;
-}, test.limit.quick);
-test.run('the add-rule dropdown stands on top of the list of the 12 attached rules, not below it', 0.2, function () {
-  if (!S.rw) return false;
-  const pick = S.pick;
-  return (!!pick && !!S.firstRule && S.order.indexOf(pick.host) !== -1 && S.order.indexOf(pick.host) < S.order.indexOf(S.firstRule)) || false;
-}, test.limit.quick);
-test.run('no hand-rolled script tag loads the search', 0.2, function () {
-  if (!S.rw) return false;
-  const scriptTags = walk(S.rw.document.root, []).filter(function (n) { return n.tagName === 'SCRIPT' || n.tag === 'script'; }).filter(function (n) { return /probabilitySearch/.test(String((n.attrs && n.attrs.src) || n.src || '')); });
-  return !scriptTags.length || false;
-}, test.limit.quick);
-// Away to the box and back: the dropdown is there again, every time the panel opens.
-test.run('away from the rules and back, the dropdown is shown again', 0.2, async function () {
-  const rw = S.rw;
-  if (!rw) return false;
-  const boxIcon = panelIcon(rw, 'box');
-  if (boxIcon) { rw.document.click(boxIcon); await settle(); }
-  if (rulesIcon(rw)) { rw.document.click(rulesIcon(rw)); await settle(); }
-  const again = rulePick(rw);
-  return (!!again && inPage(rw, again.host) && shown(again.host)) || false;
+  return !panelIcon(rw, 'rules') || false;
 }, test.limit.quick);
 
 // ── goal/G41.22: THE DETAILS PANEL IS A workBench ─────────────────────────────────────────────────────────────────────
@@ -506,26 +482,6 @@ test.run('the question and its poster both show', 0.2, async function () {
   asker.document.click(panelIcon(asker, 'qs')); await settle();
   const qsText = asker.document.getElementById('dd-panel').textContent;
   return (qsText.indexOf('Whose question?') !== -1 && qsText.indexOf('claude-windows') !== -1) || false;
-}, test.limit.quick);
-// goal/G43.3: Andy: "when i add a rule to an item or goal, it will not immediately display in the rule-list." A rule
-// attached shows in the open rules panel as its row comes, with nothing asked.
-async function ruleShows(open) {
-  const ruled = ddWorld(open, []);
-  let heard = null;
-  ruled.api.onPublished = function (fn) { heard = fn; return function () {}; };
-  await ruled.open();
-  ruled.document.click(panelIcon(ruled, 'rules')); await settle();
-  const before = ruled.document.getElementById('dd-panel').textContent;
-  const asked0 = ruled.asked.length;
-  if (heard) heard({ item: Object.assign({}, open, { rules: [{ key: 'rule/77' }] }) });
-  await settle();
-  const after = ruled.document.getElementById('dd-panel').textContent;
-  const shows = !!heard && before.indexOf('rule/77') === -1 && after.indexOf('rule/77') !== -1 && !ruled.asked.slice(asked0).some(function (a) { return a.name === 'desk.item.get'; });
-  return shows || false;
-}
-test.run('on an item, the new rule shows at once, from the row', 0.2, function () { return ruleShows(ITEM); }, test.limit.quick);
-test.run('on a goal, the new rule shows at once, from the row', 0.2, function () {
-  return ruleShows({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], blocked: [] });
 }, test.limit.quick);
 
 // goal/G41.22: no appHeader; the id, title and status in the shell's title bar.

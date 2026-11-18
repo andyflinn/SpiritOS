@@ -583,13 +583,18 @@ test.run('the List stands in a fill box, and every box up to the app is fill too
   wf.win.spirit.element.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
   await wf.mount();
   W.mountBox = wf.document.body.children[wf.document.body.children.length - 1];
+  W.deskDoc = wf.document;
   const rulesTab = wf.document.querySelector('[data-tab="rules"]');
   if (rulesTab) { wf.document.click(rulesTab); await settle(); }
   return fillOf('items.search');
 }, test.limit.quick);
-test.run('the Rules list stands in a fill box, and every box up to the app is fill too', 0.2, function () {
-  if (!W.panes) return false;
-  return fillOf('rules.search');
+// RULES GO OUT OF DESK (goal/G47.4, box v36: "The rule panel goes from the Desk app."; Andy: "go!").
+test.run('the rule panel element, spirit/app/desk/element/ruleDetails/, is gone', 0.2, function () {
+  return !fs.existsSync(path.join(RUN, 'spirit', 'app', 'desk', 'element', 'ruleDetails')) || false;
+}, test.limit.quick);
+test.run('Desk draws no Rules tab and mounts no rules list', 0.2, function () {
+  if (!W.panes || !W.deskDoc) return false;
+  return (!W.deskDoc.querySelector('[data-tab="rules"]') && !W.panes.some(function (x) { return x.o.verb === 'rules.search'; })) || false;
 }, test.limit.quick);
 
 // ── THE noPlugins PART ───────────────────────────────────────────────────────────────────────────────────────────
