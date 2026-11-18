@@ -699,18 +699,20 @@ test.run('its branch of a verb the server serves stays', 0.2, function () {
   return (staleLeft.indexOf('chat.add') !== -1) ? true : false;
 }, test.limit.quick);
 
-// EVERY SERVER'S OWN BUNDLE, enableRemote (goal/G47.5; Andy: "the fix is: desk provides a complete fucking bundle", "since
-// desk does NOT own those verbs, the node, maybe appServer.js all \"server bundles that are owned by the <appname>\"", "maybe
-// appServer can add this bundles as \"enableRemote\", belonging to <appServerName>?"; Q4, "Go for the node giving every server
-// it runs, at each start, a bundle enableRemote owned by that server, holding every verb it serves, auto-verbs included?":
-// "yes."). A server is a family of the live tree that serves remote, the auto-verb every appServer has; files, a node family,
-// serves none. The node starts on a fresh table, then again with desk serving one verb more.
+// EVERY SERVER'S OWN BUNDLE, enableRemote (goal/G47.5; Andy: "the fix is: desk provides a complete fucking bundle", "maybe
+// appServer can add this bundles as \"enableRemote\", belonging to <appServerName>?"; Q4: "yes."; "nope apiAuth still needs to
+// do that automatically."; and, on its shape: "if the bundle contains a branch only that can go into grants as branch, since
+// the auth system recognizes that when only a branch is named, it applies to all it's verbs."). A server is a family of the
+// live tree that serves remote, the auto-verb every appServer has; files, a node family, serves none. Its enableRemote holds
+// one branch, the server's family with no verb: all of it, today's verbs and later ones. The node starts on a fresh table;
+// then a table holding desk's enableRemote with a branch per verb, as an earlier node made it, is started again.
 let ownRoot = '', ownTree = null, ownFirst = null, ownAgain = null;
 const DESK_VERBS = ['chat.add', 'item.get', 'remote', 'listener', 'subscribe', 'unsubscribe'];
 const TESTICLE_VERBS = ['run', 'remote', 'listener', 'subscribe', 'unsubscribe'];
 const ownBundles = async function (a) { return ((await call(a, 'bundle', { op: 'search', text: '' })).items || []).map(parsed).filter(Boolean); };
 const enableRemoteOf = async function (a, server) { return (await ownBundles(a)).filter(function (b) { return b.label === 'enableRemote' && b.owner === server; }); };
-const verbsOf = async function (a, bundle) { return (await branchesOf(a, bundle.id)).filter(function (x) { return x.family === bundle.owner; }).map(function (x) { return x.verb; }).sort(); };
+// The bundle's branches as family/verb, sorted: the whole family alone is ["<family>/"].
+const shapeOf = async function (a, bundle) { return (await branchesOf(a, bundle.id)).map(function (x) { return String(x.family) + '/' + String(x.verb || ''); }).sort(); };
 const settle = async function () { for (let i = 0; i < 50; i++) await new Promise(function (r) { setImmediate(r); }); await new Promise(function (r) { setTimeout(r, 200); }); };
 const vtree = function (verbs) { const o = {}; verbs.forEach(function (v) { o[v] = {}; }); return o; };
 test.run('at start the node gives desk, a server, a bundle enableRemote owned by desk', 0.2, async function () {
@@ -721,31 +723,37 @@ test.run('at start the node gives desk, a server, a bundle enableRemote owned by
   await settle();
   return (await enableRemoteOf(ownFirst, 'desk')).length === 1 || false;
 }, test.limit.slow);
-test.run('desk\'s enableRemote holds every verb desk serves, its auto-verbs included, and nothing else', 0.2, async function () {
+test.run('desk\'s enableRemote holds one branch, all of desk, naming no verb', 0.2, async function () {
   if (!ownFirst) return false;
   const b = (await enableRemoteOf(ownFirst, 'desk'))[0];
   if (!b) return false;
-  const all = (await branchesOf(ownFirst, b.id));
-  return all.every(function (x) { return x.family === 'desk' && !!x.verb; }) && JSON.stringify(all.map(function (x) { return x.verb; }).sort()) === JSON.stringify(DESK_VERBS.slice().sort()) || false;
+  return JSON.stringify(await shapeOf(ownFirst, b)) === JSON.stringify(['desk/']) || false;
 }, test.limit.quick);
-test.run('testicle, another server, gets its own enableRemote, owned by testicle, with every verb it serves', 0.2, async function () {
+test.run('testicle, another server, gets its own enableRemote, owned by testicle, one branch, all of testicle', 0.2, async function () {
   if (!ownFirst) return false;
   const b = (await enableRemoteOf(ownFirst, 'testicle'))[0];
   if (!b) return false;
-  return JSON.stringify(await verbsOf(ownFirst, b)) === JSON.stringify(TESTICLE_VERBS.slice().sort()) || false;
+  return JSON.stringify(await shapeOf(ownFirst, b)) === JSON.stringify(['testicle/']) || false;
 }, test.limit.quick);
 test.run('files, a node family that serves no remote, gets no bundle', 0.2, async function () {
   if (!ownFirst) return false;
   return !(await ownBundles(ownFirst)).some(function (b) { return b.owner === 'files'; }) || false;
 }, test.limit.quick);
-test.run('started again with desk serving a new verb, desk still has one enableRemote, now holding the new verb', 0.2, async function () {
+test.run('desk\'s enableRemote holding a branch per verb, as an earlier node made it, is one branch, all of desk, after the node starts again', 0.2, async function () {
   if (!ownFirst) return false;
-  ownTree.desk['item.box'] = {};
+  const b = (await enableRemoteOf(ownFirst, 'desk'))[0];
+  if (!b) return false;
+  const sdb = new DatabaseSync(path.join(ownRoot, 'spirit', 'state', 'node.db'));
+  try {
+    sdb.prepare('DELETE FROM branch WHERE bundle = ?').run(b.id);
+    DESK_VERBS.forEach(function (v) { sdb.prepare('INSERT INTO branch (bundle, family, verb) VALUES (?, ?, ?)').run(b.id, 'desk', v); });
+  } finally { sdb.close(); }
+  if ((await shapeOf(ownFirst, b)).length !== DESK_VERBS.length) return false;
   ownAgain = createApiAuth({ rootDir: ownRoot, tree: function () { return Promise.resolve(ownTree); } });
   await settle();
   const list = await enableRemoteOf(ownAgain, 'desk');
   if (list.length !== 1) return false;
-  return (await verbsOf(ownAgain, list[0])).indexOf('item.box') !== -1 || false;
+  return JSON.stringify(await shapeOf(ownAgain, list[0])) === JSON.stringify(['desk/']) || false;
 }, test.limit.slow);
 
 test.after(function () {

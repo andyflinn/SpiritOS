@@ -132,13 +132,13 @@ so the node lets a stale branch go at start. A bundle gets a branch of desk.chat
 ## Every server's own bundle, enableRemote (goal/G47.5)
 
 Andy: *"the fix is: desk provides a complete fucking bundle"*, *"maybe appServer can add this bundles as \"enableRemote\",
-belonging to <appServerName>?"*; Q4, *"Go for the node giving every server it runs, at each start, a bundle enableRemote owned
-by that server, holding every verb it serves, auto-verbs included?"*: *"yes."* A server is a family of the live tree that
-serves remote, the auto-verb every appServer has. The node starts on a fresh table with desk, testicle and files (a node
-family, no remote), then again with desk serving one verb more:
+belonging to <appServerName>?"*; Q4: *"yes."*; *"nope apiAuth still needs to do that automatically."*; and on its shape: *"if the
+bundle contains a branch only that can go into grants as branch, since the auth system recognizes that when only a branch is
+named, it applies to all it's verbs."* A server is a family of the live tree that serves remote, the auto-verb every appServer
+has. The node starts on a fresh table with desk, testicle and files (a node family, no remote):
 
 - desk has one bundle enableRemote owned by desk;
-- it holds every verb desk serves, its auto-verbs included, and nothing else;
-- testicle has its own, owned by testicle, with every verb it serves;
+- it holds one branch, all of desk, naming no verb;
+- testicle has its own, owned by testicle, one branch, all of testicle;
 - files gets no bundle;
-- started again, desk still has one enableRemote, now holding the new verb.
+- desk's enableRemote holding a branch per verb, as an earlier node made it, is one branch, all of desk, after the node starts again.
