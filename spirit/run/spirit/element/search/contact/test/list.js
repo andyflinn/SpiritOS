@@ -118,10 +118,10 @@ test.run('when it loads, it requires its row and the search element through spir
 // those four in that order, each with its icon and word, and no all.
 const KINDS = [{ keep: true, name: 'p' }, { mine: true, name: 'm' }, { relay: true, name: 'r' }, { blocked: true, name: 'b' }];
 let kindF = null;
-const choicesOf = function () { return kindF && typeof kindF.choices === 'function' ? kindF.choices(KINDS) : []; };
+const choicesOf = function () { return !kindF ? [] : typeof kindF.choices === 'function' ? kindF.choices(KINDS) : Array.isArray(kindF.choices) ? kindF.choices : []; };
 test.run('one filter of choices holds the kinds, so only one is active at a time', 0.2, function () {
   if (!F) return false;
-  const withChoices = Object.keys(F).filter(function (k) { return typeof F[k].choices === 'function'; });
+  const withChoices = Object.keys(F).filter(function (k) { return typeof F[k].choices === 'function' || Array.isArray(F[k].choices); });
   kindF = withChoices.length === 1 ? F[withChoices[0]] : null;
   return !!kindF ? true : false;
 }, test.limit.quick);
@@ -140,6 +140,14 @@ const RELAY = { relay: true, name: 'r' }; const RELAY_PUPPET = { relay: true, mi
 const lets = function (i, row) { const c = choicesOf(); return c.length === 4 && kindF.test(row, c[i].value) === 1; };
 test.run('People lets through a node and a node puppet, and no relay and no blocked row', 0.2, function () {
   return lets(0, NODE) && lets(0, NODE_PUPPET) && !lets(0, RELAY) && !lets(0, RELAY_PUPPET) && !lets(0, BLOCKED) ? true : false;
+}, test.limit.quick);
+// Box v29: "The default is \"People\", when the app first opens." The shared search starts a filter at its first choice
+// when its choices are a list, and at nothing when they are a function (spirit/element/search.js, values); wherever the
+// kind filter starts, it lets through what People does.
+test.run('the kind filter starts at People: where the shared search starts it, a node passes and no relay and no blocked row', 0.2, function () {
+  if (!kindF) return false;
+  const start = Array.isArray(kindF.choices) && kindF.choices.length ? kindF.choices[0].value : '';
+  return kindF.test(NODE, start) === 1 && kindF.test(NODE_PUPPET, start) === 1 && kindF.test(RELAY, start) === 0 && kindF.test(BLOCKED, start) === 0 ? true : false;
 }, test.limit.quick);
 test.run('Puppets lets through a starred node and a starred relay, and no plain node or relay', 0.2, function () {
   return lets(1, NODE_PUPPET) && lets(1, RELAY_PUPPET) && !lets(1, NODE) && !lets(1, RELAY) ? true : false;

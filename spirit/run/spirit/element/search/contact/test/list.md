@@ -56,4 +56,6 @@ the time. the all button must go."*, *"🔍 Search Network is a separate toggle,
   blocked row ("nodes only, includes node-puppets, excludes relays and blocked"); Puppets a starred node and a starred
   relay, no plain node or relay ("starred/owned nodes or relays"); Relays a relay, no node; Blocked a blocked row, no node
   or relay.
+- Box v29, *"The default is \"People\", when the app first opens."*: where the shared search starts the kind filter (its first
+  choice for a list of choices, nothing for a function), it lets through what People does.
 - The network toggle says 🔍 Search Network.
