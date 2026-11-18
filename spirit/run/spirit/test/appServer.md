@@ -184,3 +184,10 @@ ping as the sibling):
 - `remote { id: SELF }` switches home: `{ current }` is this node and its own verb answers again.
 - deskClient still follows the desk (box: "a red checks that deskClient still follows the desk after the change"):
   deskClient's own test, "it serves its verbs and follows the desk's stream", is that check.
+- Publishing (box v12, "only to its own loopback clients and its relay-face, never to the peers subscribed to it"): a
+  switch publishes remote, current and the list, to its own pages (the stand-in's event.publish); no delivery to a peer
+  subscribed to it carries remote.
+- The background check (box v12, "one row per peer that lets this node into this app", "leisurely asks again in the
+  background"): the stand-in's contacts are one that lets this node in, one whose server loads but refuses it
+  (not-granted), and one that stays silent. After an empty call and a wait, the list holds this node and the first alone,
+  and remote.json keeps the first and not the refusing one. Loading a peer's interface is not being let in.

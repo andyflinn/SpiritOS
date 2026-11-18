@@ -119,6 +119,16 @@ const fake = {
     }
     // A server family under a key (the publisher's, as the client subscribes; the client's, as the publisher delivers),
     // at the path spirit.familyPath gives: routing only, this test writes no family path of its own.
+    // The node's contacts, as the background check of remote asks them (goal/G47.5): one that lets this node in, one whose
+    // server refuses it, one that stays silent.
+    if (/spirit\/contact\/api\.js$/.test(q)) {
+      return Promise.resolve({ search: function () { return Promise.resolve({ items: [{ key: 'KEY-PEER', name: 'Peer' }, { key: 'KEY-NOGRANT', name: 'No grant' }, { key: 'KEY-SILENT', name: 'Silent' }], more: false }); } });
+    }
+    if (key === 'KEY-SILENT' && /\/api\.js$/.test(q)) return Promise.reject(Object.assign(new Error('no answer'), { status: 0 }));
+    if (key === 'KEY-NOGRANT' && /\/api\.js$/.test(q)) {
+      const no = function () { return Promise.reject({ status: 403, body: { ok: false, code: 'not-granted' } }); };
+      return Promise.resolve({ ping: no, subscribe: no, remote: no });
+    }
     if (key && /^spirit\/(?:app\/)?[^/]+\/api\.js$/.test(q)) {
       return Promise.resolve({
         subscribe: function (a) { asked.push({ verb: 'subscribe', key: key, args: a }); return post('subscribe', a, SELF).then(function (r) { return r.body; }); },
@@ -132,7 +142,8 @@ const fake = {
     return Promise.resolve({});
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function () { return { status: 500, body: { ok: false } }; }); },
-  event: { publish: function () {}, subscribe: function () {} },
+  // What the server publishes to its own pages, kept (goal/G47.5: remote is published to them).
+  event: { published: [], publish: function (e) { fake.event.published.push(e); }, subscribe: function () {} },
   // A server reports its DEBUG on its job (goal/G43.15); the stand-in node takes the report and keeps nothing.
   job: { report: function () { return Promise.resolve({ ok: true }); } },
   // Its DEBUG flag, as spirit.js keeps one: read with no argument, set with a boolean.
@@ -892,6 +903,35 @@ function ownPart() {
     const a = await asOwner('remote', { id: SELF });
     const p = await asOwner('ping', {});
     return (a.status === 200 && !!a.body && a.body.current === SELF && p.status === 200 && !!p.body && p.body.pong === true) || false;
+  }, test.limit.quick);
+  // Box v12: "the appServer publishes \"remote\" on its stream whenever the background check changes a row or a switch changes
+  // current", "only to its own loopback clients and its relay-face, never to the peers subscribed to it".
+  test.run('a switch publishes remote to its own pages, with current and the list', 0.2, function () {
+    if (!R.switched) return false;
+    const seen = (fake.event.published || []).map(function (e) { return e && e.remote; }).filter(Boolean);
+    return (seen.some(function (r) { return r.current === PUBLISHER && Array.isArray(r.items); }) && seen.some(function (r) { return r.current === SELF; })) || false;
+  }, test.limit.quick);
+  test.run('remote is never delivered to the peers subscribed to it', 0.2, function () {
+    if (!R.switched) return false;
+    return !posts.some(function (p) { return JSON.stringify(p).indexOf('"remote"') !== -1; }) || false;
+  }, test.limit.quick);
+  // Box v12: "items: one row per peer that lets this node into this app", "the appServer then leisurely asks again in the
+  // background whether the list is still current, and keeps the answer there".
+  test.run('after an empty call the background check lists a contact that lets this node in', 0.2, async function () {
+    if (noServer()) return false;
+    await asOwner('remote', {});
+    await tick(800);
+    const a = R.later = await asOwner('remote', {});
+    const keys = ((a.body && a.body.items) || []).map(function (i) { return i.key; });
+    return (keys[0] === SELF && keys.indexOf('KEY-PEER') !== -1) || false;
+  }, test.limit.slow);
+  test.run('a contact whose server refuses this node is not listed, nor one that stays silent', 0.2, function () {
+    const keys = ((R.later && R.later.body && R.later.body.items) || []).map(function (i) { return i.key; });
+    return (keys.indexOf('KEY-PEER') !== -1 && keys.indexOf('KEY-NOGRANT') === -1 && keys.indexOf('KEY-SILENT') === -1) || false;
+  }, test.limit.quick);
+  test.run('the peers that let it in are kept in remote.json', 0.2, function () {
+    let held = ''; try { held = fs.readFileSync(remoteFile, 'utf8'); } catch (e) { held = ''; }
+    return (held.indexOf('KEY-PEER') !== -1 && held.indexOf('KEY-NOGRANT') === -1) || false;
   }, test.limit.quick);
 
   // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
