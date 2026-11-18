@@ -4,7 +4,7 @@
 // The tests of spirit/app/deskClient/deskClient.js, and of no other module (spec: ./deskClient.md; goal/G41.11). The
 // server runs in this process on a state folder of its own: the spirit object, appServer and the file watcher are
 // stubs, the data set and the desk's translator are the real ones, and the desk is a fake that keeps every ask and
-// answers what the test tells it to. The desk's stream is fed by hand, as appServer's streamListener feeds it.
+// answers what the test tells it to. The desk's stream is fed by hand, as appServer's listener feeds it.
 // This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the chokidar and noTeamChat parts, once files of
 // their own, are sections at its end, run after the checks above and counted with them.
 
@@ -151,7 +151,7 @@ process.argv = [process.argv[0], FILE, '{}', '--state', STATE,
 
 // ── THE STREAM, FED BY HAND ──────────────────────────────────────────
 // Each row under the node that sent it, the desk (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
-// SERVER-NODE-ID at it's lowest level."): appServer's streamListener takes it with its sender, take(job, key).
+// SERVER-NODE-ID at it's lowest level."): appServer's listener takes it with its sender, take(job, key).
 let change = 0;
 function push(row) {
   change += 1;

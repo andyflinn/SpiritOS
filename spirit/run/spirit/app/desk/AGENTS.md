@@ -23,7 +23,7 @@ they bind all the same.
   limit is re-armed, or your window says `listener stopped`. The listener:
   `node spirit/run/spirit/app/desk/deskAgentEar.js <port>`, run in the background,
   the port being your own node's; it asks your node's deskClient server, which
-  follows the desk's stream (appServer's streamListener).
+  follows the desk's stream (appServer's listener).
 - A line he sent to the other agent is not yours to answer.
 
 ## The desk server holds the state

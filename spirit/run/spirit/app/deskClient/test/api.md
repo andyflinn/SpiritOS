@@ -8,7 +8,7 @@ spirit.js's standard (`'?'` optional). The spirit object checks every call again
 
 - It exports `{ verbs }` and nothing else: it names no family of its own.
 - Each rule is one of spirit.js's rules (`spirit.rules`).
-- **Every verb listed is served**: a handler of deskClient.js, or `streamListener`, which appServer adds to a server that
+- **Every verb listed is served**: a handler of deskClient.js, or `listener`, which appServer adds to a server that
   follows a stream (deskClient follows the desk's).
 - `next { read? }`: read, a text, the key of the wake the agent last read (goal/G41.11); nothing else.
 - `cache.dump {}`: takes no path (the file is appServer's cache file of the desk).
@@ -17,7 +17,7 @@ spirit.js's standard (`'?'` optional). The spirit object checks every call again
 - `setDesk { key }`: the key of the node that runs the desk, a peer's public key, required.
 - `signoff` and `clearSignoff`: agent optional.
 - No `history.search`: deskClient keeps no record of asks (goal/G47.1, Q16).
-- `streamListener { json }`: one row of the desk's stream as JSON text, required.
+- `listener { json }`: one row of the desk's stream as JSON text, required.
 
 ## What its test must try to break
 

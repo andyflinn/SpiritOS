@@ -1,7 +1,7 @@
 # spirit/appServer.js
 
 The app server of a node's process (goal/G19.1): it serves a server's verbs on its pipe, publishes its stream to its
-pages and subscribers (streamPublisher), and follows another server's stream into its own data set (streamListener,
+pages and subscribers (streamPublisher), and follows another server's stream into its own data set (listener,
 the client half). Since goal/G41.12 it is the one stream protocol for every server (box v15, "A better peerPost
 stream"); Desk and deskClient move onto it.
 
@@ -21,7 +21,7 @@ stream"); Desk and deskClient move onto it.
 
 ### Bundles (goal/G41.12)
 
-- **Every delivery is a bundle**: one JSON array of rows in one peerPost to the subscriber's streamListener.
+- **Every delivery is a bundle**: one JSON array of rows in one peerPost to the subscriber's listener.
 - **Rows that back up go together**: while one delivery is in flight, the rows published behind it go in as few
   bundles as fit one answer, never one peerPost each.
 
@@ -181,7 +181,7 @@ ping as the sibling):
   in `spirit/state/<appServerName>/remote.json`.
 - In client mode the owner's ask goes to the sibling and its answer comes back; a peer's post is refused with a code
   saying it is in client mode; the chosen sibling's publishings still land.
-- In client mode a row only the sibling sent, delivered to this server's streamListener, is published to this node's own
+- In client mode a row only the sibling sent, delivered to this server's listener, is published to this node's own
   pages too (box: "the replies and reply stream data are cached as they are now, but also published to its own faces").
 - `remote { id: SELF }` switches home: `{ current }` is this node and its own verb answers again.
 - deskClient still follows the desk (box: "a red checks that deskClient still follows the desk after the change"):
@@ -197,4 +197,4 @@ ping as the sibling):
   intrinsic verbs"*): the test's deliveries post listener, and the stand-in's families answer listener.
 - The listener and the publisher's verbs are auto-verbs of every appServer (Andy: *"they're both auto-verbs. MUST BE."*):
   a server with a publisher only (as the desk is) and one with a stream only (as deskClient is), each a child process,
-  name listener, subscribe, unsubscribe and remote, and no streamListener.
+  name listener, subscribe, unsubscribe and remote, and no listener.

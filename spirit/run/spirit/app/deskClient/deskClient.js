@@ -23,7 +23,7 @@
 //   - Its state is spirit/state/deskClient/data/deskClient.db (goal/G43.10), named and handed over by the node as --state.
 //   - WHO IT IS, name and key, is what its node hands a server it starts (--node, job.js): no ask and no file.
 //   - IT FOLLOWS THE DESK'S STREAM (goal/G33.4, goal/G33.8): it subscribes, and the desk publishes each changed row to
-//     every subscribed deskClient (appServer streamListener), so deskClient asks the desk nothing to learn what changed.
+//     every subscribed deskClient (appServer listener), so deskClient asks the desk nothing to learn what changed.
 //   - What is meant for its agent is selected and worded as the listener it replaces did (goal/G3.4, 5): Andy's
 //     records but his seen presses, another agent's chat, and the lines Desk keeps from Andy or an agent; never
 //     its own, never the desk's busy replies, never Andy's direct line to the other agent.
@@ -120,13 +120,13 @@ function within(promise, ms) {
 
 // ── WHAT THE DESK STREAMS TO THIS AGENT (goal/G33.4, box v38-40) ─────
 //
-//   Andy: "the desk is the server and simply pushes a stream via peerPost to its deskClients", "the streamListener verb
+//   Andy: "the desk is the server and simply pushes a stream via peerPost to its deskClients", "the listener verb
 //   is approved", and the box: the desk's stream "updates their cache data set (spirit.data + translator). A client's
 //   own change lands only via that stream." The purpose (box v37): less load on the desk, up-to-date information at the
 //   agents' fingertips, "without constantly waking agents to read irrelevant messages".
 //
 // DECIDED, not this file's to undo: deskClient never asks the desk what changed (`changes` is gone); it follows the
-// desk's stream (appServer's streamListener, granted to the desk's key by setDesk) and keeps the current goal from it
+// desk's stream (appServer's listener, granted to the desk's key by setDesk) and keeps the current goal from it
 // alone, in spirit.data through the desk's translator, the same block the Desk page uses. Its agent's reads of rows the
 // stream brought are answered from there; its agent's own writes go to the desk and come back on the stream.
 // waiting: the lines meant for its agent, handed over by its next wait.
@@ -923,13 +923,13 @@ const server = appServer.serve({
       return { file: saved[0].file, bytes: saved[0].bytes };
     },
   },
-// What a peer needs granted here: the desk's node, streamListener alone (goal/G41.24).
+// What a peer needs granted here: the desk's node, listener alone (goal/G41.24).
 //
 // ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
 // register the node and the relay load. appServer puts "deskClient: " in
 // front of the text.
 }, {
-  // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
+  // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's listener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
   // cache (goal/G41.12, box v15): appServer's switch, at its default limit, 4 MB of the desk's rows.
   // The node files an app's jobs under spirit.app.<name> (spirit/job.js moduleOf; goal/G43.27): the desk's is spirit.app.desk.

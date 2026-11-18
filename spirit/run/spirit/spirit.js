@@ -909,7 +909,7 @@
       });
     };
     // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2), in a process as on a page: spirit.data, filled by each type's
-    // translator, which its type loads; a process follows a stream only through appServer's streamListener.
+    // translator, which its type loads; a process follows a stream only through appServer's listener.
     // Through the one loader, as every component is; in a process its require runs at once, so spirit.data is there now.
     module.exports = self;
     requireOne('spirit/data.js');

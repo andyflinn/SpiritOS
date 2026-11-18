@@ -442,7 +442,7 @@ if (served.length) {
   // DONE.", "WSL, NOTE AND ASSERT THIS IN YOUR TESTS, IN THE PROPER PLACE, DILIGENTLY WITHOUT FUCKING CHEATING."), no
   // FS set among them. Beyond an api.js only by decision: appServer's DEBUG on every server (desk/G2.5: "DEBUG
   // auto-verb supplied by appServer is approved."), and appServer's remote on every server (goal/G47.5, box v12: "it created an
-  // auto-verb called \"remote\"") and its streamListener (Andy: "the streamListener must be an auto-verb of
+  // auto-verb called \"remote\"") and its listener (Andy: "the listener must be an auto-verb of
   // spirit/appServer.js!"). Desk's item.rules verbs went with the rules (goal/G47.4, box v36).
   test.run('it serves exactly the verbs of its api.js', 0.4, function () {
     if (!up()) return false;
@@ -451,7 +451,7 @@ if (served.length) {
       if (!branch) return false;
       const declared = Object.keys(b.verbs);
       const offered = Object.keys(branch);
-      const decided = ['DEBUG', 'remote', 'streamListener', 'subscribe', 'unsubscribe'];
+      const decided = ['DEBUG', 'remote', 'listener', 'subscribe', 'unsubscribe'];
       const extra = offered.filter(function (v) { return declared.indexOf(v) === -1 && decided.indexOf(v) === -1; });
       const missing = declared.filter(function (v) { return offered.indexOf(v) === -1; });
       return (!extra.length && !missing.length) ? true : false;

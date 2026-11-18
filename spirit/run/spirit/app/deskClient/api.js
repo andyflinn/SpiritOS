@@ -26,6 +26,6 @@ module.exports = {
     signoff: { agent: 'text?' },
     // goal/G33.4 (box v40): the desk's stream, one row as the desk publishes it, JSON; appServer's verb for a server
     // that follows a stream (spirit/appServer.js withStreamListener), heard from the key setDesk named alone.
-    streamListener: { json: 'text' },
+    listener: { json: 'text' },
   },
 };

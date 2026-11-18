@@ -376,7 +376,7 @@ function reportDebug() {
 //
 // A sender (opts.publisher) publishes rows; a client (opts.stream) follows a sender and keeps what it sends in its
 // spirit.data through the stream's translator. Between them every delivery is one peerPost to the client's
-// streamListener {json}, json one JSON array (a bundle), each element one entry:
+// listener {json}, json one JSON array (a bundle), each element one entry:
 //   { run, n, row }                     a row the sender published, numbered n in its run
 //   { run, n, row, full: true }         a row of a full push, n the sender's newest number when the push began
 //   { run, n, full: true, end: true }   the full push has landed whole
@@ -390,18 +390,18 @@ const crypto = require('crypto');
 // The run root, where spirit.js sits: a family folder and a cache are found from here, never from the working folder.
 const RUN_ROOT = path.resolve(__dirname, '..');
 
-// ── streamListener: A SERVER FOLLOWS ANOTHER SERVER'S STREAM (goal/G33.4, box v40) ──────
+// ── listener: A SERVER FOLLOWS ANOTHER SERVER'S STREAM (goal/G33.4, box v40) ──────
 //
-//   Andy, approving it: "the streamListener verb is approved", a common component "built into the appServer module
+//   Andy, approving it: "the listener verb is approved", a common component "built into the appServer module
 //   rather than the application server itself, ... allowing appServers to be true clients to any other appServer".
 //
 // A server that follows a stream hands serve() opts.stream = { module, translator, onRow, cache }: the module the
 // sender publishes as (spirit.app.<name>), the stream's translator (its data.js), a handler for each row if it wants
-// one, and the cache switch. serve() then adds the verb streamListener {json} -> {heard: true}: one bundle. Each row
+// one, and the cache switch. serve() then adds the verb listener {json} -> {heard: true}: one bundle. Each row
 // goes straight into the server's spirit.data (spirit/data.js) through the translator, exactly as a face app
 // keeps it in the page, and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror of its
 // own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
-// follow(key) also grants that key the verb on this server's own node (auth.grant <server>.streamListener, through the
+// follow(key) also grants that key the verb on this server's own node (auth.grant <server>.listener, through the
 // one spirit object), so the sender's peerPost passes the node's gate; a grant the node holds already is no fault.
 //
 // THE CACHE (box v15). "Only a client caches. Auto-cache is one switch on the client's serve(), with a limit the client
@@ -576,7 +576,7 @@ function heard(st, from, e) {
   return following.onRow(e.row, from);
 }
 function withStreamListener(verbs, stream, followed, name) {
-  if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'streamListener')) return verbs;
+  if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'listener')) return verbs;
   dataSet();
   // A family's data.js stands on this server's data set as it is required (goal/G41.24, goal/G43.7).
   if (stream.translator) spirit.require(path.relative(RUN_ROOT, path.resolve(String(stream.translator))).split(path.sep).join('/'));
@@ -590,7 +590,7 @@ function withStreamListener(verbs, stream, followed, name) {
   };
   if (cache) restoreCaches();
   const all = Object.assign({}, verbs);
-  all.streamListener = {
+  all.listener = {
     request: { json: '' }, reply: { heard: true },
     handler: function (a, caller) {
       if (!caller || caller.owner === true || !followed.has(String(caller.key || ''))) throw Object.assign(new Error('not-granted'), { refusal: 'not-granted', extra: { why: 'this server follows no stream from this key' } });
@@ -610,21 +610,21 @@ function withStreamListener(verbs, stream, followed, name) {
 
 // ── streamPublisher: subscribe, unsubscribe, and the one publish (goal/G33.8, box v8) ──────
 //
-//   Andy: "spirit/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher)
+//   Andy: "spirit/appServer.js should provide both, a client (listener) interface and a server (streamPublisher)
 //   interface", "the server part of it accepts connections from streamListeners in form of "ID-key.api-family" where
 //   the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it
-//   always has and to the connected peer id's via peerPosts to ID-family-streamListener"; "Subscribe and unsubscribe are
+//   always has and to the connected peer id's via peerPosts to ID-family-listener"; "Subscribe and unsubscribe are
 //   verbs of the streamPublisher in js/appServer.js, approved and granted."
 //
 // A server that publishes a stream hands serve() opts.publisher = { family, bootstrap, waitMs, logMax }: the family its
 // subscribers listen as when it has nothing else to go by (after a restart), bootstrap(key) -> the rows a full push
 // hands (the server's own best set), how long one delivery may take, and how many published rows its log keeps. serve()
 // then adds two verbs:
-//   subscribe {family, run?, since?}   the caller's key subscribes as family (its streamListener), from its position
+//   subscribe {family, run?, since?}   the caller's key subscribes as family (its listener), from its position
 //   unsubscribe {}                     the caller's key stops being sent anything
 // Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
 // subscriber, never named. publish(row) puts the row on the node's job stream for its pages, as it always has, and hands
-// the same row to every subscriber through its family's streamListener over peerPost (spirit.require with a key: no packet
+// the same row to every subscriber through its family's listener over peerPost (spirit.require with a key: no packet
 // built here); a row naming keys in to goes to those subscribers alone. In order per subscriber.
 // ROWS THAT BACK UP GO TOGETHER (box v15: "the server its publishings when they back up"; "A bundle is a JSON array of
 // rows in one peerPost, as many as a sized probability bucket fits in one answer"): while one bundle is in flight, the
@@ -663,8 +663,8 @@ function bundleOf(rows) {
 function deliver(key, q, bundle) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), with the publisher's own wait.
   return spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
-    if (!fam || typeof fam.streamListener !== 'function') return 'away';
-    return spirit.outcome(fam.streamListener({ json: JSON.stringify(bundle) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
+    if (!fam || typeof fam.listener !== 'function') return 'away';
+    return spirit.outcome(fam.listener({ json: JSON.stringify(bundle) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
 }
 function pumpTo(key) {
@@ -736,7 +736,7 @@ function withPublisher(verbs, opts) {
     },
     handler: function (a, caller) {
       if (!caller || !caller.key) throw refusedNoKey();
-      if (!/^[A-Za-z]\w*$/.test(String(a.family || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its streamListener\'s' } });
+      if (!/^[A-Za-z]\w*$/.test(String(a.family || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its listener\'s' } });
       subscribe(caller.key, String(a.family), a.run, a.since);
       return { subscribed: true };
     },
@@ -903,10 +903,10 @@ function refreshRemote() {
     if (JSON.stringify(known) !== JSON.stringify(remote.known)) { remote.known = known; saveRemote(); publishRemote(); }
   }, function () { /* the list stands as it was */ }).then(function () { remote.refreshing = false; });
 }
-// EVERY SERVER HAS A streamListener, AN AUTO-VERB (goal/G47.5; Andy: "the streamListener must be an auto-verb of
+// EVERY SERVER HAS A listener, AN AUTO-VERB (goal/G47.5; Andy: "the listener must be an auto-verb of
 // spirit/appServer.js!"; box v12: "the replies and reply stream data ... also published to its own faces"): one that
 // follows no stream of its own (the desk) is given siblingListener below, which takes the chosen sibling's deliveries
-// alone, in client mode, and hands each row to this node's pages. On a switch the sibling is granted <server>.streamListener
+// alone, in client mode, and hands each row to this node's pages. On a switch the sibling is granted <server>.listener
 // and asked to subscribe this server. A server that follows a stream uses its own (heard, above).
 const siblingListener = {
   request: { json: '' }, reply: { heard: true },
@@ -927,7 +927,7 @@ function listenToSibling() {
     return;
   }
   const key = remote.current;
-  spirit.outcome(Promise.resolve(spirit.require('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.streamListener' }); })).then(function () {
+  spirit.outcome(Promise.resolve(spirit.require('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.listener' }); })).then(function () {
     return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
       if (!p || typeof p.subscribe !== 'function') throw Object.assign(new Error('the sibling takes no subscribe'), { status: 0 });
       return p.subscribe({ family: remote.name });
@@ -948,10 +948,10 @@ function switchRemote(id) {
 }
 function withRemote(verbs, name) {
   remote.name = String(name || '');
-  remote.hasListener = Object.prototype.hasOwnProperty.call(verbs, 'streamListener');
+  remote.hasListener = Object.prototype.hasOwnProperty.call(verbs, 'listener');
   readRemote();
   const all = Object.assign({}, verbs);
-  if (!remote.hasListener) all.streamListener = siblingListener;
+  if (!remote.hasListener) all.listener = siblingListener;
   all.remote = {
     request: { id: '' }, reply: { current: '' },
     // Called empty, or with the id to switch to.
@@ -975,7 +975,7 @@ function gateRemote(verb, args, caller) {
       return p[verb](args);
     })).then(function (r) { return { status: r.status, body: r.body }; });
   }
-  if (verb === 'streamListener' && key === remote.current) return null;
+  if (verb === 'listener' && key === remote.current) return null;
   if (key && key === selfKey()) return null;
   return Promise.resolve(refusal('client-mode', { verb: verb }));
 }
@@ -1003,7 +1003,7 @@ function serve(verbs, opts) {
     // goal/G33.8: both halves, the stream it publishes (withPublisher) and the streams it listens to (withStreamListener).
     // THE PUBLISHER AND THE LISTENER ON EVERY SERVER (goal/G47.5; Andy: "both: \"publisher\" and \"listener\" belong in
     // spirit/appServer.js"): a server that names no publisher publishes as its own family, with no bootstrap, so any server
-    // can be a sibling that a remote in client mode subscribes to; withRemote gives every server its streamListener.
+    // can be a sibling that a remote in client mode subscribes to; withRemote gives every server its listener.
     verbs = withDebug(withRemote(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), (opts && opts.publisher) || { family: name }), argv[1]), name));
   } catch (e) {
     console.error(e.message);
@@ -1035,7 +1035,7 @@ function serve(verbs, opts) {
     process.exit(1);
   });
   // THE CLIENT HALF (goal/G33.8): subscribe(key, family) follows the stream of family on the node of key: its rows are
-  // heard from that key (follow, which also grants the key this server's streamListener on its own node), then the
+  // heard from that key (follow, which also grants the key this server's listener on its own node), then the
   // publisher is asked to subscribe this server, as this server's family, over peerPost through the publisher's family
   // interface. Answers whether the publisher took it. Asked again whenever this server thinks it may have been dropped.
   // THE POSITION GOES WITH IT (box v15): the run and the number of the last row it took from that sender; with none
@@ -1043,7 +1043,7 @@ function serve(verbs, opts) {
   s.subscribe = function (key, family) {
     const k = String(key || '');
     const fam = String(family || '');
-    if (!k || !fam || !verbs.streamListener) return Promise.resolve(false);
+    if (!k || !fam || !verbs.listener) return Promise.resolve(false);
     // THE CACHE IS KEPT THROUGH A SUBSCRIBE (goal/G41.11, Q5). Andy: "deskClient keeps it's cache (all clients using
     // spirit-client services, that's where the fix belongs) through new subscribes", and YES to: "May a subscribe keep
     // the old cache until the new push lands, then replace it whole". A push cut short is not waited for: what it brought
@@ -1065,9 +1065,9 @@ function serve(verbs, opts) {
   // node holds the grant (true when it did already).
   s.follow = function (key) {
     const k = String(key || '');
-    if (!k || !verbs.streamListener) return Promise.resolve(false);
+    if (!k || !verbs.listener) return Promise.resolve(false);
     followed.add(k);
-    return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.grant({ key: k, path: name + '.streamListener' }); })).then(function (r) {
+    return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.grant({ key: k, path: name + '.listener' }); })).then(function (r) {
       return r.status === 200 || (r.body && r.body.code === 'already-granted');
     });
   };

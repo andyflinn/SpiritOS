@@ -7,7 +7,7 @@
 // The tests of spirit/app/desk/data.js, and of no other module (spec: ./data.md;
 // goal/G41.11, goal/G41.24). The translator
 // runs as it does: in a window of its own beside the real spirit.data (spirit/data.js), which it writes into;
-// the desk's rows are handed in as appServer's streamListener hands them, jobs of module spirit/app/desk.
+// the desk's rows are handed in as appServer's listener hands them, jobs of module spirit/app/desk.
 
 const fs = require('fs');
 const path = require('path');

@@ -142,7 +142,7 @@ function familyOf(body) {
 function entriesOf(got) { return Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : []; }
 // ANDY'S NODE AS THE DESK SEES IT, on its one door (POST /api/spirit {verb, ...}): his pages' publishes
 // (event.publish, the row as app) into pages; the event stream peerPost reads its answers on (event.subscribe); a
-// family's interface (api {family}); each post to a deskClient's streamListener (peer.post) into posts as {to, json},
+// family's interface (api {family}); each post to a deskClient's listener (peer.post) into posts as {to, json},
 // every row of it into sent as {to, row}.
 // A job (job.create {command, args}) is started for real, as a node starts it, and kept in jobs with its exit.
 function pretendNode() {
@@ -175,7 +175,7 @@ function pretendNode() {
       let ask = null; try { ask = packet.decode(b.text); } catch (e) { ask = null; }
       const body = (ask && ask.body) || {};
       let answer = familyOf(body);
-      const sl = body.deskClient && body.deskClient.streamListener;
+      const sl = body.deskClient && body.deskClient.listener;
       if (!answer && sl) {
         let got = null; try { got = JSON.parse(sl.json); } catch (e) { got = null; }
         posts.push({ to: String(b.to), json: sl.json, got: got });
@@ -800,7 +800,7 @@ test.run('a desk of its own starts for the bubble cases', 0.2, async function ()
   if (!W.node) return false;
   const node = W.node;
   W.heldGrants = node.grants.splice(0, node.grants.length);
-  node.grants.push({ key: CW.key, path: 'desk', name: CW.label }, { key: UBI.key, path: 'desk.item.get', name: UBI.label }, { key: CLIENT_ONLY.key, path: 'deskClient.streamListener', name: CLIENT_ONLY.label }, { key: OUT.key, path: 'desk.item.get', name: 'never written' });
+  node.grants.push({ key: CW.key, path: 'desk', name: CW.label }, { key: UBI.key, path: 'desk.item.get', name: UBI.label }, { key: CLIENT_ONLY.key, path: 'deskClient.listener', name: CLIENT_ONLY.label }, { key: OUT.key, path: 'desk.item.get', name: 'never written' });
   W.askG = await startDesk('desk-grants', {});
   if (W.askG) {
     await profiles(W.askG);

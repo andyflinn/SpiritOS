@@ -109,4 +109,4 @@ Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to 
 ## The listener and the publisher's verbs (goal/G47.5)
 
 The desk, a publisher only, names listener, subscribe, unsubscribe and remote in its api tree in server mode, and no
-streamListener (Andy: *"they're both auto-verbs. MUST BE."*, *"PLEASE call the damn thing jus \"listener\""*).
+listener (Andy: *"they're both auto-verbs. MUST BE."*, *"PLEASE call the damn thing jus \"listener\""*).
