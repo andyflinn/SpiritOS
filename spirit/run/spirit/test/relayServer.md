@@ -84,3 +84,9 @@ dammit!"*
 more."* Two scratch relays (a stranger's second post within its minute is held by its address, 429, which is no refusal
 of hints): a signed card ask posted as it is is taken (200); the same with hints and a hint signature beside it is
 refused as a bad request (400).
+
+## A forged signature is refused, not merely survived (goal/G47.6)
+
+The box: *"a packet with a faked signature is refused by the relay with a refusal, not merely that the relay does not
+crash."* A post claiming to be from the relay's own owner, with a real signature by that owner over another text, is answered
+with a 4xx at /api/relay/post, /api/relay/reply, /api/relay/face/answer and /api/relay/face/stream.

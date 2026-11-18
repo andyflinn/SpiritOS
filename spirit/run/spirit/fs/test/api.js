@@ -37,3 +37,24 @@ test.run('the family has no fs.annotations and no fs.annotate', 0.2, function ()
 test.run('the family has no getAnnotations among its kernel names', 0.2, function () {
   return !('getAnnotations' in names(function () { return Promise.resolve({}); })) ? true : false;
 }, test.limit.quick);
+
+// A FILE VERB NEVER CLIMBS OUT OF THE RUN FOLDER (goal/G47.6, box: "a peer asking a file verb for ../, a full path or a drive
+// letter is refused by the spirit object's path rule at the door"). The node checks every call against the verbs declared
+// here with spirit.check; each file verb's path, asked as one of these, is refused there and never reaches the disc.
+const spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
+const CLIMBS = ['../x', 'a/../../x', '..\\x', '/etc/passwd', '\\x', 'C:/x', 'c:\\x', 'a\u0000b'];
+const FILE_VERBS = ['stat', 'load', 'save', 'delete'];
+test.run('every file verb asked for a path that climbs out, starts at the top or names a drive is refused by the path rule', 0.8, function () {
+  const bad = [];
+  FILE_VERBS.forEach(function (v) {
+    CLIMBS.forEach(function (p) {
+      const args = v === 'save' ? { path: p, content: 'x' } : { path: p };
+      const r = spirit.check('fs.' + v, api.verbs[v], args);
+      if (!r || !r.code) bad.push(v + ' ' + JSON.stringify(p));
+    });
+  });
+  return bad.length === 0;
+}, test.limit.quick);
+test.run('a file verb asked for a plain path inside the run folder passes the path rule', 0.2, function () {
+  return FILE_VERBS.every(function (v) { return !spirit.check('fs.' + v, api.verbs[v], v === 'save' ? { path: 'media/a.txt', content: 'x' } : { path: 'media/a.txt' }); });
+}, test.limit.quick);

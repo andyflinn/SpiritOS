@@ -142,3 +142,10 @@ has. The node starts on a fresh table with desk, testicle and files (a node fami
 - testicle has its own, owned by testicle, one branch, all of testicle;
 - files gets no bundle;
 - desk's enableRemote holding a branch per verb, as an earlier node made it, is one branch, all of desk, after the node starts again.
+
+## The line Andy draws (goal/G47.6, box point 2)
+
+*"Tests assert that neither the fs branch nor contact.faceable can ever be granted to a peer; removing either refusal turns a
+test red. Remote root-style authority is otherwise wanted; these two are the line."* A grant of fs.load, fs.save and fs.delete
+to a peer is refused as owner-only, and the peer holds nothing of fs; a grant of contact.faceable is refused as owner-only, and
+the peer does not hold it.

@@ -311,6 +311,23 @@ test.run('a grant made from a bundle stays when the bundle goes', 0.2, async fun
   return (JSON.stringify(auth.pathsOf(PEER)) === '["files.read"]') ? true : false;
 }, test.limit.quick);
 
+// THE LINE ANDY DRAWS (goal/G47.6, box point 2: "tests assert that neither the fs branch nor contact.faceable can ever be
+// granted to a peer; removing either refusal turns a test red. Remote root-style authority is otherwise wanted; these two
+// are the line."). Each is asked as a grant to a peer, and refused; the peer holds nothing of it afterwards.
+test.run('a grant of anything in the fs branch to a peer is refused, and the peer holds none of it', 0.8, async function () {
+  if (!auth || !PEER) return false;
+  const tries = ['fs.load', 'fs.save', 'fs.delete'];
+  const answers = [];
+  for (const p of tries) answers.push(await auth.grant({ key: PEER, path: p }));
+  const held = auth.pathsOf(PEER).filter(function (p) { return p === 'fs' || p.indexOf('fs.') === 0; });
+  return (answers.every(function (r) { return !!r && r.refusal === 'owner-only'; }) && held.length === 0) ? true : false;
+}, test.limit.quick);
+test.run('a grant of contact.faceable to a peer is refused, and the peer does not hold it', 0.8, async function () {
+  if (!auth || !PEER) return false;
+  const r = await auth.grant({ key: PEER, path: 'contact.faceable' });
+  return (!!r && r.refusal === 'owner-only' && auth.pathsOf(PEER).indexOf('contact.faceable') === -1) ? true : false;
+}, test.limit.quick);
+
 // Every change is told, row by row, for the stream.
 // Andy, goal/G41.14: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set. and the
 // SHELL's spirit fucking object is supposed to hold ALL cached data, and propagate updates to the fucking elements".

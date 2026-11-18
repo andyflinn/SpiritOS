@@ -421,6 +421,23 @@ test.run('a body of invalid UTF-8 bytes posted to /api/relay/face/stream is answ
 test.run('a post whose from is a number, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(68); }, test.limit.slow);
 test.run('a post with its sig missing, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(69); }, test.limit.slow);
 test.run('a post with a forged sig, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(70); }, test.limit.slow);
+// A FORGED SIGNATURE IS REFUSED, NOT MERELY SURVIVED (goal/G47.6, box: "a packet with a faked signature is refused by the relay
+// with a refusal, not merely that the relay does not crash"). The four tests above pass on any answer. Here the post claims
+// to be from the relay's own owner, whom the relay would take, and carries a real signature by that owner over another text:
+// only the signature check stands between it and the relay. Each post route answers it with a refusal, a 4xx.
+test.run('a post claiming to be from the relay\'s owner with a signature over another text is refused with a 4xx at each post route', 0.8, async function () {
+  if (!G.list || !G.relay || !G.relay.owner || G.killer) return false;
+  const A = G.relay.auth;
+  const owner = G.relay.owner;
+  const text = '{"v":1,"body":{"card":true}}';
+  const sig = A.sign(owner.privateKey, A.postMessage(owner.publicKey, '', '{"v":1,"body":{"other":true}}'));
+  const took = [];
+  for (const p of ['/api/relay/post', '/api/relay/reply', '/api/relay/face/answer', '/api/relay/face/stream']) {
+    const r = await post(G.base, p, { from: owner.publicKey, to: '', text: text, sig: sig });
+    if (!r || !(r.status >= 400 && r.status < 500)) took.push(p + ' ' + (r && r.status));
+  }
+  return took.length === 0;
+}, test.limit.slow);
 test.run('a signed post whose text is not JSON, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(71); }, test.limit.slow);
 test.run('a signed post whose text is a JSON array, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(72); }, test.limit.slow);
 test.run('a signed post whose text holds a huge string, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(73); }, test.limit.slow);

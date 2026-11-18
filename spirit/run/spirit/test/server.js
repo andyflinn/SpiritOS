@@ -353,6 +353,29 @@ test.run('after every batch thrown at /api/spirit, the node answered a plain cal
   return hungAfter.length === 0;
 }, test.limit.quick);
 
+// THE FILE ROUTES NEVER HAND OUT WHAT LIES OUTSIDE WHAT THEY SERVE (goal/G47.6, box: "the node's file routes refuse ../, also
+// encoded"). The tests above check only that the node answers and lives; this one checks what it answered: no climbing
+// address, plain or encoded, brings back the node's identity, its node.json or the machine's passwd.
+const CLIMBING = ['/../../../../etc/passwd', '/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd', '/shell/..%2f..%2f..%2f..%2fetc/passwd',
+  '/spirit/element/../../../spirit/state/identity.json', '/spirit/element/%2e%2e/%2e%2e/%2e%2e/spirit/state/identity.json',
+  '/spirit/%2e%2e%2fspirit%2fstate%2fidentity.json', '/DEBUG/../../spirit/state/node.json', '/DEBUG/%2e%2e/%2e%2e/spirit/state/node.json',
+  '/api/spirit/../../spirit/state/node.json', '/spirit/element/..%5c..%5c..%5cspirit%5cstate%5cidentity.json'];
+test.run('no climbing address, plain or encoded, brings back the node\'s identity, its node.json or the machine\'s passwd', 0.8, async function () {
+  if (!G.node || !G.node.run || G.killer) return false;
+  // What would show the file came back: a long value of each, as it lies on the scratch node's disc.
+  const longest = function (file) {
+    try { const o = JSON.parse(fs.readFileSync(path.join(G.node.run, 'spirit', 'state', file), 'utf8')); return Object.keys(o).map(function (k) { return String(o[k]); }).sort(function (a, b) { return b.length - a.length; })[0] || ''; } catch (e) { return ''; }
+  };
+  const marks = [longest('identity.json').slice(0, 40), longest('node.json').slice(0, 40), 'root:x:0:0:'].filter(function (m) { return m.length >= 8; });
+  if (marks.length < 2) return false;
+  const leaked = [];
+  for (const p of CLIMBING) {
+    const r = await raw(G.base, 'GET ' + p + ' HTTP/1.1\r\nHost: ' + HOST + '\r\nConnection: close\r\n\r\n', '');
+    if (r && r.status === 200 && marks.some(function (m) { return (r.text || '').indexOf(m) !== -1; })) leaked.push(p);
+  }
+  return leaked.length === 0;
+}, test.limit.slow);
+
 // the node's door: raw requests and malformed paths
 // Each request written out, in the order thrown, so that each check has a plain title of its own. A request is thrown by
 // its own test; once one killed the node, the ones after it are not thrown, and say so.

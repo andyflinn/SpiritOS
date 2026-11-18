@@ -82,3 +82,7 @@ What it reports without judging (not a crash, so not red by the box's words): ho
   `spirit/test/appServer.js`'s, not this file's.
 - **A server not up judges nothing**: every server it turns on must be in the api answer, on the scratch node and on
   each throwaway node, or the run is red saying which.
+- **The file routes hand out nothing outside what they serve** (goal/G47.6, box: *"the node's file routes refuse ../, also
+  encoded"*): the climbing addresses above check only that the node answers and lives; one more check reads the answers:
+  no climbing address, plain or encoded (`%2e%2e`, `%2f`, `%5c`), brings back the scratch node's identity.json, its node.json
+  or the machine's passwd.
