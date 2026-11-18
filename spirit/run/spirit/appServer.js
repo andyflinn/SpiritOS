@@ -568,6 +568,10 @@ function heard(st, from, e) {
   const rec = { row: e.row, paths: written(st, e.row) };
   if (e.full === true) st.pushing.push(rec);
   else { keepRow(st, rec); st.run = e.run; st.n = e.n; saveSoon(st); }
+  // IN CLIENT MODE, ON TO ITS OWN PAGES (goal/G47.5, box v12: "the replies and reply stream data are cached as they are
+  // now, but also published to its own faces"): a row the chosen sibling sent goes on the node's stream for this node's
+  // pages, as its own publishings would; never to its own subscribers, whom client mode dropped.
+  if (clientMode() && from === remote.current) { try { spirit.event.publish(e.row); } catch (err) { /* no page listens */ } }
   // Then the server's own word on it.
   return following.onRow(e.row, from);
 }
@@ -831,7 +835,7 @@ function withChecked(verbs, script) {
 // In client mode (gateRemote) the owner's calls go to the sibling and its answer comes back; a peer's post is refused
 // client-mode, other than the chosen sibling's stream deliveries; the subscribers it had are dropped at the switch. The
 // subscribe a server makes to another kind of server (deskClient to desk) is untouched: remote routes toward its own kind.
-const remote = { name: '', current: '', known: [], refreshing: false, server: null };
+const remote = { name: '', current: '', known: [], refreshing: false, server: null, hasListener: false, addedListener: false };
 function remoteFile() { return path.join(RUN_ROOT, 'spirit', 'state', remote.name, 'remote.json'); }
 function selfKey() { return String((spirit.node && typeof spirit.node.key === 'string' && spirit.node.key) || ''); }
 function selfLabel() { return String((spirit.node && (spirit.node.label || spirit.node.name)) || ''); }
@@ -899,6 +903,45 @@ function refreshRemote() {
     if (JSON.stringify(known) !== JSON.stringify(remote.known)) { remote.known = known; saveRemote(); publishRemote(); }
   }, function () { /* the list stands as it was */ }).then(function () { remote.refreshing = false; });
 }
+// A SERVER THAT ONLY PUBLISHES HEARS ITS SIBLING TOO (goal/G47.5; box v12: "the appserver connects to its sibling server",
+// "the replies and reply stream data ... also published to its own faces"): one that follows no stream of its own (the
+// desk) has no streamListener, so in client mode one is added at runtime (addVerb), taking the chosen sibling's deliveries
+// alone and handing each row to this node's pages; the sibling is granted that verb and asked to subscribe this server.
+// Back home the verb goes again (dropVerb). A server that follows a stream already uses its own (heard, above).
+function listenToSibling() {
+  const s = remote.server;
+  if (!s) return;
+  if (remote.hasListener) {
+    if (typeof s.subscribe === 'function') s.subscribe(remote.current, remote.name).catch(function () { return false; });
+    return;
+  }
+  if (!remote.addedListener && typeof s.addVerb === 'function') {
+    s.addVerb('streamListener', {
+      request: { json: '' }, reply: { heard: true },
+      handler: function (a, caller) {
+        if (!caller || caller.owner === true || String(caller.key || '') !== remote.current) throw Object.assign(new Error('not-granted'), { refusal: 'not-granted', extra: { why: 'this server hears its chosen sibling alone' } });
+        let bundle = null;
+        try { bundle = JSON.parse(String(a.json)); } catch (e) { bundle = null; }
+        if (!Array.isArray(bundle)) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a delivery is one bundle: a JSON array of entries' } });
+        bundle.forEach(function (e) { if (isPlain(e) && isPlain(e.row)) { try { spirit.event.publish(e.row); } catch (err) { /* no page listens */ } } });
+        return { heard: true };
+      },
+    });
+    remote.addedListener = true;
+  }
+  const key = remote.current;
+  spirit.outcome(Promise.resolve(spirit.require('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.streamListener' }); })).then(function () {
+    return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
+      if (!p || typeof p.subscribe !== 'function') throw Object.assign(new Error('the sibling takes no subscribe'), { status: 0 });
+      return p.subscribe({ family: remote.name });
+    }));
+  }).catch(function () { /* the sibling is asked again on the next switch or start */ });
+}
+function stopListening() {
+  const s = remote.server;
+  if (remote.addedListener && s && typeof s.dropVerb === 'function') { try { s.dropVerb('streamListener'); } catch (e) { /* gone */ } }
+  remote.addedListener = false;
+}
 function switchRemote(id) {
   const me = selfKey();
   remote.current = id === me ? '' : id;
@@ -906,13 +949,14 @@ function switchRemote(id) {
   if (clientMode()) {
     // The peers it served are dropped; this node's own subscription is not a peer's.
     subscribers.forEach(function (q, key) { if (key !== me) subscribers.delete(key); });
-    if (remote.server && typeof remote.server.subscribe === 'function') remote.server.subscribe(remote.current, remote.name).catch(function () { return false; });
-  }
+    listenToSibling();
+  } else stopListening();
   publishRemote();
   return { current: remote.current || me };
 }
 function withRemote(verbs, name) {
   remote.name = String(name || '');
+  remote.hasListener = Object.prototype.hasOwnProperty.call(verbs, 'streamListener');
   readRemote();
   const all = Object.assign({}, verbs);
   all.remote = {
@@ -987,7 +1031,7 @@ function serve(verbs, opts) {
     }) } });
     subscribersFromGrants(name);
     // AT START, THE MODE remote.json HOLDS (box v12): in client mode it connects to that one sibling and asks nobody else.
-    if (clientMode()) s.subscribe(remote.current, name).catch(function () { return false; });
+    if (clientMode()) listenToSibling();
     reportDebug();
   });
   srv.on('error', function (e) {
