@@ -916,9 +916,11 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('picking a row of the dropdown sends remote with that row\'s id', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
-    await c4.evaluate('(function () { var f = [].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(TESTICLE) + ') !== -1; })[0]; var b = f && f.querySelector("button[id$=\'field\']"); if (b) b.click(); return !!b; }())');
+    // The dropdown's own rows, inside the title bar's row form (cw: the tiles under the open layer have data-key rows too).
+    const inBar = '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(TESTICLE) + ') !== -1; })[0]';
+    await c4.evaluate('(function () { var f = ' + inBar + '; var b = f && f.querySelector("button[id$=\'field\']"); if (b) b.click(); return !!b; }())');
     await sleep(1500);
-    await c4.evaluate('(function () { var r = document.querySelector("[data-key]"); if (r) r.click(); return !!r; }())');
+    await c4.evaluate('(function () { var f = ' + inBar + '; var r = f && f.querySelector("[data-key]"); if (r) r.click(); return !!r; }())');
     await sleep(1500);
     return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && !!(j.args && j.args.id); }) || false;
   }, test.limit.slow);
