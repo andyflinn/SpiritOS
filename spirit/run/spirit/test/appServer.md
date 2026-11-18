@@ -206,3 +206,11 @@ loopback beside owner. The test's server answers whoami with what it was told of
 
 - the owner's call through the loopback door (X-Spirit-Owner and X-Spirit-Loopback) reaches it as owner and loopback;
 - the owner's call without the loopback mark reaches it as owner, not loopback.
+
+## Each subscriber's return address, kept (goal/G47.5)
+
+Andy: *"so the \"subscribe\" verb needs to carry a return address."*, *"it probably needs to be stored in the server-apps
+node-owned state? spirit/state/<server-app>/clientListeners.json"*, *"go!"*. The file's shape is the builder's:
+
+- a subscribe writes its key and the branch it names to spirit/state/<server>/clientListeners.json;
+- an unsubscribe takes its key out.

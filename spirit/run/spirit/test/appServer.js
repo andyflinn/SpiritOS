@@ -874,6 +874,30 @@ function ownPart() {
     });
   };
   const remoteFile = path.join(RUN, 'spirit', 'state', NAME, 'remote.json');
+  // EACH SUBSCRIBER'S RETURN ADDRESS, KEPT (goal/G47.5; Andy: "so the \"subscribe\" verb needs to carry a return address.",
+  // "it probably needs to be stored in the server-apps node-owned state? spirit/state/<server-app>/clientListeners.json",
+  // "go!"): a subscribe's key and the branch it names are written there, so a restart delivers to the same branch; an
+  // unsubscribe takes the key out. The file's shape is the builder's: the key and its branch are looked for in it.
+  const listenersFile = path.join(RUN, 'spirit', 'state', NAME, 'clientListeners.json');
+  const SUB_KEY = 'KEY-ZZSUBSCRIBER';
+  const listenersText = function () { try { return fs.readFileSync(listenersFile, 'utf8'); } catch (e) { return ''; } };
+  test.after(function () { try { fs.rmSync(listenersFile, { force: true }); } catch (e) { /* none */ } });
+  test.run('a subscribe writes its key and the branch it names to spirit/state/<server>/clientListeners.json', 0.2, async function () {
+    if (noServer()) return false;
+    const r = await post('subscribe', { family: 'zzbranch' }, SUB_KEY);
+    if (!(r.status === 200 && r.body && r.body.subscribed === true)) return false;
+    let j = null;
+    try { j = JSON.parse(listenersText()); } catch (e) { j = null; }
+    const t = JSON.stringify(j);
+    return !!j && t.indexOf(SUB_KEY) !== -1 && t.indexOf('zzbranch') !== -1 || false;
+  }, test.limit.quick);
+  test.run('an unsubscribe takes its key out of clientListeners.json', 0.2, async function () {
+    if (noServer()) return false;
+    if (listenersText().indexOf(SUB_KEY) === -1) return false;
+    await post('unsubscribe', {}, SUB_KEY);
+    const t = listenersText();
+    return t !== '' && t.indexOf(SUB_KEY) === -1 || false;
+  }, test.limit.quick);
   // LOOPBACK BESIDE OWNER (goal/G47.5; Andy: "the checkmark in the agent-bubble that can only be set via loopback"; Q8): a call
   // the node's loopback door took carries its X-Spirit-Loopback mark, and the server is told loopback: true beside owner; an
   // owner's call without that mark, a puppeteered one, is owner alone.
