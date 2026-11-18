@@ -33,9 +33,9 @@ require('./spirit.js');
 const OWNER_VERBS = ['DEBUG'];
 // No family carries an FS set any more (goal/G43.20), so DEBUG is the one owner verb a server has.
 function ownerVerb(verb) { return OWNER_VERBS.indexOf(String(verb)) !== -1; }
-// THE STAR IS THE OWNER'S (goal/G41.30, wsl's review: "A peer can never be granted it"), granted or not: a relay's star
-// opens this node's face.
-const OWNER_PATHS = ['contact.own'];
+// 😏 IS THE OWNER'S (goal/G41.30, wsl's review of the star: "A peer can never be granted it"; goal/G47.4, box v33:
+// contact.faceable "does what own did"), granted or not: a faceable relay opens this node's face.
+const OWNER_PATHS = ['contact.faceable'];
 function ownerPath(app, verb) { return OWNER_PATHS.indexOf(String(app) + '.' + String(verb)) !== -1; }
 // THE fs FAMILY IS THE OWNER'S, hard-coded, granted or not (goal/G33.10). Andy, 2026-10-24: "would i allow a peer fs
 // access, ever? it could un-install apps from my face etc...", and "i want fs to be hard-coded owner only". A grant
@@ -51,7 +51,7 @@ function refusal(code, error) {
 // strip the app.DEBUG verb the result of returned api trees, including all
 // branches of the tree that don't have a match for the calling ID"): a
 // granted app keeps its verbs but the owner's (DEBUG,
-// contact.own); a granted verb keeps that verb alone. Exact strings, no prefix, no case folding.
+// contact.faceable); a granted verb keeps that verb alone. Exact strings, no prefix, no case folding.
 function stripTree(tree, paths) {
   const kept = {};
   Object.keys(tree || {}).forEach(function (app) {

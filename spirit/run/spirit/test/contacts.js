@@ -1,10 +1,11 @@
 'use strict';
 
 // spirit/run/spirit/test/contacts.js
-// The tests of spirit/contacts.js, and of the verb that sets a contact's star, contact.own (spec: ./contacts.md). This
-// file holds goal/G41.30 (Andy: "NO signature. just the armingButton, with a precise documentation of the risk."; "so this
-// button will put the star on relays and puppets. AND take it away."): a card is the other side's own word and sets no
-// star; the button's verb, on a scratch node over a raw POST, does.
+// The tests of spirit/contacts.js: where the star comes from, and the verb that sets 😏, contact.faceable (spec:
+// ./contacts.md). This file holds goal/G47.4 (box v33: "the star is shown as before on nodes and relays and is set only by
+// true ownership (the signed card names this node as owner); no button or verb changes it", "😏 is the row field faceable,
+// set by the new verb contact.faceable {key, faceable}, for a relay this node holds a seat on only", "contact.own goes"):
+// a card sets the star; no verb does. Its relay half, 😏 on a seated relay, is in ./hub.js.
 
 const fs = require('fs');
 const path = require('path');
@@ -46,28 +47,32 @@ test.run('a signed card naming this node as its owner is kept', 0.2, function ()
   W.row = W.seen.get(W.puppet.publicKey) || {};
   return (said.ok === true && !!W.row.card) || false;
 }, test.limit.quick);
-test.run('a card naming this node as its owner sets no star, because anyone can sign such a card', 0.8, function () {
+test.run('a card naming this node as its owner sets the star', 0.8, function () {
   if (!W.row) return false;
-  return !W.row.mine || false;
+  return W.row.mine === true || false;
 }, test.limit.quick);
-// A card naming another owner.
-test.run('a card naming another owner takes no star away, because only the button does that', 0.8, function () {
+// A newer card naming another owner.
+test.run('a newer card naming another owner takes the star away', 0.8, function () {
   if (!W.seen) return false;
-  const seen = W.seen;
-  seen.set(W.puppet.publicKey, { mine: true });
   const other = auth.generateIdentity('other');
   const said2 = contacts.setCard(W.home, W.puppet.publicKey, cardOf(W.puppet, other.publicKey, 2));
-  return (said2.ok === true && !!(seen.get(W.puppet.publicKey) || {}).mine) || false;
+  return (said2.ok === true && (W.seen.get(W.puppet.publicKey) || {}).mine === false) || false;
+}, test.limit.quick);
+test.run('a newer card naming nobody leaves no star', 0.8, function () {
+  if (!W.seen) return false;
+  contacts.setCard(W.home, W.puppet.publicKey, cardOf(W.puppet, W.me.publicKey, 3));
+  const said3 = contacts.setCard(W.home, W.puppet.publicKey, cardOf(W.puppet, '', 4));
+  return (said3.ok === true && (W.seen.get(W.puppet.publicKey) || {}).mine === false) || false;
 }, test.limit.quick);
 
-// /api/spirit contact.own: the button's verb.
+// /api/spirit on a scratch node, over a raw POST.
 const call = async function (name, args) {
   const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args }) });
   const text = await r.text(); let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
   return { status: r.status, body: body, text: text };
 };
 // The star, as the list reads it: contact.search with its yes-filter, whatever else the row is.
-const mine = async function () { const g = await call('contact.search', { q: '', mine: 'yes' }); return ((g.body && g.body.items) || []).some(function (i) { return i.key === W.KEY; }); };
+const starred = async function (key) { const g = await call('contact.search', { q: '', mine: 'yes' }); return ((g.body && g.body.items) || []).some(function (i) { return i.key === key; }); };
 const refused = function (r) { return r.status >= 400 && r.status < 500 && !!(r.body && r.body.code) && r.body.code !== 'no-such-verb' && r.body.code !== 'no-such-family'; };
 function noNode() { return !(W.node && W.node.up); }
 test.run('the scratch node comes up', 0.2, async function () {
@@ -80,59 +85,52 @@ test.after(function () {
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
-// A NODE IS STARRED ONLY WHEN IT SAYS THIS NODE OWNS IT (goal/G47.4; Andy: "can we please only allow stars for nodes, only
-// when they're actually owned? now."): the row to star holds a card, signed by that node, naming the scratch node as owner.
 const runOf = function () { return W.node.run || path.join(W.node.root, 'spirit', 'run'); };
-test.run('a row is there to star, its card naming the scratch node as its owner', 0.2, async function () {
+// A row of the scratch node's table, its signed card naming that owner.
+const rowWithCard = async function (label, owner) {
+  const id = auth.generateIdentity(label);
+  await call('contact.block', { publicKey: id.publicKey, publicLabel: label });
+  await call('contact.unblock', { publicKey: id.publicKey });
+  const said = contacts.setCard(runOf(), id.publicKey, cardOf(id, owner, 1));
+  return said.ok === true ? id.publicKey : '';
+};
+test.run('a node whose card names the scratch node is starred, with no verb asked', 0.4, async function () {
   if (noNode()) return false;
-  W.contact = auth.generateIdentity('a contact');
-  W.KEY = W.contact.publicKey;
-  const made = await call('contact.block', { publicKey: W.KEY, publicLabel: 'a contact' });
-  await call('contact.unblock', { publicKey: W.KEY });
-  const said = contacts.setCard(runOf(), W.KEY, cardOf(W.contact, auth.loadIdentity(runOf()).publicKey, 1));
-  return (made.status >= 200 && made.status < 300 && said.ok === true) || false;
+  W.KEY = await rowWithCard('ours', auth.loadIdentity(runOf()).publicKey);
+  return (!!W.KEY && await starred(W.KEY)) || false;
 }, test.limit.quick);
-test.run('a node whose card names another owner is refused the star, not-owned, and has none', 0.4, async function () {
+test.run('a node whose card names another owner has no star', 0.4, async function () {
   if (noNode()) return false;
-  const other = auth.generateIdentity('not ours');
-  await call('contact.block', { publicKey: other.publicKey, publicLabel: 'not ours' });
-  await call('contact.unblock', { publicKey: other.publicKey });
-  contacts.setCard(runOf(), other.publicKey, cardOf(other, auth.generateIdentity('someone else').publicKey, 1));
-  const on = await call('contact.own', { key: other.publicKey, own: true });
-  const g = await call('contact.search', { q: '', mine: 'yes' });
-  const starred = ((g.body && g.body.items) || []).some(function (i) { return i.key === other.publicKey; });
-  return (on.status === 403 && !!on.body && on.body.code === 'not-owned' && !starred) || false;
+  const theirs = await rowWithCard('not ours', auth.generateIdentity('someone else').publicKey);
+  return (!!theirs && !(await starred(theirs))) || false;
 }, test.limit.quick);
-test.run('a new row has no star', 0.2, async function () {
+test.run('contact.own is no verb any more', 0.2, async function () {
   if (noNode()) return false;
-  return await mine() === false || false;
+  const gone = await call('contact.own', { key: W.KEY, own: false });
+  return (gone.status >= 400 && await starred(W.KEY)) || false;
 }, test.limit.quick);
-test.run('contact.own with a key and own set to true is answered', 0.2, async function () {
+test.run('contact.faceable refuses a node with a code, and its star stays', 0.2, async function () {
   if (noNode()) return false;
-  const on = await call('contact.own', { key: W.KEY, own: true });
-  return (on.status >= 200 && on.status < 300) || false;
+  const onNode = await call('contact.faceable', { key: W.KEY, faceable: true });
+  return (refused(onNode) && await starred(W.KEY)) || false;
 }, test.limit.quick);
-test.run('contact.own with own set to true puts the star on', 0.2, async function () {
+test.run('contact.faceable taking 😏 off changes no star', 0.2, async function () {
   if (noNode()) return false;
-  return await mine() === true || false;
-}, test.limit.quick);
-test.run('contact.own with own set to false takes the star away', 0.2, async function () {
-  if (noNode()) return false;
-  const off = await call('contact.own', { key: W.KEY, own: false });
-  return (off.status >= 200 && off.status < 300 && await mine() === false) || false;
+  const off = await call('contact.faceable', { key: W.KEY, faceable: false });
+  return (off.status === 200 && await starred(W.KEY)) || false;
 }, test.limit.quick);
 test.run('a key with no row is refused with a code', 0.2, async function () {
   if (noNode()) return false;
-  const unknown = await call('contact.own', { key: auth.generateIdentity('nobody').publicKey, own: true });
+  const unknown = await call('contact.faceable', { key: auth.generateIdentity('nobody').publicKey, faceable: true });
   return refused(unknown) || false;
 }, test.limit.quick);
-test.run('own that is not true or false is refused, and nothing changes', 0.2, async function () {
+test.run('faceable that is not true or false is refused', 0.2, async function () {
   if (noNode()) return false;
-  const notBool = await call('contact.own', { key: W.KEY, own: 'yes' });
-  return (refused(notBool) && await mine() === false) || false;
+  const notBool = await call('contact.faceable', { key: W.KEY, faceable: 'yes' });
+  return refused(notBool) || false;
 }, test.limit.quick);
 test.run('a key of the wrong type is refused', 0.2, async function () {
   if (noNode()) return false;
-  const badKey = await call('contact.own', { key: 12345, own: true });
+  const badKey = await call('contact.faceable', { key: 12345, faceable: true });
   return refused(badKey) || false;
 }, test.limit.quick);

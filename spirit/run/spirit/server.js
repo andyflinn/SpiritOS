@@ -1319,8 +1319,8 @@ catch (e) {
       relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
       // Whether this node set a face on that relay (goal/G41.30, RC1): the name on the relay's row, the node's own fact.
       faceSet: function (url) { return !!relayKeys.faceOf(ROOT_DIR, url); },
-      // The star on that relay's row (goal/G41.30): contact.own alone sets it, pressed at home.
-      faceOwned: function (url) { const row = relayKeys.byUrl(ROOT_DIR, url); return !!(row && row.mine); },
+      // 😏 opens the face (goal/G47.4, box v33: faceable "does what own did").
+      faceOwned: function (url) { const row = relayKeys.byUrl(ROOT_DIR, url); return !!(row && row.faceable); },
       jobs: jobs,
       events: events,
       log: function (line) { console.log(line); },
@@ -1840,7 +1840,8 @@ catch (e) {
     'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },
     'accept': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); } },
     'label': { request: { publicKey: '', myLabel: '' }, reply: { publicKey: '', myLabel: '', caption: '' }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); } },
-    'own': { request: { key: '', own: false }, reply: { key: '', own: false }, handler: function (rq, rs) { hub.handleOwn(rq, rs, readJsonBody); } },
+    // goal/G47.4, box v33: "contact.faceable {key, faceable}", "contact.own goes".
+    'faceable': { request: { key: '', faceable: false }, reply: { key: '', faceable: false }, handler: function (rq, rs) { hub.handleFaceable(rq, rs, readJsonBody); } },
     'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget'); } },
   }, { wire: false, by: 'hub.js' });
 

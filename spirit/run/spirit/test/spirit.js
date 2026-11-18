@@ -947,7 +947,7 @@ async function faceOf(N, R) {
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
   if (!code) return {};
   await homeCall(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
-  const star = await homeCall(N.base, 'contact.own', { key: R.relayKey, own: true });
+  const star = await homeCall(N.base, 'contact.faceable', { key: R.relayKey, faceable: true });
   if (star.status !== 200) return {};
   let f = null;
   for (let i = 0; i < 10; i++) { f = await homeCall(N.base, 'relay.face', { url: R.base, name: NAME }); if (f.status === 200) break; await sleep(2000); }

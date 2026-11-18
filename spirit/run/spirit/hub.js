@@ -339,7 +339,7 @@ function buildPeople(rootDir) {
         // would look like clearing the name.
         myLabel: row.myLabel || '',
         // The row's flags, as the table holds them (goal/G40.11).
-        keep: row.keep, mine: row.mine, relay: row.relay, blocked: row.blocked, seated: row.seated,
+        keep: row.keep, mine: row.mine, relay: row.relay, blocked: row.blocked, seated: row.seated, faceable: row.faceable,
         present: row.present,
         url: row.relay ? (relayKeys.byKey(rootDir, row.publicKey) || {}).url || '' : '',
         // Bytes this node is carrying for them, across every app that
@@ -1326,33 +1326,26 @@ function createHub(rootDir) {
     });
   }
 
-  // THE STAR, ON OR OFF (goal/G41.30; Andy: "this button will put the star on relays and puppets. AND take it away.").
-  // The one writer of mine: a relay's report and a node's card only say what they claim. A relay's star opens this node's
-  // face (faceHome), so it is refused from every face and from every peer (faceHome.js, apiDoor.js, apiAuth.js).
-  function handleOwn(req, res, readJsonBody) {
+  // 😏 FACEABLE, ON OR OFF (goal/G47.4, box v33: "😏 is the row field faceable, set by the new verb contact.faceable {key,
+  // faceable}, for a relay this node holds a seat on only; it does what own did", "contact.own goes"). The one writer of
+  // faceable: a faceable relay opens this node's face (faceHome), so it is refused from every face and from every peer
+  // (faceHome.js, apiDoor.js, apiAuth.js). The star is not set here: it is the card's owner (contacts.setCard).
+  function handleFaceable(req, res, readJsonBody) {
     return readJsonBody(req).then(function (body) {
       var key = String(body.key);
-      if (!shadow(rootDir).get(key)) { res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-such-contact', error: 'no row for that key' })); return; }
-      // A RELAY NEEDS A SEAT FOR ITS STAR (goal/G41.32; Andy: "a relay I'm not a member of can not be starred (relays i own
-      // automatically give me membership)", and Q20: "yes."): an owned relay holds its seat too (relayKeys.ownerSeat). Relays
-      // alone, a node or a puppet has no seat; and only putting it on, so a star can always come off.
       var row = shadow(rootDir).get(key);
-      if (body.own === true && row.relay === true && row.seated !== true) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-seat', error: 'this node holds no seat on that relay' })); return; }
-      // A NODE IS STARRED ONLY WHEN IT SAYS THIS NODE OWNS IT (goal/G47.4; Andy: "can we please only allow stars on nodes that
-      // say we own them??? with relays I'll accept the ambiguity...", "can we please only allow stars for nodes, only when
-      // they're actually owned? now."): the card held for it, verified from its own bytes (contacts.cardOf), names this
-      // node's key as its owner (ownerBadge.ownedBy, the one ownership rule). A node with no card, or one naming nobody or
-      // another, is refused; a relay keeps its seat rule; a star always comes off.
-      if (body.own === true && row.relay !== true) {
-        var card = contactBook.cardOf(row);
-        if (!ownerBadge.ownedBy(card && card.owner, auth.loadIdentity(rootDir).publicKey)) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'not-owned', error: 'that node does not name this node as its owner' })); return; }
-      }
-      shadow(rootDir).set(key, { mine: body.own === true });
-      // A STAR TAKEN OFF TAKES THE FACE AWAY (goal/G43.18, box v29: "A star taken off a relay that has a face takes that face
-      // away (Q21)"): the face this node holds on that relay is forgotten, so putting the star back opens nothing.
-      if (body.own !== true && row.relay === true) { var faceAt = relayKeys.byKey(rootDir, key); if (faceAt && faceAt.url) relayKeys.keepFace(rootDir, faceAt.url, ''); }
+      if (!row) { res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-such-contact', error: 'no row for that key' })); return; }
+      // A SEATED RELAY ALONE (box v33: "for a relay this node holds a seat on only"; goal/G41.32, Andy: "a relay I'm not a
+      // member of can not be starred (relays i own automatically give me membership)"): a node, or a relay with no seat, is
+      // refused; and only putting it on, so 😏 can always come off.
+      if (body.faceable === true && row.relay !== true) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'not-a-relay', error: 'only a relay can be faceable' })); return; }
+      if (body.faceable === true && row.seated !== true) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-seat', error: 'this node holds no seat on that relay' })); return; }
+      shadow(rootDir).set(key, { faceable: body.faceable === true });
+      // 😏 TAKEN OFF TAKES THE FACE AWAY (goal/G43.18, box v29: "A star taken off a relay that has a face takes that face
+      // away (Q21)", the star's job now faceable's): the face this node holds on that relay is forgotten.
+      if (body.faceable !== true && row.relay === true) { var faceAt = relayKeys.byKey(rootDir, key); if (faceAt && faceAt.url) relayKeys.keepFace(rootDir, faceAt.url, ''); }
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ key: key, own: body.own === true }));
+      res.end(JSON.stringify({ key: key, faceable: body.faceable === true }));
     });
   }
 
@@ -1904,6 +1897,8 @@ function createHub(rootDir) {
       var starRow = relayKeys.byUrl(rootDir, url);
       row.key = starRow ? starRow.key : '';
       row.mine = !!(starRow && starRow.mine);
+      // 😏, whether this node gave that relay full face capability (goal/G47.4, box v33): what the face form reads.
+      row.faceable = !!(starRow && starRow.faceable);
       row.ownerLabel = router && typeof router.ownerLabelOf === 'function' ? router.ownerLabelOf(url) : '';
       if (row.claimed) {
         var seatLabel = relayKeys.seatLabel(rootDir, url);
@@ -2234,7 +2229,7 @@ function createHub(rootDir) {
     contactSearch: contactSearch,
     contactGet: contactGet,
     handleContact: handleContact,
-    handleOwn: handleOwn,
+    handleFaceable: handleFaceable,
     handlePeer: handlePeer,
     // handleInvite, handleRemovePeer, handleRename and handleRevoke were
     // exported here. Every one of them is a peerPost the browser makes

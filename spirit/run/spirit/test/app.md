@@ -13,7 +13,7 @@ Andy, box: *"we build a skeleton core-api-family, not a separate server, precise
   these were written on, gone since 25a95142, as it is not intrinsic and mounts no server. The plugins are exactly the folders of `spirit/app/` that hold their own `<name>.json`, as apps move in one by one. No app may take the name of a verb of the family: a folder named `search` is no app (goal/G43.6).
 - It answers as other searches do, key and label rows. It finds the text editor on an empty search and on its label, and not on words that fit nothing. The row carries the icon.
 - A folder counts only with its own `<name>/<name>.json`, read from the disk: a second one is found, and one without its file, `appSelector/` and `test/` are not.
-- A face may call it: *"and yes, a face with no star can call appSearch"*; since goal/G43.18 (box v29) a face is whole or there is none, so the face rule refuses only contact.own. The hidden filter that comes with that is out of scope.
+- A face may call it: *"and yes, a face with no star can call appSearch"*; since goal/G43.18 (box v29) a face is whole or there is none, so the face rule refuses only contact.faceable. The hidden filter that comes with that is out of scope.
 
 ## app.active (goal/G43.9)
 

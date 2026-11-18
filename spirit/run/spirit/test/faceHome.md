@@ -25,7 +25,7 @@ answers `true`. With no `faceSet` given it refuses: closed, not open.
   lists of verbs off the face, is gone.
 - **Starring takes the node's own word, and a face there**: only `true` is a star; a starred relay where this node set no
   face gets nothing.
-- **`contact.own` never comes through a face** (Andy: *"so this button will put the star on relays and puppets. AND take it
+- **`contact.faceable` never comes through a face** (Andy: *"so this button will put the star on relays and puppets. AND take it
   away."*, at home): refused with a code on any relay, one this node owns too, sealed or not.
 - **The owner family goes with the star** (Andy, pasting the review: *"owner.command still passes. A face on a relay that
   isn't starred can send any signed verb to your puppets, and they run it"*): `owner.command` is refused
@@ -55,7 +55,7 @@ stars."* Here `o.events` is a stand-in, and a relay event comes as `server.js` s
   snapshot). The envelope is the builder's: only that each job is on the stream is judged.
 - **The queue does not change**: its levels are as they were, one write at a time, and nothing new is lost while it waits.
 - **No restrictions on a star**: every verb of every family reaches the door, sealed and not, `relay.face` on the relay it
-  is called through and a `peer.post` carrying a face name to it among them, both still refused with no star. `contact.own` stays refused, on and off.
+  is called through and a `peer.post` carrying a face name to it among them, both still refused with no star. `contact.faceable` stays refused, on and off.
 
 ## The star part: the star, end to end
 
@@ -65,16 +65,16 @@ Once `./faceHome-star.js`, now a section of `./faceHome.js`. The star, end to en
 joins real scratch relays by their mail, sets a face and logs in, and every call is what a page sends, `POST /face/call`
 with its cookie, its Origin and json. Only the relay's mailer keeps its mail. A step that cannot run is red.
 
-goal/G43.18, box v29, *A face is whole, or there is none* (Andy: *"we remove ALL the star shit, like this,"*, *"on the home node, NO face is offered (faceForm hides itself) for a relay without star."*): *"The home node answers a face only from a starred relay, one check; a face it answers is a full face."*, *"A star taken off a relay that has a face takes that face away (Q21)."*, *"Starring is never asked from a face (contact.own)"*. The half face of G41.30 and G41.33 is gone: a refusal is judged by its 4xx alone, since v29 names no code.
+goal/G43.18, box v29, *A face is whole, or there is none* (Andy: *"we remove ALL the star shit, like this,"*, *"on the home node, NO face is offered (faceForm hides itself) for a relay without star."*): *"The home node answers a face only from a starred relay, one check; a face it answers is a full face."*, *"A star taken off a relay that has a face takes that face away (Q21)."*, *"Starring is never asked from a face (contact.faceable)"*. The half face of G41.30 and G41.33 is gone: a refusal is judged by its 4xx alone, since v29 names no code.
 
 ### Requirements
 
 - **No star, no face.** `node.card`, `fs.stat`, `contact.search`, `job.create`, `fs.save` and `owner.command` from
   the face are all refused; no job ran, no file was written.
 - **The star on, pressed at home: everything is back** (Andy: *"your face on a relay you own gets everything back"*).
-  `contact.own` true at the loopback door; `owner.command` reaches the door; `fs.save` writes the file; `job.create` of
-  an included process runs it; `/bin/sh` is still refused; `contact.own` from the face is refused and the star stays.
-- **The star off takes the face away.** The node held a face on the relay; `contact.own` false at home; the node holds
+  `contact.faceable` true at the loopback door; `owner.command` reaches the door; `fs.save` writes the file; `job.create` of
+  an included process runs it; `/bin/sh` is still refused; `contact.faceable` from the face is refused and the star stays.
+- **The star off takes the face away.** The node held a face on the relay; `contact.faceable` false at home; the node holds
   none there any more (`relay.get`'s `face.name` empty); `node.card` and the rest through it are refused; nothing ran or
   was written; the star put back opens nothing: the face is gone, not hidden.
 - **A relay's claim changes nothing.** A relay whose owner mark is this node's key has sent its owner's report; no star
@@ -95,7 +95,7 @@ The face on the owned relay is set before the owner mark goes in (the relay rest
 What a page reads from `/face/stream`, with its cookie. No star: the stream carries nothing of the node, not its file tree
 nor presence; a job run and deleted at home and a bundle added never reach the face. The star pressed with the stream open:
 none of that comes after it. Starred: the running job, the job deleted, the bundle and the join steps arrive. From the
-starred face, `contact.own` of another relay and of its own star are refused and change nothing; `relay.face` through it is
+starred face, `contact.faceable` of another relay and of its own star are refused and change nothing; `relay.face` through it is
 not refused, and the face answers at its new name. The star off: the next job stays home, and the node holds no face on
 that relay any more. Relay events are judged in `spirit/test/faceHome.js`, on stand-ins.
 

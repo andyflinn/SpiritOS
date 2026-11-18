@@ -34,11 +34,14 @@ escapes with `spirit.escapeHtml`. It is handed no api: `layer` is only the layer
   a click handler of the page's own.
 - **One armed at a time** is the element's (it was this page's by hand).
 
-- **The star, at home, two presses** (goal/G41.30; Andy: *"so this button will put the star on relays and puppets. AND take it
-  away."*; *"NO signature. just the armingButton, with a precise documentation of the risk."*): `#cd-own`, an armingButton,
-  beside the words of what it gives: its streams taken without asking, and it is never dropped. Its second press sends
-  `contact.own {key, own: true}`, on a starred row `own: false`; a press alone sends nothing. On a face
-  (`window.spirit.transport`) no button is drawn.
+- **😏 on a relay's contact detail, at home, two presses; none on a node's** (goal/G47.4, box v33: *"in the detail panel (for
+  relays only) 😏 will be an option to enable face related forms in the UI, and enable full face capability for this node in
+  the relay"*, *"the star is shown as before ... not changeable"*; Andy, of the star before it: *"NO signature. just the
+  armingButton, with a precise documentation of the risk."*): a node's detail, starred or not, draws neither `#cd-faceable`
+  nor a star button. A seated relay's draws `#cd-faceable`, an armingButton, beside the words of what it gives: a face there
+  can run programs and change files on this machine. Its second press sends `contact.faceable {key, faceable: true}`, on a
+  faceable row `faceable: false`; a press alone sends nothing. A relay with no seat, and any row on a face
+  (`window.spirit.transport`), draws no button.
 
 ## What its test must try to break
 
@@ -89,13 +92,14 @@ row's; its title goes there.
 - **A press on the drawn button asks nothing by itself**: what the second press does is the arming button's run, never
   the page's own click handler.
 
-- **The star on a relay, with who you have to trust** (goal/G41.30; Andy: *"the message is different for members and owners,
-  showing members who they have to trust, and, if the relay claims to be mine, the message should be slightly different"*;
-  *"NO signature. just the armingButton, with a precise documentation of the risk."*): `.nd-own`, an armingButton. A relay not
+- **😏 on a relay, with who you have to trust** (goal/G41.30, of the star; goal/G47.4, box v33: 😏 "does what own did"; Andy:
+  *"the message is different for members and owners, showing members who they have to trust, and, if the relay claims to be
+  mine, the message should be slightly different"*; *"NO signature. just the armingButton, with a precise documentation of the
+  risk."*): `.nd-faceable`, an armingButton, in the fold "Give this relay full face capability". A relay not
   claiming this node (`owned` false): *"says it is owned by"* its `ownerLabel`, and that this person and anyone holding the
   relay can run programs and change files on this machine. A relay claiming it: *"If you DID install this relay on a VPS and
-  you DID set its DNS records"*, and that otherwise it is lying. Its second press sends `contact.own {key: the relay's key,
-  own: true}`, on a starred row (`mine`) `own: false`; a press alone sends nothing. On a face no button is drawn.
+  you DID set its DNS records"*, and that otherwise it is lying. Its second press sends `contact.faceable {key: the relay's
+  key, faceable: true}`, on a faceable row `faceable: false`; a press alone sends nothing. On a face no button is drawn.
 
 ### What its test must try to break
 
@@ -118,17 +122,17 @@ stream, a real Chrome.
   published as each changes: a seat taken, the stream dropped and back, a report arriving, a card changing.
 - **A report goes on the relay event, whole, and never on a row**: rows reach every face, starred or not, and a report lists invites.
 - **A relay's detail** is the one contact detail, `spirit/element/search/contact/detail.js`, `create(host, { key, relay: true })` (goal/G43.32).
-- **The star is a folding panel like the others** (Andy: *"must use the same heading and style al all the other folding panels in relayPanel"*): the same heading, tile and fold mark, shut as it arrives, holding its button when opened.
-- **"A face name" shows only on a starred relay** (goal/G43.18's box, v29, Andy: *"on the home node, NO face is offered
-  (faceForm hides itself) for a relay without star."*; it replaced goal/G41.32's *"unless the relay is starred"*, and these
-  checks were turned to it in goal/G47.1, Q12, Andy: *"fix it."*): with no star, no fold; the star on, the fold comes with no
-  reload, and opened it holds the form's field and button; the star off, it goes again. Judged on boot.js's shell at /face.html.
-- **The face form offers the starred relays only**, and `faceForm.offers(relays)` says whether it has any: true for a starred
-  relay, alone or beside one with no star; false for a member's or an owner's relay with no star, one it holds no seat on, and
-  none. In Info it follows the star with no reload and no read: neither starred, no form and no empty tile; one starred, it
-  offers that one alone; both, both; one star off, that one goes.
+- **😏 is a folding panel like the others** (Andy: *"must use the same heading and style al all the other folding panels in relayPanel"*): the same heading, tile and fold mark, shut as it arrives, holding its button when opened.
+- **"A face name" shows only on a faceable relay** (goal/G43.18's box, v29, Andy: *"on the home node, NO face is offered
+  (faceForm hides itself) for a relay without star."*, the star's job 😏's since goal/G47.4, box v33): with no 😏, no fold;
+  😏 on, the fold comes with no reload, and opened it holds the form's field and button; 😏 off, it goes again. Judged on
+  boot.js's shell at /face.html.
+- **The face form offers the faceable relays only**, and `faceForm.offers(relays)` says whether it has any: true for a
+  faceable relay, alone or beside one without 😏; false for a member's or an owner's relay without 😏, one it holds no seat on,
+  and none. In Info it follows 😏 with no reload and no read: neither faceable, no form and no empty tile; one, it offers that
+  one alone; both, both; 😏 off one, that one goes.
 - **The lab holds two relays** (`lab/labNodes.js`): a relay whose checks are over is stopped and freed before the next is asked for.
-- **A relay this node is not a member of cannot be starred** (Andy: *"a relay I'm not a member of can not be starred (relays i own automatically give me membership)"*): `contact.own` refuses it at the node with a code, its panel offers no star; a member can; leaving takes the star away, and it cannot be put back; an owned relay can.
+- **A relay this node is not a member of cannot be made faceable** (Andy, of the star: *"a relay I'm not a member of can not be starred (relays i own automatically give me membership)"*; box v33: 😏 *"for a relay this node holds a seat on only"*): `contact.faceable` refuses it at the node with a code, and refuses a node; its panel offers no 😏; a member can; leaving takes 😏 away, and it cannot be put back; an owned relay can.
 - **The contact list marks a relay** (Andy: *"print its label in bold-italic"*): under 📡 Relays (the app opens on People, which shows no relay: goal/G47.4, box v29) a relay's label is bold and italic; under 👨‍👩‍👧‍👦 People a person's is not.
 - **It listens, shown or hidden**: a change is painted with no further `relay.status` or `relay.get`. **It follows only its row.**
 - **Gone from the page, it stops**: after `destroy` a change neither throws nor paints.

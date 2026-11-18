@@ -39,29 +39,29 @@ test.run('a member granted the desk whole is served its tree', 0.2, async functi
   return (verbs.indexOf('chat.add') !== -1 && !verbs.some(function (v) { return /^FS\./.test(v); })) ? true : false;
 }, test.limit.quick);
 
-// goal/G41.30: the star is the owner's alone.
-// Andy: "so this button will put the star on relays and puppets. AND take it away."; the star opens the owner's face
+// goal/G41.30: the star was the owner's alone; goal/G47.4, box v33: 😏 (contact.faceable) "does what own did".
+// Andy: "so this button will put the star on relays and puppets. AND take it away."; a faceable relay opens the owner's face
 // (spirit/faceHome.js), so no grant can give it to a peer.
-const STAR_TREE = { contact: { own: {}, get: {} } };
+const STAR_TREE = { contact: { faceable: {}, get: {} } };
 const starServers = function () { const reached = []; return { reached: reached, ask: function (ask) { reached.push(ask); return ask === 'api' ? { status: 200, body: STAR_TREE } : { status: 200, body: { ok: true } }; } }; };
 async function refusedOwnerOnly(grants) {
   const sx = starServers();
-  const rx = await answer(sx, { contact: { own: { key: 'K', own: true } } }, member(grants));
+  const rx = await answer(sx, { contact: { faceable: { key: 'K', faceable: true } } }, member(grants));
   const refused = rx && rx.body && rx.body.ok === false && rx.body.code === 'owner-only' && !sx.reached.length;
   return refused ? true : false;
 }
-test.run('a member granted contact asking contact.own is refused owner-only, and no server is asked', 0.8, function () { return refusedOwnerOnly(['contact']); }, test.limit.quick);
-test.run('a member granted contact.own asking contact.own is refused owner-only, and no server is asked', 0.8, function () { return refusedOwnerOnly(['contact.own']); }, test.limit.quick);
-test.run('the owner reaches contact.own', 0.2, async function () {
+test.run('a member granted contact asking contact.faceable is refused owner-only, and no server is asked', 0.8, function () { return refusedOwnerOnly(['contact']); }, test.limit.quick);
+test.run('a member granted contact.faceable asking contact.faceable is refused owner-only, and no server is asked', 0.8, function () { return refusedOwnerOnly(['contact.faceable']); }, test.limit.quick);
+test.run('the owner reaches contact.faceable', 0.2, async function () {
   const sOwn = starServers();
-  const ownr = await answer(sOwn, { contact: { own: { key: 'K', own: true } } }, { owner: true });
+  const ownr = await answer(sOwn, { contact: { faceable: { key: 'K', faceable: true } } }, { owner: true });
   return (ownr && ownr.body && ownr.body.ok === true && sOwn.reached.length === 1) ? true : false;
 }, test.limit.quick);
-test.run('a member granted contact is served its tree without contact.own', 0.8, async function () {
+test.run('a member granted contact is served its tree without contact.faceable', 0.8, async function () {
   const sTree = starServers();
   const starTree = await answer(sTree, 'api', member(['contact']));
   const cVerbs = Object.keys((starTree && starTree.body && starTree.body.contact) || {});
-  return (cVerbs.indexOf('get') !== -1 && cVerbs.indexOf('own') === -1) ? true : false;
+  return (cVerbs.indexOf('get') !== -1 && cVerbs.indexOf('faceable') === -1) ? true : false;
 }, test.limit.quick);
 
 // A REGISTERED SERVER GOES BY ITS NAME (goal/G43.12, the box: "No gate changes for a caller: once a server is registered, the

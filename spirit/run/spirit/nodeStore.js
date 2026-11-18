@@ -168,7 +168,10 @@ function open(rootDir, opts) {
   // kept. TIMES ARE MILLISECONDS, unlike relay.db's ISO strings: they are compared and ordered on the shedding path.
   // `present` is three-valued: -1 nobody has said, 0 said absent, 1 said present.
 
-  const SEEN_FLAGS = ['keep', 'mine', 'relay', 'ignored', 'blocked', 'seated'];
+  // faceable (goal/G47.4, box v33: "😏 is the row field faceable, set by the new verb contact.faceable {key, faceable}"):
+  // a relay this node holds a seat on, given full face capability by the owner. In the table as it is made; no table
+  // made before it is mended (below).
+  const SEEN_FLAGS = ['keep', 'mine', 'relay', 'ignored', 'blocked', 'seated', 'faceable'];
   const GRANT_NAME = "COALESCE(NULLIF(s.myLabel, ''), s.label, '')";
   db.exec(`
     CREATE TABLE IF NOT EXISTS seen (

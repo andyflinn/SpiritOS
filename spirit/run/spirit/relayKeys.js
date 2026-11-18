@@ -87,7 +87,7 @@ function shaped(rootDir, r, url) {
   const u = url || urlOf(rootDir, r.publicKey);
   return {
     key: r.publicKey, url: u, label: r.myLabel || r.label || u, myLabel: r.myLabel, publicLabel: r.label,
-    keep: r.keep, seated: r.seated, mine: r.mine, blocked: r.blocked,
+    keep: r.keep, seated: r.seated, mine: r.mine, blocked: r.blocked, faceable: r.faceable,
   };
 }
 
@@ -180,9 +180,10 @@ function setSeated(rootDir, keyOrUrl, on) {
   const row = rowFor(rootDir, keyOrUrl);
   if (!row) return false;
   if (row.seated === !!on) return false;
-  // THE STAR GOES WITH THE SEAT (goal/G41.32; Andy, of a relay left or one that removes this node: "yes."): a relay this node is
-  // no member of can not be starred, and its star opens this node's face.
-  seen(rootDir).set(row.key, on ? { seated: true } : { seated: false, mine: false });
+  // 😏 GOES WITH THE SEAT (goal/G41.32, of the star; Andy, of a relay left or one that removes this node: "yes."; goal/G47.4,
+  // box v33: faceable "for a relay this node holds a seat on only; it does what own did"): a faceable relay opens this
+  // node's face. The star stays: it is the card's owner, not a seat.
+  seen(rootDir).set(row.key, on ? { seated: true } : { seated: false, faceable: false });
   return true;
 }
 function seat(rootDir, url) { return setSeated(rootDir, url, true) || !!(byUrl(rootDir, url) || {}).seated; }
@@ -190,8 +191,8 @@ function unseat(rootDir, url) { return setSeated(rootDir, url, false); }
 
 // THE OWNER'S SEAT, NOTED ON HIS NODE (goal/G40.10; Andy: "the relay on every boot has to fucking make sure the owner
 // has a seat"). A relay's report to its owner says what it calls him (`owner`): that relay holds this node. The seat
-// and nothing more. NOT THE STAR (goal/G41.30; Andy: "this button will put the star on relays and puppets. AND take it
-// away."): any relay can send this report, and a relay's star opens this node's face, so only contact.own sets it. True
+// and nothing more. NOT 😏 (goal/G41.30, of the star; goal/G47.4, box v33): any relay can send this report, and a
+// faceable relay opens this node's face, so only contact.faceable sets it. True
 // when written, false when there was nothing to write or it already said so, so a report every few seconds writes
 // nothing.
 function ownerSeat(rootDir, url, label) {

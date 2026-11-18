@@ -4,7 +4,7 @@ require('./spirit.js');
 // spirit/run/spirit/faceHome.js
 // THE HOME NODE ANSWERS ITS FACE (goal/G30.13, step 2 of goal/G30.10). The box, Andy's:
 //   - The home node answers face requests through the same door a puppeteer uses on it: the local shell's whole
-//     interface. (Since goal/G43.18 a face is whole or none: only the star, contact.own, is refused; below.)
+//     interface. (Since goal/G43.18 a face is whole or none: only 😏, contact.faceable, is refused; below.)
 //   - It streams to the face what it streams to its loopback shell.
 //   - faceStream has its own serializing queue, in priority order: 1. face requests, 2. the spirit.fs job stream, 3. the
 //     presence stream, 4. the app servers' streams, 5. stats, dropped whenever the queue is busy. (The node-monitor
@@ -47,9 +47,9 @@ function isCall(x) {
 // NO face is offered (faceForm hides itself) for a relay without star."). The home node answers a face only from a starred
 // relay, one check (request and open, below), and a face it answers is a full face: what the loopback screen gets. So whoever
 // holds a starred relay, or the login mail, can run programs on this machine until G42 (goal/G41.30, Andy's compromise).
-// The one thing never asked from a face is the star itself (box v29: "Starring is never asked from a face (contact.own), or a
-// face could star a second relay and open a full face there").
-const NEVER_ON_THE_FACE = ['contact.own'];
+// The one thing never asked from a face is 😏 itself (box v29: "Starring is never asked from a face (contact.own), or a
+// face could star a second relay and open a full face there"; goal/G47.4, box v33: contact.faceable "does what own did").
+const NEVER_ON_THE_FACE = ['contact.faceable'];
 function faceRefuses(request) {
   const verb = String((request && request.call) || '');
   return NEVER_ON_THE_FACE.indexOf(verb) !== -1 ? verb + ' is never asked from a face' : '';

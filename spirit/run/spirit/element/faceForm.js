@@ -35,7 +35,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
 
   function offered(relays, o) {
-    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && (r.claimed || r.owned) && r.mine === true; });
+    // A face only for a faceable relay (goal/G47.4, box v33: 😏 "enables face related forms in the UI").
+    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && (r.claimed || r.owned) && r.faceable === true; });
     return o && o.fixed ? list.filter(function (r) { return r.url === o.fixed; }) : list;
   }
 

@@ -14,8 +14,8 @@ to all those files, that's why they are now completely redundant."*
 - A member granted a family reaches its verbs, and is served its tree.
 
 - **The star is the owner's alone** (goal/G41.30; Andy: *"so this button will put the star on relays and puppets. AND
-  take it away."*): a member granted `contact` or `contact.own` asking `contact.own` is refused `owner-only` with no server
-  asked; the owner reaches it; a member's tree holds no `contact.own`.
+  take it away."*): a member granted `contact` or `contact.faceable` asking `contact.faceable` is refused `owner-only` with no server
+  asked; the owner reaches it; a member's tree holds no `contact.faceable`.
 
 ## What its test must try to break
 

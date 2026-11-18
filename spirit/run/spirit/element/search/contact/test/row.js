@@ -459,10 +459,10 @@ test.run('the browser holds the login', 0.2, async function () {
   return set.result && set.result.success ? true : false;
 }, test.limit.quick);
 // THE STAR, PUT ON AT HOME (goal/G43.18, box v29: "A face is whole, or there is none"; Andy, Q18: a face with no star shows
-// nothing): the relay starred, its face draws the home desktop, Contacts on it. contact.own is the star's one writer, at home.
+// nothing): the relay faceable, its face draws the home desktop, Contacts on it. contact.faceable is 😏's one writer, at home.
 test.run('the relay is starred at home, so its face is whole', 0.2, async function () {
   if (!RF.N || !RF.N.up || !RF.R || !RF.R.relayKey) return false;
-  const on = await home(RF.N.base, 'contact.own', { key: RF.R.relayKey, own: true });
+  const on = await home(RF.N.base, 'contact.faceable', { key: RF.R.relayKey, faceable: true });
   return on.status === 200 ? true : false;
 }, test.limit.quick);
 // The face's desktop is drawn, so Contacts is there to press.

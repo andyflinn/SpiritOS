@@ -77,10 +77,12 @@ function cdStatus(text) {
 // are the half most likely to move — a message arriving while this screen
 // is open changes unanswered inbound. The key is the only part of a row
 // that cannot change.
-// THE STAR, AND WHAT IT MEANS (goal/G41.30; Andy: "NO signature. just the armingButton, with a precise documentation of the
-// risk."; "the message is different for members and owners, showing members who they have to trust, and, if the relay
-// claims to be mine, the message should be slightly different"). In every panel, at home only: on a face the node refuses
-// contact.own anyway. What a relay says here is its own word: nothing it says sets the star.
+// 😏, AND WHAT IT MEANS (goal/G41.30, of the star; Andy: "NO signature. just the armingButton, with a precise documentation
+// of the risk."; "the message is different for members and owners, showing members who they have to trust, and, if the
+// relay claims to be mine, the message should be slightly different"; goal/G47.4, box v33: "in the detail panel (for relays
+// only) 😏 will be an option to enable face related forms in the UI, and enable full face capability for this node in the
+// relay", "the star is ... not changeable"). For a relay, at home only: on a face the node refuses contact.faceable anyway.
+// What a relay says here is its own word: nothing it says sets 😏.
 var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relay.status
 function cdRelayClaim() {
   cdClaim = null;
@@ -90,28 +92,27 @@ function cdRelayClaim() {
     });
   }, function () { cdClaim = null; });
 }
-function cdStarWords() {
-  var gives = '<b>What the star gives:</b> your face on this relay can run programs, read and change files, and change grants ' +
+function cdFaceWords() {
+  var gives = '<b>What 😏 gives:</b> your face on this relay can run programs, read and change files, and change grants ' +
     'on this machine. That person and anyone holding this relay can do all of that as you, and so can anyone who reads your login mail.';
-  var node = '<b>What the star gives:</b> this node\'s posts and streams reach you without asking, and it is never dropped from your list. ' +
-    'It gives this node no way to run anything on this machine.';
-  if (cdPerson.mine) return (cdPerson.relay ? gives : node) + ' <b>Taking the star away</b> ends that.';
-  if (!cdPerson.relay) return node + ' Star only a node you set up yourself: its own card saying you own it proves nothing.';
+  if (cdPerson.faceable) return gives + ' <b>Taking 😏 away</b> ends that.';
   if (cdClaim && cdClaim.owned) return '<b>This relay says you own it.</b> Its word proves nothing. If you DID install this relay on a VPS and ' +
     'you DID set its DNS records, press this. If you did not, this relay is lying to you: do not press. ' + gives;
   var who = cdClaim && cdClaim.ownerLabel ? 'this relay says it is owned by ' + cdEscapeHtml(cdClaim.ownerLabel) : 'this relay does not say who owns it';
   return '<b>You do not own this relay:</b> ' + who + '. You would have to trust whoever runs it, and whoever can break into its ' +
     'machine, with this machine. ' + gives;
 }
-function cdStarBlock() {
+function cdFaceBlock() {
   if (window.spirit && window.spirit.transport) return '';
-  // No seat on a relay, no star to give (goal/G41.32, Q20; the node refuses it too); one already on can still come off.
-  if (cdPerson.relay && !cdPerson.mine && !cdPerson.seated) return '';
-  return '<div class="stat-tile wide"><div class="label">Star</div><div>' + cdStarWords() + '</div>' +
-    '<div class="start-job-form card"><button type="button" class="cancel-btn" id="cd-own">' + (cdPerson.mine ? 'Take the star away' : 'Give it the star') + '</button></div></div>';
+  // A relay alone, and one with a seat (box v33: "for a relay this node holds a seat on only"; the node refuses it too);
+  // one already on can still come off.
+  if (!cdPerson.relay) return '';
+  if (!cdPerson.faceable && !cdPerson.seated) return '';
+  return '<div class="stat-tile wide"><div class="label">😏 Face</div><div>' + cdFaceWords() + '</div>' +
+    '<div class="start-job-form card"><button type="button" class="cancel-btn" id="cd-faceable">' + (cdPerson.faceable ? 'Take 😏 away' : 'Give it 😏') + '</button></div></div>';
 }
-function cdStar() {
-  return cdPost('contact.own', { key: cdKey, own: !cdPerson.mine }).then(function () { return cdLoad(); });
+function cdFaceable() {
+  return cdPost('contact.faceable', { key: cdKey, faceable: !cdPerson.faceable }).then(function () { return cdLoad(); });
 }
 
 function cdLoad() {
@@ -264,13 +265,13 @@ function cdRender() {
         buttons +
       '</div>' +
     '</div>' +
-    cdStarBlock() +
+    cdFaceBlock() +
     '<div class="job-manifest-note" id="cd-status">' +
       cdEscapeHtml(cdMessage) + '</div>';
 
   cdArming('cd-block', 'Block', 'Block — press again', cdBlock);
   cdArming('cd-forget', 'Forget', 'Forget — press again', cdForget);
-  cdArming('cd-own', cdPerson.mine ? 'Take the star away' : 'Give it the star', cdPerson.mine ? 'Take the star away — press again' : 'Give it the star: I accept this risk — press again', cdStar);
+  cdArming('cd-faceable', cdPerson.faceable ? 'Take 😏 away' : 'Give it 😏', cdPerson.faceable ? 'Take 😏 away — press again' : 'Give it 😏: I accept this risk — press again', cdFaceable);
 }
 
 // Everything this screen decides is a hub verb. Nothing is written to
@@ -766,18 +767,19 @@ function ndRemoveBody() {
   return '<div class="start-job-form"><button type="button" class="cancel-btn nd-remove">Remove this relay</button></div>' +
     '<div class="job-manifest-note nd-remove-out">Remove takes it off this node\'s list and gives up the seat record here.</div>';
 }
-// THE STAR, AND WHAT IT MEANS (goal/G41.30; Andy: "NO signature. just the armingButton, with a precise documentation of the
-// risk."; "the message is different for members and owners, showing members who they have to trust, and, if the relay
-// claims to be mine, the message should be slightly different"). At home only: on a face the node refuses contact.own
-// anyway. What a relay says here is its own word: nothing it says sets the star.
-function ndStarHtml() {
+// 😏, AND WHAT IT MEANS (goal/G41.30, of the star; Andy: "NO signature. just the armingButton, with a precise documentation
+// of the risk."; "the message is different for members and owners, showing members who they have to trust, and, if the
+// relay claims to be mine, the message should be slightly different"; goal/G47.4, box v33: 😏 "will be an option to enable
+// face related forms in the UI, and enable full face capability for this node in the relay"). At home only: on a face the
+// node refuses contact.faceable anyway. What a relay says here is its own word: nothing it says sets 😏.
+function ndFaceableHtml() {
   if (!ndBadge || !ndRelayKey() || (window.spirit && window.spirit.transport)) return '';
-  // No seat, no star to give (goal/G41.32, Q20; the node refuses it too); one already on can still come off.
-  if (!ndBadge.mine && !(ndBadge.claimed || ndBadge.owned)) return '';
-  var gives = '<b>What the star gives:</b> your face on this relay can run programs, read and change files, and change grants on ' +
+  // No seat, no 😏 to give (goal/G41.32, Q20; the node refuses it too); one already on can still come off.
+  if (!ndBadge.faceable && !(ndBadge.claimed || ndBadge.owned)) return '';
+  var gives = '<b>What 😏 gives:</b> your face on this relay can run programs, read and change files, and change grants on ' +
     'this machine. That person and anyone holding this relay can do all of that as you, and so can anyone who reads your login mail.';
-  var words = gives + ' <b>Taking the star away</b> ends that.';
-  if (!ndBadge.mine) {
+  var words = gives + ' <b>Taking 😏 away</b> ends that.';
+  if (!ndBadge.faceable) {
     if (ndBadge.owned) words = '<b>This relay says you own it.</b> Its word proves nothing. If you DID install this relay on a VPS and you ' +
       'DID set its DNS records, press this. If you did not, this relay is lying to you: do not press. ' + gives;
     else words = '<b>You do not own this relay:</b> ' + (ndBadge.ownerLabel ? 'this relay says it is owned by ' + ndEscapeHtml(ndBadge.ownerLabel) : 'this relay does not say who owns it') +
@@ -785,12 +787,12 @@ function ndStarHtml() {
   }
   // A FOLDING PANEL LIKE THE OTHERS (goal/G41.32; Andy: "the folding panel "⭐ Star this relay" must use the same heading and
   // style al all the other folding panels in relayPanel."), closed as it arrives; the risk stays in it, with the button.
-  return ndPanel('star', '⭐', 'Star this relay', '<div>' + words + '</div>' +
-    '<div class="start-job-form"><button type="button" class="cancel-btn nd-own">' + (ndBadge.mine ? 'Take the star away' : 'Give it the star') + '</button></div>');
+  return ndPanel('faceable', '😏', 'Give this relay full face capability', '<div>' + words + '</div>' +
+    '<div class="start-job-form"><button type="button" class="cancel-btn nd-faceable">' + (ndBadge.faceable ? 'Take 😏 away' : 'Give it 😏') + '</button></div>');
 }
 // What it changes comes back on its row.
-function ndStar() {
-  return ndPost('contact.own', { key: ndRelayKey(), own: !ndBadge.mine });
+function ndFaceable() {
+  return ndPost('contact.faceable', { key: ndRelayKey(), faceable: !ndBadge.faceable });
 }
 
 function ndRemoveHtml() {
@@ -1631,7 +1633,7 @@ function ndArming(body) {
   each('.nd-alloc-restart', function (b) { attach(b, 'Restart? Every stream drops', ndAllocRestart); });
   // Two presses about the SAME name: the armed text names the invite.
   each('.nd-inv-revoke', function (b) { attach(b, 'Revoke ' + (b.getAttribute('data-invite-label') || '') + '?', ndRevoke); });
-  each('.nd-own', function (b) { attach(b, ndBadge && ndBadge.mine ? 'Take the star away: press again' : 'Give it the star, I accept this risk: press again', ndStar); });
+  each('.nd-faceable', function (b) { attach(b, ndBadge && ndBadge.faceable ? 'Take 😏 away: press again' : 'Give it 😏, I accept this risk: press again', ndFaceable); });
   each('.nd-remove', function (b) { attach(b, 'Press again to remove', ndRemove); });
   each('.nd-leave', function (b) { attach(b, 'Press again to leave', ndLeave); });
 }
@@ -1666,7 +1668,7 @@ function ndRender() {
       ndAllocationHtml() +
       ndInvitePanel()
     ) +
-    ndStarHtml() +
+    ndFaceableHtml() +
     ndLeaveHtml() +
     ndRemoveHtml();
     // The device panel was removed by goal/G16.2 with the device enrolment.

@@ -149,8 +149,9 @@ function createApiAuth(opts) {
       if (!PATH.test(a.path)) return Promise.resolve(refuse('not-a-path'));
       // THE fs FAMILY IS THE OWNER'S (goal/G33.10, Andy: "i want fs to be hard-coded owner only"): never granted.
       if (a.path.split('.')[0] === 'fs') return Promise.resolve(refuse('owner-only'));
-      // THE STAR IS THE OWNER'S (goal/G41.30): a relay's star opens this node's face. Never granted.
-      if (a.path === 'contact.own') return Promise.resolve(refuse('owner-only'));
+      // 😏 IS THE OWNER'S (goal/G41.30; goal/G47.4, box v33: contact.faceable "does what own did"): a faceable relay opens
+      // this node's face. Never granted.
+      if (a.path === 'contact.faceable') return Promise.resolve(refuse('owner-only'));
       const s = store();
       if (s.has(a.key, a.path)) return Promise.resolve(refuse('already-granted'));
       // Andy: "only if the path is known from a previous configuration, where owner has not pruned yet", so that

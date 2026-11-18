@@ -503,47 +503,61 @@ test.run('The person\'s detail shows none of the inbound or outbound rate number
   return (P.carol.indexOf('3.5') === -1 && P.carol.indexOf('1.25') === -1) || false;
 }, test.limit.quick);
 
-// the star: an arming button, its risk said beside it
-const personStarOf = function (x) { const b = x.document.getElementById('cd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
-test.run('A node\'s detail draws its star button as an arming button', 0.2, async function () {
-  P.w5 = personWorld({ key: 'K5', publicLabel: 'a node', mine: false }, []);
+// 😏 ON A RELAY'S CONTACT DETAIL, NONE ON A NODE'S (goal/G47.4, box v33: "in the detail panel (for relays only) 😏 will be an
+// option to enable face related forms in the UI, and enable full face capability for this node in the relay", "the star is
+// shown as before ... not changeable"): an arming button, its risk said beside it.
+const personFaceOf = function (x) { const b = x.document.getElementById('cd-faceable'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
+test.run('A node\'s detail draws no 😏 button and no star button, starred or not', 0.2, async function () {
+  const w4 = personWorld({ key: 'K4', publicLabel: 'a puppet', mine: true }, []);
+  w4.open('K4');
+  await settle();
+  return (!!w4.box && !w4.document.getElementById('cd-faceable') && !w4.document.getElementById('cd-own')) || false;
+}, test.limit.quick);
+test.run('A seated relay\'s contact detail draws its 😏 button as an arming button', 0.2, async function () {
+  P.w5 = personWorld({ key: 'K5', publicLabel: 'a relay', relay: true, seated: true, faceable: false }, []);
   P.w5.open('K5');
   await settle();
-  P.s5 = personStarOf(P.w5);
+  P.s5 = personFaceOf(P.w5);
   return !!P.s5 || false;
 }, test.limit.quick);
-test.run('it says what the star gives a node: its streams taken without asking, and it is never dropped', 0.2, function () {
+test.run('it says what 😏 gives: a face there can run programs and change files on this machine', 0.2, function () {
   if (!P.w5) return false;
-  return (/without asking/.test(pageText(P.w5)) && /never dropped/.test(pageText(P.w5))) || false;
+  return (/run programs/.test(pageText(P.w5)) && /change files/.test(pageText(P.w5))) || false;
 }, test.limit.quick);
 test.run('a press on the button alone sends nothing: the arming button holds it', 0.2, async function () {
   if (!P.w5) return false;
   const b5 = P.w5.calls.length;
-  const drawn5 = P.w5.document.getElementById('cd-own');
+  const drawn5 = P.w5.document.getElementById('cd-faceable');
   if (drawn5) { drawn5.click(); await settle(); }
-  return (!!drawn5 && !P.w5.calls.slice(b5).some(function (c) { return c.name === 'contact.own'; })) || false;
+  return (!!drawn5 && !P.w5.calls.slice(b5).some(function (c) { return c.name === 'contact.faceable'; })) || false;
 }, test.limit.quick);
-test.run('The second press on a node\'s star button asks the node to put the star on that contact', 0.2, async function () {
+test.run('The second press asks the node to make that relay faceable', 0.2, async function () {
   if (!P.w5) return false;
   if (P.s5) { await P.s5.opts.run(); await settle(); }
-  const sent5 = P.w5.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
-  return (!!sent5 && sent5.body.key === 'K5' && sent5.body.own === true) || false;
+  const sent5 = P.w5.calls.filter(function (c) { return c.name === 'contact.faceable'; }).pop();
+  return (!!sent5 && sent5.body.key === 'K5' && sent5.body.faceable === true) || false;
 }, test.limit.quick);
-test.run('On a starred person\'s row the same star button asks the node to take the star away', 0.2, async function () {
-  const w6 = personWorld({ key: 'K6', publicLabel: 'a puppet', mine: true }, []);
+test.run('On a faceable relay\'s row the same button asks the node to take 😏 away', 0.2, async function () {
+  const w6 = personWorld({ key: 'K6', publicLabel: 'a relay', relay: true, seated: true, faceable: true }, []);
   w6.open('K6');
   await settle();
-  const s6 = personStarOf(w6);
+  const s6 = personFaceOf(w6);
   if (s6) { await s6.opts.run(); await settle(); }
-  const sent6 = w6.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
-  return (!!sent6 && sent6.body.key === 'K6' && sent6.body.own === false) || false;
+  const sent6 = w6.calls.filter(function (c) { return c.name === 'contact.faceable'; }).pop();
+  return (!!sent6 && sent6.body.key === 'K6' && sent6.body.faceable === false) || false;
 }, test.limit.quick);
-test.run('On a face, a person\'s detail draws no star button', 0.2, async function () {
-  const w7 = personWorld({ key: 'K7', publicLabel: 'a node', mine: false }, []);
+test.run('A relay with no seat draws no 😏 button', 0.2, async function () {
+  const w8 = personWorld({ key: 'K8', publicLabel: 'a relay', relay: true, seated: false, faceable: false }, []);
+  w8.open('K8');
+  await settle();
+  return (!!w8.box && !w8.document.getElementById('cd-faceable')) || false;
+}, test.limit.quick);
+test.run('On a face, a relay\'s contact detail draws no 😏 button', 0.2, async function () {
+  const w7 = personWorld({ key: 'K7', publicLabel: 'a relay', relay: true, seated: true, faceable: false }, []);
   w7.win.spirit.transport = { ask: function () {} };
   w7.open('K7');
   await settle();
-  return (!!w7.box && !w7.document.getElementById('cd-own') && !personStarOf(w7)) || false;
+  return (!!w7.box && !w7.document.getElementById('cd-faceable') && !personFaceOf(w7)) || false;
 }, test.limit.quick);
 
 // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
@@ -744,15 +758,15 @@ test.run('two presses on the drawn Leave leave nothing without the element', 0.2
 // have to trust, and, if the relay claims to be mine, the message should be slightly different like \"if you DID install
 // this relay on a VSP and you DID set it's DNS records.....\""; "NO signature. just the armingButton, with a precise
 // documentation of the risk."). What a relay's owner field says is that relay's own word, so it reads "says".
-// the star on a relay: an arming button, and who you have to trust
-const relayStarOf = function (x) { const b = x.document.querySelector('.nd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
+// 😏 on a relay (goal/G47.4, box v33, the star's job now faceable's): an arming button, and who you have to trust
+const relayStarOf = function (x) { const b = x.document.querySelector('.nd-faceable'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
 const MEMBER = [{ key: 'RK2', url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'Olga', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
 const CLAIMS = [{ key: 'RK', url: OWNED_URL, label: 'mine', status: 200, owned: true, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'andy', roll: { relayKey: 'RK', relayLabel: 'Mine' } }];
-test.run('A relay\'s detail draws its star button as an arming button', 0.2, async function () {
+test.run('A relay\'s detail draws its 😏 button as an arming button', 0.2, async function () {
   L.w5 = relayWorld(MEMBER, {});
   L.w5.open('RK2');
   await settle();
-  await press(L.w5, '[data-fold="star"]');
+  await press(L.w5, '[data-fold="faceable"]');
   L.s5 = relayStarOf(L.w5);
   return !!L.s5 || false;
 }, test.limit.quick);
@@ -760,7 +774,7 @@ test.run('a relay that does not claim this node names who must be trusted, "says
   if (!L.w5) return false;
   return /says it is owned by Olga/.test(pageText(L.w5)) || false;
 }, test.limit.quick);
-test.run('The star of a relay that does not claim this node says its owner and anyone holding the relay can run programs and change files on this machine', 0.2, function () {
+test.run('😏 on a relay that does not claim this node says its owner and anyone holding the relay can run programs and change files on this machine', 0.2, function () {
   if (!L.w5) return false;
   const t = pageText(L.w5);
   return (/run programs/.test(t) && /change files/.test(t) && /anyone holding/.test(t)) || false;
@@ -772,47 +786,47 @@ test.run('it does not speak of having installed it', 0.2, function () {
 test.run('a press on the button alone sends nothing', 0.2, async function () {
   if (!L.w5) return false;
   const b5 = L.w5.calls.length;
-  const drawn5 = L.w5.document.querySelector('.nd-own');
+  const drawn5 = L.w5.document.querySelector('.nd-faceable');
   if (drawn5) { drawn5.click(); await settle(); }
-  return (!!drawn5 && !L.w5.calls.slice(b5).some(function (c) { return c.name === 'contact.own'; })) || false;
+  return (!!drawn5 && !L.w5.calls.slice(b5).some(function (c) { return c.name === 'contact.faceable'; })) || false;
 }, test.limit.quick);
-test.run('The second press on a relay\'s star button asks the node to put the star on that relay', 0.2, async function () {
+test.run('The second press on a relay\'s 😏 button asks the node to make that relay faceable', 0.2, async function () {
   if (!L.w5) return false;
   if (L.s5) { await L.s5.opts.run(); await settle(); }
-  const sent5 = L.w5.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
-  return (!!sent5 && sent5.body.key === 'RK2' && sent5.body.own === true) || false;
+  const sent5 = L.w5.calls.filter(function (c) { return c.name === 'contact.faceable'; }).pop();
+  return (!!sent5 && sent5.body.key === 'RK2' && sent5.body.faceable === true) || false;
 }, test.limit.quick);
 test.run('a relay claiming this node says: "If you DID install this relay on a VPS and you DID set its DNS records"', 0.2, async function () {
   L.w6 = relayWorld(CLAIMS, OWNED_SAID);
   L.w6.open('RK');
   await settle();
-  await press(L.w6, '[data-fold="star"]');
+  await press(L.w6, '[data-fold="faceable"]');
   return /If you DID install this relay on a VPS and you DID set its DNS records/.test(pageText(L.w6)) || false;
 }, test.limit.quick);
-test.run('The star of a relay claiming this node says that otherwise the relay is lying', 0.2, function () {
+test.run('😏 on a relay claiming this node says that otherwise the relay is lying', 0.2, function () {
   if (!L.w6) return false;
   return /lying/.test(pageText(L.w6)) || false;
 }, test.limit.quick);
-test.run('A relay claiming this node is starred with the same star button', 0.2, function () {
+test.run('A relay claiming this node is made faceable with the same 😏 button', 0.2, function () {
   if (!L.w6) return false;
   return !!relayStarOf(L.w6) || false;
 }, test.limit.quick);
-test.run('on a starred relay the same button takes the star away', 0.2, async function () {
-  const w7 = relayWorld([Object.assign({}, CLAIMS[0], { mine: true })], OWNED_SAID);
+test.run('on a faceable relay the same button takes 😏 away', 0.2, async function () {
+  const w7 = relayWorld([Object.assign({}, CLAIMS[0], { faceable: true })], OWNED_SAID);
   w7.open('RK');
   await settle();
-  await press(w7, '[data-fold="star"]');
+  await press(w7, '[data-fold="faceable"]');
   const s7 = relayStarOf(w7);
   if (s7) { await s7.opts.run(); await settle(); }
-  const sent7 = w7.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
-  return (!!sent7 && sent7.body.key === 'RK' && sent7.body.own === false) || false;
+  const sent7 = w7.calls.filter(function (c) { return c.name === 'contact.faceable'; }).pop();
+  return (!!sent7 && sent7.body.key === 'RK' && sent7.body.faceable === false) || false;
 }, test.limit.quick);
-test.run('On a face, a relay\'s detail draws no star button', 0.2, async function () {
+test.run('On a face, a relay\'s detail draws no 😏 button', 0.2, async function () {
   const w8 = relayWorld(MEMBER, {});
   w8.win.spirit.transport = { ask: function () {} };
   w8.open('RK2');
   await settle();
-  return (!!w8.box && !w8.document.querySelector('.nd-own') && !relayStarOf(w8)) || false;
+  return (!!w8.box && !w8.document.querySelector('.nd-faceable') && !relayStarOf(w8)) || false;
 }, test.limit.quick);
 
 // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
@@ -897,7 +911,8 @@ const rowsOf = function (key) { return S.stream.kept.filter(function (e) { retur
 const last = function (key) { const r = rowsOf(key); return r.length ? r[r.length - 1] : null; };
 const joinCode = function (relay) { return relay.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(relay.mailed[0].text)) || [])[1]; };
 const panelText = function () { return S.chrome.evaluate('document.getElementById("zzPanel").textContent').then(String); };
-const starred = async function (k) { const a = await home(S.N.base, 'contact.search', { q: '', mine: 'yes' }); return !!(a.body && (a.body.items || []).some(function (i) { return i.key === k; })); };
+// 😏 as the row says it (goal/G47.4, box v33: "😏 is the row field faceable").
+const starred = async function (k) { const a = await home(S.N.base, 'contact.get', { key: k }); return !!(a.body && a.body.person && a.body.person.faceable === true); };
 
 test.after(async function () {
   try { if (S.stream) S.stream.stop(); } catch (e) { /* gone */ }
@@ -1026,7 +1041,7 @@ test.run('it paints the relay\'s label', 0.2, async function () {
 const FOLDS = 'Array.prototype.slice.call(document.querySelectorAll("#zzPanel .nd-fold"))';
 test.run('its heading stands among the others', 0.2, async function () {
   if (!S.chrome) return false;
-  S.star = await S.chrome.evaluate('(function () { var all = ' + FOLDS + '; var s = all.filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; })[0]; var o = all.filter(function (h) { return h !== s; })[0]; if (!s || !o) return { star: !!s, other: !!o }; return { star: true, other: true, sameHeading: s.className === o.className && s.tagName === o.tagName, sameTile: s.parentElement.className.split(" ").slice(0, 2).join(" ") === o.parentElement.className.split(" ").slice(0, 2).join(" "), mark: !!s.querySelector(".nd-fold-mark"), details: !!document.querySelector("#zzPanel details"), buttonWhileShut: !!document.querySelector("#zzPanel .nd-own") }; }())');
+  S.star = await S.chrome.evaluate('(function () { var all = ' + FOLDS + '; var s = all.filter(function (h) { return h.textContent.indexOf("Give this relay full face capability") !== -1; })[0]; var o = all.filter(function (h) { return h !== s; })[0]; if (!s || !o) return { star: !!s, other: !!o }; return { star: true, other: true, sameHeading: s.className === o.className && s.tagName === o.tagName, sameTile: s.parentElement.className.split(" ").slice(0, 2).join(" ") === o.parentElement.className.split(" ").slice(0, 2).join(" "), mark: !!s.querySelector(".nd-fold-mark"), details: !!document.querySelector("#zzPanel details"), buttonWhileShut: !!document.querySelector("#zzPanel .nd-faceable") }; }())');
   return (!!S.star && S.star.star && S.star.other) || false;
 }, test.limit.quick);
 test.run('The star\'s fold has the same heading, tile and fold mark as the other folds', 0.2, function () {
@@ -1043,9 +1058,9 @@ test.run('it arrives shut: its button is not shown', 0.2, function () {
 }, test.limit.quick);
 test.run('pressed, it opens and holds its button', 0.2, async function () {
   if (!S.chrome) return false;
-  await S.chrome.evaluate('(function () { var s = ' + FOLDS + '.filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; })[0]; if (s) s.click(); }())');
+  await S.chrome.evaluate('(function () { var s = ' + FOLDS + '.filter(function (h) { return h.textContent.indexOf("Give this relay full face capability") !== -1; })[0]; if (s) s.click(); }())');
   await sleep(500);
-  const opened = await S.chrome.evaluate('(function () { var b = document.querySelector("#zzPanel .nd-own"); return !!b && b.closest(".stat-tile").textContent.indexOf("Star this relay") !== -1; }())');
+  const opened = await S.chrome.evaluate('(function () { var b = document.querySelector("#zzPanel .nd-faceable"); return !!b && b.closest(".stat-tile").textContent.indexOf("Give this relay full face capability") !== -1; }())');
   return opened === true || false;
 }, test.limit.quick);
 
@@ -1054,17 +1069,17 @@ test.run('pressed, it opens and holds its button', 0.2, async function () {
 // these checks asserted until goal/G47.1 (Q12, Andy: "fix it."). The relay here is a member's, with no star at first.
 const faceHead = 'Array.prototype.slice.call(document.querySelectorAll("#zzPanel .nd-fold")).filter(function (h) { return h.textContent.indexOf("A face name") !== -1; })[0]';
 const hasFaceHead = function () { return S.chrome.evaluate('!!(' + faceHead + ')'); };
-test.run('With no star, the relay\'s detail has no "A face name" fold', 0.2, async function () {
+test.run('With no 😏, the relay\'s detail has no "A face name" fold', 0.2, async function () {
   if (!S.chrome) return false;
   await sleep(1000);
   return !(await hasFaceHead()) || false;
 }, test.limit.slow);
-test.run('The home node puts the star on the relay', 0.2, async function () {
+test.run('The home node makes the relay faceable', 0.2, async function () {
   if (!S.up) return false;
-  const sOn = await home(S.N.base, 'contact.own', { key: S.key, own: true });
+  const sOn = await home(S.N.base, 'contact.faceable', { key: S.key, faceable: true });
   return sOn.status === 200 || false;
 }, test.limit.quick);
-test.run('Once the relay is starred, the "A face name" fold comes with no reload', 0.2, async function () {
+test.run('Once the relay is faceable, the "A face name" fold comes with no reload', 0.2, async function () {
   if (!S.chrome) return false;
   await until(hasFaceHead, 5000);
   return (await hasFaceHead()) || false;
@@ -1076,12 +1091,12 @@ test.run('Opened, the "A face name" fold holds the face form\'s field and its bu
   const drawn = await S.chrome.evaluate('(function () { var f = document.querySelector("#zzPanel .nd-face-form"); return f ? { input: !!f.querySelector("input"), button: !!f.querySelector("button") } : null; }())');
   return (!!drawn && drawn.input && drawn.button) || false;
 }, test.limit.slow);
-test.run('The home node takes the star off the relay', 0.2, async function () {
+test.run('The home node takes 😏 off the relay', 0.2, async function () {
   if (!S.up) return false;
-  const sOff = await home(S.N.base, 'contact.own', { key: S.key, own: false });
+  const sOff = await home(S.N.base, 'contact.faceable', { key: S.key, faceable: false });
   return sOff.status === 200 || false;
 }, test.limit.quick);
-test.run('With the star off, the "A face name" fold is gone again', 0.2, async function () {
+test.run('With 😏 off, the "A face name" fold is gone again', 0.2, async function () {
   if (!S.chrome) return false;
   await until(function () { return hasFaceHead().then(function (h) { return !h; }); }, 5000);
   return !(await hasFaceHead()) || false;
@@ -1165,14 +1180,14 @@ test.run('The face form has a function saying whether it has relays to offer', 0
   await S.chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
   await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
   await sleep(3000);
-  S.check = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/faceForm.js")).then(function () { var F = window.spirit.element.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, mine: false }]), owner: F.offers([{ url: u, owned: true, mine: false }]), starred: F.offers([{ url: u, claimed: true, mine: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, mine: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, mine: true }, { url: "http://y", claimed: true, mine: false }]) }; })');
+  S.check = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/faceForm.js")).then(function () { var F = window.spirit.element.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
   return !!S.check || false;
 }, test.limit.slow);
-test.run('The face form offers a starred relay, alone or beside one with no star', 0.2, function () {
+test.run('The face form offers a faceable relay, alone or beside one without 😏', 0.2, function () {
   if (!S.check) return false;
   return (S.check.starred === true && S.check.one === true) || false;
 }, test.limit.quick);
-test.run('The face form offers nothing for a relay with no star, whether a member\'s or an owner\'s, for one it holds no seat on, and for no relays at all', 0.2, function () {
+test.run('The face form offers nothing for a relay without 😏, whether a member\'s or an owner\'s, for one it holds no seat on, and for no relays at all', 0.2, function () {
   if (!S.check) return false;
   return (S.check.member === false && S.check.owner === false && S.check.stranger === false && S.check.none === false) || false;
 }, test.limit.quick);
@@ -1182,18 +1197,18 @@ const options = function () { return S.chrome.evaluate('JSON.stringify(Array.pro
 const tileShown = function () { return S.chrome.evaluate('(function () { var b = document.querySelector("[data-info=\\"face\\"]"); return !!b && b.offsetParent !== null && !!b.querySelector(".sp-face-relay"); }())'); };
 const emptyTile = function () { return S.chrome.evaluate('(function () { var b = document.querySelector("[data-info=\\"face\\"]"); return !!b && b.offsetParent !== null; }())'); };
 const infoReads = function () { return S.chrome.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /"call":"(relay\.(status|get)|contact\.search)"/.test(String((m.params.request || {}).postData || '')); }).length; };
-test.run('With neither relay starred, Info shows no face form and leaves no empty tile', 0.2, async function () {
+test.run('With neither relay faceable, Info shows no face form and leaves no empty tile', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
   await S.chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Info"; })[0]; if (e) e.click(); }())');
   await sleep(3000);
   return (!(await tileShown()) && !(await emptyTile())) || false;
 }, test.limit.long);
-test.run('With one relay starred, the face form comes with no reload and offers that relay alone', 0.2, async function () {
+test.run('With one relay faceable, the face form comes with no reload and offers that relay alone', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
   S.readsBefore = infoReads();
-  await home(S.N.base, 'contact.own', { key: S.key, own: true });
+  await home(S.N.base, 'contact.faceable', { key: S.key, faceable: true });
   await until(function () { return options().then(function (o) { return o.indexOf(S.R.base) !== -1; }); }, 5000);
   const one = await options();
   return ((await tileShown()) && one.indexOf(S.R.base) !== -1 && one.indexOf(S.Other.base) === -1) || false;
@@ -1202,18 +1217,18 @@ test.run('The face form followed the row without reading anything', 0.2, functio
   if (S.readsBefore === undefined) return false;
   return infoReads() === S.readsBefore || false;
 }, test.limit.quick);
-test.run('With both relays starred, the face form offers both', 0.2, async function () {
+test.run('With both relays faceable, the face form offers both', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
-  await home(S.N.base, 'contact.own', { key: S.Other.relayKey, own: true });
+  await home(S.N.base, 'contact.faceable', { key: S.Other.relayKey, faceable: true });
   await until(function () { return options().then(function (o) { return o.length >= 2; }); }, 5000);
   const both = await options();
   return (both.indexOf(S.R.base) !== -1 && both.indexOf(S.Other.base) !== -1) || false;
 }, test.limit.slow);
-test.run('With one star taken off, that relay is gone from the dropdown and the other stays', 0.2, async function () {
+test.run('With 😏 taken off one, that relay is gone from the dropdown and the other stays', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Other) return false;
-  await home(S.N.base, 'contact.own', { key: S.Other.relayKey, own: false });
+  await home(S.N.base, 'contact.faceable', { key: S.Other.relayKey, faceable: false });
   await until(function () { return options().then(function (o) { return o.indexOf(S.Other.base) === -1; }); }, 5000);
   const left = await options();
   return (left.indexOf(S.Other.base) === -1 && left.indexOf(S.R.base) !== -1) || false;
@@ -1232,26 +1247,26 @@ test.run('a third relay comes up', 0.2, async function () {
   S.others.push(S.Far);
   return !!S.Far.up || false;
 }, test.limit.slow);
-test.run('The home node refuses with a code to star a relay that is listed but holds no seat', 0.2, async function () {
+test.run('The home node refuses with a code to make faceable a relay that is listed but holds no seat', 0.2, async function () {
   if (!S.Far) return false;
   await home(S.N.base, 'relay.add', { url: S.Far.base, label: 'zzFar' });
   await until(function () { return rowsOf(S.Far.relayKey).length > 0; }, 8000);
-  const farNo = await home(S.N.base, 'contact.own', { key: S.Far.relayKey, own: true });
+  const farNo = await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (farNo.status >= 400 && farNo.status < 500 && !!(farNo.body && farNo.body.code)) || false;
 }, test.limit.quick);
-test.run('No star lands on the relay with no seat', 0.2, async function () {
+test.run('No 😏 lands on the relay with no seat', 0.2, async function () {
   if (!S.Far) return false;
   return !(await starred(S.Far.relayKey)) || false;
 }, test.limit.quick);
-test.run('taking away a star it does not have changes nothing', 0.2, async function () {
+test.run('taking away a 😏 it does not have changes nothing', 0.2, async function () {
   if (!S.Far) return false;
-  await home(S.N.base, 'contact.own', { key: S.Far.relayKey, own: false });
+  await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: false });
   const pass = !(await starred(S.Far.relayKey));
-  // A node that is no relay: what contact.own answers is said, not judged; this rule is about relays alone.
+  // A node that is no relay is refused 😏 (box v33: "for a relay this node holds a seat on only").
   S.person = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('zzPuppet').publicKey;
   await home(S.N.base, 'contact.block', { publicKey: S.person });
-  const personAns = await home(S.N.base, 'contact.own', { key: S.person, own: true });
-  return pass || false;
+  const personAns = await home(S.N.base, 'contact.faceable', { key: S.person, faceable: true });
+  return (pass && personAns.status >= 400 && personAns.status < 500) || false;
 }, test.limit.slow);
 
 // its panel offers no star there
@@ -1260,23 +1275,23 @@ test.run('the panel draws for it', 0.2, async function () {
   if (!S.Far) return false;
   const farPanel = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detail.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.element.spirit.element.search.contact.detail.create(h, { key: ' + JSON.stringify(S.Far.relayKey) + ', relay: true }); return "ok"; })');
   await until(function () { return S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0'); }, 8000);
-  S.farStar = await S.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzFar .nd-fold")).filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; }).length');
+  S.farStar = await S.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzFar .nd-fold")).filter(function (h) { return h.textContent.indexOf("Give this relay full face capability") !== -1; }).length');
   return (farPanel === 'ok' && await S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0')) || false;
 }, test.limit.quick);
-test.run('The detail of a relay with no seat has no star fold', 0.2, function () {
+test.run('The detail of a relay with no seat has no 😏 fold', 0.2, function () {
   if (S.farStar === undefined) return false;
   return S.farStar === 0 || false;
 }, test.limit.quick);
 
 // a member can star it; leaving takes the star away
 // Leaving: read from his ruling, and Q21 asks him outright (ubi: "a relay you have left keeps its star"); if he says no, these two checks go.
-test.run('Once this node has joined the relay, the star goes on', 0.2, async function () {
+test.run('Once this node has joined the relay, 😏 goes on', 0.2, async function () {
   if (!S.Far) return false;
   await home(S.N.base, 'relay.join', { url: S.Far.base, email: MAIL });
   await until(function () { return S.Far.mailed.length > 0; }, 5000);
   await home(S.N.base, 'relay.join', { url: S.Far.base, email: MAIL, code: joinCode(S.Far) });
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === true; }, 10000);
-  const farYes = await home(S.N.base, 'contact.own', { key: S.Far.relayKey, own: true });
+  const farYes = await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (farYes.status === 200 && await starred(S.Far.relayKey)) || false;
 }, test.limit.long);
 test.run('it leaves the relay: its row holds no seat', 0.2, async function () {
@@ -1287,14 +1302,14 @@ test.run('it leaves the relay: its row holds no seat', 0.2, async function () {
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === false; }, 8000);
   return ((last(S.Far.relayKey) || {}).claimed) === false || false;
 }, test.limit.long);
-test.run('Leaving the relay takes the star away with the seat', 0.2, async function () {
+test.run('Leaving the relay takes 😏 away with the seat', 0.2, async function () {
   if (!S.Far) return false;
   await until(function () { return starred(S.Far.relayKey).then(function (x) { return !x; }); }, 5000);
   return !(await starred(S.Far.relayKey)) || false;
 }, test.limit.quick);
-test.run('The star cannot be put back on a relay this node has left', 0.2, async function () {
+test.run('😏 cannot be put back on a relay this node has left', 0.2, async function () {
   if (!S.Far) return false;
-  const notAgain = await home(S.N.base, 'contact.own', { key: S.Far.relayKey, own: true });
+  const notAgain = await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (notAgain.status >= 400 && notAgain.status < 500) || false;
 }, test.limit.quick);
 
@@ -1318,9 +1333,9 @@ test.run('Once the owned relay\'s report has come, its row says it is owned', 0.
   const ownedRow2 = last(Own.relayKey) || {};
   return ownedRow2.owned === true || false;
 }, test.limit.slow);
-test.run('On a relay this node owns, the star goes on', 0.2, async function () {
+test.run('On a relay this node owns, 😏 goes on', 0.2, async function () {
   if (!S.Own) return false;
-  const ownYes = await home(S.N.base, 'contact.own', { key: S.Own.relayKey, own: true });
+  const ownYes = await home(S.N.base, 'contact.faceable', { key: S.Own.relayKey, faceable: true });
   return (ownYes.status === 200 && await starred(S.Own.relayKey)) || false;
 }, test.limit.quick);
 

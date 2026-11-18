@@ -267,7 +267,7 @@ test.run('a face with no star reads no set file', 0.8, async function () {
 // The star put on at home: a face page opened after it has the set (a starless page has no link to hear a star by).
 test.run('the star is put on at home', 0.2, async function () {
   if (!FACE) return false;
-  const star = await home(N.base, 'contact.own', { key: R.relayKey, own: true });
+  const star = await home(N.base, 'contact.faceable', { key: R.relayKey, faceable: true });
   return star.status === 200 ? true : false;
 }, test.limit.slow);
 test.run('a fresh starred face has the set too', 0.2, async function () {

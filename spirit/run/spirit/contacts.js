@@ -8,8 +8,8 @@ require('./spirit.js');
 //   Andy's box, v24: "seen, the shadow in node.db, is the one table. contacts.json, the relays table and the peers
 //   table move into it and go."
 //
-// A contact is a row of seen flagged `keep`: "a chosen contact, never shed". Somebody refused is `blocked`; a relay or a puppet the owner starred is `mine` (hub.handleOwn, the one writer of it,
-// goal/G41.30). This module keeps the owner's rules, as acts on those flags.
+// A contact is a row of seen flagged `keep`: "a chosen contact, never shed". Somebody refused is `blocked`; a node or relay whose signed card names this node its owner is `mine` (setCard, the
+// one writer of it, goal/G47.4); a seated relay the owner gave full face capability is `faceable` (hub's faceable handler). This module keeps the owner's rules, as acts on those flags.
 // Perception only. Lives on a personal node, never on a --relay.
 //
 // A contact row, as every reader here gets it:
@@ -35,7 +35,7 @@ function shaped(r) {
   if (!r) return null;
   return {
     publicKey: r.publicKey, publicLabel: r.label || '', myLabel: r.myLabel || '', card: r.card || '',
-    keep: r.keep, mine: r.mine, blocked: r.blocked, relay: r.relay, seated: r.seated, ignored: r.ignored,
+    keep: r.keep, mine: r.mine, blocked: r.blocked, relay: r.relay, seated: r.seated, ignored: r.ignored, faceable: r.faceable,
     present: r.present, lastSeen: r.lastSeen,
   };
 }
@@ -204,9 +204,12 @@ function setCard(rootDir, publicKey, cardText) {
   if (held && !(fields.at > held.at)) {
     return { ok: false, why: 'not newer', held: held.at, offered: fields.at };
   }
-  // THE CARD AND NOTHING MORE, NOT THE STAR (goal/G41.30; Andy: "this button will put the star on relays and puppets. AND
-  // take it away."): a card is signed by its own node, so any node can name this one its owner. Only contact.own sets it.
-  seen(rootDir).set(publicKey, { card: String(cardText) });
+  // THE STAR IS THE CARD'S OWNER (goal/G47.4, box v33: "the star is shown as before on nodes and relays and is set only by
+  // true ownership (the signed card names this node as owner); no button or verb changes it"): each newer card held sets
+  // it, on when it names this node's key (ownerBadge.ownedBy, the one ownership rule), off when it names another or nobody.
+  let me = '';
+  try { me = auth.loadIdentity(rootDir).publicKey || ''; } catch (e) { me = ''; }
+  seen(rootDir).set(publicKey, { card: String(cardText), mine: !!me && ownerBadge.ownedBy(fields.owner, me) });
   return { ok: true, first: !held, at: fields.at };
 }
 

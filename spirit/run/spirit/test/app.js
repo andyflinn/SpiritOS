@@ -71,8 +71,8 @@ test.run('a face may call app.search', 0.2, function () {
   const said = faceRefuses({ call: 'app.search', args: {} });
   return said === '' || false;
 }, test.limit.quick);
-test.run('the same question refuses contact.own, so it can refuse', 0.8, function () {
-  return faceRefuses({ call: 'contact.own', args: {} }) !== '' || false;
+test.run('the same question refuses contact.faceable, so it can refuse', 0.8, function () {
+  return faceRefuses({ call: 'contact.faceable', args: {} }) !== '' || false;
 }, test.limit.quick);
 
 test.run('the scratch node comes up', 0.2, async function () {
