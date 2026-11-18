@@ -55,10 +55,24 @@
         mid.style.cssText = 'flex:1;display:flex;justify-content:center;min-width:0';
         bar.root.insertBefore(mid, bar.button);
         var current = '';
+        // WHAT IT RUNS ON, SHOWN (Andy: "the selector ... won't accept the selection, the setting remains on" this node):
+        // the field names the server current is, from every answer of remote, and a refused switch says why beside it.
+        var said = document.createElement('span');
+        said.style.cssText = 'margin-left:0.5em;opacity:0.8';
+        mid.appendChild(said);
+        var opts = null;
+        var labels = {};
+        function showCurrent() {
+          var label = labels[current] || '';
+          if (!opts || !label) return;
+          opts.placeholder = label;
+          var fieldButton = mid.querySelector('button[id$="field"]');
+          if (fieldButton) fieldButton.textContent = label + ' ▾';
+        }
         S.require('spirit/element/search.js').then(function () {
           if (dropped) return;
           var fam = function () { return Promise.resolve(S.require(S.familyPath(server))); };
-          remoteList = S.element.spirit.element.search.create(mid, {
+          opts = {
             face: 'dropdown', placeholder: 'remote…',
             // ITS OWN SOURCE: remote's rows are { key, label } with the label a name, while a list's rows ride as a label
             // holding the row (the search element parses it), so each is handed over as such; current is kept from the same
@@ -66,6 +80,8 @@
             search: function () {
               return fam().then(function (f) { return f.remote({}); }).then(function (r) {
                 current = String((r && r.current) || '');
+                ((r && r.items) || []).forEach(function (i) { labels[String(i.key)] = String(i.label || i.key); });
+                showCurrent();
                 var items = ((r && r.items) || []).map(function (i) { return { key: String(i.key), label: JSON.stringify({ key: String(i.key), label: String(i.label || '') }) }; });
                 return { status: 200, body: { ok: true, items: items, more: !!(r && r.more) } };
               });
@@ -76,14 +92,19 @@
             columns: [{ field: 'label', label: 'Remote', sort: 'text' }],
             pick: function (row, k) {
               if (!k) return;
+              said.textContent = '';
               fam().then(function (f) { return f.remote({ id: String(k) }); }).then(function (r) {
                 var now = String((r && r.current) || (r && r.body && r.body.current) || '');
-                if (now && current && now !== current) window.location.reload();
+                var was = current;
                 if (now) current = now;
-              }, function () { /* the bar stays as it was */ });
+                showCurrent();
+                if (now && was && now !== was) window.location.reload();
+              }, function (e) { said.textContent = 'not switched: ' + String((e && (e.message || e.code)) || 'refused'); showCurrent(); });
             },
             empty: 'No remote.',
-          });
+          };
+          remoteList = S.element.spirit.element.search.create(mid, opts);
+          mid.appendChild(said);
           // Its first ask now, as every list's (grant/list.js): the rows are there when the field opens. And again each time
           // the field is pressed: the server checks its peers in the background after an empty call (box v12), so a later
           // open shows what that check found.
