@@ -40,6 +40,8 @@ const { spawnSync } = require('child_process');
 const USAGE = 'usage: node publishData.js [<port of its node>] [--asks N] [--only packets] [--out <dir>]';
 const NODE_WAIT_MS = 20000;
 const DEFAULT_ASKS = 20;
+// Tries at the platform list when another machine's publish clashes with it (below, step 5).
+const LIST_TRIES = 3;
 
 const argv = process.argv.slice(2);
 // THE PORT OF THE NODE THAT STARTS IT (goal/G43.21): Run in the app detail hands no argument, and the node hands every job it
@@ -288,16 +290,36 @@ async function main() {
   // (platform/README.md), and an edit of his there is never published as "publish:".
   // AND ITS LINE IN platform/README.md (box v170: "on the platform it runs on, it adds that platform's folder and files,
   // and its line in platform/README.md"): the list written whole from the platform folders there.
-  README.writeList(path.dirname(out));
-  const wrote = PUBLISHED.filter(function (f) { return fs.existsSync(path.join(out, f)); }).map(function (f) { return rel + '/' + f; })
-    .concat([path.posix.join(path.posix.dirname(rel), 'README.md')]);
-  git(['add', '--'].concat(wrote), clone);
-  const c = git(['commit', '-q', '--only', '-m', 'publish: ' + platform + ' at ' + commit + ' (platform/' + platform + '/, the standing grant of goal/G4.33)', '--'].concat(wrote), clone);
-  if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());
-  // PUSH THROUGH pushOrigin (goal/G5.1): one shared place that rebases onto origin's newest, pushes, retries on a
-  // race (Andy: "tries again if someone pushed meanwhile"), stops on a clash.
+  // THE LIST WRITTEN AGAIN AFTER A CLASH ON IT (goal/G47.1, Andy, Q36: "sure", to "fix publishData to write the platform list
+  // after rebasing"): another machine that published meanwhile added its line to origin's list, and this clone's list, written
+  // on an older base, clashed with it on the rebase (andy-wsl's publish after andy-ubuntu's). pushOrigin aborts such a rebase
+  // and leaves the clone as it was; the publish commit is then undone, its list dropped, the clone brought to origin's front by
+  // pushOrigin with nothing of this run in it, and the list written again from the folders the front holds. Each platform
+  // writes only its own folder, so the list is the one file two publishes can clash on.
   const { pushOrigin } = spirit.require('spirit/app/pushOrigin/pushOrigin.js');
-  const pushed = await pushOrigin({ repo: clone });
+  const listRel = path.posix.join(path.posix.dirname(rel), 'README.md');
+  const message = 'publish: ' + platform + ' at ' + commit + ' (platform/' + platform + '/, the standing grant of goal/G4.33)';
+  let pushed = null;
+  for (let attempt = 0; attempt < LIST_TRIES; attempt++) {
+    README.writeList(path.dirname(out));
+    const wrote = PUBLISHED.filter(function (f) { return fs.existsSync(path.join(out, f)); }).map(function (f) { return rel + '/' + f; }).concat([listRel]);
+    git(['add', '--'].concat(wrote), clone);
+    const c = git(['commit', '-q', '--only', '-m', message, '--'].concat(wrote), clone);
+    if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());
+    // PUSH THROUGH pushOrigin (goal/G5.1): one shared place that rebases onto origin's newest, pushes, retries on a
+    // race (Andy: "tries again if someone pushed meanwhile"), stops on a clash.
+    pushed = await pushOrigin({ repo: clone });
+    if (pushed && pushed.ok) break;
+    // Only a clash is tried again, the clone left as it was; any other failure is said as it is.
+    if (!/had a clash/.test(String((pushed && pushed.reason) || ''))) break;
+    say('the list clashed with another platform\'s publish; written again on origin\'s newest');
+    // Undone: its files stay staged, the list goes back to the clone's own, so the stash pushOrigin makes puts nothing back
+    // over the list origin brings.
+    git(['reset', '-q', '--soft', 'HEAD~1'], clone);
+    git(['checkout', '-q', 'HEAD', '--', listRel], clone);
+    const synced = await pushOrigin({ repo: clone });
+    if (!synced || !synced.ok) { pushed = synced; break; }
+  }
   // pushOrigin's reason says what went wrong, the push itself or putting the clone's unsaved edits back (goal/G19.6).
   if (!pushed || !pushed.ok) end(1, 'publishData: pushOrigin did not finish: ' + ((pushed && pushed.reason) || 'unknown'));
   // NO SUMMARY TO THE DESK (goal/G43.22; Andy: "publishData summary is no longer needed, i only check on github.").
