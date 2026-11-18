@@ -100,6 +100,26 @@ function createApiAuth(opts) {
   // no app's Bundles.json is read at boot and no record of them is kept. A bundle is a row of node.db, made and changed
   // through auth.bundle.
 
+  // A BRANCH OF A VERB ITS SERVER NO LONGER SERVES GOES (goal/G47.5; Andy: "the bundles that are registered for desk are out
+  // of sync with the desk api"): at start, and once more a minute later, when the app servers are up, every branch whose
+  // family the live tree serves and whose verb that family does not is deleted, and told as gone. A family the tree does
+  // not serve (its server switched off, or not up yet) keeps its branches: only a server that answers can say a verb went.
+  function dropStaleBranches() {
+    return Promise.resolve(servedTree()).then(function (tree) {
+      branches().all().forEach(function (b) {
+        const fam = tree && tree[b.family];
+        if (!b.verb || !fam || typeof fam !== 'object' || fam.ok === false) return;
+        if (Object.prototype.hasOwnProperty.call(fam, b.verb)) return;
+        if (branches().del(b.id)) told({ table: 'branch', row: { id: b.id }, gone: true });
+      });
+    }).catch(function () { /* the next pass tries again */ });
+  }
+  if (rootDir) {
+    dropStaleBranches();
+    const later = setTimeout(dropStaleBranches, 60000);
+    if (later && typeof later.unref === 'function') later.unref();
+  }
+
   return {
     // goal/G41.14: fn(change) for each bundle and branch row added, set or deleted (told, above).
     onChange: function (fn) { if (typeof fn === 'function') listeners.push(fn); },

@@ -248,12 +248,18 @@
         var who = (idSel.row && (idSel.row.name || idSel.row[ids.label])) || 'that ID';
         waiting = { want: {}, came: 0, of: paths.length, label: bundle.label || 'the bundle', who: who };
         paths.forEach(function (p) { waiting.want[String(id) + '\n' + String(p)] = true; });
+        // ONE FAILED PATH STOPS NO OTHER (goal/G47.5; Andy: "the grant-loop seemed to have exited the loop when it
+        // encountered a non-existing verb.... it should have registered the rest...."): a grant that throws or rejects is
+        // said as refused, like any refusal, and the chain goes on to the next path.
         return paths.reduce(function (chain, p) {
           return chain.then(function () {
-            return Promise.resolve(g.grant(id, p)).then(function (a) {
+            return Promise.resolve().then(function () { return g.grant(id, p); }).then(function (a) {
               if (a && (a.ok !== false || a.code === 'already-granted')) { done += 1; if (a.code === 'already-granted' && waiting) delete waiting.want[String(id) + '\n' + String(p)]; return; }
               if (waiting) delete waiting.want[String(id) + '\n' + String(p)];
               refused.push(p + ': ' + refusal(a));
+            }, function (e) {
+              if (waiting) delete waiting.want[String(id) + '\n' + String(p)];
+              refused.push(p + ': ' + ((e && e.message) || 'refused'));
             });
           });
         }, Promise.resolve()).then(function () {
