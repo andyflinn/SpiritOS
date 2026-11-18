@@ -176,6 +176,14 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.demo !== both[0]];
     out.peerRan = globalThis.peerCodeRan === true;
     out.peerOwn = typeof both[0].hello === 'function' && typeof both[0].peerOnly === 'undefined';
+    // THE STREAM'S AUTO-VERBS ON EVERY FAMILY (goal/G47.5; Andy: "both: \"publisher\" and \"listener\" belong in
+    // spirit/appServer.js", "they're both auto-verbs. MUST BE."): demo's api.js names none, yet its family has listener,
+    // subscribe and unsubscribe, as it has remote, and a call of listener goes to the peer as demo.listener.
+    out.peerAuto = ['listener', 'subscribe', 'unsubscribe', 'remote'].filter(function (v) { return typeof both[0][v] === 'function'; });
+    let posted = null;
+    s.peerPost = function (peer, app, body) { posted = body; return Promise.resolve({ heard: true }); };
+    try { await both[0].listener({ json: '[]' }); } catch (e) { /* judged by what was posted */ }
+    out.peerListener = !!(posted && posted.demo && posted.demo.listener && posted.demo.listener.json === '[]');
   }
   process.stdout.write(JSON.stringify(out));
 }()).catch(function (e) { process.stdout.write(JSON.stringify({ threw: String(e && e.stack || e) !== '' })); });
@@ -441,6 +449,15 @@ test.run('nothing the peer hands back is run: its code never ran here', 0.8, fun
 test.run('the peer\'s family has the verbs of its own copy, hello, and none the peer named (peerOnly)', 0.8, function () {
   const o = O(); if (!o) return false;
   return o.peerOwn === true || false;
+}, test.limit.quick);
+test.run('a peer\'s family has listener, subscribe and unsubscribe, auto-verbs its api.js does not name, as it has remote', 0.8, function () {
+  const o = O(); if (!o) return false;
+  const p = o.peerAuto || [];
+  return ['listener', 'subscribe', 'unsubscribe', 'remote'].every(function (v) { return p.indexOf(v) !== -1; }) || false;
+}, test.limit.quick);
+test.run('a call of the peer family\'s listener goes to the peer as its family\'s listener', 0.8, function () {
+  const o = O(); if (!o) return false;
+  return o.peerListener === true || false;
 }, test.limit.quick);
 test.run('with no port in its environment.json, require of an interface and tree refuse no-node, no default port is guessed, and none is placed on the instance', 0.2, async function () {
   if (!T.bare) return false;
