@@ -80,12 +80,28 @@ test.after(function () {
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
-test.run('a row is there to star', 0.2, async function () {
+// A NODE IS STARRED ONLY WHEN IT SAYS THIS NODE OWNS IT (goal/G47.4; Andy: "can we please only allow stars for nodes, only
+// when they're actually owned? now."): the row to star holds a card, signed by that node, naming the scratch node as owner.
+const runOf = function () { return W.node.run || path.join(W.node.root, 'spirit', 'run'); };
+test.run('a row is there to star, its card naming the scratch node as its owner', 0.2, async function () {
   if (noNode()) return false;
-  W.KEY = auth.generateIdentity('a contact').publicKey;
+  W.contact = auth.generateIdentity('a contact');
+  W.KEY = W.contact.publicKey;
   const made = await call('contact.block', { publicKey: W.KEY, publicLabel: 'a contact' });
   await call('contact.unblock', { publicKey: W.KEY });
-  return (made.status >= 200 && made.status < 300) || false;
+  const said = contacts.setCard(runOf(), W.KEY, cardOf(W.contact, auth.loadIdentity(runOf()).publicKey, 1));
+  return (made.status >= 200 && made.status < 300 && said.ok === true) || false;
+}, test.limit.quick);
+test.run('a node whose card names another owner is refused the star, not-owned, and has none', 0.4, async function () {
+  if (noNode()) return false;
+  const other = auth.generateIdentity('not ours');
+  await call('contact.block', { publicKey: other.publicKey, publicLabel: 'not ours' });
+  await call('contact.unblock', { publicKey: other.publicKey });
+  contacts.setCard(runOf(), other.publicKey, cardOf(other, auth.generateIdentity('someone else').publicKey, 1));
+  const on = await call('contact.own', { key: other.publicKey, own: true });
+  const g = await call('contact.search', { q: '', mine: 'yes' });
+  const starred = ((g.body && g.body.items) || []).some(function (i) { return i.key === other.publicKey; });
+  return (on.status === 403 && !!on.body && on.body.code === 'not-owned' && !starred) || false;
 }, test.limit.quick);
 test.run('a new row has no star', 0.2, async function () {
   if (noNode()) return false;

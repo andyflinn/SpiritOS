@@ -1338,6 +1338,15 @@ function createHub(rootDir) {
       // alone, a node or a puppet has no seat; and only putting it on, so a star can always come off.
       var row = shadow(rootDir).get(key);
       if (body.own === true && row.relay === true && row.seated !== true) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-seat', error: 'this node holds no seat on that relay' })); return; }
+      // A NODE IS STARRED ONLY WHEN IT SAYS THIS NODE OWNS IT (goal/G47.4; Andy: "can we please only allow stars on nodes that
+      // say we own them??? with relays I'll accept the ambiguity...", "can we please only allow stars for nodes, only when
+      // they're actually owned? now."): the card held for it, verified from its own bytes (contacts.cardOf), names this
+      // node's key as its owner (ownerBadge.ownedBy, the one ownership rule). A node with no card, or one naming nobody or
+      // another, is refused; a relay keeps its seat rule; a star always comes off.
+      if (body.own === true && row.relay !== true) {
+        var card = contactBook.cardOf(row);
+        if (!ownerBadge.ownedBy(card && card.owner, auth.loadIdentity(rootDir).publicKey)) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'not-owned', error: 'that node does not name this node as its owner' })); return; }
+      }
       shadow(rootDir).set(key, { mine: body.own === true });
       // A STAR TAKEN OFF TAKES THE FACE AWAY (goal/G43.18, box v29: "A star taken off a relay that has a face takes that face
       // away (Q21)"): the face this node holds on that relay is forgotten, so putting the star back opens nothing.
