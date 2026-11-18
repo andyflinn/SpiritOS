@@ -193,7 +193,11 @@ function open(rootDir, opts) {
   // stays: it is the address the node connects to, kept on the relay's own row, where the relay list reads it"). url is
   // '' for every row but a relay's; one url is one relay (relayKeys.accept), found on seen_url.
   // NO TABLE MADE BEFORE IS MENDED, here or anywhere in this file (Andy, goal/G47.1: "old files or tables should not be
-  // mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"): no column is added, dropped or renamed.
+  // mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"): no column is dropped or renamed.
+  // A FLAG THE TABLE LACKS IS ADDED, 0 on every row, before its index is made (Andy, goal/G47.4, after a node.db made
+  // before faceable stopped his node: "adding a fucking field is not mending!!!!!!!!!!!!!!!!").
+  const seenHas = db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; });
+  SEEN_FLAGS.forEach(function (f) { if (seenHas.indexOf(f) === -1) db.exec('ALTER TABLE seen ADD COLUMN ' + f + ' INTEGER NOT NULL DEFAULT 0'); });
   db.exec("CREATE INDEX IF NOT EXISTS seen_url ON seen (url) WHERE url <> ''");
   // THE FACE NAME THIS NODE HOLDS ON A RELAY, on that relay's row (Andy, 2026-10-26, goal/G40.11: "keep it, on the
   // relay's row, as the node's own fact, like myLabel"): the node set it itself (relay.face, the relay said yes). In the
