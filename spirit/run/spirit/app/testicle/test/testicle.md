@@ -272,3 +272,29 @@ Andy: *"name-space pollution is 0.7"*; the box: *"Guard: after each suite, testi
 ## A test's temp folder is gone after it (goal/G47.1, the box, no pollution)
 
 The box: *"A temp folder is cleaned by its owner: ... a test's in its own after. Guard: after each suite, testicle finds its temp folder gone; red if not"*; Q31 (Andy): the tests take their temp folders from `spirit/tempFolder.js`. A suite's folder is the helper's for its route, the suite's path without `.js`, on this node. When a run of one script's suite has ended, after hooks and all, that folder still there turns that script's and suite's test *"it leaves no temp folder behind"* red at 0.7, else green. A general suite's run over many scripts is not judged: its one folder is the suite's, and blaming each script for it would be wrong. Its test plants stray, whose suite leaves its folder: red; lambda's suite, which leaves none: green.
+
+## A red that reached no verdict says so (goal/G47.6, box point 1)
+
+The box: *"A crash or a hang stays a red on the script. The suite table is not mended; it gains one field, reason, shown as
+the explanation of a suite's red: crashed or hung when no verdict was reached."* A scratch copy with three planted scripts
+and a copy of testicle's -general test in which aCrash.js's test throws, bHung.js's never answers within its limit, and
+cFalse.js's answers false; in auto mode each suite row ends red: aCrash.js's with the reason crashed, bHung.js's with hung,
+cFalse.js's with no reason.
+
+## The classifier compiles first (goal/G47.6, box point 3)
+
+The box: *"The classifier compiles a changed script first, before it boots a scratch node; a script that does not compile is
+a red on the script."* cw: *"'not charged' must leave the compiling script waiting to run, not green, since nothing judged
+it."* A scratch copy whose classifier can get no scratch node, with a planted script that does not compile and one that
+does: in auto mode the one that does not compile is red on its "it loads, so it can be classified"; the one that compiles
+has no such row, red or green, and is still waiting to be classified.
+
+## Dependencies are watched, and a change re-runs what depends on it (goal/G47.6, box point 3)
+
+The box: *"a changed file re-runs the own suites of every script that depends on it, at any depth"*; *"the classifier loads
+each script alone in its own process and records everything that load pulled in, the whole chain; a require that happens
+only later, inside a function, is recorded while the script's own suite runs. They are kept in a new table of testicle's,
+dependency, one row per script and each file in its chain."* A scratch copy in auto mode with four planted scripts and their
+own tests: user.js requires lib.js as it loads, lazy.js requires lazyLib.js only inside a function its own test calls. Once
+their own suites ran green, the dependency table links user.js to lib.js and lazy.js to lazyLib.js; a change to lib.js
+re-runs user.js's own suite, which ends green again. The table's field names are the builder's.

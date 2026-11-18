@@ -2427,3 +2427,205 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     return !!ran || false;
   }, test.limit.long);
 }
+
+// A RED THAT REACHED NO VERDICT SAYS SO (goal/G47.6, box point 1: "A crash or a hang stays a red on the script. The suite
+// table is not mended; it gains one field, reason, shown as the explanation of a suite's red: crashed or hung when no verdict
+// was reached."). A world of its own: a scratch copy, three planted scripts, and a copy of testicle's own -general test in
+// which aCrash.js's test throws, bHung.js's test never answers within its limit, and cFalse.js's test answers false. In auto
+// mode the run takes the three; each suite row ends red, and its reason says which.
+{
+  const GENERAL_LINE = 'else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });';
+  const ACRASH = 'spirit/app/testicle/temp/zzReason/aCrash.js';
+  const BHUNG = 'spirit/app/testicle/temp/zzReason/bHung.js';
+  const CFALSE = 'spirit/app/testicle/temp/zzReason/cFalse.js';
+  const R = { s: null, N: null, DB: '', ended: false };
+  const reasonUp = function () { return !!R.N && R.N.up; };
+  const rowOf = function (script) { return suiteRow(tables(R.DB), script, GENERAL); };
+  test.after(async function () {
+    if (R.N) await stop(R.N.child);
+    try { if (R.s) LABH.freeTree(R.s); } catch (e) { /* scratch */ }
+  });
+  test.run('a scratch copy is made with three planted scripts whose general test crashes, hangs and answers false', 0.2, async function () {
+    const root = LABH.scratchTree().root;
+    const run = path.join(root, 'spirit', 'run');
+    R.s = { root: root, run: run };
+    const general = path.join(run, GENERAL);
+    const generalSrc = fs.readFileSync(general, 'utf8');
+    if (generalSrc.indexOf(GENERAL_LINE) === -1) return false;
+    fs.writeFileSync(general, generalSrc.replace(GENERAL_LINE, "else GIVEN.forEach(function (rel) { test.forScript(rel, function () {" +
+      " if (/zzReason\\/aCrash\\.js$/.test(rel)) test.run('it crashes', 0.2, function () { throw new Error('zzReason crash'); }, test.limit.quick);" +
+      " else if (/zzReason\\/bHung\\.js$/.test(rel)) test.run('it never answers', 0.2, function () { return new Promise(function () {}); }, test.limit.quick);" +
+      " else if (/zzReason\\/cFalse\\.js$/.test(rel)) test.run('it answers false', 0.2, function () { return false; }, test.limit.quick);" +
+      " else { one(rel); two(rel); } }); });"));
+    [ACRASH, BHUNG, CFALSE].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the reason of a red\n'); });
+    const on = path.join(run, 'spirit', 'state', 'testicle');
+    fs.mkdirSync(path.join(on, 'data'), { recursive: true });
+    fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
+    fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
+    R.DB = path.join(on, 'data', 'testicle.db');
+    R.N = await boot(run);
+    if (!R.N.up) return false;
+    const auto = await call(R.N.base, 'testicle.preferences', { interactive: false });
+    return auto.status === 200 || false;
+  }, test.limit.long);
+  test.run('the run judges the three planted scripts\' general suite: each suite row ends red', 0.2, async function () {
+    if (!reasonUp()) return false;
+    R.ended = !!(await until(function () {
+      return Promise.resolve([ACRASH, BHUNG, CFALSE].every(function (f) { const r = rowOf(f); return !!r && r.outcome === 'red' && no(r.test); }));
+    }, 280000));
+    return R.ended || false;
+  }, test.limit.long);
+  test.run('a suite whose test threw is red with the reason crashed', 0.8, function () {
+    if (!R.ended) return false;
+    const r = rowOf(ACRASH);
+    return (!!r && r.outcome === 'red' && r.reason === 'crashed') || false;
+  }, test.limit.quick);
+  test.run('a suite whose test never answered within its limit is red with the reason hung', 0.8, function () {
+    if (!R.ended) return false;
+    const r = rowOf(BHUNG);
+    return (!!r && r.outcome === 'red' && r.reason === 'hung') || false;
+  }, test.limit.quick);
+  test.run('a suite whose test answered false is red with no reason: its verdict was reached', 0.8, function () {
+    if (!R.ended) return false;
+    const r = rowOf(CFALSE);
+    return (!!r && r.outcome === 'red' && 'reason' in r && !r.reason) || false;
+  }, test.limit.quick);
+}
+
+// THE CLASSIFIER COMPILES FIRST (goal/G47.6, box point 3: "The classifier compiles a changed script first, before it boots a
+// scratch node; a script that does not compile is a red on the script."; cw: "'not charged' must leave the compiling script
+// waiting to run, not green, since nothing judged it"). A world of its own: a scratch copy whose classifier can get no
+// scratch node (the one line that boots it, in the copy alone), and two planted scripts, one that does not compile and one
+// that does. In auto mode the classifier runs on both.
+{
+  const BOOT_LINE = '  W.node = await ownScratch();';
+  const BAD = 'spirit/app/testicle/temp/zzCompile/bad.js';
+  const GOOD = 'spirit/app/testicle/temp/zzCompile/good.js';
+  const C = { s: null, N: null, DB: '', judged: false };
+  const compileUp = function () { return !!C.N && C.N.up; };
+  test.after(async function () {
+    if (C.N) await stop(C.N.child);
+    try { if (C.s) LABH.freeTree(C.s); } catch (e) { /* scratch */ }
+  });
+  test.run('a scratch copy is made whose classifier gets no scratch node, with a planted script that does not compile and one that does', 0.2, async function () {
+    const root = LABH.scratchTree().root;
+    const run = path.join(root, 'spirit', 'run');
+    C.s = { root: root, run: run };
+    const classifier = path.join(run, SC);
+    const src = fs.readFileSync(classifier, 'utf8');
+    if (src.indexOf(BOOT_LINE) === -1) return false;
+    fs.writeFileSync(classifier, src.replace(BOOT_LINE, '  W.node = { up: false };'));
+    fs.mkdirSync(path.dirname(path.join(run, BAD)), { recursive: true });
+    fs.writeFileSync(path.join(run, BAD), '\'use strict\';\nfunction ( {\n');
+    fs.writeFileSync(path.join(run, GOOD), '\'use strict\';\nmodule.exports = { good: true };\n');
+    const on = path.join(run, 'spirit', 'state', 'testicle');
+    fs.mkdirSync(path.join(on, 'data'), { recursive: true });
+    fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
+    fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
+    C.DB = path.join(on, 'data', 'testicle.db');
+    C.N = await boot(run);
+    if (!C.N.up) return false;
+    // Asked again until testicle takes it: it may come up a moment after the node answers.
+    const auto = await until(function () { return call(C.N.base, 'testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
+    return !!auto || false;
+  }, test.limit.long);
+  test.run('with no scratch node to be had, the classifier judges the script that does not compile', 0.2, async function () {
+    if (!compileUp()) return false;
+    C.judged = !!(await until(function () { return Promise.resolve(currentOf(tables(C.DB), BAD, SC, 'it loads, so it can be classified').length > 0); }, 180000));
+    return C.judged || false;
+  }, test.limit.long);
+  test.run('a script that does not compile is red on the script, though no scratch node came up', 0.8, function () {
+    if (!C.judged) return false;
+    const r = currentOf(tables(C.DB), BAD, SC, 'it loads, so it can be classified')[0];
+    return (!!r && no(r.verified)) || false;
+  }, test.limit.quick);
+  test.run('a script that compiles is not charged when no scratch node came up: not red, not green, still waiting to be classified', 0.8, async function () {
+    if (!C.judged) return false;
+    await sleep(5000);
+    const t = tables(C.DB);
+    const rows = currentOf(t, GOOD, SC, 'it loads, so it can be classified');
+    const row = scriptRow(t, GOOD);
+    return (rows.length === 0 && !!row && yes(row.reClassify)) || false;
+  }, test.limit.quick);
+}
+
+// DEPENDENCIES ARE WATCHED, NOT PARSED, AND A CHANGE RE-RUNS WHAT DEPENDS ON IT (goal/G47.6, box point 3: "a changed file re-runs
+// the own suites of every script that depends on it, at any depth", "the classifier loads each script alone in its own
+// process and records everything that load pulled in, the whole chain; a require that happens only later, inside a function,
+// is recorded while the script's own suite runs. They are kept in a new table of testicle's, dependency, one row per script
+// and each file in its chain"). A world of its own: a scratch copy in auto mode, and four planted scripts, each with its own
+// test: user.js requires lib.js as it loads; lazy.js requires lazyLib.js only inside a function its own test calls.
+{
+  const D0 = 'spirit/app/testicle/temp/zzDep/';
+  const DEP = { lib: D0 + 'lib.js', user: D0 + 'user.js', lazyLib: D0 + 'lazyLib.js', lazy: D0 + 'lazy.js' };
+  const DEP_SRC = {
+    lib: "'use strict';\nmodule.exports = { v: 1 };\n",
+    user: "'use strict';\nrequire('../../../../spirit.js').require('" + D0 + "lib.js');\nmodule.exports = { user: true };\n",
+    lazyLib: "'use strict';\nmodule.exports = { lazy: 1 };\n",
+    lazy: "'use strict';\nconst spirit = require('../../../../spirit.js');\nmodule.exports = { use: function () { return spirit.require('" + D0 + "lazyLib.js'); } };\n",
+  };
+  const DEP_TEST = {
+    lib: "test.run('lib answers', 0.2, function () { return true; }, test.limit.quick);\n",
+    user: "test.run('user answers', 0.2, function () { return true; }, test.limit.quick);\n",
+    lazyLib: "test.run('lazyLib answers', 0.2, function () { return true; }, test.limit.quick);\n",
+    lazy: "const lazy = require(path.join(__dirname, '..', 'lazy.js'));\ntest.run('lazy uses its lazyLib', 0.2, function () { return !!lazy.use(); }, test.limit.quick);\n",
+  };
+  const ownOfDep = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
+  const DP = { s: null, N: null, DB: '', ran: false, before: 0 };
+  const depUp = function () { return !!DP.N && DP.N.up; };
+  const ownGreen = function (k) { const r = suiteRow(tables(DP.DB), DEP[k], ownOfDep(DEP[k])); return !!r && r.outcome === 'green' && no(r.test); };
+  // The dependency table's rows, as they stand; [] when there is no such table.
+  const depRows = function () {
+    let db = null;
+    try { db = new DatabaseSync(DP.DB, { readOnly: true }); db.exec('PRAGMA busy_timeout = 5000'); return db.prepare('SELECT * FROM dependency').all(); } catch (e) { return []; }
+    finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
+  };
+  const links = function (script, file) { return depRows().some(function (r) { const v = Object.keys(r).map(function (k) { return String(r[k]); }); return v.indexOf(script) !== -1 && v.indexOf(file) !== -1; }); };
+  test.after(async function () {
+    if (DP.N) await stop(DP.N.child);
+    try { if (DP.s) LABH.freeTree(DP.s); } catch (e) { /* scratch */ }
+  });
+  test.run('a scratch copy in auto mode is made with four planted scripts and their own tests: one requiring another as it loads, one only inside a function', 0.2, async function () {
+    const root = LABH.scratchTree().root;
+    const run = path.join(root, 'spirit', 'run');
+    DP.s = { root: root, run: run };
+    Object.keys(DEP).forEach(function (k) {
+      fs.mkdirSync(path.join(run, D0, 'test'), { recursive: true });
+      fs.writeFileSync(path.join(run, DEP[k]), DEP_SRC[k]);
+      fs.writeFileSync(path.join(run, ownOfDep(DEP[k])), SUITE_HEAD + DEP_TEST[k]);
+    });
+    const on = path.join(run, 'spirit', 'state', 'testicle');
+    fs.mkdirSync(path.join(on, 'data'), { recursive: true });
+    fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
+    fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
+    DP.DB = path.join(on, 'data', 'testicle.db');
+    DP.N = await boot(run);
+    if (!DP.N.up) return false;
+    const auto = await call(DP.N.base, 'testicle.preferences', { interactive: false });
+    return auto.status === 200 || false;
+  }, test.limit.long);
+  test.run('the four are classified and their own suites run green', 0.2, async function () {
+    if (!depUp()) return false;
+    DP.ran = !!(await until(function () { return Promise.resolve(Object.keys(DEP).every(ownGreen)); }, 280000));
+    return DP.ran || false;
+  }, test.limit.long);
+  test.run('testicle keeps a dependency table, and it records that user.js pulls in lib.js as it loads', 0.8, function () {
+    if (!DP.ran) return false;
+    return links(DEP.user, DEP.lib) || false;
+  }, test.limit.quick);
+  test.run('a require inside a function, made only when lazy.js\'s own suite runs, is recorded too: lazy.js pulls in lazyLib.js', 0.8, function () {
+    if (!DP.ran) return false;
+    return links(DEP.lazy, DEP.lazyLib) || false;
+  }, test.limit.quick);
+  test.run('a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again', 0.8, async function () {
+    if (!DP.ran) return false;
+    const r0 = suiteRow(tables(DP.DB), DEP.user, ownOfDep(DEP.user));
+    DP.before = Number(r0 && r0.changed) || 0;
+    fs.appendFileSync(path.join(DP.s.run, DEP.lib), '// changed\n');
+    const again = await until(function () {
+      const r = suiteRow(tables(DP.DB), DEP.user, ownOfDep(DEP.user));
+      return Promise.resolve(!!r && Number(r.changed) > DP.before && r.outcome === 'green' && no(r.test));
+    }, 180000);
+    return !!again || false;
+  }, test.limit.long);
+}
