@@ -188,6 +188,6 @@ ping as the sibling):
   switch publishes remote, current and the list, to its own pages (the stand-in's event.publish); no delivery to a peer
   subscribed to it carries remote.
 - The background check (box v12, "one row per peer that lets this node into this app", "leisurely asks again in the
-  background"): the stand-in's contacts are one that lets this node in, one whose server loads but refuses it
+  background"): the stand-in's contacts are one that lets this node in (its server refuses remote only as owner-only), one whose server loads but refuses it
   (not-granted), and one that stays silent. After an empty call and a wait, the list holds this node and the first alone,
   and remote.json keeps the first and not the refusing one. Loading a peer's interface is not being let in.

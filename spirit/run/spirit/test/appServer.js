@@ -135,13 +135,17 @@ const fake = {
         streamListener: function (a) { return deliver(a.json); },
         // The sibling's own verb, as a remote's client mode routes the owner's ask to it (goal/G47.5).
         ping: function () { asked.push({ verb: 'sibling.ping', key: key }); return Promise.resolve({ pong: 'sibling' }); },
+        // A peer that lets this node in: its node's door passes, and its server refuses remote as owner-only, as a real one
+        // does (goal/G47.5; cw: "counts it when the answer is owner-only (or an answer at all), never not-granted or silence").
+        remote: function () { asked.push({ verb: 'sibling.remote', key: key }); return Promise.reject({ status: 403, body: { ok: false, code: 'owner-only' } }); },
       });
     }
     // goal/G43.32, decided 3: on the node spirit.require is a path-translating wrapper, a script's module at once.
     if (!/\/api\.js$/.test(q)) return require(path.join(RUN, q));
     return Promise.resolve({});
   },
-  outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function () { return { status: 500, body: { ok: false } }; }); },
+  // A refusal keeps its status and body, as spirit.outcome does (the code is what the remote check reads, goal/G47.5).
+  outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: (e && e.status) || 500, body: (e && e.body) || { ok: false } }; }); },
   // What the server publishes to its own pages, kept (goal/G47.5: remote is published to them).
   event: { published: [], publish: function (e) { fake.event.published.push(e); }, subscribe: function () {} },
   // A server reports its DEBUG on its job (goal/G43.15); the stand-in node takes the report and keeps nothing.
