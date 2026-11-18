@@ -114,9 +114,42 @@ function createApiAuth(opts) {
       });
     }).catch(function () { /* the next pass tries again */ });
   }
+  // EVERY SERVER'S OWN BUNDLE, enableRemote (goal/G47.5; Andy: "the fix is: desk provides a complete fucking bundle", "since
+  // desk does NOT own those verbs, the node, maybe appServer.js all \"server bundles that are owned by the <appname>\"",
+  // "maybe appServer can add this bundles as \"enableRemote\", belonging to <appServerName>?"; Q4, "yes."; "nope apiAuth
+  // still needs to do that automatically."): in the same passes, every family the live tree serves that serves remote, the
+  // auto-verb every appServer has, gets one bundle enableRemote owned by its name, holding a branch for every verb it
+  // serves and nothing else: made if missing, a new verb added, one gone dropped, each change told. Owned by the server,
+  // a user sees it read-only (auth.bundle and auth.branch refuse it); granting it is still his.
+  const OWN_LABEL = 'enableRemote';
+  function keepServerBundles() {
+    return Promise.resolve(servedTree()).then(function (tree) {
+      Object.keys(tree || {}).forEach(function (family) {
+        const fam = tree[family];
+        if (!fam || typeof fam !== 'object' || fam.ok === false || !Object.prototype.hasOwnProperty.call(fam, 'remote')) return;
+        if (ownerOf(family) !== family) return;
+        const B = bundles(), R = branches();
+        const mine = B.all().filter(function (b) { return b.owner === family && b.label === OWN_LABEL; });
+        let id = mine.length ? mine[0].id : 0;
+        if (!id) { id = B.add(OWN_LABEL, family); told({ table: 'bundle', row: owned(B.get(id)) }); }
+        const verbs = Object.keys(fam);
+        const held = R.all().filter(function (r) { return r.bundle === id; });
+        held.forEach(function (r) {
+          if (r.family === family && r.verb && verbs.indexOf(r.verb) !== -1) return;
+          if (R.del(r.id)) told({ table: 'branch', row: { id: r.id }, gone: true });
+        });
+        verbs.forEach(function (v) {
+          if (R.same(id, family, v, 0)) return;
+          const made = R.add(id, family, v);
+          told({ table: 'branch', row: R.get(made) });
+        });
+      });
+    }).catch(function () { /* the next pass tries again */ });
+  }
+  function startPass() { return dropStaleBranches().then(keepServerBundles); }
   if (rootDir) {
-    dropStaleBranches();
-    const later = setTimeout(dropStaleBranches, 60000);
+    startPass();
+    const later = setTimeout(startPass, 60000);
     if (later && typeof later.unref === 'function') later.unref();
   }
 

@@ -710,7 +710,7 @@ const DESK_VERBS = ['chat.add', 'item.get', 'remote', 'listener', 'subscribe', '
 const TESTICLE_VERBS = ['run', 'remote', 'listener', 'subscribe', 'unsubscribe'];
 const ownBundles = async function (a) { return ((await call(a, 'bundle', { op: 'search', text: '' })).items || []).map(parsed).filter(Boolean); };
 const enableRemoteOf = async function (a, server) { return (await ownBundles(a)).filter(function (b) { return b.label === 'enableRemote' && b.owner === server; }); };
-const verbsOf = async function (a, bundle) { return (await branchesOf(a, bundle)).filter(function (x) { return x.family === bundle.owner; }).map(function (x) { return x.verb; }).sort(); };
+const verbsOf = async function (a, bundle) { return (await branchesOf(a, bundle.id)).filter(function (x) { return x.family === bundle.owner; }).map(function (x) { return x.verb; }).sort(); };
 const settle = async function () { for (let i = 0; i < 50; i++) await new Promise(function (r) { setImmediate(r); }); await new Promise(function (r) { setTimeout(r, 200); }); };
 const vtree = function (verbs) { const o = {}; verbs.forEach(function (v) { o[v] = {}; }); return o; };
 test.run('at start the node gives desk, a server, a bundle enableRemote owned by desk', 0.2, async function () {
