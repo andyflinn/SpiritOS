@@ -18,3 +18,8 @@ Owed since the rule *"every production script has its own test"* (goal/G47.1, bo
 - An owner invented for a bundle row that named none; a branch or grant row kept under the wrong table.
 - A row gone that stays; a watcher heard after its release.
 - Two nodes' rows mixed in one view.
+
+## A key with a slash keeps every grant apart (goal/G47.4)
+
+A contact's key is base64 and may hold slashes. A key with a slash holding three grants keeps three rows, each read
+whole by its grant key, and one gone leaves the other two.

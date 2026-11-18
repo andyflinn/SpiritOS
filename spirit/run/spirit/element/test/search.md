@@ -276,3 +276,10 @@ The box: *"Tile mode is a search's own: a search that has a tile.js, beside its 
 - A search handed none shows no switch, even with the toggle option, and draws no tiles even asked to open as tiles: it is a list, with its headers.
 - Handed a tile part and asked to open as tiles, it opens as tiles; each row is drawn by the tile part, one node per row, and no plain tile of the shared search.
 - A press on a tile is the tile part's: its node hears it, and the shared search picks nothing itself.
+
+## Every row of the branch its own line (goal/G47.4)
+
+Andy: *"i want to see every single fucking grant row that matches the fucking search, and not only one of many for a
+fucking family when the fucking verbs were fucking granted separetely."* Over the real spirit.data and the auth family's
+data (spirit/data.js, spirit/auth/data.js), two grants of one contact, filed apart in the branch by key and path but
+sharing the key field (the contact's key), are drawn as two rows.

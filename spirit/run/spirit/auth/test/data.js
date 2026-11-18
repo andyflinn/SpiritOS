@@ -152,3 +152,25 @@ test.run('in a process, a row from another node is filed under that node, never 
   const here = w.X.bundles.row(8);
   return (same(w.nodes().sort(), [w.D.nodeId(SENDER), w.D.nodeId(OTHER)].sort()) && !!there && there.label === 'theirs' && here === null && !!w.X.bundles.row(4)) || false;
 }, test.limit.quick);
+
+// EVERY GRANT ITS OWN ROW, A KEY WITH A SLASH TOO (goal/G47.4; Andy: "i want to see every single fucking grant row that
+// matches the fucking search, and not only one of many for a fucking family when the fucking verbs were fucking granted
+// separetely."). Found by cw on his node: a contact's key is base64, which holds slashes, and claude-ubuntu's 69 desk
+// grants showed as one row. Here a key with a slash in it holds three grants, of one branch and of another.
+const SLASH_KEY = 'MCowBQYDK2VwAyEA/slash+key/0123456789abcdefghijklmnopq=';
+let sw = null;
+test.run('a key with a slash in it, holding three grants, keeps three grant rows', 0.2, function () {
+  sw = world();
+  if (!sw.X) return false;
+  ['desk.chat', 'desk.item', 'jobs.list'].forEach(function (p) { sw.job(row('grant', { key: SLASH_KEY, path: p, label: 'Ubu' })); });
+  return Object.keys(sw.X.grants.rows()).length === 3 || false;
+}, test.limit.quick);
+test.run('each of them is read whole by its grant key', 0.2, function () {
+  if (!sw || !sw.X) return false;
+  return ['desk.chat', 'desk.item', 'jobs.list'].every(function (p) { return same(sw.X.grants.row(sw.X.grantKey(SLASH_KEY, p)), { key: SLASH_KEY, path: p, label: 'Ubu' }); }) || false;
+}, test.limit.quick);
+test.run('one of them gone, the other two stay', 0.2, function () {
+  if (!sw || !sw.X) return false;
+  sw.job(row('grant', { key: SLASH_KEY, path: 'desk.chat' }, true));
+  return (Object.keys(sw.X.grants.rows()).length === 2 && sw.X.grants.row(sw.X.grantKey(SLASH_KEY, 'desk.chat')) === null && !!sw.X.grants.row(sw.X.grantKey(SLASH_KEY, 'jobs.list'))) || false;
+}, test.limit.quick);

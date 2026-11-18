@@ -940,6 +940,31 @@ test.run('destroy drops the watch', 0.2, function () {
   L7.destroy();
   return (unwatched === 1) ? true : false;
 }, test.limit.quick);
+// EVERY ROW OF THE BRANCH ITS OWN LINE, WHATEVER ITS FIELDS (goal/G47.4; Andy: "i want to see every single fucking grant row
+// that matches the fucking search, and not only one of many for a fucking family when the fucking verbs were fucking
+// granted separetely."). Over the real spirit.data (spirit/data.js): a grant row's key field is its contact's key, so two
+// grants of one contact, filed apart in the branch by key and path, share that field; the list draws them as two rows.
+let c7b = null;
+test.run('over the real spirit.data, two rows filed apart in the branch but sharing a key field are drawn as two rows', 0.2, async function () {
+  window.spirit.data = undefined;
+  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'spirit/data.js' }); } catch (e) { return false; }
+  // The auth family's grants, as a node's stream hands them (spirit/auth/data.js), the branch the Grants app's list views.
+  try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } catch (e) { return false; }
+  const D = window.spirit.data;
+  const X = D && D.auth && D.auth.data;
+  if (!X || typeof D.takeJob !== 'function') return false;
+  const K = 'MCowBQYDK2VwAyEAsearchTestContactKey0123456789abcdefghijk=';
+  const NODE = 'MCowBQYDK2VwAyEAsearchTestNodeKey0123456789abcdefghijklmn=';
+  ['desk.chat', 'jobs.list'].forEach(function (p) { D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: K, path: p, name: 'Ubu' } } }, NODE); });
+  c7b = container();
+  const A = source('s');
+  const L = PS.create(c7b, { search: A.search, server: 's', verb: 'v', data: X.grants.branch, columns: [{ field: 'name' }, { field: 'path' }] });
+  await tick();
+  const shown = c7b.shown().length;
+  L.destroy();
+  delete window.spirit.data;
+  return (shown === 2) ? true : false;
+}, test.limit.quick);
 test.run('a dropdown starts shut, its list not drawn', 0.2, function () {
   delete window.spirit.data;
   // create: the dropdown
