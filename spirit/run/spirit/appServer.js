@@ -944,24 +944,48 @@ const siblingListener = {
     let bundle = null;
     try { bundle = JSON.parse(String(a.json)); } catch (e) { bundle = null; }
     if (!Array.isArray(bundle)) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a delivery is one bundle: a JSON array of entries' } });
-    bundle.forEach(function (e) { if (isPlain(e) && isPlain(e.row)) { try { spirit.event.publish(e.row); } catch (err) { /* no page listens */ } } });
+    bundle.forEach(function (e) {
+      if (!isPlain(e)) return;
+      // The place it got to in the sibling's stream, handed back at the next subscribe (below).
+      if (typeof e.run === 'string' && Number.isInteger(e.n)) { sibling.run = e.run; sibling.n = e.n; }
+      if (isPlain(e.row)) { try { spirit.event.publish(e.row); } catch (err) { /* no page listens */ } }
+    });
     return { heard: true };
   },
 };
+// IN CLIENT MODE IT STAYS CONNECTED (goal/G47.5; Andy: "while my server runs in client mode it sould make every effort to
+// stay connected...", "let's ensure a bit more stability by reconnecting if the server side goes down for a few
+// minutes...", "agreed."): it subscribes to its sibling at a switch and at start, then again every SIBLING_EVERY_MS,
+// handing the place it got to so the sibling sends only what it missed; until a subscribe is taken it tries every
+// SIBLING_RETRY_MS. That covers the sibling down for a while, this node down, and the sibling dropping it as away.
+const SIBLING_RETRY_MS = 15000;
+const SIBLING_EVERY_MS = 60000;
+const sibling = { key: '', run: '', n: 0, timer: null };
+function siblingAgain(taken) {
+  if (sibling.timer) clearTimeout(sibling.timer);
+  sibling.timer = null;
+  if (!clientMode()) return;
+  sibling.timer = setTimeout(listenToSibling, taken ? SIBLING_EVERY_MS : SIBLING_RETRY_MS);
+  if (sibling.timer && typeof sibling.timer.unref === 'function') sibling.timer.unref();
+}
 function listenToSibling() {
   const s = remote.server;
-  if (!s) return;
-  if (remote.hasListener) {
-    if (typeof s.subscribe === 'function') s.subscribe(remote.current, remote.name).catch(function () { return false; });
-    return;
-  }
+  if (!s || !clientMode()) return Promise.resolve(false);
   const key = remote.current;
-  spirit.outcome(Promise.resolve(spirit.require('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.listener' }); })).then(function () {
-    return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
-      if (!p || typeof p.subscribe !== 'function') throw Object.assign(new Error('the sibling takes no subscribe'), { status: 0 });
-      return p.subscribe({ family: remote.name });
-    }));
-  }).catch(function () { /* the sibling is asked again on the next switch or start */ });
+  if (sibling.key !== key) { sibling.key = key; sibling.run = ''; sibling.n = 0; }
+  let asked;
+  if (remote.hasListener) {
+    asked = typeof s.subscribe === 'function' ? s.subscribe(key, remote.name).catch(function () { return false; }) : Promise.resolve(false);
+  } else {
+    const position = sibling.run ? { family: remote.name, run: sibling.run, since: sibling.n } : { family: remote.name };
+    asked = spirit.outcome(Promise.resolve(spirit.require('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.listener' }); })).then(function () {
+      return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
+        if (!p || typeof p.subscribe !== 'function') throw Object.assign(new Error('the sibling takes no subscribe'), { status: 0 });
+        return p.subscribe(position);
+      }));
+    }).then(function (r) { return !!(r && r.status === 200 && r.body && r.body.subscribed === true); }, function () { return false; });
+  }
+  return asked.then(function (taken) { siblingAgain(taken === true); return taken === true; });
 }
 function switchRemote(id) {
   const me = selfKey();
