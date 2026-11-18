@@ -29,9 +29,8 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/search/contact.js`, `spirit/element/search/bundle.js`,
-  `spirit/element/search/api.js`, `spirit/element/search/grant.js` and `spirit/element/rowForm.js`, and the job and auth branches' interfaces (`spirit.require('spirit/job/api.js')`,
-  `spirit.require('spirit/auth/api.js')`, the second for nodeGrants), each of which alone requires its data.js
-  (goal/G47.1); no data script.
+  `spirit/element/search/api.js`, `spirit/element/search/grant.js` and `spirit/element/rowForm.js`, and the auth branch's interface (`spirit.require('spirit/auth/api.js')`, for nodeGrants), which alone requires its
+  data.js (goal/G47.1); no data script, and not the job branch's interface: since goal/G47.4 it follows no server jobs.
 - The panel (`create`) names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no
   loopback location, no branch. The node's bundles are the one dictionary both kinds of grant are made from, so reading a
   bundle's branches (`auth.branch`) is its own.
