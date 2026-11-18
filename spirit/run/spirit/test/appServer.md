@@ -193,3 +193,8 @@ ping as the sibling):
   background"): the stand-in's contacts are one that lets this node in (its server refuses remote only as owner-only), one whose server loads but refuses it
   (not-granted), and one that stays silent. After an empty call and a wait, the list holds this node and the first alone,
   and remote.json keeps the first and not the refusing one. Loading a peer's interface is not being let in.
+- The listen verb is listener (Andy: *"PLEASE call the damn thing jus \"listener\", we won't start using camelCase on
+  intrinsic verbs"*): the test's deliveries post listener, and the stand-in's families answer listener.
+- The listener and the publisher's verbs are auto-verbs of every appServer (Andy: *"they're both auto-verbs. MUST BE."*):
+  a server with a publisher only (as the desk is) and one with a stream only (as deskClient is), each a child process,
+  name listener, subscribe, unsubscribe and remote, and no streamListener.

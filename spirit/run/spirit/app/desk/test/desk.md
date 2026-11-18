@@ -105,3 +105,8 @@ Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to 
   starts, are gone once it runs, and none is made.
 - An item and a goal answer no rules and no phaseRules.
 - The dead ui-rule checks and the rule-attach checks go with the verbs.
+
+## The listener and the publisher's verbs (goal/G47.5)
+
+The desk, a publisher only, names listener, subscribe, unsubscribe and remote in its api tree in server mode, and no
+streamListener (Andy: *"they're both auto-verbs. MUST BE."*, *"PLEASE call the damn thing jus \"listener\""*).

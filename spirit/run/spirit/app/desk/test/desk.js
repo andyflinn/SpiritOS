@@ -351,6 +351,16 @@ test.run('an item answers no rules and no phase rules', 0.2, async function () {
   const it = await itemOf(ITEMS[0]);
   return (!!it && !('rules' in it) && !('phaseRules' in it)) || false;
 }, test.limit.quick);
+// THE LISTENER AND THE PUBLISHER'S VERBS, AUTO-VERBS OF EVERY appServer (goal/G47.5; Andy: "the streamListener must be an
+// auto-verb of spirit/appServer.js!", "they're both auto-verbs. MUST BE.", "PLEASE call the damn thing jus \"listener\", we
+// won't start using camelCase on intrinsic verbs"): the desk, a publisher only, names listener, subscribe, unsubscribe and
+// remote in its api tree in server mode, and no streamListener.
+test.run('the desk names listener, subscribe, unsubscribe and remote in its api tree in server mode, and no streamListener', 0.2, async function () {
+  if (!W.up) return false;
+  let t = null; try { t = (await W.client.ask('api')).body; } catch (e) { t = null; }
+  const desk = (t && t.desk) || {};
+  return (['listener', 'subscribe', 'unsubscribe', 'remote'].every(function (v) { return v in desk; }) && !('streamListener' in desk)) || false;
+}, test.limit.quick);
 test.run('a goal answers no rules and no phase rules', 0.2, async function () {
   if (!W.up) return false;
   const g = await itemOf(GOAL.id);

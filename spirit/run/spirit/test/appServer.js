@@ -96,7 +96,9 @@ function deliver(json) {
   try { parsed = JSON.parse(json); } catch (e) { parsed = null; }
   posts.push(parsed);
   if (gate.refuse) return Promise.reject(new Error());
-  const go = function () { return post('streamListener', { json: json }, PUBLISHER).then(function (r) { return r.status === 200 ? r.body : Promise.reject(new Error()); }); };
+  // The listen verb is listener (goal/G47.5; Andy: "PLEASE call the damn thing jus \"listener\", we won't start using camelCase on
+  // intrinsic verbs"), streamListener as it was.
+  const go = function () { return post('listener', { json: json }, PUBLISHER).then(function (r) { return r.status === 200 ? r.body : Promise.reject(new Error()); }); };
   if (!gate.held) return go();
   return new Promise(function (resolve, reject) { gate.waiting.push(function () { go().then(resolve, reject); }); });
 }
@@ -132,7 +134,7 @@ const fake = {
     if (key && /^spirit\/(?:app\/)?[^/]+\/api\.js$/.test(q)) {
       return Promise.resolve({
         subscribe: function (a) { asked.push({ verb: 'subscribe', key: key, args: a }); return post('subscribe', a, SELF).then(function (r) { return r.body; }); },
-        streamListener: function (a) { return deliver(a.json); },
+        listener: function (a) { return deliver(a.json); },
         // The sibling's own verb, as a remote's client mode routes the owner's ask to it (goal/G47.5).
         ping: function () { asked.push({ verb: 'sibling.ping', key: key }); return Promise.resolve({ pong: 'sibling' }); },
         // A peer that lets this node in: its node's door passes, and its server refuses remote as owner-only, as a real one
@@ -265,6 +267,25 @@ async function child(mode) {
     let file = null;
     try { file = JSON.parse(fs.readFileSync(cacheFile(NAME), 'utf8')); } catch (e) { file = null; }
     out.kept = file && Array.isArray(file.rows) ? file.rows.map(function (r) { return r && r.item ? r.item.id : ''; }) : [];
+  }
+  if (mode === 'publisherOnly' || mode === 'streamOnly') {
+    // A server of one side alone (goal/G47.5): a publisher with no stream, as the desk is, or a stream with no publisher, as
+    // deskClient is. It reports the verbs its api tree names.
+    const A = require(FILE);
+    const one = mode === 'publisherOnly'
+      ? { publisher: { family: NAME, bootstrap: function () { return []; }, waitMs: 5000 } }
+      : { stream: { module: 'spirit.app.' + FAM, translator: TRANSLATOR } };
+    A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, one);
+    await tick(300);
+    out.verbs = await new Promise(function (resolve) {
+      const req = http.request({ socketPath: PIPE, path: '/', method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Spirit-Caller': SELF, 'X-Spirit-Owner': '1', 'X-Spirit-Loopback': '1' } }, function (res) {
+        const chunks = [];
+        res.on('data', function (c) { chunks.push(c); });
+        res.on('end', function () { let b = null; try { b = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { b = null; } resolve(b ? Object.keys(b).sort() : []); });
+      });
+      req.on('error', function () { resolve([]); });
+      req.end(JSON.stringify('api'));
+    });
   }
   process.stdout.write('RESULT ' + JSON.stringify(out) + '\n');
   process.exit(0);
@@ -903,13 +924,13 @@ function ownPart() {
     return has(70) || false;
   }, test.limit.quick);
   // Box v12: "the replies and reply stream data are cached as they are now, but also published to its own faces". A row
-  // only the sibling sent (delivered to this server's streamListener, never published here) reaches this node's own pages.
+  // only the sibling sent (delivered to this server's listener, never published here) reaches this node's own pages.
   test.run('in client mode a row the sibling streams in is published to this node\'s own pages too', 0.2, async function () {
     if (!R.switched) return false;
     const last = posts.filter(Array.isArray).map(function (b) { return b[b.length - 1]; }).filter(function (e) { return e && e.run; }).pop();
     if (!last) return false;
     const before = (fake.event.published || []).length;
-    const sent = await post('streamListener', { json: JSON.stringify([{ run: last.run, n: Number(last.n) + 1, row: row(item(81)) }]) }, PUBLISHER);
+    const sent = await post('listener', { json: JSON.stringify([{ run: last.run, n: Number(last.n) + 1, row: row(item(81)) }]) }, PUBLISHER);
     await tick(300);
     const heard = (fake.event.published || []).slice(before).some(function (e) { return e && e.item && e.item.id === 'a81'; });
     return (sent.status === 200 && heard) || false;
@@ -949,6 +970,23 @@ function ownPart() {
     let held = ''; try { held = fs.readFileSync(remoteFile, 'utf8'); } catch (e) { held = ''; }
     return (held.indexOf('KEY-PEER') !== -1 && held.indexOf('KEY-NOGRANT') === -1) || false;
   }, test.limit.quick);
+
+  // THE LISTENER AND THE PUBLISHER'S VERBS ARE AUTO-VERBS OF EVERY appServer (goal/G47.5; Andy: "the streamListener must be
+  // an auto-verb of spirit/appServer.js!", "both: \"publisher\" and \"listener\" belong in spirit/appServer.js", "they're both
+  // auto-verbs. MUST BE.", "PLEASE call the damn thing jus \"listener\""): a server of one side alone names both sides' verbs, and
+  // remote, and no streamListener.
+  const SIDES = ['listener', 'remote', 'subscribe', 'unsubscribe'];
+  const sided = function (r) { return Array.isArray(r.verbs) && SIDES.every(function (v) { return r.verbs.indexOf(v) !== -1; }) && r.verbs.indexOf('streamListener') === -1; };
+  test.run('a server with a publisher only, as the desk is, names listener, subscribe, unsubscribe and remote, and no streamListener', 0.2, function () {
+    const r = runChild('publisherOnly', 'zzPubOnly');
+    clearCache('zzPubOnly');
+    return sided(r) || false;
+  }, test.limit.slow);
+  test.run('a server with a stream only, as deskClient is, names listener, subscribe, unsubscribe and remote, and no streamListener', 0.2, function () {
+    const r = runChild('streamOnly', 'zzStreamOnly');
+    clearCache('zzStreamOnly');
+    return sided(r) || false;
+  }, test.limit.slow);
 
   // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
   // the cache, per sender, saved and read back (box v15)
