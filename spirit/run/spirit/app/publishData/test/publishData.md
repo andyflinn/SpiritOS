@@ -85,6 +85,11 @@ behaviour, which is its own module's.
 - Always and reliably pushed (Andy: *"make sure it works, commits and pushes always and reliably so."*): another clone
   pushes a commit of its own to the origin meanwhile; published again, it exits 0, and the origin holds its new commit on
   top of the other clone's.
+- Not even when another machine published its platform's line meanwhile (goal/G47.1, Andy, Q36: *"sure"*, to "fix
+  publishData to write the platform list after rebasing"; andy-wsl's publish clashed in platform/README.md after
+  andy-ubuntu's): the clone's base lists only the other platform, and the origin has moved on to a third platform's
+  folder and its line; published, it exits 0, and the origin's platform/README.md lists every platform folder the origin
+  holds.
 
 ## Box v170: the platform's README, and platform/README.md (goal/G47.1)
 

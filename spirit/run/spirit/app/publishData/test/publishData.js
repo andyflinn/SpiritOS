@@ -608,6 +608,41 @@ test.run('the origin then holds the new commit on top of the other clone\'s', 0.
   const ancestor = git(ORIGIN, ['merge-base', '--is-ancestor', moved, top]).status === 0;
   return (top !== moved && ancestor && git(ORIGIN, ['log', '-1', '--format=%s', top]).out.indexOf('platform/' + PLATFORM + '/') !== -1) ? true : false;
 }, test.limit.quick);
+// NOT EVEN WHEN ANOTHER MACHINE PUBLISHED ITS PLATFORM'S LINE MEANWHILE (goal/G47.1, Andy, Q36: "sure", to "fix publishData
+// to write the platform list after rebasing"): andy-wsl's first publish clashed in platform/README.md, its line added to a
+// base that lacked it, andy-ubuntu's line added on origin meanwhile. Here: the origin lists only the other platform, the
+// clone takes that as its base; then another machine pushes a third platform's folder and its line.
+const THIRD = ['windows', 'wsl', 'ubuntu'].filter(function (x) { return x !== PLATFORM && x !== OTHER; })[0];
+const listOnOrigin = function () {
+  const s = git(ORIGIN, ['show', 'refs/heads/master:platform/README.md']).out;
+  return s.split('\n').map(function (l) { const m = /^- \[(\w+)\]\((\w+)\/README\.md\)$/.exec(l.trim()); return m && m[1] === m[2] ? m[1] : null; }).filter(Boolean).sort();
+};
+const foldersOnOrigin = function () {
+  return git(ORIGIN, ['ls-tree', '--name-only', 'refs/heads/master', 'platform/']).out.split('\n').map(function (l) { return l.replace(/^platform\//, ''); })
+    .filter(function (p) { return ['windows', 'wsl', 'ubuntu'].indexOf(p) !== -1 && git(ORIGIN, ['cat-file', '-e', 'refs/heads/master:platform/' + p + '/README.md']).status === 0; }).sort();
+};
+let w3 = null;
+test.run('published while another machine pushed its platform\'s line to platform/README.md, publishData exits 0', 0.2, function () {
+  if (!w2) return false;
+  git(BARE_CLONE, ['pull', '-q', 'origin', 'master']);
+  fs.writeFileSync(path.join(BARE_CLONE, 'platform', 'README.md'), '# Measurements exists for the following platforms\n\n- [' + OTHER + '](' + OTHER + '/README.md)\n');
+  git(BARE_CLONE, ['commit', '-q', '-m', 'a list without this platform', '--', 'platform/README.md']);
+  git(BARE_CLONE, ['push', '-q', 'origin', 'master']);
+  git(CLONE, ['pull', '-q', '--rebase', '--autostash', 'origin', 'master']);
+  fs.mkdirSync(path.join(BARE_CLONE, 'platform', THIRD), { recursive: true });
+  fs.writeFileSync(path.join(BARE_CLONE, 'platform', THIRD, 'README.md'), '# Info and Measurements on ' + THIRD + '\n');
+  fs.writeFileSync(path.join(BARE_CLONE, 'platform', 'README.md'), '# Measurements exists for the following platforms\n\n- [' + OTHER + '](' + OTHER + '/README.md)\n- [' + THIRD + '](' + THIRD + '/README.md)\n');
+  git(BARE_CLONE, ['add', 'platform/' + THIRD + '/README.md', 'platform/README.md']);
+  git(BARE_CLONE, ['commit', '-q', '-m', 'publish: ' + THIRD]);
+  git(BARE_CLONE, ['push', '-q', 'origin', 'master']);
+  w3 = publish(CLONE, ['45440', '--asks', '1']);
+  return (w3.status === 0) ? true : false;
+}, test.limit.long);
+test.run('the origin\'s platform/README.md then lists every platform folder the origin holds', 0.2, function () {
+  if (!w3) return false;
+  const want = foldersOnOrigin();
+  return (want.length === 3 && JSON.stringify(listOnOrigin()) === JSON.stringify(want)) ? true : false;
+}, test.limit.quick);
 
 // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
 // ITS STEPS ARE ITS JOB'S PROGRESS (goal/G47.1; Andy: "if \"one-shot-script-apps\" (node:run:true) actually publish what
