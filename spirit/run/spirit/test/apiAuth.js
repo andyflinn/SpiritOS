@@ -699,6 +699,55 @@ test.run('its branch of a verb the server serves stays', 0.2, function () {
   return (staleLeft.indexOf('chat.add') !== -1) ? true : false;
 }, test.limit.quick);
 
+// EVERY SERVER'S OWN BUNDLE, enableRemote (goal/G47.5; Andy: "the fix is: desk provides a complete fucking bundle", "since
+// desk does NOT own those verbs, the node, maybe appServer.js all \"server bundles that are owned by the <appname>\"", "maybe
+// appServer can add this bundles as \"enableRemote\", belonging to <appServerName>?"; Q4, "Go for the node giving every server
+// it runs, at each start, a bundle enableRemote owned by that server, holding every verb it serves, auto-verbs included?":
+// "yes."). A server is a family of the live tree that serves remote, the auto-verb every appServer has; files, a node family,
+// serves none. The node starts on a fresh table, then again with desk serving one verb more.
+let ownRoot = '', ownTree = null, ownFirst = null, ownAgain = null;
+const DESK_VERBS = ['chat.add', 'item.get', 'remote', 'listener', 'subscribe', 'unsubscribe'];
+const TESTICLE_VERBS = ['run', 'remote', 'listener', 'subscribe', 'unsubscribe'];
+const ownBundles = async function (a) { return ((await call(a, 'bundle', { op: 'search', text: '' })).items || []).map(parsed).filter(Boolean); };
+const enableRemoteOf = async function (a, server) { return (await ownBundles(a)).filter(function (b) { return b.label === 'enableRemote' && b.owner === server; }); };
+const verbsOf = async function (a, bundle) { return (await branchesOf(a, bundle)).filter(function (x) { return x.family === bundle.owner; }).map(function (x) { return x.verb; }).sort(); };
+const settle = async function () { for (let i = 0; i < 50; i++) await new Promise(function (r) { setImmediate(r); }); await new Promise(function (r) { setTimeout(r, 200); }); };
+const vtree = function (verbs) { const o = {}; verbs.forEach(function (v) { o[v] = {}; }); return o; };
+test.run('at start the node gives desk, a server, a bundle enableRemote owned by desk', 0.2, async function () {
+  if (!createApiAuth) return false;
+  ownRoot = ownTemp('spirit-apiAuth-own-');
+  ownTree = { files: { read: {}, list: {} }, desk: vtree(DESK_VERBS), testicle: vtree(TESTICLE_VERBS) };
+  ownFirst = createApiAuth({ rootDir: ownRoot, tree: function () { return Promise.resolve(ownTree); } });
+  await settle();
+  return (await enableRemoteOf(ownFirst, 'desk')).length === 1 || false;
+}, test.limit.slow);
+test.run('desk\'s enableRemote holds every verb desk serves, its auto-verbs included, and nothing else', 0.2, async function () {
+  if (!ownFirst) return false;
+  const b = (await enableRemoteOf(ownFirst, 'desk'))[0];
+  if (!b) return false;
+  const all = (await branchesOf(ownFirst, b.id));
+  return all.every(function (x) { return x.family === 'desk' && !!x.verb; }) && JSON.stringify(all.map(function (x) { return x.verb; }).sort()) === JSON.stringify(DESK_VERBS.slice().sort()) || false;
+}, test.limit.quick);
+test.run('testicle, another server, gets its own enableRemote, owned by testicle, with every verb it serves', 0.2, async function () {
+  if (!ownFirst) return false;
+  const b = (await enableRemoteOf(ownFirst, 'testicle'))[0];
+  if (!b) return false;
+  return JSON.stringify(await verbsOf(ownFirst, b)) === JSON.stringify(TESTICLE_VERBS.slice().sort()) || false;
+}, test.limit.quick);
+test.run('files, a node family that serves no remote, gets no bundle', 0.2, async function () {
+  if (!ownFirst) return false;
+  return !(await ownBundles(ownFirst)).some(function (b) { return b.owner === 'files'; }) || false;
+}, test.limit.quick);
+test.run('started again with desk serving a new verb, desk still has one enableRemote, now holding the new verb', 0.2, async function () {
+  if (!ownFirst) return false;
+  ownTree.desk['item.box'] = {};
+  ownAgain = createApiAuth({ rootDir: ownRoot, tree: function () { return Promise.resolve(ownTree); } });
+  await settle();
+  const list = await enableRemoteOf(ownAgain, 'desk');
+  if (list.length !== 1) return false;
+  return (await verbsOf(ownAgain, list[0])).indexOf('item.box') !== -1 || false;
+}, test.limit.slow);
+
 test.after(function () {
-  for (const d of [root, bootRoot, fsRoot, staleRoot]) { try { if (d) fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ } }
+  for (const d of [root, bootRoot, fsRoot, staleRoot, ownRoot]) { try { if (d) fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ } }
 });
