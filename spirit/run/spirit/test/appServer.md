@@ -167,3 +167,20 @@ Each case spoils `cache/` before the follower starts, and it must still start an
 - only a half-written `<id>.json.tmp`, as a kill leaves it: not read;
 - a file that is no JSON, and one of the wrong shape (`rows` no list, `run` a number, `n` negative): nothing read back.
 - After all of it `spirit/state/follower/` holds nothing beside `cache/`, `data/`, `node.json` and its socket.
+
+## remote: one server, two modes (goal/G47.5, box v12)
+
+Andy: *"for a always-on server it would always run in one of two modes. by default it runs in server mode."*, *"go"*.
+Asked of the one-process server on its pipe, this node SELF, the sibling PUBLISHER (whose family under its key answers
+ping as the sibling):
+
+- remote is an auto-verb: the api tree names it.
+- Called empty by the owner it answers `{ current, items, more }`, current this node in server mode; its list holds this
+  node first, each row only a key and a label. A peer asking remote is refused.
+- `remote { id: PUBLISHER }` switches to client mode and answers `{ current }` alone, naming that peer; the choice is kept
+  in `spirit/state/<appServerName>/remote.json`.
+- In client mode the owner's ask goes to the sibling and its answer comes back; a peer's post is refused with a code
+  saying it is in client mode; the chosen sibling's publishings still land.
+- `remote { id: SELF }` switches home: `{ current }` is this node and its own verb answers again.
+- deskClient still follows the desk (box: "a red checks that deskClient still follows the desk after the change"):
+  deskClient's own test, "it serves its verbs and follows the desk's stream", is that check.

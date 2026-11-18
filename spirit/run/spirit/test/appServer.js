@@ -123,6 +123,8 @@ const fake = {
       return Promise.resolve({
         subscribe: function (a) { asked.push({ verb: 'subscribe', key: key, args: a }); return post('subscribe', a, SELF).then(function (r) { return r.body; }); },
         streamListener: function (a) { return deliver(a.json); },
+        // The sibling's own verb, as a remote's client mode routes the owner's ask to it (goal/G47.5).
+        ping: function () { asked.push({ verb: 'sibling.ping', key: key }); return Promise.resolve({ pong: 'sibling' }); },
       });
     }
     // goal/G43.32, decided 3: on the node spirit.require is a path-translating wrapper, a script's module at once.
@@ -814,6 +816,82 @@ function ownPart() {
   }, test.limit.quick);
   test.run('appServer.js races no delivery and no subscribe against a clock of its own', 0.2, function () {
     return !/FAST_MS|Promise\.race/.test(fs.readFileSync(FILE, 'utf8')) || false;
+  }, test.limit.quick);
+
+  // ── remote: one server, two modes (goal/G47.5, box v12; Andy: "for a always-on server it would always run in one of two
+  // modes. by default it runs in server mode.", "go") ────────────────────────────────────────────────────────────
+  // The auto-verb remote, asked of the server above on its pipe: by its owner over loopback, and by a peer. This node is
+  // SELF; the sibling it switches to is PUBLISHER, whose family under its key answers ping as the sibling.
+  const R = {};
+  const asOwner = function (verb, args) {
+    return new Promise(function (resolve) {
+      const req = http.request({ socketPath: PIPE, path: '/', method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Spirit-Caller': SELF, 'X-Spirit-Owner': '1', 'X-Spirit-Loopback': '1' } }, function (res) {
+        const chunks = [];
+        res.on('data', function (c) { chunks.push(c); });
+        res.on('end', function () { let b = null; try { b = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { b = null; } resolve({ status: res.statusCode, body: b }); });
+      });
+      req.on('error', function () { resolve({ status: 0, body: null }); });
+      // The tree is asked as the bare word api (appServer.js route); a verb as { verb: args }.
+      req.end(JSON.stringify(verb === 'api' ? 'api' : { [verb]: args }));
+    });
+  };
+  const remoteFile = path.join(RUN, 'spirit', 'state', NAME, 'remote.json');
+  test.after(function () { try { fs.rmSync(remoteFile, { force: true }); } catch (e) { /* none */ } });
+  test.run('remote is an auto-verb: the api tree names it', 0.2, async function () {
+    if (noServer()) return false;
+    globalThis.spirit.node = Object.assign({}, globalThis.spirit.node || {}, { key: SELF, label: 'this node' });
+    const t = await asOwner('api', {});
+    return (t.status === 200 && !!t.body && 'remote' in t.body) || false;
+  }, test.limit.quick);
+  test.run('remote called empty by the owner answers { current, items, more }, current this node in server mode', 0.2, async function () {
+    if (noServer()) return false;
+    const a = R.list = await asOwner('remote', {});
+    const b = a.body || {};
+    return (a.status === 200 && b.current === SELF && Array.isArray(b.items) && typeof b.more === 'boolean') || false;
+  }, test.limit.quick);
+  test.run('its list holds this node first, each row only a key and a label', 0.2, function () {
+    const b = (R.list && R.list.body) || {};
+    const items = Array.isArray(b.items) ? b.items : [];
+    return (items.length > 0 && items[0].key === SELF && items.every(function (i) { return JSON.stringify(Object.keys(i).sort()) === '["key","label"]'; })) || false;
+  }, test.limit.quick);
+  test.run('a peer asking remote is refused', 0.2, async function () {
+    if (noServer()) return false;
+    const a = await post('remote', {}, 'KEY-OTHER');
+    return (a.status >= 400 && a.status < 500) || false;
+  }, test.limit.quick);
+  test.run('remote with a peer id switches to client mode and answers { current } naming that peer', 0.2, async function () {
+    if (noServer()) return false;
+    const a = await asOwner('remote', { id: PUBLISHER });
+    R.switched = a.status === 200 && !!a.body && a.body.current === PUBLISHER && JSON.stringify(Object.keys(a.body)) === '["current"]';
+    return R.switched || false;
+  }, test.limit.quick);
+  test.run('the choice is kept in spirit/state/<appServerName>/remote.json', 0.2, function () {
+    if (!R.switched) return false;
+    let held = null; try { held = JSON.parse(fs.readFileSync(remoteFile, 'utf8')); } catch (e) { held = null; }
+    return (!!held && JSON.stringify(held).indexOf(PUBLISHER) !== -1) || false;
+  }, test.limit.quick);
+  test.run('in client mode the owner\'s ask goes to the sibling, and its answer comes back', 0.2, async function () {
+    if (!R.switched) return false;
+    const at = asked.length;
+    const a = await asOwner('ping', {});
+    return (a.status === 200 && !!a.body && a.body.pong === 'sibling' && asked.slice(at).some(function (x) { return x.verb === 'sibling.ping' && x.key === PUBLISHER; })) || false;
+  }, test.limit.quick);
+  test.run('in client mode a peer\'s post is refused with a code saying it is in client mode', 0.2, async function () {
+    if (!R.switched) return false;
+    const a = await post('ping', {}, 'KEY-OTHER');
+    return (a.status >= 400 && a.status < 500 && !!a.body && /client/i.test(String(a.body.code || ''))) || false;
+  }, test.limit.quick);
+  test.run('in client mode the chosen sibling\'s publishings still land', 0.2, async function () {
+    if (!R.switched) return false;
+    O.A.publish(row(item(70)));
+    await tick(400);
+    return has(70) || false;
+  }, test.limit.quick);
+  test.run('remote with this node\'s id switches home: { current } is this node and its own verb answers again', 0.2, async function () {
+    if (!R.switched) return false;
+    const a = await asOwner('remote', { id: SELF });
+    const p = await asOwner('ping', {});
+    return (a.status === 200 && !!a.body && a.body.current === SELF && p.status === 200 && !!p.body && p.body.pong === true) || false;
   }, test.limit.quick);
 
   // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
