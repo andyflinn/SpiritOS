@@ -57,13 +57,26 @@
         var current = '';
         S.require('spirit/element/search.js').then(function () {
           if (dropped) return;
+          var fam = function () { return Promise.resolve(S.require(S.familyPath(server))); };
           remoteList = S.element.spirit.element.search.create(mid, {
-            server: server, verb: 'remote', face: 'dropdown', placeholder: 'remote…',
+            face: 'dropdown', placeholder: 'remote…',
+            // ITS OWN SOURCE: remote's rows are { key, label } with the label a name, while a list's rows ride as a label
+            // holding the row (the search element parses it), so each is handed over as such; current is kept from the same
+            // answer, so a pick of the one it runs on changes nothing.
+            search: function () {
+              return fam().then(function (f) { return f.remote({}); }).then(function (r) {
+                current = String((r && r.current) || '');
+                var items = ((r && r.items) || []).map(function (i) { return { key: String(i.key), label: JSON.stringify({ key: String(i.key), label: String(i.label || '') }) }; });
+                return { status: 200, body: { ok: true, items: items, more: !!(r && r.more) } };
+              });
+            },
+            server: server, verb: 'remote',
             args: function () { return {}; },
+            name: function (row) { return String((row && (row.label || row.key)) || ''); },
             columns: [{ field: 'label', label: 'Remote', sort: 'text' }],
             pick: function (row, k) {
               if (!k) return;
-              Promise.resolve(S.require(S.familyPath(server))).then(function (fam) { return fam.remote({ id: String(k) }); }).then(function (r) {
+              fam().then(function (f) { return f.remote({ id: String(k) }); }).then(function (r) {
                 var now = String((r && r.current) || (r && r.body && r.body.current) || '');
                 if (now && current && now !== current) window.location.reload();
                 if (now) current = now;
@@ -71,10 +84,14 @@
             },
             empty: 'No remote.',
           });
-          // Which server it runs on now, so a pick of that same one changes nothing.
-          Promise.resolve(S.require(S.familyPath(server))).then(function (fam) { return fam.remote({}); }).then(function (r) {
-            current = String((r && r.current) || (r && r.body && r.body.current) || '');
-          }, function () { /* unknown until a pick says */ });
+          // Its first ask now, as every list's (grant/list.js): the rows are there when the field opens. And again each time
+          // the field is pressed: the server checks its peers in the background after an empty call (box v12), so a later
+          // open shows what that check found.
+          remoteList.refresh();
+          mid.addEventListener('click', function (e) {
+            var t = e && e.target;
+            if (t && typeof t.id === 'string' && /field$/.test(t.id) && remoteList) remoteList.refresh();
+          });
         }, function () { /* no search on this page */ });
       }
       var pane = document.createElement('div');

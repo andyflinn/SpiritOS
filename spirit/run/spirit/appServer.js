@@ -882,7 +882,10 @@ function refreshRemote() {
   }).then(function (got) {
     const people = ((got && got.items) || []).filter(function (i) { return i && i.key && i.key !== me; }).slice(0, REMOTE_ASK_MAX);
     return Promise.all(people.map(function (p) {
-      const row = { key: String(p.key), label: String(p.name || p.label || '') };
+      // A contact search's row rides as its label, the row as JSON (a list's shape): its name is in there.
+      let named = null;
+      try { named = typeof p.label === 'string' ? JSON.parse(p.label) : null; } catch (e) { named = null; }
+      const row = { key: String(p.key), label: String((named && (named.myLabel || named.name || named.publicLabel)) || p.name || '') };
       return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), row.key, { waitMs: 5000 })).then(function (fam) {
         if (!fam || typeof fam.remote !== 'function') throw Object.assign(new Error('no remote'), { status: 0 });
         return fam.remote({});
