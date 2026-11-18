@@ -13,8 +13,8 @@ table of the test's own, so nothing of a node is revoked.
 
 - `create(host, { row, grants, serves })` answers `{ destroy() }`, placed at
   `spirit.element.spirit.element.search.grant.detail`.
-- It says whose grant it is (the row's field the table names as its label) and its path; a path `serves` says no to is
-  marked deprecated.
+- It says whose grant it is (the row's field the table names as its label) and its path; no path is
+  marked deprecated, not even one no server serves (goal/G47.4), and detail.js names no deprecated and takes no `serves`.
 - Revoke is an armingButton: the first press arms it, the second asks the table's `revoke(id, path)` and says what came of
   it below the bubble. Its second press answers the revoke, so Revoke is busy until it is answered (goal/G47.1, Q25; Andy: *"sure."*).
 - Who paints, listens (Andy, G41.32): it follows its own row through its table's `watch`, keyed `<id>\n<path>`; a new
@@ -27,7 +27,7 @@ table of the test's own, so nothing of a node is revoked.
 ## What its test must try to break
 
 - A detail that leaves out whose grant it is, or its path.
-- A deprecated mark on a served path, or none on an unserved one.
+- A deprecated mark on any path.
 - A Revoke that revokes on the first press, or revokes another grant.
 - A detail that misses its row's change, takes another grant's, or keeps its watch after destroy.
 - A throw when unconfigured, or a destroy that leaves something behind.

@@ -17,3 +17,8 @@ its list a recorder in its place. What the list does is judged by `../grant/test
 - A selector that draws no list, or another one.
 - A list drawn in another box, or with options changed.
 - A selector placed anywhere but at its path.
+
+## No deprecated (goal/G47.4)
+
+Andy: *"get rid of that deprecated filter and the field in the database if it's there as well, what the hell is it
+even for?"* grant.js, its comments left out, names no deprecated and takes no `serves`.

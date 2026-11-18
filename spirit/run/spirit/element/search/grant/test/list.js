@@ -106,10 +106,11 @@ test.run('its columns are whose it is, the path and Revoke, with Revoke the righ
   const cols = (o.columns || []).map(function (c) { return c.field; });
   return JSON.stringify(cols) === '["name","path","revoke"]' ? true : false;
 }, test.limit.quick);
-test.run('each row is a grantElement, handed the same table and what the tree serves', 0.2, function () {
+// No deprecated (goal/G47.4): a row is handed nothing that judges whether a server serves its path.
+test.run('each row is a grantElement, handed the same table and nothing that judges whether a server serves its path', 0.2, function () {
   if (!l) return false;
   const el = o.element({ job_id: 'J1', path: 'fs.search', job: 'Night' }, 'J1\nfs.search');
-  return el && el.kind === 'grant' && el.opts.grants === AGENT && el.opts.serves === serves ? true : false;
+  return el && el.kind === 'grant' && el.opts.grants === AGENT && !('serves' in el.opts) ? true : false;
 }, test.limit.quick);
 // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
 // cached in spirit.data."): the list hands its search no matched() of its own.
@@ -169,4 +170,12 @@ test.run('refresh and destroy reach the search element, and its list property is
   const r0 = l.refreshes;
   made.refresh(); made.destroy();
   return l.refreshes === r0 + 1 && l.destroyed === true && made.list === l ? true : false;
+}, test.limit.quick);
+
+// NO DEPRECATED (goal/G47.4; Andy: "get rid of that deprecated filter and the field in the database if it's there as well,
+// what the hell is it even for?"): nothing marks a grant deprecated, and nothing asks whether a server serves its path.
+test.run('list.js names no deprecated and takes no serves, its comments left out', 0.2, function () {
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, 'spirit/element/search/grant/list.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return false; }
+  return (src.length > 0 && !/deprecated/i.test(src) && !/\bserves\b/.test(src)) ? true : false;
 }, test.limit.quick);

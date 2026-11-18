@@ -56,11 +56,13 @@ test.run('a second detail is made, on a path no server serves', 0.2, async funct
   if (!js) return false;
   return (await mount('zzTwo', false)) === 'made' ? true : false;
 }, test.limit.slow);
-test.run('a path no server serves today is marked deprecated', 0.2, async function () {
+// No deprecated (goal/G47.4; Andy: "get rid of that deprecated filter and the field in the database if it's there as well"):
+// a path no server serves today is shown as it is.
+test.run('a path no server serves today is not marked deprecated either', 0.2, async function () {
   if (!js) return false;
   await until(function () { return text('zzTwo').then(function (t) { return /Zz Peer/.test(t); }); }, 8000);
   const two = await text('zzTwo');
-  return /deprecated/.test(two) ? true : false;
+  return /Zz Peer/.test(two) && !/deprecated/.test(two) ? true : false;
 }, test.limit.slow);
 
 // its Revoke, an armingButton: "a armingButton [Revoke], which must revoke/delete that grant"
@@ -122,3 +124,11 @@ test.run('with no row and no table it says it is not configured, and throws noth
   const bare = await js('(function () { var b = document.body.appendChild(document.createElement("div")); try { spirit.element.spirit.element.search.grant.detail.create(b, {}); } catch (e) { return false; } return String(b.innerText); })()');
   return bare !== false && /not configured/.test(bare) ? true : false;
 }, test.limit.slow);
+
+// NO DEPRECATED (goal/G47.4; Andy: "get rid of that deprecated filter and the field in the database if it's there as well,
+// what the hell is it even for?"): nothing marks a grant deprecated, and nothing asks whether a server serves its path.
+test.run('detail.js names no deprecated and takes no serves, its comments left out', 0.2, function () {
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, 'spirit/element/search/grant/detail.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return false; }
+  return (src.length > 0 && !/deprecated/i.test(src) && !/\bserves\b/.test(src)) ? true : false;
+}, test.limit.quick);

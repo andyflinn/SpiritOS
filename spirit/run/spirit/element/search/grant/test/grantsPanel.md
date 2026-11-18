@@ -49,9 +49,9 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 - **The selectors narrow it**: nothing chosen, every grant passes; the ID filter by the grants table's own key field;
   the family selector to that family's paths, and with a verb to that verb. Their change redraws the list, the search's
   own work.
-- **Deprecated**: the tree is read through `spirit.tree()`, and the list told what it serves; a server job changed, the
-  tree is read again, so a grant reads deprecated only while no server serves it. Its filter is a plain toggle of the search,
-  its button drawn in the 🗜 row, off at first (a grant no server serves is left out); on, they are listed.
+- **No deprecated** (goal/G47.4; Andy: *"get rid of that deprecated filter and the field in the database if it's there
+  as well, what the hell is it even for?"*): no deprecated filter is handed to the list, nothing that judges whether a
+  server serves a path, no api tree is read, a server job changing reads nothing, and grantsPanel.js names no deprecated.
 - **Grant**: with no bundle or no ID chosen, nothing is asked. Otherwise it reads the chosen bundle's branches
   (`auth.branch { op: 'search', bundle }`) and grants each through the grants table it was handed, `grant(id, path)`:
   `family.verb`, or the family alone for (ALL). Nothing is granted or read past that table. A path the ID holds already
@@ -119,7 +119,7 @@ node ranks them (a revoked grant gone from it): a contact
 - An ID selector that searches anything but the ID table it was handed.
 - The form out of order, a filter line of its own, its selectors not handed to the search, a fill box above the list.
 - A filter that narrows by a key field the grants table did not name, or does not redraw the list.
-- A deprecated mark that does not follow a server starting or ending, or its filter on at first, or hidden from the search.
+- Any deprecated filter, mark or tree read left in the panel.
 - A grant made past the grants table it was handed, or of anything but the bundle's branches.
 - A Grant not handed to the rowForm as its press, a busyButton of its own on it, or a press that answers before the grants do.
 - A verb asked through an api instead of the spirit object.

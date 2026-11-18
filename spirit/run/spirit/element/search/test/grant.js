@@ -60,3 +60,11 @@ test.run('create answers what its list answers', 0.2, function () {
   if (!W.called) return false;
   return W.got === W.ANSWER ? true : false;
 }, test.limit.quick);
+
+// NO DEPRECATED (goal/G47.4; Andy: "get rid of that deprecated filter and the field in the database if it's there as well,
+// what the hell is it even for?"): nothing marks a grant deprecated, and nothing asks whether a server serves its path.
+test.run('grant.js names no deprecated and takes no serves, its comments left out', 0.2, function () {
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, 'spirit/element/search/grant.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return false; }
+  return (src.length > 0 && !/deprecated/i.test(src) && !/\bserves\b/.test(src)) ? true : false;
+}, test.limit.quick);

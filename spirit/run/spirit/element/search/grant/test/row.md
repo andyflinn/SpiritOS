@@ -39,3 +39,8 @@ grantsPanel element"*: the row knows no table.
 - An id or label read from a field the table did not name.
 - A Revoke that asks on the first press, or revokes through anything but its table.
 - One table's change repainting another table's row.
+
+## No deprecated (goal/G47.4)
+
+Andy: *"get rid of that deprecated filter and the field in the database if it's there as well, what the hell is it
+even for?"* row.js, its comments left out, names no deprecated and takes no `serves`.

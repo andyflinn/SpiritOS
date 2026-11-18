@@ -418,34 +418,32 @@ test.run('a verb chosen narrows to that verb', 0.2, function () {
   return r;
 }, test.limit.quick);
 
-// deprecated: a report, following the stream, its filter off by default
-test.run('the tree is read through spirit.tree(), and the list told what it serves', 0.2, function () {
+// NO DEPRECATED (goal/G47.4; Andy: "get rid of that deprecated filter and the field in the database if it's there as well,
+// what the hell is it even for?"). It was no field: the panel read the node's api tree and hid a grant no server served
+// today. It goes: no filter of it, nothing handed to the list to judge it by, no tree read and no servers followed for it.
+test.run('it hands the grant list no deprecated filter', 0.2, function () {
   if (!gl) return false;
-  return w.treeAsked >= 1 && typeof gl.opts.serves === 'function' && gl.opts.serves('fs.search') === true && gl.opts.serves('gone.verb') === false ? true
-    : false;
+  return !(gl.opts.filters || []).some(function (f) { return f && /deprecated/i.test(String(f.name || '') + String(f.word || '')); }) ? true : false;
 }, test.limit.quick);
-test.run('when a server job changes, the tree is read again, and the grant it now serves is no longer deprecated', 0.2, async function () {
+test.run('it hands the grant list nothing that judges whether a server serves a path', 0.2, function () {
   if (!gl) return false;
-  if (typeof gl.opts.serves !== 'function') return false;
+  return !('serves' in gl.opts) ? true : false;
+}, test.limit.quick);
+test.run('it reads no api tree', 0.2, function () {
+  if (!gl) return false;
+  return w.treeAsked === 0 ? true : false;
+}, test.limit.quick);
+test.run('a server job changing reads nothing', 0.2, async function () {
+  if (!gl) return false;
   D = w.win.spirit.data;
   const asked0 = w.treeAsked;
-  w.tree = Object.assign({}, TREE, { gone: { verb: {} } });
+  const calls0 = w.calls.length;
   D.takeJob({ id: 'spirit.app.gone', kind: 'server', status: 'running', module: 'spirit.app.gone', data: {} });
   await settle();
-  const r = w.treeAsked > asked0 && gl.opts.serves('gone.verb') === true ? true : false;
-  w.tree = TREE;
-  D.takeJob({ id: 'spirit.app.gone', kind: 'server', status: 'exited', module: 'spirit.app.gone', data: {} });
-  await settle();
-  return r;
+  return w.treeAsked === asked0 && w.calls.length === calls0 ? true : false;
 }, test.limit.quick);
-test.run('deprecated is a plain toggle of the search, its button drawn in the 🗜 row, off at first: a grant no server serves is left out', 0.2, function () {
-  if (!gl) return false;
-  dep = (gl.opts.filters || []).filter(function (f) { return f && f.name === 'deprecated'; })[0];
-  return !!dep && dep.toggle === true && (typeof dep.when !== 'function' || dep.when([]) !== false) && dep.test(DAY, undefined) === 0 && dep.test(NIGHT, undefined) === 1 ? true
-    : false;
-}, test.limit.quick);
-test.run('with its toggle on, the deprecated grants are listed', 0.2, function () {
-  return dep && dep.test(DAY, true) === 1 ? true : false;
+test.run('grantsPanel.js names no deprecated', 0.2, function () {
+  return !/deprecated/i.test(code || '') ? true : false;
 }, test.limit.quick);
 
 // the grants app, goal/G47.4 (box): "the dropdown filters are include ID (contact), branch (not fucking family) and verb (if a

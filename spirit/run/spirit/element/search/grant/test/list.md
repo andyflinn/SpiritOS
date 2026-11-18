@@ -30,3 +30,8 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./grant.js`.
 - A row handed another table, or a `matched()` handed to its search.
 - Revoke anywhere but the rightmost column.
 - An empty list that never hears its first grant.
+
+## No deprecated (goal/G47.4)
+
+Andy: *"get rid of that deprecated filter and the field in the database if it's there as well, what the hell is it
+even for?"* list.js, its comments left out, names no deprecated and takes no `serves`. A row is handed nothing that judges whether a server serves its path.
