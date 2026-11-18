@@ -13,8 +13,9 @@ The contact family: the node's book of peers, people and relays in one table. Ow
   `blocked` (`''` or `'yes'`, never `true`).
 - `get` names the contact by its key; `block`, `unblock`, `accept`, `label` and `forget` by its `publicKey`;
   `label`'s `myLabel` is needed and passes the name rule.
-- **goal/G41.30** (Andy: *"this button will put the star on relays and puppets. AND take it away."*, *"this is a yes."*):
-  `own` takes a key and `true` or `false`.
+- **goal/G47.4** (box v33: *"😏 is the row field faceable, set by the new verb contact.faceable {key, faceable}"*,
+  *"contact.own goes"*; Andy: *"\"faceable\" will do what \"own\" use to do."*): `faceable` takes a key and `true` or
+  `false`; `own` is gone.
 
 ## What its test must try to break
 

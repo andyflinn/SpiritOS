@@ -156,8 +156,13 @@ test.run('label\'s myLabel is needed and passes the name rule', 0.2, function ()
   if (!W.api) return false;
   return (refusedAs('label', { publicKey: KEY }) === 'bad-request' && refusedAs('label', { publicKey: KEY, myLabel: 'x'.repeat(300) }) === 'bad-request') || false;
 }, test.limit.quick);
-// goal/G41.30: "this button will put the star on relays and puppets. AND take it away." "this is a yes."
-test.run('own puts the star on a key or takes it away: a key, and true or false', 0.2, function () {
+// goal/G47.4 (box v33): "😏 is the row field faceable, set by the new verb contact.faceable {key, faceable}", "contact.own
+// goes"; Andy: "agreed to a new verb. \"faceable\"?", "\"faceable\" will do what \"own\" use to do.", "green? then go."
+test.run('faceable sets 😏 on a key or takes it off: a key, and true or false', 0.2, function () {
   if (!W.api) return false;
-  return (passes('own', { key: KEY, own: true }) && passes('own', { key: KEY, own: false }) && refusedAs('own', { key: KEY, own: 'yes' }) === 'bad-request' && refusedAs('own', { key: KEY }) === 'bad-request' && refusedAs('own', { key: NOT_KEY, own: true }) === 'bad-request') || false;
+  return (passes('faceable', { key: KEY, faceable: true }) && passes('faceable', { key: KEY, faceable: false }) && refusedAs('faceable', { key: KEY, faceable: 'yes' }) === 'bad-request' && refusedAs('faceable', { key: KEY }) === 'bad-request' && refusedAs('faceable', { key: NOT_KEY, faceable: true }) === 'bad-request') || false;
+}, test.limit.quick);
+test.run('own is gone', 0.2, function () {
+  if (!W.api) return false;
+  return !('own' in W.verbs) || false;
 }, test.limit.quick);
