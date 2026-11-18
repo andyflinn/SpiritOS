@@ -32,9 +32,19 @@ var api = {
 };
 function button(name) { return document.querySelector('#desk-list button[data-filter="' + name + '"]'); }
 function on(name) { var b = button(name); return !!b && /font-weight:\s*bold/.test(b.getAttribute('style') || ''); }
+// THE ROWS THAT SHOW, NOT THE ROWS KEPT (goal/G47.1, the cycle "the search keeps its rows": "a filter or a selector hides
+// and shows rows"; spirit/element/search.js keep): a row a filter leaves out stays in the table, hidden, so the list's
+// whole text would still name it. Read the rows not hidden alone.
+function shownText(list) {
+  if (!list) return '';
+  return Array.prototype.slice.call(list.querySelectorAll('tbody tr')).filter(function (tr) {
+    for (var n = tr; n && n !== list; n = n.parentNode) if (n.hidden || (n.style && n.style.display === 'none')) return false;
+    return true;
+  }).map(function (tr) { return tr.textContent; }).join('\n');
+}
 function state() {
   var list = document.getElementById('desk-list');
-  var text = list ? list.textContent : '';
+  var text = shownText(list);
   return { current: on('current'), goals: on('goalsOnly'), closed: on('includeClosed'), found: !!button('current') && !!button('goalsOnly'),
     args: searches.length ? searches[searches.length - 1] : null, currentGoal: text.indexOf('The current goal') !== -1, openItem: text.indexOf('An open item') !== -1,
     olderGoal: text.indexOf('An older goal') !== -1, olderItem: text.indexOf('An older item') !== -1 };
