@@ -326,6 +326,10 @@ function deskAgentOpen(name) {
     deskAgentProfile.cap = field(two, 'cap', 'checkbox', '');
     deskAgentProfile.included.addEventListener('change', deskAgentProfileSave);
     deskAgentProfile.cap.addEventListener('change', deskAgentProfileSave);
+    // DESK OWNER (goal/G47.5; Andy: "the checkmark in the agent-bubble that can only be set via loopback"): ticked, the
+    // desk takes that agent's calls as his; the desk refuses the change from anywhere but his node's loopback.
+    deskAgentProfile.owner = field(two, 'desk owner', 'checkbox', '');
+    deskAgentProfile.owner.addEventListener('change', deskAgentProfileSave);
   }
   return deskAgentProfileLoad();
 }
@@ -337,13 +341,15 @@ function deskAgentProfileLoad() {
     deskAgentProfile.nick.value = (r && r.nick) || '';
     deskAgentProfile.included.checked = !(r && r.included === false);
     deskAgentProfile.cap.checked = !(r && r.cap === false);
+    deskAgentProfile.owner.checked = !!(r && r.owner === true);
   }, function (e) { deskAgentNote = 'Profile not read: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 function deskAgentProfileSave() {
   var key = deskAgentKey();
   if (!key || !deskAgentProfile) return;
   deskAsk('profile.set', { agent: key, name: deskAgentProfile.name.value, nick: deskAgentProfile.nick.value,
-    included: deskAgentProfile.included.checked === true, cap: deskAgentProfile.cap.checked === true }).then(function () {
+    included: deskAgentProfile.included.checked === true, cap: deskAgentProfile.cap.checked === true,
+    owner: deskAgentProfile.owner.checked === true }).then(function () {
     deskAgentNote = '';
     deskAgentDraw();
     return deskAgentProfileLoad();

@@ -244,7 +244,9 @@ function createAppServer(verbs, opts) {
         const callerKey = String(httpReq.headers['x-spirit-caller'] || '');
         const callerLabel = String(httpReq.headers['x-spirit-label'] || '');
         let caller;
-        if (httpReq.headers['x-spirit-owner'] === '1') caller = { owner: true, key: callerKey, label: callerLabel };
+        // LOOPBACK BESIDE OWNER (goal/G47.5, Q8: "may the shared server code tell each server loopback too, beside owner":
+        // "yes."): the node's own mark for a call its loopback door took, so a server can tell it from a puppeteered one.
+        if (httpReq.headers['x-spirit-owner'] === '1') caller = httpReq.headers['x-spirit-loopback'] === '1' ? { owner: true, loopback: true, key: callerKey, label: callerLabel } : { owner: true, key: callerKey, label: callerLabel };
         else if (callerKey) caller = { key: callerKey, label: callerLabel };
         answer = ok ? route(parsed, caller) : Promise.resolve(refusal('bad-request', { why: 'not JSON' }));
       }

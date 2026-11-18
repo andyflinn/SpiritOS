@@ -654,10 +654,30 @@ function shed() {
 //   Andy, in the item's box: "The page shows the agent's name everywhere it shows the agent ... The name is looked up
 //   by the agent's key; the node's label is shown only when no name is set. Keys are never shown on the page.", and
 //   "every decision about who goes by key: take, nick address, block, the one box write."
-// The profile is his, by key (profile.set); a profile never set reads included and cap on.
+// The profile is his, by key (profile.set); a profile never set reads included and cap on, owner off.
 function profileOf(s, key) {
   const p = key ? s.profiles[String(key)] : null;
-  return { name: p ? p.name : '', nick: p ? p.nick : '', included: !p || p.included !== false, cap: !p || p.cap !== false };
+  return { name: p ? p.name : '', nick: p ? p.nick : '', included: !p || p.included !== false, cap: !p || p.cap !== false, owner: !!p && p.owner === true };
+}
+// A DESK OWNER BY HIS MARK (goal/G47.5; Andy: "desk has a unique way of gating access, and it sees me as an agent, with
+// bubble and all. all it it would need is: the bubble contains a checkmark for desk-owner on loopback", "NO NEW VERB, just
+// the checkmark in the agent-bubble that can only be set via loopback"; Q7: owner on profile.set, "yes"): his other node,
+// reaching this desk as a peer (in client mode it passes his calls on), is him here once its profile carries owner. Taken
+// once, as each call comes in: the caller is the owner's from then on, by andy, his presses his. deskOwner marks it so;
+// it carries no loopback, so it never sets the mark itself (profile.set).
+function asDeskOwner(caller) {
+  if (!caller || typeof caller !== 'object' || caller.owner === true || typeof caller.key !== 'string' || !caller.key) return caller;
+  if (!profileOf(walkState(), caller.key).owner) return caller;
+  return { owner: true, deskOwner: true, key: caller.key, label: caller.label };
+}
+function withDeskOwners(verbs) {
+  Object.keys(verbs).forEach(function (name) {
+    const v = verbs[name];
+    if (!v || typeof v.handler !== 'function') return;
+    const handler = v.handler;
+    v.handler = function (a, caller) { return arguments.length < 2 ? handler(a) : handler(a, asDeskOwner(caller)); };
+  });
+  return verbs;
 }
 function nameOfKey(s, key) { return profileOf(s, key).name; }
 // The label an agent writes with, by its key ('' for a key never heard from).
@@ -1230,7 +1250,7 @@ function apply(s, r, b, item, goalOf) {
     // nothing.)
     // goal/G21.1 adds included and cap, on unless his record says off (records before it carry neither).
     case 'profile.set':
-      s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick), included: b.included !== false, cap: b.cap !== false };
+      s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick), included: b.included !== false, cap: b.cap !== false, owner: b.owner === true };
       // goal/G21.4: his exclusion releases everything the agent holds (releaseKey).
       if (b.included === false) releaseKey(s, String(b.agent));
       return;
@@ -2087,7 +2107,7 @@ function writerOf(caller) {
 startState();
 shed();
 
-appServer.serve({
+appServer.serve(withDeskOwners({
   // NO log.add, log.search, pending.get OR changes (goal/G33.4; Andy: "log.add, log.search and pending.get: delete
   // them.", and of changes: "isn't that what this item does? implement the push/broadcast concept?"): the desk streams
   // each changed row to its subscribers (appServer.publish), and nothing is read back by a cursor.
@@ -2711,14 +2731,17 @@ appServer.serve({
   // Andy alone; every agent may read every pane." So profile.set takes included and cap, each optional (left out, it
   // keeps what the profile held, on for a profile never set), and profile.get answers them. A name or nick left empty
   // is no name or no nick (the label shows; nothing is addressed), so he can set a toggle before he names the agent.
+  // THE DESK OWNER MARK (goal/G47.5; Andy: "the checkmark in the agent-bubble that can only be set via loopback"; Q7):
+  // owner, optional and kept when left out as included and cap are; changed only by the owner on his node's loopback.
   'profile.set': {
-    request: { agent: '', name: '', nick: '', included: true, cap: true }, reply: { change: 0 },
+    request: { agent: '', name: '', nick: '', included: true, cap: true, owner: false }, reply: { change: 0 },
     accepts: function (x) {
       if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
-      const known = ['agent', 'name', 'nick', 'included', 'cap'];
+      const known = ['agent', 'name', 'nick', 'included', 'cap', 'owner'];
       return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) &&
         typeof x.agent === 'string' && typeof x.name === 'string' && typeof x.nick === 'string' &&
-        (x.included === undefined || typeof x.included === 'boolean') && (x.cap === undefined || typeof x.cap === 'boolean');
+        (x.included === undefined || typeof x.included === 'boolean') && (x.cap === undefined || typeof x.cap === 'boolean') &&
+        (x.owner === undefined || typeof x.owner === 'boolean');
     },
     handler: function (a, caller) {
       ownerOnly(caller);
@@ -2732,11 +2755,13 @@ appServer.serve({
       const was = profileOf(st, a.agent);
       const included = typeof a.included === 'boolean' ? a.included : was.included;
       const cap = typeof a.cap === 'boolean' ? a.cap : was.cap;
-      return { change: write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, included: included, cap: cap, by: w.by, key: w.key }).change };
+      const owner = typeof a.owner === 'boolean' ? a.owner : was.owner;
+      if (owner !== was.owner && caller.loopback !== true) throw refusedWhy('not-owner', 'the desk owner mark is set by the owner on his own node\'s loopback alone');
+      return { change: write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, included: included, cap: cap, owner: owner, by: w.by, key: w.key }).change };
     },
   },
   'profile.get': {
-    request: { agent: '' }, reply: { name: '', nick: '', included: true, cap: true },
+    request: { agent: '' }, reply: { name: '', nick: '', included: true, cap: true, owner: false },
     handler: function (a, caller) {
       return profileOf(walkState(), a.agent || writerOf(caller).key);
     },
@@ -2921,7 +2946,7 @@ appServer.serve({
       return { change: write('seen.set', { id: it.id, at: String(a.at), by: w.by, key: w.key }).change };
     },
   },
-},
+}),
 
 // ── THE DESK'S OWN REFUSALS (goal/G16.11) ───────────────────────────
 //

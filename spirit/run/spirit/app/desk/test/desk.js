@@ -955,6 +955,8 @@ test.run('a claim taken over a checkout with an edit of its own pulls nothing, t
 // his: a line by andy with no take, his presses accepted. The mark is set by the loopback owner alone.
 const ANDY_WSL = { key: 'MCowBQYDK2VwAyEAdeskProductTestANDYWSLAAAAAAAAAAAAAAAA=', label: 'andy-wsl' };
 const OWNER_ITEM = 'goal/G300.1';
+// The owner on his node's loopback, as its loopback door marks him (Q8): the one caller that may change the mark.
+const ANDY_LOOP = Object.assign({}, ANDY, { loopback: true });
 const ownerRow = function (key) { return W.askO('profile.get', { agent: key }, ANDY); };
 test.run('a desk of its own starts for the desk-owner cases', 0.2, async function () {
   W.askO = await startDesk('desk-owner', {});
@@ -963,7 +965,7 @@ test.run('a desk of its own starts for the desk-owner cases', 0.2, async functio
 }, test.limit.slow);
 test.run('the owner marks andy-wsl desk owner through profile.set, and its profile then holds owner', 0.2, async function () {
   if (!W.askO) return false;
-  await W.askO('profile.set', { agent: ANDY_WSL.key, name: 'Andy WSL', nick: 'awsl', included: true, cap: true, owner: true }, ANDY);
+  await W.askO('profile.set', { agent: ANDY_WSL.key, name: 'Andy WSL', nick: 'awsl', included: true, cap: true, owner: true }, ANDY_LOOP);
   const row = await ownerRow(ANDY_WSL.key);
   return !!row && row.owner === true || false;
 }, test.limit.quick);
@@ -992,6 +994,12 @@ test.run('andy-wsl, a desk owner through a peer, cannot mark another agent desk 
   const cw = await ownerRow(CW.key);
   return r.ok === false && !!cw && cw.owner !== true || false;
 }, test.limit.quick);
+test.run('the owner not on loopback, a puppeteered call, cannot mark an agent desk owner', 0.2, async function () {
+  if (!W.askO) return false;
+  const r = await W.askO('profile.set', { agent: CW.key, name: 'Claude Windows', nick: 'cw', included: true, cap: true, owner: true }, ANDY);
+  const cw = await ownerRow(CW.key);
+  return r.ok === false && !!cw && cw.owner !== true || false;
+}, test.limit.quick);
 test.run('claude-windows, not marked, still has its press seen refused not-owner', 0.2, async function () {
   if (!W.askO) return false;
   const r = await W.askO('press', { id: OWNER_ITEM, what: 'seen' }, CW);
@@ -999,7 +1007,7 @@ test.run('claude-windows, not marked, still has its press seen refused not-owner
 }, test.limit.quick);
 test.run('unmarked again by the owner, andy-wsl\'s press seen is refused not-owner', 0.2, async function () {
   if (!W.askO) return false;
-  await W.askO('profile.set', { agent: ANDY_WSL.key, name: 'Andy WSL', nick: 'awsl', included: true, cap: true, owner: false }, ANDY);
+  await W.askO('profile.set', { agent: ANDY_WSL.key, name: 'Andy WSL', nick: 'awsl', included: true, cap: true, owner: false }, ANDY_LOOP);
   const r = await W.askO('press', { id: OWNER_ITEM, what: 'seen' }, ANDY_WSL);
   return r.code === 'not-owner' || false;
 }, test.limit.quick);

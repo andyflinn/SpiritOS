@@ -70,7 +70,8 @@ module.exports = {
     // agent '' is the caller.
     'profile.get': { agent: 'text' },
     // His alone. A name or nick left '' is no name or no nick; a name otherwise passes the label rule.
-    'profile.set': { agent: 'id', name: 'name', nick: 'text', included: 'bool?', cap: 'bool?' },
+    // owner (goal/G47.5, Q7): the desk owner mark, changed by the owner on his node's loopback alone.
+    'profile.set': { agent: 'id', name: 'name', nick: 'text', included: 'bool?', cap: 'bool?', owner: 'bool?' },
     // goal/G33.7: seen per item, the arrival time of the newest thing he looked at under it.
     'seen.get': { id: 'id' },
     'seen.set': { id: 'id', at: 'text' },

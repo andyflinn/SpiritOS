@@ -118,10 +118,12 @@ bubble contains a checkmark for desk-owner on loopback"*, *"NO NEW VERB, just th
 set via loopback"*; Q7, owner *"as one more yes/no on profile.set, beside included and cap"*: *"yes"*. His WSL node reaches the
 desk as a peer, andy-wsl. On a desk of its own:
 
-- the owner marks andy-wsl desk owner through profile.set, and its profile (profile.get) then holds owner;
+- the owner on his node's loopback (Q8: the node tells a server loopback beside owner) marks andy-wsl desk owner through
+  profile.set, and its profile (profile.get) then holds owner;
 - a later profile.set that leaves owner out keeps it;
 - a line andy-wsl adds, holding no take, is accepted and stands by andy;
 - andy-wsl's press seen, an owner press, is accepted;
 - andy-wsl, a desk owner through a peer, cannot mark another agent desk owner;
+- the owner not on loopback, a puppeteered call, cannot mark an agent desk owner;
 - claude-windows, not marked, still has its press seen refused not-owner;
 - unmarked again by the owner, andy-wsl's press seen is refused not-owner.
