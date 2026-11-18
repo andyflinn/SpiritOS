@@ -914,6 +914,34 @@ test.after(stopAll);
     if (W4.bar !== 'dropdown') return false;
     return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && /testicle/.test(String(j.call || '')) && !(j.args && j.args.id); }) || false;
   }, test.limit.quick);
+  // WHAT IT RUNS ON, SHOWN (Andy: "the selector dropdown on andy-wsl's desk finds \"Andy Flinn\" but won't accept the
+  // selection, the setting remains on \"WSL ANDY VSCode\""; "nothing returned handles the data"; "all, agreed. spirit/data.js"):
+  // before any pick the field names the server remote answers as current; testicle's published remote row reaches the page's
+  // spirit.data.testicle.remote; and the field follows what lands there.
+  const barForm = function () { return '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(TESTICLE) + ') !== -1; })[0]'; };
+  const fieldText = function () { return c4.evaluate('(function () { var f = ' + barForm() + '; var b = f && f.querySelector("button[id$=\'field\']"); return b ? String(b.textContent || "") : ""; }())'); };
+  test.run('before any pick the dropdown\'s field names the server remote answers as current', 0.2, async function () {
+    if (W4.bar !== 'dropdown') return false;
+    W4.real = parsed(await c4.evaluate('spirit.require(spirit.familyPath("testicle")).then(function (f) { return f.remote({}); }).then(function (r) { return JSON.stringify(r); }, function () { return "null"; })')) || {};
+    const c = (W4.real.items || []).filter(function (i) { return String(i.key) === String(W4.real.current); })[0];
+    const label = c ? String(c.label || '') : '';
+    if (!label) return false;
+    return (await fieldText()).indexOf(label) !== -1 || false;
+  }, test.limit.slow);
+  test.run('testicle\'s published remote row reaches the page\'s spirit.data.testicle.remote, naming the same current', 0.2, async function () {
+    if (W4.bar !== 'dropdown' || !W4.real || !W4.real.current) return false;
+    return (await until(function () { return c4.evaluate('(function () { var t = (window.spirit.data || {}).testicle; return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }())'); }, 15000)) ? true : false;
+  }, test.limit.slow);
+  test.run('a remote row landing in spirit.data.testicle.remote is what the field then names', 0.2, async function () {
+    if (W4.bar !== 'dropdown') return false;
+    const fake = { current: 'K-ZZELSEWHERE', items: [{ key: 'K-ZZELSEWHERE', label: 'zz Elsewhere' }], more: false };
+    await c4.evaluate('(function () { window.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.testicle", app: { remote: ' + JSON.stringify(fake) + ' } }); return true; }())');
+    await sleep(1000);
+    const shown = await fieldText();
+    // The node's own row back, for what follows.
+    if (W4.real && W4.real.current) await c4.evaluate('(function () { window.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.testicle", app: { remote: ' + JSON.stringify(W4.real) + ' } }); return true; }())');
+    return shown.indexOf('zz Elsewhere') !== -1 || false;
+  }, test.limit.slow);
   test.run('picking a row of the dropdown sends remote with that row\'s id', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
     // The dropdown's own rows, inside the title bar's row form (cw: the tiles under the open layer have data-key rows too).
@@ -923,6 +951,20 @@ test.after(stopAll);
     await c4.evaluate('(function () { var f = ' + inBar + '; var r = f && f.querySelector("[data-key]"); if (r) r.click(); return !!r; }())');
     await sleep(1500);
     return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && !!(j.args && j.args.id); }) || false;
+  }, test.limit.slow);
+  // WHAT IT RUNS ON, SHOWN (Andy: "the selector dropdown on andy-wsl's desk finds \"Andy Flinn\" but won't accept the
+  // selection, the setting remains on \"WSL ANDY VSCode\""): the field names the server remote answers as current, and a
+  // switch the node refuses says why in the bar. The refusal is the node's answer, stood in for at the page's fetch.
+  test.run('a switch the node refuses says why in the title bar', 0.2, async function () {
+    if (W4.bar !== 'dropdown') return false;
+    await c4.evaluate('(function () { var f = window.fetch; window.__zzFetch = f; window.fetch = function (u, o) { var j = null; try { j = JSON.parse(String((o && o.body) || "")); } catch (e) {} if (j && /(^|\\.)remote$/.test(String(j.call || "")) && j.args && j.args.id) return Promise.resolve(new Response(JSON.stringify({ ok: false, code: "not-granted", error: "zz no grant on the sibling" }), { status: 403, headers: { "content-type": "application/json" } })); return f.apply(this, arguments); }; return true; }())');
+    await c4.evaluate('(function () { var f = ' + barForm() + '; var b = f && f.querySelector("button[id$=\'field\']"); if (b) b.click(); return !!b; }())');
+    await sleep(1500);
+    await c4.evaluate('(function () { var f = ' + barForm() + '; var r = f && f.querySelector("[data-key]"); if (r) r.click(); return !!r; }())');
+    await sleep(1500);
+    const text = await c4.evaluate('(function () { var f = ' + barForm() + '; return f ? String(f.textContent || "") : ""; }())');
+    await c4.evaluate('(function () { if (window.__zzFetch) window.fetch = window.__zzFetch; return true; }())');
+    return text.indexOf('zz no grant on the sibling') !== -1 || false;
   }, test.limit.slow);
   test.run('Starter, an app with no server, opens with no dropdown in its title bar', 0.2, async function () {
     if (!W4.up) return false;

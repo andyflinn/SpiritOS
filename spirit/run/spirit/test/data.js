@@ -173,6 +173,27 @@ test.run('take and rename survive a throwing translator and a non-object registr
 test.run('every job taken is handed to the translators with the api, with data or without, and null is not', 0.2, function () {
   return jobs.length === 2 && jobs[0][0].type === 'x' && jobs[1][0].type === 'nodata' && jobs[0][1] === D ? true : false;
 }, test.limit.quick);
+
+// EVERY SERVER'S remote ROW, FILED HERE (goal/G47.5; Andy: "all, agreed. spirit/data.js", on where the data of appServer's
+// auto-verbs belongs: not a server's own data.js, "would have to be duplicated for all servers"): a server publishes
+// { remote: { current, items, more } } as a job of its module, spirit.app.<name>, and it lands under spirit.data.<name>.remote,
+// a later row replacing it. No server's data.js is loaded for it.
+const REMOTE1 = { current: 'K-ZZ1', items: [{ key: 'K-ZZ1', label: 'zz one' }, { key: 'K-ZZ2', label: 'zz two' }], more: false };
+const REMOTE2 = { current: 'K-ZZ2', items: [{ key: 'K-ZZ1', label: 'zz one' }, { key: 'K-ZZ2', label: 'zz two' }], more: false };
+test.run('a server\'s published remote row lands under spirit.data.<name>.remote', 0.2, function () {
+  D.takeJob({ id: 'zzremote-job', type: 'app', module: 'spirit.app.zzremote', app: { remote: REMOTE1 } });
+  const f = D.zzremote;
+  return !!f && JSON.stringify(f.remote) === JSON.stringify(REMOTE1) || false;
+}, test.limit.quick);
+test.run('a later remote row of the same server replaces it', 0.2, function () {
+  D.takeJob({ id: 'zzremote-job', type: 'app', module: 'spirit.app.zzremote', app: { remote: REMOTE2 } });
+  const f = D.zzremote;
+  return !!f && JSON.stringify(f.remote) === JSON.stringify(REMOTE2) || false;
+}, test.limit.quick);
+test.run('another server\'s remote row lands under its own name and leaves the first as it is', 0.2, function () {
+  D.takeJob({ id: 'zzother-job', type: 'app', module: 'spirit.app.zzother', app: { remote: REMOTE1 } });
+  return !!D.zzother && JSON.stringify(D.zzother.remote) === JSON.stringify(REMOTE1) && JSON.stringify((D.zzremote || {}).remote) === JSON.stringify(REMOTE2) || false;
+}, test.limit.quick);
 test.run('a rename is handed to the translators with the api only when it names a key', 0.2, function () {
   return renames.length === 1 && renames[0][0].key === 'K1' && renames[0][1] === D ? true : false;
 }, test.limit.quick);
