@@ -11,10 +11,11 @@ itself, every search.
 ## Requirements (goal/G47.1, box v121)
 
 The box: *"new, the page twin of search-child-general.js: every search (selector, list, row, detail)
-mounted in a page on a scratch node, more rows than fit"*. One test per check, over every search judged (goal/G47.2): its
-answer names each search breaking it. A search a check has nothing to judge in (no list drawn, no detail, a detail
-that draws nothing for a planted row) is said as a comment, never counted green; a check no search could be judged by is
-red.
+mounted in a page on a scratch node, more rows than fit"*. Each check is said once per search it judges, reported for that
+search's own script, `spirit/element/search/<name>.js` (goal/G47.6: *"the search test runs each search inside test.forScript
+for that search's script ... The key then names the item that failed; the title stays the same and greppable"*). A search a
+check has nothing to judge in (no list drawn, no detail, a detail that draws nothing for a planted row) gets no test for it,
+never a green; a check no search could be judged by is red, for this suite's own script.
 
 How each search is mounted: a scratch node (the tracked files) and a headless Chrome on its face page, a fresh page per
 search. The selector is created with `{ face: 'pane', open }` in a pane of a stated size (640 by 420, class fill), over a

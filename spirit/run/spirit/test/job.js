@@ -621,11 +621,24 @@ test.run('each app switched on has its folder in spirit/state/', 0.2, function (
   return SL.servers.every(function (n) { return folders.indexOf(n) !== -1; }) ? true : false;
 }, test.limit.quick);
 // each app server's door
-test.run('each app server\'s door.sock is spirit/state/<name>/door.sock', 0.2, function () {
-  if (process.platform === 'win32') return true;
-  const sockets = SL.servers.filter(function (n) { return fs.existsSync(path.join(SL.state, n, 'door.sock')); });
-  return sockets.length === SL.servers.length ? true : false;
-}, test.limit.quick);
+// ONE RED PER APP SERVER (goal/G47.6, box: "the job test checks each app server's door inside test.forScript for that app
+// server ... The key then names the item that failed; the title stays the same and greppable."): each app server's check
+// is reported for its own script, spirit/app/<name>/<name>.js, so a red names the server whose door is missing. It waits
+// for the socket (the review: "On a lab node the socket was missing at 0 ms and present at 1,000 ms").
+// The servers are read here, as the suite loads, so each has its test before the run starts; SL.servers, read in the test
+// above, is the same list.
+const MOUNTED = fs.readdirSync(APPS).filter(function (n) {
+  try { const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); return !!(j.node && j.node.mount === true); } catch (e) { return false; }
+});
+MOUNTED.forEach(function (n) {
+  test.forScript('spirit/app/' + n + '/' + n + '.js', function () {
+    test.run('each app server\'s door.sock is spirit/state/<name>/door.sock', 0.2, async function () {
+      if (process.platform === 'win32') return true;
+      if (!SL.state) return false;
+      return (await H.until(function () { return Promise.resolve(fs.existsSync(path.join(SL.state, n, 'door.sock'))); }, 10000)) ? true : false;
+    }, test.limit.quick);
+  });
+});
 
 // an app's data in spirit/state/<name>/data/: the folder the node hands it as --state
 test.run('every server is handed spirit/state/<name>/data as its --state', 0.2, async function () {

@@ -11,8 +11,8 @@
 // as spirit/test/spirit-sibling-browser.js's WATCH does) to learn the spirit.data branch it is a view of, and more rows than
 // fit are planted in that branch, each a copy of a row the branch holds (or the plain fields alone), its text a long value
 // with no place to break. The detail is mounted by the search's detail in a panel layer (spirit/element/panel.js), as
-// the apps open one. EACH CHECK ONE TEST, OVER EVERY SEARCH JUDGED (goal/G47.2): its answer names each search breaking it; a
-// search a check has nothing to judge in is a comment, never a green; a check no search could be judged by is red.
+// the apps open one. EACH CHECK ONCE PER SEARCH (goal/G47.6), reported for that search's script: a search a check has nothing
+// to judge in gets no test, never a green; a check no search could be judged by is red.
 require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
@@ -40,6 +40,8 @@ const NAMES = TREE.map(function (f) { const m = new RegExp('^' + SEARCH + '/([^/
 const nameOf = function (f) { return (new RegExp('^' + SEARCH + '/([^/.]+)').exec(f) || [])[1] || ''; };
 const ALL = !GIVEN.length || GIVEN.some(function (f) { return f === 'spirit/element/search.js'; });
 const TARGETS = ALL ? NAMES : NAMES.filter(function (n) { return GIVEN.some(function (f) { return nameOf(f) === n; }); });
+// Held open until each search's checks are said (judgeAll, after the searches are opened).
+test.hold();
 
 // THE PANE OF A STATED SIZE (rule 16: "a box that states its size: class fill ... inside a pane that fills its app").
 const PANE_W = 640;
@@ -293,6 +295,10 @@ test.run('there are searches to judge, a scratch node and a Chrome page', 0.2, a
   return true;
 }, test.limit.slow);
 test.run('each search is mounted, planted and opened on a page of its own', 0.2, async function () {
+  // Each search's checks are said once this ends, however it ends, and the run let go.
+  try { return await openEach(); } finally { judgeAll(); test.release(); }
+}, test.limit.long);
+async function openEach() {
   if (world) return false;
   const failed = [];
   for (const n of TARGETS) {
@@ -305,92 +311,84 @@ test.run('each search is mounted, planted and opened on a page of its own', 0.2,
     if (REPORTS[n].fail) failed.push(n);
   }
   return !failed.length || false;
-}, test.limit.long);
+}
 
 // Each check: true when search n breaks it, false when n keeps it, or { skip } when n gives it nothing to judge.
-function eachSearch(why) {
-  if (world) return false;
-  const judged = []; const bad = [];
-  TARGETS.forEach(function (n) {
-    const r = REPORTS[n];
-    if (!r) { bad.push(n); return; }
-    if (r.fail) { bad.push(n); return; }
-    const w = why(r);
-    if (w && typeof w === 'object' && w.skip) return;
-    judged.push(n);
-    if (w) bad.push(n);
+// ONE RED PER SEARCH (goal/G47.6, box: "the search test runs each search inside test.forScript for that search's script ...
+// The key then names the item that failed; the title stays the same and greppable."): each check is said once per search
+// it judges, reported for that search's script, spirit/element/search/<name>.js, while the run is held open; a search a
+// check has nothing to judge in gets no test (a comment, never a green); a check no search could be judged by is red, said
+// for this suite's own script.
+const CHECKS = [];
+function judgeAll() {
+  CHECKS.forEach(function (c) {
+    let judged = false;
+    TARGETS.forEach(function (n) {
+      const r = REPORTS[n];
+      let red = true;
+      if (!world && r && !r.fail) {
+        const w = c.why(r);
+        if (w && typeof w === 'object' && w.skip) return;
+        red = !!w;
+      }
+      judged = true;
+      test.forScript(SEARCH + '/' + n + '.js', function () {
+        test.run(c.title, 0.4, function () { return !red; }, test.limit.quick);
+      });
+    });
+    if (!judged) test.run(c.title, 0.4, function () { return false; }, test.limit.quick);
   });
-  if (bad.length) return false;
-  return judged.length > 0 || false;
 }
 const listOf = function (r) { return r.noList ? { skip: true } : r.noData ? { skip: true } : null; };
 const plantedOf = function (r) { return listOf(r) || !r.drawn; };
 
-test.run('the list\'s box has a stated size, from its pane and not from its rows', 0.4, function () {
-  return eachSearch(function (r) {
+CHECKS.push({ title: 'the list\'s box has a stated size, from its pane and not from its rows', why: function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     return Math.abs(r.listAfter.h - r.listBefore.h) > 1 || r.listAfter.bottom > r.pane.bottom + 1;
-  });
-}, test.limit.quick);
-test.run('the list scrolls: its box keeps its size and its scrollHeight is greater than its clientHeight', 0.4, function () {
-  return eachSearch(function (r) {
+  } });
+CHECKS.push({ title: 'the list scrolls: its box keeps its size and its scrollHeight is greater than its clientHeight', why: function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     return Math.abs(r.listAfter.h - r.listBefore.h) > 1 || !(r.scrolls.sh > r.scrolls.ch) || !/auto|scroll/.test(r.scrolls.y);
-  });
-}, test.limit.quick);
-test.run('when the list is scrolled, its title and buttons stay at the top', 0.4, function () {
-  return eachSearch(function (r) {
+  } });
+CHECKS.push({ title: 'when the list is scrolled, its title and buttons stay at the top', why: function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     if (!r.fixedCount) return { skip: true };
     return r.moved > 0;
-  });
-}, test.limit.quick);
-test.run('a planted long value in a row wraps or clips, and nothing shows past the row\'s edge', 0.4, function () {
-  return eachSearch(function (r) {
+  } });
+CHECKS.push({ title: 'a planted long value in a row wraps or clips, and nothing shows past the row\'s edge', why: function (r) {
     const pre = plantedOf(r); if (pre) return pre;
     if (r.rowSpill === null) return true;
     return r.rowSpill > 0;
-  });
-}, test.limit.quick);
+  } });
 const detailOf = function (r) {
   if (r.noDetail) return { skip: true };
   if (r.noDetailRow) return { skip: true };
   if (!r.detailDrew) return { skip: true };
   return null;
 };
-test.run('the detail keeps a planted long value inside its panel, and scrolls when taller', 0.4, function () {
-  return eachSearch(function (r) {
+CHECKS.push({ title: 'the detail keeps a planted long value inside its panel, and scrolls when taller', why: function (r) {
     const pre = detailOf(r); if (pre) return pre;
     return r.detailSpill > 0 || (!!r.detailTaller && r.detailNoScroll > 0);
-  });
-}, test.limit.quick);
-test.run('the detail\'s title bar stays pinned when it scrolls', 0.4, function () {
-  return eachSearch(function (r) {
+  } });
+CHECKS.push({ title: 'the detail\'s title bar stays pinned when it scrolls', why: function (r) {
     const pre = detailOf(r); if (pre) return pre;
     if (!r.detailScrolls) return true;
     return !!r.barMoved;
-  });
-}, test.limit.quick);
-test.run('the selector\'s dropdown stays inside the window when opened near the right and bottom edges', 0.4, function () {
-  return eachSearch(function (r) {
+  } });
+CHECKS.push({ title: 'the selector\'s dropdown stays inside the window when opened near the right and bottom edges', why: function (r) {
     if (r.dropError) return true;
     if (r.noDropdown) return true;
     if (r.dropNotOpen) return true;
     const d = r.drop;
     return d.left < -1 || d.top < -1 || d.right > d.w + 1 || d.bottom > d.h + 1;
-  });
-}, test.limit.quick);
+  } });
 // Box v123: "every search supports both pane and dropdown; a selector with only one is red (today testicle.js, pane only,
 // and api.js, dropdown only)". Andy: "any search must support both pane AND dropdown". The dropdown is 7's.
-test.run('the selector, given the pane face, draws its own list in the pane', 0.4, function () {
-  return eachSearch(function (r) {
+CHECKS.push({ title: 'the selector, given the pane face, draws its own list in the pane', why: function (r) {
     if (r.paneError) return true;
     return !r.selectorPane;
-  });
-}, test.limit.quick);
-test.run('with two details open and one closed, the other still draws in its own panel in a page', 0.4, function () {
-  return eachSearch(function (r) {
+  } });
+CHECKS.push({ title: 'with two details open and one closed, the other still draws in its own panel in a page', why: function (r) {
     const pre = detailOf(r); if (pre) return pre;
     return !r.secondDrew || !!r.firstTouched;
-  });
-}, test.limit.quick);
+  } });
