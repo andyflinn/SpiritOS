@@ -370,11 +370,19 @@ test.run('a person is in the book', 0.2, async function () {
   planted = await call(N.base, 'contact.block', { publicKey: zzKey, publicLabel: 'zzPerson' });
   return (planted.status === 200) ? true : false;
 }, test.limit.quick);
+// CONTACTS OPENS ON PEOPLE (goal/G47.4, box v29: "👨‍👩‍👧‍👦 People (nodes only, includes node-puppets, excludes relays and
+// blocked)", "The default is \"People\""): a row is looked for under the kind it is, its filter pressed first.
+const kindOf = function (who) { return who && who.relay === true ? '📡 Relays' : who && who.blocked === true ? '❌ Blocked' : who && who.mine === true ? '⭐ Puppets' : '👨‍👩‍👧‍👦 People'; };
+const pickKind = async function (label) {
+  await waitFor('[].some.call(document.querySelectorAll("button.ps-filter"), function (x) { return x.offsetParent !== null && String(x.textContent).trim() === ' + JSON.stringify(label) + '; })', 10000);
+  return c.evaluate('(function () { var b = [].filter.call(document.querySelectorAll("button.ps-filter"), function (x) { return x.offsetParent !== null && String(x.textContent).trim() === ' + JSON.stringify(label) + '; })[0]; if (!b) return false; b.click(); return true; }())');
+};
 const detailsOf = async function (who) {
   const d = {};
   await selector('tiles');
   await waitFor('tiles().indexOf("contact") !== -1', 10000);
   await T('press("contact")');
+  await pickKind(kindOf(who));
   d.listed = await waitFor('bars().length === 1 && rows().indexOf(' + JSON.stringify(who.key) + ') !== -1', 10000);
   const contacts = (await T('bars()'))[0];
   d.depth = await T('depth()');
@@ -465,6 +473,8 @@ test.run('Contacts lists both people', 0.2, async function () {
   await selector('tiles');
   await waitFor('tiles().indexOf("contact") !== -1', 10000);
   await T('press("contact")');
+  // Both people are blocked (their panels offer Unblock), so they are listed under ❌ Blocked.
+  await pickKind('❌ Blocked');
   return (await waitFor('rows().indexOf(' + JSON.stringify(zzKey) + ') !== -1 && rows().indexOf(' + JSON.stringify(zzKey2) + ') !== -1', 10000)) ? true : false;
 }, test.limit.quick);
 const openOne = async function (key, mark) {
