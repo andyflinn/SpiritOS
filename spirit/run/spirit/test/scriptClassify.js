@@ -57,7 +57,13 @@ function loadOnNode(run, rel) {
     const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
       'const tell = function (o) { try { process.stdout.write("\\n@@" + JSON.stringify(o) + "\\n"); } catch (e) { /* gone */ } };' +
       'process.on("uncaughtException", function (e) { tell({ err: String(e && e.message || e) }); process.exit(0); });' +
-      'try { s.require(' + JSON.stringify(rel) + '); tell({ err: "" }); } catch (e) { tell({ err: String(e && e.message || e) }); }' +
+      // WHAT ITS LOAD PULLED IN (goal/G47.6, box point 3: "the classifier loads each script alone in its own process and
+      // records everything that load pulled in, the whole chain"): the module cache's new entries, run paths of production
+      // scripts, the script itself and test folders left out; sent with its class (script.classify's requires).
+      'const before = new Set(Object.keys(require.cache));' +
+      'const pulled = function () { return Object.keys(require.cache).filter(function (k) { return !before.has(k); }).map(function (k) { return path.relative(process.cwd(), k).split(path.sep).join("/"); })' +
+      '.filter(function (r) { return /\\.js$/.test(r) && r.indexOf("..") !== 0 && !path.isAbsolute(r) && !/(^|\\/)test\\//.test(r) && r !== ' + JSON.stringify(rel) + '; }); };' +
+      'try { s.require(' + JSON.stringify(rel) + '); tell({ err: "", requires: pulled() }); } catch (e) { tell({ err: String(e && e.message || e) }); }' +
       'setTimeout(function () { process.exit(0); }, 50);';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
     let out = '';
@@ -187,28 +193,54 @@ function tell(row) {
   return Promise.resolve(testicle).then(function (f) { return f['script.classify'](row); });
 }
 
-SCRIPTS.forEach(function (rel) {
+// COMPILED FIRST, BEFORE ANY SCRATCH NODE (goal/G47.6, box point 3: "The classifier compiles a changed script first, before it
+// boots a scratch node; a script that does not compile is a red on the script."): compiled as node compiles a module, in its
+// wrapper, and never run. A script that does not compile is red at once, with no node and no Chrome.
+function compiles(rel) {
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return true; }
+  try { new (require('vm').Script)('(function (exports, require, module, __filename, __dirname) {' + src.replace(/^#!.*/, '') + '\n})', { filename: rel }); return true; }
+  catch (e) { return false; }
+}
+// THE TOOL THAT NEVER REACHED A SCRIPT DOES NOT CHARGE IT (goal/G47.6, box point 1: "The script is spared only when the test
+// proves its tool never reached it: the scratch node or Chrome did not come up before anything of the script was loaded.";
+// cw: "'not charged' must leave the compiling script waiting to run, not green"): a script that compiles is judged only once
+// the scratch node and Chrome are up. When they cannot come up, it gets no test at all, and the run ends with TOOL_DOWN, so
+// testicle leaves it unjudged and waiting for classification (../app/testicle/testicle.js, classifyEnded).
+const TOOL_DOWN = 3;
+function classify(rel) {
   // "its severity is 0.8", written as the number it is (titleRules wants a severity as a number in the call).
   test.run('it loads, so it can be classified', 0.8, async function () {
     let k = null;
-    // "its severity is 0.8": the classifier failing in itself (a throw, no scratch node) fails the script at 0.8 too, as
-    // a failure said, never as the reporter's crash at 0.7.
+    let node = null;
     try {
       if (neverLoaded(rel)) k = { browserOnly: false, nodeOnly: true };
       else if (fs.existsSync(path.join(RUN, rel))) {
         const w = await world();
-        if (w.error) throw new Error();
-        const node = w.nodeR[rel] || await loadOnNode(path.join(w.node.root, 'spirit', 'run'), rel);
+        node = w.nodeR[rel] || await loadOnNode(path.join(w.node.root, 'spirit', 'run'), rel);
         const page = await loadOnPage(rel);
         k = classOf(node, page);
       }
     } catch (e) { k = null; }
     if (!k) return false;
-    try { await tell(Object.assign({ script: rel }, k)); } catch (e) { return false; }
+    try { await tell(Object.assign({ script: rel }, k, (node && Array.isArray(node.requires)) ? { requires: node.requires } : {})); } catch (e) { return false; }
     return true;
-  // The first one boots the scratch node and Chrome; each load inside it is cut at LOAD_MS.
+  // Each load inside the scratch node is cut at LOAD_MS.
   }, test.limit.long, { script: rel });
-});
+}
+const broken = SCRIPTS.filter(function (rel) { return !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)) && !compiles(rel); });
+const toLoad = SCRIPTS.filter(function (rel) { return broken.indexOf(rel) === -1 && !neverLoaded(rel) && fs.existsSync(path.join(RUN, rel)); });
+broken.forEach(function (rel) { test.run('it loads, so it can be classified', 0.8, function () { return false; }, test.limit.quick, { script: rel }); });
+SCRIPTS.filter(function (rel) { return neverLoaded(rel) || !fs.existsSync(path.join(RUN, rel)); }).forEach(classify);
+if (toLoad.length) {
+  // The scratch node and Chrome first, the run held meanwhile; the scripts that compile are judged only once both are up.
+  test.hold();
+  world().then(function (w) {
+    if (w.error) process.on('exit', function () { process.exitCode = TOOL_DOWN; });
+    else toLoad.forEach(classify);
+    test.release();
+  }, function () { process.on('exit', function () { process.exitCode = TOOL_DOWN; }); test.release(); });
+}
 
 test.after(function () {
   if (!W) return;

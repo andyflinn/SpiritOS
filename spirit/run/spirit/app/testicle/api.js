@@ -17,14 +17,14 @@ module.exports = {
     // scoped to run://. Named file.get until the rename of the table file to script.
     'script.get': { name: 'text' },
     // goal/G47.1, box v94, 1: the classifier's verb: a script row's two flags, browserOnly and nodeOnly, never both.
-    'script.classify': { script: 'text', browserOnly: 'bool', nodeOnly: 'bool' },
+    'script.classify': { script: 'text', browserOnly: 'bool', nodeOnly: 'bool', requires: 'list?' },
     // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
     'suite.search': { script: 'text?', text: 'text' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
     'testicle.set': { script: 'text', suite: 'text', test: 'text', verified: 'bool', severity: 'number' },
     // goal/G47.1, box v129-131: a suite's success or failure for one script, sent by the reporter once that suite is through
     // with it; the only thing that sets a suite row's outcome.
-    'suite.success': { script: 'text', suite: 'text', success: 'bool' },
+    'suite.success': { script: 'text', suite: 'text', success: 'bool', reason: 'text?', requires: 'list?' },
     // goal/G47.1: the current test rows, the failed first, then most severe first; script, suite and result (red or green)
     // each optional, the words narrowing them; from, the rows already held, asks the following answer.
     // Given a test with its script and suite, that test's every row, the newest flip first (its history).

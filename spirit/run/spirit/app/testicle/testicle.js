@@ -63,6 +63,14 @@ db.exec('CREATE TABLE IF NOT EXISTS script (name TEXT PRIMARY KEY, hash TEXT NOT
   'reClassify INTEGER NOT NULL DEFAULT 1, browserOnly INTEGER NOT NULL DEFAULT 0, nodeOnly INTEGER NOT NULL DEFAULT 0)');
 db.exec('CREATE TABLE IF NOT EXISTS suite (script TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, ' +
   'hash TEXT NOT NULL DEFAULT \'\', outcome TEXT NOT NULL DEFAULT \'\', changed INTEGER NOT NULL, PRIMARY KEY (script, suite))');
+// THE REASON OF A RED (goal/G47.6, box point 1: "The suite table is not mended; it gains one field, reason, shown as the
+// explanation of a suite's red: crashed or hung when no verdict was reached."): added to a table made before it, nothing else
+// of it touched. '' when the verdict was reached.
+if (!db.prepare('PRAGMA table_info(suite)').all().some(function (c) { return c.name === 'reason'; })) db.exec("ALTER TABLE suite ADD COLUMN reason TEXT NOT NULL DEFAULT ''");
+// THE DEPENDENCY TABLE (goal/G47.6, box point 3: "They are kept in a new table of testicle's, dependency, one row per script
+// and each file in its chain, replaced each time the classifier classifies that script."): requires is a file the script's
+// load pulled in (script.classify), or its own suite pulled in while it ran (suite.success).
+db.exec('CREATE TABLE IF NOT EXISTS dependency (script TEXT NOT NULL, requires TEXT NOT NULL, PRIMARY KEY (script, requires))');
 // THREE FIELDS ON THE SCRIPT TABLE (goal/G47.1, box v79, 3): reClassify "this script needs re-classification.",
 // browserOnly "this script file is an ui-element and runs in the browser only", nodeOnly "this script file runs on node.js
 // only"; both false, it runs on both, and classification never sets both. "a script seen for the first time starts with
@@ -123,7 +131,24 @@ const T = {
 // that script", "The flag is the server's alone; no suite reports anything new and no suite touches the flag", "Full: every
 // row of that script and suite in the testicle table was tested after the flag was set; then \"green\" if every one passed,
 // \"still red\" if one failed"). Its outcome column holds 'green' or 'red' once judged; the flag, test, says needs running.
-const judgeSuite = db.prepare('UPDATE suite SET test = 0, outcome = ?, changed = ? WHERE script = ? AND suite = ?');
+const judgeSuite = db.prepare('UPDATE suite SET test = 0, outcome = ?, changed = ?, reason = \'\' WHERE script = ? AND suite = ?');
+const setReason = db.prepare('UPDATE suite SET reason = ? WHERE script = ? AND suite = ?');
+const D = {
+  drop: db.prepare('DELETE FROM dependency WHERE script = ?'),
+  add: db.prepare('INSERT OR IGNORE INTO dependency (script, requires) VALUES (?, ?)'),
+  dependents: db.prepare('SELECT DISTINCT script FROM dependency WHERE requires = ?'),
+};
+// The files a script requires, as sent: run paths of production scripts, each once, never the script itself.
+function requiresOf(script, list) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  list.forEach(function (p) {
+    const r = posix(String(p || '')).replace(/^\.?\//, '');
+    if (!/\.js$/.test(r) || r === script || r.indexOf('..') !== -1 || isSuite(r) || out.indexOf(r) !== -1) return;
+    out.push(r);
+  });
+  return out;
+}
 function statusOf(test, outcome) { return test ? 'needs running' : outcome === 'red' ? 'still red' : outcome === 'green' ? 'green' : 'needs running'; }
 // A test row as the verbs and the stream carry it: its key its full key, script|suite|test|flipped, its booleans booleans
 // (goal/G47.1, the box: "the page keeps test rows by their full key, script|suite|test|flipped, and shows a test's current
@@ -227,6 +252,13 @@ const CLASSIFY = 'spirit/test/scriptClassify.js';
 const CLASSIFYABLE = 'it loads, so it can be classified';
 // "its severity is 0.8": what a run that never classified a script fails it with.
 const CLASSIFY_SEVERITY = 0.8;
+// THE CLASSIFIER'S TOOL DOWN (goal/G47.6, box point 1: "The script is spared only when the test proves its tool never reached
+// it"): a classifying run that ends with TOOL_DOWN could get no scratch node or no Chrome, so the scripts it judged nothing
+// for stay unjudged and waiting (classifyEnded), and the next classifying run waits CLASSIFY_RETRY_MS, so a missing tool is
+// not booted again and again. The exit code is spirit/test/scriptClassify.js's TOOL_DOWN.
+const TOOL_DOWN = 3;
+const CLASSIFY_RETRY_MS = 60000;
+let classifyAfter = 0;
 const toClassify = db.prepare('SELECT name, hash FROM script WHERE reClassify = 1 AND deleted = 0 ORDER BY name');
 const setClass = db.prepare('UPDATE script SET browserOnly = ?, nodeOnly = ?, reClassify = ?, changed = ? WHERE name = ?');
 const classified = db.prepare('UPDATE script SET reClassify = 0, changed = ? WHERE name = ? AND hash = ? AND reClassify = 1');
@@ -264,7 +296,7 @@ function unfit(script, suite) {
 // Every live suite row of one script its class rules out, dropped.
 function pruneUnfit(script) { Q.suitesOfScript.all(script).forEach(function (r) { if (!r.deleted) unfit(script, r.suite); }); }
 function chooseJob() {
-  if (there(CLASSIFY)) {
+  if (there(CLASSIFY) && Date.now() >= classifyAfter) {
     const owed = toClassify.all().filter(function (r) { return there(r.name); });
     if (owed.length) {
       const hashes = Object.create(null);
@@ -346,6 +378,7 @@ function nextJob() {
     if (job === j) job = null;
     // Its temp folder judged once the run has ended (judgeStray), before the run is judged whole.
     judgeStray(j);
+    judgeLeftovers(j);
     try { jobEnded(j); } catch (e) { logError('jobEnded ' + j.script + ' ' + j.suite, e); }
     // The next job at once, before busy is told: busy goes false only when nothing is left to run, never between two jobs
     // (the box: "whenever it goes back to listening for events it sets busy false").
@@ -361,13 +394,14 @@ function nextJob() {
     if (j.killed || j.stopped) { end(); return; }
     // What the run folder holds before the run (judgeLitter).
     if (!j.classify) j.runNames = runNames();
-    j.kid = spawn(process.execPath, args, { cwd: RUN, env: Object.assign({}, process.env, extra || {}), stdio: 'ignore', windowsHide: true });
+    j.mark = String(process.pid) + '-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    j.kid = spawn(process.execPath, args, { cwd: RUN, env: Object.assign({}, process.env, extra || {}, { [RUN_MARK]: j.mark }), stdio: 'ignore', windowsHide: true });
     j.kid.on('error', end);
-    j.kid.on('exit', end);
+    j.kid.on('exit', function (code) { j.exitCode = code; end(); });
   };
   if (j.classify) launch(null);
   else handWorld().then(function (w) { launch(w.env); }, function () { launch(null); });
-  j.timer = setTimeout(function () { killJob(j); }, JOB_LIMIT_MS);
+  j.timer = setTimeout(function () { j.timedOut = true; killJob(j); }, JOB_LIMIT_MS);
 }
 // THE NODE AND THE CHROME TESTICLE HANDS ITS RUNS: booted at the first suite run, the two side by side, and let go when the
 // runner has nothing left to choose, so a lab node is held only while testicle works.
@@ -449,7 +483,7 @@ function killJob(j) {
   logError('runner: killed ' + j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts) at ' + (at || 'no script') : ' for ' + j.script) + ' past ' + JOB_LIMIT_MS + ' ms', null);
   // The scripts not yet through, built into a new run from the flags (batchOf), behind what is queued.
   if (j.batch) front.push({ resume: true, script: '', suite: j.suite, title: '' });
-  if (j.kid) { try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); } }
+  if (j.kid) killTree(j, 'killJob');
 }
 // WHAT GOES WRONG, SAID ON STDERR AND KEPT NOWHERE (goal/G47.1, Q16; Andy, of testicle.err among the unread logs: "ALL
 // OF THEM. KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."): every error the runner meets is said on its
@@ -472,7 +506,7 @@ function jobEnded(j) {
   // it was on is judged (killJob): the ones through are judged already, the ones not started stay flagged for the new run.
   if (j.batch) {
     j.scripts.filter(function (s) { return !j.killed || s === j.killedAt; }).forEach(function (s) {
-      try { jobEnded({ script: s, suite: j.suite, title: '', scriptHash: j.hashes[s], suiteHash: j.suiteHash, killed: j.killed, started: j.started }); }
+      try { jobEnded({ script: s, suite: j.suite, title: '', scriptHash: j.hashes[s], suiteHash: j.suiteHash, killed: j.killed, timedOut: j.timedOut, started: j.started }); }
       catch (e) { logError('jobEnded ' + s + ' ' + j.suite, e); }
     });
     return;
@@ -503,6 +537,8 @@ function jobEnded(j) {
   // is NEVER assembled from testicle rows, anywhere").
   if (!row.test) return;
   judgeSuite.run('red', Date.now(), j.script, j.suite);
+  // No verdict reached: past the job limit it hung, else it ended before it said (goal/G47.6, box point 1).
+  setReason.run(j.timedOut ? 'hung' : 'crashed', j.script, j.suite);
   tell('suite', suiteServed(Q.suiteRow.get(j.script, j.suite)), 'updated');
 }
 // A CLASSIFYING RUN ENDED (box v94, 1: "the classify failing: not classifyable"): every script of it whose bytes are still
@@ -521,11 +557,16 @@ function classifierRow(script, suiteHash) {
 }
 function classifyEnded(j) {
   const now = Date.now();
+  const toolDown = j.exitCode === TOOL_DOWN;
+  if (toolDown) { classifyAfter = now + CLASSIFY_RETRY_MS; setTimeout(function () { try { nextJob(); } catch (e) { logError('nextJob', e); } }, CLASSIFY_RETRY_MS + 100); }
   j.scripts.forEach(function (name) {
     const sr = Q.script.get(name);
     if (!sr || sr.deleted || sr.hash !== j.hashes[name]) return;
     const row = T.current.get(name, CLASSIFY, CLASSIFYABLE);
-    if (!row || Number(row.tested) < j.started || row.judged !== j.hashes[name]) {
+    const unjudged = !row || Number(row.tested) < j.started || row.judged !== j.hashes[name];
+    // Its tool never reached it: no result, and it keeps reClassify.
+    if (unjudged && toolDown) return;
+    if (unjudged) {
       classifierRow(name, j.suiteHash);
       setResult(name, CLASSIFY, CLASSIFYABLE, false, CLASSIFY_SEVERITY, j.hashes[name], j.suiteHash);
       judgeSuite.run('red', now, name, CLASSIFY);
@@ -565,6 +606,64 @@ function judgeStray(j) {
   catch (e) { logError('judgeStray ' + j.script + ' ' + j.suite, e); return; }
   try { setResult(j.script, j.suite, STRAY, !left, STRAY_SEVERITY, j.scriptHash, j.suiteHash); }
   catch (e) { logError('judgeStray ' + j.script + ' ' + j.suite, e); }
+}
+// A SUITE LEAVES NO PROCESS BEHIND (goal/G47.6; Andy: "what about having reds for proccesses that are def dangling by aborted
+// suites????"; cw: "once a suite run has ended, killed or not, testicle looks for processes that run started that are still
+// alive a few seconds later; if there are any, the suite is red on a test like 'it leaves no process behind', and they are
+// ended", "The kill itself takes the whole tree"). A run's processes: on Linux every process whose environment carries the
+// run's mark (RUN_MARK, set at its start and inherited by what it starts, a detached one too); elsewhere every process
+// descending from the suite's own by parent id, which an orphan keeps on Windows. A general suite's run over many scripts is
+// judged by no script, as STRAY is not; a run stopped for another is ended whole and not judged.
+const RUN_MARK = 'SPIRIT_TESTICLE_RUN';
+const LEFTOVER = 'it leaves no process behind';
+const LEFTOVER_SEVERITY = 0.7;
+const LEFTOVER_WAIT_MS = 3000;
+function processesOf(j) {
+  return new Promise(function (resolve) {
+    if (!j || !j.kid || !j.kid.pid) return resolve([]);
+    if (process.platform === 'linux') {
+      const want = RUN_MARK + '=' + j.mark;
+      let out = [];
+      try {
+        out = fs.readdirSync('/proc').filter(function (d) { return /^\d+$/.test(d) && Number(d) !== process.pid; }).filter(function (d) {
+          try { return fs.readFileSync('/proc/' + d + '/environ', 'utf8').split('\0').indexOf(want) !== -1; } catch (e) { return false; }
+        }).map(Number);
+      } catch (e) { out = []; }
+      return resolve(out);
+    }
+    const list = process.platform === 'win32'
+      ? ['powershell', ['-NoProfile', '-NonInteractive', '-Command', 'Get-CimInstance Win32_Process | ForEach-Object { "$($_.ProcessId) $($_.ParentProcessId)" }']]
+      : ['ps', ['-A', '-o', 'pid=,ppid=']];
+    execFile(list[0], list[1], { windowsHide: true, timeout: 30000, maxBuffer: 1 << 24 }, function (err, stdout) {
+      if (err) return resolve([]);
+      const kids = Object.create(null);
+      String(stdout || '').split(/\r?\n/).forEach(function (l) {
+        const m = /^\s*(\d+)\s+(\d+)\s*$/.exec(l);
+        if (m) (kids[m[2]] = kids[m[2]] || []).push(Number(m[1]));
+      });
+      const out = [];
+      (function down(pid) { (kids[pid] || []).forEach(function (c) { if (out.indexOf(c) === -1 && c !== process.pid) { out.push(c); down(String(c)); } }); }(String(j.kid.pid)));
+      resolve(out);
+    });
+  });
+}
+function endPids(pids) { pids.forEach(function (p) { try { process.kill(p, 'SIGKILL'); } catch (e) { /* gone */ } }); }
+// A STOP OR A KILL TAKES THE TREE: what the run started is found while the suite still runs, then all of it ended.
+function killTree(j, who) {
+  processesOf(j).then(function (pids) {
+    endPids(pids);
+    try { j.kid.kill('SIGKILL'); } catch (e) { logError(who + ': the kill', e); }
+  }, function () { try { j.kid.kill('SIGKILL'); } catch (e) { logError(who + ': the kill', e); } });
+}
+function judgeLeftovers(j) {
+  if (!j || j.classify || j.batch || j.stopped || !j.script || !/\.js$/.test(j.suite) || !j.kid) return;
+  setTimeout(function () {
+    processesOf(j).then(function (pids) {
+      if (pids.length) { logError('runner: ' + j.suite + ' for ' + j.script + ' left ' + pids.length + ' process(es) running: ' + pids.join(' '), null); endPids(pids); }
+      try { setResult(j.script, j.suite, LEFTOVER, !pids.length, LEFTOVER_SEVERITY, j.scriptHash, j.suiteHash); }
+      catch (e) { logError('judgeLeftovers ' + j.script + ' ' + j.suite, e); }
+    });
+  }, LEFTOVER_WAIT_MS);
 }
 // ONE TEST'S RESULT WRITTEN (testicle.set's, and a killed job's failures): no flip, the current row tested again; a flip, the
 // current row retired and a new one made (goal/G47.1, the test-table cycle), each tagged with the two hashes. On a flip the
@@ -614,7 +713,7 @@ function stopJob(j, why) {
   clearTimeout(j.timer);
   logError('runner: stopped ' + (j.classify ? 'classifying' : j.suite + (j.batch ? ' (' + j.scripts.length + ' scripts)' : ' for ' + j.script)) + ': ' + why, null);
   // A run whose process has not started yet (it waits for its node and Chrome) has none to kill: launch sees it stopped.
-  if (j.kid) { try { j.kid.kill(); } catch (e) { logError('stopJob: the kill', e); } }
+  if (j.kid) killTree(j, 'stopJob');
   // QUEUED AGAIN, BEHIND WHAT STOPPED IT (box v130), in interactive as in auto: a batch to be assembled fresh from its flags, a
   // single run as it was; a classifying run needs none, its scripts still owe their class.
   if (j.batch) front.push({ resume: true, script: '', suite: j.suite, title: '' });
@@ -744,6 +843,11 @@ function apply(changed, P) {
       const row = Q.script.get(rel);
       if (row && !row.deleted && row.hash === hash(rel)) return; // the same bytes: nothing changed
       scriptUp(rel);
+      // WHAT DEPENDS ON IT RUNS AGAIN (goal/G47.6, box point 3: "a changed file re-runs the own suites of every script that
+      // depends on it, at any depth"; "Who re-runs when a file changes is one lookup, every script whose rows name it, with no
+      // walk"): each such script's own suite flagged. "A change to spirit.js, which all 255 depend on, goes to a quiet-hours
+      // sweep instead of running everything": it flags none here.
+      if (rel !== 'spirit/spirit.js') D.dependents.all(rel).forEach(function (d) { const own = ownTestOf(d.script); if (d.script !== rel && there(d.script) && there(own)) suiteUp(d.script, own); });
     });
     if (shaped) Q.redRows.all().forEach(function (r) { if (isGeneral(r.suite) && there(r.script) && there(r.suite)) suiteUp(r.script, r.suite); });
     db.exec('COMMIT');
@@ -887,7 +991,7 @@ function served(row) {
     browserOnly: !!row.browserOnly, nodeOnly: !!row.nodeOnly };
 }
 // A suite row as a search and the stream carry it: its key script|suite, its status "needs running" while it is flagged.
-function suiteServed(r) { return { key: r.script + '|' + r.suite, script: r.script, suite: r.suite, test: !!r.test, status: statusOf(r.test, r.outcome), deleted: !!r.deleted, outcome: r.outcome, changed: Number(r.changed) }; }
+function suiteServed(r) { return { key: r.script + '|' + r.suite, script: r.script, suite: r.suite, test: !!r.test, status: statusOf(r.test, r.outcome), deleted: !!r.deleted, outcome: r.outcome, reason: r.reason || '', changed: Number(r.changed) }; }
 // Test rows, already in the order they are answered in, as one search answer: the bucket keeps that order (a row's seat
 // falls with its place), cut to what one answer holds, more saying it was cut.
 // ONE ANSWER, NEVER IN PARTS (Andy: no paging; goal/G47.1, Q17): the most severe first, as many as one answer holds,
@@ -955,6 +1059,11 @@ appServer.serve({
   // the classifying run under way started on other bytes of it: then the next run takes it again. Answers the script row.
   'script.classify': {
     request: { script: '', browserOnly: false, nodeOnly: false }, reply: { name: '', hash: '', deleted: false, changed: 0 },
+    // requires may be left out (goal/G47.6, Andy: "both new arguments to the two existing verbs are approved.").
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.script !== 'string' || typeof a.browserOnly !== 'boolean' || typeof a.nodeOnly !== 'boolean') return false;
+      return Object.keys(a).every(function (k) { return k === 'script' || k === 'browserOnly' || k === 'nodeOnly' || (k === 'requires' && Array.isArray(a[k])); });
+    },
     handler: function (a) {
       const name = posix(String(a.script || '')).replace(/^\.?\//, '');
       // Any script with a row of its own, a tool of the test system in a test folder among them (testReport.js and
@@ -965,6 +1074,8 @@ appServer.serve({
       if (!row || row.deleted) throw refused('no-such-file');
       const stale = !!(job && job.classify && job.hashes && job.hashes[name] !== undefined && job.hashes[name] !== row.hash);
       setClass.run(a.browserOnly === true ? 1 : 0, a.nodeOnly === true ? 1 : 0, stale ? 1 : 0, Date.now(), name);
+      // WHAT ITS LOAD PULLED IN, its rows replaced (goal/G47.6, box point 3); a classifier that sends none leaves them.
+      if (Array.isArray(a.requires)) { D.drop.run(name); requiresOf(name, a.requires).forEach(function (r) { D.add.run(name, r); }); }
       const now = served(Q.script.get(name));
       tell('script', now, 'updated');
       // Classified: the rows its class rules out leave at once, never shown (Andy: "why do you display -sibling-node suites
@@ -1054,6 +1165,11 @@ appServer.serve({
   // the run began keeps its flag, so the run comes round again. A partial run (--test) sends none.
   'suite.success': {
     request: { script: '', suite: '', success: false }, reply: {},
+    // reason and requires may be left out (goal/G47.6, Andy: "both new arguments to the two existing verbs are approved.").
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.script !== 'string' || typeof a.suite !== 'string' || typeof a.success !== 'boolean') return false;
+      return Object.keys(a).every(function (k) { return k === 'script' || k === 'suite' || k === 'success' || (k === 'reason' && typeof a[k] === 'string') || (k === 'requires' && Array.isArray(a[k])); });
+    },
     handler: function (a) {
       const script = posix(String(a.script || '')).replace(/^\.?\//, '');
       const suite = posix(String(a.suite || '')).replace(/^\.?\//, '');
@@ -1074,6 +1190,11 @@ appServer.serve({
       // What the run left in the run folder, judged for this script (judgeLitter).
       if (ran && job && job.suite === suite) judgeLitter(job, script, ran);
       judgeSuite.run(a.success ? 'green' : 'red', Date.now(), script, suite);
+      // WHY A RED REACHED NO VERDICT (goal/G47.6, box point 1): crashed or hung, as the reporter knows it; '' otherwise.
+      if (!a.success && (a.reason === 'crashed' || a.reason === 'hung')) setReason.run(a.reason, script, suite);
+      // WHAT ITS OWN SUITE PULLED IN WHILE IT RAN (goal/G47.6, box point 3: a require made only later, inside a function; wsl:
+      // "must count only for a script's own suite"): added to its rows; a general test's are never counted.
+      if (suite === ownTestOf(script)) requiresOf(script, a.requires).forEach(function (r) { D.add.run(script, r); });
       tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'updated');
       return {};
     },

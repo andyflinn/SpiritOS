@@ -94,12 +94,14 @@
     // THE SUITES WAITING, RIGHT AFTER THE MODE (goal/G47.6, box point 4: "In auto mode, suites flagged by a change and not yet
     // run are counted as waiting beside the reds."; Q2, Andy: "as you please", to ⏳ and the count right after 🤖, gone at 0):
     // the suite rows the page's cache holds with their flag set; in interactive mode nothing runs by itself, so none is shown.
+    // A row with no script is the suite tab's summary of a suite (testicle.suite.search with no script), no suite of a script,
+    // so it is not counted.
     function drawWaiting() {
       if (gone) return;
       var D = S.data.testicle.data;
       var p = D.preferences.get();
       var b = S.data.getPath(D.branch('suite')) || {};
-      var n = (p && p.interactive === false) ? Object.keys(b).filter(function (k) { var r = b[k]; return r && r.test && !r.deleted; }).length : 0;
+      var n = (p && p.interactive === false) ? Object.keys(b).filter(function (k) { var r = b[k]; return r && r.script && r.test && !r.deleted; }).length : 0;
       if (n === shownWait) return;
       wait.innerHTML = '';
       if (n > 0 && paint(wait, '⏳')) {

@@ -121,7 +121,12 @@ let reportChain = Promise.resolve();
 // family still loading, the first report's race) is tried again, as before.
 let nowhere = false;
 function unreachable(e) { return !!e && (e.code === 'no-node' || (!!e.cause && e.cause.code === 'ECONNREFUSED')); }
+// THE REPORTER'S OWN LOADS (goal/G47.6): what spirit.js and the testicle family pull in to report, kept apart, so a script's
+// own suite never counts them as that script's dependencies (requiresOfSuite).
+const reporterOwn = new Set();
+function loadedNow() { return Object.keys(require.cache); }
 function reportToTesticle(rec, verb) {
+  const before = new Set(loadedNow());
   try {
     const own = globalThis.spirit;
     const ownWindow = globalThis.window;
@@ -130,6 +135,7 @@ function reportToTesticle(rec, verb) {
     let real = null;
     try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     testicle = testicle || real.require(real.familyPath('testicle'));
+    loadedNow().forEach(function (k) { if (!before.has(k)) reporterOwn.add(k); });
     reportsOut += 1;
     // TRIED AGAIN, UP TO THREE TIMES, A SECOND APART (goal/G47.1, wsl's verify: "the FIRST report of a suite process is
     // sometimes lost; every later one lands": the first goes out while spirit.js and the testicle family still load). The
@@ -206,13 +212,23 @@ function one(t) {
   return new Promise(function (resolve) {
     t.resolve = resolve;
     current = t;
-    const timer = ownTimeout(function () { settle(t, { pass: false, crash: true }); }, Number(t.limit) > 0 ? Number(t.limit) : 60000);
+    // PAST ITS LIMIT IT HUNG, told apart from a throw (goal/G47.6, box point 1: "crashed or hung when no verdict was reached").
+    const timer = ownTimeout(function () { settle(t, { pass: false, crash: true, hung: true }); }, Number(t.limit) > 0 ? Number(t.limit) : 60000);
     let answered;
     try { answered = Promise.resolve(t.body()); } catch (e) { answered = Promise.reject(e); }
     answered.then(function (v) {
       settle(t, { pass: v === true });
     }, function () { settle(t, { pass: false, crash: true }); });
   }).then(function () { current = null; });
+}
+
+// A SCRIPT'S OWN SUITE AND WHAT IT PULLED IN (goal/G47.6, box point 3: "a require that happens only later, inside a function, is
+// recorded while the script's own suite runs"; wsl: "must count only for a script's own suite"): the production scripts in
+// this process's module cache, run paths, the reporter's own loads, test folders and the script itself left out.
+function ownSuiteOf(script) { return path.posix.join(path.posix.dirname(script), 'test', path.posix.basename(script)); }
+function requiresOfSuite(script) {
+  return loadedNow().filter(function (k) { return !reporterOwn.has(k); }).map(runRel)
+    .filter(function (r) { return r && /\.js$/.test(r) && r !== script && !/(^|\/)test\//.test(r) && r.indexOf('node_modules/') === -1; });
 }
 
 async function runAll() {
@@ -226,10 +242,16 @@ async function runAll() {
   let doing = null;
   const held = Object.create(null);
   const reported = Object.create(null);
+  // WHY NO VERDICT, PER SCRIPT (goal/G47.6, box point 1): hung when a test of it ran past its limit, else crashed when one threw;
+  // a suite that only answered false reached its verdict, and has none.
+  const reasonOf = Object.create(null);
   const succeeded = function (script) {
     if (ONLY !== null || reported[script]) return;
     reported[script] = true;
-    reportToTesticle({ script: script, suite: SUITE_FILE, success: held[script] !== false }, 'suite.success');
+    const rec = { script: script, suite: SUITE_FILE, success: held[script] !== false };
+    if (!rec.success && reasonOf[script]) rec.reason = reasonOf[script];
+    if (SUITE_FILE === ownSuiteOf(script)) rec.requires = requiresOfSuite(script);
+    reportToTesticle(rec, 'suite.success');
   };
   for (let i = 0; ; i++) {
     while (i > lastOf() && holds > 0) await new Promise(function (r) { woken = r; });
@@ -256,6 +278,7 @@ async function runAll() {
     if (v.pass) { test.successCount++; line(title + ' ' + ICON.SUCCESS); }
     else { test.failureCount++; line(title + ' ' + ICON.ERROR); }
     if (!v.pass) held[script] = false;
+    if (!v.pass && v.crash) reasonOf[script] = (v.hung || reasonOf[script] === 'hung') ? 'hung' : 'crashed';
     reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
   }
   if (doing !== null) succeeded(doing);
