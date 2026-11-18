@@ -52,5 +52,8 @@ Box: *"these search filters. - 👨‍👩‍👧‍👦 People - ⭐ Puppets - 
 the time. the all button must go."*, *"🔍 Search Network is a separate toggle, independent of the other filters"*.
 
 - One filter of choices holds the kinds, so one is active at a time; its choices are 👨‍👩‍👧‍👦 People, ⭐ Puppets, 📡 Relays
-  and ❌ Blocked, in that order, and no all; each lets through its own kind and not the others.
+  and ❌ Blocked, in that order, and no all. Box v28: People lets through a node and a node puppet, no relay and no
+  blocked row ("nodes only, includes node-puppets, excludes relays and blocked"); Puppets a starred node and a starred
+  relay, no plain node or relay ("starred/owned nodes or relays"); Relays a relay, no node; Blocked a blocked row, no node
+  or relay.
 - The network toggle says 🔍 Search Network.

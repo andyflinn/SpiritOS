@@ -133,10 +133,22 @@ test.run('the all choice is gone', 0.2, function () {
   if (!kindF) return false;
   return !choicesOf().some(function (x) { return x.value === 'all' || /^all$/i.test(String(x.word || '')); }) ? true : false;
 }, test.limit.quick);
-test.run('each choice lets through its own kind and not the others', 0.2, function () {
-  const c = choicesOf();
-  if (c.length !== 4) return false;
-  return c.every(function (x, i) { return KINDS.every(function (row, j) { return kindF.test(row, x.value) === (i === j ? 1 : 0); }); }) ? true : false;
+// Box v28: "👨‍👩‍👧‍👦 People (nodes only, includes node-puppets, excludes relays and blocked)", "⭐ Puppets (starred/owned nodes or
+// relays ...)", "📡 Relays", "❌ Blocked".
+const NODE = { keep: true, name: 'n' }; const NODE_PUPPET = { keep: true, mine: true, name: 'np' };
+const RELAY = { relay: true, name: 'r' }; const RELAY_PUPPET = { relay: true, mine: true, name: 'rp' }; const BLOCKED = { blocked: true, name: 'b' };
+const lets = function (i, row) { const c = choicesOf(); return c.length === 4 && kindF.test(row, c[i].value) === 1; };
+test.run('People lets through a node and a node puppet, and no relay and no blocked row', 0.2, function () {
+  return lets(0, NODE) && lets(0, NODE_PUPPET) && !lets(0, RELAY) && !lets(0, RELAY_PUPPET) && !lets(0, BLOCKED) ? true : false;
+}, test.limit.quick);
+test.run('Puppets lets through a starred node and a starred relay, and no plain node or relay', 0.2, function () {
+  return lets(1, NODE_PUPPET) && lets(1, RELAY_PUPPET) && !lets(1, NODE) && !lets(1, RELAY) ? true : false;
+}, test.limit.quick);
+test.run('Relays lets through a relay, and no node', 0.2, function () {
+  return lets(2, RELAY) && !lets(2, NODE) && !lets(2, NODE_PUPPET) ? true : false;
+}, test.limit.quick);
+test.run('Blocked lets through a blocked row, and no node or relay', 0.2, function () {
+  return lets(3, BLOCKED) && !lets(3, NODE) && !lets(3, RELAY) ? true : false;
 }, test.limit.quick);
 
 // the network toggle and the named rule
