@@ -867,8 +867,11 @@ function publishRemote() {
   try { spirit.event.publish({ remote: remoteList() }); } catch (e) { /* no page listens */ }
 }
 // THE LIST CHECKED AGAIN AT LEISURE (box v12: "the appServer then leisurely asks again in the background whether the list
-// is still current"): each kept contact is asked this server's interface under its key; a peer counts when it answers it,
-// not when it refuses or stays silent. One check at a time; what changed is kept and published.
+// is still current"): each kept contact's server of this kind is asked remote {}, the one verb every appServer has with
+// no side effect. A peer counts when its server answers, refused owner-only as a peer's remote always is: its node's door
+// let this node through. Refused not-granted, at that door, or silent, it does not ("items: one row per peer that lets
+// this node into this app"; wsl: "a verb answered, not an interface loaded"). One check at a time; what changed is kept
+// and published.
 const REMOTE_ASK_MAX = 32;
 function refreshRemote() {
   if (remote.refreshing) return;
@@ -879,8 +882,13 @@ function refreshRemote() {
   }).then(function (got) {
     const people = ((got && got.items) || []).filter(function (i) { return i && i.key && i.key !== me; }).slice(0, REMOTE_ASK_MAX);
     return Promise.all(people.map(function (p) {
-      return Promise.resolve(spirit.require(familyPath(remote.name), String(p.key), { waitMs: 5000 })).then(function (fam) {
-        return fam && Object.keys(fam).length ? { key: String(p.key), label: String(p.name || p.label || '') } : null;
+      const row = { key: String(p.key), label: String(p.name || p.label || '') };
+      return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), row.key, { waitMs: 5000 })).then(function (fam) {
+        if (!fam || typeof fam.remote !== 'function') throw Object.assign(new Error('no remote'), { status: 0 });
+        return fam.remote({});
+      })).then(function (r) {
+        const code = String((r && r.body && r.body.code) || '');
+        return r && (r.status === 200 || code === 'owner-only') ? row : null;
       }, function () { return null; });
     }));
   }).then(function (rows) {
