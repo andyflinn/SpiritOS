@@ -664,9 +664,9 @@ function bundleOf(rows) {
 }
 function deliver(key, q, bundle) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), with the publisher's own wait.
-  return spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (fam) {
-    if (!fam || typeof fam.listener !== 'function') return 'away';
-    return spirit.outcome(fam.listener({ json: JSON.stringify(bundle) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
+  return spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (branch) {
+    if (!branch || typeof branch.listener !== 'function') return 'away';
+    return spirit.outcome(branch.listener({ json: JSON.stringify(bundle) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
 }
 function pumpTo(key) {
@@ -892,9 +892,9 @@ function refreshRemote() {
       let named = null;
       try { named = typeof p.label === 'string' ? JSON.parse(p.label) : null; } catch (e) { named = null; }
       const row = { key: String(p.key), label: String((named && (named.myLabel || named.name || named.publicLabel)) || p.name || '') };
-      return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), row.key, { waitMs: 5000 })).then(function (fam) {
-        if (!fam || typeof fam.remote !== 'function') throw Object.assign(new Error('no remote'), { status: 0 });
-        return fam.remote({});
+      return spirit.outcome(Promise.resolve(spirit.require(familyPath(remote.name), row.key, { waitMs: 5000 })).then(function (branch) {
+        if (!branch || typeof branch.remote !== 'function') throw Object.assign(new Error('no remote'), { status: 0 });
+        return branch.remote({});
       })).then(function (r) {
         const code = String((r && r.body && r.body.code) || '');
         return r && (r.status === 200 || code === 'owner-only') ? row : null;

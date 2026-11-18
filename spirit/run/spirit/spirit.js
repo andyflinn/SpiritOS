@@ -285,6 +285,28 @@
         throw refusal(String(b.code || 'refused'), saidWhy(r, r && r.status), { status: r && r.status, body: b });
       });
     };
+    // EVERY SERVER'S listener (goal/G47.5; Andy: "they're both auto-verbs. MUST BE.", "PLEASE call the damn thing jus
+    // \"listener\""), bound by hand as remote is: { json } is one bundle of a stream's deliveries. A server delivers to a
+    // subscriber's branch through this binding (appServer's deliver); with no api.js listing it, a desk subscribed to its
+    // sibling's desk was never sent a row.
+    // subscribe { family, run?, since? } and unsubscribe {}, the publisher's two, are bound beside it the same way.
+    var autoVerb = function (verb, fits, says) {
+      return function (args) {
+        var a = args || {};
+        if (!fits(a)) return Promise.reject(refusal('no-such-argument', says));
+        return Promise.resolve(ask(fam + '.' + verb, a)).then(function (r) {
+          if (r && r.status >= 200 && r.status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
+          var b = (r && r.body) || {};
+          throw refusal(String(b.code || 'refused'), saidWhy(r, r && r.status), { status: r && r.status, body: b });
+        });
+      };
+    };
+    if (!out.listener) out.listener = autoVerb('listener', function (a) { return Object.keys(a).length === 1 && typeof a.json === 'string'; }, 'listener takes {json}');
+    if (!out.subscribe) out.subscribe = autoVerb('subscribe', function (a) {
+      return typeof a.family === 'string' && (a.run === undefined || typeof a.run === 'string') && (a.since === undefined || typeof a.since === 'number') &&
+        Object.keys(a).every(function (k) { return k === 'family' || k === 'run' || k === 'since'; });
+    }, 'subscribe takes {family, run?, since?}');
+    if (!out.unsubscribe) out.unsubscribe = autoVerb('unsubscribe', function (a) { return Object.keys(a).length === 0; }, 'unsubscribe takes {}');
     if (typeof def.names === 'function') {
       var extra = def.names(call, { file: function (p) { return getFile(p); }, text: text, refusal: refusal, check: check });
       Object.keys(extra || {}).forEach(function (k) { if (!(k in out)) out[k] = extra[k]; });
