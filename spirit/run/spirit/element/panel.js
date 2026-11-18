@@ -6,8 +6,9 @@
 //   spirit.element.spirit.element.panel.create(host, under) -> stack
 //     host    the pane the mounter draws in; its layers go into it
 //     under   what the mounter shows there, covered while a layer is open
-//   stack.open(key, { icon, label, fill(pane, closed) }) -> layer
-//     Over `under`, in the same pane, under the title bar [icon] <label> [✕]. fill draws into the layer's pane once and answers
+//   stack.open(key, { icon, label, fill(pane, closed), remote }) -> layer
+//     Over `under`, in the same pane, under the title bar [icon] <label> [✕]; with remote, a server's name, the bar's centre
+//     holds that server's Remote dropdown (goal/G47.5). fill draws into the layer's pane once and answers
 //     what to destroy, or a promise of it. A key already open is shown again as it was left, not made anew.
 //   layer.show(), layer.hide(), layer.set({ icon, label }), layer.shown()
 //   stack.close()     hides every layer and shows `under` again
@@ -41,6 +42,41 @@
       bar.button.className = 'app-container-close';
       bar.button.title = 'Close';
       bar.span.textContent = String(spec.label || '');
+      // THE REMOTE DROPDOWN, IN THE CENTRE OF THE BAR (goal/G47.5, box v12: "all appServer faces now carry a Remote element in
+      // the center of their titlebar", "a simple dropdown, that is filled by a \"remote\" request without argument to its
+      // appServer", "the Remote element shows only on apps that have a server"): only a layer handed spec.remote, its server's
+      // name, draws it; every other bar is as it was. The shared search's dropdown, asking that server's remote itself; a pick
+      // sends remote { id }, and the page reloads when that changed the server it runs on (box v12: "for now, reload
+      // themselves to adapt to the new configuration").
+      var remoteList = null;
+      if (spec.remote) {
+        var server = String(spec.remote);
+        var mid = document.createElement('span');
+        mid.style.cssText = 'flex:1;display:flex;justify-content:center;min-width:0';
+        bar.root.insertBefore(mid, bar.button);
+        var current = '';
+        S.require('spirit/element/search.js').then(function () {
+          if (dropped) return;
+          remoteList = S.element.spirit.element.search.create(mid, {
+            server: server, verb: 'remote', face: 'dropdown', placeholder: 'remote…',
+            args: function () { return {}; },
+            columns: [{ field: 'label', label: 'Remote', sort: 'text' }],
+            pick: function (row, k) {
+              if (!k) return;
+              Promise.resolve(S.require(S.familyPath(server))).then(function (fam) { return fam.remote({ id: String(k) }); }).then(function (r) {
+                var now = String((r && r.current) || (r && r.body && r.body.current) || '');
+                if (now && current && now !== current) window.location.reload();
+                if (now) current = now;
+              }, function () { /* the bar stays as it was */ });
+            },
+            empty: 'No remote.',
+          });
+          // Which server it runs on now, so a pick of that same one changes nothing.
+          Promise.resolve(S.require(S.familyPath(server))).then(function (fam) { return fam.remote({}); }).then(function (r) {
+            current = String((r && r.current) || (r && r.body && r.body.current) || '');
+          }, function () { /* unknown until a pick says */ });
+        }, function () { /* no search on this page */ });
+      }
       var pane = document.createElement('div');
       pane.className = 'app-container-pane fill';
       pane.style.marginTop = '1em';
@@ -81,6 +117,8 @@
           if (open === layer) { open = null; cover(false); }
           if (made && typeof made.destroy === 'function') made.destroy();
           made = null;
+          if (remoteList && typeof remoteList.destroy === 'function') remoteList.destroy();
+          remoteList = null;
           if (box.parentNode) box.parentNode.removeChild(box);
           delete layers[key];
         },

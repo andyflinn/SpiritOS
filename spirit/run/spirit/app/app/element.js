@@ -73,7 +73,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       if (!stack) return;
       var known = stack.layer(kind + '/' + key);
       if (known) { known.show(); return; }
-      Promise.resolve(stack.open(kind + '/' + key, { icon: row.icon, label: row.label, fill: fill })).then(function (layer) {
+      // AN APP WITH A SERVER GETS ITS REMOTE DROPDOWN IN THE BAR (goal/G47.5, box v12: "the Remote element shows only on apps
+      // that have a server"): the layer is handed the server's name, the app's own; an app with none, and a detail, none.
+      var spec = { icon: row.icon, label: row.label, fill: fill };
+      if (kind === 'app' && row.nodeMount === true) spec.remote = key;
+      Promise.resolve(stack.open(kind + '/' + key, spec)).then(function (layer) {
         if (!layer || gone) return;
         if (look) {
           look.set = function () { layer.set(barOf(S.data.app.data.rows()[key] || row, look)); };

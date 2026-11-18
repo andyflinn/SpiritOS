@@ -272,6 +272,19 @@
         throw refusal(String(b.code || 'refused'), saidWhy(r, r && r.status), { status: r && r.status, body: b });
       });
     };
+    // EVERY SERVER'S remote (goal/G47.5, box v12: "it created an auto-verb called \"remote\""), bound by hand as DEBUG is:
+    // {} answers { current, items, more }, { id } switches and answers { current }. No api.js lists it, so the title bar's
+    // Remote dropdown and appServer's background check would find no such function without this.
+    if (!out.remote) out.remote = function (args) {
+      var a = args || {};
+      var keys = Object.keys(a);
+      if (keys.some(function (k) { return k !== 'id'; }) || ('id' in a && (typeof a.id !== 'string' || !a.id))) return Promise.reject(refusal('no-such-argument', 'remote takes {} or {id}'));
+      return Promise.resolve(ask(fam + '.remote', a)).then(function (r) {
+        if (r && r.status >= 200 && r.status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
+        var b = (r && r.body) || {};
+        throw refusal(String(b.code || 'refused'), saidWhy(r, r && r.status), { status: r && r.status, body: b });
+      });
+    };
     if (typeof def.names === 'function') {
       var extra = def.names(call, { file: function (p) { return getFile(p); }, text: text, refusal: refusal, check: check });
       Object.keys(extra || {}).forEach(function (k) { if (!(k in out)) out[k] = extra[k]; });
