@@ -1,0 +1,17 @@
+{
+  "platform": "wsl",
+  "commit": "f4ceb1e16",
+  "measuredAt": "2026-11-18T15:26:57.550Z",
+  "asks": 20,
+  "posts": 0,
+  "waitMs": {
+    "median": 0,
+    "max": 0
+  },
+  "flight": {
+    "median": 0,
+    "max": 0
+  },
+  "retried": 0,
+  "refusals": {}
+}
