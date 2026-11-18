@@ -45,3 +45,15 @@ the probabilitySearch's own data source (`options.search`), and what it asks a p
 
 A flag that is truthy but not `true`; a row that is both kept and a relay; a null row; an empty search answer; a
 card from the wrong key; stray clicks; a subscription of its own to the stream.
+
+## The kind filters, Search Network, and blocked rows (goal/G47.4)
+
+Box: *"these search filters. - 👨‍👩‍👧‍👦 People - ⭐ Puppets - 📡 Relays - ❌ Blocked are mutualy exclusive, only one active at
+the time. the all button must go."*, *"🔍 Search Network is a separate toggle, independent of the other filters"*, and
+*"a blocked contact can no longer be reached/modified by the UI"* (cw: Andy's one blocked row has no name, and the named
+rule hid it).
+
+- One filter of choices holds the kinds, so one is active at a time; its choices are 👨‍👩‍👧‍👦 People, ⭐ Puppets, 📡 Relays
+  and ❌ Blocked, in that order, and no all; each lets through its own kind and not the others.
+- The network toggle says 🔍 Search Network.
+- A blocked row with no name is listed.

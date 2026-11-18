@@ -113,20 +113,30 @@ test.run('when it loads, it requires its row and the search element through spir
   return own.every(function (p) { return atLoad.indexOf(p) !== -1; }) && !atLoad.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
 
-// the show filter: all, then each kind the list holds
-const values = function (rows) { return F.show.choices(rows).map(function (c) { return c.value; }).join(','); };
-test.run('the show filter offers only all over plain kept rows, and mine, blocked and relay after it in that order when there are such rows', 0.2, function () {
+// THE KIND FILTERS (goal/G47.4, box: "these search filters. - 👨‍👩‍👧‍👦 People - ⭐ Puppets - 📡 Relays - ❌ Blocked are mutualy
+// exclusive, only one active at the time. the all button must go."): one filter of choices, so one at a time, its choices
+// those four in that order, each with its icon and word, and no all.
+const KINDS = [{ keep: true, name: 'p' }, { mine: true, name: 'm' }, { relay: true, name: 'r' }, { blocked: true, name: 'b' }];
+let kindF = null;
+const choicesOf = function () { return kindF && typeof kindF.choices === 'function' ? kindF.choices(KINDS) : []; };
+test.run('one filter of choices holds the kinds, so only one is active at a time', 0.2, function () {
   if (!F) return false;
-  return values([{ keep: true }]) === 'all' && values([{ mine: true }, { blocked: true }, { relay: true }]) === 'all,mine,blocked,relay' ? true : false;
+  const withChoices = Object.keys(F).filter(function (k) { return typeof F[k].choices === 'function'; });
+  kindF = withChoices.length === 1 ? F[withChoices[0]] : null;
+  return !!kindF ? true : false;
 }, test.limit.quick);
-test.run('its buttons show only when there is a kind to choose', 0.2, function () {
-  if (!F) return false;
-  return F.show.when([{ keep: true }]) === false && F.show.when([{ relay: true }]) === true ? true : false;
+test.run('its choices are 👨‍👩‍👧‍👦 People, ⭐ Puppets, 📡 Relays and ❌ Blocked, in that order', 0.2, function () {
+  const c = choicesOf();
+  return JSON.stringify(c.map(function (x) { return [x.icon, x.word]; })) === JSON.stringify([['👨‍👩‍👧‍👦', 'People'], ['⭐', 'Puppets'], ['📡', 'Relays'], ['❌', 'Blocked']]) ? true : false;
 }, test.limit.quick);
-test.run('all lets every row through, and a kind lets through only the rows whose flag is exactly true', 0.2, function () {
-  if (!F) return false;
-  return F.show.test({ keep: true }, 'all') === 1 && F.show.test({ keep: true }, '') === 1 && F.show.test({ mine: true }, 'mine') === 1
-    && F.show.test({ keep: true }, 'mine') === 0 && F.show.test({ mine: 'yes' }, 'mine') === 0 ? true : false;
+test.run('the all choice is gone', 0.2, function () {
+  if (!kindF) return false;
+  return !choicesOf().some(function (x) { return x.value === 'all' || /^all$/i.test(String(x.word || '')); }) ? true : false;
+}, test.limit.quick);
+test.run('each choice lets through its own kind and not the others', 0.2, function () {
+  const c = choicesOf();
+  if (c.length !== 4) return false;
+  return c.every(function (x, i) { return KINDS.every(function (row, j) { return kindF.test(row, x.value) === (i === j ? 1 : 0); }); }) ? true : false;
 }, test.limit.quick);
 
 // the network toggle and the named rule
@@ -138,6 +148,17 @@ test.run('a row nobody decided about, a network find, shows only with network on
 test.run('a row that is kept, a relay or blocked shows with network off', 0.2, function () {
   if (!F) return false;
   return F.network.test(keptRow, false) === 1 && F.network.test(relayRow, false) === 1 && F.network.test({ blocked: true }, false) === 1 ? true : false;
+}, test.limit.quick);
+// "🔍 Search Network is a separate toggle, independent of the other filters" (box).
+test.run('the network toggle says 🔍 Search Network', 0.2, function () {
+  if (!F) return false;
+  return F.network.toggle === true && F.network.icon === '🔍' && F.network.word === 'Search Network' ? true : false;
+}, test.limit.quick);
+// "a blocked contact can no longer be reached/modified by the UI" (box): cw found Andy's one blocked row has no name, and
+// the named rule hid it. A blocked row is always listed, named or not.
+test.run('a blocked row with no name is listed', 0.2, function () {
+  if (!F) return false;
+  return F.named.test({ key: 'NOPE', blocked: true }) === 1 ? true : false;
 }, test.limit.quick);
 test.run('the named filter is never a button, and it lets through a row with a name or a relay, never a bare presence', 0.2, function () {
   if (!F) return false;
