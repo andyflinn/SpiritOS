@@ -1327,7 +1327,8 @@ test.run('On a relay this node owns, the star goes on', 0.2, async function () {
 // Andy: "the contact list should do something to mark a relay, like print its label in bold-italic."
 // the contact list marks a relay: its label in bold italic
 const styleOf = function (words) { return S.chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === ' + JSON.stringify(words) + '; })[0]; if (!e) return null; var c = getComputedStyle(e); return { weight: Number(c.fontWeight), style: c.fontStyle }; }())'); };
-test.run('a relay\'s label is bold and italic', 0.2, async function () {
+const CLICK = '(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === WORDS; })[0]; if (!e) return false; e.click(); return true; }())';
+test.run('a relay\'s label is bold and italic, under 📡 Relays', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.person) return false;
   await home(S.N.base, 'contact.label', { publicKey: S.person, myLabel: 'zzPersonRow' });
@@ -1337,6 +1338,8 @@ test.run('a relay\'s label is bold and italic', 0.2, async function () {
   await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
   await sleep(3000);
   await S.chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Contacts"; })[0]; if (e) e.click(); }())');
+  // The app opens on People, which shows no relay (goal/G47.4, box v29): the relay is under 📡 Relays.
+  await until(function () { return S.chrome.evaluate(CLICK.replace('WORDS', JSON.stringify('📡 Relays'))); }, 8000);
   await until(function () { return styleOf('scratch'); }, 8000);
   const relayLook = await styleOf('scratch');
   S.listed = true;
@@ -1344,6 +1347,8 @@ test.run('a relay\'s label is bold and italic', 0.2, async function () {
 }, test.limit.slow);
 test.run('a person is listed too', 0.2, async function () {
   if (!S.listed) return false;
+  // A person is under 👨‍👩‍👧‍👦 People (box v29).
+  await until(function () { return S.chrome.evaluate(CLICK.replace('WORDS', JSON.stringify('👨‍👩‍👧‍👦 People'))); }, 8000);
   await until(function () { return styleOf('zzPersonRow'); }, 5000);
   S.personLook = await styleOf('zzPersonRow');
   return !!S.personLook || false;

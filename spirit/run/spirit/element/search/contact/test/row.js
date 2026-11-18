@@ -476,13 +476,16 @@ test.run('the face\'s desktop is drawn with Contacts on it', 0.2, async function
 // relay: yes, so it was made as a person and stayed one). On a face that order is the usual one; a row follows its row.
 // a relay's row in Contacts opens the relay, whichever came first
 const TILE = '(function () { var a = Array.prototype.slice.call(document.querySelectorAll("*")); var e = a.filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === WORDS; })[0]; if (!e) return false; e.click(); return true; }())';
-test.run('Contacts opens, and the relay\'s row is pressed', 0.2, async function () {
+test.run('Contacts opens, 📡 Relays is chosen, and the relay\'s row is pressed', 0.2, async function () {
   if (!RF.chrome || RF.chrome.error || !RF.FACE) return false;
   const press = function (words) { return RF.chrome.evaluate(TILE.replace('WORDS', JSON.stringify(words))); };
   const pressedApp = await press('Contacts');
   await sleep(DRAWN_MS / 2);
+  // The app opens on People, which shows no relay (goal/G47.4, box v29): the relay is under 📡 Relays.
+  const pressedKind = await press('📡 Relays');
+  await sleep(DRAWN_MS / 4);
   const pressedRow = await press('scratch');
-  return pressedApp === true && pressedRow === true ? true : false;
+  return pressedApp === true && pressedKind === true && pressedRow === true ? true : false;
 }, test.limit.slow);
 test.run('the relay\'s panel opens with its folds', 0.2, async function () {
   if (!RF.chrome || RF.chrome.error || !RF.FACE) return false;

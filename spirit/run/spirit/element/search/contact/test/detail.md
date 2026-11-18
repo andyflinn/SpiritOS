@@ -129,7 +129,7 @@ stream, a real Chrome.
   offers that one alone; both, both; one star off, that one goes.
 - **The lab holds two relays** (`lab/labNodes.js`): a relay whose checks are over is stopped and freed before the next is asked for.
 - **A relay this node is not a member of cannot be starred** (Andy: *"a relay I'm not a member of can not be starred (relays i own automatically give me membership)"*): `contact.own` refuses it at the node with a code, its panel offers no star; a member can; leaving takes the star away, and it cannot be put back; an owned relay can.
-- **The contact list marks a relay** (Andy: *"print its label in bold-italic"*): a relay's label is bold and italic, a person's is not.
+- **The contact list marks a relay** (Andy: *"print its label in bold-italic"*): under 📡 Relays (the app opens on People, which shows no relay: goal/G47.4, box v29) a relay's label is bold and italic; under 👨‍👩‍👧‍👦 People a person's is not.
 - **It listens, shown or hidden**: a change is painted with no further `relay.status` or `relay.get`. **It follows only its row.**
 - **Gone from the page, it stops**: after `destroy` a change neither throws nor paints.
 
