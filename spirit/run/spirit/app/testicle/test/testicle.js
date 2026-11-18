@@ -2355,10 +2355,13 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   const limitUp = function () { return !!L.N && L.N.up; };
   const generalRow = function (t, script) { return suiteRow(t, script, GENERAL); };
   const testRows = function (t, script) { return (t.test || []).filter(function (r) { return r.script === script && r.suite === GENERAL && yes(r.current); }); };
-  test.after(async function () {
+  // Let go in its own last test (goal/G47.6: held to the suite's end, the worlds after it found the lab's six nodes taken).
+  const letGoL = async function () {
     if (L.N) await stop(L.N.child);
     try { if (L.s) LABH.freeTree(L.s); } catch (e) { /* scratch */ }
-  });
+    L.N = null; L.s = null;
+  };
+  test.after(letGoL);
   test.run('a scratch copy is made with a run limit of 60 s, three planted scripts, and a general test that works past the limit on the second', 0.2, async function () {
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
@@ -2422,9 +2425,11 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     return (!!r && r.outcome !== 'red' && !reds.length) || false;
   }, test.limit.quick);
   test.run('the run is computed again: cLater.js runs in a new run and its suite row turns green', 0.8, async function () {
-    if (!L.killed) return false;
-    const ran = await until(function () { const r = generalRow(tables(L.DB), CLATER); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 180000);
-    return !!ran || false;
+    try {
+      if (!L.killed) return false;
+      const ran = await until(function () { const r = generalRow(tables(L.DB), CLATER); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 180000);
+      return !!ran || false;
+    } finally { await letGoL(); }
   }, test.limit.long);
 }
 
