@@ -59,3 +59,15 @@ goal/G43.18, box v29, *The shell* and *Join*. Its test is `./shell.js`: a real n
 - The app detail's two rows, *"shown only for an app whose <name>.json says shell:true:true"*: none in Contacts' detail; a Home shell and a Face shell row in zzshell's. The Home shell dropdown first shows the configured home shell, the shell app's label.
 - *"Both dropdowns list only the apps whose <name>.json says shell:true:true"*: opened, each lists Zz Shell, and no other app; not the shell app either (Q28, Andy: *"no, the shell icon is now properly missing :)"*).
 - *"[armingButton-'Set']"*: Zz Shell chosen in Home shell, Set armed by its first press and pressed again, the node names `zzshell` at home, and face stays `shell`.
+
+## The Remote dropdown in the title bar (goal/G47.5)
+
+Box v12: *"all appServer faces now carry a Remote element in the center of their titlebar"*, *"that title bar is a simple
+dropdown, that is filled by a \"remote\" request without argument to its appServer"*, *"the Remote element shows only on
+apps that have a server"*; Andy: *"i understand that it touches the shared titlebar."* On a scratch node of its own, with
+Testicle (a server) and Starter (none) switched on, each opened from its tile on the face:
+
+- Testicle's title bar, the row form naming it, holds the shared search dropdown (a button whose id ends in field).
+- The page asks testicle's remote with no argument to fill it.
+- Picking a row of the dropdown sends remote with that row's id.
+- Starter's title bar holds no dropdown.

@@ -866,4 +866,69 @@ test.after(stopAll);
     if (!W3.up) return false;
     return ((await call(N.base, 'node.shell', { at: 'face' })).body.name === 'app') ? true : false;
   }, test.limit.quick);
+
+  // ── THE remote PART (goal/G47.5, box v12: "all appServer faces now carry a Remote element in the center of their titlebar",
+  // "that title bar is a simple dropdown, that is filled by a \"remote\" request without argument to its appServer", "the
+  // Remote element shows only on apps that have a server"; Andy: "i understand that it touches the shared titlebar.") ──
+  // A scratch node of its own; Testicle, an app with a server, switched on; Starter, an app with none. A tile pressed on the
+  // face opens the app as a layer, its title bar the row form naming the app. What the page asks is read from its fetches.
+  const W4 = {};
+  let N4 = null, c4 = null, TESTICLE = '', STARTER = '';
+  const labelOf = function (n) { const j = readJson(path.join(RUN, 'spirit', 'app', n, n + '.json')); return String((j && j.identity && j.identity.label) || ''); };
+  // The title bar of the open layer: the visible row form whose words are the app's label; whether it holds the shared
+  // search's dropdown (its field, a button whose id ends in field).
+  const barOf = function (label) { return c4.evaluate('(function () { var f = [].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(label) + ') !== -1; })[0]; if (!f) return "none"; return f.querySelector("button[id$=\'field\']") ? "dropdown" : "plain"; }())'); };
+  const pressTile = function (label) { return c4.evaluate('(function () { var t = [].filter.call(document.querySelectorAll("*"), function (e) { return !e.children.length && e.offsetParent !== null && String(e.textContent || "").trim() === ' + JSON.stringify(label) + '; })[0]; if (!t) return false; t.click(); return true; }())'); };
+  const asked = function () { return c4.evaluate('JSON.stringify(window.__zzAsked || [])').then(function (t) { return parsed(t) || []; }); };
+  test.run('a scratch node comes up with Testicle switched on, and Chrome opens its face page', 0.2, async function () {
+    stopAll();
+    TESTICLE = labelOf('testicle'); STARTER = labelOf('starter');
+    const s4 = LABH.scratchTree();
+    LIVE.push({ s: s4 });
+    N4 = await boot(path.join(s4.root, 'spirit', 'run'));
+    LIVE.push({ N: N4 });
+    if (!N4.up) return false;
+    c4 = await chromePage(findChrome());
+    LIVE.push({ c: c4 });
+    if (c4.error) return false;
+    await c4.send('Page.navigate', { url: N4.base + '/face.html' });
+    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.ready && spirit.app && spirit.app.activeApp)'); }, 20000);
+    await c4.evaluate('spirit.app.activeApp({ key: "testicle", active: true }); spirit.app.activeApp({ key: "starter", active: true }); true');
+    const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body.testicle); }); }, 60000);
+    await c4.send('Page.navigate', { url: N4.base + '/face.html' });
+    await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
+    await sleep(3000);
+    // Every call the page makes, kept: its fetches to /api/spirit carry { call, args }.
+    await c4.evaluate('(function () { window.__zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { if (o && o.body) window.__zzAsked.push(String(o.body)); } catch (e) {} return f.apply(this, arguments); }; return true; }())');
+    W4.up = !!served && !!TESTICLE && !!STARTER;
+    return W4.up || false;
+  }, test.limit.long);
+  test.run('Testicle, an app with a server, opens with the shared search dropdown in its title bar', 0.2, async function () {
+    if (!W4.up) return false;
+    if (!(await pressTile(TESTICLE))) return false;
+    await sleep(3000);
+    W4.bar = await barOf(TESTICLE);
+    return W4.bar === 'dropdown' || false;
+  }, test.limit.slow);
+  test.run('the dropdown is filled by remote, asked of testicle\'s server with no argument', 0.2, async function () {
+    if (W4.bar !== 'dropdown') return false;
+    return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && /testicle/.test(String(j.call || '')) && !(j.args && j.args.id); }) || false;
+  }, test.limit.quick);
+  test.run('picking a row of the dropdown sends remote with that row\'s id', 0.2, async function () {
+    if (W4.bar !== 'dropdown') return false;
+    await c4.evaluate('(function () { var f = [].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(TESTICLE) + ') !== -1; })[0]; var b = f && f.querySelector("button[id$=\'field\']"); if (b) b.click(); return !!b; }())');
+    await sleep(1500);
+    await c4.evaluate('(function () { var r = document.querySelector("[data-key]"); if (r) r.click(); return !!r; }())');
+    await sleep(1500);
+    return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && !!(j.args && j.args.id); }) || false;
+  }, test.limit.slow);
+  test.run('Starter, an app with no server, opens with no dropdown in its title bar', 0.2, async function () {
+    if (!W4.up) return false;
+    await c4.send('Page.navigate', { url: N4.base + '/face.html' });
+    await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
+    await sleep(3000);
+    if (!(await pressTile(STARTER))) return false;
+    await sleep(3000);
+    return (await barOf(STARTER)) === 'plain' || false;
+  }, test.limit.slow);
 }
