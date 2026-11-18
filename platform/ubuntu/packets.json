@@ -1,0 +1,17 @@
+{
+  "platform": "ubuntu",
+  "commit": "f4ceb1e1",
+  "measuredAt": "2026-11-18T13:26:39.608Z",
+  "asks": 20,
+  "posts": 0,
+  "waitMs": {
+    "median": 0,
+    "max": 0
+  },
+  "flight": {
+    "median": 0,
+    "max": 0
+  },
+  "retried": 0,
+  "refusals": {}
+}
