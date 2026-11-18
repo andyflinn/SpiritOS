@@ -958,7 +958,9 @@ function withRemote(verbs, name) {
     accepts: function (x) { return isPlain(x) && Object.keys(x).every(function (k) { return k === 'id'; }) && (x.id === undefined || (typeof x.id === 'string' && !!x.id)); },
     handler: function (a, caller) {
       if (!caller || caller.owner !== true) throw Object.assign(new Error('owner-only'), { refusal: 'owner-only', extra: { why: 'remote is the owner\'s alone' } });
-      if (a.id === undefined) { refreshRemote(); return remoteList(); }
+      // An empty call publishes the list too, to this node's own pages alone, so every open page's spirit.data.<server>.remote
+      // holds it (spirit/data.js files it), and then the peers are checked again in the background.
+      if (a.id === undefined) { publishRemote(); refreshRemote(); return remoteList(); }
       return switchRemote(String(a.id));
     },
   };

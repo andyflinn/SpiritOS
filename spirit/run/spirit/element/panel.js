@@ -69,8 +69,19 @@
           var fieldButton = mid.querySelector('button[id$="field"]');
           if (fieldButton) fieldButton.textContent = label + ' ▾';
         }
+        // One remote answer or published row taken in: what it runs on, and each row's label.
+        function take(r) {
+          if (!r || typeof r !== 'object') return;
+          if (r.current) current = String(r.current);
+          (Array.isArray(r.items) ? r.items : []).forEach(function (i) { labels[String(i.key)] = String(i.label || i.key); });
+          showCurrent();
+        }
+        // WHAT LANDS IN spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/data.js"): the server's
+        // published remote row, filed there by spirit/data.js, is followed as it comes.
+        var unwatchRemote = S.data && typeof S.data.watchPath === 'function' ? S.data.watchPath('remote/' + server, function (p, r) { take(r); }) : null;
         S.require('spirit/element/search.js').then(function () {
           if (dropped) return;
+          take(S.data && S.data[server] && S.data[server].remote);
           var fam = function () { return Promise.resolve(S.require(S.familyPath(server))); };
           opts = {
             face: 'dropdown', placeholder: 'remote…',
@@ -79,9 +90,7 @@
             // answer, so a pick of the one it runs on changes nothing.
             search: function () {
               return fam().then(function (f) { return f.remote({}); }).then(function (r) {
-                current = String((r && r.current) || '');
-                ((r && r.items) || []).forEach(function (i) { labels[String(i.key)] = String(i.label || i.key); });
-                showCurrent();
+                take(r);
                 var items = ((r && r.items) || []).map(function (i) { return { key: String(i.key), label: JSON.stringify({ key: String(i.key), label: String(i.label || '') }) }; });
                 return { status: 200, body: { ok: true, items: items, more: !!(r && r.more) } };
               });
@@ -157,6 +166,7 @@
           made = null;
           if (remoteList && typeof remoteList.destroy === 'function') remoteList.destroy();
           remoteList = null;
+          if (typeof unwatchRemote === 'function') unwatchRemote();
           if (box.parentNode) box.parentNode.removeChild(box);
           delete layers[key];
         },

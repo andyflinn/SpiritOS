@@ -312,8 +312,21 @@
     seenJobs.set(k, job);
   }
   // Every job is handed over, data or none: each translator reads what it needs (the jobs family keeps them whole).
+  // EVERY SERVER'S remote ROW, FILED HERE ONCE (goal/G47.5; Andy: "all, agreed. spirit/data.js", not a server's own data.js,
+  // which "would have to be duplicated for all servers"): a server publishes { remote: { current, items, more } } as a job of
+  // its module, spirit.app.<name>; it is kept as spirit.data.<name>.remote, a later row replacing it, and told to whoever
+  // watches remote/<name> (the title bar's Remote dropdown, spirit/element/panel.js).
+  function remoteOf(job) {
+    var r = job && job.app && job.app.remote;
+    if (!r || typeof r !== 'object' || Array.isArray(r)) return;
+    var m = /^spirit\.app\.([A-Za-z][A-Za-z0-9_]*)$/.exec(String(job.module || ''));
+    if (!m) return;
+    familyOf(m[1]).remote = r;
+    heard('remote/' + m[1]).forEach(function (fn) { try { fn('remote/' + m[1], r); } catch (e) { /* one reader's fault */ } });
+  }
   function onJob(job, from) {
     if (!job || typeof job !== 'object') return;
+    remoteOf(job);
     if (onPage && job.id) keep(job);
     if (handing()) each('onJob', stamped(job, from));
   }
