@@ -15,7 +15,19 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/apiAuth/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/apiAuth'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// THE DATABASES IT OPENS ARE CLOSED BEFORE ITS TEMP FOLDER GOES (goal/G47.1, no pollution; testicle's "it leaves no temp
+// folder behind", red on Andy's node 2026-11-18): Windows deletes no open file, so a database still open kept the folder.
+// Every DatabaseSync opened from here on, by the test or by what it requires, is recorded and closed first.
+const OPEN_DBS = [];
+{
+  const sqlite = require('node:sqlite');
+  const RealDb = sqlite.DatabaseSync;
+  sqlite.DatabaseSync = class extends RealDb { constructor() { super(...arguments); OPEN_DBS.push(this); } };
+}
+test.after(function () {
+  OPEN_DBS.forEach(function (d) { try { d.close(); } catch (e) { /* closed */ } });
+  try { fs.rmSync(tempFolder.path('spirit/test/apiAuth'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
+});
 const { DatabaseSync } = require('node:sqlite');
 
 const FILE = path.join(RUN, 'spirit', 'apiAuth.js');
