@@ -171,7 +171,7 @@ test.run('with a git lock left in lab\'s repo and no git running, lab still hand
 }, test.limit.long);
 test.run('with a git lock left in every personal node\'s repo and no git running, lab still hands one out, and that node\'s lock is gone', 0.4, async function () {
   const P = require(path.join(REPO, 'lab', 'labNodes.js')).POOLS;
-  const names = (P && P.personal) || [];
+  const names = (P && P.node) || [];
   const mine = names.filter(function (n) { return plantLock(path.join(LAB_GIT, 'worktrees', n, 'index.lock')); });
   if (!mine.length || mine.length !== names.length) { unplant(); return false; }
   const r = await inChild('const t = H.scratchTree(); console.log("@@" + JSON.stringify({ name: t.name || "" })); setTimeout(function () { process.exit(0); }, 200);', 120000);

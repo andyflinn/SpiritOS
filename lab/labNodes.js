@@ -76,8 +76,22 @@ function ensureRepo() {
 
 // THE FILES UNDER TEST: the checkout's spirit/run as it stands, its commit and its uncommitted edits (new files too, what
 // .gitignore keeps out stays out), one commit on lab/snapshot. Answers its sha.
+// A GIT LOCK LEFT BY A KILLED RUN (goal/G47.1; Andy: "the issue of not cleaning up git locks after aborted failed tests needs
+// fixing in the system with verification"): on Windows a killed process takes the git it started with it, and git's own lock
+// stays. One left in lab's repo at 11:14 on Andy's node failed every hand-out after it. Each lock is removed only by the one
+// that holds the lab lock that guards it, so no git of the lab's own can be running there: lab's repo (its index, HEAD, the
+// snapshot branch) under the lab lock, a node's own repo under that node's lock. Nothing but this file writes lab's repo.
+function clearGitLocks(gitDir, names) {
+  names.forEach(function (n) { try { fs.rmSync(path.join(gitDir, n), { force: true }); } catch (e) { /* not removable now */ } });
+}
+// A lab node's own git dir: its worktree's .git file names it ("gitdir: <path>").
+function nodeGitDir(dir) {
+  try { const m = /^gitdir:\s*(.+)$/m.exec(fs.readFileSync(path.join(dir, '.git'), 'utf8')); return m ? path.resolve(dir, m[1].trim()) : ''; } catch (e) { return ''; }
+}
+
 function snapshotUnlocked() {
   ensureRepo();
+  clearGitLocks(path.join(LAB_REPO, '.git'), ['index.lock', 'HEAD.lock', path.join('refs', 'heads', BRANCH + '.lock')]);
   labGit(['add', '-A', '--', 'spirit/run']);
   const tree = labGit(['write-tree']);
   let parent = '';
@@ -169,6 +183,9 @@ function cleanTree(dir) {
   }
 }
 function resetTree(name, dir, sha) {
+  // Under this node's lock, held by its caller: a git lock left in its repo is a dead run's.
+  const own = nodeGitDir(dir);
+  if (own) clearGitLocks(own, ['index.lock', 'HEAD.lock']);
   let last = null;
   for (let i = 0; i < 20; i++) {
     try {
