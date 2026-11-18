@@ -12,6 +12,7 @@
 //                                           of it came in (last: { script, test, ok }), its script named when it runs several
 //   reported(done, of, script, ok)          "<done> of <of> reported: <script> <result>" (box v134-135, the result an icon:
 //                                           Andy, "why are the results in status messages not icons?")
+//   waiting(n)                              "<n> suite(s) waiting to run", the title of the status box's ⏳ count (goal/G47.6)
 //   change(table, key, change)              "<change> <table>: <key's parts>", a test row's flip left off
 //
 // On a page it stands at spirit.required.spirit.app.testicle.words; on the node it is this module.
@@ -30,6 +31,7 @@
       return 'running ' + W.run(suite, list) + told;
     },
     reported: function (done, of, script, ok) { return done + ' of ' + of + ' reported: ' + script + ' ' + W.result(ok); },
+    waiting: function (n) { return n + ' suite' + (n === 1 ? '' : 's') + ' waiting to run'; },
     change: function (table, key, change) {
       const what = table === 'testicle' ? String(key).split('|').slice(0, 3).join(' | ') : String(key).split('|').join(' | ');
       return String(change || 'updated') + ' ' + table + ': ' + what;

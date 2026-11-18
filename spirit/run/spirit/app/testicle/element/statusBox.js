@@ -57,11 +57,14 @@
     var shownMode = null;
     // A constant height, the message ellipsed and never wrapped; its box keeps what it holds inside (overflow hidden).
     container.innerHTML = '<div class="testicle-status" style="display:flex;align-items:center;height:1.8em;line-height:1.8em;overflow:hidden;white-space:nowrap">' +
-      '<span class="testicle-mode" style="flex:none"></span>&nbsp;<span class="testicle-busy" style="flex:none"></span>&nbsp;' +
+      '<span class="testicle-mode" style="flex:none"></span>&nbsp;<span class="testicle-wait" style="flex:none"></span>' +
+      '<span class="testicle-busy" style="flex:none"></span>&nbsp;' +
       '<span class="testicle-last" style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"></span></div>';
     var mode = container.querySelector('.testicle-mode');
     var icon = container.querySelector('.testicle-busy');
     var line = container.querySelector('.testicle-last');
+    var wait = container.querySelector('.testicle-wait');
+    var shownWait = -1;
     // Through the icon element, as every pictograph is drawn (spirit/element/icon.js; the general rules).
     function paint(box, glyph) {
       var I = S.element && S.element.spirit && S.element.spirit.element.icon;
@@ -86,6 +89,24 @@
       var words = doing ? doing + (reported ? '; ' + reported : '') : reported || lastWords(m && m.last);
       line.textContent = words;
       line.title = words;
+      drawWaiting();
+    }
+    // THE SUITES WAITING, RIGHT AFTER THE MODE (goal/G47.6, box point 4: "In auto mode, suites flagged by a change and not yet
+    // run are counted as waiting beside the reds."; Q2, Andy: "as you please", to ⏳ and the count right after 🤖, gone at 0):
+    // the suite rows the page's cache holds with their flag set; in interactive mode nothing runs by itself, so none is shown.
+    function drawWaiting() {
+      if (gone) return;
+      var D = S.data.testicle.data;
+      var p = D.preferences.get();
+      var b = S.data.getPath(D.branch('suite')) || {};
+      var n = (p && p.interactive === false) ? Object.keys(b).filter(function (k) { var r = b[k]; return r && r.test && !r.deleted; }).length : 0;
+      if (n === shownWait) return;
+      wait.innerHTML = '';
+      if (n > 0 && paint(wait, '⏳')) {
+        wait.appendChild(document.createTextNode(' ' + n + ' '));
+        wait.title = W().waiting(n);
+      } else wait.title = '';
+      shownWait = n;
     }
     // A RUN SEEN FOR THE FIRST TIME: its scripts' suite rows asked once (suite.search, each script), so a box mounted while it
     // runs counts the scripts that reported before it was there; the stream brings every one after.
@@ -108,6 +129,7 @@
       var glyph = p.interactive ? '🖖' : '🤖';
       if (glyph !== shownMode && paint(mode, glyph)) shownMode = glyph;
       mode.title = p.interactive ? 'interactive' : 'auto';
+      drawWaiting();
     }
     parts.then(function () {
       if (gone) return;
