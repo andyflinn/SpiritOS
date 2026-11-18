@@ -649,6 +649,25 @@ test.run('a grant refused for another reason says so', 0.2, async function () {
   press(); await settle();
   return /owner-only|owner only/.test(box.innerHTML) ? true : false;
 }, test.limit.quick);
+// ONE FAILED PATH STOPS NO OTHER (goal/G47.5; Andy: "when i tried to grant the faulty bundle, the grant-loop seemed to have
+// exited the loop when it encountered a non-existing verb.... it should have registered the rest...."): the bundle's first
+// path (jobs.list) fails outright, its grant throwing; the paths after it are granted all the same, and the failed one said.
+let failAt = 0;
+test.run('a grant that fails outright on one path still grants every other path of the bundle', 0.2, async function () {
+  if (!press) return false;
+  w.grantAnswer = function (id, p) { if (p === 'jobs.list') return Promise.reject(new Error('no such verb')); return { ok: true }; };
+  failAt = w.calls.length;
+  press(); await settle();
+  const asked = w.calls.slice(failAt).filter(function (c) { return c.name === 'grants.grant'; }).map(function (c) { return c.args.path; });
+  return (asked.indexOf('jobs.list') !== -1 && asked.indexOf('fs.search') !== -1 && asked.indexOf('desk') !== -1) ? true : false;
+}, test.limit.quick);
+test.run('the path that failed is said as not granted, and only it', 0.2, function () {
+  if (!press) return false;
+  const t = said();
+  const r = /not granted[^<]*jobs\.list/.test(t) && t.indexOf('fs.search') === -1 ? true : false;
+  w.grantAnswer = null;
+  return r;
+}, test.limit.quick);
 
 // no warning before a grant (goal/G43.27)
 // Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."

@@ -145,3 +145,10 @@ Andy: "compare that to giving a linux user root authority, he then can fuck up t
 - **7. No warning on a grant.**
   - grantsPanel reads no `<verb>.warning.txt`.
   - `spirit/auth/grant.warning.txt` is gone, and no `<verb>.warning.txt` is left: grantsPanel was their one reader.
+
+## One failed path stops no other (goal/G47.5)
+
+Andy: *"when i tried to grant the faulty bundle, the grant-loop seemed to have exited the loop when it encountered a
+non-existing verb.... it should have registered the rest...."* The bundle's first path (jobs.list) fails outright, its
+grant throwing: the paths after it (fs.search, desk) are granted all the same, and the message names jobs.list as not
+granted, and not the paths that were.
