@@ -298,3 +298,12 @@ dependency, one row per script and each file in its chain."* A scratch copy in a
 own tests: user.js requires lib.js as it loads, lazy.js requires lazyLib.js only inside a function its own test calls. Once
 their own suites ran green, the dependency table links user.js to lib.js and lazy.js to lazyLib.js; a change to lib.js
 re-runs user.js's own suite, which ends green again. The table's field names are the builder's.
+
+## A suite leaves no process behind (goal/G47.6)
+
+Andy: *"what about having reds for proccesses that are def dangling by aborted suites????"*; cw: *"once a suite run has ended,
+killed or not, testicle looks for processes that run started that are still alive a few seconds later; if there are any,
+the suite is red on a test like 'it leaves no process behind', and they are ended"*, *"The kill itself takes the whole
+tree"*. A scratch copy with two planted scripts and their own suites: aLeft.js's starts a detached process that would sleep
+120 s and answers at once; pressed, its suite is red on "it leaves no process behind", and that process is ended.
+bKilled.js's starts a process and never answers; stopped by a press of another suite, the process it started ends with it.

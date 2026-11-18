@@ -2441,10 +2441,12 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   const R = { s: null, N: null, DB: '', ended: false };
   const reasonUp = function () { return !!R.N && R.N.up; };
   const rowOf = function (script) { return suiteRow(tables(R.DB), script, GENERAL); };
-  test.after(async function () {
+  const letGoR = async function () {
     if (R.N) await stop(R.N.child);
     try { if (R.s) LABH.freeTree(R.s); } catch (e) { /* scratch */ }
-  });
+    R.N = null; R.s = null;
+  };
+  test.after(letGoR);
   test.run('a scratch copy is made with three planted scripts whose general test crashes, hangs and answers false', 0.2, async function () {
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
@@ -2485,11 +2487,13 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     const r = rowOf(BHUNG);
     return (!!r && r.outcome === 'red' && r.reason === 'hung') || false;
   }, test.limit.quick);
-  test.run('a suite whose test answered false is red with no reason: its verdict was reached', 0.8, function () {
-    if (!R.ended) return false;
-    const r = rowOf(CFALSE);
-    return (!!r && r.outcome === 'red' && 'reason' in r && !r.reason) || false;
-  }, test.limit.quick);
+  test.run('a suite whose test answered false is red with no reason: its verdict was reached', 0.8, async function () {
+    try {
+      if (!R.ended) return false;
+      const r = rowOf(CFALSE);
+      return (!!r && r.outcome === 'red' && 'reason' in r && !r.reason) || false;
+    } finally { await letGoR(); }
+  }, test.limit.slow);
 }
 
 // THE CLASSIFIER COMPILES FIRST (goal/G47.6, box point 3: "The classifier compiles a changed script first, before it boots a
@@ -2503,10 +2507,12 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   const GOOD = 'spirit/app/testicle/temp/zzCompile/good.js';
   const C = { s: null, N: null, DB: '', judged: false };
   const compileUp = function () { return !!C.N && C.N.up; };
-  test.after(async function () {
+  const letGoC = async function () {
     if (C.N) await stop(C.N.child);
     try { if (C.s) LABH.freeTree(C.s); } catch (e) { /* scratch */ }
-  });
+    C.N = null; C.s = null;
+  };
+  test.after(letGoC);
   test.run('a scratch copy is made whose classifier gets no scratch node, with a planted script that does not compile and one that does', 0.2, async function () {
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
@@ -2540,13 +2546,15 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     return (!!r && no(r.verified)) || false;
   }, test.limit.quick);
   test.run('a script that compiles is not charged when no scratch node came up: not red, not green, still waiting to be classified', 0.8, async function () {
-    if (!C.judged) return false;
-    await sleep(5000);
-    const t = tables(C.DB);
-    const rows = currentOf(t, GOOD, SC, 'it loads, so it can be classified');
-    const row = scriptRow(t, GOOD);
-    return (rows.length === 0 && !!row && yes(row.reClassify)) || false;
-  }, test.limit.quick);
+    try {
+      if (!C.judged) return false;
+      await sleep(5000);
+      const t = tables(C.DB);
+      const rows = currentOf(t, GOOD, SC, 'it loads, so it can be classified');
+      const row = scriptRow(t, GOOD);
+      return (rows.length === 0 && !!row && yes(row.reClassify)) || false;
+    } finally { await letGoC(); }
+  }, test.limit.slow);
 }
 
 // DEPENDENCIES ARE WATCHED, NOT PARSED, AND A CHANGE RE-RUNS WHAT DEPENDS ON IT (goal/G47.6, box point 3: "a changed file re-runs
@@ -2581,10 +2589,12 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
   };
   const links = function (script, file) { return depRows().some(function (r) { const v = Object.keys(r).map(function (k) { return String(r[k]); }); return v.indexOf(script) !== -1 && v.indexOf(file) !== -1; }); };
-  test.after(async function () {
+  const letGoDP = async function () {
     if (DP.N) await stop(DP.N.child);
     try { if (DP.s) LABH.freeTree(DP.s); } catch (e) { /* scratch */ }
-  });
+    DP.N = null; DP.s = null;
+  };
+  test.after(letGoDP);
   test.run('a scratch copy in auto mode is made with four planted scripts and their own tests: one requiring another as it loads, one only inside a function', 0.2, async function () {
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
@@ -2618,14 +2628,100 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     return links(DEP.lazy, DEP.lazyLib) || false;
   }, test.limit.quick);
   test.run('a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again', 0.8, async function () {
-    if (!DP.ran) return false;
-    const r0 = suiteRow(tables(DP.DB), DEP.user, ownOfDep(DEP.user));
-    DP.before = Number(r0 && r0.changed) || 0;
-    fs.appendFileSync(path.join(DP.s.run, DEP.lib), '// changed\n');
-    const again = await until(function () {
-      const r = suiteRow(tables(DP.DB), DEP.user, ownOfDep(DEP.user));
-      return Promise.resolve(!!r && Number(r.changed) > DP.before && r.outcome === 'green' && no(r.test));
-    }, 180000);
-    return !!again || false;
+    try {
+      if (!DP.ran) return false;
+      const r0 = suiteRow(tables(DP.DB), DEP.user, ownOfDep(DEP.user));
+      DP.before = Number(r0 && r0.changed) || 0;
+      fs.appendFileSync(path.join(DP.s.run, DEP.lib), '// changed\n');
+      const again = await until(function () {
+        const r = suiteRow(tables(DP.DB), DEP.user, ownOfDep(DEP.user));
+        return Promise.resolve(!!r && Number(r.changed) > DP.before && r.outcome === 'green' && no(r.test));
+      }, 180000);
+      return !!again || false;
+    } finally { await letGoDP(); }
+  }, test.limit.long);
+}
+
+// A SUITE LEAVES NO PROCESS BEHIND (goal/G47.6; Andy: "what about having reds for proccesses that are def dangling by aborted
+// suites????", "wsl, where are those reds?"; cw: "once a suite run has ended, killed or not, testicle looks for processes that
+// run started that are still alive a few seconds later; if there are any, the suite is red on a test like 'it leaves no
+// process behind', and they are ended", "The kill itself takes the whole tree"). A world of its own: a scratch copy, two
+// planted scripts with their own suites. aLeft.js's suite starts a process of its own, detached, that would sleep 120 s,
+// and answers at once; bKilled.js's suite starts one too and then never answers, and is stopped by a press of another
+// suite. Each started process writes its pid beside the scratch tree, outside the run folder.
+{
+  const L0 = 'spirit/app/testicle/temp/zzLeak/';
+  const LEFT = L0 + 'aLeft.js', KILLED = L0 + 'bKilled.js';
+  const ownOfLeak = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
+  // From the suite's folder, run/spirit/app/testicle/temp/zzLeak/test, eight up is the scratch tree's root.
+  const pidAt = function (name) { return "path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', 'zzLeak-" + name + ".pid')"; };
+  const sleeper = function (name, detached) {
+    return "const kid = require('child_process').spawn(process.execPath, ['-e', 'setTimeout(function () {}, 120000)'], { stdio: 'ignore'" + (detached ? ", detached: true" : '') + " });" +
+      (detached ? " kid.unref();" : '') + " require('fs').writeFileSync(" + pidAt(name) + ", String(kid.pid));\n";
+  };
+  const LEAK_TEST = {
+    left: sleeper('left', true) + "test.run('aLeft answers', 0.2, function () { return true; }, test.limit.quick);\n",
+    killed: sleeper('killed', false) + "test.run('bKilled never answers', 0.2, function () { return new Promise(function () {}); }, test.limit.long);\n",
+  };
+  const LK = { s: null, N: null, DB: '', ran: false, pressed: false };
+  const leakUp = function () { return !!LK.N && LK.N.up; };
+  const pidOf = function (name) { try { return Number(fs.readFileSync(path.join(LK.s.root, 'zzLeak-' + name + '.pid'), 'utf8')) || 0; } catch (e) { return 0; } };
+  const alive = function (pid) { if (!pid) return false; try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+  const letGoLK = async function () {
+    ['left', 'killed'].forEach(function (n) { const p = LK.s ? pidOf(n) : 0; if (alive(p)) { try { process.kill(p); } catch (e) { /* gone */ } } });
+    if (LK.N) await stop(LK.N.child);
+    try { if (LK.s) LABH.freeTree(LK.s); } catch (e) { /* scratch */ }
+    LK.N = null; LK.s = null;
+  };
+  test.after(letGoLK);
+  test.run('a scratch copy is made with a planted suite that leaves a process running and one that starts a process and never answers', 0.2, async function () {
+    const root = LABH.scratchTree().root;
+    const run = path.join(root, 'spirit', 'run');
+    LK.s = { root: root, run: run };
+    fs.mkdirSync(path.join(run, L0, 'test'), { recursive: true });
+    fs.writeFileSync(path.join(run, LEFT), "'use strict';\n// aLeft\n");
+    fs.writeFileSync(path.join(run, KILLED), "'use strict';\n// bKilled\n");
+    fs.writeFileSync(path.join(run, ownOfLeak(LEFT)), SUITE_HEAD + LEAK_TEST.left);
+    fs.writeFileSync(path.join(run, ownOfLeak(KILLED)), SUITE_HEAD + LEAK_TEST.killed);
+    const on = path.join(run, 'spirit', 'state', 'testicle');
+    fs.mkdirSync(path.join(on, 'data'), { recursive: true });
+    fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
+    fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
+    LK.DB = path.join(on, 'data', 'testicle.db');
+    LK.N = await boot(run);
+    return LK.N.up || false;
+  }, test.limit.long);
+  test.run('aLeft.js\'s own suite is pressed, runs, and its suite row ends', 0.2, async function () {
+    if (!leakUp()) return false;
+    await until(function () { return call(LK.N.base, 'testicle.suite.search', { script: LEFT, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
+    const r = await until(function () { return call(LK.N.base, 'testicle.run', { script: LEFT, suite: ownOfLeak(LEFT) }).then(function (x) { return !!(x.body && x.body.started === true); }); }, 120000);
+    if (!r) return false;
+    LK.ran = !!(await until(function () { const row = suiteRow(tables(LK.DB), LEFT, ownOfLeak(LEFT)); return Promise.resolve(!!row && no(row.test) && (row.outcome === 'green' || row.outcome === 'red') && !!pidOf('left')); }, 120000));
+    return LK.ran || false;
+  }, test.limit.long);
+  test.run('a suite whose process is still running after it ended is red on "it leaves no process behind"', 0.8, async function () {
+    if (!LK.ran) return false;
+    const red = await until(function () {
+      const rows = currentOf(tables(LK.DB), LEFT, ownOfLeak(LEFT), 'it leaves no process behind');
+      return Promise.resolve(rows.length > 0 && no(rows[0].verified));
+    }, 30000);
+    return !!red || false;
+  }, test.limit.long);
+  test.run('the process a suite left running is ended', 0.8, async function () {
+    if (!LK.ran) return false;
+    return (await until(function () { return Promise.resolve(!alive(pidOf('left'))); }, 30000)) || false;
+  }, test.limit.long);
+  test.run('a suite stopped while it runs takes the process it started with it', 0.8, async function () {
+    try {
+      if (!leakUp()) return false;
+      await until(function () { return call(LK.N.base, 'testicle.suite.search', { script: KILLED, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
+      const r = await call(LK.N.base, 'testicle.run', { script: KILLED, suite: ownOfLeak(KILLED) });
+      if (!(r.body && r.body.started === true)) return false;
+      const started = await until(function () { return Promise.resolve(alive(pidOf('killed'))); }, 60000);
+      if (!started) return false;
+      // A press of another suite stops the running one.
+      await call(LK.N.base, 'testicle.run', { script: LEFT, suite: ownOfLeak(LEFT) });
+      return (await until(function () { return Promise.resolve(!alive(pidOf('killed'))); }, 30000)) || false;
+    } finally { await letGoLK(); }
   }, test.limit.long);
 }
