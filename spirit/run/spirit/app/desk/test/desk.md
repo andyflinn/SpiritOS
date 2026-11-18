@@ -110,3 +110,18 @@ Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to 
 
 The desk, a publisher only, names listener, subscribe, unsubscribe and remote in its api tree in server mode, and no
 listener (Andy: *"they're both auto-verbs. MUST BE."*, *"PLEASE call the damn thing jus \"listener\""*).
+
+## A desk owner by his mark (goal/G47.5)
+
+Andy: *"desk has a unique way of gating access, and it sees me as an agent, with bubble and all. all it it would need is: the
+bubble contains a checkmark for desk-owner on loopback"*, *"NO NEW VERB, just the checkmark in the agent-bubble that can only be
+set via loopback"*; Q7, owner *"as one more yes/no on profile.set, beside included and cap"*: *"yes"*. His WSL node reaches the
+desk as a peer, andy-wsl. On a desk of its own:
+
+- the owner marks andy-wsl desk owner through profile.set, and its profile (profile.get) then holds owner;
+- a later profile.set that leaves owner out keeps it;
+- a line andy-wsl adds, holding no take, is accepted and stands by andy;
+- andy-wsl's press seen, an owner press, is accepted;
+- andy-wsl, a desk owner through a peer, cannot mark another agent desk owner;
+- claude-windows, not marked, still has its press seen refused not-owner;
+- unmarked again by the owner, andy-wsl's press seen is refused not-owner.

@@ -948,6 +948,62 @@ test.run('a claim taken over a checkout with an edit of its own pulls nothing, t
     false;
 }, test.limit.slow);
 
+// A DESK OWNER BY HIS MARK (goal/G47.5; Andy: "desk has a unique way of gating access, and it sees me as an agent, with
+// bubble and all. all it it would need is: the bubble contains a checkmark for desk-owner on loopback", "NO NEW VERB, just
+// the checkmark in the agent-bubble that can only be set via loopback"; Q7, owner "as one more yes/no on profile.set, beside
+// included and cap": "yes"). His WSL node reaches this desk as a peer, andy-wsl; marked owner in its profile, its calls are
+// his: a line by andy with no take, his presses accepted. The mark is set by the loopback owner alone.
+const ANDY_WSL = { key: 'MCowBQYDK2VwAyEAdeskProductTestANDYWSLAAAAAAAAAAAAAAAA=', label: 'andy-wsl' };
+const OWNER_ITEM = 'goal/G300.1';
+const ownerRow = function (key) { return W.askO('profile.get', { agent: key }, ANDY); };
+test.run('a desk of its own starts for the desk-owner cases', 0.2, async function () {
+  W.askO = await startDesk('desk-owner', {});
+  if (W.askO) await profiles(W.askO);
+  return !!W.askO || false;
+}, test.limit.slow);
+test.run('the owner marks andy-wsl desk owner through profile.set, and its profile then holds owner', 0.2, async function () {
+  if (!W.askO) return false;
+  await W.askO('profile.set', { agent: ANDY_WSL.key, name: 'Andy WSL', nick: 'awsl', included: true, cap: true, owner: true }, ANDY);
+  const row = await ownerRow(ANDY_WSL.key);
+  return !!row && row.owner === true || false;
+}, test.limit.quick);
+test.run('a later profile.set that leaves owner out keeps it', 0.2, async function () {
+  if (!W.askO) return false;
+  await W.askO('profile.set', { agent: ANDY_WSL.key, name: 'Andy WSL', nick: 'awsl', included: true, cap: true }, ANDY);
+  const row = await ownerRow(ANDY_WSL.key);
+  return !!row && row.owner === true || false;
+}, test.limit.quick);
+test.run('a line andy-wsl adds, holding no take, is accepted and stands by andy', 0.2, async function () {
+  if (!W.askO) return false;
+  const text = 'zz a line from his other node ' + Date.now();
+  const r = await W.askO('chat.add', { id: OWNER_ITEM, text: text }, ANDY_WSL);
+  if (r.ok === false) return false;
+  const line = (((await W.askO('item.chat', { id: OWNER_ITEM }, ANDY)).chat) || []).filter(function (l) { return l && l.text === text; })[0];
+  return !!line && line.by === 'andy' || false;
+}, test.limit.quick);
+test.run('andy-wsl\'s press seen, an owner press, is accepted', 0.2, async function () {
+  if (!W.askO) return false;
+  const r = await W.askO('press', { id: OWNER_ITEM, what: 'seen' }, ANDY_WSL);
+  return r.ok !== false && r.code !== 'not-owner' || false;
+}, test.limit.quick);
+test.run('andy-wsl, a desk owner through a peer, cannot mark another agent desk owner', 0.2, async function () {
+  if (!W.askO) return false;
+  const r = await W.askO('profile.set', { agent: CW.key, name: 'Claude Windows', nick: 'cw', included: true, cap: true, owner: true }, ANDY_WSL);
+  const cw = await ownerRow(CW.key);
+  return r.ok === false && !!cw && cw.owner !== true || false;
+}, test.limit.quick);
+test.run('claude-windows, not marked, still has its press seen refused not-owner', 0.2, async function () {
+  if (!W.askO) return false;
+  const r = await W.askO('press', { id: OWNER_ITEM, what: 'seen' }, CW);
+  return r.code === 'not-owner' || false;
+}, test.limit.quick);
+test.run('unmarked again by the owner, andy-wsl\'s press seen is refused not-owner', 0.2, async function () {
+  if (!W.askO) return false;
+  await W.askO('profile.set', { agent: ANDY_WSL.key, name: 'Andy WSL', nick: 'awsl', included: true, cap: true, owner: false }, ANDY);
+  const r = await W.askO('press', { id: OWNER_ITEM, what: 'seen' }, ANDY_WSL);
+  return r.code === 'not-owner' || false;
+}, test.limit.quick);
+
 test.after(async function () {
   W.pullKids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
   try { if (W.kid) W.kid.kill(); } catch (e) { /* gone */ }
