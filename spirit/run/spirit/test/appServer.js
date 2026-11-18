@@ -188,7 +188,9 @@ const cacheFile = function (name) {
 
 function start(streamOpts, publisherOpts) {
   const A = require(FILE);
-  const s = A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {
+  // whoami answers what the server was told of its caller (goal/G47.5, Q8: the shared server code tells a server loopback beside owner).
+  const s = A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } },
+    whoami: { request: {}, reply: { owner: false, loopback: false }, handler: function (a, caller) { return { owner: !!(caller && caller.owner === true), loopback: !!(caller && caller.loopback === true) }; } } }, {
     stream: Object.assign({ module: 'spirit.app.' + FAMILY, translator: TRANSLATOR }, streamOpts || {}),
     publisher: Object.assign({ family: NAME, bootstrap: function () { bootstraps += 1; return bootstrap.slice(); }, waitMs: 5000 }, publisherOpts || {}),
   });
@@ -872,6 +874,30 @@ function ownPart() {
     });
   };
   const remoteFile = path.join(RUN, 'spirit', 'state', NAME, 'remote.json');
+  // LOOPBACK BESIDE OWNER (goal/G47.5; Andy: "the checkmark in the agent-bubble that can only be set via loopback"; Q8): a call
+  // the node's loopback door took carries its X-Spirit-Loopback mark, and the server is told loopback: true beside owner; an
+  // owner's call without that mark, a puppeteered one, is owner alone.
+  const asOwnerOnly = function (verb, args) {
+    return new Promise(function (resolve) {
+      const req = http.request({ socketPath: PIPE, path: '/', method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Spirit-Caller': SELF, 'X-Spirit-Owner': '1' } }, function (res) {
+        const chunks = [];
+        res.on('data', function (c) { chunks.push(c); });
+        res.on('end', function () { let b = null; try { b = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { b = null; } resolve({ status: res.statusCode, body: b }); });
+      });
+      req.on('error', function () { resolve({ status: 0, body: null }); });
+      req.end(JSON.stringify({ [verb]: args }));
+    });
+  };
+  test.run('the owner\'s call through the loopback door reaches the server as owner and loopback', 0.2, async function () {
+    if (noServer()) return false;
+    const r = await asOwner('whoami', {});
+    return r.status === 200 && !!r.body && r.body.owner === true && r.body.loopback === true || false;
+  }, test.limit.quick);
+  test.run('the owner\'s call without the loopback mark reaches the server as owner, not loopback', 0.2, async function () {
+    if (noServer()) return false;
+    const r = await asOwnerOnly('whoami', {});
+    return r.status === 200 && !!r.body && r.body.owner === true && r.body.loopback === false || false;
+  }, test.limit.quick);
   test.after(function () { try { fs.rmSync(remoteFile, { force: true }); } catch (e) { /* none */ } });
   test.run('remote is an auto-verb: the api tree names it', 0.2, async function () {
     if (noServer()) return false;

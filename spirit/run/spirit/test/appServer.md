@@ -198,3 +198,11 @@ ping as the sibling):
 - The listener and the publisher's verbs are auto-verbs of every appServer (Andy: *"they're both auto-verbs. MUST BE."*):
   a server with a publisher only (as the desk is) and one with a stream only (as deskClient is), each a child process,
   name listener, subscribe, unsubscribe and remote, and no listener.
+
+## Loopback beside owner (goal/G47.5)
+
+Andy: *"the checkmark in the agent-bubble that can only be set via loopback"*; Q8, the shared server code tells a server
+loopback beside owner. The test's server answers whoami with what it was told of its caller:
+
+- the owner's call through the loopback door (X-Spirit-Owner and X-Spirit-Loopback) reaches it as owner and loopback;
+- the owner's call without the loopback mark reaches it as owner, not loopback.
