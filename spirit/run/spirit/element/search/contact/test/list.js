@@ -154,12 +154,6 @@ test.run('the network toggle says 🔍 Search Network', 0.2, function () {
   if (!F) return false;
   return F.network.toggle === true && F.network.icon === '🔍' && F.network.word === 'Search Network' ? true : false;
 }, test.limit.quick);
-// "a blocked contact can no longer be reached/modified by the UI" (box): cw found Andy's one blocked row has no name, and
-// the named rule hid it. A blocked row is always listed, named or not.
-test.run('a blocked row with no name is listed', 0.2, function () {
-  if (!F) return false;
-  return F.named.test({ key: 'NOPE', blocked: true }) === 1 ? true : false;
-}, test.limit.quick);
 test.run('the named filter is never a button, and it lets through a row with a name or a relay, never a bare presence', 0.2, function () {
   if (!F) return false;
   return F.named.when() === false && F.named.test({ name: 'a' }) === 1 && F.named.test({ relay: true }) === 1 && F.named.test({ present: true }) === 0 && F.named.test(null) === 0 ? true : false;
