@@ -472,7 +472,47 @@ test.run('a transaction whose function throws keeps none of its writes', 0.8, fu
   return (threw && W.a.seen.get('TX2') === null && !W.a.auth.has('TX2', 'p')) || false;
 }, test.limit.quick);
 
+// A FIELD THE CODE HAS AND AN OLD TABLE LACKS IS ADDED AT START (goal/G47.4; Andy: "why would adding one field to a db table
+// crash a node?????", "and why does the node not just fucking add the field???", "fucking bullshit, adding a fucking field is
+// not mending!!!!!!!!!!!!!!!!"). An old node.db is made here: a store opened, one contact row written, closed, and the seen
+// table's faceable column taken out again (its index first), as a node.db made before faceable has it. Opened again, the
+// store comes up, the column is there with 0 on the old row, and the row is kept.
+const OLD_KEY = 'MCowBQYDK2VwAyEAoldTableOldTableOldTableOldTableOldTableOld=';
+test.run('an old node.db whose seen table lacks a flag column opens', 0.2, function () {
+  try {
+    W.oldHome = ownTemp('old-');
+    fs.mkdirSync(path.join(W.oldHome, 'spirit', 'state'), { recursive: true });
+    const first = nodeStore.open(W.oldHome);
+    first.seen.set(OLD_KEY, { keep: true, label: 'old' });
+    first.close();
+    const raw = new DatabaseSync(path.join(W.oldHome, 'spirit', 'state', 'node.db'));
+    raw.exec('DROP INDEX IF EXISTS seen_faceable');
+    raw.exec('ALTER TABLE seen DROP COLUMN faceable');
+    W.oldLacked = !raw.prepare('PRAGMA table_info(seen)').all().some(function (c) { return c.name === 'faceable'; });
+    raw.close();
+  } catch (e) { return false; }
+  if (!W.oldLacked) return false;
+  try { W.old = nodeStore.open(W.oldHome); } catch (e) { W.old = null; }
+  return !!W.old || false;
+}, test.limit.quick);
+test.run('the missing column is there once it opens, 0 on the old row', 0.2, function () {
+  if (!W.old) return false;
+  const raw = new DatabaseSync(path.join(W.oldHome, 'spirit', 'state', 'node.db'), { readOnly: true });
+  let has = false; let value = null;
+  try {
+    has = raw.prepare('PRAGMA table_info(seen)').all().some(function (c) { return c.name === 'faceable'; });
+    const r = has ? raw.prepare('SELECT faceable FROM seen WHERE publicKey = ?').get(OLD_KEY) : null;
+    value = r ? r.faceable : null;
+  } catch (e) { has = false; } finally { raw.close(); }
+  return (has && value === 0) || false;
+}, test.limit.quick);
+test.run('the old row is kept as it was', 0.2, function () {
+  if (!W.old) return false;
+  const row = W.old.seen.get(OLD_KEY);
+  return (!!row && row.keep === true) || false;
+}, test.limit.quick);
+
 test.after(function () {
-  [W.s, W.sh, W.t, W.q, W.a].forEach(function (s) { if (s) s.close(); });
+  [W.s, W.sh, W.t, W.q, W.a, W.old].forEach(function (s) { if (s) s.close(); });
   try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });

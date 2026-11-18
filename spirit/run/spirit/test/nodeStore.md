@@ -86,3 +86,13 @@ untaken packet that was taken, or a day old; the file past its cap, or the packe
 read as new; a queue put that resets a row's body; a grant label
 overwriting the owner's name; a bundle's branches left behind; a transaction's writes kept after a throw; a reopen that
 lost the rows.
+
+## A field the code has and an old table lacks is added at start (goal/G47.4)
+
+Andy: *"why would adding one field to a db table crash a node?????"*, *"and why does the node not just fucking add the
+field???"*, *"fucking bullshit, adding a fucking field is not mending!!!!!!!!!!!!!!!!"*. An old node.db is made in the test:
+a store opened, a contact row written, closed, and the seen table's faceable column taken out (its index first).
+
+- Opened again, the store comes up (today it throws "no such column: faceable", as Andy's node did).
+- The column is there, 0 on the old row.
+- The old row is kept as it was.
