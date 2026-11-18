@@ -668,6 +668,37 @@ test.run('opened again on the same root, the bundles and their branches are ther
   return ((await call(again, 'bundle', { op: 'get', id: reader.id })).label === 'Reader' && (await call(again, 'branch', { op: 'search', text: '', bundle: reader.id })).items.length === 1) ? true : false;
 }, test.limit.quick);
 
+// A BUNDLE NAMES NO VERB ITS SERVER NO LONGER SERVES (goal/G47.5; Andy: "the bundles that are registered for desk are out of
+// sync with the desk api, some test needs to assert that the bundles don't specify and verbs that are not in the api
+// (anymore)...."; cw and wsl: bundles are rows of each node's table, not files, so the node itself lets them go at start).
+// A bundle with two branches of desk, one a verb the tree serves (chat.add) and one it no longer does (rule.add, planted in
+// the table as an old node holds it, since no verb adds a path nobody serves); then the node starts again on the same table.
+let staleRoot = '', staleTree = null, staleB = null, staleLeft = null;
+const branchesOf = async function (a, bundle) { return ((await call(a, 'branch', { op: 'search', text: '', bundle: bundle })).items || []).map(parsed).filter(Boolean); };
+test.run('a bundle branch naming a verb the server no longer serves is gone after the node starts again', 0.2, async function () {
+  if (!createApiAuth) return false;
+  staleRoot = ownTemp('spirit-apiAuth-stale-');
+  staleTree = { files: { read: {}, list: {} }, desk: { 'chat.add': {}, 'item.get': {} } };
+  const start = function () { return createApiAuth({ rootDir: staleRoot, tree: function () { return Promise.resolve(staleTree); } }); };
+  const first = start();
+  staleB = await call(first, 'bundle', { op: 'add', label: 'Old deskhand' });
+  if (!isNum(staleB.id)) return false;
+  await call(first, 'branch', { op: 'add', bundle: staleB.id, family: 'desk', verb: 'chat.add' });
+  const sdb = new DatabaseSync(path.join(staleRoot, 'spirit', 'state', 'node.db'));
+  try { sdb.prepare('INSERT INTO branch (bundle, family, verb) VALUES (?, ?, ?)').run(staleB.id, 'desk', 'rule.add'); } finally { sdb.close(); }
+  const planted = (await branchesOf(first, staleB.id)).map(function (x) { return x.verb; });
+  if (planted.indexOf('rule.add') === -1) return false;
+  const again = start();
+  for (let i = 0; i < 50; i++) await new Promise(function (r) { setImmediate(r); });
+  await new Promise(function (r) { setTimeout(r, 200); });
+  staleLeft = (await branchesOf(again, staleB.id)).map(function (x) { return x.verb; });
+  return (staleLeft.indexOf('rule.add') === -1) ? true : false;
+}, test.limit.slow);
+test.run('its branch of a verb the server serves stays', 0.2, function () {
+  if (!staleLeft) return false;
+  return (staleLeft.indexOf('chat.add') !== -1) ? true : false;
+}, test.limit.quick);
+
 test.after(function () {
-  for (const d of [root, bootRoot, fsRoot]) { try { if (d) fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ } }
+  for (const d of [root, bootRoot, fsRoot, staleRoot]) { try { if (d) fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ } }
 });

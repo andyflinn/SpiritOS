@@ -118,3 +118,13 @@ server: no verb makes a server's bundle, so the test makes one in `node.db` dire
   bundle. Only the exact same label is a duplicate. A label is free again once its bundle is deleted.
 - Through the verbs: an add naming an app server is refused; a server's bundle cannot be deleted, nor its branches added to,
   changed or deleted; it is still read by get. On a node-owned bundle all of it works.
+
+## A bundle names no verb its server no longer serves (goal/G47.5)
+
+Andy: *"the bundles that are registered for desk are out of sync with the desk api, some test needs to assert that the
+bundles don't specify and verbs that are not in the api (anymore)...."* Bundles are rows of each node's table, not files,
+so the node lets a stale branch go at start. A bundle gets a branch of desk.chat.add (served) by the verb, and desk.rule.add
+(no longer served) planted in the table; the node starts again on the same table:
+
+- the branch naming rule.add is gone;
+- the branch of chat.add stays.
