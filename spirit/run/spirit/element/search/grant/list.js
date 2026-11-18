@@ -10,7 +10,6 @@
 //                    handed on to each row as it is (the note an unconfigured list draws still says stream)
 //     opts.filters   the page's filters, handed to probabilitySearch as they are
 //     opts.selectors the page's selectors, handed to probabilitySearch as they are, drawn in its 🪣 row
-//     opts.serves(path)  handed to each row: a path no server serves today reads deprecated
 //     opts.empty     the words when nothing matches
 //     opts.face      'dropdown' a closed field opening to the same list (box v123: "every search supports both pane and
 //                    dropdown"); anything else, the pane it always was. opts.placeholder and opts.pick(row, key), the dropdown's,
@@ -55,9 +54,11 @@
       columns: [
         { field: 'name', label: 'Whose', sort: 'text' },
         { field: 'path', label: 'Path', sort: 'text' },
-        { field: 'revoke', label: '' },
+        // AT THE RIGHT EDGE, OF A FIXED WIDTH (goal/G47.4; Andy: "can you make the revoke-button column stick to the right
+        // edge so the button doesn't jump out my way when i try to revoke haiku's grants?"): a row going away moves no Revoke.
+        { field: 'revoke', label: '', width: '6em', align: 'right' },
       ],
-      element: function (row) { return window.spirit.element.spirit.element.search.grant.row.create(row, { grants: g, serves: o.serves }); },
+      element: function (row) { return window.spirit.element.spirit.element.search.grant.row.create(row, { grants: g }); },
       filters: o.filters,
       selectors: o.selectors,
       empty: o.empty || 'No grant matches.',

@@ -16,8 +16,8 @@
 //     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), watch(fn(id + newline + path,
 //                    row)) }; branch is a whole spirit.data path (node/family/branch), its rows its family's cache
 //                    manager's
-//     opts.serves(path)  whether a server serves that path today; one that does not reads deprecated (a REPORT: Andy,
-//                    "so we defer pruning to be triggered by the owners auth app, who can report deprecated branches")
+//   A grant shows as it is, whether a server serves its path today or not (goal/G47.4; Andy: "get rid of that deprecated
+//   filter ... what the hell is it even for?").
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
@@ -71,11 +71,7 @@
       row: { key: String(key || ''), path: String(r.path || ''), label: String(label || '') },
       fields: [
         { name: 'name', from: ['label'], paint: function (v) { return '<span style="white-space:nowrap">' + esc(v.label) + '</span>'; } },
-        { name: 'path', paint: function (v) {
-          var gone = typeof o.serves === 'function' && !o.serves(v.path);
-          return '<span style="white-space:nowrap">' + esc(v.path) + '</span>' +
-            (gone ? ' <span class="gr-gone" title="no server serves this path today">deprecated</span>' : '');
-        } },
+        { name: 'path', paint: function (v) { return '<span style="white-space:nowrap">' + esc(v.path) + '</span>'; } },
       ].concat(revoke),
       actions: configured ? [
         // Its table revokes it, and its cache manager takes the row out.

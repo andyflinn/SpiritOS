@@ -3,14 +3,13 @@
 // ONE GRANT, ITS DETAIL (goal/G43.32, the box: "every branch's search is search/<branch>.js, the selector, and its folder
 // holds list.js, row.js and detail.js"), OF WHICHEVER GRANTS TABLE ITS CALLER HANDS IT, as the list and
 // the row take it (goal/G41.16): it names no table. A grant is an ID and a path; its detail says whose it is and which path,
-// the path marked deprecated when no server serves it today, and its Revoke, an armingButton (Andy, on G41.13: "a
+// as it is, served today or not (goal/G47.4), and its Revoke, an armingButton (Andy, on G41.13: "a
 // armingButton [Revoke], which must revoke/delete that grant in the database"), in one rowForm. Its test:
 // ./test/detail.js.
 //
-//   spirit.element.spirit.element.search.grant.detail.create(host, { row, grants, serves }) -> { destroy() }
+//   spirit.element.spirit.element.search.grant.detail.create(host, { row, grants }) -> { destroy() }
 //     row      the grant row, its id and whose grant it is in the fields its table names
 //     grants   the grants table, as the list takes it: { key, label, revoke(id, path), watch(fn(id + newline + path, row)) }
-//     serves(path)  whether a server serves that path today
 // What a press did is said below the bubble, the mounter's line (rowForm). Unconfigured, it draws a note and throws nothing.
 (function () {
   var parts = Promise.all(['spirit/element/rowForm.js', 'spirit/element/armingButton.js'].map(function (p) { return window.spirit.require(p); }));
@@ -40,8 +39,7 @@
     var label = String(r[g.label] || id);
     function paint() {
       if (!form) return;
-      var deprecated = typeof o.serves === 'function' && !o.serves(path);
-      form.span.textContent = label + ' · ' + path + (deprecated ? ' (deprecated: no server serves this path today)' : '');
+      form.span.textContent = label + ' · ' + path;
     }
     // WHO PAINTS, LISTENS (Andy, G41.32): its row as its table's watch hands it, keyed <id>\n<path> as the grant row keys it; a
     // new label repaints, and a grant gone, revoked here or anywhere, says so.

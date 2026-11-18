@@ -7,7 +7,7 @@
 // contain list, row an detail elements."). Its test: ./test/grant.js, the list judged through it.
 //
 //   spirit.element.spirit.element.search.grant.create(container, options) -> the list's { list, refresh(), destroy() }
-//     options        handed to the list as they are (grants, filters, selectors, serves, empty); the list is drawn in the container itself, so a
+//     options        handed to the list as they are (grants, filters, selectors, empty); the list is drawn in the container itself, so a
 //                    pane fills the box it is given
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.

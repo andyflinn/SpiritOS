@@ -19,20 +19,20 @@
 //   never falls back to one caller's setting.
 //
 // One panel: the one-row grant form, a rowForm, ➕ [ID selector] [bundle selector] [Grant] (goal/G41.13, G41.27); then the grant list
-// (its search's 🪣 row the ID filter and the branch selector, its 🗜 row deprecated), and below it the delete row, ❌ [ID] [branch] [verb] [Delete] (../grant.js), the one box that
-// fills (rule/16). Deprecated is a REPORT read from the node's api tree (a server is away or the verb is gone, and the
-// grant waits for the owner, intact: suspend/repair, G1.4), following the stream, its filter off by default.
+// (its search's 🪣 row the ID filter and the branch selector), and below it the delete row, ❌ [ID] [branch] [verb] [Delete] (../grant.js), the one box that
+// fills (rule/16). Every grant shows as it is, whether a server serves its path today or not: no deprecated filter, no
+// mark, no reading of the api tree for it (goal/G47.4; Andy: "get rid of that deprecated filter ... what the hell is it
+// even for?").
 // A BUNDLE IS NOT GRANTED BY REFERENCE (G41.13, box v7): the node's bundles are the one dictionary both kinds of grant are
 // made from, so the bundle's branches (auth.branch) are read here, and each becomes one grant through the grants table,
 // family.verb or the family alone for (ALL), a path already granted counted done.
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.require, each element bringing its own.
-  // And the jobs family's cache manager, the servers' jobs it follows (goal/G41.28), and the auth family's, which nodeGrants
-  // (below) reads.
+  // And the auth family's cache manager, which nodeGrants (below) reads.
   var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
-    'spirit/element/search/grant.js', 'spirit/element/rowForm.js', 'spirit/element/armingButton.js', 'spirit/client/apiTreeIndex.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
-    .concat([window.spirit.require('spirit/job/api.js'), window.spirit.require('spirit/auth/api.js')]));
+    'spirit/element/search/grant.js', 'spirit/element/rowForm.js', 'spirit/element/armingButton.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
+    .concat([window.spirit.require('spirit/auth/api.js')]));
 
   // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.ready holds it,
   // or as spirit.require binds a server's family, answering { status, body } as a list reads it.
@@ -101,7 +101,6 @@
       host.appendChild(note);
       return { destroy: function () { host.innerHTML = ''; } };
     }
-    var tree = null;
     var list = null;          // the grant list
     var idSel = null;         // the grant form's ID selector
     var bundleSel = null;     // and its bundle selector
@@ -117,16 +116,6 @@
     function esc(text) { return window.spirit.escapeHtml(String(text == null ? '' : text)); }
     function refusal(body) { return (body && (body.error || body.code)) || 'refused'; }
 
-    // The owner's api tree: what serves() judges against. Through the one spirit object, spirit.tree(), which answers on
-    // the home node and on a face alike (goal/G41.14: asked as the verb 'api', the face's home path refused it, the tree
-    // came back empty, and every grant read deprecated).
-    function loadTree() {
-      return Promise.resolve(window.spirit.tree()).then(function (t) {
-        tree = t && typeof t === 'object' ? t : {};
-        return tree;
-      }, function () { tree = null; return tree; });
-    }
-    function serves(p) { return !tree || window.spirit.apiTreeIndex.serves(tree, p); }
     function redraw() { if (list) list.list.redraw(); }
 
     // THE LIST'S SELECTORS NARROW IT (goal/G41.13): the ID chosen, read from the grants table's own key field, the family
@@ -148,14 +137,6 @@
           return !verb || p === app + '.' + verb ? 1 : 0;
         } }];
     }
-    var filters = [
-      // A DEPRECATED FILTER, OFF BY DEFAULT (Andy: "your allowed to keep the deprecated, BUT you must provide a filter for
-      // deprecated that is OFF by default, BUT KNOW THAT THE DEPRECATED IS COMPLETELY INACCURATE....."): off, a grant no
-      // server here serves today is left out; on, it is listed, marked. Its button stands on the search's own 🗜 row (Andy:
-      // "put the fucking deprecated filter on the same fucking line as all other filters").
-      { name: 'deprecated', word: 'deprecated', toggle: true,
-        test: function (row, on) { return on === true || serves(String((row && row.path) || '')) ? 1 : 0; } },
-    ];
 
     // A FILTER CHOSEN ASKS THE NODE AGAIN (goal/G47.4, the box: "the search therefore must find any user that has grants for
     // any branch/verb combination"; Andy: "the more i modify the search, the more records will be cached"): the grants table
@@ -176,7 +157,7 @@
     // [Delete-armingButton]. It acts on what is chosen in it, not on what the list shows"): a contact alone, every grant of
     // that contact; a contact and a branch, every grant of that branch for that contact; all three, the one grant row.
     // "No new verb: the node revokes one exact grant, so the panel searches the chosen contact, branch and verb, revokes
-    // each match, and asks again until none is left." A grant no server serves today (deprecated) is a grant like any other.
+    // each match, and asks again until none is left."
     function chosenForDelete() {
       return { id: delId ? String(delId.value || '') : '', branch: delApi ? String(delApi.family || '') : '', verb: delApi ? String(delApi.verb || '') : '' };
     }
@@ -213,37 +194,6 @@
         say(failed ? 'revoked ' + done + ' grants; ' + failed + ' refused' : 'revoked ' + done + ' grants', failed > 0);
         if (done) askAgain();
       }, function () { say('the search for the grants to delete was refused', true); });
-    }
-
-    // DEPRECATED FOLLOWS THE STREAM (Andy: "so show deprecated, but CHANGE AS SOON AS STREMED DATA SAYS OTHERWISE."): a
-    // node's servers are jobs of kind server on its stream, their status changing as each starts and ends; such a job
-    // changed, the tree is read again and the list redraws. One read at a time: a change while one is out asks once more
-    // when it lands.
-    var treeBusy = false;
-    var treeAgain = false;
-    function treeChanged() {
-      if (treeBusy) { treeAgain = true; return; }
-      treeBusy = true;
-      loadTree().then(function () {
-        treeBusy = false;
-        if (!gone) redraw();
-        if (treeAgain) { treeAgain = false; treeChanged(); }
-      });
-    }
-    // The servers' jobs as the jobs family's cache keeps them (spirit.data.job.data, goal/G41.28), followed while mounted.
-    var unfollow = null;
-    function followServers() {
-      var J = ((window.spirit.data || {}).job || {}).data;
-      if (!J || unfollow) return;
-      var seen = Object.create(null);   // job id -> its last status, so a write of the same says nothing new
-      Object.keys(J.jobs()).forEach(function (id) { var j = J.job(id); if (j && j.kind === 'server') seen[id] = String(j.status || ''); });
-      unfollow = J.watch(function (id, job) {
-        if (gone || !id || !job || job.kind !== 'server') return;
-        var status = String(job.status || '');
-        if (seen[id] === status) return;
-        seen[id] = status;
-        treeChanged();
-      });
     }
 
     // NO WARNING BEFORE A GRANT (goal/G43.27; Andy: "compare that to giving a linux user root authority, he then can fuck
@@ -372,12 +322,7 @@
       P.spirit.element.armingButton.attach(del.button, { label: 'Delete', run: deleteChosen });
       paint();
       watchGrants();
-      // The servers followed first, so the jobs the page already holds are taken as the tree about to be read.
-      followServers();
-      return loadTree().then(function () {
-        if (gone) return;
-        list = P.spirit.element.search.grant.create(listHost, { grants: g, filters: filters, selectors: selectors(), serves: serves });
-      });
+      list = P.spirit.element.search.grant.create(listHost, { grants: g, selectors: selectors() });
     });
 
     return {
@@ -385,8 +330,6 @@
         gone = true;
         if (typeof unwatch === 'function') unwatch();
         unwatch = null;
-        if (typeof unfollow === 'function') unfollow();
-        unfollow = null;
         if (list) list.destroy();
         list = null;
         [filterId, filterFamily].forEach(function (s) { if (s && typeof s.removeEventListener === 'function') s.removeEventListener('change', askAgain); });
