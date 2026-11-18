@@ -328,11 +328,11 @@ included.
 
 - A stream with no event for 5 s is reset (box v148): the page reaches the node through a go-between of the test that stops reading what the node sends (the socket open, nothing arriving, on Windows as on Linux), and the page opens a new event.subscribe by itself within 6.5 s; it cancels the silent one first (the old request ended before the new one was sent); and it says the stream is down (onConnection false).
 
-## The stream's auto-verbs on every family (goal/G47.5)
+## The stream's auto-verbs on every branch (goal/G47.5)
 
 Andy: *"both: \"publisher\" and \"listener\" belong in spirit/appServer.js"*, *"they're both auto-verbs. MUST BE."* Found on his
-nodes: his Windows desk delivers to andy-wsl's desk family by calling its listener, and desk's api.js names none, so the bound
-family had no listener and nothing was sent. A peer's family bound from demo's api.js, which names none of them:
+nodes: his Windows desk delivers to andy-wsl's desk branch by calling its listener, and desk's api.js names none, so the bound
+branch had no listener and nothing was sent. A peer's branch bound from demo's api.js, which names none of them:
 
 - has listener, subscribe and unsubscribe, as it has remote;
 - a call of its listener goes to the peer as demo.listener.
