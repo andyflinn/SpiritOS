@@ -151,6 +151,34 @@ test.run('no lab node is left locked once its holders ended', 0.2, async functio
   const left = LOCKS().filter(function (n) { let pid = ''; try { pid = fs.readFileSync(path.join(LAB_NODES, n), 'utf8').trim(); process.kill(Number(pid), 0); return true; } catch (e) { return false; } });
   return !left.length || false;
 }, test.limit.quick);
+// A GIT LOCK LEFT BY A RUN THAT WAS KILLED (goal/G47.1; Andy: "the issue of not cleaning up git locks after aborted failed
+// tests needs fixing in the system with verification"; cw found it on Andy's Windows node: a run killed at 11:14 while lab
+// took its snapshot left git's index.lock in lab's repo, and every later hand-out failed on it). Planted here as such a run
+// leaves it, with no git running: in lab's repo, and in each personal node's own repo (its worktree entry). Only locks this
+// test planted are removed afterwards.
+const LAB_GIT = path.join(REPO, 'lab', 'repo', '.git');
+const planted = [];
+const plantLock = function (at) { try { if (fs.existsSync(path.dirname(at)) && !fs.existsSync(at)) { fs.writeFileSync(at, ''); planted.push(at); return true; } } catch (e) { /* not planted */ } return false; };
+const unplant = function () { planted.splice(0).forEach(function (at) { try { fs.rmSync(at, { force: true }); } catch (e) { /* gone */ } }); };
+test.after(unplant);
+test.run('with a git lock left in lab\'s repo and no git running, lab still hands out a node, and the lock is gone', 0.4, async function () {
+  const at = path.join(LAB_GIT, 'index.lock');
+  if (!plantLock(at)) { unplant(); return false; }
+  const r = await inChild('const t = H.scratchTree(); console.log("@@" + JSON.stringify({ name: t.name || "" })); setTimeout(function () { process.exit(0); }, 200);', 120000);
+  const gone = !fs.existsSync(at);
+  unplant();
+  return (!!r && r !== 'waiting' && !r.error && !!r.name && gone) || false;
+}, test.limit.long);
+test.run('with a git lock left in every personal node\'s repo and no git running, lab still hands one out, and that node\'s lock is gone', 0.4, async function () {
+  const P = require(path.join(REPO, 'lab', 'labNodes.js')).POOLS;
+  const names = (P && P.personal) || [];
+  const mine = names.filter(function (n) { return plantLock(path.join(LAB_GIT, 'worktrees', n, 'index.lock')); });
+  if (!mine.length || mine.length !== names.length) { unplant(); return false; }
+  const r = await inChild('const t = H.scratchTree(); console.log("@@" + JSON.stringify({ name: t.name || "" })); setTimeout(function () { process.exit(0); }, 200);', 120000);
+  const gone = !!r && !!r.name && !fs.existsSync(path.join(LAB_GIT, 'worktrees', r.name, 'index.lock'));
+  unplant();
+  return (gone && r !== 'waiting' && !r.error) || false;
+}, test.limit.long);
 // A TEST'S CHROME ENDS WITH THE TEST (goal/G47.1, Q9, wsl: "Shall a test's headless Chrome end when its test ends, even a
 // test that is killed?" Andy: "anything that leaves 77 useless chromes running must be fixed."). A child opens a page with chromePage, says its Chrome's pid, and ends: by itself, or killed.
 function chromeChild(end) {

@@ -20,6 +20,10 @@ moves at once"*. Each hand-out is asked from a child process of its own, as a te
   (*"lab resets its node before each test (spirit/state/ wiped, node restarted), never the tests"*).
 - **A lock per node:** with the three personal nodes held, a fourth ask waits, and is handed one of them when a holder ends
   (*"a lock file per lab node, one test on it at a time; a test that finds every lab node taken waits"*).
+- **A git lock a killed run left behind** (goal/G47.1, Andy: *"the issue of not cleaning up git locks after aborted failed
+  tests needs fixing in the system with verification"*): with git's `index.lock` left in lab's repo and no git running, lab
+  still hands out a node, and the lock is gone; the same with one left in every personal node's own repo: one is handed
+  out, and that node's lock is gone.
 - **The relays:** `scratchRelay` hands out one of lab's two relays, under `repo://lab/node/`, and two asked at once are the two
   different relays (Andy: *"i specifically wanted two of them so that we can test members of one relay talking to members of
   another."*).
