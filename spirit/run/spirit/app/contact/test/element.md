@@ -20,7 +20,8 @@ Andy: *"the new contact app will be exactly the same as the old, merely placed w
 
 ### The same app
 
-- Its tile opens the app, and the contact a fresh node knows is listed.
+- Its tile opens the app, and under 📡 Relays the contact a fresh node knows, its relay, is listed (the app opens on People,
+  which shows no relay: goal/G47.4, box v29).
 
 ### The peer counters are gone
 

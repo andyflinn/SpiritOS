@@ -167,10 +167,14 @@ test.run('the tiles show Contacts, with nothing pressed', 0.2, async function ()
 }, test.limit.quick);
 
 // the box: "exactly the same as the old": its tile opens the contacts
-test.run('its tile opens the app, and the contact the node knows is listed', 0.2, async function () {
+// The contact the scratch node knows is its relay, and the app opens on People, which shows no relay (goal/G47.4, box v29:
+// "👨‍👩‍👧‍👦 People (nodes only, ... excludes relays ...)", "The default is \"People\""): it is listed under 📡 Relays.
+test.run('its tile opens the app, and under Relays the contact the node knows is listed', 0.2, async function () {
   if (!W.page) return false;
   const relay = W.relay || {};
   await press('Contacts');
+  if (!(await shows('Relays'))) return false;
+  await press('Relays');
   return await shows(relay.name || 'noderoutes') ? true : false;
 }, test.limit.quick);
 test.run('a contact\'s detail no longer shows the inbound and outbound counters', 0.2, async function () {
