@@ -78,3 +78,41 @@ test.run('a post carries no hints: chooseRoute answers none for a peer whose rou
   return chosen.hints === undefined || false;
 }, test.limit.quick);
 test.after(function () { try { if (W.routeHome) fs.rmSync(W.routeHome, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
+
+// FORGETTING A CONTACT REVOKES ALL ITS GRANTS (goal/G47.4, Q3; Andy: "When you forget a contact, should the node revoke all
+// of its grants at once?" "yes. it should."). On a scratch node with an identity of its own, a kept contact holding two
+// grants is forgotten through the hub's forget, as the node's verb asks it; then the node's grants table holds none of
+// that key's, and another key's grant stands.
+const FORGOT_KEY = 'MCowBQYDK2VwAyEAFORGETFORGETFORGETFORGETFORGETFORGETFORGET=';
+const KEPT_KEY = 'MCowBQYDK2VwAyEAKEPTKEPTKEPTKEPTKEPTKEPTKEPTKEPTKEPTKEPTKE=';
+test.run('on a scratch node, forgetting a contact answers 200, forgotten', 0.2, async function () {
+  try {
+    W.forgetHome = ownTemp('forget');
+    fs.mkdirSync(path.join(W.forgetHome, 'spirit', 'state'), { recursive: true });
+    const relayAuth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
+    relayAuth.saveIdentity(W.forgetHome, relayAuth.generateIdentity());
+    const book = require(path.join(RUN, 'spirit', 'contacts.js'));
+    book.noteLabel(W.forgetHome, FORGOT_KEY, 'Gone');
+    book.accept(W.forgetHome, FORGOT_KEY);
+    W.store = require(path.join(RUN, 'spirit', 'nodeStore.js')).open(W.forgetHome).auth;
+    W.store.grant(FORGOT_KEY, 'desk.chat', 'Gone');
+    W.store.grant(FORGOT_KEY, 'jobs.list', 'Gone');
+    W.store.grant(KEPT_KEY, 'desk.chat', 'Kept');
+    const hub = require(HUB).createHub(W.forgetHome);
+    W.answer = await new Promise(function (resolve) {
+      const res = { status: 0, body: '', writeHead: function (s) { res.status = s; }, setHeader: function () {}, end: function (b) { res.body = String(b || ''); resolve(res); } };
+      hub.handlePeer({}, res, function () { return Promise.resolve({ publicKey: FORGOT_KEY }); }, 'forget');
+      setTimeout(function () { resolve(res); }, 2000);
+    });
+  } catch (e) { return false; }
+  let body = null; try { body = JSON.parse(W.answer.body); } catch (e) { body = null; }
+  return (W.answer.status === 200 && !!body && body.forgotten === true) || false;
+}, test.limit.quick);
+test.run('forgetting a contact revokes every grant of its key', 0.2, function () {
+  if (!W.store) return false;
+  return W.store.paths(FORGOT_KEY).length === 0 || false;
+}, test.limit.quick);
+test.run('forgetting a contact leaves another key\'s grants', 0.2, function () {
+  if (!W.store) return false;
+  return JSON.stringify(W.store.paths(KEPT_KEY)) === '["desk.chat"]' || false;
+}, test.limit.quick);

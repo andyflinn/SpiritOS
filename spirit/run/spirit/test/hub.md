@@ -13,3 +13,12 @@ The box: *"hub.js decodes packets itself, against the one decoder (G16.5)."* G16
 
 *"A post carries no hints: the node sends none"*. A scratch node that once heard a route for a peer (planted while the
 store still takes one): `chooseRoute` for that peer, named by no relay, answers the first relay held and no hints.
+
+## Forgetting a contact revokes all its grants (goal/G47.4, Q3)
+
+Andy: *"When you forget a contact, should the node revoke all of its grants at once?"* *"yes. it should."*
+
+- On a scratch node with an identity of its own, a kept contact holding two grants is forgotten through the hub's
+  forget: it answers 200, forgotten.
+- Then the node's grants table holds no grant of that key.
+- Another key's grant stands.
