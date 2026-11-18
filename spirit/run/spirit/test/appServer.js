@@ -902,6 +902,18 @@ function ownPart() {
     await tick(400);
     return has(70) || false;
   }, test.limit.quick);
+  // Box v12: "the replies and reply stream data are cached as they are now, but also published to its own faces". A row
+  // only the sibling sent (delivered to this server's streamListener, never published here) reaches this node's own pages.
+  test.run('in client mode a row the sibling streams in is published to this node\'s own pages too', 0.2, async function () {
+    if (!R.switched) return false;
+    const last = posts.filter(Array.isArray).map(function (b) { return b[b.length - 1]; }).filter(function (e) { return e && e.run; }).pop();
+    if (!last) return false;
+    const before = (fake.event.published || []).length;
+    const sent = await post('streamListener', { json: JSON.stringify([{ run: last.run, n: Number(last.n) + 1, row: row(item(81)) }]) }, PUBLISHER);
+    await tick(300);
+    const heard = (fake.event.published || []).slice(before).some(function (e) { return e && e.item && e.item.id === 'a81'; });
+    return (sent.status === 200 && heard) || false;
+  }, test.limit.quick);
   test.run('remote with this node\'s id switches home: { current } is this node and its own verb answers again', 0.2, async function () {
     if (!R.switched) return false;
     const a = await asOwner('remote', { id: SELF });

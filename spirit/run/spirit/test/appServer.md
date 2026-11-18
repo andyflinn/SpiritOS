@@ -181,6 +181,8 @@ ping as the sibling):
   in `spirit/state/<appServerName>/remote.json`.
 - In client mode the owner's ask goes to the sibling and its answer comes back; a peer's post is refused with a code
   saying it is in client mode; the chosen sibling's publishings still land.
+- In client mode a row only the sibling sent, delivered to this server's streamListener, is published to this node's own
+  pages too (box: "the replies and reply stream data are cached as they are now, but also published to its own faces").
 - `remote { id: SELF }` switches home: `{ current }` is this node and its own verb answers again.
 - deskClient still follows the desk (box: "a red checks that deskClient still follows the desk after the change"):
   deskClient's own test, "it serves its verbs and follows the desk's stream", is that check.
