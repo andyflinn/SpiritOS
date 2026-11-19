@@ -95,11 +95,14 @@
         press: function () { return script && suite ? S.testicle.run({ script: script, suite: suite }) : undefined; } });
       run.button.title = 'run this suite now';
       run.span.appendChild(titleLine);
-      var named = RF.create(container.querySelector('[data-history="titleForm"]'), { icon: '✏️', button: 'rename', press: rename });
+      // A FIELD CHANGE'S ROW (Andy: "a row form for a field change should have: ✏️ (pinned to left edge) "text" [INPUT] [change
+      // button]"), as the app's label row (spirit/element/search/app/changeAppLabel.js) is.
+      var named = RF.create(container.querySelector('[data-history="titleForm"]'), { icon: '✏️', button: 'Change', press: rename });
       var input = document.createElement('input');
       input.type = 'text';
       input.setAttribute('data-history', 'newTitle');
       input.value = test;
+      named.span.appendChild(document.createTextNode('Title '));
       named.span.appendChild(input);
       S.required.spirit.element.fieldInput.attach(input, 'description');
       function rename() {

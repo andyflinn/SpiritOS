@@ -17,7 +17,9 @@ the detail mounted alone on `/face.html` in a real Chrome.
 - Each row drawn by the test row (❌/✅, two decimals, no title or file names) with the date it flipped.
 - A flip set on the node shows at the top with no press; a test with no row says *No row of this test.*
 - Row 1's run button asks `testicle.run` for its script and suite. Row 2, right under it, a row form holds the title in an
-  input bounded by the description rule, 128 bytes (Andy: *"row 2: rowForm for title change"*); rows 3 and 4 the full
+  input bounded by the description rule, 128 bytes (Andy: *"row 2: rowForm for title change"*): ✏️, the word *Title*, the
+  input, then its *Change* button (*"a row form for a field change should have: ✏️ (pinned to left edge) "text" [INPUT]
+  [change button]"*); rows 3 and 4 the full
   script path and the full suite path (*"row 3: script file name - fow 4: suite file name then the list"*). Its rename asks `testicle.title` with the script, the suite, the old title
   and the typed one; a refusal is said below the forms and the title line stays.
 - `destroy` empties its container, and nothing is drawn there after.

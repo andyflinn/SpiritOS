@@ -226,16 +226,22 @@ test.run('row 2, right under the title\'s run form, is the row form holding the 
   const forms = (o && o.forms) || [];
   return (!!o && o.next && forms.length === 2 && forms[0].run && !forms[0].input && forms[1].input && !forms[1].run) || false;
 }, test.limit.quick);
+// Andy: "a row form for a field change should have: ✏️ (pinned to left edge) "text" [INPUT] [change button]".
+test.run('row 2 reads ✏️, the word Title, the input, then its Change button', 0.4, async function () {
+  if (mounted()) return false;
+  const v = await c.evaluate('(function () { var f = document.querySelector("#zzBox [data-history=titleForm] .shell-row-form"); if (!f) return ""; var k = f.children; var span = f.querySelector(".shell-row-form-span"); var parts = span ? Array.prototype.map.call(span.childNodes, function (n) { return n.nodeType === 3 ? String(n.textContent).trim() : n.tagName.toLowerCase(); }).filter(Boolean) : []; return JSON.stringify({ icon: k[0] ? String(k[0].textContent).trim() : "", parts: parts, button: k.length ? k[k.length - 1].tagName.toLowerCase() + "=" + k[k.length - 1].textContent : "" }); }())');
+  return v === JSON.stringify({ icon: '✏️', parts: ['Title', 'input'], button: 'button=Change' }) || false;
+}, test.limit.quick);
 test.run('the title input holds the test\'s title and takes no more than 128 bytes', 0.4, async function () {
   if (mounted()) return false;
   const v = await c.evaluate('(function () { var i = document.querySelector("#zzBox input[data-history=newTitle]"); return i ? JSON.stringify({ value: i.value, max: i.getAttribute("maxlength") }) : ""; }())');
   let o = null; try { o = JSON.parse(v); } catch (e) { o = null; }
   return (!!o && o.value === FLIPS && o.max === '128') || false;
 }, test.limit.quick);
-test.run('a press of rename asks testicle.title with the script, the suite, the old title and the typed one', 0.4, async function () {
+test.run('a press of Change asks testicle.title with the script, the suite, the old title and the typed one', 0.4, async function () {
   if (mounted()) return false;
   await c.evaluate('(function () { window.zzAsked = []; var i = document.querySelector("#zzBox input[data-history=newTitle]"); if (i) i.value = "alpha has a new name";' +
-    ' var b = Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (x) { return (x.textContent || "") === "rename"; })[0]; if (b) b.click(); }())');
+    ' var b = Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (x) { return (x.textContent || "") === "Change"; })[0]; if (b) b.click(); }())');
   const ok = await until(function () { return c.evaluate('window.zzAsked.some(function (x) { return /"testicle\\.testicle\\.title"|"testicle\\.title"/.test(x); })'); }, 5000);
   const asked = await c.evaluate('JSON.stringify(window.zzAsked.filter(function (x) { return /testicle\\.title/.test(x); }))');
   let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
