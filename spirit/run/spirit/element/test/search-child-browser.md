@@ -17,6 +17,11 @@ for that search's script ... The key then names the item that failed; the title 
 check has nothing to judge in (no list drawn, no detail, a detail that draws nothing for a planted row) gets no test for it,
 never a green; a check no search could be judged by is red, for this suite's own script.
 
+A part of a search handed to this suite (its `list.js`, `row.js`, `detail.js` or any other file under
+`spirit/element/search/<name>/`) gets one line of its own, reported for that part: `its search, <name>, keeps the search
+rules`, red when any check of its search is red or the search could not be judged (goal/G47.1: run together with its search,
+a part got no result at all, and testicle called that run crashed).
+
 How each search is mounted: a scratch node (the tracked files) and a headless Chrome on its face page, a fresh page per
 search. The selector is created with `{ face: 'pane', open }` in a pane of a stated size (640 by 420, class fill), over a
 panel stack (`spirit/element/panel.js`). The probabilitySearch it makes is watched to learn the spirit.data branch it is a

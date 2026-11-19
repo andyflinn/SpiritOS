@@ -323,7 +323,14 @@ async function openEach() {
 // check has nothing to judge in gets no test (a comment, never a green); a check no search could be judged by is red, said
 // for this suite's own script.
 const CHECKS = [];
+// A PART OF A SEARCH HANDED TO THIS SUITE GETS ITS OWN LINE (goal/G47.1, Andy's contact list reds: "why the system doesn't
+// catch them by itself"; wsl: "go from me"): testicle hands this suite a search and its parts in one run; with every check
+// said for the search's own script, a part (its list.js, row.js, detail.js) got no result at all, testicle called that run
+// crashed, and the part's old reds stood. Each part given says one line, green or red with its search; the faults stay said
+// once, on the search.
+const PARTS = GIVEN.filter(function (f) { const n = nameOf(f); return n && f !== SEARCH + '/' + n + '.js' && TARGETS.indexOf(n) !== -1; });
 function judgeAll() {
+  const redIn = {};
   CHECKS.forEach(function (c) {
     let judged = false;
     TARGETS.forEach(function (n) {
@@ -335,11 +342,19 @@ function judgeAll() {
         red = !!w;
       }
       judged = true;
+      if (red) redIn[n] = true;
       test.forScript(SEARCH + '/' + n + '.js', function () {
         test.run(c.title, 0.4, function () { return !red; }, test.limit.quick);
       });
     });
     if (!judged) test.run(c.title, 0.4, function () { return false; }, test.limit.quick);
+  });
+  PARTS.forEach(function (f) {
+    const n = nameOf(f);
+    const red = !!world || !REPORTS[n] || !!REPORTS[n].fail || !!redIn[n];
+    test.forScript(f, function () {
+      test.run('its search, ' + n + ', keeps the search rules', 0.4, function () { return !red; }, test.limit.quick);
+    });
   });
 }
 const listOf = function (r) { return r.noList ? { skip: true } : r.noData ? { skip: true } : null; };
