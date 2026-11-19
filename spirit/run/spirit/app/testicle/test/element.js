@@ -181,10 +181,9 @@ test.run('it has a face, its shell.mount being true', 0.2, function () {
 test.run('it has a server beside the face, its node.mount being true', 0.2, function () {
   return (!!own && !!own.node && own.node.mount === true) || false;
 }, test.limit.quick);
-test.run('its folder holds its manifest, its face, its server, its api.js and data.js, its words.js and testAll.js, and a json description of each verb, busy, preferences, script.get, script.classify, suite.search, suite.success, testicle.set, testicle.search, red, run, subscribe and unsubscribe, its element/ folder and its test/ folder, nothing else', 0.2, function () {
-  const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element', 'element.js', 'preferences.json', 'red.json', 'run.json', 'script.classify.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'suite.success.json', 'testAll.js', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json', 'words.js']) || false;
-}, test.limit.quick);
+// WHAT ITS FOLDERS HOLD IS THE APP RULES' TO JUDGE, FOR EVERY APP ALIKE, NOT A LIST BY HAND HERE (goal/G47.1, Andy: "how much of
+// this shit belongs in app-child-general or app-child-node or app-child-browser!?!?!?!?!", "CLEAN THAT SHIT UP!!!!!!!!!!!!!"):
+// the hand lists of its folder and of its element/ folder went; spirit/test/app-child-general.js judges an app's folder.
 // spirit/app/testicle/element/ PROPERLY DONE (goal/G47.1, box v134: "every part of testicle's face an element of its own in
 // element/<name>/<name>.js with its own test (the file detail, the monitor row with the status box, the settings panel);
 // element.js only mounts them and the searches; each loads its own, mounts empty, judged by -browser"; Andy: "what you're
@@ -195,10 +194,6 @@ const PARTS = path.join(APP, 'element');
 const PART_NAMES = ['scriptDetail', 'settingsPanel', 'statusBox'];
 // And the searches, moved there by Andy (6eb9e4f5, d94d6e08, 1db7136e; box v141: "spirit/app/testicle/element/search/suite.js
 // and ./suite/, testicle.js and ./testicle/").
-test.run('its element/ folder holds scriptDetail.js, settingsPanel.js and statusBox.js, its search/ folder and its test/ folder, nothing else', 0.4, function () {
-  let held = []; try { held = fs.readdirSync(PARTS).sort(); } catch (e) { held = []; }
-  return JSON.stringify(held) === JSON.stringify(['scriptDetail.js', 'search', 'settingsPanel.js', 'statusBox.js', 'test']) || false;
-}, test.limit.quick);
 test.run('each part has its own test, element/test/<name>.js', 0.4, function () {
   const bad = PART_NAMES.filter(function (n) { return !fs.existsSync(path.join(PARTS, 'test', n + '.js')); });
   return !bad.length || false;
