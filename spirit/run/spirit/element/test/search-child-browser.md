@@ -21,7 +21,9 @@ How each search is mounted: a scratch node (the tracked files) and a headless Ch
 search. The selector is created with `{ face: 'pane', open }` in a pane of a stated size (640 by 420, class fill), over a
 panel stack (`spirit/element/panel.js`). The probabilitySearch it makes is watched to learn the spirit.data branch it is a
 view of, and 60 rows are planted there, each a copy of a row the branch holds (or the plain text fields alone), every text
-field of it, and of its label json, a long value with no place to break. The detail is the search's detail, created
+field of it, and of its label json, a long value with no place to break. A planted row says what its list needs to show it
+at all: testicle's a current red, the contact list's no relay, not blocked and kept, since it opens on People with Search
+Network off (goal/G47.1: a planted copy of a fresh node's relay row showed nothing). The detail is the search's detail, created
 in a panel layer as the apps open one, its options the planted row's fields with `row` and `panel` beside them.
 
 1. the list's box has a stated size, from its pane and not from its rows (rule 16): with the rows planted, its height is what it

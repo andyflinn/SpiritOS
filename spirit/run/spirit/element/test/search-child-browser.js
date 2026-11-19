@@ -61,7 +61,10 @@ const SHAPES = { branch: { family: 'zzfamily', verb: 'zzverb' }, suite: { script
 // The fields a list filters its rows by, kept as they are when a row is planted (suite shows the rows of its script alone).
 const KEEP = { suite: ['script'] };
 // What a planted row must say to be shown at all: testicle's list shows current reds alone at the start (Andy: "reds only").
-const FORCE = { testicle: { current: true, verified: false }, suite: { script: OPTIONS.suite.script } };
+// The contact list opens on People with Search Network off (goal/G47.4, box v29: "The default is \"People\""): it shows a row
+// that is no relay, not blocked, and decided about (kept); a planted copy of a fresh node's relay row showed nothing, and
+// every check judged an empty list (goal/G47.1, Andy's reds on spirit/element/search/contact.js).
+const FORCE = { testicle: { current: true, verified: false }, suite: { script: OPTIONS.suite.script }, contact: { relay: false, blocked: false, keep: true } };
 // A long value with no place to break: a row and a detail must wrap or clip it.
 const LONG = 'zzLongValue' + 'W'.repeat(300);
 
