@@ -493,12 +493,25 @@
       if (tiles) {
         // The part paints its own tile; the shared search draws only the relevance, into the part's tile-bar, when it changed
         // (goal/G43.6: "The relevance is a centered, horizontal bar, between the tile image and the tile label").
-        var slot = typeof n.querySelector === 'function' ? n.querySelector('.tile-bar') : null;
         var tileWas = entry.painted;
+        // A ROW THAT CHANGED GETS ITS TILE MADE AGAIN (wsl's red on spirit/app/data.js, "once the apps job has reached the
+        // page, agent's tile shows its new label"): the part draws a tile from its row once, so a renamed app kept its old
+        // label; the fresh tile takes the old one's place. Compared by content: a branch's rows are fresh objects on every read.
+        var json = JSON.stringify(rowNow || null);
+        if (tileWas && tileWas.json !== json) {
+          var fresh = o.tile(w.row || {}, w.key);
+          if (fresh && typeof fresh.setAttribute === 'function') {
+            fresh.setAttribute('data-key', w.key);
+            if (n.parentNode) n.parentNode.replaceChild(fresh, n);
+            entry.node = n = fresh;
+            tileWas = null;
+          }
+        }
+        var slot = typeof n.querySelector === 'function' ? n.querySelector('.tile-bar') : null;
         if (slot && (!tileWas || tileWas.words !== typed || tileWas.rank !== w.rank)) slot.innerHTML = how.tileBar(w);
         // The row itself in the tooltip (goal/G43.6), unless the part set one of its own.
-        if (!n.title || (tileWas && n.title === tileWas.tip)) { var tip = how.tileTip(w.row); n.title = tip; entry.painted = { row: rowNow, words: typed, rank: w.rank, tip: tip }; return; }
-        entry.painted = { row: rowNow, words: typed, rank: w.rank };
+        if (!n.title || (tileWas && n.title === tileWas.tip)) { var tip = how.tileTip(w.row); n.title = tip; entry.painted = { row: rowNow, json: json, words: typed, rank: w.rank, tip: tip }; return; }
+        entry.painted = { row: rowNow, json: json, words: typed, rank: w.rank };
         return;
       }
       // The match column, first while words are typed: added, drawn and taken away in the row itself.
