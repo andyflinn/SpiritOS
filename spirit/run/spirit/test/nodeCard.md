@@ -17,7 +17,7 @@ test"* (goal/G47.1, box v72). Run in process on scratch homes, each with its own
   key, empty.
 - `read`: name, description, publicKey, and the description cap from fieldRules.
 - `setName`: normalized and stored; 400 for empty, invisible, too long, the name kept. `setDescription`: answers what
-  was stored, empty clears, too long refused 400, never cut.
+  was stored; empty and too long refused 400, the stored one kept, never cut (goal/G47.4, box v52).
 - `rotate` (Andy: *"rotation is a crisis.measure"*): a new seal pair, the old private key gone, the identity key kept,
   the card strictly newer than any handed out, a never-counted node too.
 

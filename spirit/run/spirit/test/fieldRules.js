@@ -55,9 +55,12 @@ test.run('leverOk accepts a meaning of letters then an iteration with no leading
 }, test.limit.quick);
 
 // ── describeProblem, describeRemaining ──
-test.run('describeProblem finds empty fine, passes 128 bytes, and calls 129 "description too long"', 0.2, function () {
-  const got = [F.describeProblem(''), F.describeProblem(undefined), F.describeProblem('y'.repeat(128)), F.describeProblem('y'.repeat(129))];
-  return short(got) === short(['', '', '', 'description too long']) || false;
+// goal/G47.4, box v52: "that field rule will demand that desctiptions are NOT empty" (Andy: "since the rule-change for
+// DESCRIPTION_MAX_BYTES won't wreck anything ... GO!"; a node describes itself at its first boot, server.js).
+test.run('describeProblem refuses empty, blank and missing, passes 128 bytes, and calls 129 "description too long"', 0.2, function () {
+  const empty = [F.describeProblem(''), F.describeProblem('   '), F.describeProblem(undefined)];
+  const got = [F.describeProblem('y'.repeat(128)), F.describeProblem('y'.repeat(129))];
+  return (empty.every(function (p) { return typeof p === 'string' && p.length > 0; }) && short(got) === short(['', 'description too long'])) || false;
 }, test.limit.quick);
 test.run('describeProblem refuses the invisible too', 0.2, function () {
   const p = F.describeProblem('hello ‮ world');

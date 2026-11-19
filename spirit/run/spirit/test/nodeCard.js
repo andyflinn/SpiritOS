@@ -118,12 +118,12 @@ test.run('setName refuses, 400, an empty name, an invisible character, one too l
   const got = ['  ', 'a‮b', 'x'.repeat(65)].map(function (t) { return C.setName(A, t); });
   return (got.every(function (r) { return r.ok === false && r.status === 400; }) && auth.loadIdentity(A).name === 'alpha two') || false;
 }, test.limit.quick);
-test.run('setDescription answers what was stored; empty clears it; too long is refused, 400, never cut', 0.2, function () {
+// goal/G47.4, box v52: "that field rule will demand that desctiptions are NOT empty": a description is replaced, never cleared.
+test.run('setDescription answers what was stored; empty and too long are refused, 400, the stored one kept, never cut', 0.2, function () {
   const ok = C.setDescription(A, '  said   twice ');
   const long = C.setDescription(A, 'y'.repeat(129));
-  const kept = C.read(A).description;
   const clear = C.setDescription(A, '');
-  return (ok.ok === true && ok.description === 'said twice' && long.ok === false && long.status === 400 && kept === 'said twice' && clear.ok === true && C.read(A).description === '') || false;
+  return (ok.ok === true && ok.description === 'said twice' && long.ok === false && long.status === 400 && clear.ok === false && clear.status === 400 && C.read(A).description === 'said twice') || false;
 }, test.limit.quick);
 
 // ── rotate (Andy: "rotation is a crisis.measure") ──

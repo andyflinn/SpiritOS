@@ -11,7 +11,7 @@ never cut. Owed since the rule *"every production script has its own test"* (goa
   or soft hyphen is refused; 64 bytes pass, 65 are `name too long`, counted after normalizing.
 - `spokenOk`: 1-32 of `A-Za-z0-9._-`. `leverOk`: a meaning of letters then an iteration `[1-9][0-9]*`, layered on the
   spoken rule (no leading zero, no `0`, no separator).
-- `describeProblem`: empty is fine; 129 bytes refused; the invisible refused. `describeRemaining` counts down in bytes.
+- `describeProblem`: empty, blank and missing are refused (goal/G47.4, box v52); 129 bytes refused; the invisible refused. `describeRemaining` counts down in bytes.
 - `normalizeParagraph` keeps newlines, tabs and spaces, CRLF to LF; `paragraphProblem` required, other controls
   refused, 2049 bytes refused.
 - `emailProblem`: each malformed address told why; at most 254 bytes.
