@@ -159,7 +159,11 @@ async function boot(run) {
   const err = fs.openSync(path.join(run, '..', '..', 'node.err'), 'a');
   const child = LABH.startNodeOn(run, port, { stdio: ['ignore', 'ignore', err] });
   const base = 'http://127.0.0.1:' + port;
-  const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
+  // UP MEANS TESTICLE ANSWERS, not only the node (goal/G47.1, Andy's flipping 0.8s on the run-limit world: the node answered,
+  // testicle was not mounted yet on a busy machine, the world's one ask for auto mode was refused, and aOk.js never ran).
+  // Asked without arguments, testicle.preferences only reads.
+  const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000) &&
+    await until(function () { return call(base, 'testicle.preferences', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return { child: child, base: base, up: !!up };
 }
 function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null || c.signalCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
