@@ -46,13 +46,13 @@ PLANT[AS] = '\'use strict\';\n// the test of alpha\n';
 PLANT[BS] = '\'use strict\';\n// the test of beta\n';
 PLANT[Z + 'notes.md'] = '# no script\n';
 // THE REDS (goal/G47.1, the box: "Opened with no words and no selector, the page shows the reds first"): gamma, in a folder of
-// its own so the checks of the three tests above never count its rows, fails 5 tests, so they and the planted rows fit one answer. ONE ANSWER, NO PAGING (Q17, Andy: "WTF is
+// its own so the checks of the three tests above never count its rows, fails 2 tests, so they and the planted rows fit one answer however long a title is (it is cut by bytes). ONE ANSWER, NO PAGING (Q17, Andy: "WTF is
 // search paging"; testicle.search answers once, about 13 rows): gamma's 30 of the paging days filled that one answer, so the
 // planted rows the checks below read never showed, and every one of them went red.
 const Z2 = 'spirit/zzTsearchRed/';
 const G = Z2 + 'gamma.js';
 const GS = Z2 + 'test/gamma.js';
-const GAMMA_REDS = 5;
+const GAMMA_REDS = 2;
 PLANT[G] = '\'use strict\';\n// gamma\n';
 PLANT[GS] = '\'use strict\';\n// the test of gamma\n';
 // THE TESTS SET: alpha's long title passing at 0, beta's failing at 1, alpha's flip in a general suite at 0.2, passing then
@@ -182,7 +182,7 @@ test.run('tests of the planted scripts are set on the node', 0.2, async function
   return planted || false;
 }, test.limit.slow);
 let gammaPlanted = false;
-test.run('gamma\'s 5 failed tests are set on the node before the page opens', 0.2, async function () {
+test.run('gamma\'s 2 failed tests are set on the node before the page opens', 0.2, async function () {
   if (!N || !N.up) return false;
   let bad = 0;
   for (let i = 1; i <= GAMMA_REDS; i++) {
@@ -224,7 +224,7 @@ test.run('when opened, red is on and green is off', 0.2, async function () {
   const red = await T('filter("red")'), green = await T('filter("green")');
   return (!!red && !!green && red.on && !green.on) || false;
 }, test.limit.slow);
-test.run('when opened, it shows the reds, every one of gamma\'s 5, in its one answer', 0.2, async function () {
+test.run('when opened, it shows the reds, every one of gamma\'s 2, in its one answer', 0.2, async function () {
   if (mounted()) return false;
   if (!gammaPlanted) return false;
   const ok = await waitFor('keys().filter(function (k) { return k.indexOf("' + Z2 + '") === 0; }).length >= ' + GAMMA_REDS, 15000);
