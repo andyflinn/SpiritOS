@@ -202,12 +202,16 @@ function leverOk(label) {
 // It is small on purpose — this
 // travels as an answer to anybody who asks, and a node that can be made
 // to emit a paragraph is a better amplifier than one that emits a line.
+// A TEST'S TITLE KEEPS THIS RULE TOO (goal/G47.4, the box: "test titles are
+// constrained BY DESCRIPTION_MAX_BYTES, in spirit/fieldRules.js"): the
+// test report fails a title that breaks it, and testicle.title refuses one.
 var DESCRIPTION_MAX_BYTES = 128;
 
-// EMPTY IS FINE, and that is the one place this differs from `problem`.
-// A name is required — a node with none cannot be enrolled to — and a
-// description is something you may simply not have written. Clearing it
-// is a legitimate edit, not a form to refuse.
+// EMPTY IS REFUSED (goal/G47.4, the box: "that field rule will demand that
+// desctiptions are NOT empty"; Andy: "the node already auto-fills an empty
+// description"): a node that was never described describes itself on boot
+// (serveCommon.js ensureFirstRun), so the only edit this refuses is
+// clearing one; it is replaced instead.
 //
 // TOO LONG IS REFUSED, never cut (Andy, goal/G4.16: "too-long refused").
 // The invisible is refused too: a bidi override in a description sits in
@@ -215,7 +219,7 @@ var DESCRIPTION_MAX_BYTES = 128;
 // either field.
 function describeProblem(text) {
   var n = normalize(text);
-  if (!n) return '';
+  if (!n) return 'description required';
   if (INVISIBLE_RE.test(n)) return 'description has invisible or control characters';
   if (byteLength(n) > DESCRIPTION_MAX_BYTES) return 'description too long';
   return '';
