@@ -21,6 +21,13 @@ function router(opts) {
 }
 const sent = function () { return true; };
 
+// THE TIME A ROUTE IS GRANTED, WRITTEN OUT (goal/G47.1, TEST_SYSTEM_ADDENDUM.md: "a value a test reads from its script is first
+// written out in that test"; router.js:115: "FIVE SECONDS, and it replaced 20000"). The tests below use R.DEFAULT_TTL_MS; this
+// one goes red if it changes, so they do not follow a changed value along unseen.
+test.run('a route is granted five seconds when it asks for none: DEFAULT_TTL_MS is 5000', 0.2, function () {
+  return R.DEFAULT_TTL_MS === 5000 || false;
+}, test.limit.quick);
+
 // ── open: register, then deliver ──
 test.run('open files the route, then delivers, and answers 202 with the hash and the time granted', 0.2, function () {
   const r = router();

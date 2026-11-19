@@ -4,6 +4,9 @@
 forward, enforced by shape. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v71, 9).
 Each test makes a router on a planted clock.
 
+- The time granted when none is asked, written out: `DEFAULT_TTL_MS` is 5000 (router.js: *"FIVE SECONDS, and it replaced
+  20000"*); the tests after it use the constant, and this one goes red if it changes (goal/G47.1, TEST_SYSTEM_ADDENDUM.md).
+
 - `open`: the route is filed before the delivery runs, answering 202 with the hash and the time granted. Refused with
   no delivery (500), no hash, requester or target (400), an unknown requester class (500, never taken as a member). A
   delivery that fails, by false or by throwing, leaves no route (502). A hash in flight is 409, `inFlight`, nothing
