@@ -2174,6 +2174,22 @@ test.run('a run with a title retires nothing: after testicle.run of "stale one" 
   await idle(120000);
   return (r.status === 200 && currentOf(tables(DB), SZ, SZS, 'stale two').length > 0) || false;
 }, test.limit.long);
+// A CRASHED RUN ERASES NOTHING (goal/G47.4, the box: "killed or crashed run of a script/suite deletes no testicle rows"):
+// rewritten to report "stale one" and then a test whose body throws, so the run ends crashed, "stale two" unreported.
+test.run('zzStale\'s suite is rewritten to report "stale one", then crash, and run whole', 0.2, async function () {
+  if (!staleWorld) return false;
+  const before = currentOf(tables(DB), SZ, SZS, 'stale one')[0];
+  put(SZS, SUITE_HEAD + "test.run('stale one', 0.2, function () { return true; }, test.limit.quick);\ntest.run('stale boom', 0.2, function () { throw new Error('boom'); }, test.limit.quick);\n");
+  const ok = await until(function () { const now = currentOf(tables(DB), SZ, SZS, 'stale one')[0]; return Promise.resolve(!!now && !!before && Number(now.tested) > Number(before.tested)); }, 280000);
+  await idle(280000);
+  return !!ok || false;
+}, test.limit.long);
+test.run('after a crashed run, a test it did not report keeps its rows: "stale two" is still there', 0.4, function () {
+  if (!staleWorld) return false;
+  return (tables(DB).test || []).some(function (r) { return r.script === SZ && r.suite === SZS && r.test === 'stale two'; }) || false;
+}, test.limit.quick);
+// A COMPLETED RUN ERASES WHAT IT DID NOT REPORT (goal/G47.4, the box: "titles that did not report for a completed run of a
+// script/suite combination, will be completely erased from the data base"): every row of them, history too.
 test.run('zzStale\'s suite is rewritten to report "stale one" alone, and run whole', 0.2, async function () {
   if (!staleWorld) return false;
   const before = currentOf(tables(DB), SZ, SZS, 'stale one')[0];
@@ -2182,9 +2198,9 @@ test.run('zzStale\'s suite is rewritten to report "stale one" alone, and run who
   await idle(280000);
   return !!ok || false;
 }, test.limit.long);
-test.run('after a whole run, a test it did not report is no longer current: "stale two" has no current row', 0.4, function () {
+test.run('after a completed run, a test it did not report has no row at all: "stale two" and "stale boom" are erased', 0.4, function () {
   if (!staleWorld) return false;
-  const left = currentOf(tables(DB), SZ, SZS, 'stale two');
+  const left = (tables(DB).test || []).filter(function (r) { return r.script === SZ && r.suite === SZS && (r.test === 'stale two' || r.test === 'stale boom'); });
   return !left.length || false;
 }, test.limit.quick);
 test.run('the suite\'s status follows the tests it now has: zzStale\'s own suite shows "green"', 0.4, async function () {

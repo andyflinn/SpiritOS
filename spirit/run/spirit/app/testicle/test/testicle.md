@@ -332,3 +332,13 @@ mid-run held four of its six nodes for hours, because the runner stayed busy and
 suite starved on the lab. Set to auto, two planted suites of 25 seconds each run one after the other, the runner busy
 throughout. A stray left on a lab node while the first runs is ended before the second goes on. Each suite marks its
 start with a file in the copy's root, since no verb says which suite runs now.
+
+## A completed run sheds the titles it did not report (goal/G47.4)
+
+The box: *"titles that did not report for a completed run of a script/suite combination, will be completely erased from
+the data base. no point keeping history for something that unstable"*, *"killed or crashed run of a script/suite deletes no
+testicle rows."* It replaces goal/G47.1's retiring of such a title (its rows kept, current no more). A planted
+`temp/zzStale/` whose own suite reports "stale one" green and "stale two" red. A run of "stale one" alone (a title) touches
+nothing. Rewritten to report "stale one" and then a test whose body throws, its run ends crashed: "stale two" keeps its
+rows. Rewritten to report "stale one" alone, its run completes: "stale two" and "stale boom" have no row at all, and the
+suite shows green.

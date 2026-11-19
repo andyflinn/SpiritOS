@@ -70,11 +70,13 @@
         if (typeof a.running === 'string') mon.running = a.running;
         var row = TABLES.indexOf(a.table) !== -1 && a.row && typeof a.row === 'object' ? a.row : null;
         var k = row ? keyOf(a.table, row) : '';
-        if (k) {
+        // A TEST ROW ERASED (goal/G47.4: a title a completed run did not report) leaves the mirror.
+        if (k && a.table === 'testicle' && a.change === 'deleted') V.del(a.table + '/' + k);
+        else if (k) {
           V.merge(a.table + '/' + k, kept(a.table, row));
           if (a.table === 'suite' && row.script) everySuite(V, String(row.suite || ''));
-          mon.last = { table: a.table, key: k, change: String(a.change || 'updated'), at: Date.now() };
         }
+        if (k) mon.last = { table: a.table, key: k, change: String(a.change || 'updated'), at: Date.now() };
         if (Object.keys(mon).length) V.merge(MONITOR, mon);
         // THE PREFERENCES (goal/G47.1, box v79, 4): "a set is published to testicle's subscribers, so the ⚙ panel and any
         // other page follow it".

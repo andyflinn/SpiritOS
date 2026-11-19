@@ -124,6 +124,10 @@ const T = {
   history: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? ORDER BY flipped DESC'),
   // The current rows of one script and suite: what its status is judged from.
   ofSuite: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND current = 1'),
+  // Every title of one script and suite, with when it was last tested, and every row of one title (eraseUnreported).
+  titlesOf: db.prepare('SELECT test, MAX(tested) AS last FROM testicle WHERE script = ? AND suite = ? GROUP BY test'),
+  rowsOf: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ?'),
+  erase: db.prepare('DELETE FROM testicle WHERE script = ? AND suite = ? AND test = ?'),
 };
 // A SUITE ROW'S STATUS, THE SERVER'S ALONE (goal/G47.1, the box: "A suite row's status, for its script: \"needs running\"
 // when it never ran; \"still red\" when it ran, but has failed tests in it for that script; \"green\" if all tests in the
@@ -592,6 +596,17 @@ process.on('uncaughtException', function (e) { logError('uncaught', e); process.
 // short ("a suite that hangs before any test reported fails too, with no test rows needed"). A row flagged again during
 // the run (a change after it started) stays flagged and comes round again ("the running job is not killed, the suite comes
 // round again behind it").
+// THE TITLES A COMPLETED RUN DID NOT REPORT (goal/G47.4, the box: "the testicle should know all tests titles that were
+// actually run for this script/suite combination, and therefore kill all testicle rows that were NOT run", "no point keeping
+// history for something that unstable"): every title of the script and suite not tested since the run started goes, every
+// row of it, its history too, each told deleted.
+function eraseUnreported(script, suite, started) {
+  T.titlesOf.all(script, suite).filter(function (t) { return Number(t.last) < started; }).forEach(function (t) {
+    const rows = T.rowsOf.all(script, suite, t.test);
+    T.erase.run(script, suite, t.test);
+    rows.forEach(function (r) { tell('testicle', testServed(r), 'deleted'); });
+  });
+}
 function jobEnded(j) {
   // STOPPED FOR A TOP RED'S FIX (box v128): its results untouched, its rows left flagged, so it comes round again.
   if (j.stopped) return;
@@ -613,19 +628,7 @@ function jobEnded(j) {
     if (j.killed) logError('jobEnded: killed ' + j.script + ' ' + j.suite + ' left flagged: ' + (!row ? 'no suite row' : row.deleted ? 'deleted' : !sr ? 'no script row' : 'hashes moved'), null);
     return;
   }
-  // A TEST A WHOLE RUN NO LONGER REPORTS STOPS BEING CURRENT (goal/G47.1, cleaning; found on Andy's testicle: backup/api.js's
-  // -browser rerun skipped 17 element checks it no longer applies, and their old red rows kept the suite "still red"): after
-  // a whole run that reported at least one test, every current row of that script and suite it did not report is current no
-  // more, each streamed. A run that reported nothing (it crashed or hung) retires nothing.
-  if (!j.killed && j.started) {
-    const rows = T.ofSuite.all(j.script, j.suite);
-    if (rows.some(function (r) { return Number(r.tested) >= j.started; })) {
-      rows.filter(function (r) { return Number(r.tested) < j.started; }).forEach(function (t) {
-        T.retire.run(t.script, t.suite, t.test, Number(t.flipped));
-        tell('testicle', testServed(T.row.get(t.script, t.suite, t.test, Number(t.flipped))), 'updated');
-      });
-    }
-  }
+  // A test a whole run no longer reports is erased when its verdict comes (eraseUnreported, in suite.success), not here.
   // ITS SUCCESS CAME (testicle.suite.success, box v129-131): the row is set and its flag cleared. Still flagged, the run gave
   // none (killed, crashed, or its report fell short): still red. Never summed from its test rows (box v131: "a suite's result
   // is NEVER assembled from testicle rows, anywhere").
@@ -1303,7 +1306,12 @@ appServer.serve({
       if (ran && job && job.suite === suite) judgeLitter(job, script, ran);
       judgeSuite.run(a.success ? 'green' : 'red', Date.now(), script, suite);
       // WHY A RED REACHED NO VERDICT (goal/G47.6, box point 1): crashed or hung, as the reporter knows it; '' otherwise.
-      if (!a.success && (a.reason === 'crashed' || a.reason === 'hung')) setReason.run(a.reason, script, suite);
+      const broke = !a.success && (a.reason === 'crashed' || a.reason === 'hung');
+      if (broke) setReason.run(a.reason, script, suite);
+      // A COMPLETED RUN SHEDS THE TITLES IT DID NOT REPORT (goal/G47.4, the box: "titles that did not report for a completed
+      // run of a script/suite combination, will be completely erased from the data base", "killed or crashed run of a
+      // script/suite deletes no testicle rows"): the verdict of the run testicle started, not crashed or hung.
+      if (ran && job && job.suite === suite && job.started && !job.killed && !broke && suite !== CLASSIFY) eraseUnreported(script, suite, job.started);
       // WHAT ITS OWN SUITE PULLED IN WHILE IT RAN (goal/G47.6, box point 3: a require made only later, inside a function; wsl:
       // "must count only for a script's own suite"): added to its rows; a general test's are never counted.
       if (suite === ownTestOf(script)) requiresOf(script, a.requires).forEach(function (r) { D.add.run(script, r); });
