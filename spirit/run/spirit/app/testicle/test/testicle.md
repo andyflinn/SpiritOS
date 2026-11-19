@@ -323,5 +323,6 @@ current; no dependency row names cR.js on either side; aR.js no longer lists bR.
 Andy: *"there ONE test process, it can bloody well clean up after itself and if neccessary before itself, it's NOT fucking
 negotiating with any other process for fucking lab nodes"*, *"testicle can double ensure that no fucking lab nodes or
 headless chromes are loitering about before AND after ever fucking run."* A scratch copy with a planted script and its own
-test, and a stray process left running in one of the copy's lab node folders: a press of the suite ends the stray before
+test, and a stray process left running in one of the copy's lab node folders, written down in the lab's own record of the
+node started there (`lab/node/<name>.pid`), as an aborted run leaves one: a press of the suite ends the stray before
 the run goes on, and the suite then runs green.

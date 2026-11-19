@@ -25,7 +25,7 @@ require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { execFile, spawn } = require('child_process');
+const { execFile, execFileSync, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 // Every status line and every result's icon, worded in one place (goal/G47.1; ./words.js).
 const WORDS = spirit.require('spirit/app/testicle/words.js');
@@ -343,6 +343,59 @@ function batchOf(suite) {
 // nothing said why): while scripts are owed a class, each time the runner does not start it says why on its stderr, a
 // reason said once until it changes.
 let waitedFor = '';
+// NOTHING LOITERS, BEFORE AND AFTER EVERY RUN (goal/G47.1; Andy: "testicle can double ensure that no fucking lab nodes or
+// headless chromes are loitering about before AND after ever fucking run.", "but noooo, it has to an elaborate design with
+// as many failure points as possible!"): a run is testicle's work from its first job to the moment nothing is left to
+// choose. When one starts and when it ends, every process still holding or running on a node of this tree's lab
+// (repo://lab/node/<name>.lock and .pid) is ended with all it started, those files go, and every headless Chrome on a
+// profile of this tree's (spirit/test/headLessChrome's temp route) is ended. Testicle is the one run on its tree; nothing
+// else is asked. At start the runner counts as idle, so its first run is swept before it too.
+let idle = true;
+const LAB_NODES = path.join(RUN, '..', '..', 'lab', 'node');
+function sweep(when) {
+  let pids = [];
+  try {
+    fs.readdirSync(LAB_NODES).filter(function (f) { return /\.(lock|pid)$/.test(f) && f !== '.lab.lock'; }).forEach(function (f) {
+      const at = path.join(LAB_NODES, f);
+      let pid = 0; try { pid = Number(fs.readFileSync(at, 'utf8').trim()) || 0; } catch (e) { pid = 0; }
+      if (pid && pid !== process.pid && pids.indexOf(pid) === -1) pids.push(pid);
+      try { fs.rmSync(at, { force: true }); } catch (e) { logError('sweep ' + when + ': ' + f, e); }
+    });
+  } catch (e) { /* no lab on this tree */ }
+  let profiles = '';
+  try { profiles = spirit.require('spirit/tempFolder.js').path('spirit/test/headLessChrome'); } catch (e) { profiles = ''; }
+  if (profiles) chromesOn(profiles).forEach(function (p) { if (p !== process.pid && pids.indexOf(p) === -1) pids.push(p); });
+  pids = pids.filter(alive);
+  if (!pids.length) return;
+  logError('sweep ' + when + ': ending ' + pids.length + ' loitering process(es): ' + pids.join(' '), null);
+  pids.forEach(endTree);
+}
+function alive(pid) { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } }
+// A process and all it started: taskkill /T on Windows; elsewhere its descendants by parent id, then itself.
+function endTree(pid) {
+  if (process.platform === 'win32') { try { execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore', timeout: 30000 }); } catch (e) { /* gone */ } return; }
+  let kids = [];
+  try { kids = execFileSync('ps', ['-A', '-o', 'pid=,ppid='], { encoding: 'utf8', timeout: 30000 }).split('\n').map(function (l) { return /^\s*(\d+)\s+(\d+)/.exec(l); }).filter(Boolean); } catch (e) { kids = []; }
+  (function down(p) { kids.filter(function (m) { return Number(m[2]) === p; }).forEach(function (m) { down(Number(m[1])); try { process.kill(Number(m[1]), 'SIGKILL'); } catch (e) { /* gone */ } }); }(pid));
+  try { process.kill(pid, 'SIGKILL'); } catch (e) { /* gone */ }
+}
+// Every process whose command line names a folder under that profile route: the Chromes of this tree's tests.
+function chromesOn(profiles) {
+  const want = path.resolve(profiles).toLowerCase();
+  if (process.platform === 'linux') {
+    try {
+      return fs.readdirSync('/proc').filter(function (d) { return /^\d+$/.test(d); }).filter(function (d) {
+        try { return fs.readFileSync('/proc/' + d + '/cmdline', 'utf8').split('\0').join(' ').toLowerCase().indexOf(want) !== -1; } catch (e) { return false; }
+      }).map(Number);
+    } catch (e) { return []; }
+  }
+  const list = process.platform === 'win32'
+    ? ['powershell', ['-NoProfile', '-NonInteractive', '-Command', 'Get-CimInstance Win32_Process | ForEach-Object { "$($_.ProcessId) $($_.CommandLine)" }']]
+    : ['ps', ['-A', '-o', 'pid=,args=']];
+  let out = '';
+  try { out = execFileSync(list[0], list[1], { encoding: 'utf8', windowsHide: true, timeout: 30000, maxBuffer: 1 << 24 }); } catch (e) { return []; }
+  return out.split(/\r?\n/).map(function (l) { const m = /^\s*(\d+)\s+(.*)$/.exec(l); return m && m[2].toLowerCase().split('/').join(path.sep).indexOf(want) !== -1 ? Number(m[1]) : 0; }).filter(Boolean);
+}
 function waits(why) {
   if (why === waitedFor) return;
   waitedFor = why;
@@ -357,7 +410,8 @@ function nextJob() {
   // run. The write's end calls for the quiet second again (apply), and the job starts after it.
   if (working || timer || pending.size) { waits(working ? 'a write runs' : timer ? 'a write is due' : pending.size + ' changes pending'); return; }
   const n = chooseJob();
-  if (!n) { waits('nothing chosen'); dropWorld(); told(); return; }
+  if (!n) { waits('nothing chosen'); dropWorld(); if (!idle) { idle = true; sweep('after the run'); } told(); return; }
+  if (idle) { idle = false; sweep('before the run'); }
   if (n.classify) logError('runner: classifying ' + n.scripts.length + ' scripts (' + (prefs.interactive ? 'interactive' : 'auto') + ')', null);
   // THE TWO HASHES, TAKEN AT THE START (the box: "When a run starts, the server remembers the two hashes as they stand, and
   // until that run ends tags every result of it with them").

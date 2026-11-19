@@ -2870,6 +2870,9 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     const kid = require('child_process').spawn(process.execPath, ['-e', 'setTimeout(function () {}, 600000)'], { cwd: nodeDir, stdio: 'ignore', detached: true });
     kid.unref();
     ST.stray = kid.pid;
+    // Written down as the lab writes down a node it starts (lab/labNodes.js noteNode, <name>.pid), which is how an aborted
+    // run's node is left: a process's working folder cannot be read on Windows, so the lab's own record is what names it (cw).
+    fs.writeFileSync(path.join(root, 'lab', 'node', 'personal1.pid'), String(kid.pid));
     return aliveS(ST.stray) || false;
   }, test.limit.long);
   test.run('a press of a suite ends a process left running on a lab node before the run goes on', 0.8, async function () {
