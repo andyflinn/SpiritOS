@@ -68,7 +68,7 @@ test.run('create makes a row of kind suite, keyed by the row\'s key, with no act
   return (s && s.kind === 'suite' && s.key === ROW.key && Array.isArray(s.actions) && !s.actions.length) || false;
 }, test.limit.quick);
 // the run cycle: "The 🏃‍♂️ column is on every row of the script detail tab, the first column"
-test.run('its fields are the 🏃‍♂️ first, then the suite\'s filename, then its status', 0.2, function () {
+test.run('its fields are the run button first, then the suite\'s filename, then its status', 0.2, function () {
   if (!s) return false;
   const names = s.fields.map(function (f) { return f.name; });
   return JSON.stringify(names) === JSON.stringify(['run', 'suite', 'status']) || false;
@@ -90,7 +90,7 @@ test.run('a row with no status draws nothing in the status cell', 0.2, function 
 }, test.limit.quick);
 
 // "each row's button running its own suite", "The button is the busy button exactly as it is"
-test.run('once mounted, its 🏃‍♂️ cell holds a busy button labelled 🏃‍♂️', 0.2, async function () {
+test.run('once mounted, its first cell holds a busy button labelled with the runner', 0.2, async function () {
   if (!el || typeof el.mount !== 'function') return false;
   cell = aCell();
   el.mount({ run: cell });

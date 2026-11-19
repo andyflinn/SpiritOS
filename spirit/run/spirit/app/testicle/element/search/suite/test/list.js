@@ -160,7 +160,7 @@ test.run('it lists each suite once', 0.2, async function () {
   return (k.length > 0 && new Set(k).size === k.length) || false;
 }, test.limit.quick);
 // goal/G47.1, the run cycle: "the 🏃‍♂️ column first, no sort"
-test.run('its columns are 🏃‍♂️ first with no sort, then Suite and Status, each a sort trigger', 0.2, async function () {
+test.run('its columns are the run button first with no sort, then Suite and Status, each a sort trigger', 0.2, async function () {
   if (notMounted()) return false;
   const h = ((await view('zzBox')) || {}).heads || [];
   return (h.length === 3 && h[0].text === '🏃‍♂️' && !h[0].sort && /^Suite\b/.test(h[1].text) && h[1].sort === 'suite' && h[2].text === 'Status' && h[2].sort === 'status') || false;

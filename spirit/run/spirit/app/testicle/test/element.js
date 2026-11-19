@@ -608,7 +608,7 @@ const iotaOwn = 'spirit/zzTesticle/test/iota.js';
 // 🛌 idle (sleeping), 🚶‍➡️ working, as the server streams it ... then the last change: a row added, deleted or updated in
 // any of its three tables", "The row has a constant height, and the message is ellipsed, never wrapped", "busy is streamed by
 // the server ... the page never asks testicle.busy". Its icons are recorded from here, so iota's run below is seen.
-test.run('a monitor row stands above the workbench, a busy icon in it, 🛌 or 🚶‍➡️', 0.2, async function () {
+test.run('a monitor row stands above the workbench, a busy icon in it, the sleeper or the walker', 0.2, async function () {
   if (!face()) return false;
   const ok = await waitFor('monitor() && monitor().benchTop !== null && monitor().bottom <= monitor().benchTop + 0.5', 10000);
   return !!ok || false;
@@ -652,14 +652,14 @@ test.run('iota.js\'s tab is opened and lists its suites', 0.2, async function ()
   iotaRows = ok ? ((await T('shown()')) || { rows: [] }).rows : [];
   return iotaRows.length > 0 || false;
 }, test.limit.slow);
-test.run('every suite row of the script detail has a 🏃‍♂️ button in its first column', 0.2, async function () {
+test.run('every suite row of the script detail has a run button in its first column', 0.2, async function () {
   if (!face()) return false;
   const cells = [];
   for (const r of iotaRows) cells.push(await T('runCell(' + JSON.stringify(r.key) + ')'));
   const bad = cells.filter(function (x) { return !x || !x.button || !/🏃/.test(String(x.glyph || x.first)); });
   return (cells.length > 0 && !bad.length) || false;
 }, test.limit.quick);
-test.run('the 🏃‍♂️ is the busy button, spirit/element/busyButton.js, which the suite list loads', 0.2, function () {
+test.run('the run button is the busy button, spirit/element/busyButton.js, which the suite list loads', 0.2, function () {
   const files = ['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/suite/list.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/element.js'];
   return files.some(function (f) { return /['"]spirit\/element\/busyButton\.js['"]/.test(code(path.join(RUN, f))); }) || false;
 }, test.limit.quick);
@@ -673,7 +673,7 @@ test.run('a press on iota\'s own suite\'s 🏃‍♂️ is answered at once: the
 }, test.limit.slow);
 // the box: busy "stays the one answer it is today (a write, a wait, files pending, a script.get, a suite running)": iota's
 // own suite waits three seconds before its first test reports, so in that time only the suite running makes the server work.
-test.run('before any test of the suite reports, the suite running alone shows 🚶‍➡️', 0.2, async function () {
+test.run('before any test of the suite reports, the suite running alone shows the walker', 0.2, async function () {
   if (!face()) return false;
   const ok = await waitFor('monitor() && monitor().icon === "🚶‍➡️"', 2000);
   return !!ok || false;
@@ -693,7 +693,7 @@ test.run('while the suite runs, the permanent testicle search tab shows iota\'s 
 }, test.limit.slow);
 
 // The monitor row, after iota's run: the server worked while the suite it started ran (busy counts it), then slept.
-test.run('while a suite the server started runs, the monitor shows 🚶‍➡️', 0.2, async function () {
+test.run('while a suite the server started runs, the monitor shows the walker', 0.2, async function () {
   if (!face()) return false;
   return ((await T('icons_seen()')) || []).indexOf('🚶‍➡️') !== -1 || false;
 }, test.limit.quick);
