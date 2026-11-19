@@ -42,6 +42,10 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
     // The page's table of types, as spirit.js puts it on the spirit object.
     MIME_TYPES: { '.html': 'text/html; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' } } };
   global.spirit = global.window.spirit;
+  // Handed over from the real spirit object (goal/G47.1, Andy's red 'its size is shown through formatBytes'): spirit.js may be
+  // loaded already in this process (the test reporter loads it), and then a later require of it hands back its cached copy
+  // and fills nothing here, so the row fell back to "2048 B".
+  (function () { const real = require(path.join(RUN, 'spirit', 'spirit.js')); ['formatBytes', 'escapeHtml'].forEach(function (k) { if (typeof global.window.spirit[k] !== 'function' && typeof real[k] === 'function') global.window.spirit[k] = real[k]; }); }());
   // goal/G43.32: every element places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
