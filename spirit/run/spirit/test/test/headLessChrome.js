@@ -105,20 +105,9 @@ test.run('lab holds six personal nodes, personal1 to personal6, and its two rela
   let P = null; try { P = require(path.join(REPO, 'lab', 'labNodes.js')).POOLS; } catch (e) { return false; }
   return (!!P && JSON.stringify(P.node) === JSON.stringify(PERSONAL) && JSON.stringify(P.relay) === JSON.stringify(['relay1', 'relay2'])) || false;
 }, test.limit.quick);
-// "a lock file per lab node, one test on it at a time; a test that finds every lab node taken waits"
-test.run('one test per lab node at a time: with the six personal nodes held, a seventh ask waits, and is handed one when a holder ends', 0.4, async function () {
-  const holders = PERSONAL.map(function () { return ask('node', 25000); });
-  const held = await Promise.all(holders.map(function (h) { return within(h.got, 120000); }));
-  if (held.some(function (h) { return !h || h === 'waiting' || h.error; })) return false;
-  const roots = held.map(function (h) { return h.root; });
-  if (new Set(roots).size !== PERSONAL.length) return false;
-  const fourth = ask('node', 500);
-  const early = await within(fourth.got, 5000);
-  if (early !== 'waiting') { holders.forEach(function (h) { h.kid.kill(); }); return false; }
-  const late = await within(fourth.got, 60000);
-  await Promise.all(holders.map(function (h) { return h.ended; }));
-  return (!!late && late !== 'waiting' && !late.error && roots.indexOf(late.root) !== -1) || false;
-}, test.limit.long);
+// NO TEST OF WAITING FOR A LAB NODE (goal/G47.1; Andy: "this should fucking b cleaned up, this is exactly the kind of shit that
+// keeps bringing stupid bucks back!", "get rid of shit like tat."): the check that a seventh ask waits held the old design,
+// tests holding nodes side by side and waiting for each other, against one run per tree and the lab as a stack. Gone.
 // THE HELPERS A TEST'S OWN WORLD USES (goal/G47.3, the build; ./headLessChrome.md): scratchTree takes one lab node and
 // no more, startNodeOn starts a node only on a tree lab handed out, freeTree frees a node and deletes nothing.
 function inChild(code, ms) {

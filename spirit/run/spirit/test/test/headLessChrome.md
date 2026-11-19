@@ -18,8 +18,8 @@ moves at once"*. Each hand-out is asked from a child process of its own, as a te
   is untouched"*).
 - **Reset before each test:** a file one test left in its node's `spirit/state/` is gone when that node is handed out again
   (*"lab resets its node before each test (spirit/state/ wiped, node restarted), never the tests"*).
-- **A lock per node:** with the three personal nodes held, a fourth ask waits, and is handed one of them when a holder ends
-  (*"a lock file per lab node, one test on it at a time; a test that finds every lab node taken waits"*).
+- **No test of waiting for a lab node** (goal/G47.1, Andy: *"get rid of shit like tat."*): the check that an ask with every
+  node held waits held the old design, tests holding nodes side by side; one run per tree and the lab as a stack replace it.
 - **A git lock a killed run left behind** (goal/G47.1, Andy: *"the issue of not cleaning up git locks after aborted failed
   tests needs fixing in the system with verification"*): with git's `index.lock` left in lab's repo and no git running, lab
   still hands out a node, and the lock is gone; the same with one left in every personal node's own repo: one is handed
