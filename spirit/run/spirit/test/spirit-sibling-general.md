@@ -46,6 +46,9 @@ gone. From `./app.js`: that an app's description names its icon and label. A scr
 - **`testModule.js` gives it one entry per branch folder**, and on a blast radius the deepest branch holding the file
   (`spirit/app/desk/desk.js` is `spirit/app/desk`'s, not `spirit/app`'s). A module in no branch gets none.
 - **Every check is named by its branch folder** or a file in it. A folder given that is no branch is red.
+- **Only a file of the branch folder itself is judged as its branch** (goal/G47.4; Andy: *"if (folder is a branch folder)
+  { run those tests here}"*, *"better-organized general tests will run faster"*): a file whose own folder is the branch
+  folder, or the folder itself; its elements and tests, in folders below, are not judged as the branch again.
 - **The tree is every file git keeps and every file not yet added that git does not ignore**, so a new app's branch is
   judged before it is committed.
 - Given no folder, it must have found over 20 branches, desk's and fs's among them.

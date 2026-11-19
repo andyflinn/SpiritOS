@@ -73,8 +73,10 @@ const ALL = branchesOf(RUN);
 // WHAT FITS (box v94, 2: "all scripts listed in the arguments that fit"): a branch folder, or a file in one, which is judged
 // as its branch; anything in no branch is not this part's, and it judges nothing.
 const handed = ARGS[0] ? String(ARGS[0]).replace(/^\.\//, '').replace(/^spirit\/run\//, '').replace(/\/$/, '') : '';
-const home = handed ? ALL.filter(function (b) { return handed === b.dir || handed.indexOf(b.dir + '/') === 0; })
-  .sort(function (a, b) { return b.dir.length - a.dir.length; })[0] : null;
+// ONLY A FILE OF THE BRANCH FOLDER ITSELF (goal/G47.4; Andy: "if (folder is a branch folder) { run those tests here}", "the
+// idea here is that better-organized general tests will run faster."): a file whose own folder is a branch folder, or the
+// folder handed; a branch's elements and tests, in folders below it, are not judged as their branch again.
+const home = handed ? ALL.filter(function (b) { return handed === b.dir || path.posix.dirname(handed) === b.dir; })[0] : null;
 if (handed && !home) return;
 const asked = home ? home.dir : '';
 const TARGETS = asked ? ALL.filter(function (b) { return b.dir === asked; }) : ALL;
