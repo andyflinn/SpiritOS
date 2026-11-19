@@ -55,8 +55,11 @@ const GS = Z2 + 'test/gamma.js';
 const GAMMA_REDS = 2;
 PLANT[G] = '\'use strict\';\n// gamma\n';
 PLANT[GS] = '\'use strict\';\n// the test of gamma\n';
-// THE TESTS SET: alpha's long title passing at 0, beta's failing at 1, alpha's flip in a general suite at 0.2, passing then
-// failing, so two rows of it are kept and one is current.
+// THE TESTS SET: alpha's long title passing at 1, beta's failing at 1, alpha's flip in a general suite at 0, passing then
+// failing, so two rows of it are kept and one is current. A PASS SHOWN UNNARROWED IS AT 1 (Q17, one answer, no paging): the
+// scratch node's own classifier passes every script of its tree at 0.8 while this test runs, so a planted pass below that
+// never reaches the one answer of an unnarrowed ask (on Windows, where it classifies fast, every check reading alpha's pass
+// went red). A pass at 0 is the quiet pass, shown only to a narrower ask, as the fresh page's checks below say.
 const LONG = 'alpha answers every question it is asked, however long the question, and this title is shown in full';
 const FAILS = 'beta fails';
 const FLIPS = 'alpha flips';
@@ -170,13 +173,13 @@ test.run('tests of the planted scripts are set on the node', 0.2, async function
   GEN = s.gen;
   if (!GEN) return false;
   const sets = [
-    { script: A, suite: AS, test: LONG, verified: true, severity: 0 },
+    { script: A, suite: AS, test: LONG, verified: true, severity: 1 },
     { script: B, suite: BS, test: FAILS, verified: false, severity: 1 },
-    { script: A, suite: GEN, test: FLIPS, verified: true, severity: 0.2 },
+    { script: A, suite: GEN, test: FLIPS, verified: true, severity: 0 },
   ];
   const out = [];
   for (const a of sets) { out.push(await call(N.base, 'testicle.testicle.set', a)); await sleep(20); }
-  out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: GEN, test: FLIPS, verified: false, severity: 0.2 }));
+  out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: GEN, test: FLIPS, verified: false, severity: 0 }));
   planted = out.every(function (r) { return r.status === 200; });
   out.forEach(function (r, i) { const b = r.body || {}; if (r.status === 200 && b.key) current[i === 3 ? FLIPS : i === 0 ? LONG : i === 1 ? FAILS : 'replaced'] = b; });
   return planted || false;
@@ -298,7 +301,7 @@ test.run('the first column is the result as an icon: ❌ for a failure, ✅ for 
 test.run('the second column is the severity with two decimals, 0.00 and 1.00 too', 0.2, function () {
   if (mounted()) return false;
   const got = [LONG, FAILS, FLIPS].map(function (t) { return ((byTitle[t] || { cells: [] }).cells[1] || {}).text; });
-  return JSON.stringify(got) === JSON.stringify(['0.00', '1.00', '0.20']) || false;
+  return JSON.stringify(got) === JSON.stringify(['1.00', '1.00', '0.00']) || false;
 }, test.limit.quick);
 // the box: "The test title is shown in full"
 test.run('the third column is the title, shown in full', 0.2, function () {
@@ -530,7 +533,8 @@ test.run('with the suite unselected and no script chosen, every script\'s tests 
 // the box: "a view of the testicle branch data.js keeps": a test set on the node shows by itself.
 test.run('a test set on the node shows in the list with no press', 0.2, async function () {
   if (mounted()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: 'beta answers later', verified: true, severity: 0.4 });
+  // A pass, so at 1, above the classifier's passes (see THE TESTS SET).
+  const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: 'beta answers later', verified: true, severity: 1 });
   if (r.status !== 200) return false;
   const ok = await until(function () { return T('cells()').then(function (rows) { return (rows || []).some(function (x) { return titleOf(x) === 'beta answers later'; }); }); }, 10000);
   return !!ok || false;
