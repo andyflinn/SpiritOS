@@ -174,7 +174,11 @@ function chromeChild(end) {
   const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const p = await H.chromePage(H.findChrome());' +
     ' process.stdout.write("\\n@@" + JSON.stringify({ pid: p.kid && p.kid.pid, error: !!p.error }) + "\\n");' +
     (end === 'exit' ? ' setTimeout(function () { process.exit(0); }, 300);' : ' setInterval(function () {}, 1000);') + ' }());';
-  const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
+  // Its own Chrome, never the handed one: under testicle this suite is handed a Chrome in SPIRIT_CHROME_PORT, and a child
+  // that inherits it opens its page there, with no Chrome of its own to name (red on every testicle run since 2026-11-16).
+  const env = Object.assign({}, process.env);
+  delete env.SPIRIT_CHROME_PORT;
+  const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'], env: env });
   let out = '';
   const got = new Promise(function (resolve) {
     kid.stdout.on('data', function (d) { out += d; const m = /\n@@(.*)\n/.exec(out); if (m) { try { resolve(JSON.parse(m[1])); } catch (e) { resolve({ error: true }); } } });
