@@ -180,9 +180,9 @@ test.run('it has a face, its shell.mount being true', 0.2, function () {
 test.run('it has a server beside the face, its node.mount being true', 0.2, function () {
   return (!!own && !!own.node && own.node.mount === true) || false;
 }, test.limit.quick);
-test.run('its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, preferences, script.get, script.classify, suite.search, suite.success, testicle.set, testicle.search, red, run, subscribe and unsubscribe, its element/ folder and its test/ folder, nothing else', 0.2, function () {
+test.run('its folder holds its manifest, its face, its server, its api.js and data.js, its words.js and testAll.js, and a json description of each verb, busy, preferences, script.get, script.classify, suite.search, suite.success, testicle.set, testicle.search, red, run, subscribe and unsubscribe, its element/ folder and its test/ folder, nothing else', 0.2, function () {
   const held = fs.existsSync(APP) ? fs.readdirSync(APP).filter(function (f) { return f !== 'test'; }).sort() : [];
-  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element', 'element.js', 'preferences.json', 'red.json', 'run.json', 'script.classify.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'suite.success.json', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json']) || false;
+  return JSON.stringify(held) === JSON.stringify(['api.js', 'busy.json', 'data.js', 'element', 'element.js', 'preferences.json', 'red.json', 'run.json', 'script.classify.json', 'script.get.json', 'subscribe.json', 'suite.search.json', 'suite.success.json', 'testAll.js', 'testicle.js', 'testicle.json', 'testicle.search.json', 'testicle.set.json', 'unsubscribe.json', 'words.js']) || false;
 }, test.limit.quick);
 // spirit/app/testicle/element/ PROPERLY DONE (goal/G47.1, box v134: "every part of testicle's face an element of its own in
 // element/<name>/<name>.js with its own test (the file detail, the monitor row with the status box, the settings panel);
