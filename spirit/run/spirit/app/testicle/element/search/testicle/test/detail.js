@@ -127,16 +127,25 @@ test.run('the test detail loads on its own and mounts for a given script, suite 
   return made === 'made' || false;
 }, test.limit.slow);
 
-// the box: "The title line is the test's title in full"
+// the box: "The title line is the test's title in full"; goal/G47.4, Andy: "display the title in a bubble on top."
 test.run('the detail\'s title line is the test\'s title in full', 0.2, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
   return (!!v && v.title === FLIPS) || false;
 }, test.limit.quick);
-test.run('the detail\'s columns are Flipped, then the test row\'s Result, Severity, Title, Script and Suite', 0.2, async function () {
+test.run('the title stands in a bubble, the first thing in the detail', 0.4, async function () {
+  if (mounted()) return false;
+  const ok = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var t = b && b.querySelector("[data-history=title]"); var top = b && b.firstElementChild && b.firstElementChild.firstElementChild; return !!t && t === top && t.classList.contains("shell-bubble"); }())');
+  return ok === true || false;
+}, test.limit.quick);
+// goal/G47.4, Andy: "the list does NOT need to have a description/title column, that repeats the above information EVERY
+// single time...."
+// then: "give a row on top to the full script filename", "give a row on top to the full suite filename", "and eliminate those
+// columns, too."
+test.run('the detail\'s columns are Flipped, then the test row\'s Result and Severity, with no Title, Script or Suite', 0.4, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
-  return (!!v && JSON.stringify(v.heads) === JSON.stringify(['Flipped', 'Result', 'Severity', 'Title', 'Script', 'Suite'])) || false;
+  return (!!v && JSON.stringify(v.heads) === JSON.stringify(['Flipped', 'Result', 'Severity'])) || false;
 }, test.limit.quick);
 // the box: "given a valid test title ... it answers every row matching that script, suite and title, current or not, newest
 // first. A test's history in its detail comes from that, no new verb."
@@ -151,11 +160,11 @@ test.run('no row of another test of the same suite shows', 0.2, async function (
   const v = await view('zzBox');
   return (!!v && v.rows.length > 0 && !v.rows.some(function (r) { return r.cells.indexOf(OTHER) !== -1; })) || false;
 }, test.limit.quick);
-test.run('each row is drawn by the test row, with its result as an icon, its severity, title and file names', 0.2, async function () {
+test.run('each row is drawn by the test row, with its result as an icon and its severity, and no title or file names', 0.4, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
   const tail = (v && v.rows || []).map(function (r) { return r.cells.slice(1).join(' | '); });
-  const want = ['✅', '❌', '✅'].map(function (i) { return [i, '0.30', FLIPS, base(A), base(AS)].join(' | '); });
+  const want = ['✅', '❌', '✅'].map(function (i) { return [i, '0.30'].join(' | '); });
   return JSON.stringify(tail) === JSON.stringify(want) || false;
 }, test.limit.quick);
 test.run('each row shows the date it flipped', 0.2, async function () {
@@ -181,6 +190,12 @@ test.run('the detail shows its full script path and its full suite path', 0.4, a
   const text = await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")');
   return (text.indexOf(A) !== -1 && text.indexOf(AS) !== -1) || false;
 }, test.limit.quick);
+// goal/G47.4, Andy: "give a row on top to the full script filename", "give a row on top to the full suite filename".
+test.run('under the title row form, the full script path and then the full suite path each stand in a row of their own', 0.4, async function () {
+  if (mounted()) return false;
+  const v = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var f = b.querySelector("[data-history=titleForm]"); var s = f && f.nextElementSibling; var u = s && s.nextElementSibling; return JSON.stringify([s ? s.getAttribute("data-history") + "=" + s.textContent : "", u ? u.getAttribute("data-history") + "=" + u.textContent : ""]); }())');
+  return v === JSON.stringify(['script=' + A, 'suite=' + AS]) || false;
+}, test.limit.quick);
 // goal/G47.4: the 🏃 is the run form's icon (a pictograph only in the icon element, the general rules), its button 'run'.
 test.run('the detail has a 🏃 run form with a run button for its script and suite', 0.4, async function () {
   if (mounted()) return false;
@@ -197,14 +212,16 @@ test.run('a press of the detail\'s run button asks testicle.run for its script a
   let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
   return (!!ok && !!body && body.args && body.args.script === A && body.args.suite === AS) || false;
 }, test.limit.slow);
-// goal/G47.4, the box: "right under the run-icon-button row (make that into a nice rowForm) a second rowForm will allow me to
-// change the tests title", "new titles and the corresponding ui INPUT must be bounded by DESCRIPTION_MAX_BYTES". What the
-// rename does on the server is testicle's own test's; here, the two forms, the bounded input, the ask and a refusal said.
-test.run('the run button and the title input each stand in a row form, the title form right under the run form', 0.4, async function () {
+// goal/G47.4, the box: "a second rowForm will allow me to change the tests title", "new titles and the corresponding ui INPUT
+// must be bounded by DESCRIPTION_MAX_BYTES"; then Andy: "display the title in a bubble on top.", "a rowForm to change it below
+// that.", "i LIKE the run-bubble in that tab though...". What the rename does on the server is testicle's own test's; here,
+// the two forms in that order, the bounded input, the ask and a refusal said.
+test.run('right under the title bubble the title input stands in a row form, and the run form further down', 0.4, async function () {
   if (mounted()) return false;
-  const f = await c.evaluate('(function () { var fs = document.getElementById("zzBox").querySelectorAll(".shell-row-form"); return JSON.stringify(Array.prototype.map.call(fs, function (x) { return { run: /🏃/.test(x.textContent || "") && Array.prototype.some.call(x.querySelectorAll("button"), function (b) { return b.textContent === "run"; }), input: !!x.querySelector("input[data-history=newTitle]") }; })); }())');
-  let forms = []; try { forms = JSON.parse(f); } catch (e) { forms = []; }
-  return (forms.length === 2 && forms[0].run && !forms[0].input && forms[1].input && !forms[1].run) || false;
+  const f = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var t = b.querySelector("[data-history=title]"); var fs = b.querySelectorAll(".shell-row-form"); return JSON.stringify({ next: !!(t && t.nextElementSibling && t.nextElementSibling.querySelector("input[data-history=newTitle]")), forms: Array.prototype.map.call(fs, function (x) { return { run: /🏃/.test(x.textContent || "") && Array.prototype.some.call(x.querySelectorAll("button"), function (b) { return b.textContent === "run"; }), input: !!x.querySelector("input[data-history=newTitle]") }; }) }); }())');
+  let o = null; try { o = JSON.parse(f); } catch (e) { o = null; }
+  const forms = (o && o.forms) || [];
+  return (!!o && o.next && forms.length === 2 && forms[0].input && !forms[0].run && forms[1].run && !forms[1].input) || false;
 }, test.limit.quick);
 test.run('the title input holds the test\'s title and takes no more than 128 bytes', 0.4, async function () {
   if (mounted()) return false;

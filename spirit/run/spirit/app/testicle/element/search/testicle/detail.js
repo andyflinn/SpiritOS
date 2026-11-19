@@ -8,9 +8,10 @@
 //
 // The box: "testicle.search answers the current rows by default; given a valid test title, {script, suite, test, text}, it
 // answers every row matching that script, suite and title, current or not, newest first. A test's history in its detail
-// comes from that, no new verb." The title line is the test's title in full; below it every row, the newest flip first,
-// each drawn by ./row.js with the date it flipped. It asks again whenever testicle publishes a row of this test. Above
-// the rows two row forms (goal/G47.4): the paths with the 🏃, and the title, renamed through testicle.title.
+// comes from that, no new verb." The title line is the test's title in full, in a bubble on top; below it every row, the
+// newest flip first, each drawn by ./row.js with the date it flipped, its title and file names left out. It asks again
+// whenever testicle publishes a row of this test. Between the title and the rows (goal/G47.4): the title's row form, renamed
+// through testicle.title, the full script path, the full suite path, and the 🏃 run form.
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its row, testicle's interface and its cache manager.
@@ -35,14 +36,21 @@
     // stops the running suite and runs it first, as a top-10 fix does; the detail shows its full script and suite path"; Andy:
     // "the testicle detail doesn't show the full script name"): the script's and the suite's path in full under the title, and
     // the busy button the script tab's rows have, asking testicle.run for this script and suite.
-    // ITS TWO ROW FORMS (goal/G47.4, the box: "right under the run-icon-button row (make that into a nice rowForm) a second
-    // rowForm will allow me to change the tests title"): the run form, its icon 🏃 (a pictograph only in the icon element, the
-    // general rules), holds the paths and its run button; the title form an input
+    // THE TITLE ON TOP, THEN ITS TWO ROW FORMS (goal/G47.4; Andy: "display the title in a bubble on top.", "a rowForm to change
+    // it below that.", "i LIKE the run-bubble in that tab though..."): the title in the shared bubble; the title form an input
     // bounded by the description rule ("new titles and the corresponding ui INPUT must be bounded by DESCRIPTION_MAX_BYTES"),
-    // its press asking testicle.title; what a press refused is said below the bubbles.
-    container.innerHTML = '<div class="testicle-history fill" style="overflow:auto"><div class="testicle-title" data-history="title"></div>' +
-      '<div data-history="runForm"></div><div data-history="titleForm"></div><div class="testicle-said" data-history="said"></div>' +
-      '<table class="testicle-flips" data-history="rows"><thead><tr><th>Flipped</th><th>Result</th><th>Severity</th><th>Title</th><th>Script</th><th>Suite</th></tr></thead><tbody></tbody></table></div>';
+    // its press asking testicle.title; the run form, its icon 🏃 (a pictograph only in the icon element, the general rules),
+    // holds its run button; what a press refused is said below the bubbles.
+    // THE SCRIPT AND THE SUITE EACH A ROW ON TOP, AND NONE OF THE THREE AS A COLUMN (Andy: "the list does NOT need to have a
+    // description/title column, that repeats the above information EVERY single time....", then "give a row on top to the full
+    // script filename", "give a row on top to the full suite filename", "and eliminate those columns, too."): every row is this
+    // test of this script and suite, so the history keeps the flip, the result and the severity.
+    container.innerHTML = '<div class="testicle-history fill" style="overflow:auto"><div class="testicle-title shell-bubble" data-history="title"></div>' +
+      '<div data-history="titleForm"></div><div class="testicle-path shell-bubble" data-history="script"></div>' +
+      '<div class="testicle-path shell-bubble" data-history="suite"></div><div data-history="runForm"></div><div class="testicle-said" data-history="said"></div>' +
+      '<table class="testicle-flips" data-history="rows"><thead><tr><th>Flipped</th><th>Result</th><th>Severity</th></tr></thead><tbody></tbody></table></div>';
+    container.querySelector('[data-history="script"]').textContent = script;
+    container.querySelector('[data-history="suite"]').textContent = suite;
     container.querySelector('[data-history="title"]').textContent = test;
     var body = container.querySelector('tbody');
 
@@ -56,8 +64,8 @@
         drawn.push(el);
         var when = r.flipped ? new Date(Number(r.flipped)).toISOString().replace('T', ' ').slice(0, 19) : '';
         return '<tr data-key="' + esc(r.key) + '"><td data-field="flipped">' + esc(when) + '</td>' +
-          el.cells().map(function (c) { return '<td data-field="' + esc(c.name) + '">' + c.html + '</td>'; }).join('') + '</tr>';
-      }).join('') || '<tr><td colspan="6">' + esc('No row of this test.') + '</td></tr>';
+          el.cells().filter(function (c) { return c.name !== 'test' && c.name !== 'script' && c.name !== 'suite'; }).map(function (c) { return '<td data-field="' + esc(c.name) + '">' + c.html + '</td>'; }).join('') + '</tr>';
+      }).join('') || '<tr><td colspan="3">' + esc('No row of this test.') + '</td></tr>';
     }
     // ITS ROWS ARE THE BRANCH'S (goal/G47.1, the box: "Every element of testicle's face updates itself in response to the
     // server stream"): the history is asked once and kept in testicle's branch; what is drawn is every row of this test the
@@ -71,7 +79,7 @@
     }
     function ask() {
       return Promise.resolve(S.testicle['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
-        .then(function (b) { S.data.testicle.data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="6">' + esc((e && e.message) || e) + '</td></tr>'; });
+        .then(function (b) { S.data.testicle.data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
     }
 
     function said(text) { var el = container.querySelector('[data-history="said"]'); if (el) el.textContent = text || ''; }
@@ -80,9 +88,7 @@
       var run = RF.create(container.querySelector('[data-history="runForm"]'), { icon: '🏃‍♂️', button: 'run',
         press: function () { return script && suite ? S.testicle.run({ script: script, suite: suite }) : undefined; } });
       run.button.title = 'run this suite now';
-      run.span.innerHTML = '<span class="testicle-paths"><span data-history="script"></span><br><span data-history="suite"></span></span>';
-      run.span.querySelector('[data-history="script"]').textContent = script;
-      run.span.querySelector('[data-history="suite"]').textContent = suite;
+      run.span.textContent = 'run this suite now';
       var named = RF.create(container.querySelector('[data-history="titleForm"]'), { icon: '✏️', button: 'rename', press: rename });
       var input = document.createElement('input');
       input.type = 'text';
