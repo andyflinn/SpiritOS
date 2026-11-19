@@ -2884,9 +2884,42 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     return !!(await until(function () { return Promise.resolve(!aliveS(ST.stray)); }, 60000)) || false;
   }, test.limit.long);
   test.run('the pressed suite then runs green', 0.2, async function () {
+    if (!ST.pressed) return false;
+    return !!(await until(function () { const r = suiteRow(tables(ST.DB), SA, ownOfS(SA)); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 120000)) || false;
+  }, test.limit.long);
+  // BEFORE EVERY SUITE'S RUN, NOT ONLY A BUSY STRETCH'S FIRST (goal/G47.1; Andy's lab on 2026-11-19: classifiers stopped
+  // mid-run at 08:36-08:46 held four of its six nodes until past noon, because the runner, busy all along, never swept again,
+  // and testicle's own suite starved on the lab). Auto, two planted suites of 25 seconds each run one after the other, the
+  // runner busy throughout; a stray left on a lab node while the first runs is ended before the second goes on.
+  const SB = S0 + 'sB.js', SC = S0 + 'sC.js';
+  // Each marks its start in the copy's root, outside its run folder (run/spirit/app/testicle/temp/zzStray/test is eight
+  // folders below the root); no verb says which suite runs now.
+  const STARTED = function (rel) { return 'started-' + path.posix.basename(rel, '.js'); };
+  const SLOW = function (rel) {
+    return "require('fs').writeFileSync(path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', '" + STARTED(rel) + "'), '');\n" +
+      "test.run('it waits 25 seconds', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 25000); }); }, test.limit.long);\n";
+  };
+  const running = function (rel) { return fs.existsSync(path.join(ST.s.root, STARTED(rel))); };
+  test.run('while the runner stays busy, a stray left on a lab node during one suite is ended before the next suite runs', 0.8, async function () {
     try {
-      if (!ST.pressed) return false;
-      return !!(await until(function () { const r = suiteRow(tables(ST.DB), SA, ownOfS(SA)); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 120000)) || false;
+      if (!strayUp()) return false;
+      const set = await call(ST.N.base, 'testicle.preferences', { interactive: false });
+      if (set.status !== 200) return false;
+      [SB, SC].forEach(function (rel) {
+        fs.writeFileSync(path.join(ST.s.run, rel), "'use strict';\n// " + path.posix.basename(rel) + '\n');
+        fs.writeFileSync(path.join(ST.s.run, ownOfS(rel)), SUITE_HEAD + SLOW(rel));
+      });
+      let first = '';
+      if (!(await until(function () { first = running(SB) ? SB : running(SC) ? SC : ''; return Promise.resolve(!!first); }, 240000))) return false;
+      const second = first === SB ? SC : SB;
+      const nodeDir = path.join(ST.s.root, 'lab', 'node', 'personal2', 'spirit', 'run');
+      fs.mkdirSync(nodeDir, { recursive: true });
+      const kid = require('child_process').spawn(process.execPath, ['-e', 'setTimeout(function () {}, 600000)'], { cwd: nodeDir, stdio: 'ignore', detached: true });
+      kid.unref();
+      ST.stray = kid.pid;
+      fs.writeFileSync(path.join(ST.s.root, 'lab', 'node', 'personal2.pid'), String(kid.pid));
+      if (!(await until(function () { return Promise.resolve(running(second)); }, 120000))) return false;
+      return !!(await until(function () { return Promise.resolve(!aliveS(ST.stray) && running(second)); }, 10000)) || false;
     } finally { await letGoST(); }
   }, test.limit.long);
 }

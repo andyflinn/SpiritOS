@@ -326,3 +326,9 @@ headless chromes are loitering about before AND after ever fucking run."* A scra
 test, and a stray process left running in one of the copy's lab node folders, written down in the lab's own record of the
 node started there (`lab/node/<name>.pid`), as an aborted run leaves one: a press of the suite ends the stray before
 the run goes on, and the suite then runs green.
+
+Before every suite's run, not only before a busy stretch's first: on Andy's lab on 2026-11-19, classifiers stopped
+mid-run held four of its six nodes for hours, because the runner stayed busy and never swept again, and testicle's own
+suite starved on the lab. Set to auto, two planted suites of 25 seconds each run one after the other, the runner busy
+throughout. A stray left on a lab node while the first runs is ended before the second goes on. Each suite marks its
+start with a file in the copy's root, since no verb says which suite runs now.
