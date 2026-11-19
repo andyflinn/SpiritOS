@@ -60,5 +60,8 @@ test.run('a report on a starred row still notes the seat', 0.2, function () {
 }, test.limit.quick);
 
 test.after(function () {
+  // The node store it opened is closed first (goal/G47.1, Andy's red "it leaves no temp folder behind" on Windows): a
+  // folder holding an open database cannot be removed there, and its clean-up failed without a word.
+  if (W.home) { try { nodeStore.open(W.home).close(); } catch (e) { /* not opened */ } }
   if (W.home) { try { fs.rmSync(W.home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
 });
