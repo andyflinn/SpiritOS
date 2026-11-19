@@ -7,7 +7,7 @@
       root.row     the chosen app, null while none is
       one bubbling `change` on a pick
       options.face 'pane' is the list itself, 'tiles' the apps as tiles; the default is the dropdown
-      options.toggle true: a pane or tiles flips between the two
+      (options.toggle went, goal/G47.4: the app search's tile part gives it the list or tiles switch by itself)
       options.hide   the app keys left out of every face
 
 ## Requirements
@@ -29,7 +29,7 @@
 - *"row 1: rowForm: [✏️] "Label" [label input box] [Change]"*. Change writes `label` to `spirit/state/<name>/node.json`, not to `<name>.json` (Q4), and the row and the panel follow.
 - Row 2: *"if inactive: [🔴] "Activate <app-label> "face" "and" "server" [🟢]"*, *"if active: [🟢] "Deactivate <app-label> "face" "and" "server" [🔴]"*. *"face"* only if `shell.mount`, *"server"* only if `node.mount`, *"and"* only if both.
 - Row 3, the Allow row, is gone (goal/G43.18, box v29: "the Allow row of the app detail and its element, spirit/app/appSelector/rowFormAppShell.js, are deleted"): no row says Allow or Don't allow as shell, and <name>.json alone says whether an app may be a shell.
-- *"in :tiles mode, only activated apps will appear."* Reached by the toggle or from the start; an app made active appears and one made inactive leaves, no search asked.
+- *"in :tiles mode, only activated apps will appear."* Reached by the switch or from the start; an app made active appears and one made inactive leaves, no search asked.
 - *"in :tiles mode, appSelector icons will 'launch'"*: Andy left "(or mount?)" open and raised no objection to today's behaviour, so a tile opens its app inside through `spirit.app.<name>.createApp` where the app has one (monitor), else
   `spirit.elements.<name>.create`, and the close icon brings the tiles back.
 
@@ -42,7 +42,7 @@ Monitor is intrinsic since Andy's 7f6ebbbe, so always on. The suite plants an ap
 Andy: *"all, MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"*, *"where is your test that scans the app folders ... and doesn't show tiles for ANY app with shell:mound:false?"*, and *"where is the test that verifies that an app who claims to have a face, also actually supplies a fucking face?"*
 
 - Planted apps, each made active first: one saying `shell.mount: true` (its tile must show, or nothing is judged), and every way of not saying it: `false`, absent, `"true"`, `1`, a `null` shell, no shell part, and a `node.run` app. None shows a tile.
-- Judged on the tiles from the start, the tiles reached by the toggle, and the shell's own tiles (`hide: ['shell']`).
+- Judged on the tiles from the start, the tiles reached by the switch, and the shell's own tiles (`hide: ['shell']`).
 - An app whose json drops `shell.mount` on disk loses its tile with no reload; with its shell part gone it does not come back; saying it again brings it back.
 - THE TREE'S OWN APPS ARE NOT NAMED HERE (goal/G47.4; Andy: *"THIS IS something that belongs in fucking app-child-browser"*, *"that fucking test is useless, it fucking assumes settings in fucking spirit/app/<name>/<name>.json"*): each is judged by its own manifest in `spirit/test/app-child-browser.js`: no tile without `shell.mount: true`, a face that mounts with it, and for `node.run` the pane, the dropdown, Run and no Activate. This test judges only the apps it plants.
 

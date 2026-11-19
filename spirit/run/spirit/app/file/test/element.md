@@ -24,7 +24,7 @@ Andy: *"file should be the same as files is. i don't want to loose all the nice 
 
 ### New
 
-- A tiles mode, with the toggle between pane and tiles.
+- A tiles mode, its tiles drawn by the file search's tile part, with the switch between pane and tiles (goal/G47.4).
 - A file's icon by its kind, in the pane and the tiles alike: text 📜, video 📹, image 🌇, audio 🔊, a folder 📁, any other ❔, never 📄.
 - A press opens the file over all of file, one bar in view, the list out of view: text for text, media as `img`, `video` or `audio`, fstat only for a file of unknown kind. Text and media handed a file show their whole selves, the file picker too (Andy: *"i changed my mind"*).
 - The bars: `✏️ Text Editor: notes.txt`; `🌇 Media Viewer: pic.png`, `📹 Media Viewer: clip.mp4`, `🔊 Media Viewer: song.mp3`, the file's own icon (Q15); fstat's ends in the file's name.

@@ -9,7 +9,7 @@
 //     file keeps a stack over its own list.
 //
 // The list of files as a pane, where every app shares it (Q8): its Name, Size and Changed columns, search in names or in
-// contents, the folder tree, and the toggle to tiles. A press opens the file over the list, through panel (Q2): text for text,
+// contents, the folder tree, and the list or tiles switch. A press opens the file over the list, through panel (Q2): text for text,
 // media for video, image and audio, fstat alone for anything else (Q1: "file really just has two "openers", text and media").
 // A contents match opens text at its line, the words marked. Its ✕ hides the file, so pressing it again shows it as it was.
 (function () {
@@ -72,7 +72,6 @@
       stack = S.element.spirit.element.panel.create(box, listBox);
       list = S.element.spirit.element.search.file.create(listBox, {
         face: 'pane',
-        toggle: true,
         pick: function (row, key) {
           if (!row || row.kind !== 'file') return;
           var hit = row.line > 0;

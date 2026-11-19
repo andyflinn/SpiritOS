@@ -12,10 +12,10 @@
 //     root.row     the chosen app, null while none is
 //     one bubbling `change` on a pick, which shows that app's detail under the list; refresh() asks again
 //     options.face 'pane' is the list itself, 'tiles' the apps as tiles, 'dropdown' the dropdown
-//     options.toggle true: a pane or tiles flips between the two (goal/G43.9)
+//     (options.toggle went, goal/G47.4: the app search has a tile part, so its list or tiles switch is there by itself)
 //     options.hide   app keys left out of every face, beside app itself, which is never listed (goal/G43.18; Andy: "the shell
 //                    should exclude itself completely from the app-list")
-//   No options is the app mounted as an app or a shell (boot.js, a launch): the tiles, with the toggle, as the shell app drew it.
+//   No options is the app mounted as an app or a shell (boot.js, a launch): the tiles, with the list or tiles switch, as the shell app drew it.
 //
 // ONE SELECTOR, THREE FACES (goal/G43.9; Andy, box: "One appSelector, with three faces: dropdown, pane and tiles."): "tiles
 // shows active only, pane shows all", "and the picks differ: tiles launches, pane shows the detail with its button." Both open on
@@ -38,7 +38,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     return e && typeof e.create === 'function' ? e : null;
   }
   function createAppSelector(options) {
-    var o = options || { face: 'tiles', toggle: true };
+    var o = options || { face: 'tiles' };
     var hide = ['app'].concat(Array.isArray(o.hide) ? o.hide : []);
     var face = o.face === 'pane' || o.face === 'tiles' ? o.face : 'dropdown';
     var isPane = face !== 'dropdown';
@@ -141,7 +141,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
       stack = window.spirit.element.spirit.element.panel.create(root, listBox);
-      made = window.spirit.element.spirit.element.search.app.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
+      made = window.spirit.element.spirit.element.search.app.create(listBox, { face: face, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
         // The keys left out of every face, app itself always (goal/G43.18; Andy: "the shell should exclude itself completely
         // from the app-list").

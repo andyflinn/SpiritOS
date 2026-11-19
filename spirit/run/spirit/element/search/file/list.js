@@ -17,7 +17,7 @@
 //
 //   create(host, opts) -> the list (value, row, words(), refresh(), redraw(), sort(), destroy())
 //     opts.face         'pane' or 'dropdown'
-//     opts.toggle       true: a pane flips to tiles and back (goal/G43.17)
+//     (opts.toggle went, goal/G47.4: its tile part, ./tile.js, gives it the list or tiles switch by itself)
 //     opts.accept, opts.placeholder, opts.all, opts.empty
 //     opts.flat         true: no folders, never the tree (goal/G47.1); set in code only, nothing on screen shows it
 //     opts.name(row)    what the dropdown's field says once a file is picked; its path by default
@@ -28,7 +28,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) ['spirit/element/search/file/row.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.require) ['spirit/element/search/file/row.js', 'spirit/element/search/file/tile.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
   window.spirit.require('spirit/fs/api.js');
   function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
@@ -83,6 +83,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     // read the score or the line off the row lost both while the tree was still arriving (goal/G43.17).
     var lines = Object.create(null);
     var made = Object.create(null);     // path -> its row element, so a folder's press can say it is open (goal/G43.17: 📂)
+    var tiles = Object.create(null);    // path -> its tile, so a folder's press shows 📂 on its tile too
+    function tileIcon(row, p) { return row.kind === 'folder' ? (opened[p] ? '📂' : '📁') : (E.spirit.element.fstat ? E.spirit.element.fstat.iconOf(p) : '❔'); }
     var list = null;
     // FLAT (goal/G47.1): no folder row and never the indented tree, so every row shows its path.
     var flat = o.flat === true;
@@ -100,8 +102,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       server: 'fs',
       verb: 'search',
       face: o.face,
-      // A PANE OR ITS TILES (goal/G43.17: "It gains a tiles mode, with the toggle between pane and tiles").
-      toggle: o.toggle === true,
       placeholder: o.placeholder || 'choose a file…',
       all: o.all,
       // What the dropdown's field says once a file is picked: its path, or the mounter's words (text names it in its title bar).
@@ -112,11 +112,14 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
       ],
-      // A FILE'S TILE (goal/G43.17, Q14): its kind's icon, a folder 📁 shut and 📂 open, and its name.
+      // ITS TILE PART (goal/G47.4; goal/G43.17, Q14: its kind's icon, a folder 📁 shut and 📂 open, and its name): ./tile.js. A
+      // press on a tile does what a press on its row does, a folder opening or shutting. With it the shared search shows the
+      // list or tiles switch by itself (the toggle option went).
       tile: function (row, key) {
         var p = String(key || row.path || '');
-        var icon = row.kind === 'folder' ? (opened[p] ? '📂' : '📁') : (E.spirit.element.fstat ? E.spirit.element.fstat.iconOf(p) : '❔');
-        return { icon: icon, label: p.slice(p.lastIndexOf('/') + 1) };
+        var n = E.spirit.element.search.file.tile.create(Object.assign({ key: p }, row), { icon: tileIcon(row, p), press: function (r, k) { list.press(k); } });
+        tiles[p] = { node: n, row: row };
+        return n;
       },
       element: function (row, key) { var el = E.spirit.element.search.file.row.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
       // A file deleted on disc is held back from every draw: its row took itself out (./row.js, leave).
@@ -140,6 +143,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
         if (row.kind !== 'folder') return false;
         if (!list.words()) { if (opened[key]) delete opened[key]; else opened[key] = true; }
         if (made[key]) made[key].apply({ open: !!opened[key] });
+        var t = tiles[key];
+        if (t && E.spirit.element.icon) { var ic = t.node.querySelector('.icon'); if (ic) { ic.innerHTML = ''; E.spirit.element.icon.create(ic, { glyph: tileIcon(t.row, key) }); } }
         return true;
       },
       // A contents match is picked with its line, from what the search said (lines above), whatever the row holds now.

@@ -1642,7 +1642,7 @@ async function tilesPart() {
   const type = async function (w) { await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(w) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()'); await sleep(500); };
   test.run('the tiles face draws one tile per row', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
-    await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; window.__made = window.spirit.element.spirit.element.search.create(d, { face: "tiles", rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
+    await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; window.__plainTile = function (row, key) { var n = document.createElement("div"); n.className = "app-icon"; var ic = document.createElement("span"); ic.className = "icon"; ic.textContent = row.icon || ""; var bar = document.createElement("div"); bar.className = "tile-bar"; var lb = document.createElement("span"); lb.className = "label"; lb.textContent = row.label || ""; n.appendChild(ic); n.appendChild(bar); n.appendChild(lb); n.addEventListener("click", function () { (window.__picked = window.__picked || []).push(key); }); return n; }; window.__made = window.spirit.element.spirit.element.search.create(d, { face: "tiles", tile: window.__plainTile, rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
     await until(function () { return js('window.__box.querySelectorAll(".app-icon").length > 0'); }, 3000);
     plain = await read();
     // "the same ranked rows, drawn as tiles", "No column headers or sorting"
@@ -1671,7 +1671,7 @@ async function tilesPart() {
   // SUPPOSED TO, GID OR NO GRID!!!!!!!!!!!!!!"). Forty rows in a 400 by 240 px box, once as tiles, once as the list: nothing
   // of it is drawn below the box, and the rows that do not fit are reached by scrolling inside it.
   const contained = async function (face) {
-    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); var made = window.spirit.element.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', rows: function () { return rows; }, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
+    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); var made = window.spirit.element.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', tile: window.__plainTile, rows: function () { return rows; }, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
       ' return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var box = d.getBoundingClientRect(); var lowest = 0; [].forEach.call(d.querySelectorAll("*"), function (e) { var b = e.getBoundingClientRect(); if (!b.width || !b.height) return; var cut = false; for (var p = e.parentElement; p && p !== d; p = p.parentElement) { var o = getComputedStyle(p).overflowY; if ((o === "auto" || o === "scroll" || o === "hidden") && b.bottom > p.getBoundingClientRect().bottom + 1) { cut = true; break; } } if (!cut) lowest = Math.max(lowest, Math.round(b.bottom)); });' +
       ' var scrolls = [].some.call([d].concat([].slice.call(d.querySelectorAll("*"))), function (e) { var o = getComputedStyle(e).overflowY; return (o === "auto" || o === "scroll") && e.scrollHeight > e.clientHeight + 1; }); var out = { boxBottom: Math.round(box.bottom), lowest: lowest, scrolls: scrolls }; made.destroy(); d.remove(); return JSON.stringify(out); }); })()'));
   };
@@ -1840,33 +1840,20 @@ async function tilesPart() {
     pn = JSON.parse(pane);
     return (pn.tiles === 0 && pn.headers > 0) ? true : false;
   }, test.limit.quick);
-  const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.element.spirit.element.search.create(d, Object.assign({ rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
-  const drop = function () { return js('(function () { window.__t.remove(); return true; })()'); };
+  const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.element.spirit.element.search.create(d, Object.assign({ tile: window.__plainTile, rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
+  const drop = function () { return js('(function () { if (window.__t) window.__t.remove(); return true; })()'); };
   const toggles = function () { return js('window.__t.querySelectorAll(".list-toggle").length'); };
-  test.run('a pane without the option has no toggle', 0.2, async function () {
-    if (!node || !node.up || !chrome || chrome.error) return false;
-    // Named here for the builder: the toggle is .list-toggle, and the owner hears through the option onFace(face).
-    // the box: "A new option, toggle: true. Without it nothing changes for any other list."
-    await make({ face: 'pane' });
-    return (await toggles() === 0) ? true : false;
-  }, test.limit.quick);
-  test.run('tiles without the option have no toggle', 0.2, async function () {
-    if (!node || !node.up || !chrome || chrome.error) return false;
-    await drop();
-    await make({ face: 'tiles' });
-    return (await toggles() === 0) ? true : false;
-  }, test.limit.quick);
-  test.run('a dropdown with the option has no toggle', 0.2, async function () {
+  test.run('a dropdown has no toggle, even with a tile part', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await drop();
     // the box: "It flips pane and tiles only. Dropdown closes to a field, so it never shows the toggle."
-    await make({ face: 'dropdown', toggle: true });
+    await make({ face: 'dropdown' });
     return (await toggles() === 0) ? true : false;
   }, test.limit.quick);
-  test.run('a pane with the option has one toggle', 0.2, async function () {
+  test.run('a pane with a tile part has one toggle', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await drop();
-    await make({ face: 'pane', toggle: true });
+    await make({ face: 'pane' });
     return (await toggles() === 1) ? true : false;
   }, test.limit.quick);
   test.run('the toggle follows the Search button', 0.2, async function () {

@@ -36,15 +36,19 @@
 //   face                       'pane' (the default) or 'dropdown' (goal/G30.20): a closed field with the chosen row's name
 //                              or the placeholder, opening to the same list; a pick closes it. placeholder, all (a None
 //                              button that picks nothing, its words the field's while nothing is chosen) and name(row)
-//                              are the dropdown's. Or 'tiles' (goal/G43.6): the same ranked rows, each row.icon above
-//                              the relevance above row.label, the row itself in the tooltip; no headers, no sorting
-//   toggle                     true: a button after Search flips pane and tiles, the words kept (goal/G43.9); never on a dropdown
+//                              are the dropdown's. Or 'tiles' (goal/G43.6): the same ranked rows as tiles, for a search
+//                              handed a tile part (below); one handed none opens as a pane
+//   (toggle)                   gone (goal/G47.4): a search handed a tile part shows the list or tiles switch after Search by
+//                              itself, never on a dropdown; one handed none shows none, asked or not
 //   order(a, b)                optional: the owner's order of two rows while no words are typed and no column is sorted, in
 //                              place of the order the rows came (goal/G47.1: testicle's reds first, the most severe first)
 //   most                       optional: the most rows shown, the first of that order (goal/G47.1: testicle's "up to 100 tests")
 //   onFace(face)               told the new face, 'pane' or 'tiles', before the list draws
-//   tile(row, key)             optional: { icon, label } of a tile, where the row's own icon and label are not (goal/G43.17,
-//                              Q14: a file's tile shows its kind's icon and its name); either left out is the row's
+//   tile(row, key)             optional, the search's TILE PART (goal/G47.4, the box: "Tile mode is a search's own: a search
+//                              that has a tile.js, beside its row.js, has tile mode. Its tile.js draws its tile and decides
+//                              what a press does"): answers the tile's node, made once per row, as element(row, key) answers
+//                              a row's; the node takes its own press, and the shared search picks nothing on it. A node
+//                              holding an element of class tile-bar has the relevance drawn into it (goal/G43.6)
 //   visible(row)               false holds a row back; asked at every draw
 //   filters                    [{ name, test(row, value), when, toggle, multi, keepOne, choices }]: a multi filter's value is
 //                              the choices turned off; keepOne keeps its last choice on, a press that would turn it off ignored;
@@ -54,7 +58,9 @@
 //                              are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
 //                              element's change redraws the list, and its test narrows it as a filter's does
-// }) -> { value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
+// }) -> { value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), press(key), destroy }
+//   press(key): what a press on that row does (its fold, its details, else its pick), for a tile part that hands its press on
+//   (goal/G47.4: a tile part decides what a press does; the file search's folder tile opens its folder).
 //
 // spirit.element.spirit.element.search.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, score }.
@@ -189,9 +195,12 @@
     var shown = [];
     var snap = false;
     var dropdown = o.face === 'dropdown';
-    var tiles = o.face === 'tiles';
-    // THE TOGGLE (goal/G43.9; Andy, box: "A new option, toggle: true."): pane and tiles only, as "Dropdown closes to a field".
-    var toggling = o.toggle === true && !dropdown;
+    // TILE MODE IS A SEARCH'S OWN (goal/G47.4, the box: "The shared search shows the list or tiles switch beside its Search
+    // button for a search that has a tile part; a search without one is a list only, with no switch and no tiles. The
+    // mounter's toggle option and the shared search's own plain tile go"; "the mounter still picks which face a search opens in").
+    var tilePart = typeof o.tile === 'function';
+    var tiles = o.face === 'tiles' && tilePart;
+    var toggling = tilePart && !dropdown;
     function toggleGlyph() { return tiles ? '☰' : '▦'; }
     var open = !dropdown;
     var self = { value: '', row: null };
@@ -394,17 +403,12 @@
           return (!r.isKey || r.flag) && r.path !== 'icon';
         }).map(function (r) { return r.path + ': ' + (r.isKey ? 'true' : r.objectString); }).join('\n');
       }
-      // What a tile shows: what the list hands for it, else the row's own (goal/G43.17, Q14).
-      function tileOf(w) {
-        var t = (typeof o.tile === 'function' ? o.tile(w.row || {}, w.key) : null) || {};
-        return { icon: t.icon != null ? t.icon : w.row && w.row.icon, label: t.label != null ? t.label : w.row && w.row.label };
-      }
       var list = el('list');
       if (!list) return;
       if (snap) list.scrollTop = 0;
       keep(list, rows, {
         searching: searching,
-        bar: bar, tileBar: tileBar, tileTip: tileTip, tileOf: tileOf,
+        bar: bar, tileBar: tileBar, tileTip: tileTip,
       });
     }
 
@@ -458,8 +462,9 @@
       if (entry.node) return entry.node;
       var n;
       if (tiles) {
-        n = make('div');
-        n.className = 'app-icon';
+        // THE TILE PART DRAWS THE TILE (goal/G47.4): its node, made once, as a row's element is.
+        n = o.tile(w.row || {}, w.key);
+        if (!n || typeof n.setAttribute !== 'function') n = make('div');
       } else {
         n = make('tr', 'cursor:pointer');
         columns.forEach(function (c) {
@@ -486,16 +491,14 @@
       var n = entry.node;
       var rowNow = entry.el ? entry.el.row : entry.row;
       if (tiles) {
-        var t = how.tileOf(w);
+        // The part paints its own tile; the shared search draws only the relevance, into the part's tile-bar, when it changed
+        // (goal/G43.6: "The relevance is a centered, horizontal bar, between the tile image and the tile label").
+        var slot = typeof n.querySelector === 'function' ? n.querySelector('.tile-bar') : null;
         var tileWas = entry.painted;
-        // REPAINTED WHEN WHAT IT SHOWS CHANGED: its icon, label and tip as they now read, not the row object, which a row's
-        // element changes in place (so a label renamed on the stream was never painted).
-        var tip = how.tileTip(w.row);
-        if (!tileWas || tileWas.icon !== t.icon || tileWas.label !== t.label || tileWas.tip !== tip || tileWas.words !== typed || tileWas.rank !== w.rank) {
-          n.title = tip;
-          n.innerHTML = '<span class="icon">' + iconHtml(t.icon) + '</span>' + how.tileBar(w) + '<span class="label">' + mark(t.label) + '</span>';
-          entry.painted = { row: rowNow, icon: t.icon, label: t.label, tip: tip, words: typed, rank: w.rank };
-        }
+        if (slot && (!tileWas || tileWas.words !== typed || tileWas.rank !== w.rank)) slot.innerHTML = how.tileBar(w);
+        // The row itself in the tooltip (goal/G43.6), unless the part set one of its own.
+        if (!n.title || (tileWas && n.title === tileWas.tip)) { var tip = how.tileTip(w.row); n.title = tip; entry.painted = { row: rowNow, words: typed, rank: w.rank, tip: tip }; return; }
+        entry.painted = { row: rowNow, words: typed, rank: w.rank };
         return;
       }
       // The match column, first while words are typed: added, drawn and taken away in the row itself.
@@ -757,7 +760,8 @@
         // ENTER IN THE SEARCH FIELD SEARCHES, and only that (Andy: "that enter belong to the search input box only");
         // Enter on the list opens the current row.
         if (e.target && e.target.id === pre + 'text') { stop(); ask(); return; }
-        if (currentKey != null && byKey[currentKey]) { stop(); pressRow(byKey[currentKey]); return; }
+        // On tiles, Enter presses the current tile itself, so its part hears it as a click.
+        if (currentKey != null && byKey[currentKey]) { stop(); if (tiles) { var tn = byKey[currentKey].node; if (tn && typeof tn.click === 'function') tn.click(); return; } pressRow(byKey[currentKey]); return; }
       }
     });
     own.addEventListener('click', function (e) {
@@ -801,6 +805,8 @@
       }
       // A press inside a row's element (its own action buttons) is the element's, not a row press.
       if (typeof t.closest === 'function' && t.closest('[data-action]')) return;
+      // A PRESS ON A TILE IS THE TILE PART'S (goal/G47.4): its node hears it, and the shared search picks nothing itself.
+      if (tiles) return;
       pressRow(rowOf(t));
     });
     // A PRESS ELSEWHERE SHUTS AN OPEN DROPDOWN; a row a press drew away (a folder folding) is not elsewhere.
@@ -823,6 +829,7 @@
     self.words = function () { return words(); };
     self.ask = function (verb, args) { return lend(verb, args); };
     self.sort = setSort;
+    self.press = function (key) { if (key != null && byKey[key]) pressRow(byKey[key]); };
     self.destroy = function () {
       live = false;
       selectors.forEach(function (s) { if (typeof s.element.removeEventListener === 'function') s.element.removeEventListener('change', onSelector); });

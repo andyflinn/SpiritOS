@@ -13,7 +13,7 @@
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  ['spirit/element/search.js', 'spirit/element/search/app/row.js'].forEach(function (p) { window.spirit.require(p); });
+  ['spirit/element/search.js', 'spirit/element/search/app/row.js', 'spirit/element/search/app/tile.js'].forEach(function (p) { window.spirit.require(p); });
   window.spirit.require('spirit/app/api.js');
 
   function create(host, opts) {
@@ -34,7 +34,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       server: 'app',
       verb: 'search',
       face: o.face,
-      toggle: o.toggle === true,
+      // ITS TILE PART (goal/G47.4): an app's tile, ./tile.js; a press on it picks the app, as a press on its row does. With it
+      // the shared search shows the list or tiles switch by itself (the toggle option went).
+      tile: function (row, key) { return window.spirit.element.spirit.element.search.app.tile.create(row, { press: function (r, k) { if (typeof o.pick === 'function') o.pick(r, k); } }); },
       onFace: function (f) { face = f; if (typeof o.onFace === 'function') o.onFace(f); },
       visible: o.visible,
       placeholder: 'choose an app…',

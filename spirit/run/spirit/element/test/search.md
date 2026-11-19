@@ -26,9 +26,9 @@ draws and ranks.
   - `entries` is `[{ key, row, at, gone, el }]`.
   - `state` is `{ words, values, filters, sort: { field, direction }, columns, score }`.
   - It returns `[{ key, row, rank, entry }]`.
-- `create(container, options)` returns `{ value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }`.
+- `create(container, options)` returns `{ value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), press(key), destroy }`; `press(key)` does what a press on that row does, for a tile part that hands its press on (goal/G47.4).
   - The options are those its header lists: `server`, `verb`, `search`, `published`, `args`, `columns`, `data`, `element`, `face`,
-    `toggle`, `onFace`, `tile`, `visible`, `filters`, `selectors`, `score`, `rows`, `fold`, `details`, `pick`, `empty`,
+    `onFace`, `tile`, `visible`, `filters`, `selectors`, `score`, `rows`, `fold`, `details`, `pick`, `empty`,
     `placeholder`, `all`, `name`. A `matched` is not read (goal/G41.28).
 - `matchRanges(text, words)` returns `[[from, to), ...]`.
 
@@ -224,21 +224,20 @@ Andy, box: *"probabilitySearch gets a third face, 'tiles', beside 'pane' and 'dr
 - The tooltip shows the row, one `path: value` above the other, drawn from the scan `probabilityStringObjectMatch` uses: `measureObject`, exported, whose rows carry their js object path (`stats.cpu`, `files[0].name`). The `icon` row is dropped.
 - A pane stays a table with headers.
 
-### The toggle (goal/G43.9)
+### The switch between list and tiles (goal/G43.9; goal/G47.4)
 
-- *"A new option, toggle: true. Without it nothing changes for any other list."* No option, no toggle, on a pane or on tiles.
-- *"It flips pane and tiles only. Dropdown closes to a field, so it never shows the toggle."*
+- A search handed a tile part shows the switch; the toggle option went (goal/G47.4). A dropdown never shows it: *"Dropdown closes to a field, so it never shows the toggle."*
 - *"The toggle sits on the search row, right after the Search button."* It is the next element after that button.
 - *"The face can change while the list lives, keeping the search words."* A press draws the other face, words kept, and a second press goes back.
-- *"It tells its owner the new face."*
+- *"It tells its owner the new face."* The switch is `.list-toggle`, and the owner hears through the option `onFace(face)`.
 
-The box names neither, so the test names them for the builder: the toggle is `.list-toggle`, and the owner hears through the option `onFace(face)`. If the build names them otherwise, the verifier corrects the test.
+The checks that draw tiles hand the search a plain tile part of their own, drawn as the shared search once drew its plain tile: the image, a `tile-bar` the search fills with the relevance, and the label; its press records the pick.
 
 ### What a list hands its tiles (goal/G43.17, Q14)
 
 Andy, on Q14 *"May I change the shared search list, so the Files tiles can show each file's own icon and name?"*: *"yes."*
 
-- The option `tile(row, key)` answers `{ icon, label }` for a tile. Either one left out is the row's own `row.icon` or `row.label`; without the option nothing changes for any other list.
+- Since goal/G47.4 the option `tile(row, key)` is the search's tile part and answers the tile's node (below); the files list hands its own, `spirit/element/search/file/tile.js`.
 - The files list hands a file its kind's icon (fstat's `iconOf`), a folder 📁 shut and 📂 open, and the file's name.
 
 - A grid of tiles (goal/G47.1; Andy: *"the FUCKING TILE MODE IN APP-SEARCH (OR SEARCH ITSELF) FUCKING IS NO GRID ANYMORE, EVERY FUCKING TILE IS CENTERED ON IT'S OWN FUCKING ROW!"*): three tiles in an 800 px box share one line, left to right, each apart from the next.
