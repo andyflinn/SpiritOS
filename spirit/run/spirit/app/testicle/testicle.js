@@ -374,6 +374,7 @@ function nextJob() {
   const end = function () {
     if (done) return;
     done = true;
+    j.endedAt = Date.now();
     clearTimeout(j.timer);
     if (job === j) job = null;
     // Its temp folder judged once the run has ended (judgeStray), before the run is judged whole.
@@ -395,6 +396,7 @@ function nextJob() {
     // What the run folder holds before the run (judgeLitter).
     if (!j.classify) j.runNames = runNames();
     j.mark = String(process.pid) + '-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    j.launchedAt = Date.now();
     j.kid = spawn(process.execPath, args, { cwd: RUN, env: Object.assign({}, process.env, extra || {}, { [RUN_MARK]: j.mark }), stdio: 'ignore', windowsHide: true });
     j.kid.on('error', end);
     j.kid.on('exit', function (code) { j.exitCode = code; end(); });
@@ -631,18 +633,29 @@ function processesOf(j) {
       } catch (e) { out = []; }
       return resolve(out);
     }
+    // A PROCESS ID COMES BACK ON WINDOWS (andy's node: nodeStore's suite, which starts nothing, was red on LEFTOVER): once the
+    // suite has ended, a new process may get its id, and that one's children read as the suite's. So each process comes with
+    // the time it was made, and only one made while the suite ran (from its start to its end) counts as its child; what
+    // descends from such a child counts if made after the suite started. Elsewhere ps gives no such time here, and the mark
+    // decides on Linux.
     const list = process.platform === 'win32'
-      ? ['powershell', ['-NoProfile', '-NonInteractive', '-Command', 'Get-CimInstance Win32_Process | ForEach-Object { "$($_.ProcessId) $($_.ParentProcessId)" }']]
+      ? ['powershell', ['-NoProfile', '-NonInteractive', '-Command', 'Get-CimInstance Win32_Process | ForEach-Object { "$($_.ProcessId) $($_.ParentProcessId) $(([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds())" }']]
       : ['ps', ['-A', '-o', 'pid=,ppid=']];
     execFile(list[0], list[1], { windowsHide: true, timeout: 30000, maxBuffer: 1 << 24 }, function (err, stdout) {
       if (err) return resolve([]);
       const kids = Object.create(null);
+      const made = Object.create(null);
       String(stdout || '').split(/\r?\n/).forEach(function (l) {
-        const m = /^\s*(\d+)\s+(\d+)\s*$/.exec(l);
-        if (m) (kids[m[2]] = kids[m[2]] || []).push(Number(m[1]));
+        const m = /^\s*(\d+)\s+(\d+)(?:\s+(\d+))?\s*$/.exec(l);
+        if (!m) return;
+        (kids[m[2]] = kids[m[2]] || []).push(Number(m[1]));
+        if (m[3]) made[m[1]] = Number(m[3]);
       });
+      const from = (Number(j.launchedAt) || 0) - 1000;
+      const until = (Number(j.endedAt) || Date.now()) + 1000;
+      const fits = function (c, direct) { const t = made[c]; if (t === undefined) return process.platform !== 'win32'; return t >= from && (!direct || t <= until); };
       const out = [];
-      (function down(pid) { (kids[pid] || []).forEach(function (c) { if (out.indexOf(c) === -1 && c !== process.pid) { out.push(c); down(String(c)); } }); }(String(j.kid.pid)));
+      (function down(pid, direct) { (kids[pid] || []).forEach(function (c) { if (out.indexOf(c) === -1 && c !== process.pid && fits(String(c), direct)) { out.push(c); down(String(c), false); } }); }(String(j.kid.pid), true));
       resolve(out);
     });
   });

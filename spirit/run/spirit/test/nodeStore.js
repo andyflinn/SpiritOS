@@ -14,7 +14,8 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/nodeStore/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/nodeStore'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// Its folder is removed by the last after, once every store in it is closed: on Windows a folder holding an open database
+// cannot be removed, and the suite was red on 'it leaves no temp folder behind' for that alone.
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 const { DatabaseSync } = require('node:sqlite');
@@ -514,5 +515,6 @@ test.run('the old row is kept as it was', 0.2, function () {
 
 test.after(function () {
   [W.s, W.sh, W.t, W.q, W.a, W.old].forEach(function (s) { if (s) s.close(); });
+  try { fs.rmSync(tempFolder.path('spirit/test/nodeStore'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
   try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
