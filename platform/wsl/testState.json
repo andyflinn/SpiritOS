@@ -1,12 +1,12 @@
 {
   "platform": "wsl",
-  "measuredAt": "2026-11-18T15:26:57.748Z",
-  "commit": "f4ceb1e16",
+  "measuredAt": "2026-11-19T01:15:52.494Z",
+  "commit": "e219eee14",
   "from": "testicle.db: the current result of each test this node's testicle keeps; no suite was run for this report",
   "note": "",
-  "tests": 25883,
-  "green": 25546,
-  "red": 337,
+  "tests": 26460,
+  "green": 26262,
+  "red": 198,
   "suites": [
     {
       "script": "spirit/DEBUG.js",
@@ -22,7 +22,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:56.049Z"
+      "newestAt": "2026-11-18T23:48:48.450Z"
     },
     {
       "script": "spirit/DEBUG.js",
@@ -54,7 +54,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:56.477Z"
+      "newestAt": "2026-11-18T23:48:48.839Z"
     },
     {
       "script": "spirit/DEBUG/garbageArguments.js",
@@ -86,7 +86,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:56.888Z"
+      "newestAt": "2026-11-18T23:48:49.220Z"
     },
     {
       "script": "spirit/DEBUG/headLessBrowser.js",
@@ -118,7 +118,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:57.312Z"
+      "newestAt": "2026-11-18T23:48:49.670Z"
     },
     {
       "script": "spirit/answerRelay.js",
@@ -139,10 +139,10 @@
     {
       "script": "spirit/apiAuth.js",
       "suite": "spirit/test/apiAuth.js",
-      "tests": 97,
-      "green": 97,
+      "tests": 100,
+      "green": 100,
       "red": 0,
-      "newestAt": "2026-11-18T09:07:41.123Z"
+      "newestAt": "2026-11-18T23:53:40.070Z"
     },
     {
       "script": "spirit/apiAuth.js",
@@ -150,7 +150,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:57.710Z"
+      "newestAt": "2026-11-18T23:48:50.267Z"
     },
     {
       "script": "spirit/apiAuth.js",
@@ -182,7 +182,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:58.121Z"
+      "newestAt": "2026-11-18T23:48:50.679Z"
     },
     {
       "script": "spirit/apiDoor.js",
@@ -222,7 +222,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:58.523Z"
+      "newestAt": "2026-11-18T23:48:51.141Z"
     },
     {
       "script": "spirit/app.js",
@@ -258,11 +258,19 @@
     },
     {
       "script": "spirit/app/agent/agent.js",
+      "suite": "spirit/test/job.js",
+      "tests": 1,
+      "green": 1,
+      "red": 0,
+      "newestAt": "2026-11-18T23:54:29.143Z"
+    },
+    {
+      "script": "spirit/app/agent/agent.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:58.917Z"
+      "newestAt": "2026-11-18T23:48:51.560Z"
     },
     {
       "script": "spirit/app/agent/agent.js",
@@ -310,7 +318,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:59.336Z"
+      "newestAt": "2026-11-18T23:48:51.998Z"
     },
     {
       "script": "spirit/app/agent/api.js",
@@ -366,7 +374,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:48:59.733Z"
+      "newestAt": "2026-11-18T23:48:52.416Z"
     },
     {
       "script": "spirit/app/agent/data.js",
@@ -422,7 +430,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:00.154Z"
+      "newestAt": "2026-11-18T23:48:52.842Z"
     },
     {
       "script": "spirit/app/agent/element.js",
@@ -470,7 +478,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:00.591Z"
+      "newestAt": "2026-11-18T23:48:53.381Z"
     },
     {
       "script": "spirit/app/agent/element/chatPane.js",
@@ -518,7 +526,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:01.041Z"
+      "newestAt": "2026-11-18T23:48:53.781Z"
     },
     {
       "script": "spirit/app/agent/element/table/job/elementRow.js",
@@ -566,7 +574,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:01.474Z"
+      "newestAt": "2026-11-18T23:48:53.905Z"
     },
     {
       "script": "spirit/app/agent/element/table/job/elementTable.js",
@@ -614,7 +622,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:01.908Z"
+      "newestAt": "2026-11-18T23:48:54.254Z"
     },
     {
       "script": "spirit/app/agent/element/table/model/elementRow.js",
@@ -662,7 +670,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:02.350Z"
+      "newestAt": "2026-11-18T23:48:54.667Z"
     },
     {
       "script": "spirit/app/agent/element/table/model/elementTable.js",
@@ -710,7 +718,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:02.779Z"
+      "newestAt": "2026-11-18T23:48:55.109Z"
     },
     {
       "script": "spirit/app/agent/element/table/persona/elementRow.js",
@@ -758,7 +766,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:03.207Z"
+      "newestAt": "2026-11-18T23:48:55.528Z"
     },
     {
       "script": "spirit/app/agent/element/table/persona/elementTable.js",
@@ -806,7 +814,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:03.669Z"
+      "newestAt": "2026-11-18T23:48:55.917Z"
     },
     {
       "script": "spirit/app/agent/element/table/provider/elementRow.js",
@@ -854,7 +862,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:04.085Z"
+      "newestAt": "2026-11-18T23:48:56.344Z"
     },
     {
       "script": "spirit/app/agent/element/table/provider/elementTable.js",
@@ -902,7 +910,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:00.930Z"
+      "newestAt": "2026-11-18T23:48:56.777Z"
     },
     {
       "script": "spirit/app/agent/element/table/row.js",
@@ -950,7 +958,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:04.523Z"
+      "newestAt": "2026-11-18T23:48:57.207Z"
     },
     {
       "script": "spirit/app/agent/element/table/tableElement.js",
@@ -990,7 +998,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:05.016Z"
+      "newestAt": "2026-11-18T23:48:57.593Z"
     },
     {
       "script": "spirit/app/agent/nodeAgent.js",
@@ -1030,7 +1038,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:05.345Z"
+      "newestAt": "2026-11-18T23:48:57.702Z"
     },
     {
       "script": "spirit/app/agent/provider/anthropic/anthropic.js",
@@ -1070,7 +1078,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:05.707Z"
+      "newestAt": "2026-11-18T23:48:58.111Z"
     },
     {
       "script": "spirit/app/agent/provider/openai/openai.js",
@@ -1110,7 +1118,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:06.125Z"
+      "newestAt": "2026-11-18T23:48:58.618Z"
     },
     {
       "script": "spirit/app/agent/table/job/server.js",
@@ -1150,7 +1158,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:06.302Z"
+      "newestAt": "2026-11-18T23:48:59.223Z"
     },
     {
       "script": "spirit/app/agent/table/model/server.js",
@@ -1190,7 +1198,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:06.490Z"
+      "newestAt": "2026-11-18T23:48:59.672Z"
     },
     {
       "script": "spirit/app/agent/table/persona/server.js",
@@ -1230,7 +1238,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:06.935Z"
+      "newestAt": "2026-11-18T23:49:00.122Z"
     },
     {
       "script": "spirit/app/agent/table/provider/server.js",
@@ -1270,7 +1278,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:07.339Z"
+      "newestAt": "2026-11-18T23:49:00.572Z"
     },
     {
       "script": "spirit/app/agent/table/rowTable.js",
@@ -1318,7 +1326,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:07.768Z"
+      "newestAt": "2026-11-18T23:49:00.992Z"
     },
     {
       "script": "spirit/app/api.js",
@@ -1374,7 +1382,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:08.201Z"
+      "newestAt": "2026-11-18T23:49:01.368Z"
     },
     {
       "script": "spirit/app/app/element.js",
@@ -1422,7 +1430,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:08.621Z"
+      "newestAt": "2026-11-18T23:49:01.767Z"
     },
     {
       "script": "spirit/app/backup/api.js",
@@ -1466,11 +1474,19 @@
     },
     {
       "script": "spirit/app/backup/backup.js",
+      "suite": "spirit/test/job.js",
+      "tests": 1,
+      "green": 1,
+      "red": 0,
+      "newestAt": "2026-11-18T23:54:29.201Z"
+    },
+    {
+      "script": "spirit/app/backup/backup.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:09.047Z"
+      "newestAt": "2026-11-18T23:49:02.137Z"
     },
     {
       "script": "spirit/app/backup/backup.js",
@@ -1518,7 +1534,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:09.469Z"
+      "newestAt": "2026-11-18T23:49:02.503Z"
     },
     {
       "script": "spirit/app/backup/data.js",
@@ -1574,7 +1590,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:09.924Z"
+      "newestAt": "2026-11-18T23:49:02.926Z"
     },
     {
       "script": "spirit/app/chat/api.js",
@@ -1618,11 +1634,19 @@
     },
     {
       "script": "spirit/app/chat/chat.js",
+      "suite": "spirit/test/job.js",
+      "tests": 1,
+      "green": 1,
+      "red": 0,
+      "newestAt": "2026-11-18T23:54:29.266Z"
+    },
+    {
+      "script": "spirit/app/chat/chat.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:10.347Z"
+      "newestAt": "2026-11-18T23:49:03.042Z"
     },
     {
       "script": "spirit/app/chat/chat.js",
@@ -1670,7 +1694,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:10.811Z"
+      "newestAt": "2026-11-18T23:49:03.434Z"
     },
     {
       "script": "spirit/app/chat/data.js",
@@ -1726,7 +1750,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:11.279Z"
+      "newestAt": "2026-11-18T23:49:03.895Z"
     },
     {
       "script": "spirit/app/chat/element.js",
@@ -1766,7 +1790,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:11.699Z"
+      "newestAt": "2026-11-18T23:49:03.972Z"
     },
     {
       "script": "spirit/app/chat/nodeChat.js",
@@ -1814,7 +1838,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:12.226Z"
+      "newestAt": "2026-11-18T23:49:04.443Z"
     },
     {
       "script": "spirit/app/contact/element.js",
@@ -1862,7 +1886,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:12.642Z"
+      "newestAt": "2026-11-18T23:49:04.802Z"
     },
     {
       "script": "spirit/app/data.js",
@@ -1918,7 +1942,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:13.083Z"
+      "newestAt": "2026-11-18T23:49:05.208Z"
     },
     {
       "script": "spirit/app/desk/api.js",
@@ -1966,7 +1990,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:13.495Z"
+      "newestAt": "2026-11-18T23:49:05.636Z"
     },
     {
       "script": "spirit/app/desk/cacheRules.js",
@@ -2014,7 +2038,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:13.909Z"
+      "newestAt": "2026-11-18T23:49:05.760Z"
     },
     {
       "script": "spirit/app/desk/data.js",
@@ -2058,11 +2082,19 @@
     },
     {
       "script": "spirit/app/desk/desk.js",
+      "suite": "spirit/test/job.js",
+      "tests": 1,
+      "green": 1,
+      "red": 0,
+      "newestAt": "2026-11-18T23:54:29.348Z"
+    },
+    {
+      "script": "spirit/app/desk/desk.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:14.320Z"
+      "newestAt": "2026-11-18T23:49:06.162Z"
     },
     {
       "script": "spirit/app/desk/desk.js",
@@ -2102,7 +2134,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:14.746Z"
+      "newestAt": "2026-11-18T23:49:06.547Z"
     },
     {
       "script": "spirit/app/desk/deskAgentEar.js",
@@ -2142,7 +2174,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:15.162Z"
+      "newestAt": "2026-11-18T23:49:06.950Z"
     },
     {
       "script": "spirit/app/desk/deskLoop.js",
@@ -2182,7 +2214,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:15.630Z"
+      "newestAt": "2026-11-18T23:49:07.424Z"
     },
     {
       "script": "spirit/app/desk/element.js",
@@ -2230,7 +2262,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:16.105Z"
+      "newestAt": "2026-11-18T23:49:07.614Z"
     },
     {
       "script": "spirit/app/desk/element/desk/desk.js",
@@ -2278,7 +2310,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:16.569Z"
+      "newestAt": "2026-11-18T23:49:08.092Z"
     },
     {
       "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
@@ -2318,7 +2350,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:17.007Z"
+      "newestAt": "2026-11-18T23:49:08.534Z"
     },
     {
       "script": "spirit/app/desk/nodeDesk.js",
@@ -2366,7 +2398,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:17.430Z"
+      "newestAt": "2026-11-18T23:49:08.943Z"
     },
     {
       "script": "spirit/app/deskClient/api.js",
@@ -2422,7 +2454,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:17.836Z"
+      "newestAt": "2026-11-18T23:49:09.056Z"
     },
     {
       "script": "spirit/app/deskClient/data.js",
@@ -2466,11 +2498,19 @@
     },
     {
       "script": "spirit/app/deskClient/deskClient.js",
+      "suite": "spirit/test/job.js",
+      "tests": 1,
+      "green": 1,
+      "red": 0,
+      "newestAt": "2026-11-18T23:54:29.402Z"
+    },
+    {
+      "script": "spirit/app/deskClient/deskClient.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:18.255Z"
+      "newestAt": "2026-11-18T23:49:09.541Z"
     },
     {
       "script": "spirit/app/deskClient/deskClient.js",
@@ -2518,7 +2558,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:18.778Z"
+      "newestAt": "2026-11-18T23:49:10.007Z"
     },
     {
       "script": "spirit/app/file/element.js",
@@ -2566,7 +2606,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:19.336Z"
+      "newestAt": "2026-11-18T23:49:10.526Z"
     },
     {
       "script": "spirit/app/grants/element.js",
@@ -2614,7 +2654,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:19.757Z"
+      "newestAt": "2026-11-18T23:49:10.926Z"
     },
     {
       "script": "spirit/app/icons/api.js",
@@ -2670,7 +2710,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:20.169Z"
+      "newestAt": "2026-11-18T23:49:11.333Z"
     },
     {
       "script": "spirit/app/icons/data.js",
@@ -2726,7 +2766,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:20.665Z"
+      "newestAt": "2026-11-18T23:49:11.793Z"
     },
     {
       "script": "spirit/app/icons/element.js",
@@ -2766,7 +2806,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:21.094Z"
+      "newestAt": "2026-11-18T23:49:12.200Z"
     },
     {
       "script": "spirit/app/icons/icons.js",
@@ -2806,7 +2846,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:21.512Z"
+      "newestAt": "2026-11-18T23:49:12.597Z"
     },
     {
       "script": "spirit/app/icons/nodeIcons.js",
@@ -2854,7 +2894,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:22.013Z"
+      "newestAt": "2026-11-18T23:49:13.092Z"
     },
     {
       "script": "spirit/app/info/element.js",
@@ -2902,7 +2942,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:22.536Z"
+      "newestAt": "2026-11-18T23:49:13.598Z"
     },
     {
       "script": "spirit/app/introSpector/element.js",
@@ -2910,7 +2950,7 @@
       "tests": 21,
       "green": 20,
       "red": 1,
-      "newestAt": "2026-11-18T13:01:19.784Z"
+      "newestAt": "2026-11-18T23:58:21.152Z"
     },
     {
       "script": "spirit/app/introSpector/element.js",
@@ -2950,7 +2990,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:22.958Z"
+      "newestAt": "2026-11-18T23:49:13.768Z"
     },
     {
       "script": "spirit/app/job/element.js",
@@ -2998,7 +3038,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:23.520Z"
+      "newestAt": "2026-11-18T23:49:14.288Z"
     },
     {
       "script": "spirit/app/join/element.js",
@@ -3046,7 +3086,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:24.027Z"
+      "newestAt": "2026-11-18T23:49:14.789Z"
     },
     {
       "script": "spirit/app/media/element.js",
@@ -3094,7 +3134,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:24.528Z"
+      "newestAt": "2026-11-18T23:49:15.267Z"
     },
     {
       "script": "spirit/app/monitor/element.js",
@@ -3134,7 +3174,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:24.946Z"
+      "newestAt": "2026-11-18T23:49:15.671Z"
     },
     {
       "script": "spirit/app/publishData/agentReadme.js",
@@ -3174,7 +3214,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-16T01:54:55.109Z"
+      "newestAt": "2026-11-18T23:49:16.070Z"
     },
     {
       "script": "spirit/app/publishData/measure.js",
@@ -3195,10 +3235,10 @@
     {
       "script": "spirit/app/publishData/publishData.js",
       "suite": "spirit/app/publishData/test/publishData.js",
-      "tests": 71,
-      "green": 71,
+      "tests": 73,
+      "green": 73,
       "red": 0,
-      "newestAt": "2026-11-18T00:41:01.627Z"
+      "newestAt": "2026-11-18T16:34:54.172Z"
     },
     {
       "script": "spirit/app/publishData/publishData.js",
@@ -3206,7 +3246,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-18T01:15:47.776Z"
+      "newestAt": "2026-11-18T16:30:35.077Z"
     },
     {
       "script": "spirit/app/publishData/publishData.js",
@@ -3214,7 +3254,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:25.356Z"
+      "newestAt": "2026-11-18T23:49:16.209Z"
     },
     {
       "script": "spirit/app/publishData/publishData.js",
@@ -3222,15 +3262,15 @@
       "tests": 46,
       "green": 46,
       "red": 0,
-      "newestAt": "2026-11-18T07:54:54.178Z"
+      "newestAt": "2026-11-18T16:30:36.657Z"
     },
     {
       "script": "spirit/app/publishData/publishData.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-18T00:26:28.379Z"
+      "newestAt": "2026-11-18T16:30:38.085Z"
     },
     {
       "script": "spirit/app/pullOrigin/pullOrigin.js",
@@ -3254,7 +3294,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:09.011Z"
+      "newestAt": "2026-11-18T23:49:16.598Z"
     },
     {
       "script": "spirit/app/pullOrigin/pullOrigin.js",
@@ -3294,7 +3334,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:25.765Z"
+      "newestAt": "2026-11-18T23:49:16.726Z"
     },
     {
       "script": "spirit/app/pushOrigin/pushOrigin.js",
@@ -3342,7 +3382,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:26.203Z"
+      "newestAt": "2026-11-18T23:49:17.138Z"
     },
     {
       "script": "spirit/app/starter/element.js",
@@ -3363,34 +3403,34 @@
     {
       "script": "spirit/app/testicle/api.js",
       "suite": "spirit/app/testicle/test/api.js",
-      "tests": 19,
-      "green": 19,
+      "tests": 22,
+      "green": 22,
       "red": 0,
-      "newestAt": "2026-11-16T14:00:12.540Z"
+      "newestAt": "2026-11-18T23:53:33.303Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
       "suite": "spirit/app/testicle/test/testicle-sibling-browser.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T13:31:37.477Z"
+      "newestAt": "2026-11-18T23:50:33.324Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
       "suite": "spirit/app/testicle/test/testicle-sibling-general.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T13:31:38.719Z"
+      "newestAt": "2026-11-18T23:50:33.646Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
       "suite": "spirit/app/testicle/test/testicle-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T13:31:40.267Z"
+      "newestAt": "2026-11-18T23:50:33.993Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
@@ -3398,7 +3438,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T08:38:09.036Z"
+      "newestAt": "2026-11-18T23:53:03.278Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
@@ -3406,7 +3446,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-18T01:15:49.671Z"
+      "newestAt": "2026-11-18T23:53:04.263Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
@@ -3414,7 +3454,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:26.613Z"
+      "newestAt": "2026-11-18T23:49:17.599Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
@@ -3422,7 +3462,7 @@
       "tests": 7,
       "green": 7,
       "red": 0,
-      "newestAt": "2026-11-18T00:21:23.442Z"
+      "newestAt": "2026-11-18T23:53:10.348Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
@@ -3430,15 +3470,15 @@
       "tests": 68,
       "green": 68,
       "red": 0,
-      "newestAt": "2026-11-18T07:54:59.681Z"
+      "newestAt": "2026-11-18T23:53:17.846Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 1,
-      "green": 1,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T13:40:34.446Z"
+      "newestAt": "2026-11-18T23:53:29.260Z"
     },
     {
       "script": "spirit/app/testicle/data.js",
@@ -3494,7 +3534,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:27.028Z"
+      "newestAt": "2026-11-18T23:49:18.007Z"
     },
     {
       "script": "spirit/app/testicle/data.js",
@@ -3566,7 +3606,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:27.589Z"
+      "newestAt": "2026-11-18T23:49:18.552Z"
     },
     {
       "script": "spirit/app/testicle/element.js",
@@ -3630,7 +3670,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:28.025Z"
+      "newestAt": "2026-11-18T23:49:18.980Z"
     },
     {
       "script": "spirit/app/testicle/element/scriptDetail.js",
@@ -3694,7 +3734,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:28.447Z"
+      "newestAt": "2026-11-18T23:49:19.390Z"
     },
     {
       "script": "spirit/app/testicle/element/search/suite.js",
@@ -3758,7 +3798,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:10.101Z"
+      "newestAt": "2026-11-18T23:49:19.848Z"
     },
     {
       "script": "spirit/app/testicle/element/search/suite/list.js",
@@ -3822,7 +3862,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:10.258Z"
+      "newestAt": "2026-11-18T23:49:20.305Z"
     },
     {
       "script": "spirit/app/testicle/element/search/suite/row.js",
@@ -3886,7 +3926,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:28.882Z"
+      "newestAt": "2026-11-18T23:49:20.739Z"
     },
     {
       "script": "spirit/app/testicle/element/search/testicle.js",
@@ -3950,7 +3990,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:11.118Z"
+      "newestAt": "2026-11-18T23:49:21.179Z"
     },
     {
       "script": "spirit/app/testicle/element/search/testicle/detail.js",
@@ -4014,7 +4054,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:11.629Z"
+      "newestAt": "2026-11-18T23:49:21.419Z"
     },
     {
       "script": "spirit/app/testicle/element/search/testicle/list.js",
@@ -4078,7 +4118,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:12.075Z"
+      "newestAt": "2026-11-18T23:49:21.799Z"
     },
     {
       "script": "spirit/app/testicle/element/search/testicle/row.js",
@@ -4142,7 +4182,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:29.310Z"
+      "newestAt": "2026-11-18T23:49:21.961Z"
     },
     {
       "script": "spirit/app/testicle/element/settingsPanel.js",
@@ -4163,34 +4203,34 @@
     {
       "script": "spirit/app/testicle/element/statusBox.js",
       "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "tests": 17,
-      "green": 2,
-      "red": 15,
-      "newestAt": "2026-11-16T14:00:11.985Z"
+      "tests": 20,
+      "green": 20,
+      "red": 0,
+      "newestAt": "2026-11-18T22:52:41.874Z"
     },
     {
       "script": "spirit/app/testicle/element/statusBox.js",
       "suite": "spirit/app/testicle/test/testicle-sibling-browser.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T13:31:38.380Z"
+      "newestAt": "2026-11-18T22:52:42.197Z"
     },
     {
       "script": "spirit/app/testicle/element/statusBox.js",
       "suite": "spirit/app/testicle/test/testicle-sibling-general.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T13:31:39.514Z"
+      "newestAt": "2026-11-18T22:52:42.490Z"
     },
     {
       "script": "spirit/app/testicle/element/statusBox.js",
       "suite": "spirit/test/app-child-browser.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-18T00:19:52.065Z"
+      "newestAt": "2026-11-18T22:55:12.104Z"
     },
     {
       "script": "spirit/app/testicle/element/statusBox.js",
@@ -4198,7 +4238,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-18T01:15:55.503Z"
+      "newestAt": "2026-11-18T22:55:13.046Z"
     },
     {
       "script": "spirit/app/testicle/element/statusBox.js",
@@ -4206,7 +4246,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:29.742Z"
+      "newestAt": "2026-11-18T23:49:22.371Z"
     },
     {
       "script": "spirit/app/testicle/element/statusBox.js",
@@ -4214,7 +4254,7 @@
       "tests": 19,
       "green": 19,
       "red": 0,
-      "newestAt": "2026-11-18T00:21:35.368Z"
+      "newestAt": "2026-11-18T22:55:21.273Z"
     },
     {
       "script": "spirit/app/testicle/element/statusBox.js",
@@ -4222,7 +4262,63 @@
       "tests": 67,
       "green": 67,
       "red": 0,
-      "newestAt": "2026-11-18T07:55:19.353Z"
+      "newestAt": "2026-11-18T23:53:19.393Z"
+    },
+    {
+      "script": "spirit/app/testicle/testAll.js",
+      "suite": "spirit/app/testicle/test/testAll.js",
+      "tests": 7,
+      "green": 7,
+      "red": 0,
+      "newestAt": "2026-11-18T21:01:32.941Z"
+    },
+    {
+      "script": "spirit/app/testicle/testAll.js",
+      "suite": "spirit/app/testicle/test/testicle-sibling-general.js",
+      "tests": 3,
+      "green": 3,
+      "red": 0,
+      "newestAt": "2026-11-18T20:55:20.747Z"
+    },
+    {
+      "script": "spirit/app/testicle/testAll.js",
+      "suite": "spirit/app/testicle/test/testicle-sibling-node.js",
+      "tests": 3,
+      "green": 3,
+      "red": 0,
+      "newestAt": "2026-11-18T20:55:21.281Z"
+    },
+    {
+      "script": "spirit/app/testicle/testAll.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-18T20:57:48.499Z"
+    },
+    {
+      "script": "spirit/app/testicle/testAll.js",
+      "suite": "spirit/test/scriptClassify.js",
+      "tests": 1,
+      "green": 1,
+      "red": 0,
+      "newestAt": "2026-11-18T23:49:22.758Z"
+    },
+    {
+      "script": "spirit/app/testicle/testAll.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 67,
+      "green": 67,
+      "red": 0,
+      "newestAt": "2026-11-18T20:58:10.593Z"
+    },
+    {
+      "script": "spirit/app/testicle/testAll.js",
+      "suite": "spirit/test/spirit-sibling-node.js",
+      "tests": 3,
+      "green": 3,
+      "red": 0,
+      "newestAt": "2026-11-18T20:58:20.070Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
@@ -4230,7 +4326,7 @@
       "tests": 3,
       "green": 3,
       "red": 0,
-      "newestAt": "2026-11-18T10:15:57.000Z"
+      "newestAt": "2026-11-18T22:52:42.566Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
@@ -4238,15 +4334,15 @@
       "tests": 3,
       "green": 3,
       "red": 0,
-      "newestAt": "2026-11-18T10:15:57.437Z"
+      "newestAt": "2026-11-18T22:52:42.916Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "tests": 269,
-      "green": 161,
-      "red": 108,
-      "newestAt": "2026-11-18T12:57:58.961Z"
+      "tests": 289,
+      "green": 279,
+      "red": 10,
+      "newestAt": "2026-11-19T00:34:19.884Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
@@ -4254,7 +4350,15 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-18T10:15:59.586Z"
+      "newestAt": "2026-11-18T22:55:13.549Z"
+    },
+    {
+      "script": "spirit/app/testicle/testicle.js",
+      "suite": "spirit/test/job.js",
+      "tests": 1,
+      "green": 1,
+      "red": 0,
+      "newestAt": "2026-11-18T23:54:29.471Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
@@ -4262,7 +4366,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:30.167Z"
+      "newestAt": "2026-11-18T23:49:23.162Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
@@ -4270,47 +4374,47 @@
       "tests": 67,
       "green": 67,
       "red": 0,
-      "newestAt": "2026-11-18T10:16:08.283Z"
+      "newestAt": "2026-11-18T23:53:20.967Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-18T10:16:11.614Z"
+      "newestAt": "2026-11-18T22:55:31.355Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
       "suite": "spirit/app/testicle/test/testicle-sibling-browser.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T01:56:10.597Z"
+      "newestAt": "2026-11-18T20:55:20.386Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
       "suite": "spirit/app/testicle/test/testicle-sibling-general.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T01:56:12.211Z"
+      "newestAt": "2026-11-18T20:55:20.829Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
       "suite": "spirit/app/testicle/test/testicle-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-16T01:56:13.542Z"
+      "newestAt": "2026-11-18T20:55:21.367Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
       "suite": "spirit/app/testicle/test/words.js",
-      "tests": 6,
-      "green": 6,
+      "tests": 7,
+      "green": 7,
       "red": 0,
-      "newestAt": "2026-11-18T01:00:29.151Z"
+      "newestAt": "2026-11-18T23:53:33.633Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
@@ -4318,7 +4422,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T09:11:38.241Z"
+      "newestAt": "2026-11-18T23:58:14.252Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
@@ -4326,7 +4430,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-18T01:15:56.463Z"
+      "newestAt": "2026-11-18T20:57:49.005Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
@@ -4334,7 +4438,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:30.567Z"
+      "newestAt": "2026-11-18T23:49:23.674Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
@@ -4342,7 +4446,7 @@
       "tests": 7,
       "green": 7,
       "red": 0,
-      "newestAt": "2026-11-18T00:21:37.670Z"
+      "newestAt": "2026-11-18T20:57:59.063Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
@@ -4350,15 +4454,15 @@
       "tests": 67,
       "green": 67,
       "red": 0,
-      "newestAt": "2026-11-18T07:55:22.551Z"
+      "newestAt": "2026-11-18T20:58:12.169Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 1,
-      "green": 1,
+      "tests": 2,
+      "green": 2,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:53.931Z"
+      "newestAt": "2026-11-18T20:58:20.133Z"
     },
     {
       "script": "spirit/app/text/element.js",
@@ -4390,7 +4494,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:30.767Z"
+      "newestAt": "2026-11-18T23:49:24.120Z"
     },
     {
       "script": "spirit/app/text/element.js",
@@ -4422,7 +4526,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:31.176Z"
+      "newestAt": "2026-11-18T23:49:24.590Z"
     },
     {
       "script": "spirit/appClient.js",
@@ -4454,7 +4558,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:31.614Z"
+      "newestAt": "2026-11-18T23:49:25.042Z"
     },
     {
       "script": "spirit/appServer.js",
@@ -4486,7 +4590,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:32.032Z"
+      "newestAt": "2026-11-18T23:49:25.467Z"
     },
     {
       "script": "spirit/arrivals.js",
@@ -4518,7 +4622,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:32.454Z"
+      "newestAt": "2026-11-18T23:49:25.916Z"
     },
     {
       "script": "spirit/auth/api.js",
@@ -4558,7 +4662,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:32.868Z"
+      "newestAt": "2026-11-18T23:49:26.301Z"
     },
     {
       "script": "spirit/auth/data.js",
@@ -4598,7 +4702,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:33.272Z"
+      "newestAt": "2026-11-18T23:49:26.695Z"
     },
     {
       "script": "spirit/authTableInterface.js",
@@ -4630,7 +4734,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:33.685Z"
+      "newestAt": "2026-11-18T23:49:27.207Z"
     },
     {
       "script": "spirit/boxes.js",
@@ -4662,7 +4766,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:34.105Z"
+      "newestAt": "2026-11-18T23:49:27.629Z"
     },
     {
       "script": "spirit/buildStamp.js",
@@ -4694,7 +4798,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:34.519Z"
+      "newestAt": "2026-11-18T23:49:28.089Z"
     },
     {
       "script": "spirit/client/apiTreeIndex.js",
@@ -4734,7 +4838,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:34.936Z"
+      "newestAt": "2026-11-18T23:49:28.521Z"
     },
     {
       "script": "spirit/client/packet.js",
@@ -4774,7 +4878,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:35.354Z"
+      "newestAt": "2026-11-18T23:49:28.916Z"
     },
     {
       "script": "spirit/config/api.js",
@@ -4814,7 +4918,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:35.759Z"
+      "newestAt": "2026-11-18T23:49:29.318Z"
     },
     {
       "script": "spirit/config/data.js",
@@ -4854,7 +4958,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:36.179Z"
+      "newestAt": "2026-11-18T23:49:29.445Z"
     },
     {
       "script": "spirit/contact/api.js",
@@ -4894,7 +4998,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:36.595Z"
+      "newestAt": "2026-11-18T23:49:29.815Z"
     },
     {
       "script": "spirit/contact/data.js",
@@ -4934,7 +5038,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:37.014Z"
+      "newestAt": "2026-11-18T23:49:30.316Z"
     },
     {
       "script": "spirit/contacts.js",
@@ -4966,7 +5070,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:37.442Z"
+      "newestAt": "2026-11-18T23:49:30.714Z"
     },
     {
       "script": "spirit/coreFiles.js",
@@ -4998,7 +5102,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:37.846Z"
+      "newestAt": "2026-11-18T23:49:31.098Z"
     },
     {
       "script": "spirit/data.js",
@@ -5038,7 +5142,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:38.265Z"
+      "newestAt": "2026-11-18T23:49:31.222Z"
     },
     {
       "script": "spirit/element/appHeader/appHeader.js",
@@ -5070,7 +5174,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:38.690Z"
+      "newestAt": "2026-11-18T23:49:31.632Z"
     },
     {
       "script": "spirit/element/appInstaller.js",
@@ -5102,7 +5206,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:39.090Z"
+      "newestAt": "2026-11-18T23:49:31.741Z"
     },
     {
       "script": "spirit/element/armingButton.js",
@@ -5134,7 +5238,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:39.552Z"
+      "newestAt": "2026-11-18T23:49:31.919Z"
     },
     {
       "script": "spirit/element/bundleEditor.js",
@@ -5166,7 +5270,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:40.028Z"
+      "newestAt": "2026-11-18T23:49:32.398Z"
     },
     {
       "script": "spirit/element/busyButton.js",
@@ -5198,7 +5302,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:40.464Z"
+      "newestAt": "2026-11-18T23:49:32.959Z"
     },
     {
       "script": "spirit/element/changeMyDescription.js",
@@ -5230,7 +5334,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:40.910Z"
+      "newestAt": "2026-11-18T23:49:33.436Z"
     },
     {
       "script": "spirit/element/changeMyLabel.js",
@@ -5262,7 +5366,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:41.319Z"
+      "newestAt": "2026-11-18T23:49:33.860Z"
     },
     {
       "script": "spirit/element/codeMirror.js",
@@ -5294,7 +5398,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:41.721Z"
+      "newestAt": "2026-11-18T23:49:34.273Z"
     },
     {
       "script": "spirit/element/contactLabel.js",
@@ -5326,7 +5430,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:42.163Z"
+      "newestAt": "2026-11-18T23:49:34.707Z"
     },
     {
       "script": "spirit/element/faceForm.js",
@@ -5358,7 +5462,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:42.624Z"
+      "newestAt": "2026-11-18T23:49:35.119Z"
     },
     {
       "script": "spirit/element/fieldInput.js",
@@ -5390,7 +5494,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:43.059Z"
+      "newestAt": "2026-11-18T23:49:35.523Z"
     },
     {
       "script": "spirit/element/fstat.js",
@@ -5422,7 +5526,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:43.477Z"
+      "newestAt": "2026-11-18T23:49:35.916Z"
     },
     {
       "script": "spirit/element/icon.js",
@@ -5454,7 +5558,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:43.643Z"
+      "newestAt": "2026-11-18T23:49:36.312Z"
     },
     {
       "script": "spirit/element/installSpiritElement.js",
@@ -5494,7 +5598,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:44.154Z"
+      "newestAt": "2026-11-18T23:49:36.810Z"
     },
     {
       "script": "spirit/element/introSpector.js",
@@ -5502,7 +5606,7 @@
       "tests": 21,
       "green": 20,
       "red": 1,
-      "newestAt": "2026-11-18T13:01:20.493Z"
+      "newestAt": "2026-11-18T23:58:21.845Z"
     },
     {
       "script": "spirit/element/introSpector.js",
@@ -5526,7 +5630,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:44.602Z"
+      "newestAt": "2026-11-18T23:49:37.248Z"
     },
     {
       "script": "spirit/element/joinForm.js",
@@ -5558,7 +5662,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:45.193Z"
+      "newestAt": "2026-11-18T23:49:37.761Z"
     },
     {
       "script": "spirit/element/joinList.js",
@@ -5590,7 +5694,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:45.625Z"
+      "newestAt": "2026-11-18T23:49:38.113Z"
     },
     {
       "script": "spirit/element/joinSteps.js",
@@ -5622,7 +5726,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:16.349Z"
+      "newestAt": "2026-11-18T23:49:38.517Z"
     },
     {
       "script": "spirit/element/monitor/job.js",
@@ -5654,7 +5758,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:16.820Z"
+      "newestAt": "2026-11-18T23:49:38.943Z"
     },
     {
       "script": "spirit/element/monitor/job/connections.js",
@@ -5686,7 +5790,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:17.302Z"
+      "newestAt": "2026-11-18T23:49:39.093Z"
     },
     {
       "script": "spirit/element/monitor/job/cpu.js",
@@ -5718,7 +5822,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:17.760Z"
+      "newestAt": "2026-11-18T23:49:39.528Z"
     },
     {
       "script": "spirit/element/monitor/job/delay.js",
@@ -5750,7 +5854,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:18.225Z"
+      "newestAt": "2026-11-18T23:49:39.990Z"
     },
     {
       "script": "spirit/element/monitor/job/memory.js",
@@ -5782,7 +5886,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:18.677Z"
+      "newestAt": "2026-11-18T23:49:40.471Z"
     },
     {
       "script": "spirit/element/monitor/job/running.js",
@@ -5814,7 +5918,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:18.835Z"
+      "newestAt": "2026-11-18T23:49:40.936Z"
     },
     {
       "script": "spirit/element/monitor/job/uptime.js",
@@ -5846,7 +5950,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:19.320Z"
+      "newestAt": "2026-11-18T23:49:41.396Z"
     },
     {
       "script": "spirit/element/monitor/task.js",
@@ -5878,7 +5982,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:19.775Z"
+      "newestAt": "2026-11-18T23:49:41.813Z"
     },
     {
       "script": "spirit/element/monitor/value.js",
@@ -5910,7 +6014,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:46.113Z"
+      "newestAt": "2026-11-18T23:49:42.299Z"
     },
     {
       "script": "spirit/element/nodeInfo.js",
@@ -5942,7 +6046,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:46.552Z"
+      "newestAt": "2026-11-18T23:49:42.894Z"
     },
     {
       "script": "spirit/element/panel.js",
@@ -5974,7 +6078,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:46.965Z"
+      "newestAt": "2026-11-18T23:49:43.279Z"
     },
     {
       "script": "spirit/element/progressBar.js",
@@ -6006,7 +6110,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:47.386Z"
+      "newestAt": "2026-11-18T23:49:43.722Z"
     },
     {
       "script": "spirit/element/rotateKey.js",
@@ -6038,7 +6142,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:20.215Z"
+      "newestAt": "2026-11-18T23:49:44.118Z"
     },
     {
       "script": "spirit/element/row.js",
@@ -6070,7 +6174,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:47.815Z"
+      "newestAt": "2026-11-18T23:49:44.548Z"
     },
     {
       "script": "spirit/element/rowForm.js",
@@ -6091,10 +6195,10 @@
     {
       "script": "spirit/element/search.js",
       "suite": "spirit/element/test/search-child-browser.js",
-      "tests": 12,
-      "green": 8,
-      "red": 4,
-      "newestAt": "2026-11-18T13:01:11.831Z"
+      "tests": 3,
+      "green": 3,
+      "red": 0,
+      "newestAt": "2026-11-18T20:57:41.936Z"
     },
     {
       "script": "spirit/element/search.js",
@@ -6118,7 +6222,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:48.279Z"
+      "newestAt": "2026-11-18T23:49:44.998Z"
     },
     {
       "script": "spirit/element/search.js",
@@ -6126,7 +6230,7 @@
       "tests": 19,
       "green": 18,
       "red": 1,
-      "newestAt": "2026-11-18T13:01:20.987Z"
+      "newestAt": "2026-11-18T23:58:22.446Z"
     },
     {
       "script": "spirit/element/search.js",
@@ -6147,10 +6251,10 @@
     {
       "script": "spirit/element/search/api.js",
       "suite": "spirit/element/test/search-child-browser.js",
-      "tests": 12,
-      "green": 12,
+      "tests": 10,
+      "green": 10,
       "red": 0,
-      "newestAt": "2026-11-18T00:36:03.649Z"
+      "newestAt": "2026-11-18T23:58:09.959Z"
     },
     {
       "script": "spirit/element/search/api.js",
@@ -6166,7 +6270,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:48.797Z"
+      "newestAt": "2026-11-18T23:49:45.479Z"
     },
     {
       "script": "spirit/element/search/api.js",
@@ -6195,10 +6299,10 @@
     {
       "script": "spirit/element/search/api/detail.js",
       "suite": "spirit/element/test/search-child-browser.js",
-      "tests": 12,
-      "green": 12,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-18T01:15:36.463Z"
+      "newestAt": "2026-11-18T22:55:07.540Z"
     },
     {
       "script": "spirit/element/search/api/detail.js",
@@ -6214,7 +6318,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:20.712Z"
+      "newestAt": "2026-11-18T23:49:45.903Z"
     },
     {
       "script": "spirit/element/search/api/detail.js",
@@ -6243,10 +6347,10 @@
     {
       "script": "spirit/element/search/api/list.js",
       "suite": "spirit/element/test/search-child-browser.js",
-      "tests": 12,
-      "green": 11,
-      "red": 1,
-      "newestAt": "2026-11-18T01:22:23.865Z"
+      "tests": 3,
+      "green": 3,
+      "red": 0,
+      "newestAt": "2026-11-18T23:52:54.806Z"
     },
     {
       "script": "spirit/element/search/api/list.js",
@@ -6262,7 +6366,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:20.850Z"
+      "newestAt": "2026-11-18T23:49:46.390Z"
     },
     {
       "script": "spirit/element/search/api/list.js",
@@ -6290,6 +6394,14 @@
     },
     {
       "script": "spirit/element/search/api/row.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 3,
+      "green": 3,
+      "red": 0,
+      "newestAt": "2026-11-18T23:58:06.808Z"
+    },
+    {
+      "script": "spirit/element/search/api/row.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -6302,7 +6414,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:21.271Z"
+      "newestAt": "2026-11-18T23:49:46.843Z"
     },
     {
       "script": "spirit/element/search/api/row.js",
@@ -6342,7 +6454,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:49.269Z"
+      "newestAt": "2026-11-18T23:49:47.288Z"
     },
     {
       "script": "spirit/element/search/api/verb.js",
@@ -6370,6 +6482,14 @@
     },
     {
       "script": "spirit/element/search/app.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 10,
+      "green": 10,
+      "red": 0,
+      "newestAt": "2026-11-18T23:58:09.989Z"
+    },
+    {
+      "script": "spirit/element/search/app.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -6382,7 +6502,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:49.797Z"
+      "newestAt": "2026-11-18T23:49:47.752Z"
     },
     {
       "script": "spirit/element/search/app.js",
@@ -6422,7 +6542,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:50.293Z"
+      "newestAt": "2026-11-18T23:49:48.207Z"
     },
     {
       "script": "spirit/element/search/app/changeAppIcon.js",
@@ -6462,7 +6582,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:50.743Z"
+      "newestAt": "2026-11-18T23:49:48.334Z"
     },
     {
       "script": "spirit/element/search/app/changeAppLabel.js",
@@ -6502,7 +6622,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:23.168Z"
+      "newestAt": "2026-11-18T23:49:48.847Z"
     },
     {
       "script": "spirit/element/search/app/detail.js",
@@ -6542,7 +6662,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:23.652Z"
+      "newestAt": "2026-11-18T23:49:49.333Z"
     },
     {
       "script": "spirit/element/search/app/list.js",
@@ -6582,7 +6702,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:24.141Z"
+      "newestAt": "2026-11-18T23:49:49.741Z"
     },
     {
       "script": "spirit/element/search/app/row.js",
@@ -6622,7 +6742,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:51.224Z"
+      "newestAt": "2026-11-18T23:49:50.146Z"
     },
     {
       "script": "spirit/element/search/app/rowFormAppActive.js",
@@ -6662,7 +6782,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:51.534Z"
+      "newestAt": "2026-11-18T23:49:50.679Z"
     },
     {
       "script": "spirit/element/search/app/rowFormSetShell.js",
@@ -6702,7 +6822,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:51.974Z"
+      "newestAt": "2026-11-18T23:49:51.089Z"
     },
     {
       "script": "spirit/element/search/app/rowFormToggle.js",
@@ -6742,7 +6862,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:52.487Z"
+      "newestAt": "2026-11-18T23:49:51.283Z"
     },
     {
       "script": "spirit/element/search/app/serverDEBUG.js",
@@ -6770,6 +6890,14 @@
     },
     {
       "script": "spirit/element/search/branch.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 7,
+      "green": 7,
+      "red": 0,
+      "newestAt": "2026-11-18T23:58:09.643Z"
+    },
+    {
+      "script": "spirit/element/search/branch.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -6782,7 +6910,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:52.905Z"
+      "newestAt": "2026-11-18T23:49:51.647Z"
     },
     {
       "script": "spirit/element/search/branch.js",
@@ -6822,7 +6950,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:25.215Z"
+      "newestAt": "2026-11-18T23:49:52.136Z"
     },
     {
       "script": "spirit/element/search/branch/list.js",
@@ -6862,7 +6990,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:25.638Z"
+      "newestAt": "2026-11-18T23:49:52.362Z"
     },
     {
       "script": "spirit/element/search/branch/row.js",
@@ -6890,6 +7018,14 @@
     },
     {
       "script": "spirit/element/search/bundle.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 10,
+      "green": 10,
+      "red": 0,
+      "newestAt": "2026-11-18T23:58:10.027Z"
+    },
+    {
+      "script": "spirit/element/search/bundle.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -6902,7 +7038,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:53.327Z"
+      "newestAt": "2026-11-18T23:49:52.779Z"
     },
     {
       "script": "spirit/element/search/bundle.js",
@@ -6942,7 +7078,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:26.239Z"
+      "newestAt": "2026-11-18T23:49:53.276Z"
     },
     {
       "script": "spirit/element/search/bundle/detail.js",
@@ -6982,7 +7118,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:26.714Z"
+      "newestAt": "2026-11-18T23:49:53.740Z"
     },
     {
       "script": "spirit/element/search/bundle/list.js",
@@ -7022,7 +7158,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:27.169Z"
+      "newestAt": "2026-11-18T23:49:54.109Z"
     },
     {
       "script": "spirit/element/search/bundle/row.js",
@@ -7050,6 +7186,14 @@
     },
     {
       "script": "spirit/element/search/contact.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 10,
+      "green": 6,
+      "red": 4,
+      "newestAt": "2026-11-18T23:58:10.061Z"
+    },
+    {
+      "script": "spirit/element/search/contact.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -7062,7 +7206,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:53.763Z"
+      "newestAt": "2026-11-18T23:49:54.504Z"
     },
     {
       "script": "spirit/element/search/contact.js",
@@ -7102,7 +7246,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:28.094Z"
+      "newestAt": "2026-11-18T23:49:54.942Z"
     },
     {
       "script": "spirit/element/search/contact/detail.js",
@@ -7142,7 +7286,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T05:41:53.720Z"
+      "newestAt": "2026-11-18T23:49:55.367Z"
     },
     {
       "script": "spirit/element/search/contact/list.js",
@@ -7182,7 +7326,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:29.058Z"
+      "newestAt": "2026-11-18T23:49:55.874Z"
     },
     {
       "script": "spirit/element/search/contact/row.js",
@@ -7210,6 +7354,14 @@
     },
     {
       "script": "spirit/element/search/file.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 10,
+      "green": 10,
+      "red": 0,
+      "newestAt": "2026-11-18T23:58:10.092Z"
+    },
+    {
+      "script": "spirit/element/search/file.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -7222,7 +7374,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:54.256Z"
+      "newestAt": "2026-11-18T23:49:56.287Z"
     },
     {
       "script": "spirit/element/search/file.js",
@@ -7262,7 +7414,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:29.946Z"
+      "newestAt": "2026-11-18T23:49:56.701Z"
     },
     {
       "script": "spirit/element/search/file/detail.js",
@@ -7302,7 +7454,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:30.449Z"
+      "newestAt": "2026-11-18T23:49:56.850Z"
     },
     {
       "script": "spirit/element/search/file/list.js",
@@ -7342,7 +7494,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:30.915Z"
+      "newestAt": "2026-11-18T23:49:57.263Z"
     },
     {
       "script": "spirit/element/search/file/row.js",
@@ -7370,6 +7522,14 @@
     },
     {
       "script": "spirit/element/search/grant.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 10,
+      "green": 10,
+      "red": 0,
+      "newestAt": "2026-11-18T23:58:10.122Z"
+    },
+    {
+      "script": "spirit/element/search/grant.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -7382,7 +7542,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:54.741Z"
+      "newestAt": "2026-11-18T23:49:57.707Z"
     },
     {
       "script": "spirit/element/search/grant.js",
@@ -7422,7 +7582,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T05:41:54.841Z"
+      "newestAt": "2026-11-18T23:49:58.141Z"
     },
     {
       "script": "spirit/element/search/grant/detail.js",
@@ -7470,7 +7630,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:55.286Z"
+      "newestAt": "2026-11-18T23:49:58.605Z"
     },
     {
       "script": "spirit/element/search/grant/grantsPanel.js",
@@ -7510,7 +7670,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T05:41:55.773Z"
+      "newestAt": "2026-11-18T23:49:59.003Z"
     },
     {
       "script": "spirit/element/search/grant/list.js",
@@ -7550,7 +7710,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T05:41:56.195Z"
+      "newestAt": "2026-11-18T23:49:59.123Z"
     },
     {
       "script": "spirit/element/search/grant/row.js",
@@ -7578,6 +7738,14 @@
     },
     {
       "script": "spirit/element/search/icon.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 7,
+      "green": 7,
+      "red": 0,
+      "newestAt": "2026-11-18T23:58:09.814Z"
+    },
+    {
+      "script": "spirit/element/search/icon.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -7590,7 +7758,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:55.764Z"
+      "newestAt": "2026-11-18T23:49:59.590Z"
     },
     {
       "script": "spirit/element/search/icon.js",
@@ -7630,7 +7798,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:33.559Z"
+      "newestAt": "2026-11-18T23:49:59.970Z"
     },
     {
       "script": "spirit/element/search/icon/list.js",
@@ -7670,7 +7838,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:33.977Z"
+      "newestAt": "2026-11-18T23:50:00.389Z"
     },
     {
       "script": "spirit/element/search/icon/row.js",
@@ -7698,6 +7866,14 @@
     },
     {
       "script": "spirit/element/search/job.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "tests": 10,
+      "green": 9,
+      "red": 1,
+      "newestAt": "2026-11-18T23:58:10.152Z"
+    },
+    {
+      "script": "spirit/element/search/job.js",
       "suite": "spirit/element/test/search-child-general.js",
       "tests": 16,
       "green": 16,
@@ -7710,7 +7886,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:55.922Z"
+      "newestAt": "2026-11-18T23:50:00.789Z"
     },
     {
       "script": "spirit/element/search/job.js",
@@ -7750,7 +7926,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:34.883Z"
+      "newestAt": "2026-11-18T23:50:01.224Z"
     },
     {
       "script": "spirit/element/search/job/detail.js",
@@ -7790,7 +7966,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:35.377Z"
+      "newestAt": "2026-11-18T23:50:01.417Z"
     },
     {
       "script": "spirit/element/search/job/list.js",
@@ -7830,7 +8006,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:35.805Z"
+      "newestAt": "2026-11-18T23:50:01.607Z"
     },
     {
       "script": "spirit/element/search/job/row.js",
@@ -7862,7 +8038,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:56.326Z"
+      "newestAt": "2026-11-18T23:50:01.968Z"
     },
     {
       "script": "spirit/element/tabContainer.js",
@@ -7894,7 +8070,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:56.771Z"
+      "newestAt": "2026-11-18T23:50:02.361Z"
     },
     {
       "script": "spirit/element/workBench.js",
@@ -7926,7 +8102,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:57.186Z"
+      "newestAt": "2026-11-18T23:50:02.830Z"
     },
     {
       "script": "spirit/event/api.js",
@@ -7966,7 +8142,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:57.600Z"
+      "newestAt": "2026-11-18T23:50:03.234Z"
     },
     {
       "script": "spirit/event/data.js",
@@ -8006,7 +8182,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:58.022Z"
+      "newestAt": "2026-11-18T23:50:03.697Z"
     },
     {
       "script": "spirit/event/event.js",
@@ -8038,7 +8214,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:58.433Z"
+      "newestAt": "2026-11-18T23:50:04.153Z"
     },
     {
       "script": "spirit/faceHome.js",
@@ -8070,7 +8246,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:58.849Z"
+      "newestAt": "2026-11-18T23:50:04.565Z"
     },
     {
       "script": "spirit/faceRoute.js",
@@ -8102,7 +8278,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:59.263Z"
+      "newestAt": "2026-11-18T23:50:05.087Z"
     },
     {
       "script": "spirit/fieldRules.js",
@@ -8142,7 +8318,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:49:59.689Z"
+      "newestAt": "2026-11-18T23:50:05.488Z"
     },
     {
       "script": "spirit/fileSystem.js",
@@ -8163,10 +8339,10 @@
     {
       "script": "spirit/fs/api.js",
       "suite": "spirit/fs/test/api.js",
-      "tests": 5,
-      "green": 5,
+      "tests": 10,
+      "green": 10,
       "red": 0,
-      "newestAt": "2026-11-16T14:20:50.485Z"
+      "newestAt": "2026-11-18T23:53:34.131Z"
     },
     {
       "script": "spirit/fs/api.js",
@@ -8174,7 +8350,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:00.123Z"
+      "newestAt": "2026-11-18T23:50:05.914Z"
     },
     {
       "script": "spirit/fs/api.js",
@@ -8214,7 +8390,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:00.544Z"
+      "newestAt": "2026-11-18T23:50:06.467Z"
     },
     {
       "script": "spirit/fs/data.js",
@@ -8254,7 +8430,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:00.960Z"
+      "newestAt": "2026-11-18T23:50:07.116Z"
     },
     {
       "script": "spirit/hub.js",
@@ -8286,7 +8462,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:01.374Z"
+      "newestAt": "2026-11-18T23:50:07.553Z"
     },
     {
       "script": "spirit/introSpector.js",
@@ -8318,7 +8494,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:01.792Z"
+      "newestAt": "2026-11-18T23:50:08.019Z"
     },
     {
       "script": "spirit/invites.js",
@@ -8340,9 +8516,9 @@
       "script": "spirit/job.js",
       "suite": "spirit/test/job.js",
       "tests": 185,
-      "green": 184,
-      "red": 1,
-      "newestAt": "2026-11-18T01:13:16.431Z"
+      "green": 185,
+      "red": 0,
+      "newestAt": "2026-11-18T23:55:43.990Z"
     },
     {
       "script": "spirit/job.js",
@@ -8350,7 +8526,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:02.207Z"
+      "newestAt": "2026-11-18T23:50:08.449Z"
     },
     {
       "script": "spirit/job.js",
@@ -8382,7 +8558,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:02.653Z"
+      "newestAt": "2026-11-18T23:50:08.882Z"
     },
     {
       "script": "spirit/job/api.js",
@@ -8422,7 +8598,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:03.094Z"
+      "newestAt": "2026-11-18T23:50:09.003Z"
     },
     {
       "script": "spirit/job/data.js",
@@ -8462,7 +8638,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:03.506Z"
+      "newestAt": "2026-11-18T23:50:09.475Z"
     },
     {
       "script": "spirit/joinStepsJob.js",
@@ -8494,7 +8670,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:03.920Z"
+      "newestAt": "2026-11-18T23:50:09.866Z"
     },
     {
       "script": "spirit/lever.js",
@@ -8534,7 +8710,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:04.347Z"
+      "newestAt": "2026-11-18T23:50:10.265Z"
     },
     {
       "script": "spirit/limits.js",
@@ -8574,7 +8750,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:38.839Z"
+      "newestAt": "2026-11-18T23:50:10.488Z"
     },
     {
       "script": "spirit/listLimiter.js",
@@ -8614,7 +8790,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:04.758Z"
+      "newestAt": "2026-11-18T23:50:10.873Z"
     },
     {
       "script": "spirit/net/api.js",
@@ -8654,7 +8830,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:05.167Z"
+      "newestAt": "2026-11-18T23:50:11.287Z"
     },
     {
       "script": "spirit/net/data.js",
@@ -8694,7 +8870,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:05.596Z"
+      "newestAt": "2026-11-18T23:50:11.703Z"
     },
     {
       "script": "spirit/netFence.js",
@@ -8726,7 +8902,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:05.995Z"
+      "newestAt": "2026-11-18T23:50:12.113Z"
     },
     {
       "script": "spirit/node/api.js",
@@ -8766,7 +8942,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:06.402Z"
+      "newestAt": "2026-11-18T23:50:12.519Z"
     },
     {
       "script": "spirit/node/data.js",
@@ -8806,7 +8982,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:06.830Z"
+      "newestAt": "2026-11-18T23:50:12.998Z"
     },
     {
       "script": "spirit/nodeCard.js",
@@ -8838,7 +9014,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:07.254Z"
+      "newestAt": "2026-11-18T23:50:13.449Z"
     },
     {
       "script": "spirit/nodeSearches.js",
@@ -8870,7 +9046,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:07.683Z"
+      "newestAt": "2026-11-18T23:50:13.856Z"
     },
     {
       "script": "spirit/nodeSettings.js",
@@ -8902,7 +9078,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:08.104Z"
+      "newestAt": "2026-11-18T23:50:14.287Z"
     },
     {
       "script": "spirit/nodeShell.js",
@@ -8934,7 +9110,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:08.525Z"
+      "newestAt": "2026-11-18T23:50:14.713Z"
     },
     {
       "script": "spirit/nodeStore.js",
@@ -8966,7 +9142,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:08.941Z"
+      "newestAt": "2026-11-18T23:50:15.140Z"
     },
     {
       "script": "spirit/owner/api.js",
@@ -8979,10 +9155,10 @@
     {
       "script": "spirit/owner/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 18,
-      "green": 18,
+      "tests": 64,
+      "green": 64,
       "red": 0,
-      "newestAt": "2026-11-18T13:01:42.786Z"
+      "newestAt": "2026-11-18T16:38:48.485Z"
     },
     {
       "script": "spirit/owner/api.js",
@@ -9006,7 +9182,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:09.351Z"
+      "newestAt": "2026-11-18T23:50:15.540Z"
     },
     {
       "script": "spirit/owner/data.js",
@@ -9019,10 +9195,10 @@
     {
       "script": "spirit/owner/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 57,
-      "green": 53,
-      "red": 4,
-      "newestAt": "2026-11-16T03:26:31.643Z"
+      "tests": 62,
+      "green": 62,
+      "red": 0,
+      "newestAt": "2026-11-18T16:38:49.794Z"
     },
     {
       "script": "spirit/owner/data.js",
@@ -9046,7 +9222,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:09.761Z"
+      "newestAt": "2026-11-18T23:50:16.002Z"
     },
     {
       "script": "spirit/ownerBadge.js",
@@ -9059,10 +9235,10 @@
     {
       "script": "spirit/ownerBadge.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:26:32.413Z"
+      "newestAt": "2026-11-18T16:38:50.634Z"
     },
     {
       "script": "spirit/ownerBadge.js",
@@ -9086,15 +9262,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:10.186Z"
+      "newestAt": "2026-11-18T23:50:16.415Z"
     },
     {
       "script": "spirit/ownerPost.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:26:33.135Z"
+      "newestAt": "2026-11-18T16:38:51.523Z"
     },
     {
       "script": "spirit/ownerPost.js",
@@ -9118,7 +9294,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:10.583Z"
+      "newestAt": "2026-11-18T23:50:16.575Z"
     },
     {
       "script": "spirit/peer/api.js",
@@ -9131,10 +9307,10 @@
     {
       "script": "spirit/peer/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 57,
-      "green": 53,
-      "red": 4,
-      "newestAt": "2026-11-16T03:27:32.066Z"
+      "tests": 64,
+      "green": 64,
+      "red": 0,
+      "newestAt": "2026-11-18T16:38:52.936Z"
     },
     {
       "script": "spirit/peer/api.js",
@@ -9158,7 +9334,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:10.988Z"
+      "newestAt": "2026-11-18T23:50:16.985Z"
     },
     {
       "script": "spirit/peer/data.js",
@@ -9171,10 +9347,10 @@
     {
       "script": "spirit/peer/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 57,
-      "green": 53,
-      "red": 4,
-      "newestAt": "2026-11-16T03:28:33.335Z"
+      "tests": 62,
+      "green": 62,
+      "red": 0,
+      "newestAt": "2026-11-18T16:38:54.162Z"
     },
     {
       "script": "spirit/peer/data.js",
@@ -9198,7 +9374,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:11.120Z"
+      "newestAt": "2026-11-18T23:50:17.126Z"
     },
     {
       "script": "spirit/peerFile.js",
@@ -9211,10 +9387,10 @@
     {
       "script": "spirit/peerFile.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:34.022Z"
+      "newestAt": "2026-11-18T16:38:55.001Z"
     },
     {
       "script": "spirit/peerFile.js",
@@ -9238,15 +9414,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:11.520Z"
+      "newestAt": "2026-11-18T23:50:17.718Z"
     },
     {
       "script": "spirit/peerPost.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:34.799Z"
+      "newestAt": "2026-11-18T16:38:55.899Z"
     },
     {
       "script": "spirit/peerPost.js",
@@ -9270,15 +9446,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:11.925Z"
+      "newestAt": "2026-11-18T23:50:18.157Z"
     },
     {
       "script": "spirit/peerRank.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:35.487Z"
+      "newestAt": "2026-11-18T16:38:56.757Z"
     },
     {
       "script": "spirit/peerRank.js",
@@ -9302,15 +9478,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:12.332Z"
+      "newestAt": "2026-11-18T23:50:18.575Z"
     },
     {
       "script": "spirit/postQueue.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:36.290Z"
+      "newestAt": "2026-11-18T20:58:13.201Z"
     },
     {
       "script": "spirit/postQueue.js",
@@ -9334,15 +9510,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:12.743Z"
+      "newestAt": "2026-11-18T23:50:18.982Z"
     },
     {
       "script": "spirit/presence.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:36.980Z"
+      "newestAt": "2026-11-18T20:58:14.196Z"
     },
     {
       "script": "spirit/presence.js",
@@ -9366,15 +9542,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:13.144Z"
+      "newestAt": "2026-11-18T23:50:19.689Z"
     },
     {
       "script": "spirit/presenceNode.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:37.717Z"
+      "newestAt": "2026-11-18T20:58:15.198Z"
     },
     {
       "script": "spirit/presenceNode.js",
@@ -9398,15 +9574,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:13.273Z"
+      "newestAt": "2026-11-18T23:50:19.798Z"
     },
     {
       "script": "spirit/puppetMode.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:40.525Z"
+      "newestAt": "2026-11-18T20:58:16.165Z"
     },
     {
       "script": "spirit/puppetMode.js",
@@ -9430,15 +9606,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:13.701Z"
+      "newestAt": "2026-11-18T23:50:19.908Z"
     },
     {
       "script": "spirit/puppetStream.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:41.271Z"
+      "newestAt": "2026-11-18T20:58:17.176Z"
     },
     {
       "script": "spirit/puppetStream.js",
@@ -9462,15 +9638,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:14.085Z"
+      "newestAt": "2026-11-18T23:50:20.616Z"
     },
     {
       "script": "spirit/relay.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:28:41.893Z"
+      "newestAt": "2026-11-18T23:53:22.011Z"
     },
     {
       "script": "spirit/relay.js",
@@ -9494,7 +9670,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:14.450Z"
+      "newestAt": "2026-11-18T23:50:21.053Z"
     },
     {
       "script": "spirit/relay/api.js",
@@ -9507,10 +9683,10 @@
     {
       "script": "spirit/relay/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 58,
-      "green": 54,
-      "red": 4,
-      "newestAt": "2026-11-16T03:29:33.778Z"
+      "tests": 65,
+      "green": 65,
+      "red": 0,
+      "newestAt": "2026-11-18T23:53:23.530Z"
     },
     {
       "script": "spirit/relay/api.js",
@@ -9534,7 +9710,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:14.855Z"
+      "newestAt": "2026-11-18T23:50:21.475Z"
     },
     {
       "script": "spirit/relay/data.js",
@@ -9547,10 +9723,10 @@
     {
       "script": "spirit/relay/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 58,
-      "green": 54,
-      "red": 4,
-      "newestAt": "2026-11-16T03:30:35.397Z"
+      "tests": 63,
+      "green": 63,
+      "red": 0,
+      "newestAt": "2026-11-18T23:53:25.058Z"
     },
     {
       "script": "spirit/relay/data.js",
@@ -9574,15 +9750,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:15.270Z"
+      "newestAt": "2026-11-18T23:50:21.866Z"
     },
     {
       "script": "spirit/relayAuth.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:36.086Z"
+      "newestAt": "2026-11-18T23:53:26.023Z"
     },
     {
       "script": "spirit/relayAuth.js",
@@ -9606,15 +9782,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:15.664Z"
+      "newestAt": "2026-11-18T23:50:22.382Z"
     },
     {
       "script": "spirit/relayConfig.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:36.788Z"
+      "newestAt": "2026-11-18T23:58:28.126Z"
     },
     {
       "script": "spirit/relayConfig.js",
@@ -9638,15 +9814,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:15.802Z"
+      "newestAt": "2026-11-18T23:50:22.547Z"
     },
     {
       "script": "spirit/relayDump.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:37.631Z"
+      "newestAt": "2026-11-18T23:58:29.243Z"
     },
     {
       "script": "spirit/relayDump.js",
@@ -9670,15 +9846,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:16.217Z"
+      "newestAt": "2026-11-18T23:50:22.923Z"
     },
     {
       "script": "spirit/relayKeys.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:38.342Z"
+      "newestAt": "2026-11-18T23:58:30.245Z"
     },
     {
       "script": "spirit/relayKeys.js",
@@ -9702,15 +9878,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:16.644Z"
+      "newestAt": "2026-11-18T23:50:23.322Z"
     },
     {
       "script": "spirit/relayLimits.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:39.095Z"
+      "newestAt": "2026-11-18T23:58:31.173Z"
     },
     {
       "script": "spirit/relayLimits.js",
@@ -9734,15 +9910,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:17.085Z"
+      "newestAt": "2026-11-18T23:50:23.766Z"
     },
     {
       "script": "spirit/relayRequest.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:39.846Z"
+      "newestAt": "2026-11-18T23:58:32.156Z"
     },
     {
       "script": "spirit/relayRequest.js",
@@ -9755,10 +9931,10 @@
     {
       "script": "spirit/relayServer.js",
       "suite": "spirit/test/relayServer.js",
-      "tests": 219,
-      "green": 219,
+      "tests": 221,
+      "green": 221,
       "red": 0,
-      "newestAt": "2026-11-16T14:30:36.610Z"
+      "newestAt": "2026-11-18T22:56:06.894Z"
     },
     {
       "script": "spirit/relayServer.js",
@@ -9766,15 +9942,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:17.131Z"
+      "newestAt": "2026-11-18T23:48:41.838Z"
     },
     {
       "script": "spirit/relayServer.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 41,
+      "green": 41,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:40.695Z"
+      "newestAt": "2026-11-18T22:55:27.979Z"
     },
     {
       "script": "spirit/relayServer.js",
@@ -9798,15 +9974,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:17.500Z"
+      "newestAt": "2026-11-18T23:50:23.906Z"
     },
     {
       "script": "spirit/relayStatus.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:41.361Z"
+      "newestAt": "2026-11-18T23:58:33.072Z"
     },
     {
       "script": "spirit/relayStatus.js",
@@ -9830,15 +10006,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:17.909Z"
+      "newestAt": "2026-11-18T23:50:24.300Z"
     },
     {
       "script": "spirit/relayStore.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 28,
-      "red": 5,
-      "newestAt": "2026-11-16T03:30:42.048Z"
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-18T23:58:33.991Z"
     },
     {
       "script": "spirit/relayStore.js",
@@ -9862,15 +10038,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:18.315Z"
+      "newestAt": "2026-11-18T23:50:24.710Z"
     },
     {
       "script": "spirit/relayUrl.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:42.793Z"
+      "newestAt": "2026-11-18T23:58:34.916Z"
     },
     {
       "script": "spirit/relayUrl.js",
@@ -9894,15 +10070,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:18.730Z"
+      "newestAt": "2026-11-18T23:50:25.122Z"
     },
     {
       "script": "spirit/router.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:43.527Z"
+      "newestAt": "2026-11-18T23:58:36.061Z"
     },
     {
       "script": "spirit/router.js",
@@ -9918,7 +10094,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:19.136Z"
+      "newestAt": "2026-11-18T23:50:25.538Z"
     },
     {
       "script": "spirit/seal.js",
@@ -9931,10 +10107,10 @@
     {
       "script": "spirit/seal.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 38,
+      "green": 38,
       "red": 0,
-      "newestAt": "2026-11-16T03:30:44.297Z"
+      "newestAt": "2026-11-18T23:58:36.874Z"
     },
     {
       "script": "spirit/seal.js",
@@ -9958,7 +10134,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:41.511Z"
+      "newestAt": "2026-11-18T23:50:25.956Z"
     },
     {
       "script": "spirit/search/object.js",
@@ -9990,7 +10166,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:41.925Z"
+      "newestAt": "2026-11-18T23:50:26.363Z"
     },
     {
       "script": "spirit/search/string.js",
@@ -10014,7 +10190,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:19.543Z"
+      "newestAt": "2026-11-18T23:50:26.781Z"
     },
     {
       "script": "spirit/seenPeers.js",
@@ -10046,7 +10222,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:19.954Z"
+      "newestAt": "2026-11-18T23:50:27.187Z"
     },
     {
       "script": "spirit/sendMail.js",
@@ -10078,7 +10254,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:20.358Z"
+      "newestAt": "2026-11-18T23:50:27.592Z"
     },
     {
       "script": "spirit/sendMail/mailgun.js",
@@ -10094,7 +10270,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:20.787Z"
+      "newestAt": "2026-11-18T23:50:28.002Z"
     },
     {
       "script": "spirit/serveCommon.js",
@@ -10118,7 +10294,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:20.834Z"
+      "newestAt": "2026-11-18T23:48:41.967Z"
     },
     {
       "script": "spirit/server.js",
@@ -10126,7 +10302,15 @@
       "tests": 72,
       "green": 72,
       "red": 0,
-      "newestAt": "2026-11-18T06:11:46.741Z"
+      "newestAt": "2026-11-18T22:57:26.778Z"
+    },
+    {
+      "script": "spirit/server.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 41,
+      "green": 41,
+      "red": 0,
+      "newestAt": "2026-11-18T22:55:29.021Z"
     },
     {
       "script": "spirit/server.js",
@@ -10150,7 +10334,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:21.201Z"
+      "newestAt": "2026-11-18T23:50:28.393Z"
     },
     {
       "script": "spirit/shell/boot.js",
@@ -10159,6 +10343,14 @@
       "green": 7,
       "red": 0,
       "newestAt": "2026-11-18T00:22:53.781Z"
+    },
+    {
+      "script": "spirit/shell/boot.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 41,
+      "green": 41,
+      "red": 0,
+      "newestAt": "2026-11-18T22:55:29.912Z"
     },
     {
       "script": "spirit/shell/seal.js",
@@ -10174,7 +10366,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:21.609Z"
+      "newestAt": "2026-11-18T23:50:28.770Z"
     },
     {
       "script": "spirit/shell/seal.js",
@@ -10198,7 +10390,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:22.021Z"
+      "newestAt": "2026-11-18T23:50:29.194Z"
     },
     {
       "script": "spirit/spirit.js",
@@ -10238,7 +10430,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:22.440Z"
+      "newestAt": "2026-11-18T23:50:29.595Z"
     },
     {
       "script": "spirit/spiritErrors.js",
@@ -10262,7 +10454,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:22.845Z"
+      "newestAt": "2026-11-18T23:50:29.710Z"
     },
     {
       "script": "spirit/sseClient.js",
@@ -10286,7 +10478,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:23.270Z"
+      "newestAt": "2026-11-18T23:50:30.076Z"
     },
     {
       "script": "spirit/streamSink.js",
@@ -10310,7 +10502,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-18T00:16:42.774Z"
+      "newestAt": "2026-11-18T23:50:30.456Z"
     },
     {
       "script": "spirit/tempFolder.js",
@@ -10334,7 +10526,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:23.504Z"
+      "newestAt": "2026-11-18T23:48:42.134Z"
     },
     {
       "script": "spirit/test/headLessChrome.js",
@@ -10342,15 +10534,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:23.719Z"
+      "newestAt": "2026-11-18T23:48:42.393Z"
     },
     {
       "script": "spirit/test/headLessChrome.js",
       "suite": "spirit/test/test/headLessChrome.js",
-      "tests": 18,
-      "green": 14,
+      "tests": 22,
+      "green": 18,
       "red": 4,
-      "newestAt": "2026-11-16T04:35:03.393Z"
+      "newestAt": "2026-11-18T16:36:06.890Z"
     },
     {
       "script": "spirit/test/spirit-sibling-browser.js",
@@ -10358,7 +10550,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:23.920Z"
+      "newestAt": "2026-11-18T23:48:42.636Z"
     },
     {
       "script": "spirit/test/spirit-sibling-general.js",
@@ -10366,7 +10558,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:24.122Z"
+      "newestAt": "2026-11-18T23:48:42.990Z"
     },
     {
       "script": "spirit/test/spirit-sibling-general.js",
@@ -10382,7 +10574,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:24.162Z"
+      "newestAt": "2026-11-18T23:48:43.027Z"
     },
     {
       "script": "spirit/test/testModule.js",
@@ -10398,7 +10590,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:24.386Z"
+      "newestAt": "2026-11-18T23:48:43.174Z"
     },
     {
       "script": "spirit/test/testReport.js",
@@ -10414,7 +10606,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:24.481Z"
+      "newestAt": "2026-11-18T23:50:30.807Z"
     },
     {
       "script": "spirit/trafficLog.js",
@@ -10438,7 +10630,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:24.525Z"
+      "newestAt": "2026-11-18T23:50:31.168Z"
     },
     {
       "script": "spirit/verbTable.js",
@@ -10462,7 +10654,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-18T10:50:24.560Z"
+      "newestAt": "2026-11-18T23:50:31.683Z"
     },
     {
       "script": "spirit/word.js",
@@ -11335,7 +11527,7 @@
       "suite": "spirit/test/spirit-sibling-browser.js",
       "title": "its searches are each made with a spirit.data branch, no rows of their own",
       "severity": 0.4,
-      "at": "2026-11-18T13:01:16.766Z"
+      "at": "2026-11-18T23:58:18.320Z"
     },
     {
       "script": "spirit/app/testicle/element.js",
@@ -11534,865 +11726,74 @@
       "at": "2026-11-18T00:44:14.562Z"
     },
     {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "a page loads the box by itself and mounts it alone",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.696Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "a scratch node comes up with its DEBUG on and testicle on",
-      "severity": 0.7,
-      "at": "2026-11-16T14:00:11.669Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "after a press of zzBad's own suite the box says \"1 of 1 reported: spirit/zzBox/zzBad.js ❌\", its true outcome",
-      "severity": 0.4,
-      "at": "2026-11-16T14:00:11.894Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "after a press of zzOk's own suite the box says it runs, then \"1 of 1 reported: spirit/zzBox/zzOk.js ✅\"",
-      "severity": 0.4,
-      "at": "2026-11-16T14:00:11.848Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "it shows the mode the node's testicle stands at: 🖖, interactive, as the node answers it",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.735Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "its box keeps what it holds inside, with overflow hidden, one line and the message ellipsed",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.943Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "once the box is destroyed, its container is empty",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.985Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "testicle has classified the scratch tree and is idle",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.754Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "when mounted, it puts one box into its container with the mode, the busy icon and the line",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.716Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "when testicle is idle, the box shows 🛌",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.803Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "while testicle classified, the box showed 🚶‍➡️ and what it was doing, as the stream said",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.779Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "while zzBad's suite runs, its running line names the test reported, \"zzBad fails\", with ❌ and never ✅",
-      "severity": 0.4,
-      "at": "2026-11-16T14:00:11.921Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "while zzOk's suite runs, its running line names the test reported, \"zzOk holds\", with ✅",
-      "severity": 0.4,
-      "at": "2026-11-16T14:00:11.869Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "with the node set to auto the box shows 🤖 by itself, and set back to interactive it shows 🖖",
-      "severity": 0.4,
-      "at": "2026-11-16T14:00:11.963Z"
-    },
-    {
-      "script": "spirit/app/testicle/element/statusBox.js",
-      "suite": "spirit/app/testicle/element/test/statusBox.js",
-      "title": "zzOk.js and zzBad.js are planted with their own tests, and testicle is idle again",
-      "severity": 0.2,
-      "at": "2026-11-16T14:00:11.826Z"
-    },
-    {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a -browser result for a node-only script is refused, and no current row of it stands",
-      "severity": 0.4,
-      "at": "2026-11-18T12:37:48.557Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a browser-only script is tested by -general and -browser general tests, and no -node one",
-      "severity": 0.2,
-      "at": "2026-11-18T12:46:49.031Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a change to a script holding a top red stops the running suite: zzLong's run ends without its end",
-      "severity": 0.4,
-      "at": "2026-11-18T11:46:20.555Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a failing test row sent alone leaves the suite row's outcome as testicle.suite.success left it: zzSucc stays green",
-      "severity": 0.4,
-      "at": "2026-11-18T12:01:20.613Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a file added to the tree flags the general test again for a script it judged red",
-      "severity": 0.2,
-      "at": "2026-11-18T11:37:07.226Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a flagged suite runs by itself, with no run asked: nu's and xi's own suites start",
-      "severity": 0.2,
-      "at": "2026-11-18T11:45:48.004Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a general test is started with the script as its argument, and reports for that script",
-      "severity": 0.7,
-      "at": "2026-11-18T11:27:46.269Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a load not complete in 3 seconds counts as a hang: not classifyable, its row red, severity 0.8",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:44.019Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a node-only script is tested by -general and -node general tests, and no -browser one",
-      "severity": 0.2,
-      "at": "2026-11-18T12:46:48.964Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a press in a script tab still runs a general test for that one script",
-      "severity": 0.4,
-      "at": "2026-11-18T11:41:20.633Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a result carries both hashes it ran against, the script's and the suite's",
-      "severity": 0.2,
-      "at": "2026-11-18T11:47:51.101Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a result of that run carries the script's hash as it stood when the run started",
-      "severity": 0.2,
-      "at": "2026-11-18T11:52:41.471Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a run stopped is re-assembled fresh from the flags: the next run is handed zzReB and zzReC, not zzReA",
-      "severity": 0.4,
-      "at": "2026-11-18T12:01:20.562Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a run with a title retires nothing: after testicle.run of \"stale one\" alone, \"stale two\" is still current",
-      "severity": 0.4,
-      "at": "2026-11-18T11:51:20.527Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a scratch copy is made with a run limit of 60 s, three planted scripts, and a general test that works past the limit on the second",
-      "severity": 0.7,
-      "at": "2026-11-18T12:57:58.802Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a script changed after the start is also classified with no press, within 30 seconds",
-      "severity": 0.2,
-      "at": "2026-11-18T12:27:03.410Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a script classified has no red classifyable row",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:44.038Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a script planted with no 'use strict' shows \"still red\" in the general test",
-      "severity": 0.2,
-      "at": "2026-11-18T11:37:07.201Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a script that crashes in both is not classifyable: its classifyable row is red, severity 0.8",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:44.000Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a script that crashes on the node for lack of document and loads in the page is browser-only",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:43.935Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a script that exits on the node with nothing thrown has loaded there: an app server comes out node-only",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:43.976Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a script that loads on the node and crashes in the page for lack of require is node-only",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:43.904Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a script's own test is started with no argument",
-      "severity": 0.2,
-      "at": "2026-11-18T11:24:16.141Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite asked by testicle.run goes to the head of the queue: tau runs before omicron's own suite",
-      "severity": 0.2,
-      "at": "2026-11-18T12:00:43.197Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite flagged twice is owed one run: nu's own suite ran once",
-      "severity": 0.2,
-      "at": "2026-11-18T11:45:51.009Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite that leaves a folder in the run folder is red on \"it leaves nothing new in the run folder\", at 0.7",
-      "severity": 0.4,
-      "at": "2026-11-18T11:30:16.501Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite that leaves its temp folder behind is red on \"it leaves no temp folder behind\", at 0.7",
-      "severity": 0.4,
-      "at": "2026-11-18T11:32:46.547Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite that leaves no temp folder is green on it",
-      "severity": 0.4,
-      "at": "2026-11-18T11:32:46.581Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite that leaves nothing in the run folder is green on it",
-      "severity": 0.4,
-      "at": "2026-11-18T11:30:16.528Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite that ran with a failed test for the script shows \"still red\"",
-      "severity": 0.2,
-      "at": "2026-11-18T11:33:07.036Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite that succeeded against a script and its hash stays a success in the suite table: aOk.js still green",
+      "title": "a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again",
       "severity": 0.8,
-      "at": "2026-11-18T12:57:58.873Z"
+      "at": "2026-11-19T00:33:56.979Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite the run never reached is not failed by the kill: cLater.js's suite row is not red, and none of its test rows",
+      "title": "a require inside a function, made only when lazy.js's own suite runs, is recorded too: lazy.js pulls in lazyLib.js",
       "severity": 0.8,
-      "at": "2026-11-18T12:57:58.938Z"
+      "at": "2026-11-19T00:33:56.957Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite whose every test passed shows \"green\"",
+      "title": "a scratch copy in auto mode is made with four planted scripts and their own tests: one requiring another as it loads, one only inside a function",
       "severity": 0.2,
-      "at": "2026-11-18T11:32:56.793Z"
+      "at": "2026-11-19T00:29:16.863Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a suite whose only test hangs, its process kept alive, fails too: sigma's suite shows \"still red\"",
+      "title": "a scratch copy is made with three planted scripts whose general test crashes, hangs and answers false",
       "severity": 0.2,
-      "at": "2026-11-18T12:18:45.627Z"
+      "at": "2026-11-19T00:24:27.868Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "a test that hangs fails at its own limit: rho hangs is red, rho answers its first green",
-      "severity": 0.2,
-      "at": "2026-11-18T12:15:25.331Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "aOk.js reports its success in the run before the limit",
-      "severity": 0.2,
-      "at": "2026-11-18T12:57:58.825Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "after a restart, a classified script still shows only the suites that apply",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:47.506Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "after a whole run, a test it did not report is no longer current: \"stale two\" has no current row",
-      "severity": 0.4,
-      "at": "2026-11-18T11:51:20.584Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "after the start, interactive still, a script changed while down is classified with no press",
-      "severity": 0.2,
-      "at": "2026-11-18T12:26:33.343Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "after the start, the classifier having changed while down, every live script is classified again, right away",
-      "severity": 0.2,
-      "at": "2026-11-18T12:09:25.189Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "any other change waits its turn: zzLong's run ends with its end, and zzCalm's own suite starts after it",
-      "severity": 0.4,
-      "at": "2026-11-18T11:46:20.683Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "at a start, interactive and nothing pressed, every live script is classified",
-      "severity": 0.2,
-      "at": "2026-11-18T11:08:02.165Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "at once after it is classified, a browser-only script's suite search shows no -node suite",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:44.083Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "at once after it is classified, a node-only script's suite search shows no -browser suite",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:44.104Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "classified first, tested after: each one's own suite reports only after its reClassify cleared",
-      "severity": 0.2,
-      "at": "2026-11-18T12:41:48.803Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "each one is classified again in interactive mode with nothing pressed: reClassify is false on every one of the six",
-      "severity": 0.2,
-      "at": "2026-11-18T12:46:48.917Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "each row holds the result its test gave",
-      "severity": 0.2,
-      "at": "2026-11-18T11:24:16.118Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "every one is classified by the server by itself: reClassify false on each",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:43.865Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "general tests run first, though the own suite sorts first by name: every general result for early.js came before early's own suite started",
-      "severity": 0.2,
-      "at": "2026-11-18T11:47:51.074Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "general tests run first: every general result for nu.js came before nu's own suite started",
-      "severity": 0.2,
-      "at": "2026-11-18T11:45:51.036Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "in auto mode, the server processes everything by itself: psi's flagged suite is run",
-      "severity": 0.2,
-      "at": "2026-11-18T12:31:03.489Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "in debug mode, set to auto, it never runs testicle's own tests, only the dummies: none reports, and it comes to rest",
+      "title": "a suite whose test answered false is red with no reason: its verdict was reached",
       "severity": 0.8,
-      "at": "2026-11-18T12:57:58.773Z"
+      "at": "2026-11-19T00:29:08.217Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "in debug mode, the classifier judged only scripts under spirit/app/testicle/",
-      "severity": 0.4,
-      "at": "2026-11-18T11:02:31.952Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "in interactive mode, a press of testicle.run runs that suite, and only it",
-      "severity": 0.2,
-      "at": "2026-11-18T12:26:32.393Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "in interactive mode, nothing runs by itself: five seconds on, the server is idle and no suite of chi or psi was run",
-      "severity": 0.2,
-      "at": "2026-11-18T12:25:32.245Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "in interactive mode, the classifier's own suite row is no longer flagged for chi",
-      "severity": 0.2,
-      "at": "2026-11-18T12:25:27.263Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "in interactive mode, the server classifies by itself with no press: chi's reClassify turns false",
-      "severity": 0.2,
-      "at": "2026-11-18T12:25:27.231Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "it leaves nothing new in the run folder",
-      "severity": 0.7,
-      "at": "2026-11-18T12:57:50.294Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "once that work is done, busy answers false again",
-      "severity": 0.2,
-      "at": "2026-11-18T11:20:14.032Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "once zzdA's edited suite has run again, the test it lost is no longer current",
-      "severity": 0.2,
-      "at": "2026-11-18T12:56:11.222Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "pi.js changes, and changes again while its own suite runs",
-      "severity": 0.2,
-      "at": "2026-11-18T11:51:51.191Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "rho's suite shows \"still red\"",
-      "severity": 0.2,
-      "at": "2026-11-18T12:15:45.372Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "rho.js and sigma.js change",
-      "severity": 0.2,
-      "at": "2026-11-18T12:13:25.324Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "six scripts are written, each with its own test: node, page, both, broken, hang and exit",
-      "severity": 0.2,
-      "at": "2026-11-18T12:37:43.834Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "spirit/app/testicle/temp/zzBatch/ is planted with its three kinds of general test and three scripts, classified and run once",
-      "severity": 0.7,
-      "at": "2026-11-18T11:41:20.493Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "spirit/app/testicle/temp/zzRe/ is planted with its own -general test and three scripts, and run once",
-      "severity": 0.7,
-      "at": "2026-11-18T12:01:20.507Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "spirit/app/testicle/temp/zzStale/ is planted, its own suite reporting one test green and one red, and run once",
-      "severity": 0.7,
-      "at": "2026-11-18T11:51:20.491Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "spirit/app/testicle/temp/zzSucc/ is planted with its own suite and run once",
-      "severity": 0.7,
-      "at": "2026-11-18T11:56:20.502Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "spirit/app/testicle/temp/zzTop/ is planted with a long suite, a suite red at 0.9 and a green one, each run once",
-      "severity": 0.7,
-      "at": "2026-11-18T11:46:20.496Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "testicle hands the same node and the same Chrome to the next suite it runs",
-      "severity": 0.4,
-      "at": "2026-11-18T12:03:21.126Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "testicle hands the suites it runs a node that answers, and a Chrome that answers",
-      "severity": 0.4,
-      "at": "2026-11-18T12:03:21.099Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "testicle is switched to interactive while the classifying goes on",
-      "severity": 0.2,
-      "at": "2026-11-18T12:46:48.890Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "testicle.suite.success with success false is what turns zzSucc red",
-      "severity": 0.4,
-      "at": "2026-11-18T12:01:20.637Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "testicle.suite.success with success false sets that suite row at once: its outcome red, its flag cleared",
-      "severity": 0.4,
-      "at": "2026-11-18T11:56:20.536Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "testicle.suite.success with success true sets it green, at once, whatever its test rows say",
-      "severity": 0.4,
-      "at": "2026-11-18T11:56:20.564Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the -browser test then runs once, handed the two that run in a page, never the node-only one",
-      "severity": 0.4,
-      "at": "2026-11-18T11:41:20.579Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the -node test then runs once, handed the two that run on the node, never the browser-only one",
-      "severity": 0.4,
-      "at": "2026-11-18T11:41:20.552Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the changed script's red suite runs first: zzRed's own suite starts within 30 s of its change, before zzLong's 40 s were up",
-      "severity": 0.4,
-      "at": "2026-11-18T11:46:20.583Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the queue is worked off and the server is idle",
-      "severity": 0.2,
-      "at": "2026-11-18T11:41:47.281Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the run is computed again: cLater.js runs in a new run and its suite row turns green",
+      "title": "a suite whose test never answered within its limit is red with the reason hung",
       "severity": 0.8,
-      "at": "2026-11-18T12:57:58.961Z"
+      "at": "2026-11-19T00:29:08.196Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the run is killed at its limit while bHang.js works on",
-      "severity": 0.2,
-      "at": "2026-11-18T12:57:58.848Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the runner is idle, so the table holds still while every variation is asked",
-      "severity": 0.2,
-      "at": "2026-11-18T11:12:11.374Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the runner starts no sooner than 1 second after the last change: the second change pushed the start back",
-      "severity": 0.2,
-      "at": "2026-11-18T11:45:48.031Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the running job is not killed by a change: pi's first run ends",
-      "severity": 0.2,
-      "at": "2026-11-18T11:52:21.267Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the server is idle again after chi and psi",
-      "severity": 0.2,
-      "at": "2026-11-18T12:35:43.495Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the stopped run goes back flagged: zzLong's own suite runs again, after zzRed's",
-      "severity": 0.4,
-      "at": "2026-11-18T11:46:20.632Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the stopped run's results are untouched: zzLong's current row is the one from before",
-      "severity": 0.4,
-      "at": "2026-11-18T11:46:20.609Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the suite comes round again behind it: pi's own suite runs a second time, after the first ended",
-      "severity": 0.2,
-      "at": "2026-11-18T11:56:41.572Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the suite running at the kill fails: bHang.js red",
-      "severity": 0.4,
-      "at": "2026-11-18T12:57:58.917Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the suite's status follows the tests it now has: zzStale's own suite shows \"green\"",
-      "severity": 0.4,
-      "at": "2026-11-18T11:51:20.609Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "the tests aOk.js's suite reported keep their results: every one of aOk.js's rows still passed",
+      "title": "a suite whose test threw is red with the reason crashed",
       "severity": 0.8,
-      "at": "2026-11-18T12:57:58.897Z"
+      "at": "2026-11-19T00:29:08.175Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "there is never a second run beside the running one: tau started after every run before it ended",
+      "title": "testicle keeps a dependency table, and it records that user.js pulls in lib.js as it loads",
+      "severity": 0.8,
+      "at": "2026-11-19T00:33:56.846Z"
+    },
+    {
+      "script": "spirit/app/testicle/testicle.js",
+      "suite": "spirit/app/testicle/test/testicle.js",
+      "title": "the four are classified and their own suites run green",
       "severity": 0.2,
-      "at": "2026-11-18T12:00:43.225Z"
+      "at": "2026-11-19T00:33:56.818Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "there is one runner: nu's and xi's runs never overlap",
+      "title": "the run judges the three planted scripts' general suite: each suite row ends red",
       "severity": 0.2,
-      "at": "2026-11-18T11:45:48.054Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "two planted UI suites, each pressed, write down what testicle handed them",
-      "severity": 0.2,
-      "at": "2026-11-18T12:03:21.067Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "when the classifier changes, a script classified before reads reClassify true again",
-      "severity": 0.7,
-      "at": "2026-11-18T12:46:48.807Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "when the classifier changes, a script that failed is tried again, though it did not change: its classifyable row is tested anew",
-      "severity": 0.2,
-      "at": "2026-11-18T12:46:48.862Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "with nothing changing, busy answers false",
-      "severity": 0.2,
-      "at": "2026-11-18T11:03:21.978Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "with one script changed later, the -general test runs once, handed that one",
-      "severity": 0.4,
-      "at": "2026-11-18T11:41:20.608Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "with rows flagged when the server starts, the runner runs them by itself",
-      "severity": 0.2,
-      "at": "2026-11-18T12:04:45.124Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "with testicle given, the suite runs up to that test and no test after it",
-      "severity": 0.2,
-      "at": "2026-11-18T11:26:46.269Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "with three scripts changed in one quiet second, the -general test runs once, handed all three",
-      "severity": 0.4,
-      "at": "2026-11-18T11:41:20.525Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "without testicle, the whole suite runs: every test of it reports to testicle",
-      "severity": 0.2,
-      "at": "2026-11-18T11:24:16.093Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "zzLong.js changes again, and zzCalm.js, holding no red, changes while zzLong's own suite runs",
-      "severity": 0.2,
-      "at": "2026-11-18T11:46:20.660Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "zzLong.js changes, and zzRed.js changes while zzLong's own suite runs",
-      "severity": 0.2,
-      "at": "2026-11-18T11:46:20.528Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "zzReA, which reported before the stop, is done: its suite row green, its flag cleared",
-      "severity": 0.4,
-      "at": "2026-11-18T12:01:20.588Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "zzReA, zzReB and zzReC change, and while the batch waits on zzReB, another suite is pressed",
-      "severity": 0.2,
-      "at": "2026-11-18T12:01:20.534Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "zzStale's suite is rewritten to report \"stale one\" alone, and run whole",
-      "severity": 0.2,
-      "at": "2026-11-18T11:51:20.554Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
-      "title": "zzdA, zzdC and their own tests run while testicle is on",
-      "severity": 0.2,
-      "at": "2026-11-18T12:51:28.909Z"
+      "at": "2026-11-19T00:29:08.073Z"
     },
     {
       "script": "spirit/appClient.js",
@@ -12434,35 +11835,7 @@
       "suite": "spirit/test/spirit-sibling-browser.js",
       "title": "its searches are each made with a spirit.data branch, no rows of their own",
       "severity": 0.4,
-      "at": "2026-11-18T13:01:20.258Z"
-    },
-    {
-      "script": "spirit/element/search.js",
-      "suite": "spirit/element/test/search-child-browser.js",
-      "title": "a planted long value in a row wraps or clips, and nothing shows past the row's edge",
-      "severity": 0.4,
-      "at": "2026-11-18T13:01:11.694Z"
-    },
-    {
-      "script": "spirit/element/search.js",
-      "suite": "spirit/element/test/search-child-browser.js",
-      "title": "the list scrolls: its box keeps its size and its scrollHeight is greater than its clientHeight",
-      "severity": 0.4,
-      "at": "2026-11-18T13:01:11.647Z"
-    },
-    {
-      "script": "spirit/element/search.js",
-      "suite": "spirit/element/test/search-child-browser.js",
-      "title": "the list's box has a stated size, from its pane and not from its rows",
-      "severity": 0.4,
-      "at": "2026-11-18T13:01:11.617Z"
-    },
-    {
-      "script": "spirit/element/search.js",
-      "suite": "spirit/element/test/search-child-browser.js",
-      "title": "when the list is scrolled, its title and buttons stay at the top",
-      "severity": 0.4,
-      "at": "2026-11-18T13:01:11.672Z"
+      "at": "2026-11-18T23:58:21.760Z"
     },
     {
       "script": "spirit/element/search.js",
@@ -12518,7 +11891,7 @@
       "suite": "spirit/test/spirit-sibling-browser.js",
       "title": "its searches are each made with a spirit.data branch, no rows of their own",
       "severity": 0.4,
-      "at": "2026-11-18T13:01:20.930Z"
+      "at": "2026-11-18T23:58:22.383Z"
     },
     {
       "script": "spirit/element/search/api.js",
@@ -12535,11 +11908,32 @@
       "at": "2026-11-18T01:00:58.609Z"
     },
     {
-      "script": "spirit/element/search/api/list.js",
+      "script": "spirit/element/search/contact.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "title": "a planted long value in a row wraps or clips, and nothing shows past the row's edge",
+      "severity": 0.4,
+      "at": "2026-11-18T23:58:08.600Z"
+    },
+    {
+      "script": "spirit/element/search/contact.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "title": "the list scrolls: its box keeps its size and its scrollHeight is greater than its clientHeight",
+      "severity": 0.4,
+      "at": "2026-11-18T23:58:07.751Z"
+    },
+    {
+      "script": "spirit/element/search/contact.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "title": "the list's box has a stated size, from its pane and not from its rows",
+      "severity": 0.4,
+      "at": "2026-11-18T23:58:07.128Z"
+    },
+    {
+      "script": "spirit/element/search/contact.js",
       "suite": "spirit/element/test/search-child-browser.js",
       "title": "when the list is scrolled, its title and buttons stay at the top",
       "severity": 0.4,
-      "at": "2026-11-18T01:22:23.723Z"
+      "at": "2026-11-18T23:58:08.292Z"
     },
     {
       "script": "spirit/element/search/file/row.js",
@@ -12554,6 +11948,13 @@
       "title": "when its path in data.files changes, the row repaints its size",
       "severity": 0.2,
       "at": "2026-11-18T01:03:04.542Z"
+    },
+    {
+      "script": "spirit/element/search/job.js",
+      "suite": "spirit/element/test/search-child-browser.js",
+      "title": "when the list is scrolled, its title and buttons stay at the top",
+      "severity": 0.4,
+      "at": "2026-11-18T23:58:08.435Z"
     },
     {
       "script": "spirit/faceHome.js",
@@ -12619,188 +12020,6 @@
       "at": "2026-11-18T05:59:37.681Z"
     },
     {
-      "script": "spirit/job.js",
-      "suite": "spirit/test/job.js",
-      "title": "each app server's door.sock is spirit/state/<name>/door.sock",
-      "severity": 0.2,
-      "at": "2026-11-18T01:12:22.810Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page asking for its branch by its name gets its data.js",
-      "severity": 0.4,
-      "at": "2026-11-16T03:26:31.099Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page on the scratch node asks for each branch by its name",
-      "severity": 0.7,
-      "at": "2026-11-16T03:26:30.981Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "no data.js of its branch was asked that is not there (no 404)",
-      "severity": 0.4,
-      "at": "2026-11-16T03:26:31.123Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "on the page, spirit.data under its branch has data and cache",
-      "severity": 0.4,
-      "at": "2026-11-16T03:26:31.140Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page asking for its branch by its name gets its data.js",
-      "severity": 0.4,
-      "at": "2026-11-16T03:27:31.443Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page on the scratch node asks for each branch by its name",
-      "severity": 0.7,
-      "at": "2026-11-16T03:27:31.408Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "no data.js of its branch was asked that is not there (no 404)",
-      "severity": 0.4,
-      "at": "2026-11-16T03:27:31.466Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "on the page, spirit.data under its branch has data and cache",
-      "severity": 0.4,
-      "at": "2026-11-16T03:27:31.487Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page asking for its branch by its name gets its data.js",
-      "severity": 0.4,
-      "at": "2026-11-16T03:28:32.692Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page on the scratch node asks for each branch by its name",
-      "severity": 0.7,
-      "at": "2026-11-16T03:28:31.804Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "no data.js of its branch was asked that is not there (no 404)",
-      "severity": 0.4,
-      "at": "2026-11-16T03:28:32.720Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "on the page, spirit.data under its branch has data and cache",
-      "severity": 0.4,
-      "at": "2026-11-16T03:28:32.747Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page asking for its branch by its name gets its data.js",
-      "severity": 0.4,
-      "at": "2026-11-16T03:29:33.196Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page on the scratch node asks for each branch by its name",
-      "severity": 0.7,
-      "at": "2026-11-16T03:29:33.098Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "no data.js of its branch was asked that is not there (no 404)",
-      "severity": 0.4,
-      "at": "2026-11-16T03:29:33.218Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "on the page, spirit.data under its branch has data and cache",
-      "severity": 0.4,
-      "at": "2026-11-16T03:29:33.240Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page asking for its branch by its name gets its data.js",
-      "severity": 0.4,
-      "at": "2026-11-16T03:30:34.864Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "a page on the scratch node asks for each branch by its name",
-      "severity": 0.7,
-      "at": "2026-11-16T03:30:33.469Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "no data.js of its branch was asked that is not there (no 404)",
-      "severity": 0.4,
-      "at": "2026-11-16T03:30:34.889Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "on the page, spirit.data under its branch has data and cache",
-      "severity": 0.4,
-      "at": "2026-11-16T03:30:34.910Z"
-    },
-    {
-      "script": "spirit/relayStore.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every file in a test folder matches a production file: none is garbage",
-      "severity": 0.4,
-      "at": "2026-11-16T03:30:41.991Z"
-    },
-    {
-      "script": "spirit/relayStore.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every general test is <file>-<child | sibling>-<general | node | browser>.js, and no other",
-      "severity": 0.4,
-      "at": "2026-11-16T03:30:41.968Z"
-    },
-    {
-      "script": "spirit/relayStore.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every production script has its own test",
-      "severity": 0.2,
-      "at": "2026-11-16T03:30:41.944Z"
-    },
-    {
-      "script": "spirit/relayStore.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the module handed has test files of its own, and they are read",
-      "severity": 0.2,
-      "at": "2026-11-16T03:30:41.922Z"
-    },
-    {
-      "script": "spirit/relayStore.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "there are suites to judge",
-      "severity": 0.2,
-      "at": "2026-11-16T03:30:41.764Z"
-    },
-    {
       "script": "spirit/spirit.js",
       "suite": "spirit/test/spirit.js",
       "title": "a scratch node is up, on its own copy of the tree",
@@ -12819,28 +12038,28 @@
       "suite": "spirit/test/test/headLessChrome.js",
       "title": "a test that ends leaves no Chrome of its own running",
       "severity": 0.4,
-      "at": "2026-11-16T04:34:54.674Z"
+      "at": "2026-11-18T16:35:56.961Z"
     },
     {
       "script": "spirit/test/headLessChrome.js",
       "suite": "spirit/test/test/headLessChrome.js",
       "title": "a test that is killed leaves no Chrome of its own running",
       "severity": 0.4,
-      "at": "2026-11-16T04:34:55.059Z"
+      "at": "2026-11-18T16:35:57.285Z"
     },
     {
       "script": "spirit/test/headLessChrome.js",
       "suite": "spirit/test/test/headLessChrome.js",
       "title": "no lab node is left locked once its holders ended",
       "severity": 0.2,
-      "at": "2026-11-16T04:34:54.519Z"
+      "at": "2026-11-18T16:35:55.886Z"
     },
     {
       "script": "spirit/test/headLessChrome.js",
       "suite": "spirit/test/test/headLessChrome.js",
       "title": "one test per lab node at a time: with the six personal nodes held, a seventh ask waits, and is handed one when a holder ends",
       "severity": 0.4,
-      "at": "2026-11-16T04:34:52.405Z"
+      "at": "2026-11-18T16:35:28.704Z"
     },
     {
       "script": "spirit/word.js",

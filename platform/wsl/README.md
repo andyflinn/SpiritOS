@@ -1,6 +1,6 @@
 # Info and Measurements on wsl
 
-Measurements were taken on **Wednesday, November 18, 2026** for repository commit **f4ceb1e16**
+Measurements were taken on **Thursday, November 19, 2026** for repository commit **e219eee14**
 
 ## The Machine the Measurements come from
 
@@ -14,9 +14,9 @@ Measurements were taken on **Wednesday, November 18, 2026** for repository commi
 ## Summary
 
 - A SpiritOS relay given 512 Megabytes of RAM can hold live streams for 2,403 simultaneously.
-- A SpiritOS node at rest uses 105 MB of RAM.
-- A call to a node on its own machine answers in 2.7 ms, the slowest in 7.8 ms.
-- A card request through a relay takes 147.5 ms, the slowest 178.8 ms; sealing and signing take 1.4 ms of it.
+- A SpiritOS node at rest uses 102 MB of RAM.
+- A call to a node on its own machine answers in 2.7 ms, the slowest in 6.7 ms.
+- A card request through a relay takes 147.7 ms, the slowest 252.2 ms; sealing and signing take 1.4 ms of it.
 
 ## Details
 
