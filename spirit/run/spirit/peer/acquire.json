@@ -1,0 +1,8 @@
+{
+  "description": "Add a key to your contacts (publicKey), with the label it came with (publicLabel) or none, recording where it was found (url, or else this node's first listed relay); the relay is asked nothing. Answers 201 {publicKey, publicLabel, keep}. Refused 400 without a publicKey, for a publicLabel that breaks the name rule, or for this node's own key; 503 when there is no relay url or the url is not a relay address; 507 when the memory is full of the people you added.",
+  "request": {
+    "publicKey": "key",
+    "publicLabel": "name?",
+    "url": "url?"
+  }
+}

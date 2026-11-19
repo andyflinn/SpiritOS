@@ -1,3 +1,7 @@
 {
-  "description": "Whether a member's key is granted one api path (\"app\" or \"app.verb\"): {allowed}."
+  "description": "Whether a member's key is granted one api path (\"app\" or \"app.verb\"): {allowed}.",
+  "request": {
+    "key": "key",
+    "path": "text"
+  }
 }

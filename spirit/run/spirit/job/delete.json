@@ -1,0 +1,6 @@
+{
+  "description": "Remove one job that has ended (cancelled, completed, failed or stopped) by its id, and tell every subscriber it is gone; 204 with no body. Refused 404 when there is no such job or it has not ended yet.",
+  "request": {
+    "id": "id"
+  }
+}

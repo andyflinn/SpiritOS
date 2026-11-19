@@ -1,0 +1,7 @@
+{
+  "description": "Put a relay on this node's list by its url, under your own label for it, once its card answers: {ok, url, relayKey}. Refused 400 when the label is missing or breaks the name rule, or the url is not https (or loopback http); 503 with no router to ask with; 502 when the relay gives no card; and 409 when it cannot be listed under its key.",
+  "request": {
+    "url": "url",
+    "label": "name?"
+  }
+}

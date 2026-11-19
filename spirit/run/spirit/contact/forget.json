@@ -1,0 +1,6 @@
+{
+  "description": "Take a key out of your contacts (publicKey): it is no longer kept, your name for it is cleared, and every grant it held is revoked. Answers {publicKey, forgotten, stillBlocked}: a blocked key keeps its row and stays blocked. Refused 400 without a publicKey or for this node's own key, and 404 when nothing is kept about it.",
+  "request": {
+    "publicKey": "key"
+  }
+}

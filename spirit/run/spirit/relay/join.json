@@ -1,0 +1,9 @@
+{
+  "description": "Join the relay at url by email. With an email it asks the relay to mail a link (link, or else this node's own join page) carrying a code: {ok, url}. With that code it takes the seat, puts the relay on the list and connects to it: {ok, url, label}, 201 for a new seat and 200 for an email change on a seat already held; the url may be left out while the relay asked last is remembered. Refused 400 without a url or with neither email nor code, 503 with no router to join with, the relay's own refusal under its status, and 502 when it does not answer.",
+  "request": {
+    "url": "url",
+    "email": "text",
+    "code": "text?",
+    "link": "url?"
+  }
+}

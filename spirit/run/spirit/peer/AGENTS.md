@@ -5,6 +5,4 @@ payload to a peer, peer.acquire adds a confirmed key to the book. Who is
 out there is contact.search's to answer (goal/G30.19; peer.search is gone). `wire: true`: every one of these fails the
 same way when the box is offline.
 
-Described to agents (goal/G10.5): nothing. peer.post and
-peer.acquire have no file here and are closed to agents: a post in the
-owner's name and a row in his book are his.
+Every verb has its <verb>.json beside api.js, its arguments as api.js declares them (goal/G47.4; Andy: "api.js and <verb>.json files match precisely"). Which verbs an agent may call is no longer said by a file being there or not: the agent app gates branches and verbs for agents, not the node (Andy, goal/G47.4).

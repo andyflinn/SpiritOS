@@ -6,7 +6,4 @@ since goal/G30.6, beside the node's other families. The owner calls it on
 loopback; a member reaches it only through a grant (apiDoor.js), as every
 family.
 
-Described to agents: the reads (query, search, peer) and the bundle and
-branch tables (bundle, branch; goal/G41.14). The writes (grant,
-revoke, relabel) have no file here and are closed to agents until a goal opens
-them.
+Every verb has its <verb>.json beside api.js, its arguments as api.js declares them (goal/G47.4; Andy: "api.js and <verb>.json files match precisely"). Which verbs an agent may call is no longer said by a file being there or not: the agent app gates branches and verbs for agents, not the node (Andy, goal/G47.4).

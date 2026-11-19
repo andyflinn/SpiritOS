@@ -1,0 +1,7 @@
+{
+  "description": "The shell app this node names at home or on its face (at, home or face): with no name it answers {ok, status, name}, the one named, app if none is set; with a name it names that app and answers the same. Refused 400 bad-place when at is neither home nor face, and 400 not-a-shell when there is no such app or its own json does not say it is a shell.",
+  "request": {
+    "at": "text",
+    "name": "text?"
+  }
+}

@@ -1,3 +1,7 @@
 {
-  "description": "The files and folders the node will serve, found by words (q; any order, matched against each name and path and ranked best first; empty means everything, in path order), as a bounded list of {key: path, label: path}; a folder's path ends in a slash. With contents: \"yes\" the words are searched inside text files up to 1 MB instead (case ignored, partial words included) and the files are ranked by their contents alone, each label {path, score, line}: the contents score (0 to 1, higher for better and more matched lines) and the first matched line."
+  "description": "The files and folders the node will serve, found by words (q; any order, matched against each name and path and ranked best first; empty means everything, in path order), as a bounded list of {key: path, label: path}; a folder's path ends in a slash. With contents: \"yes\" the words are searched inside text files up to 1 MB instead (case ignored, partial words included) and the files are ranked by their contents alone, each label {path, score, line}: the contents score (0 to 1, higher for better and more matched lines) and the first matched line.",
+  "request": {
+    "q": "text?",
+    "contents": "flag?"
+  }
 }

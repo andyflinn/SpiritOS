@@ -1,0 +1,3 @@
+{
+  "description": "Replace this node's cipher key with a new one and throw the old private key away, with no grace period; its identity key stays, so it is the same node to everyone. The new card, newer than any handed out before, goes to every relay at once: {ok, at, relays}, at being the card's counter and relays how many it went to. Refused 500 (rotate-not-saved) when the new key cannot be saved, and then nothing is published."
+}

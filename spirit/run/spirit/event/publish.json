@@ -1,0 +1,10 @@
+{
+  "description": "A process publishes on its own job by id: its status, data, a log line (logMessage) or its object (app). The job is changed, every subscriber hears it, and the answer is the job as it now stands. Refused 413 (app-request-too-large) when the object is over the payload limit, and 404 when there is no job with that id.",
+  "request": {
+    "id": "id",
+    "status": "text?",
+    "data": "object?",
+    "logMessage": "text?",
+    "app": "object?"
+  }
+}

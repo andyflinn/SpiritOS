@@ -1,0 +1,6 @@
+{
+  "description": "Change the sentence this node tells strangers about itself (description): {ok, status, description}, the description as stored. Refused 400 when it is empty (description required), longer than 128 bytes, or has invisible or control characters.",
+  "request": {
+    "description": "description"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "description": "Take the block off a key (publicKey) and nothing more; a person blocked while still waiting goes back to waiting, not into your contacts: {publicKey, keep, blocked}. Refused 400 without a publicKey or for this node's own key, 404 when there is no row for it, and 507 when unblocking someone you had added needs room the memory does not have.",
+  "request": {
+    "publicKey": "key"
+  }
+}

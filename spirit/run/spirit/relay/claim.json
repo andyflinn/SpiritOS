@@ -1,0 +1,9 @@
+{
+  "description": "Claim a seat under a name on the relay at url, with an invite and its label when it takes one: the relay's own answer under its status, with mine saying whether the seat is this node's key. A seat taken, or one this node already holds (409, mine true), puts the relay on the node's list, writes the seat down and connects to it. Refused 503 when the url is not a relay address or there is no router to claim with, and 502 when the claim fails on the way.",
+  "request": {
+    "url": "url",
+    "name": "name",
+    "invite": "text?",
+    "inviteLabel": "name?"
+  }
+}

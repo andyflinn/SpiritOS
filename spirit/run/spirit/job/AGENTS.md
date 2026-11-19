@@ -5,7 +5,4 @@ processes and other local transient ones, and their tracking. It is not an api
 hub: a server process is called by its verb on the flat apiDoor, and the
 allow-table is the `auth` family. Local (`wire: false`).
 
-Described to agents (goal/G10.5): the reads (search, get). The writes (create,
-cancel, delete) have no file here and are closed to agents until a goal opens
-them. A process publishes on its own job through `event.publish` (goal/G40.6);
-jobs has no update verb.
+Every verb has its <verb>.json beside api.js, its arguments as api.js declares them (goal/G47.4; Andy: "api.js and <verb>.json files match precisely"). Which verbs an agent may call is no longer said by a file being there or not: the agent app gates branches and verbs for agents, not the node (Andy, goal/G47.4).
