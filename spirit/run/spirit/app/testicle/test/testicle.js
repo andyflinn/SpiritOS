@@ -2472,8 +2472,9 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     R.DB = path.join(on, 'data', 'testicle.db');
     R.N = await boot(run);
     if (!R.N.up) return false;
-    const auto = await call(R.N.base, 'testicle.preferences', { interactive: false });
-    return auto.status === 200 || false;
+    // Asked again until testicle takes it: it may come up a moment after the node answers.
+    const auto = await until(function () { return call(R.N.base, 'testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
+    return !!auto || false;
   }, test.limit.long);
   test.run('the run judges the three planted scripts\' general suite: each suite row ends red', 0.2, async function () {
     if (!reasonUp()) return false;
@@ -2616,8 +2617,9 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     DP.DB = path.join(on, 'data', 'testicle.db');
     DP.N = await boot(run);
     if (!DP.N.up) return false;
-    const auto = await call(DP.N.base, 'testicle.preferences', { interactive: false });
-    return auto.status === 200 || false;
+    // Asked again until testicle takes it: it may come up a moment after the node answers.
+    const auto = await until(function () { return call(DP.N.base, 'testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
+    return !!auto || false;
   }, test.limit.long);
   test.run('the four are classified and their own suites run green', 0.2, async function () {
     if (!depUp()) return false;
