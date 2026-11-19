@@ -8,10 +8,10 @@
 //
 // The box: "testicle.search answers the current rows by default; given a valid test title, {script, suite, test, text}, it
 // answers every row matching that script, suite and title, current or not, newest first. A test's history in its detail
-// comes from that, no new verb." The title line is the test's title in full, in a bubble on top; below it every row, the
-// newest flip first, each drawn by ./row.js with the date it flipped, its title and file names left out. It asks again
-// whenever testicle publishes a row of this test. Between the title and the rows (goal/G47.4): the title's row form, renamed
-// through testicle.title, the full script path, the full suite path, and the 🏃 run form.
+// comes from that, no new verb." The title line is the test's title in full, on top in a row form with its run button;
+// below it every row, the newest flip first, each drawn by ./row.js with the date it flipped, its title and file names left
+// out. It asks again whenever testicle publishes a row of this test. Between the title and the rows (goal/G47.4): the
+// title's rename form (testicle.title), the full script path and the full suite path.
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its row, testicle's interface and its cache manager.
@@ -36,22 +36,28 @@
     // stops the running suite and runs it first, as a top-10 fix does; the detail shows its full script and suite path"; Andy:
     // "the testicle detail doesn't show the full script name"): the script's and the suite's path in full under the title, and
     // the busy button the script tab's rows have, asking testicle.run for this script and suite.
-    // THE TITLE ON TOP, THEN ITS TWO ROW FORMS (goal/G47.4; Andy: "display the title in a bubble on top.", "a rowForm to change
-    // it below that.", "i LIKE the run-bubble in that tab though..."): the title in the shared bubble; the title form an input
-    // bounded by the description rule ("new titles and the corresponding ui INPUT must be bounded by DESCRIPTION_MAX_BYTES"),
-    // its press asking testicle.title; the run form, its icon 🏃 (a pictograph only in the icon element, the general rules),
-    // holds its run button; what a press refused is said below the bubbles.
+    // FOUR ROWS, THEN THE LIST (goal/G47.4; Andy: "script, suite, title are all common to all rows in the list. so - row 1:
+    // Title Bubble: presented as Row Form with a run button on the right side, like the ones in app for one-shot jobs - row 2:
+    // rowForm for title change - row 3: script file name - fow 4: suite file name then the list"): row 1 the run form, its icon
+    // 🏃 (a pictograph only in the icon element, the general rules), the title its line and run its button, as the app's task
+    // row (spirit/element/monitor/task.js) has its name and Run; row 2 the title form, an input bounded by the description
+    // rule ("new titles and the corresponding ui INPUT must be bounded by DESCRIPTION_MAX_BYTES"), its press asking
+    // testicle.title; what a press refused is said below the bubbles.
     // THE SCRIPT AND THE SUITE EACH A ROW ON TOP, AND NONE OF THE THREE AS A COLUMN (Andy: "the list does NOT need to have a
     // description/title column, that repeats the above information EVERY single time....", then "give a row on top to the full
     // script filename", "give a row on top to the full suite filename", "and eliminate those columns, too."): every row is this
     // test of this script and suite, so the history keeps the flip, the result and the severity.
-    container.innerHTML = '<div class="testicle-history fill" style="overflow:auto"><div class="testicle-title shell-bubble" data-history="title"></div>' +
+    container.innerHTML = '<div class="testicle-history fill" style="overflow:auto"><div data-history="runForm"></div>' +
       '<div data-history="titleForm"></div><div class="testicle-path shell-bubble" data-history="script"></div>' +
-      '<div class="testicle-path shell-bubble" data-history="suite"></div><div data-history="runForm"></div><div class="testicle-said" data-history="said"></div>' +
+      '<div class="testicle-path shell-bubble" data-history="suite"></div><div class="testicle-said" data-history="said"></div>' +
       '<table class="testicle-flips" data-history="rows"><thead><tr><th>Flipped</th><th>Result</th><th>Severity</th></tr></thead><tbody></tbody></table></div>';
     container.querySelector('[data-history="script"]').textContent = script;
     container.querySelector('[data-history="suite"]').textContent = suite;
-    container.querySelector('[data-history="title"]').textContent = test;
+    // The title's line, put into row 1 once the row form is loaded.
+    var titleLine = document.createElement('span');
+    titleLine.className = 'testicle-title';
+    titleLine.setAttribute('data-history', 'title');
+    titleLine.textContent = test;
     var body = container.querySelector('tbody');
 
     var drawn = [];
@@ -88,7 +94,7 @@
       var run = RF.create(container.querySelector('[data-history="runForm"]'), { icon: '🏃‍♂️', button: 'run',
         press: function () { return script && suite ? S.testicle.run({ script: script, suite: suite }) : undefined; } });
       run.button.title = 'run this suite now';
-      run.span.textContent = 'run this suite now';
+      run.span.appendChild(titleLine);
       var named = RF.create(container.querySelector('[data-history="titleForm"]'), { icon: '✏️', button: 'rename', press: rename });
       var input = document.createElement('input');
       input.type = 'text';
@@ -104,7 +110,7 @@
           test = S.fieldRules ? S.fieldRules.normalize(to) : String(to).trim();
           prefix = script + '|' + suite + '|' + test + '|';
           input.value = test;
-          container.querySelector('[data-history="title"]').textContent = test;
+          titleLine.textContent = test;
           ask();
         }, function (e) { if (!gone) said((e && e.message) || String(e)); });
       }

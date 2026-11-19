@@ -6,8 +6,9 @@ of `../../test/testicle.js`: a scratch node with testicle on, a test flipped thr
 the detail mounted alone on `/face.html` in a real Chrome.
 
 - `create(container, { script, suite, test })` loads alone through `spirit.require` and answers `{ destroy }`.
-- The title line is the test's title in full, in a bubble, the first thing in the detail (goal/G47.4, Andy: *"display the
-  title in a bubble on top."*).
+- The title line is the test's title in full, in row 1: a row form with the 🏃 as its icon and its run button on the right,
+  as the app's task row (goal/G47.4, Andy: *"row 1: Title Bubble: presented as Row Form with a run button on the right
+  side, like the ones in app for one-shot jobs"*).
 - Its columns: Flipped, then Result, Severity; no Title, Script or Suite (Andy: *"the list does NOT need to have a
   description/title column, that repeats the above information EVERY single time...."*, then *"and eliminate those
   columns, too."*).
@@ -15,11 +16,9 @@ the detail mounted alone on `/face.html` in a real Chrome.
   row matching that script, suite and title, current or not, newest first"*); no row of another test.
 - Each row drawn by the test row (❌/✅, two decimals, no title or file names) with the date it flipped.
 - A flip set on the node shows at the top with no press; a test with no row says *No row of this test.*
-- Right under the title bubble a row form holds the title in an input bounded by the description rule, 128 bytes (goal/G47.4,
-  Andy: *"a rowForm to change it below that."*); under it the full script path and the full suite path, each a row of its
-  own (Andy: *"give a row on top to the full script filename"*, *"... the full suite filename"*); then the run button,
-  asking `testicle.run` for them, in a row form whose icon is the 🏃 (a pictograph only in the icon element, the general
-  rules; Andy: *"i LIKE the run-bubble in that tab though..."*). Its rename asks `testicle.title` with the script, the suite, the old title
+- Row 1's run button asks `testicle.run` for its script and suite. Row 2, right under it, a row form holds the title in an
+  input bounded by the description rule, 128 bytes (Andy: *"row 2: rowForm for title change"*); rows 3 and 4 the full
+  script path and the full suite path (*"row 3: script file name - fow 4: suite file name then the list"*). Its rename asks `testicle.title` with the script, the suite, the old title
   and the typed one; a refusal is said below the forms and the title line stays.
 - `destroy` empties its container, and nothing is drawn there after.
 

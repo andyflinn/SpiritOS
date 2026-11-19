@@ -127,15 +127,16 @@ test.run('the test detail loads on its own and mounts for a given script, suite 
   return made === 'made' || false;
 }, test.limit.slow);
 
-// the box: "The title line is the test's title in full"; goal/G47.4, Andy: "display the title in a bubble on top."
+// the box: "The title line is the test's title in full"; goal/G47.4, Andy: "row 1: Title Bubble: presented as Row Form with a
+// run button on the right side, like the ones in app for one-shot jobs".
 test.run('the detail\'s title line is the test\'s title in full', 0.2, async function () {
   if (mounted()) return false;
-  const v = await view('zzBox');
-  return (!!v && v.title === FLIPS) || false;
-}, test.limit.quick);
-test.run('the title stands in a bubble, the first thing in the detail', 0.4, async function () {
+  const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && v.title === FLIPS; }); }, 5000);
+  return !!ok || false;
+}, test.limit.slow);
+test.run('row 1 is a row form holding the title, with its run button on the right', 0.4, async function () {
   if (mounted()) return false;
-  const ok = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var t = b && b.querySelector("[data-history=title]"); var top = b && b.firstElementChild && b.firstElementChild.firstElementChild; return !!t && t === top && t.classList.contains("shell-bubble"); }())');
+  const ok = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var top = b && b.firstElementChild && b.firstElementChild.firstElementChild; var f = top && top.querySelector(".shell-row-form"); var t = f && f.querySelector("[data-history=title]"); var bs = f ? f.querySelectorAll("button") : []; var last = bs.length ? bs[bs.length - 1] : null; return !!t && t.textContent === ' + JSON.stringify(FLIPS) + ' && !!last && last.textContent === "run" && !f.querySelector("input"); }())');
   return ok === true || false;
 }, test.limit.quick);
 // goal/G47.4, Andy: "the list does NOT need to have a description/title column, that repeats the above information EVERY
@@ -190,8 +191,9 @@ test.run('the detail shows its full script path and its full suite path', 0.4, a
   const text = await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")');
   return (text.indexOf(A) !== -1 && text.indexOf(AS) !== -1) || false;
 }, test.limit.quick);
-// goal/G47.4, Andy: "give a row on top to the full script filename", "give a row on top to the full suite filename".
-test.run('under the title row form, the full script path and then the full suite path each stand in a row of their own', 0.4, async function () {
+// goal/G47.4, Andy: "give a row on top to the full script filename", "give a row on top to the full suite filename", then
+// "row 3: script file name - fow 4: suite file name then the list".
+test.run('rows 3 and 4, under the rename form, are the full script path and then the full suite path', 0.4, async function () {
   if (mounted()) return false;
   const v = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var f = b.querySelector("[data-history=titleForm]"); var s = f && f.nextElementSibling; var u = s && s.nextElementSibling; return JSON.stringify([s ? s.getAttribute("data-history") + "=" + s.textContent : "", u ? u.getAttribute("data-history") + "=" + u.textContent : ""]); }())');
   return v === JSON.stringify(['script=' + A, 'suite=' + AS]) || false;
@@ -214,14 +216,15 @@ test.run('a press of the detail\'s run button asks testicle.run for its script a
 }, test.limit.slow);
 // goal/G47.4, the box: "a second rowForm will allow me to change the tests title", "new titles and the corresponding ui INPUT
 // must be bounded by DESCRIPTION_MAX_BYTES"; then Andy: "display the title in a bubble on top.", "a rowForm to change it below
-// that.", "i LIKE the run-bubble in that tab though...". What the rename does on the server is testicle's own test's; here,
-// the two forms in that order, the bounded input, the ask and a refusal said.
-test.run('right under the title bubble the title input stands in a row form, and the run form further down', 0.4, async function () {
+// that.", then "row 1: Title Bubble: presented as Row Form with a run button ... row 2: rowForm for title change". What the
+// rename does on the server is testicle's own test's; here, the two forms in that order, the bounded input, the ask and a
+// refusal said.
+test.run('row 2, right under the title\'s run form, is the row form holding the title input', 0.4, async function () {
   if (mounted()) return false;
-  const f = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var t = b.querySelector("[data-history=title]"); var fs = b.querySelectorAll(".shell-row-form"); return JSON.stringify({ next: !!(t && t.nextElementSibling && t.nextElementSibling.querySelector("input[data-history=newTitle]")), forms: Array.prototype.map.call(fs, function (x) { return { run: /🏃/.test(x.textContent || "") && Array.prototype.some.call(x.querySelectorAll("button"), function (b) { return b.textContent === "run"; }), input: !!x.querySelector("input[data-history=newTitle]") }; }) }); }())');
+  const f = await c.evaluate('(function () { var b = document.getElementById("zzBox"); var r = b.querySelector("[data-history=runForm]"); var fs = b.querySelectorAll(".shell-row-form"); return JSON.stringify({ next: !!(r && r.nextElementSibling && r.nextElementSibling.querySelector("input[data-history=newTitle]")), forms: Array.prototype.map.call(fs, function (x) { return { run: /🏃/.test(x.textContent || "") && Array.prototype.some.call(x.querySelectorAll("button"), function (b) { return b.textContent === "run"; }), input: !!x.querySelector("input[data-history=newTitle]") }; }) }); }())');
   let o = null; try { o = JSON.parse(f); } catch (e) { o = null; }
   const forms = (o && o.forms) || [];
-  return (!!o && o.next && forms.length === 2 && forms[0].input && !forms[0].run && forms[1].run && !forms[1].input) || false;
+  return (!!o && o.next && forms.length === 2 && forms[0].run && !forms[0].input && forms[1].input && !forms[1].run) || false;
 }, test.limit.quick);
 test.run('the title input holds the test\'s title and takes no more than 128 bytes', 0.4, async function () {
   if (mounted()) return false;
