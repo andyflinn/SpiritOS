@@ -29,6 +29,8 @@
 //   const test = require('<run>/spirit/test/testReport.js');
 
 const path = require('path');
+// The rule a test's title keeps (goal/G47.4): product code, which a test may load.
+const TITLE_RULE = require(path.join(__dirname, '..', 'fieldRules.js'));
 
 const STARS = '**************************************************************************';
 const LINE_LENGTH = STARS.length;
@@ -274,7 +276,9 @@ async function runAll() {
     if (doing !== script) { doing = script; held[script] = true; line(script); }
     const once = script + '|' + title;
     // A title said twice, a severity that is no number from 0.0 to 1.0, or no body: a fail at 0.7, as a crash is.
-    if (seen[once] || typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1) || typeof t.body !== 'function') t.verdict = { pass: false, crash: true };
+    // A TITLE THAT BREAKS THE DESCRIPTION RULE too (goal/G47.4, the box: "test titles are constrained BY
+    // DESCRIPTION_MAX_BYTES, in spirit/fieldRules.js"): empty, invisible characters, or past its 128 bytes; refused, never cut.
+    if (TITLE_RULE.describeProblem(title) || seen[once] || typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1) || typeof t.body !== 'function') t.verdict = { pass: false, crash: true };
     else await one(t);
     seen[once] = true;
     const v = t.verdict || { pass: false };

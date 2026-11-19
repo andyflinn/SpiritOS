@@ -63,6 +63,9 @@ const TWICE = [
   "test.run('one title', 0.2, function () { return true; }, 1000);",
   "test.run('one title', 0.2, function () { return true; }, 1000);",
   "test.run('a severity out of range', 2, function () { return true; }, 1000);",
+  // goal/G47.4: a title keeps the description rule, 128 bytes at most (an 'é' is two bytes).
+  "test.run('" + 'é'.repeat(64) + "', 0.2, function () { return true; }, 1000);",
+  "test.run('" + 'é'.repeat(64) + "x', 0.2, function () { return true; }, 1000);",
 ].join('\n');
 const GENERAL = [
   "'use strict';",
@@ -287,6 +290,11 @@ test.run('a title said twice in a suite fails the second time', 0.2, function ()
 }, test.limit.quick);
 test.run('a severity outside 0.0 to 1.0 fails its test', 0.2, function () {
   return markIn(W.twice.out, 'a severity out of range') === '❌';
+}, test.limit.quick);
+// A TITLE PAST THE DESCRIPTION RULE (goal/G47.4, the box: "test titles are constrained BY DESCRIPTION_MAX_BYTES, in
+// spirit/fieldRules.js"): counted in bytes, refused never cut; one byte past fails a test that passes, at 128 it passes.
+test.run('a title of 128 bytes passes, and one of 129 bytes fails its test, printed whole', 0.2, function () {
+  return (markIn(W.twice.out, 'é'.repeat(64)) === '✅' && markIn(W.twice.out, 'é'.repeat(64) + 'x') === '❌') || false;
 }, test.limit.quick);
 
 // ── NO NODE ──
