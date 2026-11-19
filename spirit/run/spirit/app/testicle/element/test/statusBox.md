@@ -11,37 +11,31 @@ testicle's face is an element of its own"*, *"element/statusBox.js (the monitor 
 - **It loads its own parts** (rule/26; Andy: *"the fucking status box must require the fucking api and make sure the fucking
   data.js is installed"*): the icon element, `spirit/data.js`, testicle's `api.js` and testicle's cache manager (`data.js`,
   which the page's one stream feeds). Mounted alone, it gets its data by itself.
-- **Its box:** one `.testicle-status` row into its container, of a constant height (1.8em), one line, its overflow hidden, the
-  message ellipsed and never wrapped (the box: *"The row has a constant height, and the message is ellipsed, never
-  wrapped"*).
+- **Its box:** one `.testicle-status` into its container, its overflow hidden: an inline block of the status icons on the left
+  (`.testicle-icons`), then an inline block of two rows on top of each other (`.testicle-rows`, two `.testicle-row`), each
+  one line, ellipsed (goal/G47.4, the box, ### status bar: *"the status icons in an inline block on the left edge; after it,
+  a second inline block of two rows on top of each other, so the icons get the extra height."*).
 - **The mode first** (box v80, 2: *"🤖 auto / 🖖 interactive, ahead of the 🛌/🚶‍➡️ icon, from the stream"*): from testicle's
   preferences, asked once, then followed in the branch the stream keeps.
 - **The busy icon:** 🛌 idle, 🚶‍➡️ working, drawn through the icon element, from the stream's monitor; its title says idle or
   working.
-- **The line**, the first of these that has words:
-  - **each suite as it reports** (box v134-135: *"knows which suite is running and for which scripts, and shows "<x> of <n>
-    reported: <script> <success|failure>""*): the stream's `monitor.running` names the suite, its scripts and when it
-    started; every suite row of that suite and one of those scripts set since the start (its outcome green or red) is one
-    reported, the newest named with its outcome. A run seen for the first time asks `testicle.suite.search` once for each
-    of its scripts, so a box mounted mid-run counts those that reported before it was there;
-  - **what the server is doing** (Andy: *"do that"*): the monitor's `doing`, while it classifies or tests;
-  - **the last change:** the monitor's last row change, in words, a test row's flip left off.
+- **Row 1:** *"<suites owed>: <suite file name>"*: suites owed as testicle streams it (suites marked needs running, in the
+  current run or not, a suite counted once), and the running suite. **Row 2:** *"<tests reported>: <script file name>"*,
+  counting up as the running suite reports. During classification row 1 names the classifier's file and row 2 reads
+  *"<n> of <total>"* and the script, n counting up. The numbers are related info, *"watching water boil"*.
+- **No test titles and no results** of suites or tests in the bar; **both rows empty** when no run is active.
+- **The stream:** suites owed and classifications owed, sent when either changes and once to a page as it connects; while
+  classifying, the running message names the classifier, its total and its count; no doing text.
 - **destroy()** stops its watches and leaves its container empty.
 
 ## What its test judges
 
 On a real testicle, nothing fed by hand (box v142): a scratch lab node with testicle on, the box mounted alone on a page
-that loaded it by itself; one box with the mode, the busy icon and the line; the mode the node answers (🖖, interactive);
-🚶‍➡️ and what it was doing while testicle classified the tree, as the stream said; 🛌 once idle; two planted scripts with their
-own tests pressed, one holding and one failing, each shown with *"1 of 1 reported: <script> ✅"* or *❌* in its line as
-testicle streams it (the result an icon since Andy's *"why are the results in status messages not icons?"*, its words
-spirit/app/testicle/words.js); the node set to auto and back, 🤖 then 🖖 by itself (box v143, *"subscribe to the data they display"*);
-overflow hidden, one line, the message ellipsed; destroyed, an empty container.
-
-The suites waiting (goal/G47.6, box point 4: *"In auto mode, suites flagged by a change and not yet run are counted as
-waiting beside the reds"*; Q2, Andy: *"as you please"*): two scripts planted while interactive, each with an own suite that
-takes 15 s; set to auto, the box shows ⏳ and the number of suite rows flagged at that moment, right after 🤖; as suites run, the
-count follows them down, still the number flagged (the scratch tree flags every suite it holds, so none waiting is out of
-reach here; gone at 0 is the builder's).
-
-Not judged by it yet: the last change in words (shown when nothing runs and nothing is being done).
+that loaded it by itself; one box with the mode and the busy icon; the icons in a block on the left and two rows stacked
+right of it; the mode the node answers (🖖, interactive); 🚶‍➡️ while testicle classified the tree, row 1 naming the classifier
+and row 2 counting *"<n> of <total>"* up; 🛌 and both rows empty once idle; two planted scripts with their own tests pressed,
+one holding and one failing: row 1 their suite, row 2 the tests reported (1) and their script, never a title or a result,
+both rows empty after; no doing text from the stream; overflow hidden, each row one line, ellipsed; the node set to auto and
+back, 🤖 then 🖖 by itself (box v143); in auto mode row 1's number equal to the suites testicle's database holds marked, and
+following them down as suites report; a page loaded anew while nothing changes holding suites owed and classifications owed
+as the database says them; destroyed, an empty container.
