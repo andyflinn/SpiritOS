@@ -699,13 +699,15 @@ test.run('every helper has a capital, so none is a word', 0.2, function () {
 }, test.limit.quick);
 
 // Andy: "the helpes must not be words there either, this goes for all spirit.app contained objects."
-// spirit.app: no helper is a word, on it or on an app it holds
+// spirit.app: no helper is a word, on it or on an app it holds. The auto-verbs every bound branch has, remote, listener,
+// subscribe and unsubscribe (spirit.js, goal/G47.5), are its verbs, not helpers, and are left out.
 // goal/G43.32, the box: "Monitor too: its createApp becomes its element.js, and appSelector's createApp path goes."
 test.run('spirit.app holds keys, and no app in it has a createApp, monitor\'s being its element.js', 0.2, async function () {
   if (!F.got) return false;
   F.onApp = await ask('(function () { var S = window.spirit; return Promise.all(["spirit/app/monitor/element.js"].map(function (p) { return Promise.resolve(S.require(p)).then(null, function () { return null; }); })).then(function () {' +
     ' var out = { keys: Object.keys(S.app || {}), words: [] };' +
-    ' out.keys.forEach(function (k) { var v = S.app[k]; if (typeof v === "function" && !/[A-Z]/.test(k)) out.words.push(k);' +
+    ' var AUTO = ["remote", "listener", "subscribe", "unsubscribe"];' +
+    ' out.keys.forEach(function (k) { var v = S.app[k]; if (typeof v === "function" && !/[A-Z]/.test(k) && AUTO.indexOf(k) === -1) out.words.push(k);' +
     ' else if (k !== "FS" && v && typeof v === "object") Object.keys(v).forEach(function (h) { if (typeof v[h] === "function" && !/[A-Z]/.test(h)) out.words.push(k + "." + h); }); });' +
     ' out.apps = out.keys.filter(function (k) { return S.app[k] && typeof S.app[k].createApp === "function"; });' +
     ' return JSON.stringify(out); }); })()');
