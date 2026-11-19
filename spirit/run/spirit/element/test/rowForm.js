@@ -191,3 +191,12 @@ test.run('a hidden form takes its 1em with it, so the next one stands 1em below 
   if (!m) return false;
   return (!!sp && near(sp.gone.bTop, sp.em) && sp.gone.height < sp.shown.height - sp.em) ? true : false;
 }, test.limit.quick);
+// A FIELD ROW (goal/G47.4; Andy: "✏️ (pinned to left edge) \"text\" [INPUT] [change button] where the input gets any spare
+// space before the change button..."): in a 600px form, the words, then a text input, then the button; the input reaches
+// from the words to the button, one gap from each.
+test.run('in a field row the text input takes the spare space between its words and the button', 0.2, async function () {
+  if (!m) return false;
+  const f = await W.page.evaluate('(function () { var c = document.createElement("div"); c.style.cssText = "width:600px;padding:0;border:0"; document.body.appendChild(c); var r = window.spirit.element.spirit.element.rowForm.create(c, { icon: "✏️", button: "Change" }); var w = document.createElement("span"); w.textContent = "Title"; var i = document.createElement("input"); i.type = "text"; r.span.appendChild(w); r.span.appendChild(i); var em = parseFloat(getComputedStyle(r.span).fontSize); var g = function (e) { return e.getBoundingClientRect(); }; return JSON.stringify({ em: em, words: g(w), input: g(i), span: g(r.span), button: g(r.button) }); }())').then(JSON.parse).catch(function () { return null; });
+  if (!f) return false;
+  return (near(f.input.right, f.span.right) && near(f.input.left - f.words.right, f.em) && f.input.top < f.words.bottom && f.input.width > 300) ? true : false;
+}, test.limit.quick);

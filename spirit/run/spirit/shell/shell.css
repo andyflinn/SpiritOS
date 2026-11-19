@@ -509,6 +509,11 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 .shell-row-form > .shell-icon { align-self: flex-start; }
 .shell-row-form > .shell-row-form-span { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 1em; }
 .shell-row-form > .shell-row-form-span > * { max-width: 100%; box-sizing: border-box; }
+/* A FIELD ROW'S INPUT TAKES THE SPARE SPACE (goal/G47.4; Andy: "a row form for a field change should have: ✏️ (pinned to left
+   edge) \"text\" [INPUT] [change button] where the input gets any spare space before the change button..."): a text input in
+   the span grows to fill what its words leave, and wraps to a row of its own below 8em. */
+.shell-row-form > .shell-row-form-span > input:not([type]),
+.shell-row-form > .shell-row-form-span > input[type="text"] { flex: 1 1 8em; min-width: 8em; }
 .shell-row-form > button { flex: none; align-self: flex-end; margin-left: auto; }
 
 /* THE BUSY BUTTON'S TURN (goal/G41.23; spirit/element/busyButton.js; Andy: "an animated icon showing to the left of the

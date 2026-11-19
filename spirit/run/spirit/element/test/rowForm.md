@@ -50,3 +50,9 @@ Andy: *"rowForms should carry their own upper 1em spacing, so when they're invis
 
 - Its root carries 1em above it, its own margin, so two forms one under the other stand 1em apart.
 - Hidden, a form takes that 1em with it: the next one stands 1em below what is above.
+
+A field row (goal/G47.4; Andy: *"✏️ (pinned to left edge) \"text\" [INPUT] [change button] where the input gets any spare
+space before the change button..."*):
+
+- In a 600px form holding words and a text input, the input reaches from one gap after the words to the end of the span,
+  before the button, on the words' row.
