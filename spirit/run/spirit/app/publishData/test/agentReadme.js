@@ -32,7 +32,10 @@ let R, s, allowance, less, noWhen, m;
 // remains empty, but this conflicts with the rule that the product only has one name in run:// and that is \"spirit\""):
 // it was run://test/_tmp_agentReadme, and its cleanup left run://test/ behind.
 test.run('its scratch folder lies outside the run folder, so no run://test/ is made', 0.2, function () {
-  return /^\.\.([\\/]|$)/.test(path.relative(RUN, TMP)) || false;
+  // Outside: above the run folder, or on another drive, where Windows answers an absolute path (the temp folder is C:, a tree
+  // may be D:).
+  const rel = path.relative(RUN, TMP);
+  return (/^\.\.([\\/]|$)/.test(rel) || path.isAbsolute(rel)) || false;
 }, test.limit.quick);
 test.run('it exports write, summaryOf and machineOf', 0.2, function () {
   R = null;
