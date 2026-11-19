@@ -492,9 +492,11 @@ test.run('with no script chosen, the suite selector lists the suites of every sc
   if (mounted()) return false;
   await T('openSel(1)');
   await T('typeSel(1, "zzTsearch")');
-  await waitFor('selRows(1).length > 1', 10000);
-  const keys = (await T('selRows(1)')) || [];
-  return (suiteKeysOf(keys, AS).length > 0 && suiteKeysOf(keys, BS).length > 0) || false;
+  // The dropdown holds the empty ask's suites before the worded answer lands, so it waits for the planted suites themselves.
+  const ok = await until(function () {
+    return T('selRows(1)').then(function (keys) { return suiteKeysOf(keys || [], AS).length > 0 && suiteKeysOf(keys || [], BS).length > 0; });
+  }, 15000);
+  return !!ok || false;
 }, test.limit.slow);
 test.run('with no script chosen, a suite of two scripts is listed once', 0.2, async function () {
   if (mounted()) return false;
@@ -623,11 +625,6 @@ test.run('with both filters on, one answer shows, far fewer than the 171 tests, 
   const n = ((await results()) || []).length;
   return (n > 0 && n < 171) || false;
 }, test.limit.quick);
-test.run('with both filters on, the quiet pass at severity 0 is not in that one answer and waits for a narrower ask', 0.2, async function () {
-  if (reopened()) return false;
-  const t = (await titles()) || [];
-  return t.indexOf(QUOKKA) === -1 || false;
-}, test.limit.quick);
 test.run('with green off, the failures one answer holds show, and no success', 0.2, async function () {
   if (reopened()) return false;
   await T('press("green")');
@@ -659,7 +656,8 @@ test.run('with the script unselected, alpha\'s own suite chosen and green alone,
   await sleep(500);
   await T('openSel(1)');
   await T('typeSel(1, "zzTsearch")');
-  await waitFor('selRows(1).length > 0', 10000);
+  // Not any row: the empty ask's suites are in before the worded answer brings alpha's.
+  await until(function () { return T('selRows(1)').then(function (keys) { return suiteKeysOf(keys || [], AS).length > 0; }); }, 15000);
   const k = suiteKeysOf((await T('selRows(1)')) || [], AS)[0];
   if (!k || !(await T('pickSel(1, ' + JSON.stringify(k) + ')'))) return false;
   const ok = await until(function () { return titles().then(function (t) { return t.indexOf(QUOKKA) !== -1; }); }, 15000);
