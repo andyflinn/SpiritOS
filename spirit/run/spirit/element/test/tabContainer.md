@@ -21,7 +21,7 @@ An element with one row of tabs at the top, showing the selected tab's content i
   `aria-selected="true"`, every other one `aria-selected="false"`.
 - At start the tab `selected` names is selected, or the first tab when `selected` names none.
 - A tab's `mount(box)` is called once, the first time it is selected, with a box of its own inside the content area. The
-  box is kept: selecting the tab again mounts nothing. Only the selected tab's box shows; every other box is hidden.
+  box is kept: selecting the tab again mounts nothing. Only the selected tab's box shows; every other box is hidden and displayed none, since the shell's fill class it carries would show it through the hidden attribute (goal/G47.1).
 - `select(name)` with a name that is no tab changes nothing.
 - It listens on its own box, not on the container it is handed, one listener per event type, and that box keeps what it
   holds inside (overflow hidden), as the general rules ask: a click on a tab button selects that tab.

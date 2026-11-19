@@ -66,7 +66,10 @@
         if (content) content.appendChild(box);
         try { mounted[name] = t.mount(box); } catch (e) { /* one tab's fault */ }
       }
-      Object.keys(boxes).forEach(function (k) { boxes[k].hidden = k !== name; });
+      // HIDDEN FOR REAL (goal/G47.1, Andy: "the FUCKING testicle detail (history) open overtop of the fucking fixed-tab-testicle
+      // search TAB!!!!!"): each box carries the shell's fill class, whose display:flex beats the hidden attribute, so an inactive
+      // box is also displayed none, and the selected one given back to its class.
+      Object.keys(boxes).forEach(function (k) { var off = k !== name; boxes[k].hidden = off; boxes[k].style.display = off ? 'none' : ''; });
     }
     function add(tab) {
       if (gone || !tab) return;

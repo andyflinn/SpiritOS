@@ -146,6 +146,12 @@ test.run('select shows that tab, mounted into its own box', 0.2, function () {
 test.run('only the selected tab\'s box shows; the others are hidden', 0.2, function () {
   return (hiddenNow(boxOne) && !hiddenNow(boxTwo)) ? true : false;
 }, test.limit.quick);
+// HIDDEN FOR REAL (goal/G47.1, Andy: "the FUCKING testicle detail (history) open overtop of the fucking fixed-tab-testicle search
+// TAB!!!!!"): every tab box carries the shell's fill class, and shell.css's .fill sets display:flex, which beats the hidden
+// attribute; so an inactive box hidden by the attribute alone still shows, under the selected one. It must be displayed none.
+test.run('an inactive tab\'s box is displayed none, since the fill class it carries would show it through the hidden attribute', 0.4, function () {
+  return (!!boxOne && boxOne.style.display === 'none' && !!boxTwo && boxTwo.style.display !== 'none') ? true : false;
+}, test.limit.quick);
 test.run('the aria-selected marks follow the selection', 0.2, function () {
   // The row as it is now: drawn again on its own (its node's markup), or with the whole container. A browser reflects either
   // in the container's markup; this stub does not, so the row's own node is read when it was drawn on its own.
