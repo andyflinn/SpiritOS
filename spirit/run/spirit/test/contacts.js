@@ -16,7 +16,9 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/contacts/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/contacts'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// Its store closed first: on Windows a folder holding an open database cannot be removed, and the suite was red on
+// 'it leaves no temp folder behind' for that alone.
+test.after(function () { try { if (W.store) W.store.close(); } catch (e) { /* closed */ } try { fs.rmSync(tempFolder.path('spirit/test/contacts'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const contacts = require(path.join(RUN, 'spirit', 'contacts.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 const nodeCard = require(path.join(RUN, 'spirit', 'nodeCard.js'));
@@ -40,7 +42,8 @@ test.run('a signed card naming this node as its owner is kept', 0.2, function ()
   // This node, as its identity file holds it (relayAuth.loadIdentity reads it from here).
   W.me = auth.generateIdentity('me');
   fs.writeFileSync(path.join(W.home, 'spirit', 'state', 'identity.json'), JSON.stringify(W.me));
-  W.seen = nodeStore.open(W.home).seen;
+  W.store = nodeStore.open(W.home);
+  W.seen = W.store.seen;
   W.puppet = auth.generateIdentity('puppet');
   W.seen.set(W.puppet.publicKey, { keep: true });
   const said = contacts.setCard(W.home, W.puppet.publicKey, cardOf(W.puppet, W.me.publicKey, 1));
