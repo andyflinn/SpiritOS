@@ -1601,11 +1601,14 @@ test.run('in interactive mode, the server classifies by itself with no press: ch
   const ok = await until(function () { const r = scriptRow(tables(DB), CHI); return Promise.resolve(!!r && no(r.reClassify)); }, 120000);
   return !!ok || false;
 }, test.limit.long);
-test.run('in interactive mode, the classifier\'s own suite row is no longer flagged for chi', 0.2, function () {
+// WAITED FOR, NOT READ ONCE (goal/G47.1, Andy: "i don't need flaky things. FIX IT."): chi's reClassify clears when its class is
+// set, and the classifier's suite row a moment later, when its suite.success lands; read at once, a busy machine showed it
+// still flagged.
+test.run('in interactive mode, the classifier\'s own suite row is no longer flagged for chi', 0.2, async function () {
   if (!i1) return false;
-  const r = suiteRow(tables(DB), CHI, SC);
-  return (!!r && no(r.test)) || false;
-}, test.limit.quick);
+  const ok = await until(function () { const r = suiteRow(tables(DB), CHI, SC); return Promise.resolve(!!r && no(r.test)); }, 30000);
+  return !!ok || false;
+}, test.limit.slow);
 test.run('in interactive mode, classification never sets both browserOnly and nodeOnly', 0.2, function () {
   if (!i1) return false;
   const both = i1.script.filter(function (r) { return yes(r.browserOnly) && yes(r.nodeOnly); });
@@ -1647,12 +1650,15 @@ test.run('in interactive mode, with suites still waiting, the node stops, and ch
   append(CHI, '// changed while the node was down, interactive\n');
   return waiting === 1 || false;
 }, test.limit.slow);
+// AS LONG AS THE REPORTER'S LONGEST LIMIT ALLOWS (goal/G47.1, Andy: "i don't need flaky things. FIX IT."): after a start the
+// classifier boots a scratch node and Chrome before it judges anything; 120 s was too short for that on a busy machine, and
+// turned this red with nothing wrong. 280 s, inside test.limit.long.
 test.run('after the start, interactive still, a script changed while down is classified with no press', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
   if (!up()) return false;
   const p = prefsOf(await call(N.base, 'testicle.preferences', {}));
   if (p.interactive !== true) return false;
-  const ok = await until(function () { const r = scriptRow(tables(DB), CHI); return Promise.resolve(!!r && no(r.reClassify)); }, 120000);
+  const ok = await until(function () { const r = scriptRow(tables(DB), CHI); return Promise.resolve(!!r && no(r.reClassify)); }, 280000);
   return !!ok || false;
 }, test.limit.long);
 test.run('a script changed after the start is also classified with no press, within 30 seconds', 0.2, async function () {
