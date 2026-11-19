@@ -1,8 +1,8 @@
 {
   "description": "Add files you change for an item to your list, by repository path: {id, path} for one, or {id, paths: [...]} for a list in one write (goal/G41.11, the desk only). A list is cut at one answer, in its order; the reply {change, added, more} says how many paths landed and whether the rest was cut, so send the rest again. A path already on your list, or one with a .. segment, is refused, naming it. A file must be on the list of an item you have taken before you may write or commit it; the red test file goes on the list too. A file added after Andy's Go is marked late.",
   "request": {
-    "id": "",
-    "path": "",
-    "paths": []
+    "id": "id",
+    "path": "text?",
+    "paths": "list?"
   }
 }

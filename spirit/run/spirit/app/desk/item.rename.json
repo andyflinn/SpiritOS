@@ -1,7 +1,7 @@
 {
   "description": "Rename an item by id: title is its new title. Andy's alone. Answers {change}.",
   "request": {
-    "id": "",
-    "title": ""
+    "id": "id",
+    "title": "text"
   }
 }

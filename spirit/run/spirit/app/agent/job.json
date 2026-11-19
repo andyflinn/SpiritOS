@@ -1,3 +1,15 @@
 {
-  "description": "The agent's job table, one verb (goal/G41.4): op add, set, delete, get or search; a job carries its text, loop, a bundle, a provider and a persona."
+  "description": "The agent's job table, one verb (goal/G41.4): op add, set, delete, get or search; a job carries its text, loop, a bundle, a provider and a persona.",
+  "request": {
+    "op": "id",
+    "id": "key?",
+    "icon": "text?",
+    "label": "name?",
+    "loop": "bool?",
+    "job": "text?",
+    "bundle": "text?",
+    "provider": "key?",
+    "persona": "key?",
+    "text": "text?"
+  }
 }

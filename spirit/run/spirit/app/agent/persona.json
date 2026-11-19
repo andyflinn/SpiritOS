@@ -1,3 +1,13 @@
 {
-  "description": "The agent's persona table, one verb (goal/G41.4): op add, set, delete, get or search; a persona carries its text, a bundle and a provider."
+  "description": "The agent's persona table, one verb (goal/G41.4): op add, set, delete, get or search; a persona carries its text, a bundle and a provider.",
+  "request": {
+    "op": "id",
+    "id": "key?",
+    "icon": "text?",
+    "label": "name?",
+    "persona": "text?",
+    "bundle": "text?",
+    "provider": "key?",
+    "text": "text?"
+  }
 }
