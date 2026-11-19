@@ -13,6 +13,10 @@ require('../spirit.js');
 const test = require('./testReport.js');
 // A path as given, absolute or not, scoped to run:// (the verifier hands absolute ones).
 const RUN_DIR = require('path').join(__dirname, '..', '..');
+// A SCRIPT'S SOURCE WITH LF LINE ENDINGS (goal/G47.1, Andy's red on spirit/app/icons/element.js, 'its code reaches no element
+// through spirit.elements', for a comment): a Windows checkout writes CRLF, a line split at LF keeps its CR, and the pattern
+// dropping a line's comment (.*$, which stops at a CR) left the comment in, read as code. Top level, for every section of this file.
+function readSource(rel) { return require('fs').readFileSync(require('path').join(RUN_DIR, rel), 'utf8').replace(/\r\n?/g, '\n'); }
 function runRel(a) {
   const p = require('path');
   const abs = p.isAbsolute(String(a)) ? String(a) : p.resolve(String(a));
@@ -1090,7 +1094,7 @@ function pathIn(args) {
 const LOADS = /\b(require|import|readFileSync|createReadStream|readFile)\s*\(/g;
 // The calls of one file that load a path into a test folder: [{ line, call, path }].
 function reaches(rel) {
-  const text = code(fs.readFileSync(path.join(RUN, rel), 'utf8'));
+  const text = code(readSource(rel));
   const out = [];
   let m;
   LOADS.lastIndex = 0;
@@ -1516,7 +1520,7 @@ function shapeBreaks(rel) {
   // Its name holds a dot of its own: "just rename the bloody script".
   if (stem.indexOf('.') !== -1) return true;
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return true; }
+  try { src = readSource(rel); } catch (e) { return true; }
   const code = codeOf(src);
   if (!/^\s*(['"])use strict\1\s*;/.test(code)) return true;
   if (rel === 'spirit/spirit.js') return false;
@@ -1611,7 +1615,7 @@ const NODE_MODULES_ON_PURPOSE = /^spirit\/run\/spirit\/test\/(job|fileSystem)\.(
 function codeLinesMatching(rel, re, bare) {
   if (!/\.(js|html)$/.test(rel)) return [];
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  try { src = readSource(rel); } catch (e) { return []; }
   const hits = [];
   const lines = bare ? src.split('\n').map(function (l) {
     return l.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\\n]|\\.)*`/g, "''").replace(/\/\/.*$/, '').replace(/(^|[=(,:\[!&|?{};]\s*|\breturn\s+)\/(?:[^\/\\\n]|\\.)+\/[gimsuy]*/g, '$1RE').replace(/^\s*\*.*$/, '');
@@ -1628,7 +1632,7 @@ function missingRequires(rel) {
   // file on purpose by its name: one it plants, zz<Name>, or one that is not there, noSuch<Name>.
   if (!/\.(js|html)$/.test(rel)) return [];
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  try { src = readSource(rel); } catch (e) { return []; }
   const code = codeOf(src, false);
   const asked = [];
   // spirit.require, and any short name a file gives its spirit (S.require, sp.require): every <name>.require of a path written
@@ -1664,7 +1668,7 @@ function branchDataFiles(files) {
 // The branch data.js paths a file's code requires by its written path.
 function dataRequiresOf(rel) {
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  try { src = readSource(rel); } catch (e) { return []; }
   const out = [];
   const re = /\brequire\s*\(\s*['"`](spirit\/[^'"`]+\/data\.js)['"`]/g;
   const code = codeOf(src, false);
@@ -1701,7 +1705,7 @@ function unquoted(rel, src) {
 // Each line of the file that matches re, as <file>:<line>.
 function linesMatching(rel, re) {
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  try { src = readSource(rel); } catch (e) { return []; }
   const hits = [];
   unquoted(rel, src).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(i + 1); });
   return hits;
@@ -1712,7 +1716,7 @@ function linesMatching(rel, re) {
 function strayElementReaches(rel) {
   if (!/\.(js|html)$/.test(rel)) return [];
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return []; }
+  try { src = readSource(rel); } catch (e) { return []; }
   const stray = [];
   codeOf(src, true).split('\n').forEach(function (line, i) {
     const re = /(?<![\w$]\s*\.\s*)(?<![\w$])(?:(?:window|self)\s*\.\s*)?spirit\s*\.\s*element((?:\s*\.\s*[A-Za-z_$][\w$]*)+)/g;
@@ -1741,7 +1745,7 @@ function strayElementReaches(rel) {
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 // The helper itself defines installSpiritElement and places nothing: it is required, no element.
-function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement.js' && /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
+function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement.js' && /\binstallSpiritElement\s*\(/.test(codeOf(readSource(rel), true)); }
 // NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "no developer will want to use a system
 // that pollutes global name-spaces.", "go on this"; judged in oneFile below). It took the place of requireOnNode, which
 // nothing called. Never loaded, as the classifier never loads them (spirit/test/scriptClassify.js): the node and the relay
