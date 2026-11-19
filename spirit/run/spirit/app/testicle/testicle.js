@@ -345,30 +345,60 @@ function batchOf(suite) {
 let waitedFor = '';
 // NOTHING LOITERS, BEFORE AND AFTER EVERY RUN (goal/G47.1; Andy: "testicle can double ensure that no fucking lab nodes or
 // headless chromes are loitering about before AND after ever fucking run.", "but noooo, it has to an elaborate design with
-// as many failure points as possible!"): a run is testicle's work from its first job to the moment nothing is left to
-// choose. When one starts and when it ends, every process still holding or running on a node of this tree's lab
-// (repo://lab/node/<name>.lock and .pid) is ended with all it started, those files go, and every headless Chrome on a
-// profile of this tree's (spirit/test/headLessChrome's temp route) is ended. Testicle is the one run on its tree; nothing
-// else is asked. At start the runner counts as idle, so its first run is swept before it too.
+// as many failure points as possible!"): before every job, and when the runner has nothing left to choose, every process
+// still holding or running on a node of this tree's lab (repo://lab/node/<name>.lock and .pid) is ended with all it started,
+// those files go, and every headless Chrome on a profile of this tree's (spirit/test/headLessChrome's temp route) is ended.
+// Testicle is the one run on its tree; nothing else is asked. Only the node and Chrome it hands its own runs are spared.
 let idle = true;
 const LAB_NODES = path.join(RUN, '..', '..', 'lab', 'node');
 function sweep(when) {
-  let pids = [];
+  const records = [];
   try {
     fs.readdirSync(LAB_NODES).filter(function (f) { return /\.(lock|pid)$/.test(f) && f !== '.lab.lock'; }).forEach(function (f) {
       const at = path.join(LAB_NODES, f);
       let pid = 0; try { pid = Number(fs.readFileSync(at, 'utf8').trim()) || 0; } catch (e) { pid = 0; }
-      if (pid && pid !== process.pid && pids.indexOf(pid) === -1) pids.push(pid);
-      try { fs.rmSync(at, { force: true }); } catch (e) { logError('sweep ' + when + ': ' + f, e); }
+      records.push({ f: f, at: at, pid: pid });
     });
   } catch (e) { /* no lab on this tree */ }
   let profiles = '';
   try { profiles = spirit.require('spirit/tempFolder.js').path('spirit/test/headLessChrome'); } catch (e) { profiles = ''; }
-  if (profiles) chromesOn(profiles).forEach(function (p) { if (p !== process.pid && pids.indexOf(p) === -1) pids.push(p); });
+  const chromes = profiles ? chromesOn(profiles) : [];
+  // TESTICLE'S OWN NODE AND CHROME ARE SPARED, their records too: swept before every suite (wsl's red, "while the runner stays
+  // busy, a stray left on a lab node during one suite is ended before the next suite runs"), the world it hands its runs lives
+  // across them, until the runner has nothing left to choose.
+  const spare = (records.length || chromes.length) && world && world.kid && world.kid.pid ? treeOf(world.kid.pid) : [];
+  const spared = function (pid) { return pid === process.pid || spare.indexOf(pid) !== -1; };
+  let pids = [];
+  records.forEach(function (r) {
+    if (r.pid && spared(r.pid)) return;
+    if (r.pid && pids.indexOf(r.pid) === -1) pids.push(r.pid);
+    try { fs.rmSync(r.at, { force: true }); } catch (e) { logError('sweep ' + when + ': ' + r.f, e); }
+  });
+  chromes.forEach(function (p) { if (!spared(p) && pids.indexOf(p) === -1) pids.push(p); });
   pids = pids.filter(alive);
   if (!pids.length) return;
   logError('sweep ' + when + ': ending ' + pids.length + ' loitering process(es): ' + pids.join(' '), null);
   pids.forEach(endTree);
+}
+// A process and every process descending from it, by parent id.
+function treeOf(root) {
+  let pairs = [];
+  try {
+    if (process.platform === 'linux') {
+      pairs = fs.readdirSync('/proc').filter(function (d) { return /^\d+$/.test(d); }).map(function (d) {
+        try { const st = fs.readFileSync('/proc/' + d + '/stat', 'utf8'); return [Number(d), Number(st.slice(st.lastIndexOf(')') + 2).split(' ')[1])]; } catch (e) { return null; }
+      }).filter(Boolean);
+    } else {
+      const list = process.platform === 'win32'
+        ? ['powershell', ['-NoProfile', '-NonInteractive', '-Command', 'Get-CimInstance Win32_Process | ForEach-Object { "$($_.ProcessId) $($_.ParentProcessId)" }']]
+        : ['ps', ['-A', '-o', 'pid=,ppid=']];
+      pairs = execFileSync(list[0], list[1], { encoding: 'utf8', windowsHide: true, timeout: 30000, maxBuffer: 1 << 24 }).split(/\r?\n/)
+        .map(function (l) { const m = /^\s*(\d+)\s+(\d+)/.exec(l); return m ? [Number(m[1]), Number(m[2])] : null; }).filter(Boolean);
+    }
+  } catch (e) { pairs = []; }
+  const out = [root];
+  for (let i = 0; i < out.length; i++) pairs.forEach(function (p) { if (p[1] === out[i] && out.indexOf(p[0]) === -1) out.push(p[0]); });
+  return out;
 }
 function alive(pid) { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } }
 // A process and all it started: taskkill /T on Windows; elsewhere its descendants by parent id, then itself.
@@ -411,7 +441,8 @@ function nextJob() {
   if (working || timer || pending.size) { waits(working ? 'a write runs' : timer ? 'a write is due' : pending.size + ' changes pending'); return; }
   const n = chooseJob();
   if (!n) { waits('nothing chosen'); dropWorld(); if (!idle) { idle = true; sweep('after the run'); } told(); return; }
-  if (idle) { idle = false; sweep('before the run'); }
+  idle = false;
+  sweep('before the run');
   if (n.classify) logError('runner: classifying ' + n.scripts.length + ' scripts (' + (prefs.interactive ? 'interactive' : 'auto') + ')', null);
   // THE TWO HASHES, TAKEN AT THE START (the box: "When a run starts, the server remembers the two hashes as they stand, and
   // until that run ends tags every result of it with them").
