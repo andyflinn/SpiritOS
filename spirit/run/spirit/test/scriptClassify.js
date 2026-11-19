@@ -236,12 +236,20 @@ broken.forEach(function (rel) { classify(rel, true); });
 SCRIPTS.filter(function (rel) { return neverLoaded(rel) || !fs.existsSync(path.join(RUN, rel)); }).forEach(function (rel) { classify(rel, false); });
 if (toLoad.length) {
   // The scratch node and Chrome first, the run held meanwhile; the scripts that compile are judged only once both are up.
+  // NEVER LONGER THAN A TEST IS GIVEN (andy-ubuntu stood at "classifying 0 of" for an hour): the scratch node and Chrome were
+  // once booted inside the first test, and so cut at its limit; held for here, they are given the same limit, and past it
+  // the tool counts as down: nothing of a compiling script is judged, the run ends TOOL_DOWN, and testicle tries again later.
   test.hold();
+  let held = true;
+  const toolDown = function () { process.on('exit', function () { process.exitCode = TOOL_DOWN; }); };
+  const late = setTimeout(function () { if (!held) return; held = false; toolDown(); test.release(); }, test.limit.long);
   world().then(function (w) {
-    if (w.error) process.on('exit', function () { process.exitCode = TOOL_DOWN; });
+    if (!held) return;
+    held = false; clearTimeout(late);
+    if (w.error) toolDown();
     else toLoad.forEach(function (rel) { classify(rel, false); });
     test.release();
-  }, function () { process.on('exit', function () { process.exitCode = TOOL_DOWN; }); test.release(); });
+  }, function () { if (!held) return; held = false; clearTimeout(late); toolDown(); test.release(); });
 }
 
 test.after(function () {
