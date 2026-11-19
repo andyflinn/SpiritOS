@@ -18,7 +18,8 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/desk/' + name + tempAsked); }
-test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/desk/test/desk'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// Its folder is removed by the last after of this file, once its databases are closed and its servers stopped: on
+// Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
 const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 const packet = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
@@ -1018,3 +1019,6 @@ test.after(async function () {
   try { if (W.node) W.node.server.close(); } catch (e) { /* closed */ }
   await sleep(200);
 });
+
+// THE LAST AFTER: its temp folder, once everything in it is closed (see the top of this file).
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/desk/test/desk'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });

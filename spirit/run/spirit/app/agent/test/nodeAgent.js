@@ -16,7 +16,8 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/test/nodeAgent/' + name + tempAsked); }
-test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/agent/test/nodeAgent'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// Its folder is removed by the last after of this file, once its databases are closed and its servers stopped: on
+// Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
 const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 
 const DIR = path.join(__dirname, '..');
@@ -293,3 +294,6 @@ test.run('the agent\'s api.js declares subscribe and unsubscribe, which the publ
 test.run('there is no read verb: the page reads the state from the stream', 0.2, function () {
   return !/['"]state['"]\s*:\s*\{|\bstate\s*:\s*\{\s*request/.test(code()) ? true : false;
 }, test.limit.quick);
+
+// THE LAST AFTER: its temp folder, once everything in it is closed (see the top of this file).
+test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/agent/test/nodeAgent'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
