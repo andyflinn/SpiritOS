@@ -137,7 +137,14 @@ const D = {
   drop: db.prepare('DELETE FROM dependency WHERE script = ?'),
   add: db.prepare('INSERT OR IGNORE INTO dependency (script, requires) VALUES (?, ?)'),
   dependents: db.prepare('SELECT DISTINCT script FROM dependency WHERE requires = ?'),
+  // A FILE GONE FROM THE TREE TAKES ITS DEPENDENCY ROWS WITH IT, both ways (goal/G47.1, Andy: "classification must bring with
+  // it a complete reconciliation of the dataset in its tables", then "yes. that's what i say."): every row naming a file no
+  // longer on disc, as a script or as required, goes whenever the tree's shape changed, at start too (dropStale).
+  named: db.prepare('SELECT script AS name FROM dependency UNION SELECT requires FROM dependency'),
+  gone: db.prepare('DELETE FROM dependency WHERE script = ? OR requires = ?'),
 };
+// On disc, whatever the scope: in debug mode a script of the scope still requires spirit/spirit.js.
+function dropStale() { D.named.all().forEach(function (r) { let on = false; try { on = fs.statSync(path.join(RUN, r.name)).isFile(); } catch (e) { on = false; } if (!on) D.gone.run(r.name, r.name); }); }
 // The files a script requires, as sent: run paths of production scripts, each once, never the script itself.
 function requiresOf(script, list) {
   if (!Array.isArray(list)) return [];
@@ -673,6 +680,10 @@ function judgeLeftovers(j) {
   setTimeout(function () {
     processesOf(j).then(function (pids) {
       if (pids.length) { logError('runner: ' + j.suite + ' for ' + j.script + ' left ' + pids.length + ' process(es) running: ' + pids.join(' '), null); endPids(pids); }
+      // Its script or suite gone in the wait: no result is made current under a deleted row (goal/G47.1, the reconciliation:
+      // "results current only under a live suite row"; wsl's red found this one written after cR.js was deleted).
+      const row = Q.suiteRow.get(j.script, j.suite);
+      if (!row || row.deleted) return;
       try { setResult(j.script, j.suite, LEFTOVER, !pids.length, LEFTOVER_SEVERITY, j.scriptHash, j.suiteHash); }
       catch (e) { logError('judgeLeftovers ' + j.script + ' ' + j.suite, e); }
     });
@@ -863,6 +874,7 @@ function apply(changed, P) {
       if (rel !== 'spirit/spirit.js') D.dependents.all(rel).forEach(function (d) { const own = ownTestOf(d.script); if (d.script !== rel && there(d.script) && there(own)) suiteUp(d.script, own); });
     });
     if (shaped) Q.redRows.all().forEach(function (r) { if (isGeneral(r.suite) && there(r.script) && there(r.suite)) suiteUp(r.script, r.suite); });
+    if (shaped) dropStale();
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
@@ -993,6 +1005,8 @@ db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (br
   db.prepare('SELECT name FROM script WHERE deleted = 0').all().forEach(function (r) { names.add(r.name); });
   db.prepare('SELECT DISTINCT suite FROM suite WHERE deleted = 0').all().forEach(function (r) { names.add(r.suite); });
   names.forEach(function (n) { pending.add(n); });
+  // Dependency rows of files already gone before this start (goal/G47.1, the reconciliation): no change event names them.
+  dropStale();
   kick();
 }());
 // Rows already flagged at the start: the runner starts 1 second after the server starts.
