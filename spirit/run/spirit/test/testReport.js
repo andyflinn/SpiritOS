@@ -135,6 +135,10 @@ function reportToTesticle(rec, verb) {
     let real = null;
     try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     testicle = testicle || real.require(real.familyPath('testicle'));
+    // ITS FAILURE CAUGHT WHERE IT IS KEPT (the test review, fix 1: "testReport.js:137 stores the report promise with no handler, and
+    // :209 charges the rejection to the running test"; with no node, three passing tests gave two greens and a red): a family
+    // that cannot load is asked for again by the next try (once), and its rejection is never a crash of the test that runs.
+    if (testicle && typeof testicle.then === 'function') testicle.then(null, function () { /* asked for again by once */ });
     loadedNow().forEach(function (k) { if (!before.has(k)) reporterOwn.add(k); });
     reportsOut += 1;
     // TRIED AGAIN, UP TO THREE TIMES, A SECOND APART (goal/G47.1, wsl's verify: "the FIRST report of a suite process is
@@ -144,6 +148,7 @@ function reportToTesticle(rec, verb) {
     const once = function () {
       if (nowhere) return Promise.resolve();
       testicle = testicle || real.require(real.familyPath('testicle'));
+      if (testicle && typeof testicle.then === 'function') testicle.then(null, function () { /* handled below */ });
       return Promise.resolve(testicle).then(function (f) { return f[verb || 'testicle.set'](rec); }, function (e) { testicle = null; throw e; });
     };
     const wait = function () { return new Promise(function (r) { ownTimeout(r, 1000); }); };
