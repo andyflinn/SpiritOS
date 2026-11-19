@@ -134,7 +134,9 @@ test.run('picking None clears its value', 0.2, function () {
 test.run('load lists another party\'s families', 0.2, async function () {
   if (!sl) return false;
   await servers.load(function () { return Promise.resolve(OTHER); }); await settle();
-  return short(names(sl)) === short(['relay']) ? true : false;
+  // The list is made again for the party's source (its rows, not the node's branch); the newest one is the one drawn.
+  const now = w.lists[w.lists.length - 1];
+  return short(names(now)) === short(['relay']) ? true : false;
 }, test.limit.quick);
 
 // THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.

@@ -179,7 +179,9 @@ test.run('another family clears the verb and lists its own verbs', 0.2, function
 test.run('load lists another party\'s tree, clears the choice and hides the verb half', 0.2, async function () {
   if (!vl || !fl) return false;
   await fam.load(function () { return Promise.resolve(OTHER); }); await settle();
-  return fam.family === '' && fam.value === '' && verbBox.hidden === true && short(names(fl)) === short(['relay']) ? true : false;
+  // The family list is made again for the party's source (its rows, not the node's branch); the newest one is the one drawn.
+  const flNow = w.lists.filter(function (l) { return l !== vl; }).pop();
+  return fam.family === '' && fam.value === '' && verbBox.hidden === true && short(names(flNow)) === short(['relay']) ? true : false;
 }, test.limit.quick);
 
 // AND A PANE (box v123: "every search supports both pane and dropdown; a selector with only one is red (today testicle.js,

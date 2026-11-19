@@ -83,7 +83,10 @@
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
     var list = { redraw: function () {} };
-    var made = parts.then(function () {
+    // THE LIST IS MADE FOR ITS SOURCE (goal/G47.1, wsl's red: a party's tree loaded later still drew the node's own branch):
+    // this node's own tree is the apiTree branch, a party's its own rows, and the shared search takes one or the other as it
+    // is made; so a load that changes between the two makes the list again, for the new source.
+    function makeList() {
       var E = window.spirit.element.spirit.element;
       list = E.search.create(host, {
         face: isPane ? 'pane' : 'dropdown',
@@ -105,7 +108,8 @@
         } : undefined,
         empty: 'No server matches.',
       });
-    });
+    }
+    var made = parts.then(makeList);
 
     // ANY PARTY'S TREE (goal/G30.5): options.tree, a function answering a promise of the tree, lists another party's
     // families (introSpector: a peer node's, a relay's); root.load(fn) lists a new one and clears the choice. Without it,
@@ -114,6 +118,12 @@
       root.value = '';
       root.tree = null;
       clearDetail();
+      var nowOwn = typeof fn !== 'function';
+      if (nowOwn !== own) {
+        own = nowOwn;
+        root.own = own;
+        made = made.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); host.innerHTML = ''; makeList(); });
+      }
       list.redraw();
       // The node's own api answer, through the spirit object (goal/G32.2), kept in the apiTree branch; a party's, its own.
       var got = typeof fn === 'function' ? fn() : readOwnTree();
