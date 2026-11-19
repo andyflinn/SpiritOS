@@ -84,7 +84,7 @@ node, the reads moved.
 - *"this object has only helper functions and object <name> for every application"*: nothing else is on `spirit.data`, so the shared tree `spirit.data.data` is gone.
 - Every helper on `spirit.data` has a capital in its name, Andy: *"all the helperFunctions in objects like spirit.data should potential \"words\" the should have a capital in it"*, and on Q10: *"it belongs to \"Fix 'data'\", THIS item."* A word is a to z, so no family can land on a helper.
 - Q5, *"Does spirit.data.<name>.cache hold a level per node, as the tree does today?"*, Andy: *"yes."* The app rows stand at `spirit.data.app.cache[<node>].apps`, and a row of another node stands under that node and not under this page's.
-- On `spirit.app`, Andy: *"the helpes must not be words there either, this goes for all spirit.app contained objects."* No function on it, or on an app it holds, is a word. `FS` is left out: it is every family's, and an app cannot land inside it. So are the auto-verbs every bound branch has, `remote`, `listener`, `subscribe` and `unsubscribe` (goal/G47.5): they are its verbs, not helpers.
+- `spirit.app`'s own rules (no `createApp`, no helper a word) are the app branch's, in `spirit/app/test/data.md` (goal/G47.1).
 - The reads moved: `spirit.data.app.data` answers `rows` and `watch`, and `spirit.data.fs.data.watch` stands, which `word.js` follows.
 
 ### Assumed by this test
