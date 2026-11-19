@@ -137,7 +137,10 @@ test.run('freeTree frees the lab node and deletes nothing: its tree is still the
 }, test.limit.long);
 test.run('no lab node is left locked once its holders ended', 0.2, async function () {
   await sleep(500);
-  const left = LOCKS().filter(function (n) { let pid = ''; try { pid = fs.readFileSync(path.join(LAB_NODES, n), 'utf8').trim(); process.kill(Number(pid), 0); return true; } catch (e) { return false; } });
+  // The node testicle handed this run (SPIRIT_MOUNT_RUN, under lab/node/<name>) is held by testicle's world for the whole
+  // run, its holder alive: it is not left over, so it is not counted.
+  const handed = (process.env.SPIRIT_MOUNT_RUN || '').split(/[\\/]/);
+  const left = LOCKS().filter(function (n) { if (handed.indexOf(n.replace(/\.lock$/, '')) !== -1) return false; let pid = ''; try { pid = fs.readFileSync(path.join(LAB_NODES, n), 'utf8').trim(); process.kill(Number(pid), 0); return true; } catch (e) { return false; } });
   return !left.length || false;
 }, test.limit.quick);
 // A GIT LOCK LEFT BY A RUN THAT WAS KILLED (goal/G47.1; Andy: "the issue of not cleaning up git locks after aborted failed
