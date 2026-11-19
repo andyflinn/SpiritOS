@@ -361,7 +361,9 @@ test.run('every file it lists is a .js outside any test/ folder', 0.2, function 
 // the box: "A new tab is opened and activated in the center pane's tabContainer: the file detail"
 test.run('shown.js is concerned by its own test and by general tests', 0.2, function () {
   if (!N || !N.up) return false;
-  want1 = concerning(s.run, F1);
+  // And the classifier's row, which every production script has in its detail (Andy: "I LIKE SEING THAT TEST FUCKING LISTED
+  // IN THE SCRIPT TAG AND SEEING IT GREEN"); testModule.js does not list it, testicle does.
+  want1 = concerning(s.run, F1).concat(['spirit/test/scriptClassify.js']).sort();
   return (want1.indexOf('spirit/zzTesticle/test/shown.js') !== -1 && want1.length > 1) || false;
 }, test.limit.quick);
 test.run('a production file in the left pane is clicked', 0.2, async function () {
