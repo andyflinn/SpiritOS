@@ -22,6 +22,10 @@ module.exports = {
     'suite.search': { script: 'text?', text: 'text' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
     'testicle.set': { script: 'text', suite: 'text', test: 'text', verified: 'bool', severity: 'number' },
+    // goal/G47.4, the box: "a new verb testicle.title will change a testicle title, the script, suite AND oldTitle arguments
+    // must match an existing row exactly" (Andy: "GO!"; wsl reviewed it): the title replaced in its suite file, committed and
+    // pushed, then every row of that suite and title renamed.
+    'testicle.title': { script: 'text', suite: 'text', oldTitle: 'text', title: 'text' },
     // goal/G47.1, box v129-131: a suite's success or failure for one script, sent by the reporter once that suite is through
     // with it; the only thing that sets a suite row's outcome.
     'suite.success': { script: 'text', suite: 'text', success: 'bool', reason: 'text?', requires: 'list?' },

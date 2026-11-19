@@ -128,7 +128,14 @@ const T = {
   titlesOf: db.prepare('SELECT test, MAX(tested) AS last FROM testicle WHERE script = ? AND suite = ? GROUP BY test'),
   rowsOf: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ?'),
   erase: db.prepare('DELETE FROM testicle WHERE script = ? AND suite = ? AND test = ?'),
+  // One suite's title, of every script (testicle.title): whether a title is there, its rows, and their rename.
+  titleInSuite: db.prepare('SELECT 1 AS there FROM testicle WHERE suite = ? AND test = ? LIMIT 1'),
+  ofTitle: db.prepare('SELECT * FROM testicle WHERE suite = ? AND test = ?'),
+  retitle: db.prepare('UPDATE testicle SET test = ? WHERE suite = ? AND test = ?'),
 };
+// The rule a test's title keeps (goal/G47.4, the box: "test titles are constrained BY DESCRIPTION_MAX_BYTES, in
+// spirit/fieldRules.js").
+function fieldRules() { return spirit.require('spirit/fieldRules.js'); }
 // A SUITE ROW'S STATUS, THE SERVER'S ALONE (goal/G47.1, the box: "A suite row's status, for its script: \"needs running\"
 // when it never ran; \"still red\" when it ran, but has failed tests in it for that script; \"green\" if all tests in the
 // suite passed", "\"needs running\" clears when the server has a full, successful report from the suite in its database for
@@ -596,6 +603,74 @@ process.on('uncaughtException', function (e) { logError('uncaught', e); process.
 // short ("a suite that hangs before any test reported fails too, with no test rows needed"). A row flagged again during
 // the run (a change after it started) stays flagged and comes round again ("the running job is not killed, the suite comes
 // round again behind it").
+// A TITLE AS ITS SUITE WRITES IT (goal/G47.4, testicle.title): a quoted string, '...' or "...", its backslashes and its own
+// quote escaped. Found exactly once among both, or the rename is refused.
+function literalsOf(title) {
+  const t = String(title).replace(/\\/g, '\\\\');
+  return ["'" + t.replace(/'/g, "\\'") + "'", '"' + t.replace(/"/g, '\\"') + '"'];
+}
+function countOf(text, piece) { let n = 0; let i = text.indexOf(piece); while (i !== -1) { n += 1; i = text.indexOf(piece, i + piece.length); } return n; }
+const REPO_ROOT = path.resolve(RUN, '..', '..');
+function git(args) {
+  return new Promise(function (resolve, reject) {
+    execFile('git', args, { cwd: REPO_ROOT, windowsHide: true, maxBuffer: 1 << 24 }, function (e, out, err) { if (e) reject(new Error(String(err || e.message).trim())); else resolve(String(out)); });
+  });
+}
+// The rename itself: the suite's literal, then its spec's mentions, committed by path and pushed; then every row of that
+// suite and title, of every script, takes the new title, each told (the old key deleted, the new added).
+function renameTitle(script, suite, old, title) {
+  const suiteFile = path.join(RUN, suite);
+  const specFile = suiteFile.replace(/\.js$/, '.md');
+  const rel = function (f) { return posix(path.relative(REPO_ROOT, f)); };
+  const text = fs.readFileSync(suiteFile, 'utf8');
+  const olds = literalsOf(old);
+  const found = olds.map(function (l) { return countOf(text, l); });
+  if (found[0] + found[1] !== 1) throw refused('not-found-once');
+  if (literalsOf(title).some(function (l) { return text.indexOf(l) !== -1; })) throw refused('duplicate-title');
+  const form = found[0] === 1 ? 0 : 1;
+  const spec = fs.existsSync(specFile) ? fs.readFileSync(specFile, 'utf8') : null;
+  const files = [rel(suiteFile)].concat(spec !== null ? [rel(specFile)] : []);
+  let committed = '';
+  const putBack = function () {
+    fs.writeFileSync(suiteFile, text);
+    if (spec !== null) fs.writeFileSync(specFile, spec);
+  };
+  return git(['status', '--porcelain', '--'].concat(files)).then(function (dirty) {
+    if (dirty.trim()) throw refused('suite-has-edits');
+    fs.writeFileSync(suiteFile, text.replace(olds[form], literalsOf(title)[form]));
+    if (spec !== null && spec.indexOf(old) !== -1) fs.writeFileSync(specFile, spec.split(old).join(title));
+    return git(['add', '--'].concat(files))
+      .then(function () { return git(['commit', '-q', '-m', 'testicle.title, ' + suite + ': "' + old + '" is now "' + title + '"', '--'].concat(files)); })
+      .then(function () { return git(['rev-parse', 'HEAD']); })
+      .then(function (sha) { committed = sha.trim(); return git(['rev-parse', '--abbrev-ref', 'HEAD']); })
+      .then(function (b) {
+        const target = b.trim() === 'HEAD' ? 'master' : b.trim();
+        // Origin moved meanwhile: taken first, then pushed again; anything that still fails puts it all back.
+        return git(['push', '-q', 'origin', 'HEAD:refs/heads/' + target]).catch(function () {
+          return git(['fetch', '-q', 'origin']).then(function () { return git(['rebase', '-q', 'origin/' + target]); })
+            .then(function () { return git(['rev-parse', 'HEAD']); })
+            .then(function (sha) { committed = sha.trim(); return git(['push', '-q', 'origin', 'HEAD:refs/heads/' + target]); });
+        });
+      })
+      .catch(function (e) {
+        logError('testicle.title: push failed, put back', e);
+        return git(['rebase', '--abort']).catch(function () {})
+          .then(function () { return committed ? git(['rev-parse', 'HEAD']) : ''; })
+          .then(function (head) { return committed && head.trim() === committed ? git(['reset', '-q', '--soft', 'HEAD~1']) : null; })
+          .then(function () { return git(['reset', '-q', '--'].concat(files)).catch(function () {}); })
+          .then(function () { putBack(); throw refused('push-failed'); });
+      });
+  }).then(function () {
+    const rows = T.ofTitle.all(suite, old);
+    db.exec('BEGIN');
+    try { T.retitle.run(title, suite, old); db.exec('COMMIT'); } catch (e) { db.exec('ROLLBACK'); throw e; }
+    rows.forEach(function (r) {
+      tell('testicle', testServed(r), 'deleted');
+      tell('testicle', testServed(T.row.get(r.script, r.suite, title, Number(r.flipped))), 'added');
+    });
+    return { renamed: rows.length };
+  });
+}
 // THE TITLES A COMPLETED RUN DID NOT REPORT (goal/G47.4, the box: "the testicle should know all tests titles that were
 // actually run for this script/suite combination, and therefore kill all testicle rows that were NOT run", "no point keeping
 // history for something that unstable"): every title of the script and suite not tested since the run started goes, every
@@ -1319,6 +1394,31 @@ appServer.serve({
       return {};
     },
   },
+  // A TEST'S TITLE CHANGED (goal/G47.4, the box: "a new verb testicle.title will change a testicle title, the script, suite
+  // AND oldTitle arguments must match an existing row exactly, and the new title must be valid and not exceed
+  // max_title_length", "testicle will refuse a title change if it would lead to a duplicate within the suite, or if the
+  // string can not be found excatcly once as a literal in the suite file", "the title will be naturally replaced in the suite
+  // file itself", "testicle will update all testicle rows for that suite/title (for all scripts)", "the changes in the suite
+  // file, if successfull will immediatelly pushed to Origin"; "test titles are constrained BY DESCRIPTION_MAX_BYTES"). The
+  // suite and its spec beside it are committed alone, by path, and pushed; a push that fails puts the file and its spec back
+  // and the rows stay as they were, so the file, the rows and origin never disagree.
+  'testicle.title': {
+    request: { script: '', suite: '', oldTitle: '', title: '' }, reply: {},
+    handler: function (a) {
+      const script = posix(String(a.script || '')).replace(/^\.?\//, '');
+      const suite = posix(String(a.suite || '')).replace(/^\.?\//, '');
+      const old = String(a.oldTitle || '');
+      if (!script || !suite || !old || script.indexOf('..') !== -1 || suite.indexOf('..') !== -1 || !/\.js$/.test(suite) || !isSuite(suite)) throw refused('bad-request');
+      if (!T.rowsOf.all(script, suite, old).length) throw refused('no-such-test');
+      const bad = fieldRules().describeProblem(a.title);
+      if (bad) throw Object.assign(refused('bad-title'), { extra: { why: bad } });
+      const title = fieldRules().normalize(a.title);
+      if (title === old) throw refused('same-title');
+      if (T.titleInSuite.get(suite, title)) throw refused('duplicate-title');
+      if (!there(suite)) throw refused('no-such-file');
+      return renameTitle(script, suite, old, title);
+    },
+  },
   'testicle.set': {
     request: { script: '', suite: '', test: '', verified: false, severity: 0 }, reply: {},
     handler: function (a) {
@@ -1434,4 +1534,12 @@ appServer.serve({
   'no-such-file': { status: 404, text: 'no such file' },
   // A -browser suite's result for a node-only script, a -node suite's for a browser-only one (testicle.set, above).
   'not-applicable': { status: 409, text: 'this suite does not apply to this script' },
+  // testicle.title's refusals (goal/G47.4, the box: "else the request is refused").
+  'no-such-test': { status: 404, text: 'no row of that script, suite and title' },
+  'bad-title': { status: 400, text: 'the title breaks the description rule' },
+  'same-title': { status: 400, text: 'the new title is the old one' },
+  'duplicate-title': { status: 409, text: 'that title is already in the suite' },
+  'not-found-once': { status: 409, text: 'the title is not written exactly once in its suite file' },
+  'suite-has-edits': { status: 409, text: 'the suite file or its spec has edits of its own' },
+  'push-failed': { status: 409, text: 'the change could not be pushed, and was put back' },
 } });

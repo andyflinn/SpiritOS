@@ -342,3 +342,15 @@ testicle rows."* It replaces goal/G47.1's retiring of such a title (its rows kep
 nothing. Rewritten to report "stale one" and then a test whose body throws, its run ends crashed: "stale two" keeps its
 rows. Rewritten to report "stale one" alone, its run completes: "stale two" and "stale boom" have no row at all, and the
 suite shows green.
+
+## testicle.title renames a test (goal/G47.4)
+
+The box: *"a new verb testicle.title will change a testicle title, the script, suite AND oldTitle arguments must match an
+existing row exactly, and the new title must be valid and not exceed max_title_length"*, *"testicle will refuse a title
+change if it would lead to a duplicate within the suite, or if the string can not be found excatcly once as a literal in
+the suite file"*, *"the title will be naturally replaced in the suite file itself"*, *"testicle will update all testicle
+rows for that suite/title (for all scripts)"*, *"the changes in the suite file, if successfull will immediatelly pushed to
+Origin"*. Refusals: `no-such-test`, `bad-title` (the description rule's words in `why`), `same-title`, `duplicate-title`,
+`not-found-once`, `suite-has-edits` (the suite or its spec has edits of its own), `push-failed` (the file, its spec and the
+rows put back). The suite and its spec are committed alone, by path; origin moved meanwhile is taken first, then pushed
+again. Owed here: a world with a local bare origin (the lab's repo has none, so a push from a lab node fails safely).

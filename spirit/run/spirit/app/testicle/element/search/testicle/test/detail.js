@@ -181,20 +181,53 @@ test.run('the detail shows its full script path and its full suite path', 0.4, a
   const text = await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")');
   return (text.indexOf(A) !== -1 && text.indexOf(AS) !== -1) || false;
 }, test.limit.quick);
-test.run('the detail has a 🏃 run button for its script and suite', 0.4, async function () {
+// goal/G47.4: the 🏃 is the run form's icon (a pictograph only in the icon element, the general rules), its button 'run'.
+test.run('the detail has a 🏃 run form with a run button for its script and suite', 0.4, async function () {
   if (mounted()) return false;
-  const n = await c.evaluate('Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (b) { return /🏃/.test(b.textContent || ""); }).length');
+  const n = await c.evaluate('Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll(".shell-row-form"), function (f) { var b = f.querySelector("button"); return /🏃/.test(f.textContent || "") && !!b && b.textContent === "run"; }).length');
   return n === 1 || false;
 }, test.limit.quick);
-test.run('a press of the detail\'s 🏃 asks testicle.run for its script and suite', 0.4, async function () {
+test.run('a press of the detail\'s run button asks testicle.run for its script and suite', 0.4, async function () {
   if (mounted()) return false;
   await c.evaluate('(function () { window.zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { window.zzAsked.push(String(o && o.body || "")); } catch (e) {} return f.apply(this, arguments); };' +
     ' var s = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { try { window.zzAsked.push(String(b || "")); } catch (e) {} return s.apply(this, arguments); };' +
-    ' var b = Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (x) { return /🏃/.test(x.textContent || ""); })[0]; if (b) b.click(); }())');
+    ' var b = Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (x) { return (x.textContent || "") === "run"; })[0]; if (b) b.click(); }())');
   const ok = await until(function () { return c.evaluate('window.zzAsked.some(function (x) { return /"testicle\\.run"/.test(x); })'); }, 5000);
   const asked = await c.evaluate('JSON.stringify(window.zzAsked.filter(function (x) { return /testicle\\.run/.test(x); }))');
   let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
   return (!!ok && !!body && body.args && body.args.script === A && body.args.suite === AS) || false;
+}, test.limit.slow);
+// goal/G47.4, the box: "right under the run-icon-button row (make that into a nice rowForm) a second rowForm will allow me to
+// change the tests title", "new titles and the corresponding ui INPUT must be bounded by DESCRIPTION_MAX_BYTES". What the
+// rename does on the server is testicle's own test's; here, the two forms, the bounded input, the ask and a refusal said.
+test.run('the run button and the title input each stand in a row form, the title form right under the run form', 0.4, async function () {
+  if (mounted()) return false;
+  const f = await c.evaluate('(function () { var fs = document.getElementById("zzBox").querySelectorAll(".shell-row-form"); return JSON.stringify(Array.prototype.map.call(fs, function (x) { return { run: /🏃/.test(x.textContent || "") && Array.prototype.some.call(x.querySelectorAll("button"), function (b) { return b.textContent === "run"; }), input: !!x.querySelector("input[data-history=newTitle]") }; })); }())');
+  let forms = []; try { forms = JSON.parse(f); } catch (e) { forms = []; }
+  return (forms.length === 2 && forms[0].run && !forms[0].input && forms[1].input && !forms[1].run) || false;
+}, test.limit.quick);
+test.run('the title input holds the test\'s title and takes no more than 128 bytes', 0.4, async function () {
+  if (mounted()) return false;
+  const v = await c.evaluate('(function () { var i = document.querySelector("#zzBox input[data-history=newTitle]"); return i ? JSON.stringify({ value: i.value, max: i.getAttribute("maxlength") }) : ""; }())');
+  let o = null; try { o = JSON.parse(v); } catch (e) { o = null; }
+  return (!!o && o.value === FLIPS && o.max === '128') || false;
+}, test.limit.quick);
+test.run('a press of rename asks testicle.title with the script, the suite, the old title and the typed one', 0.4, async function () {
+  if (mounted()) return false;
+  await c.evaluate('(function () { window.zzAsked = []; var i = document.querySelector("#zzBox input[data-history=newTitle]"); if (i) i.value = "alpha has a new name";' +
+    ' var b = Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (x) { return (x.textContent || "") === "rename"; })[0]; if (b) b.click(); }())');
+  const ok = await until(function () { return c.evaluate('window.zzAsked.some(function (x) { return /"testicle\\.testicle\\.title"|"testicle\\.title"/.test(x); })'); }, 5000);
+  const asked = await c.evaluate('JSON.stringify(window.zzAsked.filter(function (x) { return /testicle\\.title/.test(x); }))');
+  let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
+  const a = (body && body.args) || {};
+  return (!!ok && a.script === A && a.suite === AS && a.oldTitle === FLIPS && a.title === 'alpha has a new name') || false;
+}, test.limit.slow);
+// The planted suite file does not write the title, so the node refuses ("can not be found excatcly once as a literal").
+test.run('a refused rename says why below the forms, and the title line stays', 0.4, async function () {
+  if (mounted()) return false;
+  const ok = await until(function () { return c.evaluate('String((document.querySelector("#zzBox [data-history=said]") || {}).textContent || "").length > 0'); }, 10000);
+  const v = await view('zzBox');
+  return (!!ok && !!v && v.title === FLIPS) || false;
 }, test.limit.slow);
 test.run('a test with no row says so', 0.2, async function () {
   if (mounted()) return false;
