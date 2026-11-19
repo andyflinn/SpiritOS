@@ -8,7 +8,7 @@ Read from the disc; then on a scratch node of its own with the app switched on, 
 
 ## Requirements
 
-- It lists its verbs, `line.write`, `line.receive`, `chat.read`, `chat.search` and `chats.search` among them, and requires no code.
+- It lists its verbs, `line.write`, `line.receive`, `chat.read`, `chat.search` and `chats.search` among them, and requires nothing but spirit.js and its companion data.js (Andy's rule: "every api.js requires it's companion data.js").
 - `api {family: chat}` answers this file word for word; `api {family: chatClerver}` answers none.
 - Every verb it lists is a verb of the node as `chat.<verb>`: none answers no-such-verb.
 

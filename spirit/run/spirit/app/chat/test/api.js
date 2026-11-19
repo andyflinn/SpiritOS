@@ -26,8 +26,13 @@ test.run('it lists its verbs', 0.2, function () {
   try { X.verbs = require(FILE).verbs; } catch (e) { X.verbs = null; }
   return !!X.verbs && typeof X.verbs === 'object' && Object.keys(X.verbs).length > 0 ? true : false;
 }, test.limit.quick);
-test.run('it requires no code: it is an interface only', 0.2, function () {
-  return !/require\s*\(/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')) ? true : false;
+// AN INTERFACE AND ITS COMPANION DATA, NOTHING ELSE (goal/G47.1; Andy's rule, newer than this check's "requires no code": "every
+// api.js requires it's companion data.js, and is the only script to require that data.js"): every require it makes names
+// spirit.js or spirit/app/chat/data.js, and nothing else.
+test.run('it requires nothing but spirit.js and its companion data.js: it is an interface', 0.2, function () {
+  const src = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
+  const names = (src.match(/require\s*\(\s*['"][^'"]+['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\s*\(\s*['"]|['"]\s*\)$/g, ''); });
+  return names.length > 0 && names.every(function (n) { return /(^|\/)spirit\.js$/.test(n) || n === 'spirit/app/chat/data.js'; }) ? true : false;
 }, test.limit.quick);
 test.run('it lists line.write, which the server serves', 0.2, function () {
   return X.verbs && X.verbs['line.write'] ? true : false;

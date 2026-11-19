@@ -90,9 +90,10 @@ test.run('no code names shell/contacts', 0.2, function () {
   return !oldApp.length || false;
 }, test.limit.quick);
 const OWN = function () { return readJson(path.join(APP, 'contact.json')) || {}; };
-test.run('its icon is 🤩', 0.2, function () {
+// Andy's own change of it, 2026-11-17 ("contact-icon:🪪"); it was 🤩.
+test.run('its icon is 🪪', 0.2, function () {
   const id = OWN().identity || {};
-  return id.icon === '🤩' || false;
+  return id.icon === '🪪' || false;
 }, test.limit.quick);
 test.run('its label is Contacts, as the old app\'s name', 0.2, function () {
   const id = OWN().identity || {};
