@@ -317,3 +317,11 @@ only under a live suite row; dependencies only between existing files, a script'
 learned. A scratch copy in auto mode: aR.js and cR.js pull in bR.js, each with its own test; once green and linked, cR.js
 and its test are deleted and aR.js stops pulling in bR.js. Then cR.js's suite rows are deleted and none of its results is
 current; no dependency row names cR.js on either side; aR.js no longer lists bR.js; aR.js and bR.js keep their live rows.
+
+## testicle cleans its lab before a run (goal/G47.1)
+
+Andy: *"there ONE test process, it can bloody well clean up after itself and if neccessary before itself, it's NOT fucking
+negotiating with any other process for fucking lab nodes"*, *"testicle can double ensure that no fucking lab nodes or
+headless chromes are loitering about before AND after ever fucking run."* A scratch copy with a planted script and its own
+test, and a stray process left running in one of the copy's lab node folders: a press of the suite ends the stray before
+the run goes on, and the suite then runs green.

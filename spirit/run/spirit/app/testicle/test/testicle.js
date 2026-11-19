@@ -2830,3 +2830,60 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     } finally { await letGoRC(); }
   }, test.limit.slow);
 }
+
+// TESTICLE CLEANS ITS LAB BEFORE A RUN (goal/G47.1; Andy: "there ONE test process, it can bloody well clean up after itself and
+// if neccessary before itself, it's NOT fucking negotiating with any other process for fucking lab nodes", "testicle can double
+// ensure that no fucking lab nodes or headless chromes are loitering about before AND after ever fucking run."). A world of its
+// own: a scratch copy with one planted script and its own test; a stray process is left running on one of the copy's lab
+// nodes, as an aborted run leaves one. A press of the suite ends it before the suite runs, and the suite runs green.
+{
+  const S0 = 'spirit/app/testicle/temp/zzStray/';
+  const SA = S0 + 'sA.js';
+  const ownOfS = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
+  const ST = { s: null, N: null, DB: '', stray: 0, pressed: false };
+  const strayUp = function () { return !!ST.N && ST.N.up; };
+  const aliveS = function (pid) { if (!pid) return false; try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+  const letGoST = async function () {
+    if (aliveS(ST.stray)) { try { process.kill(ST.stray); } catch (e) { /* gone */ } }
+    if (ST.N) await stop(ST.N.child);
+    try { if (ST.s) LABH.freeTree(ST.s); } catch (e) { /* scratch */ }
+    ST.N = null; ST.s = null;
+  };
+  test.after(letGoST);
+  test.run('a scratch copy is made with a planted script and its own test, and a stray process left running on one of its lab nodes', 0.2, async function () {
+    const root = LABH.scratchTree().root;
+    const run = path.join(root, 'spirit', 'run');
+    ST.s = { root: root, run: run };
+    fs.mkdirSync(path.join(run, S0, 'test'), { recursive: true });
+    fs.writeFileSync(path.join(run, SA), "'use strict';\n// sA\n");
+    fs.writeFileSync(path.join(run, ownOfS(SA)), SUITE_HEAD + "test.run('sA answers', 0.2, function () { return true; }, test.limit.quick);\n");
+    const on = path.join(run, 'spirit', 'state', 'testicle');
+    fs.mkdirSync(path.join(on, 'data'), { recursive: true });
+    fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
+    fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
+    ST.DB = path.join(on, 'data', 'testicle.db');
+    ST.N = await boot(run);
+    if (!ST.N.up) return false;
+    // The copy's own lab, as its testicle's runs use it: a node folder there with a process still running in it.
+    const nodeDir = path.join(root, 'lab', 'node', 'personal1', 'spirit', 'run');
+    fs.mkdirSync(nodeDir, { recursive: true });
+    const kid = require('child_process').spawn(process.execPath, ['-e', 'setTimeout(function () {}, 600000)'], { cwd: nodeDir, stdio: 'ignore', detached: true });
+    kid.unref();
+    ST.stray = kid.pid;
+    return aliveS(ST.stray) || false;
+  }, test.limit.long);
+  test.run('a press of a suite ends a process left running on a lab node before the run goes on', 0.8, async function () {
+    if (!strayUp() || !ST.stray) return false;
+    await until(function () { return call(ST.N.base, 'testicle.suite.search', { script: SA, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
+    const r = await until(function () { return call(ST.N.base, 'testicle.run', { script: SA, suite: ownOfS(SA) }).then(function (x) { return !!(x.body && x.body.started === true); }); }, 120000);
+    ST.pressed = !!r;
+    if (!ST.pressed) return false;
+    return !!(await until(function () { return Promise.resolve(!aliveS(ST.stray)); }, 60000)) || false;
+  }, test.limit.long);
+  test.run('the pressed suite then runs green', 0.2, async function () {
+    try {
+      if (!ST.pressed) return false;
+      return !!(await until(function () { const r = suiteRow(tables(ST.DB), SA, ownOfS(SA)); return Promise.resolve(!!r && r.outcome === 'green' && no(r.test)); }, 120000)) || false;
+    } finally { await letGoST(); }
+  }, test.limit.long);
+}
