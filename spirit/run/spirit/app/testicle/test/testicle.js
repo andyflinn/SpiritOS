@@ -2636,14 +2636,16 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     DP.ran = !!(await until(function () { return Promise.resolve(Object.keys(DEP).every(ownGreen)); }, 280000));
     return DP.ran || false;
   }, test.limit.long);
-  test.run('testicle keeps a dependency table, and it records that user.js pulls in lib.js as it loads', 0.8, function () {
+  // Waited for, not read once (goal/G47.1, Andy: "FIX IT."): the classifier records what a load pulled in, and on a busy
+  // machine its report can land after the own suites already ran green.
+  test.run('testicle keeps a dependency table, and it records that user.js pulls in lib.js as it loads', 0.8, async function () {
     if (!DP.ran) return false;
-    return links(DEP.user, DEP.lib) || false;
-  }, test.limit.quick);
-  test.run('a require inside a function, made only when lazy.js\'s own suite runs, is recorded too: lazy.js pulls in lazyLib.js', 0.8, function () {
+    return !!(await until(function () { return Promise.resolve(links(DEP.user, DEP.lib)); }, 120000)) || false;
+  }, test.limit.long);
+  test.run('a require inside a function, made only when lazy.js\'s own suite runs, is recorded too: lazy.js pulls in lazyLib.js', 0.8, async function () {
     if (!DP.ran) return false;
-    return links(DEP.lazy, DEP.lazyLib) || false;
-  }, test.limit.quick);
+    return !!(await until(function () { return Promise.resolve(links(DEP.lazy, DEP.lazyLib)); }, 120000)) || false;
+  }, test.limit.long);
   test.run('a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again', 0.8, async function () {
     try {
       if (!DP.ran) return false;
@@ -2741,4 +2743,90 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
       return (await until(function () { return Promise.resolve(!alive(pidOf('killed'))); }, 30000)) || false;
     } finally { await letGoLK(); }
   }, test.limit.long);
+}
+
+// CLASSIFYING RECONCILES ALL FOUR TABLES WITH THE TREE (goal/G47.1; Andy: "classification must bring with it a complete
+// reconciliation of the dataset in its tables.", "yes. that's what i say." to cw's reading: "whenever testicle classifies,
+// at start and on each change, all four tables are brought into line with the tree, nothing left behind. Script table: only
+// files that exist are live. Suite table: only pairs of a live script and a suite that exists and applies to it. Test
+// results: current only under a live suite row. Dependencies: only between files that exist, and a script's list replaced
+// whole each time it is learned, never added to."). A world of its own, in auto mode: aR.js and cR.js each pull in bR.js
+// as they load, each with its own test; once all three ran green, cR.js and its test are deleted and aR.js stops pulling in
+// bR.js.
+{
+  const R0 = 'spirit/app/testicle/temp/zzRecon/';
+  const RC = { a: R0 + 'aR.js', b: R0 + 'bR.js', c: R0 + 'cR.js' };
+  const pulls = function (what) { return "'use strict';\nrequire('../../../../spirit.js').require('" + R0 + "bR.js');\nmodule.exports = { " + what + ": true };\n"; };
+  const RC_SRC = { a: pulls('a'), b: "'use strict';\nmodule.exports = { b: true };\n", c: pulls('c') };
+  const ownOfR = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
+  const RR = { s: null, N: null, DB: '', ran: false, moved: false };
+  const reconUp = function () { return !!RR.N && RR.N.up; };
+  const ownGreenR = function (k) { const r = suiteRow(tables(RR.DB), RC[k], ownOfR(RC[k])); return !!r && r.outcome === 'green' && no(r.test); };
+  const depRowsR = function () {
+    let db = null;
+    try { db = new DatabaseSync(RR.DB, { readOnly: true }); db.exec('PRAGMA busy_timeout = 5000'); return db.prepare('SELECT * FROM dependency').all(); } catch (e) { return []; }
+    finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
+  };
+  const namesR = function (r) { return Object.keys(r).map(function (k) { return String(r[k]); }); };
+  const linksR = function (script, file) { return depRowsR().some(function (r) { const v = namesR(r); return v.indexOf(script) !== -1 && v.indexOf(file) !== -1; }); };
+  const letGoRC = async function () {
+    if (RR.N) await stop(RR.N.child);
+    try { if (RR.s) LABH.freeTree(RR.s); } catch (e) { /* scratch */ }
+    RR.N = null; RR.s = null;
+  };
+  test.after(letGoRC);
+  test.run('a scratch copy in auto mode is made with three planted scripts, two of them pulling in the third as they load, each with its own test', 0.2, async function () {
+    const root = LABH.scratchTree().root;
+    const run = path.join(root, 'spirit', 'run');
+    RR.s = { root: root, run: run };
+    fs.mkdirSync(path.join(run, R0, 'test'), { recursive: true });
+    Object.keys(RC).forEach(function (k) {
+      fs.writeFileSync(path.join(run, RC[k]), RC_SRC[k]);
+      fs.writeFileSync(path.join(run, ownOfR(RC[k])), SUITE_HEAD + "test.run('" + k + "R answers', 0.2, function () { return true; }, test.limit.quick);\n");
+    });
+    const on = path.join(run, 'spirit', 'state', 'testicle');
+    fs.mkdirSync(path.join(on, 'data'), { recursive: true });
+    fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
+    fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
+    RR.DB = path.join(on, 'data', 'testicle.db');
+    RR.N = await boot(run);
+    if (!RR.N.up) return false;
+    const auto = await until(function () { return call(RR.N.base, 'testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
+    return !!auto || false;
+  }, test.limit.long);
+  test.run('the three are classified, their own suites run green, and the table links aR.js and cR.js to bR.js', 0.2, async function () {
+    if (!reconUp()) return false;
+    RR.ran = !!(await until(function () { return Promise.resolve(Object.keys(RC).every(ownGreenR) && linksR(RC.a, RC.b) && linksR(RC.c, RC.b)); }, 280000));
+    return RR.ran || false;
+  }, test.limit.long);
+  test.run('cR.js and its test are deleted, and aR.js stops pulling in bR.js; testicle takes both changes', 0.2, async function () {
+    if (!RR.ran) return false;
+    fs.rmSync(path.join(RR.s.run, RC.c), { force: true });
+    fs.rmSync(path.join(RR.s.run, ownOfR(RC.c)), { force: true });
+    fs.writeFileSync(path.join(RR.s.run, RC.a), "'use strict';\nmodule.exports = { a: 'alone' };\n");
+    RR.moved = !!(await until(function () { const r = scriptRow(tables(RR.DB), RC.c); const a = scriptRow(tables(RR.DB), RC.a); return Promise.resolve(!!r && yes(r.deleted) && !!a && no(a.reClassify)); }, 280000));
+    return RR.moved || false;
+  }, test.limit.long);
+  test.run('a deleted script\'s suite rows are deleted with it, and none of its test results is current', 0.8, function () {
+    if (!RR.moved) return false;
+    const t = tables(RR.DB);
+    const live = t.suite.filter(function (r) { return r.script === RC.c && no(r.deleted); });
+    const current = (t.test || []).filter(function (r) { return r.script === RC.c && yes(r.current); });
+    return (live.length === 0 && current.length === 0) || false;
+  }, test.limit.quick);
+  test.run('no dependency row names a deleted script, on either side', 0.8, async function () {
+    if (!RR.moved) return false;
+    return !!(await until(function () { return Promise.resolve(!depRowsR().some(function (r) { return namesR(r).indexOf(RC.c) !== -1; })); }, 60000)) || false;
+  }, test.limit.slow);
+  test.run('a script learned again has its dependency list replaced whole: aR.js no longer lists bR.js', 0.8, async function () {
+    if (!RR.moved) return false;
+    return !!(await until(function () { return Promise.resolve(!linksR(RC.a, RC.b)); }, 60000)) || false;
+  }, test.limit.slow);
+  test.run('what still exists stays: bR.js and aR.js keep their live script and suite rows', 0.8, async function () {
+    try {
+      if (!RR.moved) return false;
+      const t = tables(RR.DB);
+      return ['a', 'b'].every(function (k) { const r = scriptRow(t, RC[k]); const s = suiteRow(t, RC[k], ownOfR(RC[k])); return !!r && no(r.deleted) && !!s && no(s.deleted); }) || false;
+    } finally { await letGoRC(); }
+  }, test.limit.slow);
 }

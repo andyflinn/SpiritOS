@@ -307,3 +307,13 @@ the suite is red on a test like 'it leaves no process behind', and they are ende
 tree"*. A scratch copy with two planted scripts and their own suites: aLeft.js's starts a detached process that would sleep
 120 s and answers at once; pressed, its suite is red on "it leaves no process behind", and that process is ended.
 bKilled.js's starts a process and never answers; stopped by a press of another suite, the process it started ends with it.
+
+## Classifying reconciles all four tables with the tree (goal/G47.1)
+
+Andy: *"classification must bring with it a complete reconciliation of the dataset in its tables."*, and *"yes. that's what i
+say."* to: whenever testicle classifies, all four tables are brought into line with the tree, nothing left behind; only
+existing files live in the script table; suite rows only for a live script and a suite that exists; test results current
+only under a live suite row; dependencies only between existing files, a script's list replaced whole each time it is
+learned. A scratch copy in auto mode: aR.js and cR.js pull in bR.js, each with its own test; once green and linked, cR.js
+and its test are deleted and aR.js stops pulling in bR.js. Then cR.js's suite rows are deleted and none of its results is
+current; no dependency row names cR.js on either side; aR.js no longer lists bR.js; aR.js and bR.js keep their live rows.
