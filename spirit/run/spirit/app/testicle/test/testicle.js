@@ -294,7 +294,7 @@ test.run('in debug mode, once the start is worked off, testicle\'s scripts are o
   const out = tables(DB).script.filter(function (r) { return no(r.deleted) && !/^spirit\/app\/testicle\//.test(r.name); });
   return !out.length || false;
 }, test.limit.long);
-test.run('in debug mode, testicle\'s general suites are only testicle-sibling-general.js, -node.js and -browser.js, and the planted worlds\' own', 0.4, function () {
+test.run('in debug mode, testicle runs only its own three sibling general suites and those of its planted worlds', 0.4, function () {
   if (!up()) return false;
   const gens = Array.from(new Set(tables(DB).suite.filter(function (r) { return no(r.deleted) && /-(child|sibling)-(general|node|browser)\.js$/.test(r.suite); }).map(function (r) { return r.suite; })));
   const out = gens.filter(function (g) { return DEBUG_GENERALS.indexOf(g) === -1 && !/^spirit\/app\/testicle\/temp\//.test(g); });
@@ -1399,7 +1399,7 @@ test.run('general tests run first: every general result for nu.js came before nu
   const gen = (tables(DB).test || []).filter(function (r) { return r.script === NU && r.suite !== NUS && Number(r.tested) >= lastChange; });
   return (!!own0 && gen.length > 0 && gen.every(function (r) { return Number(r.tested) < own0; })) || false;
 }, test.limit.quick);
-test.run('general tests run first, though the own suite sorts first by name: every general result for early.js came before early\'s own suite started', 0.2, async function () {
+test.run('general suites run before a script\'s own suite, even when the own suite sorts first by name', 0.2, async function () {
   if (!up()) return false;
   await until(function () { return Promise.resolve(starts('early').length > 0); }, 120000);
   const own0 = (starts('early')[0] || {}).at;
@@ -2372,7 +2372,7 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     L.N = null; L.s = null;
   };
   test.after(letGoL);
-  test.run('a scratch copy is made with a run limit of 60 s, three planted scripts, and a general test that works past the limit on the second', 0.2, async function () {
+  test.run('a scratch copy is set up with a 60-second run limit and a general test running past it on the second of three scripts', 0.2, async function () {
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
     L.s = { root: root, run: run };
@@ -2611,7 +2611,7 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     DP.N = null; DP.s = null;
   };
   test.after(letGoDP);
-  test.run('a scratch copy in auto mode is made with four planted scripts and their own tests: one requiring another as it loads, one only inside a function', 0.2, async function () {
+  test.run('a scratch copy in auto mode is set up with four scripts: one requires another as it loads, one only inside a function', 0.2, async function () {
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
     DP.s = { root: root, run: run };
@@ -2775,7 +2775,7 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     RR.N = null; RR.s = null;
   };
   test.after(letGoRC);
-  test.run('a scratch copy in auto mode is made with three planted scripts, two of them pulling in the third as they load, each with its own test', 0.2, async function () {
+  test.run('a scratch copy in auto mode is set up with three scripts, two of which require the third as they load', 0.2, async function () {
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
     RR.s = { root: root, run: run };

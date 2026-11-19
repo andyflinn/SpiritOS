@@ -223,7 +223,7 @@ test.run('its title row has the persona table\'s look', 0.2, function () {
 // goal/G41.21: the bundle by the bundle selector in dropdown mode (kind bundle), as the job's.
 // goal/G41.26: the provider by the providerSelector in dropdown mode, the same field the job's detail has
 // (../../job/elementRow.js: { field: 'provider', kind: 'pick', pick: 'provider' }).
-test.run('its fields are the label, the persona in a CodeMirror editor, its bundle by the bundle selector, and its provider by the provider selector as a dropdown, as the job\'s are', 0.2, function () {
+test.run('the persona editor\'s fields in order: label, the persona as code, the bundle by its selector, the provider picked', 0.2, function () {
   const r = X.r;
   return r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['persona', 'code', ''], ['bundle', 'bundle', ''], ['provider', 'pick', 'provider']])
     ? true : false;
@@ -243,7 +243,7 @@ test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
   return !X.made.required.slice(X.made.from).some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent branch\'s interface spirit/app/agent/api.js is required, and its branch of the persona table is the home node\'s <node>/agent/persona', 0.2, function () {
+test.run('the persona page requires the agent interface, and the persona branch it reads is the home node\'s <node>/agent/persona', 0.2, function () {
   if (!X.made) return false;
   if (X.made.required.slice(X.made.from).indexOf('spirit/app/agent/api.js') === -1) return false;
   const DATA = global.window.spirit.data;

@@ -154,7 +154,7 @@ test.run('its list shows the provider\'s icon the server sends with the row, the
   const c = E.t.o.columns || [];
   return (c.length === 2 && c[0].field === 'icon' && c[0].from === 'providerIcon' && c[1].field === 'label' && c[1].label === 'Model' && c[1].sort === 'text') || false;
 }, test.limit.quick);
-test.run('a row picked opens in the model row editor, whose row maker hands its box, id and added to elementRow\'s create with the detail pane and answers what it makes', 0.2, function () {
+test.run('picking a row opens the model row editor in the detail pane, made for that row\'s box, id and added flag', 0.2, function () {
   if (!E.t) return false;
   if (typeof E.t.o.row !== 'function') return false;
   const b = { id: 'detail-box' };

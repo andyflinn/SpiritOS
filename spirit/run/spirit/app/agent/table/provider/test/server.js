@@ -452,7 +452,7 @@ test.run('its title row has the provider table\'s look', 0.2, function () {
 // Andy, box v22: "with Label and Description, URL, and API_KEY"; the icon comes first of every editor (tableElement.js).
 // goal/G41.21: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is this
 // provider": of names the picked table's field that must hold this row's id (../../tableElement.js).
-test.run('its fields are the label, the url, the API key as a secret, and last the model, a pick field of the model table narrowed to this provider\'s models', 0.2, function () {
+test.run('the provider editor\'s fields in order: label, url, API key as a secret, and the model picked from this provider\'s models', 0.2, function () {
   const r = P.r;
   return r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '', f.of || '']; })) === JSON.stringify([['label', 'name', '', ''], ['url', 'url', '', ''], ['apiKey', 'secret', '', ''], ['model', 'pick', 'model', 'providerId']])
     ? true : false;

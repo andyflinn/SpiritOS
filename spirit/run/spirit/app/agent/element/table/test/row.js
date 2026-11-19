@@ -329,7 +329,7 @@ test.run('the editor has no Save button', 0.2, function () {
   if (!ed) return false;
   return !the(ed, 'save') && !/>\s*Save\s*</.test(ed.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('changing the label saves the whole row by itself, asking provider to set its id, icon, label, url, on and tags, with the untyped secret left out', 0.2, async function () {
+test.run('changing the label saves the whole row at once, every field and its icon, with a secret only when one was typed', 0.2, async function () {
   if (!ed) return false;
   w.calls.length = 0;
   the(ed, 'label').value = 'Typed';

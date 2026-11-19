@@ -363,7 +363,7 @@ test.run('its title row has the model table\'s look', 0.2, function () {
 }, test.limit.quick);
 // goal/G41.21, Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for
 // that.............": the provider is shown (kind output, the provider table's row by its icon and label), never picked.
-test.run('its fields are the label shown only (the model name as the provider gives it), the provider shown and never picked, and the capabilities shown only', 0.2, function () {
+test.run('the model editor\'s fields are all shown, never picked: its label, its provider and its capabilities', 0.2, function () {
   const r = X.r;
   return r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'output', ''], ['providerId', 'output', 'provider'], ['capabilities', 'output', '']])
     ? true : false;

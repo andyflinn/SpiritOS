@@ -98,7 +98,7 @@ test.run('a row that is not goal.whole is kept and drops nothing', 0.2, function
 // another goal pushed whole: it is current, and nothing kept of others goes (goal/G41.12)
 // Andy, goal/G41.12, box v15: "The cache keeps everything the server sends, every goal, no filtering on the client
 // side"; goal/G41.24, his decision: "the three bundle checks go, and the other three assert my G41.12 words."
-test.run('another goal pushed whole is current, while the rows and parts of the goal before it and another goal\'s row all stay, as every goal is kept', 0.2, function () {
+test.run('a second goal pushed whole becomes current, and the first goal\'s items, parts and boxes stay in the cache', 0.2, function () {
   if (!w) return false;
   w.X.took('item.box', { id: 'goal/G9.1' }, { box: 'the box', version: 3 });
   w.job(whole(it('goal/G8.1', 'goal/G8')));

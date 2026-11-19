@@ -89,7 +89,7 @@ test.run('the shared element is told its table, job, and the page\'s detail pane
   if (!E.t) return false;
   return (E.t.o.table === 'job' && E.t.o.detail === detail) || false;
 }, test.limit.quick);
-test.run('a row picked opens in the job row editor: the row asked for is made by the row editor\'s create, in its box, with its id, added and the detail pane, and answered', 0.2, function () {
+test.run('picking a row opens the job row editor in the detail pane, made for that row\'s box, id and added flag', 0.2, function () {
   if (!E.t) return false;
   if (typeof E.t.o.row !== 'function') return false;
   const b = { id: 'detail-box' };

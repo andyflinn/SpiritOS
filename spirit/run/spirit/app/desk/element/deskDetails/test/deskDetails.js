@@ -372,7 +372,7 @@ test.run('Delete is an arming button that says "Delete: sure?" on the first pres
 test.run('Abandon is an arming button that says "Sure? Abandon the goal" on the first press and sends desk.press abandon on the second', 0.2, function () {
   return goalPress('dd-abandon', 'Sure? Abandon the goal', press('abandon'));
 }, test.limit.quick);
-test.run('Close on a goal with an item open is an arming button that says "are you sure? 1 open" on the first press and sends desk.press close on the second', 0.2, function () {
+test.run('Close on a goal with an item open asks "are you sure? 1 open" on the first press and closes on the second', 0.2, function () {
   return goalPress('dd-close', 'are you sure? 1 open', press('close'));
 }, test.limit.quick);
 
@@ -387,7 +387,7 @@ test.run('Close on a done item is an arming button, armed on the first press wit
   const w = await opened(Object.assign({}, ITEM, { status: 'done' }));
   return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }));
 }, test.limit.quick);
-test.run('Close on a goal with nothing open is an arming button, armed on the first press with nothing sent, that sends desk.press close on the second', 0.2, async function () {
+test.run('Close on a goal with nothing open only arms on the first press, and closes on the second', 0.2, async function () {
   const w = await opened({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'], blocked: [] });
   return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }));
 }, test.limit.quick);
@@ -695,9 +695,9 @@ async function fullHeight(key) {
   const full = !!p && !p.error && !p.paneScrolls && !!p.scroller && p.scroller.bottom >= p.pane.bottom - 24 && p.scroller.bottom <= p.pane.bottom + 1;
   return full || false;
 }
-test.run('the box panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () { return fullHeight('box'); }, test.limit.slow);
-test.run('the qs panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () { return fullHeight('qs'); }, test.limit.slow);
-test.run('the files panel, the first time its icon is pressed, uses all the height: its list scrolls in itself, down to the bottom of the pane', 0.2, function () { return fullHeight('files'); }, test.limit.slow);
+test.run('the box panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, function () { return fullHeight('box'); }, test.limit.slow);
+test.run('the qs panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, function () { return fullHeight('qs'); }, test.limit.slow);
+test.run('the files panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, function () { return fullHeight('files'); }, test.limit.slow);
 // THE GRANT ROW PINNED ON TOP (Andy: "the file panel must have the red gran button row pinned to the top and the
 // file list only using the remaining vertical space"): never in the list that scrolls, and it stays put.
 test.run('in the files panel, the grant buttons stay pinned above the file list as it scrolls', 0.2, function () {

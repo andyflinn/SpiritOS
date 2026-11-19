@@ -939,7 +939,7 @@ test.run('a commit lands on origin, the desk\'s checkout holds an edit, and ubi\
   const redE = await W.askA('claim', { id: 'goal/G300.2', phase: 'red', commit: h3 }, UBI);
   return (!!h3 && !!redE.change) || false;
 }, test.limit.quick);
-test.run('a claim taken over a checkout with an edit of its own pulls nothing, the edit stays, and a line of the desk\'s under the item says so', 0.2, async function () {
+test.run('a claim on a checkout with an uncommitted edit pulls nothing and keeps the edit, and the desk says so under the item', 0.2, async function () {
   if (!W.askA || W.linesE === undefined) return false;
   const worldA = W.worldA;
   const saidE = await waitFor(async function () { return (await deskLines(W.askA, 'goal/G300.2')).length > W.linesE; }, 15000);

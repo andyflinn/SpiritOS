@@ -437,7 +437,7 @@ test.run('the line meant for it is handed over', 0.2, async function () {
 test.run('when the lines take more than one answer, the first says more', 0.2, function () {
   return V.firstMore === true || false;
 }, test.limit.quick);
-test.run('every one of the 250 lines that came while it was busy is handed over, over as many waits as it takes: none dropped by a cap, none cut and lost', 0.2, async function () {
+test.run('all 250 lines that came while it was busy are handed over across as many waits as it takes, none dropped or cut', 0.2, async function () {
   const got = V.got || [];
   const missing = (V.sent || []).filter(function (s) { return !got.some(function (l) { return l.indexOf(s) !== -1; }); });
   // Whatever the last wait handed is read: its key comes back, so the queue is clear for what follows.

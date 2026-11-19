@@ -157,7 +157,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.d
 // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor is
 // ./row.js's. goal/G43.32: it stands at its path, spirit.element.spirit.app.agent.element.table.tableElement, its shared
 // pieces (once an element of their own, agentDetail) with its create.
-test.run('it places spirit.element.spirit.app.agent.element.table.tableElement with create and no other element, as the row\'s editor is row.js\'s', 0.2, function () {
+test.run('the file registers one element, the table editor with its create; the row editor lives in row.js', 0.2, function () {
   if (!AT) return false;
   return AT.tableElement && typeof AT.tableElement.create === 'function' && !AT.row ? true : false;
 }, test.limit.quick);

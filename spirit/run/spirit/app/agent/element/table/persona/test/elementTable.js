@@ -89,7 +89,7 @@ test.run('the shared element is told its table, persona, and the page\'s detail 
   if (!E.t) return false;
   return (E.t.o.table === 'persona' && E.t.o.detail === detail) || false;
 }, test.limit.quick);
-test.run('a row picked opens in the persona row editor, which elementRow.create makes with the row\'s box, id and added flag and the detail pane, and that editor is answered', 0.2, function () {
+test.run('picking a row opens the persona row editor in the detail pane, made for that row\'s box, id and added flag', 0.2, function () {
   if (!E.t) return false;
   if (typeof E.t.o.row !== 'function') return false;
   const b = { id: 'detail-box' };

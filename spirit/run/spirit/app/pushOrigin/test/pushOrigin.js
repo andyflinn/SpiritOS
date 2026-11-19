@@ -138,7 +138,7 @@ test.run('a rebase already in progress is refused, saying so, and is still in pr
 }, test.limit.slow);
 // goal/G5.1, pushOrigin.js: "if the rebase hits a clash ... The clone is left exactly as it was (same HEAD, unsaved edits
 // back in place, untracked files kept), and origin is unchanged."
-test.run('a clash with origin answers ok false, leaves the clone as it was with its unsaved edit and untracked file back, and leaves origin unchanged', 0.4, async function () {
+test.run('a clash with origin answers ok false and puts the clone back as it was, edits and untracked files kept, origin untouched', 0.4, async function () {
   const p = lib(); if (!p) return false;
   const w = world();
   w.commit(w.other, 'shared.txt', 'line one, theirs\n', 'theirs'); git(['push', '-q', 'origin', 'master'], w.other);

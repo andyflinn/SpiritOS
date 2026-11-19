@@ -55,7 +55,7 @@ test.run('every rule is one of spirit.js\'s standard rules, a trailing question 
   });
   return bad === 0 || false;
 }, test.limit.quick);
-test.run('the verbs of api.js are busy, preferences, script.get, script.classify, suite.search, testicle.set, suite.success, testicle.search, red, run, subscribe and unsubscribe', 0.2, function () {
+test.run('api.js names exactly testicle\'s verbs, no more and no fewer', 0.2, function () {
   if (!W.api) return false;
   return W.names.slice().sort().join() === VERBS.slice().sort().join() || false;
 }, test.limit.quick);

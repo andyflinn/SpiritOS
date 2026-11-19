@@ -89,7 +89,7 @@ test.run('the shared element is told its table, provider, and the page\'s detail
   if (!E.t) return false;
   return (E.t.o.table === 'provider' && E.t.o.detail === detail) || false;
 }, test.limit.quick);
-test.run('a row picked opens in the provider row editor, made by elementRow\'s create with the box, the id, added and the detail pane, and answered', 0.2, function () {
+test.run('picking a row opens the provider row editor in the detail pane, made for that row\'s box, id and added flag', 0.2, function () {
   if (!E.t) return false;
   if (typeof E.t.o.row !== 'function') return false;
   const b = { id: 'detail-box' };

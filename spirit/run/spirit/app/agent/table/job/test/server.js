@@ -231,7 +231,7 @@ test.run('its title row has the job table\'s look', 0.2, function () {
 }, test.limit.quick);
 // goal/G41.21: the bundle set "with a bundleSelector in dropdown mode" (kind bundle), the provider and the persona by a
 // pick field of their table; the order of the box, the code field drawn last by the shared element whatever its place.
-test.run('its fields are the label, the loop flag, the job, then the bundle by the bundle selector, the provider and the persona each by a pick field of its table', 0.2, function () {
+test.run('the job editor\'s fields in order: label, loop flag, job code, bundle by its selector, provider and persona picked', 0.2, function () {
   const r = X.r;
   return r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '']; })) === JSON.stringify([['label', 'name', ''], ['loop', 'bool', ''], ['job', 'code', ''],
     ['bundle', 'bundle', ''], ['provider', 'pick', 'provider'], ['persona', 'pick', 'persona']]) ? true : false;
@@ -247,7 +247,7 @@ test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
   return !X.made.required.slice(X.made.from).some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('its page files require the agent family\'s interface, spirit/app/agent/api.js, whose data.js makes the job branch the home node\'s <node>/agent/job', 0.2, function () {
+test.run('the job page requires the agent interface, and the job branch it reads is the home node\'s <node>/agent/job', 0.2, function () {
   if (!X.made || X.made.required.slice(X.made.from).indexOf('spirit/app/agent/api.js') === -1) return false;
   const DATA = global.window.spirit.data;
   const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;

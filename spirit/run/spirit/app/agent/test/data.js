@@ -160,7 +160,7 @@ test.run('a table\'s watch with no id and no function watches nothing and answer
 }, test.limit.quick);
 
 // ── in node, brought by its api.js (goal/G47.1: "every api.js requires it's companion data.js") ──
-test.run('in node, requiring the agent family\'s interface, spirit/app/agent/api.js, brings its data.js, which stands at spirit.data.agent.data', 0.2, async function () {
+test.run('in node, requiring the agent interface brings its data.js, standing at spirit.data.agent.data with row and branch', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.require('spirit/app/agent/api.js')); } catch (e) { return false; }

@@ -185,7 +185,7 @@ test.run('the box it hands the workBench takes the shell\'s fill class', 0.2, fu
 // left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app").
 // goal/G41.26, Andy, box: "the left site icon strip gains a [chat] icon, that opens the following, NEW panel, titled:
 // \"💬 Select Persona\"". Its place in the strip is not said; it is the one left tool that is not a table's.
-test.run('the left strip holds one tool per table, provider, model, persona and job, and no grant; the right two tools, the server\'s and one more; each with its name, icon, title and mount', 0.2, function () {
+test.run('the left strip has one tool per agent table and no grants tool, the right strip two, the server\'s among them', 0.2, function () {
   if (!X.wb) return false;
   const L = X.L, R = X.R, LEFT = TABLES.slice();
   return JSON.stringify(L.map(function (t) { return t && t.name; }).filter(function (n) { return LEFT.indexOf(n) !== -1; })) === JSON.stringify(LEFT) && R.length === 2 && R.some(function (t) { return t && t.name === 'server'; }) &&

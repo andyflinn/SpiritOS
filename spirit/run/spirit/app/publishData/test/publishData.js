@@ -285,7 +285,7 @@ test.run('testState.json holds testicle\'s current tests, read only, with no sui
   try { ts = JSON.parse(fs.readFileSync(path.join(OUT, 'testState.json'), 'utf8')); } catch (e) { ts = null; }
   return (ts && ts.platform === PLATFORM && !('agent' in ts) && ts.commit === WR.COMMIT && ts.tests === ts.green + ts.red && Array.isArray(ts.suites) && Array.isArray(ts.reds) && ts.reds.length === ts.red && /no suite was run/.test(ts.from) && /testicle/.test(ts.from) && !/verify/i.test(ts.from)) ? true : false;
 }, test.limit.quick);
-test.run('the counts in testState.json are testicle\'s current rows: every current test, the failed ones its reds, each with its script and suite', 0.2, function () {
+test.run('testState.json\'s test and red counts match testicle\'s current rows, and every red names its script, suite and test', 0.2, function () {
   if (!ts) return false;
   if (!fs.existsSync(TESTICLE_DB)) return false;
   const { DatabaseSync } = require('node:sqlite');
@@ -321,7 +321,7 @@ test.run('the README is written beside them, titled "# Info and Measurements on 
 }, test.limit.quick);
 // The box: "one short paragraph: \"Measurements were taken on **<Weekday>, <Month> <day-number-in-month>, <four-digit-year>**
 // for repository commit **<commit-id>**\"". The day is the run's, here or in UTC.
-test.run('the README\'s next line says Measurements were taken on **<Weekday>, <Month> <day>, <year>** for repository commit **<commit-id>**', 0.2, function () {
+test.run('the README\'s second line says, in bold, that the measurements were taken today and for which commit', 0.2, function () {
   if (!RL.length) return false;
   const day = function (utc) { return new Date().toLocaleDateString('en-US', Object.assign({ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }, utc ? { timeZone: 'UTC' } : {})); };
   const want = [day(false), day(true)].map(function (d) { return 'Measurements were taken on **' + d + '** for repository commit **' + WR.COMMIT + '**'; });
@@ -333,7 +333,7 @@ test.run('the README\'s line after that is the heading "## The Machine the Measu
 }, test.limit.quick);
 // The six bullets, each "- **<label>**: <value>", the values node.js's system info on this machine.
 let MACH = null;
-test.run('under the machine heading come six bullets: OS/Platform, OS Version, Node.js Version, Total RAM, CPU, Architecture, in that order', 0.2, function () {
+test.run('under the machine heading come six bullets: OS, OS version, Node.js version, total RAM, CPU and architecture, in order', 0.2, function () {
   if (!RL.length) return false;
   const b = bulletsUnder('## The Machine the Measurements come from') || [];
   const labels = ['OS/Platform', 'OS Version', 'Node.js Version', 'Total RAM', 'CPU', 'Architecture'];
@@ -381,7 +381,7 @@ test.run('the README\'s "## Summary" comes after the machine, with four bullets'
   return (!!SUM && RL.indexOf('## Summary') > RL.indexOf('## The Machine the Measurements come from') && SUM.length === 4) || false;
 }, test.limit.quick);
 // "computed by the relay's own rule": no more than the relay allows in 512 MB with nothing of it at rest, in seats.
-test.run('the first Summary bullet is "A SpiritOS relay given 512 Megabytes of RAM can hold live streams for <number-of-users> simultaneously."', 0.2, function () {
+test.run('the first summary bullet gives how many users a relay holds live streams for in 512 MB, within the relay\'s own rule', 0.2, function () {
   if (!SUM) return false;
   const m = /^- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for ([\d,]+) simultaneously\.$/.exec(SUM[0] || '');
   const relay = require(path.join(RUN, 'spirit', 'relay.js'));
@@ -398,7 +398,7 @@ test.run('the third Summary bullet is "A call to a node on its own machine answe
   const m = /^- A call to a node on its own machine answers in ([\d.]+) ms, the slowest in ([\d.]+) ms\.$/.exec(SUM[2] || '');
   return (!!m && Number(m[1]) > 0 && Number(m[1]) <= Number(m[2])) || false;
 }, test.limit.quick);
-test.run('the fourth Summary bullet is "A card request through a relay takes <ms> ms, the slowest <ms> ms; sealing and signing take <ms> ms of it."', 0.2, function () {
+test.run('the fourth summary bullet gives a card request\'s time through a relay, its slowest, and the sealing and signing within it', 0.2, function () {
   if (!SUM) return false;
   const m = /^- A card request through a relay takes ([\d.]+) ms, the slowest ([\d.]+) ms; sealing and signing take ([\d.]+) ms of it\.$/.exec(SUM[3] || '');
   return (!!m && Number(m[1]) > 0 && Number(m[1]) <= Number(m[2]) && Number(m[3]) > 0 && Number(m[3]) <= Number(m[1])) || false;
@@ -428,12 +428,12 @@ const linkedDoc = function (f) { try { return fs.readFileSync(path.join(OUT, f),
 const firstDocWith = function (pick) { for (let i = 1; i < (LINKS || []).length; i++) if (linkedDoc(LINKS[i]).some(pick)) return i; return -1; };
 const generalLine = function (l) { return GENERAL_SUITE.test(l) && (l.match(/\b\d+\b/g) || []).length >= 3; };
 const ownLine = function (l) { return /\/test\/[\w.-]+\.js\b/.test(l) && !GENERAL_SUITE.test(l) && (l.match(/\b\d+\b/g) || []).length >= 2; };
-test.run('one linked document lists the general tests: each general suite, the number of production files it judges, and its green and red counts', 0.2, function () {
+test.run('a linked document lists the general suites, each with the production files it judges and its green and red counts', 0.2, function () {
   if (!LINKS) return false;
   const i = firstDocWith(generalLine);
   return i > 0 || false;
 }, test.limit.quick);
-test.run('below the general tests, a linked document lists the own suites: each production script with its own suite, and its green and red counts', 0.2, function () {
+test.run('a second linked document, after that one, lists each production script\'s own suite with its green and red counts', 0.2, function () {
   if (!LINKS) return false;
   const g = firstDocWith(generalLine);
   const o = firstDocWith(ownLine);
@@ -564,7 +564,7 @@ test.run('platform/README.md is titled "Measurements exists for the following pl
   if (!PR) return false;
   return /^(#+\s*)?Measurements exists for the following platforms$/.test(PR[0] || '') || false;
 }, test.limit.quick);
-test.run('platform/README.md then holds one bullet per platform folder, this one and the other, each a link to that folder\'s README.md, and nothing else', 0.2, function () {
+test.run('platform/README.md then links each platform folder\'s README.md, this machine\'s and the other\'s, one bullet each, nothing else', 0.2, function () {
   if (!PR) return false;
   const rest = PR.slice(1);
   const named = rest.map(function (l) { const m = /^- \[(windows|wsl|ubuntu)\]\((windows|wsl|ubuntu)\/README\.md\)$/.exec(l); return m && m[1] === m[2] ? m[1] : null; });
