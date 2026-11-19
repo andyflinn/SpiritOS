@@ -228,6 +228,8 @@
       I.create(hold, { glyph: glyph });
       return hold.innerHTML;
     }
+    // The filter row as last written into the page (draw).
+    var filtersDrawn = null;
     function filterHtml() {
       var row = filters.filter(function (f) { return typeof f.when !== 'function' || !!f.when(cachedRows()); }).map(function (f) {
         return '<span data-filter="' + esc(f.name) + '">' + choicesOf(f).map(function (c) {
@@ -358,7 +360,9 @@
       if (!live || !open) return;
       takePage();
       var fs0 = el('filters');
-      if (filters.length && fs0) fs0.innerHTML = filterHtml();
+      // THE FILTER ROW WRITTEN ONLY WHEN IT CHANGED (goal/G47.1: the job search, redrawn at every job's change, threw its filter
+      // buttons away each time, so a press could land on a button being replaced, and its title-bar check measured buttons gone).
+      if (filters.length && fs0) { var fh = filterHtml(); if (fh !== filtersDrawn) { fs0.innerHTML = fh; filtersDrawn = fh; } }
       var entries = Object.keys(byKey).map(function (k) { var e = byKey[k]; elementOf(e); return e; });
       // Its owner may hold some rows back (o.visible; appSelector's tiles show active apps alone, goal/G43.9).
       if (typeof o.visible === 'function') entries = entries.filter(function (e) { return o.visible(e.row); });
