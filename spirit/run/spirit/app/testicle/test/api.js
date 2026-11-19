@@ -23,7 +23,7 @@ const passes = function (verb, args) { return !!W.verbs[verb] && spirit.check('t
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.check('testicle.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 // suite.success since box v129-131 (Andy: "the reporter reporting fucking success/failure of the suite through a new verb
 // testicle.suite.success").
-const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'suite.success', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
+const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'testicle.title', 'suite.success', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
 const SET = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title', verified: true, severity: 0.2 };
 
 test.run('testicle\'s api.js loads', 0.2, function () {

@@ -1,0 +1,9 @@
+{
+  "description": "One test's title changed (goal/G47.4): {script, suite, oldTitle, title}. script, suite and oldTitle must match an existing row exactly; the new title keeps the description rule (not empty, no invisible characters, at most 128 bytes) and is not already in the suite. The old title must be written exactly once in the suite file, as '...' or \"...\"; it is replaced there in its own quote form, and the suite's spec beside it takes the new title wherever it said the old. The suite and its spec are committed alone, by path, and pushed to origin; a push that fails puts both files back. Only then every row of that suite and title, of every script, takes the new title. Answers {renamed}, the number of rows renamed. Refused: \"no row of that script, suite and title\", \"the title breaks the description rule\" (its words in why), \"the new title is the old one\", \"that title is already in the suite\", \"the title is not written exactly once in its suite file\", \"the suite file or its spec has edits of its own\", \"the change could not be pushed, and was put back\".",
+  "request": {
+    "script": "text",
+    "suite": "text",
+    "oldTitle": "text",
+    "title": "text"
+  }
+}
