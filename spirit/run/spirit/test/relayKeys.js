@@ -16,7 +16,9 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayKeys/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayKeys'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// Its store closed first: on Windows a folder holding an open database cannot be removed, and the suite was red on
+// 'it leaves no temp folder behind' for that alone.
+test.after(function () { try { if (W.home) nodeStore.open(W.home).close(); } catch (e) { /* closed */ } try { fs.rmSync(tempFolder.path('spirit/test/relayKeys'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 
