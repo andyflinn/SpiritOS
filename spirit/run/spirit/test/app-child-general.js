@@ -223,15 +223,8 @@ function appRules(all) {
     test.run('the app\'s data.js is there', 0.4, function () {
       return each(withApi, function (f) { return isFile(f.dir + '/data.js') ? true : false; });
     }, test.limit.quick);
-    test.run('each verb the app serves has its json description', 0.4, function () {
-      return each(withApi, function (f) {
-        const verbs = apiVerbs(f);
-        const undescribed = (verbs || []).filter(function (v) {
-          try { return !isObj(JSON.parse(fs.readFileSync(path.join(RUN, f.dir, v + '.json'), 'utf8'))); } catch (e) { return true; }
-        });
-        return (!!verbs && !undescribed.length) ? true : false;
-      });
-    }, test.limit.quick);
+    // Each verb's <verb>.json: judged on every branch, both ways and with its arguments, by spirit-sibling-general.js
+    // (goal/G47.4, "api.js and <verb>.json files match precisely"), which replaced this one-way check of the apps.
   }
 }
 

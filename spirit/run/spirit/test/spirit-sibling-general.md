@@ -56,6 +56,10 @@ gone. From `./app.js`: that an app's description names its icon and label. A scr
 - **It stands where its family is found** (goal/G43.27, the fewest path elements): `spirit.familyPath(<name>)` is its
   `api.js`; and **no other `<name>/api.js` is in the tree** (`spirit/<name>/`, `spirit/app/<name>/`,
   `process/js/<name>/[family/]`; Andy: *"duplicate <name>/api.js raise a red."*).
+- **Its verbs and their `.json` files match one to one** (goal/G47.4; Andy: *"api.js and <verb>.json files match
+  precisely"*, *"including defined arguments"*): each verb has its `<verb>.json` beside `api.js`, each `.json` there is a
+  verb's, but the branch's own `<name>.json`; each `.json`'s `request` lists every argument with its rule exactly as
+  `api.js` writes it (a verb with none may leave it out). It replaces the apps' one-way check and every hand list of verbs.
 - **Required on the node it is placed and binds** (decided 8: *"A branch's api.js is placed at
   spirit.required.spirit.<branch-path>.api and also binds the branch."*): in a process of its own, `spirit.require` of it
   leaves the `api.js` at `spirit.required.<its path>`, and binds every verb it declares on `spirit.<name>`, under the name

@@ -167,6 +167,28 @@ if (withApi.length) {
       return !twins.length;
     });
   }, test.limit.quick);
+  // ITS VERBS AND THEIR .json FILES MATCH ONE TO ONE (goal/G47.4; Andy: "api.js and <verb>.json files match precisely", "loads
+  // the api.js file and then makes sure that api.js and verb.json files match one-to-one, including defined arguments", "I
+  // noticed some garbage test that hardcoded verbs that belong into it's <verb>.json collection.... BE SMARTER THAN THAT!",
+  // "MAKE IT HAPPEN!!!"; taken in the sitting as cw's way: each <verb>.json's request lists every argument with its rule
+  // exactly as api.js writes it). Every verb has its <verb>.json beside api.js, every .json there is a verb's, except the
+  // branch's own <name>.json, which describes the branch; a verb with no arguments may leave its request out.
+  test.run('each verb of its api.js has its <verb>.json, each .json a verb, with the same arguments and rules', 0.4, function () {
+    return overAll(withApi, function (b) {
+      if (!b.verbs) return false;
+      const verbs = Object.keys(b.verbs);
+      let files = [];
+      try { files = fs.readdirSync(path.join(RUN, b.dir)).filter(function (f) { return /\.json$/.test(f) && f !== b.name + '.json'; }).map(function (f) { return f.slice(0, -5); }); } catch (e) { return false; }
+      if (files.some(function (f) { return verbs.indexOf(f) === -1; })) return false;
+      return verbs.every(function (v) {
+        let j = null;
+        try { j = JSON.parse(fs.readFileSync(path.join(RUN, b.dir, v + '.json'), 'utf8')); } catch (e) { return false; }
+        if (!j || typeof j !== 'object' || Array.isArray(j)) return false;
+        const sorted = function (o) { const out = {}; Object.keys(o || {}).sort().forEach(function (k) { out[k] = o[k] && typeof o[k] === 'object' ? sorted(o[k]) : o[k]; }); return out; };
+        return JSON.stringify(sorted(j.request || {})) === JSON.stringify(sorted(b.verbs[v] || {}));
+      });
+    });
+  }, test.limit.quick);
 }
 
 // ── 1a. AN APP BRANCH'S DESCRIPTION ─────────────────────────────────────────────────────────────────────────────────

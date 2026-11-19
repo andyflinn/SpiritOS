@@ -46,7 +46,8 @@ every other sub-folder `spirit/app/<name>/`:
   app's folder holds none but `element.js`; a non-intrinsic app's others stand in its `element/`.
 - Rule 6: *"an app that serves verbs must also contain, in the spirit/app/[name]/ folder a valid api.js, a data.js and a
   json description file for each verb it serves."* An app with a server has an `api.js`. With one, it loads and declares
-  verbs, `data.js` is there, and each verb has a `<verb>.json` that parses to an object.
+  verbs and `data.js` is there. Each verb's `<verb>.json` is judged by `spirit-sibling-general.js` on every branch, apps
+  and system alike, both ways and with its arguments (goal/G47.4).
 
 ## What its test must try to break
 
