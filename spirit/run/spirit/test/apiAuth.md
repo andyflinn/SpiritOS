@@ -141,7 +141,7 @@ has. The node starts on a fresh table with desk, testicle and files (a node fami
 - it holds one branch, all of desk, naming no verb;
 - testicle has its own, owned by testicle, one branch, all of testicle;
 - files gets no bundle;
-- desk's enableRemote holding a branch per verb, as an earlier node made it, is one branch, all of desk, after the node starts again.
+- desk's enableRemote with a branch per verb, as an earlier node made it, is one branch, all of desk, after a restart.
 
 ## The line Andy draws (goal/G47.6, box point 2)
 

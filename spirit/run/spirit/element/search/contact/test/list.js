@@ -180,7 +180,7 @@ test.run('the named filter is never a button, and it lets through a row with a n
 }, test.limit.quick);
 
 // create hands the search element the one table
-test.run('the list is a view of the contact family\'s contacts in spirit.data.contact.data.branch, with the list\'s filters and the columns presence, status, label and add', 0.2, function () {
+test.run('the list is a view of spirit.data.contact.data.branch, with its filters and the columns presence, status, label and add', 0.2, function () {
   if (!L) return false;
   const host = { isConnected: true, addEventListener: function (t, fn) { if (t === 'click') clicks.push(fn); } };
   // The mounter's panel stack's open (goal/G43.18), filling its pane at once.
@@ -228,7 +228,7 @@ test.run('a kept row opens its Contact', 0.2, async function () {
   const open = asked.pop();
   return open.verb === 'contactDetails' && open.body.key === 'K1' ? true : false;
 }, test.limit.quick);
-test.run('a row nobody decided about asks that node who it is (peer.post through the spirit object, a card ask in its envelope), and says its card', 0.2, async function () {
+test.run('a row nobody decided about asks that node who it is (peer.post, a card ask in its envelope), and says its card', 0.2, async function () {
   if (!o) return false;
   o.details({ name: 'z' }, 'KZ', null);
   await tick();

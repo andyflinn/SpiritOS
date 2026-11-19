@@ -1482,7 +1482,7 @@ async function popupPart() {
     chrome = await chromePage(findChrome());
     return (node.up && !chrome.error) ? true : false;
   }, test.limit.slow);
-  test.run('three search dropdowns of 40 rows are drawn, each in a 48 px box that cuts off its overflow, with a block drawn over the space below the first two', 0.2, async function () {
+  test.run('three search dropdowns of 40 rows, each in a 48 px box cutting off its overflow, a block over the space below the first two', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);

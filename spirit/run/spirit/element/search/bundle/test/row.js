@@ -190,7 +190,7 @@ test.run('another bundle\'s row changes nothing here', 0.2, async function () {
 // auth family's data.js, which comes with the auth api.js it requires. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
 // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
 // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-test.run('a bundle row published lands in the auth family\'s bundles by its id, through the family\'s data.js that comes with the api.js the row element requires', 0.2, function () {
+test.run('a bundle row published lands in the auth bundles by its id, through the data.js that comes with the api.js the row requires', 0.2, function () {
   if (!hasA()) return false;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
   return JSON.stringify(A.bundles.row({ id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }) ? true : false;

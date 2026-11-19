@@ -35,7 +35,7 @@ test.run('the body maximum is the payload maximum plus the headroom, with no roo
 test.run('the stream event maximum is six times the payload maximum plus the headroom, and the stream backlog maximum is two of them', 0.2, function () {
   return (L.STREAM_EVENT_MAX === 6 * L.PAYLOAD_MAX + L.WIRE_HEADROOM && L.STREAM_BACKLOG_MAX === 2 * L.STREAM_EVENT_MAX) || false;
 }, test.limit.quick);
-test.run('the sealed maximum is derived from the payload maximum with the floor taken outside the multiply, and the answer maximum is half of it', 0.2, function () {
+test.run('the sealed maximum comes from the payload maximum, the floor taken outside the multiply; the answer maximum is half of it', 0.2, function () {
   return (L.SEALED_MAX === 3 * Math.floor((L.PAYLOAD_MAX - L.SEAL_ENVELOPE) / 4) && L.ANSWER_MAX === Math.floor(L.SEALED_MAX / 2)) || false;
 }, test.limit.quick);
 
@@ -45,7 +45,7 @@ test.run('on real seal output the wire size is four times the rounded-up third o
   const off = texts.filter(function (t) { return wire(t) !== 4 * Math.ceil(Buffer.byteLength(JSON.stringify(t), 'utf8') / 3) + L.SEAL_ENVELOPE; });
   return off.length === 0 || false;
 }, test.limit.quick);
-test.run('the sealed maximum is the exact ceiling, since the largest text it allows seals within the payload maximum and one byte more does not', 0.2, function () {
+test.run('the sealed maximum is the exact ceiling: the largest text it allows seals within the payload maximum, one byte more does not', 0.2, function () {
   const fits = 'x'.repeat(L.SEALED_MAX - 2);     // its JSON is SEALED_MAX bytes
   const over = 'x'.repeat(L.SEALED_MAX - 1);
   return (wire(fits) <= L.PAYLOAD_MAX && wire(over) > L.PAYLOAD_MAX) || false;

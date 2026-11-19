@@ -82,7 +82,7 @@ test.run('words in the order typed beat the same words swapped', 0.2, function (
   const b = p('one two', 'two one x');
   return a > b || false;
 }, test.limit.quick);
-test.run('distance weighs more than order, so words adjacent and swapped beat words in order with a word between, in labels of the same length', 0.2, function () {
+test.run('distance weighs more than order: words adjacent and swapped beat words in order with a word between, labels of one length', 0.2, function () {
   const a = p('alpha beta', 'beta alpha zz');
   const b = p('alpha beta', 'alpha zz beta');
   return a > b || false;

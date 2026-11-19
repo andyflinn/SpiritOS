@@ -57,7 +57,7 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, requiring the contact family\'s interface, spirit/contact/api.js, brings its data.js, which stands at spirit.data.contact.data', 0.2, async function () {
+test.run('in node, requiring spirit/contact/api.js brings the contact family\'s data.js, which stands at spirit.data.contact.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;

@@ -154,7 +154,7 @@ function door(o) {
 }
 function message(envelope, from) { return { hash: 'h4sh0123456789', relay: 'https://relay.example', fromKey: from === undefined ? OWNER.publicKey : from, envelope: envelope }; }
 
-test.run('at the puppet door the owner\'s signed command runs through the node\'s verbs, and the answer goes back to him with the command\'s hash as re', 0.2, async function () {
+test.run('at the puppet door the owner\'s signed command runs through the node\'s verbs, the answer going back with the command\'s hash as re', 0.2, async function () {
   const d = door();
   d.door(message(command('job.list', { all: true })));
   await settle();
@@ -184,7 +184,7 @@ test.run('a command from the owner that fails the switch is refused to him at th
   const a = (d.posts[0] || { sent: {} }).sent.answer || {};
   return (d.calls.length === 0 && d.posts.length === 1 && a.status === 403 && a.error === 'bad command signature') || false;
 }, test.limit.quick);
-test.run('an answer too large for a packet is said by name at the puppet door, never dropped, as 413 answer-too-large with the verb and the size', 0.2, async function () {
+test.run('an answer too large for a packet is said at the puppet door, never dropped: 413 answer-too-large with the verb and the size', 0.2, async function () {
   const d = door({ encode: function (type, answer, extra) { return answer && answer.code !== 'answer-too-large' ? null : { text: JSON.stringify({ answer: answer, re: extra.re }) }; } });
   d.door(message(command('job.list')));
   await settle();

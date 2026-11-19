@@ -65,7 +65,7 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the search element, its row element and the auth interface spirit/auth/api.js through spirit.require, and no data script', 0.2, function () {
+test.run('it requires the search element, its row element and spirit/auth/api.js through spirit.require, and no data script', 0.2, function () {
   if (!loaded) return false;
   return ['spirit/element/search.js', 'spirit/element/search/bundle/row.js', 'spirit/auth/api.js'].every(function (p) { return loaded.indexOf(p) !== -1; }) && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
@@ -100,7 +100,7 @@ test.run('it fills as soon as it is drawn, with one refresh at create', 0.2, fun
 // goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set": the list is a
 // view of the node's bundles (goal/G41.28: the branch the auth family's cache manager keeps), so a bundle added anywhere
 // on the page shows in every bundle list (probabilitySearch's data).
-test.run('it is a view of the auth family\'s bundles at spirit.data.auth.data.bundles.branch, the spirit object\'s cache, which the node\'s stream keeps current', 0.2, function () {
+test.run('it is a view of the auth bundles at spirit.data.auth.data.bundles.branch, the cache the node\'s stream keeps current', 0.2, function () {
   if (!l) return false;
   const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.bundles;
   return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : false;

@@ -137,7 +137,7 @@ test.run('a string argument comes in the sizes 0, 1, 100 and 3/4 of the payload'
   const miss = sizes.filter(function (n) { return !put.some(function (a) { return a && a.name === 'x'.repeat(n); }); });
   return !miss.length || false;
 }, test.limit.quick);
-test.run('a string argument comes with every bad character, namely a NUL, a lone surrogate, control characters, a quote, a backslash and a path piece', 0.2, function () {
+test.run('a string argument comes with every bad character: a NUL, a lone surrogate, controls, a quote, a backslash, a path piece', 0.2, function () {
   if (!L) return false;
   const miss = BADS.filter(function (re) { return !put.some(function (a) { return a && typeof a.name === 'string' && re.test(a.name); }); });
   return !miss.length || false;

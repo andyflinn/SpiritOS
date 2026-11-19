@@ -81,7 +81,7 @@ test.run('the weights add up to 1: a string every row of the object matches exac
 test.run('one string alone weighs 1.0', 0.2, function () {
   return near(p('andy', { andy: true }), 1) || false;
 }, test.limit.quick);
-test.run('a string weighs the total length less its own, over the total length, over one less than the number of strings: "andy" beside "qq" weighs 1/3, beside "qqqqqq" 3/5', 0.2, function () {
+test.run('a string weighs (total length less its own) / total length / (strings less one): "andy" beside "qq" 1/3, beside "qqqqqq" 3/5', 0.2, function () {
   const got = [p('andy', { qq: 'andy' }), p('andy', { qqqqqq: 'andy' })];
   return (near(got[0], 1 / 3) && near(got[1], 3 / 5)) || false;
 }, test.limit.quick);

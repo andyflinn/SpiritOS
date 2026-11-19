@@ -87,10 +87,10 @@ test.run('a link to https://127.0.0.1:65432/face.html is refused and no mail is 
 test.run('a link to http://localhost:65432/face.html is refused and no mail is sent, as the host is not exactly 127.0.0.1', 0.8, function () { return mailed('http://localhost:65432/face.html'); }, test.limit.quick);
 test.run('a link to http://evil.com/face.html is refused and no mail is sent, as the host is another site', 0.8, function () { return mailed('http://evil.com/face.html'); }, test.limit.quick);
 test.run('a link to http://127.0.0.1.evil.com/face.html is refused and no mail is sent, as its host only begins with 127.0.0.1', 0.8, function () { return mailed('http://127.0.0.1.evil.com/face.html'); }, test.limit.quick);
-test.run('a link to http://127.0.0.1:1@evil.com/face.html is refused and no mail is sent, as it has a user name and password before an @ and the site is evil.com', 0.8, function () { return mailed('http://127.0.0.1:1@evil.com/face.html'); }, test.limit.quick);
-test.run('a link to http://user@127.0.0.1:65432/face.html is refused and no mail is sent, as it has a user name before an @, even on 127.0.0.1', 0.8, function () { return mailed('http://user@127.0.0.1:65432/face.html'); }, test.limit.quick);
-test.run('a link to http://127.0.0.2:65432/face.html is refused and no mail is sent, as it is another loopback address, not exactly 127.0.0.1', 0.8, function () { return mailed('http://127.0.0.2:65432/face.html'); }, test.limit.quick);
-test.run('a link to http://evil.com/?http://127.0.0.1:65432/ is refused and no mail is sent, as 127.0.0.1 is only in the query and the site is evil.com', 0.8, function () { return mailed('http://evil.com/?http://127.0.0.1:65432/'); }, test.limit.quick);
+test.run('a link to http://127.0.0.1:1@evil.com/face.html is refused, no mail sent: a user and password before an @, the site evil.com', 0.8, function () { return mailed('http://127.0.0.1:1@evil.com/face.html'); }, test.limit.quick);
+test.run('a link to http://user@127.0.0.1:65432/face.html is refused, no mail sent: a user name before an @, even on 127.0.0.1', 0.8, function () { return mailed('http://user@127.0.0.1:65432/face.html'); }, test.limit.quick);
+test.run('a link to http://127.0.0.2:65432/face.html is refused, no mail sent: another loopback address, not exactly 127.0.0.1', 0.8, function () { return mailed('http://127.0.0.2:65432/face.html'); }, test.limit.quick);
+test.run('a link to http://evil.com/?http://127.0.0.1:65432/ is refused, no mail sent: 127.0.0.1 only in the query, the site evil.com', 0.8, function () { return mailed('http://evil.com/?http://127.0.0.1:65432/'); }, test.limit.quick);
 
 // the login mail carries the token, where to paste it, and no link
 // The box: "The login-email must not carry a link, so a fake login-email cannot lead the user to a look-alike site",

@@ -64,7 +64,7 @@ test.run('it names nothing of the old shell\'s list search', 0.2, function () {
   const names = /shellCreateListSearch|listSearch\.js/.test(code);
   return !names ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.bundle with a create, beside the shell\'s other selectors, and createBundleSelector no more', 0.2, function () {
+test.run('it registers spirit.element.spirit.element.search.bundle with a create, beside the other selectors; createBundleSelector gone', 0.2, function () {
   if (!E) return false;
   return made && typeof made.create === 'function' && !('createBundleSelector' in E) ? true : false;
 }, test.limit.quick);

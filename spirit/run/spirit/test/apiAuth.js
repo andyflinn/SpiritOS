@@ -42,7 +42,7 @@ const parsed = function (item) { try { return JSON.parse(item.label); } catch (e
 let family, verbs, b, r, bj, createApiAuth, root, tree, auth, reader, desk, got, renamed, all, row, hit, whole, one, noVerb, g, keysOf, ofDesk, ofFiles, ofVerb, every, db, colsOf, names, idx, tables, del, left, gone, PEER, kept, told, tb, tr, tr2, n, toldG, GPEER, plain, asked, mine, mdb, afterSet, badIn, kdb, kept2, odb, wrote, outGet, outItem, owned, ofNode, every2, bootRoot, probeDir, bootTree, boot, ownedBy, settleBoot, a1, all1, records, heldMade, hdb, aU, heldRow, first, countOf, twice, other, twoCase, reborn, hb, addB, setB, delB, nb, nbr, nset, ndel, fsRoot, fsTree, fsAuth, fsBundle, keptId, addedloadFile, addedpath, addedsaveFile, moved, again;
 
 // The two verbs, declared.
-test.run('spirit/auth/api.js declares the bundle verb with an op, a numeric id, a label, a search text and an owner that may be left out, and nothing more', 0.2, async function () {
+test.run('spirit/auth/api.js declares the bundle verb with an op, a numeric id, a label, a search text, an optional owner, nothing more', 0.2, async function () {
   family = require(FAMILY);
   verbs = (family && family.verbs) || {};
   // Andy, box: "The interfaces to those two tables are TWO verbs under the auth family, auth.bundle and auth.branch,
@@ -53,7 +53,7 @@ test.run('spirit/auth/api.js declares the bundle verb with an op, a numeric id, 
   return (b && b.op === 'id' && b.id === 'number?' && b.label === 'name?' && b.text === 'text?' && typeof b.owner === 'string' && /\?$/.test(b.owner) && Object.keys(b).length === 5) ? true : false;
 }, test.limit.quick);
 
-test.run('spirit/auth/api.js declares the branch verb with an op, an id, a bundle, a family, a verb and a search text, flat as the agent tables\' verbs', 0.2, async function () {
+test.run('spirit/auth/api.js declares the branch verb with an op, an id, a bundle, a family, a verb and a search text, all flat', 0.2, async function () {
   r = verbs.branch;
   return (r && r.op === 'id' && r.id === 'number?' && r.bundle === 'number?' && r.family === 'text?' && r.verb === 'text?' && r.text === 'text?' && Object.keys(r).length === 6) ? true : false;
 }, test.limit.quick);
@@ -66,7 +66,7 @@ test.run('spirit/auth/branch.json describes the verb and its request', 0.2, asyn
   return (!!(function (d) { return d && typeof d.description === 'string' && d.description && d.request && 'op' in d.request; }(readJson(path.join(RUN, 'spirit', 'auth', 'branch.json'))))) ? true : false;
 }, test.limit.quick);
 
-test.run('spirit/auth/bundle.json names the owner in its request and its description, and its description offers no set op, though it may say a set is refused', 0.2, async function () {
+test.run('spirit/auth/bundle.json names the owner in its request and description, and offers no set op, though it may say a set is refused', 0.2, async function () {
   bj = readJson(path.join(RUN, 'spirit', 'auth', 'bundle.json'));
   return (bj && bj.request && 'owner' in bj.request && /owner/.test(String(bj.description || '')) && !/\bset \{/.test(String(bj.description || ''))) ? true : false;
 }, test.limit.quick);
@@ -756,7 +756,7 @@ test.run('files, a node family that serves no remote, gets no bundle', 0.2, asyn
   if (!ownFirst) return false;
   return !(await ownBundles(ownFirst)).some(function (b) { return b.owner === 'files'; }) || false;
 }, test.limit.quick);
-test.run('desk\'s enableRemote holding a branch per verb, as an earlier node made it, is one branch, all of desk, after the node starts again', 0.2, async function () {
+test.run('desk\'s enableRemote with a branch per verb, as an earlier node made it, is one branch, all of desk, after a restart', 0.2, async function () {
   if (!ownFirst) return false;
   const b = (await enableRemoteOf(ownFirst, 'desk'))[0];
   if (!b) return false;

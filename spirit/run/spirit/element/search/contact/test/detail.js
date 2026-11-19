@@ -774,7 +774,7 @@ test.run('a relay that does not claim this node names who must be trusted, "says
   if (!L.w5) return false;
   return /says it is owned by Olga/.test(pageText(L.w5)) || false;
 }, test.limit.quick);
-test.run('😏 on a relay that does not claim this node says its owner and anyone holding the relay can run programs and change files on this machine', 0.2, function () {
+test.run('😏 on a relay not claiming this node says its owner and whoever holds the relay can run programs and change files here', 0.2, function () {
   if (!L.w5) return false;
   const t = pageText(L.w5);
   return (/run programs/.test(t) && /change files/.test(t) && /anyone holding/.test(t)) || false;
@@ -1187,7 +1187,7 @@ test.run('The face form offers a faceable relay, alone or beside one without �
   if (!S.check) return false;
   return (S.check.starred === true && S.check.one === true) || false;
 }, test.limit.quick);
-test.run('The face form offers nothing for a relay without 😏, whether a member\'s or an owner\'s, for one it holds no seat on, and for no relays at all', 0.2, function () {
+test.run('The face form offers nothing for a relay without 😏, a member\'s or an owner\'s, for one with no seat held, or for no relays', 0.2, function () {
   if (!S.check) return false;
   return (S.check.member === false && S.check.owner === false && S.check.stranger === false && S.check.none === false) || false;
 }, test.limit.quick);

@@ -99,7 +99,7 @@ test.run('it exports its table of verbs and nothing else, so it names no family 
   if (!W.api) return false;
   return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
-test.run('every verb\'s arguments are a plain object whose rules are each one of spirit.js\'s standard rules, a trailing question mark making it optional', 0.2, function () {
+test.run('every verb\'s arguments are a plain object, each rule one of spirit.js\'s standard rules, a trailing ? making it optional', 0.2, function () {
   if (!W.api) return false;
   if (!isPlain(W.verbs)) return false;
   if (!W.names.length) return false;

@@ -166,7 +166,7 @@ test.run('readJsonBody refuses a declared Content-Length past BODY_MAX with 413 
   const err = await within(C.readJsonBody(q).then(function () { return null; }, function (e) { return e; }), 1000);
   return (err && err.statusCode === 413 && q.destroyed) || false;
 }, test.limit.quick);
-test.run('readJsonBody refuses a body with no Content-Length that runs past its max by the running total with 413, and bodyBytes says how much was read', 0.2, async function () {
+test.run('readJsonBody refuses with 413 a body with no Content-Length whose running total passes its max; bodyBytes says what was read', 0.2, async function () {
   const q = plantedReq({});
   const p = C.readJsonBody(q, { max: 10 }).then(function () { return null; }, function (e) { return e; });
   q.emit('data', Buffer.from('{"a":"0123456789"}'));

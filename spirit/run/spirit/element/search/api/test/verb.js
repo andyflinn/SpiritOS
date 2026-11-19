@@ -138,7 +138,7 @@ test.run('show with no server hides it and clears the choice', 0.2, function () 
 
 // this node's own verbs are the node family's cache (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors
 // draw from it")
-test.run('it requires the node branch\'s interface spirit/node/api.js and no data.js, and its list is a view of the node family\'s verbs, with no rows of its own', 0.2, async function () {
+test.run('it requires spirit/node/api.js and no data.js, and its list is a view of the node family\'s verbs, no rows of its own', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   mine = made.create(node('div'), {});
   await settle();

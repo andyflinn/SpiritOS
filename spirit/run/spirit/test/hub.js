@@ -72,7 +72,7 @@ test.run('hub.js\'s code has no packet.decode, nor any decode of its own', 0.2, 
 // (planted in node.db while the store still takes one), named by no relay, goes to the first relay held, with no hints.
 const PEER_KEY = 'MCowBQYDK2VwAyEAROUTEROUTEROUTEROUTEROUTEROUTEROUTEROUTEROU=';
 let chosen = null;
-test.run('on a scratch node that once heard a route for a peer, chooseRoute asked for that peer with one relay held sends the post to that relay', 0.2, function () {
+test.run('on a scratch node that once heard a route for a peer, chooseRoute for that peer with one relay held sends the post there', 0.2, function () {
   const os = require('os');
   W.routeHome = ownTemp('spirit-hub-route-');
   fs.mkdirSync(path.join(W.routeHome, 'spirit', 'state'), { recursive: true });

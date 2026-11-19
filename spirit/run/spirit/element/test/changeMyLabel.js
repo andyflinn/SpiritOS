@@ -195,7 +195,7 @@ test.run('the field then shows the name the node stored', 0.2, function () {
 test.run('after Save it says saved', 0.2, function () {
   return (/saved/.test(said.textContent)) ? true : false;
 }, test.limit.quick);
-test.run('it requires the node family\'s interface, spirit/node/api.js, and no data.js, and the name the node stored is kept in the node family\'s card', 0.2, function () {
+test.run('it requires spirit/node/api.js and no data.js, and the name the node stored is kept in the node family\'s card', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
   N = ((w.win.spirit.data || {}).node || {}).data;
   return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : false;

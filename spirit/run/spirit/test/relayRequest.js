@@ -82,7 +82,7 @@ test.run('relayRequest brings the method, the path and the JSON body to the rela
   const s = W.seen[n] || {};
   return (a.status === 200 && a.text === 'echo POST /post?x=1 {"hello":"world"}' && s.method === 'POST' && s.url === '/post?x=1' && short(Object.keys(a).sort()) === short(['status', 'text'])) || false;
 }, test.limit.quick);
-test.run('relayRequest sets the Host header explicitly to the target\'s own, as server.js checks it, with the JSON type and the body\'s length', 0.2, async function () {
+test.run('relayRequest sets the Host header to the target\'s own, as server.js checks it, with the JSON type and the body\'s length', 0.2, async function () {
   if (!W.base) return false;
   const n = W.seen.length;
   // Explicitly: on loopback Node would write the same Host itself, so the options handed to http.request are read too.

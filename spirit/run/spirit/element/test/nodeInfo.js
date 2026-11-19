@@ -251,7 +251,7 @@ test.run('it asks spirit.node.card once, with an empty object', 0.2, function ()
   card = w.calls.filter(function (c) { return c.name === 'node.card'; });
   return (card.length === 1 && JSON.stringify(card[0].args) === '{}') ? true : false;
 }, test.limit.quick);
-test.run('it requires the node interface spirit/node/api.js and no data.js, and keeps node.card\'s answer in spirit.data.node.data\'s card, which each field draws itself from', 0.2, function () {
+test.run('it requires spirit/node/api.js and no data.js, and keeps node.card\'s answer in spirit.data.node.data\'s card, each field\'s source', 0.2, function () {
   N = ((w.S.data || {}).node || {}).data;
   return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node') ? true : false;
 }, test.limit.quick);
@@ -290,10 +290,10 @@ test.run('the email form (joinForm) stands above the face form (faceForm), each 
   return (!!join && !!face && join.host === w.slot(host, 'email') && face.host === w.slot(host, 'face')) ? true : false;
 }, test.limit.quick);
 const urls = function (f) { return f.o.relays.map(function (r) { return r.url; }).join(','); };
-test.run('each is handed every relay this node lists, as relay.status answers them in its body (the email form always; the face form picks a seated, starred one itself)', 0.2, function () {
+test.run('each is handed every relay relay.status lists (the email form always; the face form picks a seated, starred one itself)', 0.2, function () {
   return (urls(join) === ROWS.map(function (r) { return r.url; }).join(',') && urls(face) === urls(join)) ? true : false;
 }, test.limit.quick);
-test.run('the email form is not narrowed to the seated, so Join shows where no seat is held; neither form is handed an escape, since each escapes with spirit.escapeHtml itself', 0.2, function () {
+test.run('the email form is not narrowed to the seated, so Join shows with no seat held; no form is handed an escape, each has its own', 0.2, function () {
   return (!('pick' in join.o) && !('escape' in join.o) && !('escape' in face.o)) ? true : false;
 }, test.limit.quick);
 test.run('the face form is handed a reload', 0.2, function () {
@@ -352,7 +352,7 @@ test.run('the rotate button opens rotateKey in that stack as 🆘 Rotate this no
 test.run('pressing the rotate button rotates nothing, since the dialog does that on its own two presses', 0.2, function () {
   return (w.calls.filter(function (c) { return /rotate/i.test(c.name); }).length === 0) ? true : false;
 }, test.limit.quick);
-test.run('its fill loads spirit/element/rotateKey.js and makes spirit.element.spirit.element.rotateKey in the layer\'s pane, answering it to destroy', 0.2, async function () {
+test.run('its fill loads spirit/element/rotateKey.js and makes spirit.element.spirit.element.rotateKey in the layer\'s pane, to destroy', 0.2, async function () {
   pane = node('<pane>');
   filled = await op.spec.fill(pane, function () { return false; });
   return (w.required.indexOf('spirit/element/rotateKey.js') !== -1 && w.rotateKeys.length === 1 && w.rotateKeys[0].pane === pane && filled === w.rotateKeys[0]) ? true : false;

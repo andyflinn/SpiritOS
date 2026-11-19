@@ -54,7 +54,7 @@ test.run('zzFail is started', 0.2, async function () {
   const failed = await call('job.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
   return failed.status >= 200 && failed.status < 300 ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.search.job.list.create, given a container and open', 0.2, async function () {
+test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.search.job.list.create, given container and open', 0.2, async function () {
   if (!call) return false;
   await until(function () { return call('job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });

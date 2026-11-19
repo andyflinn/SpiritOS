@@ -226,7 +226,7 @@ test.run('shell.css holds .tab-content to the height left, with min-height 0 and
 test.run('shell.css draws .tab-content as a rounded bubble with the shell\'s --shell-well as its background', 0.2, function () {
   return (/border-radius:/.test(rule) && /background:\s*var\(--shell-well\)/.test(rule)) ? true : false;
 }, test.limit.quick);
-test.run('--shell-well is set in shell.css and face.css darker than each one\'s --shell-pane, so on the face it is a darker green than the page has', 0.2, function () {
+test.run('--shell-well is set in shell.css and face.css darker than each one\'s --shell-pane, so the face\'s is a darker green', 0.2, function () {
   hexOf = function (css, name) { const m = new RegExp(name + ':\\s*(#[0-9a-fA-F]{6})').exec(css); return m ? m[1] : null; };
   light = function (hex) { const n = parseInt(hex.slice(1), 16); return 0.2126 * (n >> 16 & 255) + 0.7152 * (n >> 8 & 255) + 0.0722 * (n & 255); };
   greens = [['shell.css', sheet], ['face.css', face]].map(function (p) { return { file: p[0], well: hexOf(p[1], '--shell-well'), pane: hexOf(p[1], '--shell-pane') }; });

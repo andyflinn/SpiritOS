@@ -220,7 +220,7 @@ test.run('a node and a Chrome are ready to hand on', 0.2, async function () {
   return true;
 }, test.limit.slow);
 test.after(async function () { try { if (HANDED.chrome && HANDED.chrome.close) HANDED.chrome.close(); } catch (e) { /* gone */ } try { if (HANDED.node && HANDED.node.release) await HANDED.node.release(); } catch (e) { /* gone */ } });
-test.run('handed a node and a Chrome, a test\'s scratchNode and chromePage start neither, and answer the handed ones with the tree and the servers it asked for', 0.4, async function () {
+test.run('handed a node and a Chrome, scratchNode and chromePage start neither, and answer the handed ones with the tree and servers', 0.4, async function () {
   if (!HANDED.node || !HANDED.node.up || !HANDED.chrome || HANDED.chrome.error) return false;
   const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const n = await H.scratchNode({ shared: true, servers: ["testicle"] });' +
     ' const p = await H.chromePage(H.findChrome());' +
@@ -260,7 +260,7 @@ test.run('handed a node and a Chrome, a test\'s scratchNode and chromePage start
 // ASKED FROM INSIDE A LAB NODE (cw, on G47.1: "run from inside a lab node, headLessChrome now brings the node it hands out
 // into line with the tree it runs in (what differs copied, what that tree lacks removed)"; the classifier asks from testicle's
 // own scratch tree, whose planted scripts are in no commit): a node asked from a lab node's tree holds that tree's files.
-test.run('asked from inside a lab node\'s tree, scratchNode hands out another node in line with that tree: its new file there, its removed file gone', 0.4, async function () {
+test.run('asked from inside a lab node\'s tree, scratchNode hands out another node in line with it: its new file there, its removed gone', 0.4, async function () {
   const host = ask('node', 90000);
   const h = await within(host.got, 120000);
   if (!h || h === 'waiting' || h.error) { host.kid.kill(); return false; }

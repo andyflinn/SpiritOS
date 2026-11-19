@@ -98,7 +98,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   // it loads what it uses itself (rule/26)
   return (['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js'].every(function (p) { return required.indexOf(p) !== -1; })) ? true : false;
 }, test.limit.quick);
-test.run('the bundle editor requires the auth interface spirit/auth/api.js and no data.js, and the auth bundles it adds to stand on the page', 0.2, function () {
+test.run('the bundle editor requires spirit/auth/api.js and no data.js, and the auth bundles it adds stand on the page', 0.2, function () {
   if (!loaded) return false;
   return (loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && !!(((global.window.spirit.data || {}).auth || {}).data)) ? true : false;
 }, test.limit.quick);
@@ -147,7 +147,7 @@ test.run('Add refuses an empty label, or one the label\'s rule refuses, and asks
   await settle();
   return (asked.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('the bundle editor creates a bundleSelector in its own bounded box inside its container, as a pane with the columns label and owner, its labels only shown, never edited', 0.2, function () {
+test.run('the bundle editor puts a bundleSelector pane in its own bounded box, columns label and owner, its labels shown, never edited', 0.2, function () {
   // below it, filling the rest: the bundles, as a pane
   // Andy, goal/G41.32: "the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button." A row pressed
   // opens its branchEditor tab (the row element's, tested in its own folder).
@@ -160,7 +160,7 @@ test.run('the bundle editor creates a bundleSelector in its own bounded box insi
 test.run('the bundleSelector sits in a box that fills the space left, by shell.css fill', 0.2, function () {
   return (!!sel && (/\bfill\b/.test(sel.className || '') || holds(box, 'fill'))) ? true : false;
 }, test.limit.quick);
-test.run('a valid label asks auth.bundle to add that label, as the rule writes it and with no owner, since a user makes node-owned bundles alone', 0.2, async function () {
+test.run('a valid label asks auth.bundle to add it, as the rule writes it, with no owner: a user makes node-owned bundles alone', 0.2, async function () {
   // Add
   input.value = '  Reader ';
   r0 = sel.refreshed;

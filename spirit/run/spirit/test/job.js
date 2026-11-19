@@ -417,7 +417,7 @@ test.run('the planted app server\'s job id is its route, spirit.app.zzserve', 0.
 }, test.limit.quick);
 
 // one job per family (Q1, Q2): the node's own jobs are spirit, spirit.fs, spirit.app, spirit.contact, spirit.auth
-test.run('the node\'s own jobs are exactly spirit, spirit.app, spirit.auth, spirit.contact and spirit.fs, with contacts, presence and peer search in one, the app list and app faces in one, and stats and join steps under spirit', 0.2, async function () {
+test.run('the node\'s own jobs are exactly spirit, spirit.app, spirit.auth, spirit.contact and spirit.fs', 0.2, async function () {
   RT.own = [];
   for (const id of RT.ids || []) {
     const g = await rask('job.get', { key: id });

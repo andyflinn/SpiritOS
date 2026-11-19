@@ -293,7 +293,7 @@ test.run('no factory, no transport and no second object is handed out, in node o
 // login is spirit.login): post and get to the node; the login's /face/api, and the link's /face/call, whole and piece by piece.
 // AND ONE STREAM BY ITS ADDRESS (goal/G47.1, the box, "Reload Problems with the face": boot.js "opens the face's stream through
 // spirit.js, handing only the face's address"): readStream fetches the address it is handed, o.url().
-test.run('one post and one get reach the node, post(verb, args) and get(path); the other three are the relay\'s face routes, the login and the link; one more is the stream reader\'s, by its address', 0.2, function () {
+test.run('one post and one get reach the node; three more are the relay\'s face routes, login and link; one is the stream reader\'s', 0.2, function () {
   const fetches = (code.match(/\bfetch\(/g) || []).length;
   const toFace = (code.match(/\bfetch\('\/face\/(api|call)'/g) || []).length;
   const byAddress = (code.match(/\bfetch\(o\.url\(\)/g) || []).length;
@@ -328,7 +328,7 @@ test.run('on a page, error, formatBytes and escapeHtml answer as specified', 0.2
 const KEY = 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '=';
 const rules = { text: ['a', 1], id: ['a', ''], flag: ['yes', 'no'], number: [1, Infinity], bool: [true, 'true'], object: [{}, []], list: [[], {}],
   key: [KEY, 'abc'], url: ['https://a.b', 'ftp://a.b'], path: ['a/b.js', '../a'], name: ['bert', 7], description: ['a line', 7], paragraph: ['a paragraph', 7] };
-test.run('spirit.rules names exactly bool, description, flag, id, key, list, name, number, object, paragraph, path, text and url, in node and on a page', 0.2, function () {
+test.run('spirit.rules names exactly bool, description, flag, id, key, list, name, number, object, paragraph, path, text, url, both sides', 0.2, function () {
   if (!T.w || !T.w.spirit) return false;
   return (JSON.stringify(s.rules.slice().sort()) === JSON.stringify(Object.keys(rules).sort()) && JSON.stringify(T.w.spirit.rules.slice().sort()) === JSON.stringify(Object.keys(rules).sort())) || false;
 }, test.limit.quick);
@@ -339,7 +339,7 @@ test.run('each rule passes a good value and refuses a bad one bad-request', 0.2,
   });
   return !wrongRules.length || false;
 }, test.limit.quick);
-test.run('an argument it does not name is no-such-argument; a missing one bad-request; one marked ? may be missing; arguments not an object, or a rule that does not exist, bad-request', 0.2, function () {
+test.run('an unnamed argument is no-such-argument; a missing one, a non-object or an unknown rule bad-request; one marked ? may be missing', 0.2, function () {
   const c1 = s.check('t', { a: 'text' }, { b: 'x' });
   const c2 = s.check('t', { a: 'text' }, {});
   const c3 = s.check('t', { a: 'text?' }, {});
@@ -365,7 +365,7 @@ test.run('the scratch run root\'s instance is its process\'s one global', 0.2, f
   return o.same || false;
 }, test.limit.quick);
 // goal/G43.32: in node a branch is bound from the api.js on its own disc, so its node is never asked for it.
-test.run('spirit.require of the demo interface binds it on the one instance as spirit.demo, once for two callers at once, from its own disc: its node is never asked for its api.js', 0.2, function () {
+test.run('spirit.require of the demo interface binds spirit.demo once for two callers at once, from its own disc, never asking its node', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   return (!!o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && !!o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.family === 'demo'; }).length === 0) || false;
@@ -379,7 +379,7 @@ test.run('a bound family has its own names, a dotted verb in camel case too (lin
   const o = O(); if (!o) return false;
   return (o.hi === 'hello dave' && o.dotted === 't' && o.fs === true) || false;
 }, test.limit.quick);
-test.run('an argument the verb does not name is refused before it leaves; a verb the family lacks is not on it; a family with no interface refuses no-interface', 0.2, function () {
+test.run('an argument the verb does not name is refused before it leaves; a verb the family lacks is not on it; no interface: no-interface', 0.2, function () {
   const o = O(); if (!o) return false;
   return (o.noArg === 'no-such-argument' && o.noVerb === true && o.noFamily === 'no-interface') || false;
 }, test.limit.quick);
@@ -405,7 +405,7 @@ test.run('spirit.node holds its port from environment.json, and the name, key an
   const f = o.facts || {};
   return (f.port === T.node.port && f.name === 'nodey' && f.key === 'K1' && f.ownerKey === 'O1') || false;
 }, test.limit.quick);
-test.run('spirit.event.publish and spirit.job start, progress and end publish by event.publish with the job\'s own id, the one path, with no job.update and no spirit.job.publish; one over the payload cap is said as dropped, and a second start while one is open refuses job-open', 0.2, function () {
+test.run('spirit.job start, progress and end publish by event.publish with the job\'s id; over the cap is dropped; a second start job-open', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   const updates = node.asked.filter(function (b) { return b.call === 'event.publish'; }).map(function (b) { return b.args; });
@@ -415,7 +415,7 @@ test.run('spirit.event.publish and spirit.job start, progress and end publish by
       && dropped.length === 1 && dropped[0].app.dropped.max > 0 && JSON.stringify(states) === JSON.stringify(['start', 'progress', 'end']) && o.startAgain === 'job-open'
       && o.noJobsPublish === true && !node.asked.some(function (b) { return b.call === 'job.update'; })) || false;
 }, test.limit.quick);
-test.run('spirit.event.subscribe hears the node\'s events family as a stream, said up, then the snapshot, then each update, until unsubscribed', 0.2, function () {
+test.run('spirit.event.subscribe hears the node\'s events as a stream: up, then the snapshot, then each update, until unsubscribed', 0.2, function () {
   const o = O(); if (!o) return false;
   return JSON.stringify(o.heard) === JSON.stringify(['up:true', 'snapshot:j1', 'update:j1:done']) || false;
 }, test.limit.quick);
@@ -425,13 +425,13 @@ test.run('in a process, every event.subscribe says it is a server, so it takes n
   const subscribes = T.node.asked.filter(function (b) { return b.call === 'event.subscribe'; });
   return (subscribes.length > 0 && subscribes.every(function (b) { return b.reader === 'server'; })) || false;
 }, test.limit.quick);
-test.run('spirit.peerPost makes one post of peer.post and reads the answer off the node\'s events, through event.subscribe as a server, as it always worked', 0.2, function () {
+test.run('spirit.peerPost makes one post of peer.post and reads the answer off the node\'s events, through event.subscribe as a server', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
   return (!!o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'peer.post' && b.args && b.args.to === 'peerKey9'; })) || false;
 }, test.limit.quick);
-test.run('spirit.require with a path, a key and how answers the peer\'s family, its calls going through spirit.peerPost with how, one for two callers at once, and not its own node\'s spirit.demo', 0.2, function () {
+test.run('spirit.require with a path, a key and how answers the peer\'s family through spirit.peerPost, once for two callers, not its own', 0.2, function () {
   const o = O(); if (!o) return false;
   return (!!o.peer && o.peer[0] === true && o.peer[2] === 'hello from peerKey1' && o.peer[3] === true && o.peerHow === 777) || false;
 }, test.limit.quick);
@@ -459,7 +459,7 @@ test.run('a call of the peer branch\'s listener goes to the peer as that branch\
   const o = O(); if (!o) return false;
   return o.peerListener === true || false;
 }, test.limit.quick);
-test.run('with no port in its environment.json, require of an interface and tree refuse no-node, no default port is guessed, and none is placed on the instance', 0.2, async function () {
+test.run('with no port in its environment.json, require of an interface and tree refuse no-node; no port is guessed or placed on it', 0.2, async function () {
   if (!T.bare) return false;
   const n = await observe(T.bare, 'none');
   return (n.require === 'no-node' && n.tree === 'no-node' && n.noPort === true) || false;
@@ -472,7 +472,7 @@ test.run('with no port in its environment.json, require of an interface and tree
 // stands there and binds when first called; one with no interface is refused no-interface when called.
 // The one family start calls is node, for node.card (goal/G41.28, Q10: "yes."): its api is asked as it is called. Never the
 // whole api, and no other family's.
-test.run('spirit.start() asks no api, spirit.ready answers the instance, any family named on it stands there and binds when first called, and a call to one with no interface is refused no-interface', 0.2, async function () {
+test.run('spirit.start() asks no api, spirit.ready answers the instance, a family binds when first called; no interface: no-interface', 0.2, async function () {
   const wq = T.wq = page();
   const started = wq.spirit.start();
   const again = wq.spirit.start();
@@ -553,7 +553,7 @@ test.run('no server pastes spirit.js into a page, and serveCommon.inlineSpirit i
   const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'serveCommon.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'spirit', 'relayServer.js'), 'utf8');
   return !/inlineSpirit/.test(serverSrc) || false;
 }, test.limit.quick);
-test.run('on the home node\'s page spirit.js gets shell/boot.js alone and runs it, spirit.booted answering; the seal waits for a face\'s link, which requires it', 0.2, async function () {
+test.run('on the home node\'s page spirit.js gets shell/boot.js alone and runs it, spirit.booted answering; the seal waits for a face', 0.2, async function () {
   const injected = T.injected = [];
   const faceWindow = T.faceWindow = {
     fetch: function (url) {
@@ -907,7 +907,7 @@ test.run('a face page opens, its stream handing a subscriber the node\'s snapsho
   RC.before = await L.page.evaluate('window.zzHeard || 0');
   return !!ok || false;
 }, test.limit.slow);
-test.run('after its node restarts on the same port, the page\'s stream comes back by itself: the subscriber hears the node again within 60 s', 0.8, async function () {
+test.run('after its node restarts on the same port, the page\'s stream comes back by itself: the node is heard again within 60 s', 0.8, async function () {
   if (!RC.before) return false;
   await L.node.restart();
   const back = await H.until(function () { return L.page.evaluate('(window.zzHeard || 0) > ' + RC.before); }, 60000);

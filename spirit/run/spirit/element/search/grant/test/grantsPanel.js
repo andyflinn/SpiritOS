@@ -254,7 +254,7 @@ test.run('it requires no data script', 0.2, function () {
 // dictionary both kinds of grant are made from, so a bundle's branches are the panel's to read.
 // The panel itself, create(): the node's grants table beside it (nodeGrants, below) is one its caller picks by name.
 // goal/G43.32: create() runs up to where the script places itself, as it ran up to E.grantsPanel = before.
-test.run('the panel names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location and no branch', 0.2, function () {
+test.run('the panel names no grants or ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location, no branch', 0.2, function () {
   if (!code) return false;
   const made = code.slice(code.indexOf('function create('), code.indexOf("window.spirit.require('spirit/element/installSpiritElement.js')"));
   return made.length > 0 && !/auth\.(grant|revoke|search)\b|nodeGrants|data\.auth|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(made) ? true : false;
@@ -304,7 +304,7 @@ test.run('the unconfigured panel\'s destroy empties the host', 0.2, function () 
 // "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
 // its form elements into span and wires the button itself (a busyButton or a click)." Since goal/G47.1 (Q20) it hands the
 // rowForm its request as press.
-test.run('it makes one bundle selector, three ID selectors (the form\'s, the filter and the delete row\'s) and two api selectors (the filter and the delete row\'s)', 0.2, async function () {
+test.run('it makes one bundle selector, three ID selectors (form, filter, delete row) and two api selectors (filter, delete row)', 0.2, async function () {
   if (!GP || typeof GP.create !== 'function') return false;
   box = node('panel');
   cfg = config(w);
@@ -616,7 +616,7 @@ test.run('Grant reads the chosen bundle\'s branches by asking auth.branch to sea
   const read = w.calls.slice(at0).filter(function (c) { return c.name === 'auth.branch'; })[0];
   return read && read.args.op === 'search' && read.args.bundle === 7 ? true : false;
 }, test.limit.quick);
-test.run('Grant grants each branch through the grants table it was handed, by id and path, the path being family.verb, or the family alone for (ALL)', 0.2, function () {
+test.run('Grant grants each branch through the grants table it was handed, by id and path: family.verb, or the family alone for (ALL)', 0.2, function () {
   if (!press) return false;
   const grants = w.calls.slice(at0).filter(function (c) { return c.name === 'grants.grant'; });
   return grants.length === 3 && grants.every(function (c) { return c.args.id === 'J3'; }) && JSON.stringify(grants.map(function (c) { return c.args.path; }).sort()) === '["desk","fs.search","jobs.list"]' ? true
@@ -742,7 +742,7 @@ test.run('the request settles once every grant is answered, so the button is pla
 // grantsPanel.nodeGrants: the node's own grants table, one a caller picks by name (goal/G43.24)
 // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
 // (GR_GRANTS). It moves into grantsPanel."
-test.run('the branch of grantsPanel.nodeGrants is the auth family\'s cache at spirit.data.auth.data.grants.branch, keyed by key and labelled by label', 0.2, function () {
+test.run('grantsPanel.nodeGrants\'s branch is the auth cache at spirit.data.auth.data.grants.branch, keyed by key, labelled by label', 0.2, function () {
   if (!GP) return false;
   g = GP.nodeGrants;
   A = ((w.win.spirit.data || {}).auth || {}).data;

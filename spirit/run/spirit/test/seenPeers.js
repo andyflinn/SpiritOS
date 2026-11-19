@@ -214,7 +214,7 @@ test.run('a note sheds too: the bound holds after a write, not only when asked t
   s.note('MCowNEWONE', { label: 'n' });
   return F.store.seen.bytes() <= s.maxBytes || false;
 }, test.limit.quick);
-test.run('roomToAdd counts the store full when the cap is spent on kept rows alone, and then a kept row needs no room while a new one is refused', 0.2, function () {
+test.run('roomToAdd counts the store full when kept rows alone spend the cap; then a kept row needs no room, a new one is refused', 0.2, function () {
   if (!F.store) return false;
   const s = P.createSeenPeers({ store: F.store, maxBytes: 1 });
   const forNew = s.roomToAdd('MCowSTRANGER');
