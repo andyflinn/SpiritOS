@@ -90,10 +90,11 @@ test.run('no code names shell/contacts', 0.2, function () {
   return !oldApp.length || false;
 }, test.limit.quick);
 const OWN = function () { return readJson(path.join(APP, 'contact.json')) || {}; };
-// Andy's own change of it, 2026-11-17 ("contact-icon:🪪"); it was 🤩.
-test.run('its icon is 🪪', 0.2, function () {
+// WHICH ICON IS ANDY'S, AND IT CHANGES (goal/G47.1, Andy: "I'm not sure if it's worth testing for specific icons.. hey will
+// only settle slowly over the next while...", then "yes" to keeping 'it has an icon' and dropping which one).
+test.run('it has an icon', 0.2, function () {
   const id = OWN().identity || {};
-  return id.icon === '🪪' || false;
+  return (typeof id.icon === 'string' && id.icon.trim() !== '') || false;
 }, test.limit.quick);
 test.run('its label is Contacts, as the old app\'s name', 0.2, function () {
   const id = OWN().identity || {};

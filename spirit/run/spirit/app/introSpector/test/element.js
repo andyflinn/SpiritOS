@@ -33,9 +33,11 @@ test.after(function () {
 test.run('spirit/app/introSpector/introSpector.json is there', 0.2, function () {
   return !!OWN() || false;
 }, test.limit.quick);
-test.run('introSpector\'s icon is 👓', 0.2, function () {
+// WHICH ICON IS ANDY'S, AND IT CHANGES (goal/G47.1, Andy: "I'm not sure if it's worth testing for specific icons.. hey will
+// only settle slowly over the next while...", then "yes" to keeping 'it has an icon' and dropping which one).
+test.run('introSpector has an icon', 0.2, function () {
   const id = (OWN() || {}).identity || {};
-  return id.icon === '👓' || false;
+  return (typeof id.icon === 'string' && id.icon.trim() !== '') || false;
 }, test.limit.quick);
 test.run('introSpector\'s label stays introSpector', 0.2, function () {
   const id = (OWN() || {}).identity || {};

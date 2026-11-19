@@ -35,7 +35,9 @@ test.run('spirit/app/chat/chat.json is there', 0.2, function () {
   X.id = (X.own && X.own.identity) || {};
   return X.own ? true : false;
 }, test.limit.quick);
-test.run('its icon is 💬', 0.2, function () { return X.id.icon === '💬' ? true : false; }, test.limit.quick);
+// WHICH ICON IS ANDY'S, AND IT CHANGES (goal/G47.1, Andy: "I'm not sure if it's worth testing for specific icons.. hey will
+// only settle slowly over the next while...", then "yes" to keeping 'it has an icon' and dropping which one).
+test.run('it has an icon', 0.2, function () { return typeof X.id.icon === 'string' && X.id.icon.trim() !== '' ? true : false; }, test.limit.quick);
 test.run('its label is Chat', 0.2, function () { return X.id.label === 'Chat' ? true : false; }, test.limit.quick);
 test.run('it is not intrinsic', 0.2, function () { return !!X.own && X.id.intrinsic !== true ? true : false; }, test.limit.quick);
 test.run('its shell mount is true, with a tile', 0.2, function () {

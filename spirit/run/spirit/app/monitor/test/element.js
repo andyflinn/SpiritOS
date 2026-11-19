@@ -31,9 +31,11 @@ const js = function (s) { return W.chrome.evaluate(s); };
 const read = async function () { try { return JSON.parse(await js('JSON.stringify({ text: window.__box ? window.__box.innerText : "" })')); } catch (e) { return {}; } };
 
 // monitor.json: "icon 🦻, label "Monitor", mount monitor.js, shell mount and tile true, node mount false." Since goal/G43.32 it mounts element.js (rule 4)
-test.run('its icon is 🦻 and its label is Monitor', 0.2, function () {
+// WHICH ICON IS ANDY'S, AND IT CHANGES (goal/G47.1, Andy: "I'm not sure if it's worth testing for specific icons.. hey will
+// only settle slowly over the next while...", then "yes" to keeping 'it has an icon' and dropping which one).
+test.run('it has an icon, and its label is Monitor', 0.2, function () {
   const m = readJson();
-  return m.identity && m.identity.icon === '🦻' && m.identity.label === 'Monitor' ? true : false;
+  return m.identity && typeof m.identity.icon === 'string' && m.identity.icon.trim() !== '' && m.identity.label === 'Monitor' ? true : false;
 }, test.limit.quick);
 test.run('it mounts element.js', 0.2, function () {
   const m = readJson();

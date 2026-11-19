@@ -10,7 +10,7 @@ Andy: *"the new contact app will be exactly the same as the old, merely placed w
 
 - `spirit/element/contacts/` is gone, and `spirit/element/search/contact/` holds `list.js` and `row.js`. No code names the old folder.
 - `shell/contacts/` is gone, and `spirit/app/contact/element.js` is there. No code names `shell/contacts`.
-- `contact.json`: icon 🪪 (Andy, 2026-11-17; it was 🤩), label Contacts, intrinsic true, `shell.mount` true, `node.mount` false.
+- `contact.json`: an icon, today 🪪 (an icon; which one is Andy's and not tested, goal/G47.1), label Contacts, intrinsic true, `shell.mount` true, `node.mount` false.
 
 ### Always on
 

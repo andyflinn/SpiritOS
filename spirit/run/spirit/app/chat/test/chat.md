@@ -8,7 +8,7 @@ Its json and code read from the disc; then a scratch node of its own with the ap
 
 ## Requirements
 
-- `chat.json`: icon 💬, label Chat, not intrinsic; `shell.mount` true with a tile; `node.mount` true.
+- `chat.json`: an icon, today 💬 (an icon; which one is Andy's and not tested, goal/G47.1), label Chat, not intrinsic; `shell.mount` true with a tile; `node.mount` true.
 - `chat.js` names `nodeChat.js` for the node and `element.js` for a page, and draws nothing itself.
 - Switched on, its server answers `chat.chats.search`, and the process the node runs for the job `spirit.app.chat` is `spirit/app/chat/chat.js`.
 - Its tile shows Chat and 💬, and opens the chat with its input; the page throws nothing.
