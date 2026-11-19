@@ -66,6 +66,8 @@ const TWICE = [
   // goal/G47.4: a title keeps the description rule, 128 bytes at most (an 'é' is two bytes).
   "test.run('" + 'é'.repeat(64) + "', 0.2, function () { return true; }, 1000);",
   "test.run('" + 'é'.repeat(64) + "x', 0.2, function () { return true; }, 1000);",
+  // goal/G47.4, box v52: "that field rule will demand that desctiptions are NOT empty": an empty title, passing by its body.
+  "test.run('', 0.2, function () { return true; }, 1000);",
 ].join('\n');
 const GENERAL = [
   "'use strict';",
@@ -295,6 +297,10 @@ test.run('a severity outside 0.0 to 1.0 fails its test', 0.2, function () {
 // spirit/fieldRules.js"): counted in bytes, refused never cut; one byte past fails a test that passes, at 128 it passes.
 test.run('a title of 128 bytes passes, and one of 129 bytes fails its test, printed whole', 0.2, function () {
   return (markIn(W.twice.out, 'é'.repeat(64)) === '✅' && markIn(W.twice.out, 'é'.repeat(64) + 'x') === '❌') || false;
+}, test.limit.quick);
+test.run('an empty title fails its test', 0.2, function () {
+  const marks = W.twice.out.split('\n').map(function (l) { return l.replace(/^\*+\s*/, '').trim(); });
+  return (marks.indexOf('❌') !== -1 && marks.indexOf('✅') === -1) || false;
 }, test.limit.quick);
 
 // ── NO NODE ──
