@@ -1,6 +1,6 @@
 # Info and Measurements on windows
 
-Measurements were taken on **Wednesday, November 18, 2026** for repository commit **8418708d4**
+Measurements were taken on **Thursday, November 19, 2026** for repository commit **2ed635eba**
 
 ## The Machine the Measurements come from
 
@@ -13,10 +13,10 @@ Measurements were taken on **Wednesday, November 18, 2026** for repository commi
 
 ## Summary
 
-- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for 2,367 simultaneously.
+- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for 2,355 simultaneously.
 - A SpiritOS node at rest uses 85 MB of RAM.
-- A call to a node on its own machine answers in 15 ms, the slowest in 21.8 ms.
-- A card request through a relay takes 82.3 ms, the slowest 335 ms; sealing and signing take 1.9 ms of it.
+- A call to a node on its own machine answers in 15.1 ms, the slowest in 18.2 ms.
+- A card request through a relay takes 79.2 ms, the slowest 309.7 ms; sealing and signing take 1.6 ms of it.
 
 ## Details
 

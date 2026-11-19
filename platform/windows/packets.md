@@ -1,10 +1,10 @@
 # Packets: windows
 
-20 read-only testicle asks of this node at `8418708d4`, 2026-11-18T16:08:31.339Z, timed by its own traffic log.
+20 read-only testicle asks of this node at `2ed635eba`, 2026-11-19T01:16:20.078Z, timed by its own traffic log.
 
 | | median | worst |
 |---|---|---|
-| queue wait (ms) | 25 | 25 |
-| flight (ms) | 396 | 396 |
+| queue wait (ms) | 23 | 23 |
+| flight (ms) | 167 | 167 |
 
 1 posts, 0 needed more than one try, refusals: none.
