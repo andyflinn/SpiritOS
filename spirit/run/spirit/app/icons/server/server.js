@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/app/icons/nodeIcons.js
+// spirit/run/spirit/app/icons/server/server.js
 // THE ICON SET, ITS NODE HALF (goal/G43.19, box v16). Andy: "icons is an app with a face, and an api, no fucking process for
 // some trivial shit like a quickie applet", "the node must execute spirit/app/<name>/<name>.js with the request, instead of
 // routing it to a server, like a cgi-script, and that process lives only as long as the request." Its contract and its
@@ -19,7 +19,7 @@
 // server."): a changed row goes out on the app's one job, spirit.app.icons, before the answer, so every open page hears it
 // through data.js: { icons: { row } }, or { icons: { glyph, removed: true } }.
 
-require('../../spirit.js');
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const appServer = spirit.require('spirit/server/app.js');
@@ -30,7 +30,7 @@ const at = argv.indexOf('--state');
 const STATE = at !== -1 ? argv[at + 1] : '';
 if (!STATE) { console.error('icons: no --state; the node that starts an app names its state folder'); process.exit(2); }
 const SET = path.join(STATE, 'iconSet.json');
-const SYSTEM = path.resolve(__dirname, '..', '..', 'iconSet.json');
+const SYSTEM = path.resolve(__dirname, '..', '..', '..', 'iconSet.json');
 
 // The same picture under another spelling: the variation selectors (U+FE0E, U+FE0F) are invisible, so a glyph pasted with
 // or without one is the same icon (Andy: "the icon app allowed me to add a duplicate icon.... that shouldn't work").

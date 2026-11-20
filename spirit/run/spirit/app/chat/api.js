@@ -2,7 +2,7 @@
 // spirit/run/spirit/app/chat/: the chat server's branch interface, where spirit.familyPath('chat') finds it (goal/G41.12)
 // THE chat SERVER'S INTERFACE (goal/G32.3; the branch is chat, as its folder, since goal/G43.31): every verb it serves, each argument with its rule (spirit.js's
 // standard, '?' optional). The node answers this text to api {family} without the server hearing of it, and maps it
-// to its name: it names no family of its own. The rules are written by hand from the handlers in nodeChat.js, not
+// to its name: it names no family of its own. The rules are written by hand from the handlers in chat/server/server.js, not
 // from the request shapes: an argument a handler cannot do without is required, and each carries the tightest rule
 // every value the handler takes still passes. The server checks everything again. A verb added to the server is added
 // here, in the same commit.

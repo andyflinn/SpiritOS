@@ -2,7 +2,7 @@
 // spirit/run/spirit/type/string/checkKind.js
 // THE TYPE spirit.type.string.checkKind (goal/G48.4, the box: "options for a multiple-choice will be held in a separate script file for each
 // field type that has its own options. so that interpreters of data descriptions can use the same function for validation"):
-// the kind of a Desk check, one of its OPTIONS (nodeDesk.js check.add: "a check is C, T, G or Q"). The same file on the node and on a page: on the node it is this module,
+// the kind of a Desk check, one of its OPTIONS (desk/server/server.js check.add: "a check is C, T, G or Q"). The same file on the node and on a page: on the node it is this module,
 // on a page it stands at spirit.required.spirit.type.string.checkKind. Its test: ./test/checkKind.js.
 (function (root) {
   var OPTIONS = ['C', 'T', 'G', 'Q'];

@@ -1,0 +1,1038 @@
+'use strict';
+
+// spirit/run/spirit/app/deskClient/deskClient.js
+// THE DESK CLIENT — goal/G3.3, G3.4, G3.5. A server on an agent's own node: it passes one ask to Andy's desk, and while its agent waits it reads what changed at the desk and holds what is meant for that agent.
+//
+//   Andy, 2026-10-02 (goal/G3.1): "i am ready to accept completely alternative design, if it achieves what todays
+//   deskAgentEar does, and statistics are kept somewhere you can access them easily.", then "accepted." to a deskClient
+//   server, "you both chose verb name and all", and "a guarantee that no core modules are touched. this is a
+//   agent/user appclication". Of the statistics: "so you can report facts, not fiction."
+//
+// DECIDED in Desk (goal/G3), not this file's to undo:
+//   - It asks through the spirit object and nothing else (the desk family bound under the desk's key, over peerPost,
+//     the one copy of post-then-await), and takes nothing from the environment but what its node hands a process it
+//     starts. The agents app it replaces is not permitted in this repo.
+//   - Which node is the desk is TOLD, never guessed: nothing in a node's contacts marks one, so the owner sets the
+//     key once (setDesk) and it is kept.
+//   - A node gives a server 12 s (appClient.js DOOR_WAIT_MS), and a busy desk may hold a post longer. So an ask
+//     answers within 10 s: the desk's answer, or no-answer. The wait goes on behind it; nothing is sent twice unless
+//     the agent decides it.
+//   - NO RECORD OF ASKS IS KEPT (goal/G47.1, Q16; Andy, of deskClient's ask history among the unread logs: "ALL OF
+//     THEM. KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."; "WE DON'T STORE SHIT LIKE THAT IF WE DON'T NEED
+//     IT"): this replaces the statistics of goal/G3.1 and the history.search verb that read them.
+//   - Its state is spirit/state/deskClient/data/deskClient.db (goal/G43.10), named and handed over by the node as --state.
+//   - WHO IT IS, name and key, is what its node hands a server it starts (--node, job.js): no ask and no file.
+//   - IT FOLLOWS THE DESK'S STREAM (goal/G33.4, goal/G33.8): it subscribes, and the desk publishes each changed row to
+//     every subscribed deskClient (appServer listener), so deskClient asks the desk nothing to learn what changed.
+//   - What is meant for its agent is selected and worded as the listener it replaces did (goal/G3.4, 5): Andy's
+//     records but his seen presses, another agent's chat, and the lines Desk keeps from Andy or an agent; never
+//     its own, never the desk's busy replies, never Andy's direct line to the other agent.
+
+// The spirit object first, as the global spirit (goal/G40.1).
+require('../../../spirit.js');
+const fs = require('fs');
+const path = require('path');
+const { DatabaseSync } = require('node:sqlite');
+const appServer = spirit.require('spirit/server/app.js');
+const limits = spirit.require('spirit/limits.js');
+const VENDORED_FOLDERS = spirit.require('spirit/fileSystem.js').VENDORED_FOLDERS;
+const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
+
+const argv = process.argv;
+function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
+function parsed(text, fallback) {
+  try { const v = JSON.parse(text); return v && typeof v === 'object' && !Array.isArray(v) ? v : fallback; } catch (e) { return fallback; }
+}
+const STATE = arg('--state');
+if (!STATE) {
+  console.error('deskClient: no --state; the node that starts this names its state folder');
+  process.exit(2);
+}
+fs.mkdirSync(STATE, { recursive: true });
+
+// Who this agent is: its node's name and key, to tell what is its own from what is meant for it.
+const NODE = parsed(arg('--node'), {});
+const SELF = String(NODE.name || '');
+const SELF_KEY = String(NODE.publicKey || '');
+
+// The asker is answered inside the node's 12 s; the desk is waited for as long as a held post may take to land
+// and be answered (the node holds a busy post for PATIENCE_MS, peer.post's own patienceMs).
+const HOLD_MS = 10000;
+const PATIENCE_MS = 60000;
+const WAIT_MS = PATIENCE_MS + 30000;
+const ANSWER_ROOM = limits.ANSWER_MAX - 512;
+const LEAVE_BY_MS = 11000;
+const BIG = Number.MAX_SAFE_INTEGER;
+
+const db = new DatabaseSync(path.join(STATE, 'deskClient.db'));
+// In WAL a reader never blocks the writer, so a backup can copy this file while it is written.
+db.exec('PRAGMA busy_timeout=5000');
+db.exec('PRAGMA journal_mode=WAL');
+db.exec(
+  // No asks table (goal/G47.1, Q16, above): an old deskClient.db keeps its rows until deleted by hand; nothing reads or
+  // writes them.
+  'CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT NOT NULL);'
+);
+const getSetting = db.prepare('SELECT value FROM settings WHERE name = ?');
+const putSetting = db.prepare('INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value');
+
+function refused(code, extra) { const e = new Error(code); e.refusal = code; if (extra) e.extra = extra; return e; }
+// The agent itself, on its own node's loopback door. Speaking to Andy's desk as this node is the owner's alone.
+function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
+// The desk's key, as the owner set it; none set, nobody to ask.
+function deskKey() {
+  const to = getSetting.get('desk');
+  if (!to || !to.value) throw refused('no-such-peer');
+  return to.value;
+}
+
+// How an ask ended, from what the kernel handed back: its two transport outcomes by their own names, a desk
+// refusal as refused, anything else as answered.
+function outcomeOf(got) {
+  if (got && got.ok === false && (got.code === 'not-posted' || got.code === 'no-answer')) return got.code;
+  return got && got.ok === false ? 'refused' : 'answered';
+}
+
+// ONE ASK OF THE DESK, THROUGH ITS FAMILY INTERFACE (goal/G33.4, box v38). Andy: the family interface takes ANY
+// transport. The desk node's desk family, bound by the one spirit object under the desk's key (spirit.require with a
+// key, goal/G40.6), over peerPost with this server's waiting; the call is checked against the desk's own api.js and goes
+// as the packet the far apiDoor takes; nothing here builds one. Answers the desk's body as before, its refusal included,
+// and the kernel's own outcomes (not-posted, no-answer).
+const DESK_HOW = { waitMs: WAIT_MS, patienceMs: PATIENCE_MS };
+function askDesk(to, verb, args) {
+  // THE DESK IS AN APP OF spirit/app/ (goal/G43.27): its family is spirit/app/desk/api.js.
+  return spirit.require('spirit/app/desk/api.js', to, DESK_HOW).then(function (desk) {
+    return spirit.outcome(Promise.resolve().then(function () {
+      if (typeof desk[verb] !== 'function') { const e = new Error('the desk serves no verb ' + verb); e.code = 'no-such-verb'; throw e; }
+      return desk[verb](args);
+    })).then(function (r) {
+      return r.body || { ok: false, code: 'no-answer', error: 'the desk did not answer' };
+    });
+  }, function () { return { ok: false, code: 'no-answer', error: 'the desk family did not answer' }; });
+}
+// A promise, or the time running out, whichever is first; the promise itself goes on.
+function within(promise, ms) {
+  let timer = null;
+  const out = new Promise(function (resolve) { timer = setTimeout(resolve, Math.max(0, ms)); });
+  return Promise.race([promise, out]).finally(function () { clearTimeout(timer); });
+}
+
+// ── WHAT THE DESK STREAMS TO THIS AGENT (goal/G33.4, box v38-40) ─────
+//
+//   Andy: "the desk is the server and simply pushes a stream via peerPost to its deskClients", "the listener verb
+//   is approved", and the box: the desk's stream "updates their cache data set (spirit.data + translator). A client's
+//   own change lands only via that stream." The purpose (box v37): less load on the desk, up-to-date information at the
+//   agents' fingertips, "without constantly waking agents to read irrelevant messages".
+//
+// DECIDED, not this file's to undo: deskClient never asks the desk what changed (`changes` is gone); it follows the
+// desk's stream (appServer's listener, granted to the desk's key by setDesk) and keeps the current goal from it
+// alone, in spirit.data through the desk's translator, the same block the Desk page uses. Its agent's reads of rows the
+// stream brought are answered from there; its agent's own writes go to the desk and come back on the stream.
+// waiting: the lines meant for its agent, handed over by its next wait.
+const waiting = [];
+let said = '';
+// The waits a line, a job or a wake ends early.
+const wakers = [];
+// Whether a job may have opened since the last ask of work.open: set by a row the stream brought that holds a phase
+// nobody holds (true at start); a wait asks work.open only then, so a quiet wait asks nothing.
+let jobsMaybe = true;
+
+// The data set: the server's spirit.data, which appServer fills from the stream through the desk's translator (box v41).
+// THE CACHE OUTLIVES A RESTART (goal/G41.11; Andy: "the client/receiver of a pushed peerPost stream must assume, no
+// disconnect ever happened"), and it is appServer's (goal/G41.12): its cache switch (stream.cache, below) keeps the
+// desk's rows in spirit/state/deskClient/<the desk's node id>.json and reads them back at the start, before any
+// subscribe (box v15: deskClient's own cache file, "its save and restore ... go").
+const dataSet = appServer.data;
+const KEPT_READS = ['item.get', 'item.box', 'item.checks', 'item.chat', 'item.files'];
+// Known by its key (goal/G3.9: Andy may relabel an agent), by its name only where the row names no key.
+function heldByMe(row) {
+  if (!row || !row.with) return false;
+  return row.withKey && SELF_KEY ? row.withKey === SELF_KEY : row.with === SELF;
+}
+// The answer the desk would give, from what the stream brought, or null when it is not all there. Any item the stream
+// brought answers, held or not (box v37: "up-to-date information at the agents' fingertips"). THE CACHE IS QUERIED
+// THROUGH THE DESK'S OWN FAMILY FILE (goal/G41.12, box v15: "The client queries its own cache through that api.js"; since
+// goal/G41.24 its data.js, Andy: "deskClient can get it form its own disc"): its cache.answer, on this
+// node's own copy, the same appServer's query uses.
+// The same file is the stream's translator (below), which appServer requires once the data set is there: it is required
+// here only when first read from, so that require is the one that runs it.
+const DESK_CCM = path.join(__dirname, '..', '..', 'desk', 'data.js');
+function fromKept(name, args) {
+  const k = kept();
+  return k && typeof k.answer === 'function' ? k.answer(name, args, ANSWER_ROOM) : null;
+}
+// WHAT THE CACHE HOLDS OF THE DESK, ASKED OF ITS MANAGER (goal/G41.28; Andy: "doesn't the fucking ...
+// clientCacheManager.js take care of that"): spirit.data.desk.data answers by what a thing is; no branch is named here.
+function kept() { return (globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) || null; }
+function keptItem(id) { const k = kept(); return k ? k.item(String(id || '')) : null; }
+function keptPart(id) { const k = kept(); return k ? k.part(String(id || '')) : null; }
+function keptItems() { const k = kept(); return k ? k.items() : {}; }
+function keptCurrent() { const k = kept(); return k ? k.current() : ''; }
+// A KEPT READ (goal/G41.11; Andy: "the agents verifier has ALL the information needed for commits right on the agents
+// node.... so we put in specific cache-searches into the deskClients api", and "if the agent wants to know stuff, give
+// them FIRST the cache"): the desk verb with kept, answered from the cache only and never asked of the desk, so a
+// lagging desk cannot stall it. A kept read of KEPT_READS the cache holds answers as the desk would; a kept item.get
+// carries beside the facts the current goal (current), its own agent (self) and whether the item's goal or the current
+// goal is in design (goalDesign, from their own kept facts), and one with no id answers current and self alone.
+// Anything else is refused not-kept, saying why.
+function keptRead(name, args) {
+  const notKept = function (why) { return { ok: false, code: 'not-kept', why: why }; };
+  if (KEPT_READS.indexOf(name) === -1) return notKept(name + ' is no kept read (' + KEPT_READS.join(', ') + ')');
+  const current = String(keptCurrent() || '');
+  const id = String((args && args.id) || '');
+  if (name === 'item.get' && !id) return { item: '', current: current, self: SELF };
+  const got = fromKept(name, args);
+  if (!got) return notKept(name + ' of ' + (id || 'no item') + ' is not in the cache' + (current ? ' (only the current goal ' + current + ' is kept)' : ' (no goal pushed yet)'));
+  if (name !== 'item.get') return got;
+  const row = keptItem(id) || {};
+  const goalRow = keptItem(String(row.goal || id)) || {};
+  const currentRow = current ? (keptItem(current) || {}) : {};
+  return Object.assign({}, got, { current: current, self: SELF, goalDesign: goalRow.design === true || currentRow.design === true });
+}
+// WHOLE FROM THE FIRST PUSH (goal/G41.11; the box: "the current goal's items' file lists and checks are kept whole from
+// the first push"): the push brings an item's facts, never its file list or its checks, so on the first push of an
+// item of the current goal both are read once, here, into the cache; the desk's side rows keep them current from then
+// on (the translator's side). Until then a kept read of them is refused not-kept, never guessed.
+const wholeAsked = new Set();
+function keepWhole(facts) {
+  const id = String((facts && facts.id) || '');
+  const current = String(keptCurrent() || '');
+  const goal = facts && facts.goal === '' ? id : String((facts && facts.goal) || '');
+  if (!id || !current || goal !== current) return;
+  let to = '';
+  try { to = deskKey(); } catch (e) { return; }
+  const whole = keptPart(id) || {};
+  ['item.files', 'item.checks'].forEach(function (verb) {
+    const part = verb === 'item.files' ? 'files' : 'checks';
+    const key = verb + ' ' + id;
+    if (Array.isArray(whole[part]) || wholeAsked.has(key)) return;
+    wholeAsked.add(key);
+    askDesk(to, verb, { id: id }).then(function (got) {
+      if (got && typeof got === 'object' && got.ok !== false && globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) globalThis.spirit.data.desk.data.took(verb, { id: id }, got);
+    }, function () {}).then(function () { wholeAsked.delete(key); });
+  });
+}
+
+// ONE ROW OF THE DESK'S STREAM, as appServer hands it after it took it into spirit.data (onRow): if it is a line meant
+// for this agent, into what its next wait hands over; a row that holds a phase nobody holds may mean a job.
+// The lines of the goal in view since the agent's last wake (handOver), each once: { key, text }.
+// ALL THE NEWS SINCE THE LAST WAKE (goal/G33.8, box v15-16; Andy: "the desk client, when it wakes its agent, hands it
+// all the news since the last agent-wake, this is also why you never know about status changes etc... in the items or
+// goals"): every line of the goal in view, whoever wrote it and wherever, and every change of an
+// item's or the goal's state (its phase, holder, Go, claims, verified, done, closed, a check), as the stream brought
+// them, each once, in order. They are handed with the next wake (handOver) and wake nothing by themselves. A line or
+// change meant for the agent is handed as DESK (it is the agent's to act on); the rest as NEWS. Nothing is asked of
+// the desk.
+// NO CAP DROPS NEWS (goal/G41.11; Andy: "why would the deskClient let an agent do anything until the agent has received
+// those notices?"): what came while the agent was busy is all handed over, over as many waits as it takes (handOver).
+// EVERY STORE SHEDS PAST A CAP (Andy's standing rule), SO THIS ONE DOES, BUT ONLY OF NEWS NEVER HANDED: a line handed
+// and not yet read (unread: true, put back by `next`) is the agent's already and is never shed, or a lost answer
+// would lose it. Past NEWS_MAX_BYTES of news never handed, the oldest of it goes, and the next wake says how many went.
+// The cap is in bytes (lines differ in size) and far above what one goal's stream brings between two waits.
+const sinceWake = [];
+const NEWS_MAX_BYTES = 1024 * 1024;
+let newsShed = 0;
+function shedNews() {
+  let bytes = 0;
+  sinceWake.forEach(function (x) { if (!x.unread) bytes += Buffer.byteLength(x.text, 'utf8'); });
+  for (let i = 0; bytes > NEWS_MAX_BYTES && i < sinceWake.length;) {
+    if (sinceWake[i].unread) { i += 1; continue; }
+    bytes -= Buffer.byteLength(sinceWake[i].text, 'utf8');
+    sinceWake.splice(i, 1);
+    newsShed += 1;
+  }
+}
+function inView(goal) {
+  const cur = /^goal\/G(\d+)$/.exec(String(keptCurrent() || ''));
+  return !!cur && goal === Number(cur[1]);
+}
+function lineKeyOf(id, l) { return String(id) + '#' + String(l.at) + '#' + String(l.key || l.by); }
+function news(key, text) {
+  if (sinceWake.some(function (x) { return x.key === key; })) return;
+  sinceWake.push({ key: key, text: text });
+  shedNews();
+}
+// Which state of a row is news: these fields, as the facts carry them.
+const STATE_FIELDS = ['status', 'phase', 'with', 'go', 'claims', 'verified', 'design', 'limbo'];
+const STATE_QUIET = ['chat.add', 'agent.state', 'seen.set', 'line.take'];
+// Each item's state as last heard, so only a change of it is news (the first heard, a bootstrap's, is only noted).
+const lastState = {};
+function keepSinceWake(row) {
+  if (row.table === 'chat') {
+    if (!row.row || row.removed) return;
+    const l = row.row;
+    if (!l.at || String(l.at) <= sinceNow || !inView(row.goal)) return;
+    if (SELF_KEY ? l.key === SELF_KEY : l.by === SELF) return;
+    if (Array.isArray(row.to) && row.to.length && row.to.indexOf(SELF_KEY) === -1) return;
+    news(lineKeyOf(row.id, l), 'NEWS ' + l.by + ' chat.add ' + JSON.stringify({ id: String(row.id), text: String(l.text) }));
+    return;
+  }
+  if (row.table === 'checks') {
+    if (!row.row || row.removed || !inView(row.goal)) return;
+    const c = row.row;
+    const checkKey = 'check#' + row.id + '#' + c.number + '#' + c.state;
+    const checkText = 'check.set ' + JSON.stringify({ id: String(row.id), check: String(c.number), kind: String(c.kind || ''), state: String(c.state || '') });
+    news(checkKey, 'NEWS ' + checkText);
+    return { id: String(row.id), key: checkKey, text: checkText };
+  }
+  const f = row.item && typeof row.item === 'object' ? row.item : null;
+  if (!f || !f.id || STATE_QUIET.indexOf(String(row.verb || '')) !== -1) return;
+  const k = /^goal\/G(\d+)/.exec(String(f.id));
+  if (!k || !inView(Number(k[1]))) return;
+  const state = {};
+  STATE_FIELDS.forEach(function (n) { if (f[n] !== undefined && f[n] !== '' && f[n] !== false && f[n] !== 0) state[n] = f[n]; });
+  // Only a change of its state is news: a write that leaves those fields as they were (a box taken, a rename) is not.
+  const print = JSON.stringify(state);
+  if (lastState[f.id] === undefined) { lastState[f.id] = print; return; }
+  if (lastState[f.id] === print) return;
+  lastState[f.id] = print;
+  // ITS OWN FILE REPORTS ARE NOT NEWS TO IT (goal/G33.11): the status its watch wrote is what its agent just did.
+  if (String(row.verb || '') === 'item.status' && (SELF_KEY ? row.byKey === SELF_KEY : row.by === SELF)) return;
+  const stateKey = 'state#' + f.id + '#' + print;
+  const stateText = String(row.verb || 'change') + ' ' + JSON.stringify(Object.assign({ id: String(f.id) }, state));
+  news(stateKey, 'NEWS ' + stateText);
+  return { id: String(f.id), key: stateKey, text: stateText };
+}
+// ITS OWN ITEM'S CHANGES WAKE IT (goal/G33.9, box v4; Andy: "my issuing the grant didn't reach/wake the phase-holder",
+// and "your deskClient knows that you hold the current phase of the item, and wakes you [on] that item's status
+// changes"): a change of the state or the checks of an item this agent holds (its holder or its phase holder, now or
+// just before the change) wakes it as its own (DESK), whoever made it, Andy, another agent or the desk, but itself.
+const heldIds = {};
+function holdsItem(f) { return !!f && (heldByMe(f) || (!!f.phaseWith && f.phaseWith === SELF)); }
+function wakeOnHeld(row, change) {
+  const f = row.item && typeof row.item === 'object' ? row.item : null;
+  const id = String((f && f.id) || row.id || '');
+  const now = f ? holdsItem(f) : holdsItem(keptItem(id));
+  const mine = now || heldIds[id] === true;
+  if (f) heldIds[id] = now;
+  if (!change || !mine) return;
+  if (SELF_KEY ? row.byKey === SELF_KEY : row.by === SELF) return;
+  wakeWith({ text: 'DESK ' + String(row.by || 'desk') + ' ' + change.text, key: change.key });
+}
+function streamed(row) {
+  if (!row || typeof row !== 'object') return;
+  heardAt = Date.now();
+  wakeOnHeld(row, keepSinceWake(row));
+  const facts = row.item && typeof row.item === 'object' ? row.item : null;
+  if (facts && !row.removed) keepWhole(facts);
+  // The row wakes a wait too: since box v43 the desk sends nothing but its stream, so no nudge comes beside it.
+  if (facts && facts.phase && !facts.phaseWith && facts.go && !facts.done) { jobsMaybe = true; wakers.splice(0).forEach(function (wake) { wake(); }); }
+  // HIS PRESSES THAT OPEN OR MOVE WORK WAKE EVERY AGENT (goal/G41.2; Andy: "you didn't notice end-of design on the item,
+  // and the go", and the box: "deskClient's must know at all times which is the current gloal, changes in \"current\"
+  // goal must be broadcast and knows instantly by all clients"): his Go, Go all, End design and Reopen on an item of the
+  // current goal, and his Make current on any goal.
+  const press = pressWake(row);
+  if (press) { wakeWith(press); return; }
+  const line = meantForAgent(row);
+  if (!line) return;
+  const hand = function () { wakeWith(line); };
+  if (!line.take) { hand(); return; }
+  // TAKE FIRST, THEN WAKE (goal/G27.12, reopened). Andy, 2026-10-17: "when an agent's deskClient takes a chat line for
+  // him, all other deskClients should be refused a take, and thus NOT notify their agent." So his line is taken at the
+  // desk (line.take, the desk's own rule of who may) before it is handed over; a take the desk refuses drops it, and its
+  // agent is not woken.
+  // ONLY A TAKE THE DESK ANSWERED WAKES (goal/G41.11; one line, one agent): a take that got no answer (a lagging desk)
+  // wakes nobody, since another agent's take may have landed; the line still comes as NEWS with the next wake.
+  let to = '';
+  try { to = deskKey(); } catch (e) { return; }
+  askDesk(to, 'line.take', { id: line.take }).then(function (got) {
+    if (outcomeOf(got) === 'answered') hand();
+  }, function () {});
+}
+
+const WAKING_PRESSES = ['go', 'go-all', 'end-design', 'reopen'];
+function pressWake(row) {
+  if (String(row.verb || '') !== 'press' || row.by !== 'andy' || !row.item || !row.item.id) return null;
+  const what = String(row.what || '');
+  const cur = /^goal\/G(\d+)$/.exec(String(keptCurrent() || ''));
+  const current = what === 'make-current' || (!!cur && row.key && row.key.goal === Number(cur[1]));
+  if (!current || (what !== 'make-current' && WAKING_PRESSES.indexOf(what) === -1)) return null;
+  const key = 'press#' + String(row.change) + '#' + String(row.item.id) + '#' + what;
+  if (seenLines.has(key)) return null;
+  seenLines.add(key);
+  return { text: 'DESK andy press ' + JSON.stringify({ id: String(row.item.id), what: what }), key: key };
+}
+// WHAT IS MEANT FOR ITS AGENT (box v37: "without constantly waking agents to read irrelevant messages"). A new line of
+// the stream's chat rows:
+//   - Andy's line addressed to its own agent (a line addressed to others is never taken here); or addressed to nobody, on the
+//     item it holds or on an item nobody holds (taken first: line.take, the desk's own rule of who may answer, goal/G27.12);
+//   - another agent's line, or the desk's, on the item it holds;
+//   - never its own line, never the desk's busy replies, and never chat between others on an item another agent holds.
+// A commit line of another agent's pulls this clone beside the hand-over (goal/G5.8).
+const seenLines = new Set();
+// WHAT IS OLD (goal/G3.4: a first run starts at now; nothing is handed twice, a restart included). A line or box
+// version written at or before `since` is old, however often the stream brings it again (a goal pushed whole, to a
+// client new to the desk or back from away). since is kept in the settings: set to now on the very first run, and
+// moved to the newest line seen whenever a wait ends, so a burst of rows pushed out of time order is judged whole.
+let newestSeen = '';
+function since() {
+  const row = getSetting.get('since');
+  if (row && row.value) return row.value;
+  const now = new Date().toISOString();
+  putSetting.run('since', now);
+  return now;
+}
+const SINCE_AT_START = since();
+let sinceNow = SINCE_AT_START;
+function isOld(at) {
+  const a = String(at || '');
+  if (a > newestSeen) newestSeen = a;
+  return !!a && a <= sinceNow;
+}
+function moveSince() {
+  if (newestSeen > sinceNow) { sinceNow = newestSeen; putSetting.run('since', sinceNow); }
+}
+function meantForAgent(row) {
+  if (!row.row || row.removed) return null;
+  // ONE GOAL IN VIEW (goal/G33.8): the desk publishes every goal's rows to its subscribers now, so what is meant for the
+  // agent is of the current goal, or his line addressed to it, or on the item it holds.
+  const cur = /^goal\/G(\d+)$/.exec(String(keptCurrent() || ''));
+  // No team chat and no special goal since goal/G43.22 (Andy: "G0 goes, from ui and server, kept in database.").
+  const inView = (!!cur && row.goal === Number(cur[1])) || (Array.isArray(row.to) && row.to.indexOf(SELF_KEY) !== -1) ||
+    heldByMe(keptItem(String(row.id || '')));
+  if (!inView) return null;
+  if ((row.table === 'chat' || row.table === 'box') && isOld(row.row.at)) return null;
+  // HIS BOX WRITE ON THE ITEM IT HOLDS reaches it, as it did (goal/G27.12: "His box.write still reaches the agents").
+  if (row.table === 'box') {
+    const f = keptItem(String(row.id || ''));
+    return row.row.by === 'andy' && heldByMe(f) ? { text: 'DESK andy box.write ' + JSON.stringify({ id: String(row.id), version: row.row.version }) } : null;
+  }
+  // HIS CLEAR OF A RED Q THIS AGENT PLACED reaches it (goal/G21.2: "the agent that placed it is notified"), AND HIS GRANT
+  // OF A G IT PLACED (goal/G41.2; Andy: "file-core grants reference the agent who requests them, when granted, the agent
+  // must be woken to notice"). The desk opens no core grant since 2026-11-17, so a G is one an agent placed by hand.
+  if (row.table === 'checks') {
+    const c = row.row;
+    const placed = SELF_KEY ? c.placedKey === SELF_KEY : c.placedBy === SELF;
+    const seen = 'check#' + String(row.id) + '#' + String(c.number) + '#' + String(c.state);
+    const wakes = c.state === 'cleared' || (c.kind === 'G' && c.state === 'granted');
+    if (!placed || !wakes || seenLines.has(seen)) return null;
+    seenLines.add(seen);
+    return { text: 'DESK andy check.set ' + JSON.stringify({ id: String(row.id), check: String(c.number), state: String(c.state) }) };
+  }
+  if (row.table !== 'chat') return null;
+  const l = row.row;
+  const id = String(row.id || '');
+  const lineKey = id + '#' + String(l.at) + '#' + String(l.key || l.by) + '#' + String(l.text).length;
+  if (seenLines.has(lineKey)) return null;    // a change to a line it has seen (a take) is no new line
+  seenLines.add(lineKey);
+  const mine = SELF_KEY ? l.key === SELF_KEY : l.by === SELF;
+  if (mine) return null;
+  if (l.key && l.by !== 'andy' && l.by !== 'desk') rememberOther(String(l.key), String(l.by));
+  const body = JSON.stringify({ id: id, text: String(l.text) });
+  const facts = keptItem(id) || null;
+  const held = heldByMe(facts);
+  const nobodyHolds = !facts || !facts.with;
+  if (l.by === 'andy') {
+    // His line addressed to agents comes only to them, its row naming them (desk.js sidePublish, appServer.publish).
+    // His line addressed to this agent wakes it as its own with no take (the desk bound a nick line's take already; his
+    // "all" line needs none, goal/G33.2), and entitles it to answer there (mayChat).
+    if (Array.isArray(row.to) && row.to.length) {
+      if (row.to.indexOf(SELF_KEY) === -1) return null;
+      entitled[id] = true;
+      return { text: 'DESK andy chat.add ' + body, key: lineKeyOf(id, l) };
+    }
+    if (held || nobodyHolds) return { text: 'DESK andy chat.add ' + body, take: id, key: lineKeyOf(id, l) };
+    return null;
+  }
+  const said = String(l.text || '');
+  const m = /^commit ([0-9a-f]{7,40})\b/.exec(said);
+  if (m) queuePull(m[1]);
+  if (l.by === 'desk' && /^message delivered, /.test(said)) return null;
+  // THE DESK'S LINE ADDRESSED TO THE CAP AGENTS (goal/G41.11): when a box write turns it red the desk offers the cap in a
+  // line whose row names them (to), as his addressed lines do. It wakes this agent as its own with no take, and entitles
+  // it to answer there and take the box (mayChat).
+  if (l.by === 'desk' && Array.isArray(row.to) && row.to.length) {
+    if (row.to.indexOf(SELF_KEY) === -1) return null;
+    entitled[id] = true;
+    return { text: 'DESK desk chat.add ' + body, key: lineKeyOf(id, l) };
+  }
+  if (held) return { text: 'DESK ' + l.by + ' chat.add ' + body, key: lineKeyOf(id, l) };
+  return null;
+}
+// THE AGENT'S STATUS, KEPT IN RAM AND KEPT ALIVE WITH DESK (goal/G27.12): connected, busy, idle, or signed off.
+let agentState = 'connected';
+
+// THE PULL (goal/G5.8): the clone this deskClient runs from, fast-forwarded onto its origin only when it holds no
+// unsaved edit; with one, nothing is touched and the agent is told. A rebase that clashes is undone. '' when pulled
+// or already there.
+// BESIDE next, NEVER INSIDE IT (goal/G19.6; Andy, 2026-10-12: "agreed to the whole thing as stated", the box:
+// "deskClient pulls beside the call that hands an agent its lines, never inside it, and never aborts a rebase it did
+// not start."). A pull inside next could hold it past the node's 12 s door, so a commit line only queues its hash; the
+// pulls run one at a time, as child processes, after the line is handed over, and what a pull has to tell joins the
+// lines waiting for the agent, handed over by the next wait (or the one under way).
+// NOT INTO THE AGENT'S OWN REBASE: with a rebase already in progress in the clone it neither pulls nor aborts, and
+// says so; it aborts only a rebase its own pull left behind.
+function gitIn(args, cwd) {
+  return new Promise(function (resolve) {
+    require('child_process').execFile('git', args, { cwd: cwd, encoding: 'utf8', timeout: 60000, windowsHide: true, maxBuffer: 4 * 1024 * 1024 }, function (e, stdout, stderr) {
+      resolve({ status: e ? (typeof e.code === 'number' ? e.code : 1) : 0, out: String(stdout || '').trim(), err: String(stderr || '').trim() });
+    });
+  });
+}
+function rebaseInProgress(root) {
+  return Promise.all(['rebase-merge', 'rebase-apply'].map(function (d) {
+    return gitIn(['rev-parse', '--git-path', d], root).then(function (r) { return !!r.out && fs.existsSync(path.resolve(root, r.out)); });
+  })).then(function (found) { return found.indexOf(true) !== -1; });
+}
+async function pullClone(hash) {
+  const top = await gitIn(['rev-parse', '--show-toplevel'], __dirname);
+  if (top.status !== 0 || !top.out) return '';
+  const root = top.out;
+  if ((await gitIn(['cat-file', '-e', hash + '^{commit}'], root)).status === 0 && (await gitIn(['merge-base', '--is-ancestor', hash, 'HEAD'], root)).status === 0) return '';
+  if (await rebaseInProgress(root)) return 'commit ' + hash + ' landed; a rebase is in progress in your clone, so it was not pulled.';
+  if ((await gitIn(['status', '--porcelain', '--untracked-files=no'], root)).out) return 'commit ' + hash + ' landed; your clone has unsaved edits, so it was not pulled.';
+  const pulled = await gitIn(['pull', '-q', '--rebase'], root);
+  if (pulled.status === 0) return '';
+  const why = (pulled.err || pulled.out).slice(0, 300);
+  // No rebase was in progress before the pull, so one standing now is the pull's own.
+  if (!await rebaseInProgress(root)) return 'commit ' + hash + ' landed; the pull failed, so your clone was not pulled: ' + why;
+  await gitIn(['rebase', '--abort'], root);
+  return 'commit ' + hash + ' landed; the pull clashed and was undone, so your clone was not pulled: ' + why;
+}
+const pulls = [];
+let pulling = false;
+function queuePull(hash) {
+  if (pulls.indexOf(hash) === -1) pulls.push(hash);
+  // After the answer under way has gone: the queue is worked from the next turn of the event loop.
+  setImmediate(pumpPulls);
+}
+function pumpPulls() {
+  if (pulling || !pulls.length) return;
+  pulling = true;
+  pullClone(pulls.shift()).then(function (told) {
+    if (!told) return;
+    wakeWith({ text: told });
+  }).catch(function (e) { console.error('deskClient: the pull failed: ' + ((e && e.message) || e)); })
+    .then(function () { pulling = false; pumpPulls(); });
+}
+
+// RULE 1 AT THIS NODE (goal/G3.9). Andy, 2026-10-02: "Agants will NOT speak to each other behind the users back."
+// Each agent's node blocks the other agent's key (contact.block; contacts.js: a blocked key is not heard). Every
+// other agent seen writing at the desk — a record under a key not this agent's, not andy's, not the desk's — is
+// kept here, and before a wait hands anything over the node is asked whether each is blocked; one that is not
+// has the wait refused, unblocked, naming it, until it holds. Andy's writes name no agent.
+function others() {
+  const row = getSetting.get('others');
+  try { const o = row ? JSON.parse(row.value) : null; return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; }
+}
+function rememberOther(key, name) {
+  const o = others();
+  if (o[key] === name) return;
+  o[key] = name;
+  putSetting.run('others', JSON.stringify(o));
+}
+function blockedHere(key) {
+  // Through the one spirit object (goal/G32.3, goal/G40.6).
+  return spirit.require('spirit/contact/api.js').then(function (contact) { return contact.get({ key: key }); }).then(function (body) {
+    const p = body && body.person;
+    return !!(p && p.blocked === true);
+  }, function () { return false; });
+}
+function unblockedOther() {
+  const o = others();
+  const keys = Object.keys(o);
+  function one(i) {
+    if (i >= keys.length) return Promise.resolve(null);
+    return blockedHere(keys[i]).then(function (blocked) { return blocked ? one(i + 1) : { name: o[keys[i]], key: keys[i] }; });
+  }
+  return one(0);
+}
+
+// THE AGENT'S WORD AT THE DESK (goal/G2.3): listening when its agent starts to wait, working when it is handed
+// lines. Said on the change only, never on every wait, and said again next time if it did not land.
+function say(to, word) {
+  said = word;
+  return askDesk(to, 'agent.state', { word: word }).then(function (got) {
+    if (outcomeOf(got) !== 'answered' && said === word) said = '';
+  }, function () { if (said === word) said = ''; });
+}
+
+// As many waiting lines as one answer holds, oldest first.
+// EVERY LINE SINCE THE LAST WAKE (goal/G33.8, box v15; Andy: "your desk client, when it wakes you, should give you all
+// the lines that happened since your last wake"): the wake hands over the current goal's lines the
+// stream brought since the agent's last wake, whoever wrote them and wherever, newest last, together with what was meant
+// for it (the waking line among them, once); as many as fill one answer, the oldest left out first, and more says so.
+// Nothing is asked of the desk: they are the rows the stream brought. A line not meant for the agent wakes nothing.
+// THE ONE WAKE (goal/G33.2, box v3; Andy: "it's the actual 'wake' that must gather the news and attach it to the wake
+// trigger"). Every trigger, a line meant for the agent, a general line its deskClient took, a change on an item it holds,
+// a job or a Go, a pull's word, calls wakeWith with itself; the wait it ends hands over what the wake gathers
+// (handOver): all the news since the last wake from what the stream brought, then the triggers, last. No trigger
+// gathers news of its own.
+function wakeWith(trigger) {
+  // A trigger waiting already, or handed and not yet read, is not queued twice (a row the stream brings again).
+  const k = trigger && trigger.key;
+  if (k && (waiting.some(function (w) { return w.key === k; }) || (unread && unread.items.some(function (x) { return x.key === k; })))) return;
+  waiting.push(trigger);
+  saveWake();
+  wakers.splice(0).forEach(function (wake) { wake(); });
+}
+// THE WAKE OUTLIVES A RESTART (goal/G41.22; Andy, the box: "every wake not yet read comes back in one, none lost and none
+// twice, also after a node restart"). The wake handed and not
+// yet read (its key and lines) and the triggers waiting are kept in this server's settings as they change, and read back
+// at start: the next wait, naming the key the agent last read, hands them as it would have. Bounded like an answer: a
+// kept wake past WAKE_KEPT_BYTES keeps its newest lines.
+const WAKE_KEPT_BYTES = 256 * 1024;
+function saveWake() {
+  const plain = function (x) { return { key: String(x.key || ''), text: String(x.text || ''), trigger: !!x.trigger }; };
+  const kept = { unread: unread ? { key: unread.key, items: unread.items.map(plain) } : null, waiting: waiting.map(function (w) { return { key: String(w.key || ''), text: String(w.text || '') }; }) };
+  while (Buffer.byteLength(JSON.stringify(kept), 'utf8') > WAKE_KEPT_BYTES && (kept.waiting.length || (kept.unread && kept.unread.items.length))) {
+    if (kept.unread && kept.unread.items.length) kept.unread.items.shift(); else kept.waiting.shift();
+  }
+  try { putSetting.run('wake', JSON.stringify(kept)); } catch (e) { /* kept again on the next change */ }
+}
+// NO LINE IS LOST (goal/G41.11; Andy: "desk and deskClient must work in concert"): a line leaves the queue only as it
+// goes into the answer. What does not fit stays queued, in its place, and owed makes the next wait hand it over at
+// once; a line too big for an answer on its own goes in pieces, its rest queued first for the next wait.
+// A WAKE IS DROPPED ONLY ONCE READ (goal/G41.11; Andy, goal/G41: "The desk ear must not successfully start listening if
+// there is a wake waiting", and of the read key: "good idea, make the red assert it"). Each answer with lines is a wake
+// with its key; what it held stays here (unread) until a later next names that key as read. A next that names no key,
+// or another (an older one, or an answer that never got through), has the unread wake put back first in the queue and
+// handed again at once, under the same key while it holds nothing new; anything that came since makes it a new wake.
+let owed = false;
+let unread = null;
+let again = null;
+let wakeCount = 0;
+function readWake(read) {
+  if (!unread) return;
+  const was = unread;
+  unread = null;
+  if (read && read === was.key) { saveWake(); return; }
+  // A trigger read back after a restart is its key and text (saveWake).
+  waiting.unshift.apply(waiting, was.items.filter(function (x) { return x.trigger; }).map(function (x) { return x.trigger === true ? { key: x.key, text: x.text } : x.trigger; }));
+  sinceWake.unshift.apply(sinceWake, was.items.filter(function (x) { return !x.trigger; }).map(function (x) { return { key: x.key, text: x.text, unread: true }; }));
+  again = { key: was.key, texts: was.items.map(function (x) { return x.text; }).join('\n') };
+  owed = true;
+  saveWake();
+}
+// What a restart left (saveWake), read back once at start: a wake handed and never read, and the triggers that waited.
+(function () {
+  let kept = null;
+  try { const row = getSetting.get('wake'); kept = row && row.value ? JSON.parse(row.value) : null; } catch (e) { kept = null; }
+  if (!kept) return;
+  if (kept.unread && kept.unread.key && Array.isArray(kept.unread.items)) unread = { key: String(kept.unread.key), items: kept.unread.items };
+  (Array.isArray(kept.waiting) ? kept.waiting : []).forEach(function (w) { if (w && w.text) waiting.push({ key: String(w.key || ''), text: String(w.text) }); });
+  owed = waiting.length > 0;
+}());
+function handOver(to, t0) {
+  moveSince();
+  owed = false;
+  const triggers = waiting.splice(0);
+  // A trigger's own NEWS copy goes: it comes once, as the trigger.
+  const items = sinceWake.splice(0).filter(function (x) { return !triggers.some(function (w) { return w.key && w.key === x.key; }); });
+  // News shed past the cap is said, never silent (NEWS_MAX_BYTES).
+  if (newsShed) { items.unshift({ key: '', text: 'NEWS ' + newsShed + ' older line(s) of news were shed past the news cap before they could be handed' }); newsShed = 0; }
+  triggers.forEach(function (w) { items.push({ key: w.key || '', text: w.text, trigger: w }); });
+  const lines = [];
+  let left = items.length;
+  let rest = null;
+  for (let i = items.length - 1; i >= 0; i--) {
+    let text = items[i].text;
+    if (!lines.length) {
+      // One line too big for an answer on its own is cut to fit, never held back for ever; its rest is queued.
+      const whole = text;
+      while (text.length > 1 && Buffer.byteLength(JSON.stringify({ lines: [text], more: true }), 'utf8') > ANSWER_ROOM) text = text.slice(0, Math.floor(text.length / 2));
+      if (text.length < whole.length) rest = { key: '', text: whole.slice(text.length) };
+    } else if (Buffer.byteLength(JSON.stringify({ lines: [text].concat(lines), more: true }), 'utf8') > ANSWER_ROOM) break;
+    lines.unshift(text);
+    left = i;
+  }
+  // What did not go back into the queue, oldest first, as it stood: triggers to the waiting, the rest to the news.
+  const back = items.slice(0, left);
+  if (rest) back.push(rest);
+  waiting.unshift.apply(waiting, back.filter(function (x) { return x.trigger; }).map(function (x) { return x.trigger; }));
+  sinceWake.unshift.apply(sinceWake, back.filter(function (x) { return !x.trigger; }).map(function (x) { return { key: x.key, text: x.text, unread: x.unread === true }; }));
+  owed = back.length > 0;
+  agentState = 'busy';
+  const cut = owed;
+  // What this wake holds, unread until its key comes back: the piece that went, not the rest that stays.
+  // The line cut to fit is the newest, the last of them; its piece is handed again as news, its rest stays queued.
+  const sent = items.slice(left);
+  if (rest && sent.length) sent[sent.length - 1] = { key: '', text: lines[lines.length - 1] };
+  // The unread wake handed again keeps its key while it holds the same lines; anything else is a new wake.
+  const same = !!again && again.texts === sent.map(function (x) { return x.text; }).join('\n');
+  wakeCount += 1;
+  const flight = { key: same ? again.key : Date.now().toString(36) + '.' + wakeCount, items: sent };
+  again = null;
+  unread = flight;
+  saveWake();
+  // NO RULES RIDE ON A WAKE (goal/G47.4, box v36: "Desk no longer sends the agents a rule list when they wake."): its
+  // lines alone.
+  const answer = cut ? { lines: lines, more: true, key: flight.key } : { lines: lines, key: flight.key };
+  // "working" is said behind the answer, never waited for: a slow desk holds no wake (goal/G41.11). One that does not
+  // land is said again on the next change (say).
+  say(to, 'working');
+  return Promise.resolve(answer);
+}
+
+// THE CHAT GATE (goal/G27.6): a chat write is allowed on an item the agent holds, or where it took a line. The desk's
+// answer decides; no answer refuses.
+// THE BOX IS GATED THE SAME WAY (goal/G27.12, reopened): Andy, 2026-10-17, to gating box.take and box.write in deskClient
+// as chat is gated: "yes, add that". An agent that neither holds the item nor took his line there leaves its box alone.
+const GATED = ['chat.add', 'box.take', 'box.write'];
+// The items where a line of his addressed to this agent entitles it to answer (goal/G33.2, box v6).
+const entitled = {};
+function mayChat(to, verb, args) {
+  if (GATED.indexOf(verb) === -1 || !args || !args.id) return Promise.resolve(true);
+  const id = String(args.id);
+  if (entitled[id]) return Promise.resolve(true);
+  return askDesk(to, 'item.get', { id: id }).then(function (r) {
+    let it = {};
+    try { it = JSON.parse((r && r.item) || '{}'); } catch (e) { it = {}; }
+    // THE DESK KEEPS HOLDS AND TAKES BY LABEL; ITS NAMES MAP GIVES THE NAME (goal/G27.6: Levant's label is not his name).
+    const names = it.names || {};
+    const nameOf = function (label) { return names[label] || label; };
+    if (it.with && nameOf(it.with) === SELF) return true;
+    // AN EARLIER PHASE HOLDER, OR ITS CREATOR (goal/G27.10, R2 and R5): the desk lets them post at any time, so this gate
+    // does too.
+    if ([it.red, it.builder, it.verifier, it.creator].some(function (l) { return l && nameOf(l) === SELF; })) return true;
+    return askDesk(to, 'item.chat', { id: id }).then(function (c) {
+      const lines = (c && Array.isArray(c.chat)) ? c.chat : [];
+      return lines.some(function (l) { return l && l.taken && nameOf(l.taken) === SELF; });
+    });
+  }).catch(function () { return false; });
+}
+
+// THE PROBABILITY SEARCH FRAMEWORK ON THIS CLIENT (goal/G40.12; Andy, 2026-10-26: "ALL desk clients need to cache
+// search results, the same. That is part of the whole probability search frame work"): every desk search's rows are
+// kept here by key, per verb and the arguments beside its words, the newest answer replacing a row with the same key.
+// An answer with words is the kept rows ranked against those words (probabilityStringObjectMatch over the row's label),
+// best first, cut in bytes to one answer (probabilityBucket), so a row an earlier search brought is found again
+// without the desk holding it in its answer. With no words the desk's answer is passed on as it came. Kept in memory
+// for the life of this process, as the desk's pushes are.
+// DISCREPANCY WITH ANDY's RULES: goal/G41.28, Andy: "a probability search of a dataBase table must ALWAYS search the
+// whole bloody ROW, as it is served through a single-row \"get\", using a probabilityStringObjectMatch." (quoted in
+// desk.js). This ranking matches only the string fields of a kept row's label (flat, below), not the whole row.
+// ONE ANSWER IS WHAT appServer LETS LEAVE (goal/G41.3): limits.ANSWER_MAX, measured on the whole body.
+const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
+const searchKept = new Map();
+function searchCached(name, args, got) {
+  if (!/(^|\.)search$/.test(String(name)) || !got || got.ok === false || !Array.isArray(got.items)) return got;
+  const scope = Object.assign({}, args || {});
+  const words = String(scope.text != null ? scope.text : (scope.q != null ? scope.q : '')).trim();
+  delete scope.text; delete scope.q;
+  const where = name + ' ' + JSON.stringify(scope);
+  const rows = searchKept.get(where) || new Map();
+  searchKept.set(where, rows);
+  got.items.forEach(function (i) { if (i && i.key != null) rows.set(String(i.key), i.label); });
+  if (!words) return got;
+  const bucket = createProbabilityBucket(Infinity);
+  let n = 0;
+  rows.forEach(function (label, key) {
+    let fields = label;
+    if (typeof label === 'string') { try { fields = JSON.parse(label); } catch (e) { fields = { label: label }; } }
+    const flat = {};
+    Object.keys(fields || {}).forEach(function (k) { if (typeof fields[k] === 'string') flat[k] = fields[k]; });
+    const score = Number(probabilityStringObjectMatch(words, flat)) || 0;
+    n += 1;
+    if (score > 0) bucket.seatFor(score * (1 - 1e-9) + 1e-9 / (1 + n), { key: key, label: label });
+  });
+  const r = bucket.serialize(null, SEARCH_ROOM);
+  return Object.assign({}, got, { items: r.items, more: !!(r.more || got.more) });
+}
+
+const server = appServer.serve({
+  // ONE ASK OF ANDY'S DESK. What comes back is the answer, a refusal of the desk's included: it is the desk's to
+  // say no. THE ANSWER ITSELF, NOT A JSON STRING (goal/G4.19, issue 4): the reply is declared {} and may carry more
+  // (appServer.js), so a big desk read is not escaped once more past the travel limit. Andy: "4. a MAX_PAYLOAD pop
+  // is serious."
+  'desk': {
+    // {name, json}: the desk verb's name and its arguments as JSON; name, not verb, which would collide with the name of
+    // the call on /api/spirit (goal/G30.6, Andy, 2026-10-20: "yes").
+    // kept (goal/G41.11) may be left out: {name, json} is every other caller's ask.
+    request: { name: '', json: '', kept: false }, reply: {},
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      const known = ['name', 'json', 'kept'];
+      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) && typeof x.name === 'string' && typeof x.json === 'string' &&
+        (x.kept === undefined || typeof x.kept === 'boolean');
+    },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      // A SIGNED-OFF AGENT WRITES NOTHING (goal/G27.12): the desk's signoff holds here too, not only on the desk's list (Andy 2026-10-16).
+      if (agentState === 'signed off') throw refused('signed-off', { why: 'this agent is signed off' });
+      let args = null;
+      try { args = JSON.parse(a.json || '{}'); } catch (e) { args = null; }
+      // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
+      if (!a.name) throw refused('bad-request', { why: 'desk needs the name of the desk verb to ask' });
+      if (!args || typeof args !== 'object' || Array.isArray(args)) throw refused('bad-request', { why: 'desk needs json: the arguments as a JSON object' });
+      // A KEPT READ (goal/G41.11; the commit check's interface): answered from the cache alone, never asked of the desk.
+      if (a.kept === true) return keptRead(a.name, args);
+      const to = deskKey();
+      // CHAT IS GATED (goal/G27.6; Andy 2026-10-16): on an item this agent holds, or where it has taken a line, its chat may
+      // be written; anywhere else it may only reply to lines it successfully took. If the desk cannot say, it is refused.
+      // A READ OF THE HELD ITEM, FROM WHAT IS KEPT (goal/G33.3): nothing asked of the desk.
+      const reading = KEPT_READS.indexOf(a.name) !== -1;
+      if (reading) { const ready = fromKept(a.name, args); if (ready) return ready; }
+      // ITS AGENT'S OWN WRITE LEAVES WHAT IS KEPT ALONE (goal/G33.4, box v38: "an agent's own change lands in its cache
+      // ONLY via the desk's push"): the change comes back from the desk like anybody's; nothing is written or dropped here.
+      return mayChat(to, a.name, args).then(function (ok) {
+        if (!ok) throw refused('not-taken', { why: 'this agent holds neither the item nor a line it took here' });
+        // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
+        const answer = askDesk(to, a.name, args).then(function (got) {
+          if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer');
+          // A PART READ WHEN NEEDED STAYS (goal/G33.4, box v46: "the box and other parts will come when needed and stay"):
+          // into spirit.data through the desk's translator, which the push keeps current from now on.
+          if (reading && got.ok !== false && globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) globalThis.spirit.data.desk.data.took(a.name, args, got);
+          return searchCached(a.name, args, got);
+        });
+        let timer = null;
+        const held = new Promise(function (resolve, reject) {
+          timer = setTimeout(function () { reject(refused('no-answer')); }, HOLD_MS);
+        });
+        return Promise.race([answer, held]).finally(function () { clearTimeout(timer); });
+      });
+    },
+  },
+  // WHICH NODE IS THE DESK, told once by the node's owner and kept.
+  'setDesk': {
+    request: { key: '' }, reply: { set: true },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      if (!a.key) throw refused('bad-request', { why: 'setDesk needs the key of the node that runs the desk' });
+      putSetting.run('desk', a.key);
+      // IT SUBSCRIBES TO THE DESK'S STREAM (goal/G33.8, box v8: "A client subscribes; the desk only publishes"); a desk
+      // it never followed has no position here, so it pushes in full (appServer, goal/G41.12).
+      subscribeDesk(a.key);
+      return { set: true };
+    },
+  },
+  // THE AGENT WAITS HERE. What is waiting for it is handed over at once; else the desk is asked while the wait
+  // lasts, and the wait ends with nothing inside the node's 12 s. The agent's listener asks again.
+  'next': {
+    // read (goal/G41.11): the key of the wake the agent last read; left out, no wake is read.
+    request: { read: '' }, reply: { lines: [''] },
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      return Object.keys(x).every(function (k) { return k === 'read'; }) && (x.read === undefined || typeof x.read === 'string');
+    },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      if (agentState === 'signed off') throw refused('signed-off', { why: 'this agent is signed off' });
+      // The unread wake is dropped once its key comes back, else handed again at once. A wait that names no key reads
+      // nothing: the wake is handed again (Andy, 2026-10-27: "don't even THINK of compromising product code for the
+      // convenience of a bunch of crappy tests that are NOT product, just let the fuckers fail").
+      readWake(a.read === undefined ? '' : String(a.read));
+      // ONLY WHEN IDLE: the agent asks here when it waits, so it is idle; a line is handed over only then.
+      agentState = 'idle';
+      const to = deskKey();
+      const t0 = Date.now();
+      const deadline = t0 + HOLD_MS;
+      // A QUIET STREAM IS SUBSCRIBED AGAIN by the timer below (resubscribeQuiet), not here: a wait asks nothing for it.
+      // Its first word makes it known to the desk, which then streams it the current goal whole (goal/G33.4).
+      if (said !== 'listening') say(to, 'listening');
+      // A JOB AT ONCE (goal/G5.8). Andy: "will the deskAgentEar return immediately with a job to do if one is available?"
+      // One read first, so lines waiting are handed before a job; then a job open to this agent comes back as a JOB
+      // line; else the wait goes on as before.
+      // Asked only when a job may have opened since the last ask (jobsMaybe): a quiet wait asks the desk nothing.
+      // NO WAKE IS LOST TO A SLOW ASK (goal/G41.2): the job ask gets the time the answer has left, and one not answered
+      // by then is asked again on the next wait (jobsMaybe stays up), so the agent's ask never outlives the node's wait.
+      function firstJob() {
+        if (!jobsMaybe) return Promise.resolve('');
+        jobsMaybe = false;
+        const late = {};
+        const asked = askDesk(to, 'work.open', {}).then(function (got) {
+          const jobs = ((got && got.items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean);
+          if (!jobs.length) return '';
+          const j = jobs[0];
+          return 'JOB ' + j.id + ' ' + j.phase;
+        }).catch(function () { return ''; });
+        return within(asked, Math.max(0, t0 + LEAVE_BY_MS - Date.now())).then(function (job) {
+          if (job === undefined) { jobsMaybe = true; return ''; }
+          return job;
+        });
+      }
+      // The wait ends, with lines or with none, only once every other agent is blocked here (goal/G3.9).
+      function ending(answer) {
+        return unblockedOther().then(function (bad) {
+          if (bad) throw refused('unblocked', bad);
+          return answer();
+        });
+      }
+      function wait() {
+        // What one answer could not hold comes with the next wait at once (owed, goal/G41.11).
+        if (waiting.length || (owed && sinceWake.length)) return ending(function () { return handOver(to, t0); });
+        const now = Date.now();
+        if (now >= deadline) return ending(function () { moveSince(); return { lines: [] }; });
+        // NOTHING IS ASKED (goal/G33.4): the desk's stream brings what is meant for its agent; the time ends this, or a
+        // line the stream brought does.
+        let wake = null;
+        const woken = new Promise(function (resolve) { wake = resolve; wakers.push(resolve); });
+        return within(woken, deadline - now).then(function () {
+          const i = wakers.indexOf(wake);
+          if (i !== -1) wakers.splice(i, 1);
+          return jobOrWait();
+        });
+      }
+      // A JOB WAKES IT TOO (goal/G33.7, found live at G33.7's Go: "the agent was not woken"): a row the stream brought
+      // that may open a job (jobsMaybe) has work.open asked at once, mid-wait as at its start, and a job ends the wait.
+      // A WAKE WAITING GOES FIRST (goal/G41.11; Andy: "we MUST look more precisely at performance again"): no job ask
+      // stands before it, however slow the desk; jobsMaybe stays up, so the job is asked on the next wait.
+      function jobOrWait() {
+        if (!jobsMaybe || waiting.length || (owed && sinceWake.length)) return wait();
+        return within(firstJob(), Math.max(0, deadline - Date.now())).then(function (job) {
+          // A wake already waiting (a line, its own item's change) goes on without a job; with one, the job comes last.
+          if (!job) return wait();
+          // A job is a trigger like any other (goal/G33.2, box v3): the one wake.
+          wakeWith({ text: job });
+          return ending(function () { return handOver(to, t0); });
+        });
+      }
+      return Promise.resolve().then(jobOrWait);
+    },
+  },
+  // SIGNOFF (goal/G27.12). Desk sends the order; deskClient persists signed off and confirms it back to desk, whatever
+  // the agent or model thinks. Only the signoff is written to disk.
+  'signoff': {
+    request: { agent: '' }, reply: { signedOff: true, status: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      agentState = 'signed off';
+      try { fs.writeFileSync(path.join(STATE, 'status.json'), JSON.stringify({ status: agentState, signedOff: true, at: new Date().toISOString() })); }
+      catch (e) { throw refused('not-saved', { why: 'could not persist the signoff' }); }
+      return { signedOff: true, status: agentState };
+    },
+  },
+  // CLEAR SIGNOFF (goal/G27.6, approved by Andy 2026-10-16). Owner-only: the desk lifts a signoff it gave, and the agent
+  // is connected again. The cleared state is written to STATE/status.json, the same file the signoff uses.
+  'clearSignoff': {
+    request: { agent: '' }, reply: { cleared: true, status: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      agentState = 'connected';
+      try { fs.writeFileSync(path.join(STATE, 'status.json'), JSON.stringify({ status: agentState, signedOff: false, at: new Date().toISOString() })); }
+      catch (e) { throw refused('not-saved', { why: 'could not persist the cleared signoff' }); }
+      return { cleared: true, status: agentState };
+    },
+  },
+  // No changed verb (goal/G33.7, the approved verb list: "nothing sends it since the push"): the stream's own rows wake
+  // a wait.
+  // No history.search (goal/G47.1, Q16): no record of asks is kept, so there is none to search.
+  // THE CACHE DUMP (goal/G41.11): a fixed file name for it. Owner-only like every verb here: the cache as it stands, saved
+  // now, to appServer's cache file of the desk (goal/G41.12), spirit/state/deskClient/cache/<the desk's node id>.json
+  // (goal/G43.20: "cache, which is written by spirit/server/app.js was ALWAYS supposed to go into spirit/state/<name>/cache/"), the one the cache is read
+  // back from, and nowhere else; it takes no path, so a caller cannot name one.
+  'cache.dump': {
+    request: {}, reply: { file: '', bytes: 0 },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      let saved = [];
+      try { saved = appServer.saveCaches(); }
+      catch (e) { throw refused('not-saved', { why: 'could not write the cache: ' + ((e && e.message) || e) }); }
+      if (!saved.length) throw refused('not-saved', { why: 'no cache is kept yet: this deskClient follows no desk' });
+      return { file: saved[0].file, bytes: saved[0].bytes };
+    },
+  },
+// What a peer needs granted here: the desk's node, listener alone (goal/G41.24).
+//
+// ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
+// register the node and the relay load. appServer puts "deskClient: " in
+// front of the text.
+}, {
+  // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's listener takes each row into spirit.data through the
+  // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
+  // cache (goal/G41.12, box v15): appServer's switch, at its default limit, 4 MB of the desk's rows.
+  // The node files an app's jobs under spirit.app.<name> (spirit/job.js moduleOf; goal/G43.27): the desk's is spirit.app.desk.
+  stream: { module: 'spirit.app.desk', translator: DESK_CCM, onRow: streamed, cache: true },
+  codes: {
+  // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
+  'unblocked': { status: 409, text: 'another agent is not blocked on this node' },
+  // The chat and box gate (goal/G27.6, goal/G27.12): undeclared, both reached the agent as handler-failed.
+  'not-taken': { status: 409, text: 'this agent holds neither the item nor a line it took here' },
+  // A signed-off agent (goal/G27.12): deskAgentEar reads this code to say so.
+  'signed-off': { status: 409, text: 'this agent is signed off' },
+} });
+
+// SUBSCRIBED TO THE DESK (goal/G33.8): appServer's client half (spirit/server/app.js server.subscribe): the desk setDesk
+// named, from the start and whenever setDesk names one, as family deskClient of the desk's family.
+// WITH THE POSITION IT HOLDS (goal/G41.11; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do
+// desk, (re-use that verb) with the position number as argument"): since goal/G41.12 appServer's own, the desk's run
+// and the number of the last row it took, kept through a restart in its cache.
+// When the stream last brought a row, and when a subscribe was last asked (resubscribeQuiet, below).
+let heardAt = Date.now();
+let askedAt = Date.now();
+function subscribeDesk(key) {
+  askedAt = Date.now();
+  return server.subscribe(key, 'desk').catch(function () { return false; });
+}
+(function () { const d = getSetting.get('desk'); if (d && d.value) subscribeDesk(d.value); }());
+// A QUIET STREAM IS SUBSCRIBED AGAIN, WITH ITS POSITION (goal/G41.12). Andy: "the client after getting nothing for a
+// while must resubscribe witha position real soon....", "resubscribe must ALSO FAIL SUPER-FAST, then wait for 10
+// soconds", and "just 10 SECONDS, NO POINT IN STAGGERING": QUIET_MS after the last row heard, and as long after the last
+// subscribe asked, it subscribes again with its position (appServer's run and the number of the last row it took); a
+// subscribe that fails fast (appServer) is asked again QUIET_MS later, every time the same. The desk's stream hands what
+// came after the position, or pushes in full, so nothing is lost.
+const QUIET_MS = 10000;
+setInterval(function resubscribeQuiet() {
+  const d = getSetting.get('desk');
+  const now = Date.now();
+  if (!d || !d.value || now - heardAt < QUIET_MS || now - askedAt < QUIET_MS) return;
+  subscribeDesk(d.value);
+}, 1000).unref();
+
+// THE CHECKOUT, WATCHED (goal/G33.11). Andy, in the box: "While its agent holds the red or the build of an item, the
+// agent's deskClient watches its checkout and reports each change to the item's status column only, never to the chat.
+// The status shows the changed file's name only, without its path; its colour says which kind: red a test file, white a
+// production file." Each change is one item.status, as the agent; the desk keeps the file name and counts the write as
+// activity, so a hold whose files move is never stale. A file git ignores (logs, node state, this server's own db) is
+// no change to the work. A path in a test folder is tone test, any other code.
+function heldPhase() {
+  const items = keptItems() || {};
+  for (const id of Object.keys(items)) {
+    const f = keptItem(id);
+    if (!f || f.done || f.status === 'closed' || !heldByMe(f)) continue;
+    if ((f.phase === 'red' && f.red === SELF) || (f.phase === 'build' && f.builder === SELF) || (f.phase === 'verify' && f.verifier === SELF)) return String(f.id);
+  }
+  return '';
+}
+const ignoredPaths = new Map();
+function ignored(root, rel) {
+  if (ignoredPaths.has(rel)) return Promise.resolve(ignoredPaths.get(rel));
+  return gitIn(['check-ignore', '-q', '--', rel], root).then(function (r) {
+    const is = r.status === 0;
+    if (ignoredPaths.size > 1000) ignoredPaths.clear();
+    ignoredPaths.set(rel, is);
+    return is;
+  });
+}
+// THE NODE'S OWN WATCHER COMPONENT (goal/G40.3). Andy: "you hand-rolled shit again!", "use that chokidar component then
+// on the whole repo.", and "you may as well add to the filename in the status (changed, deleted, added)". chokidar, as
+// the node's spirit.fs job uses it (spirit/job.js), on the whole checkout; the status word is the path and what happened
+// to it, which the desk keeps as the file's name and that word.
+const WHAT = { add: 'added', change: 'changed', unlink: 'deleted' };
+// ONLY FILES OF THE PRODUCT TREE (goal/G41.2; Andy: "updates only for files in the product tree."): each status is a
+// message through the relay to the desk, and the desk sends it on to every agent, all of it through each node's one
+// message at a time. So a file outside spirit/run/ says nothing, and nor does an editor's temporary copy inside it (a
+// .tmp copy, a sed scratch file, a swap or backup file), which is no file of the product.
+function statusWorthy(rel) {
+  const p = String(rel || '');
+  if (p.indexOf('spirit/run/') !== 0) return false;
+  const name = p.split('/').pop();
+  return !/\.tmp\.\d+\.[0-9a-f]+$|^sed[A-Za-z0-9]{6}$|\.sw[op]$|~$/.test(name);
+}
+// A PRODUCT TEST SHOWS RED (goal/G43.3; Andy, the box: "when product tests are modified, they should show up as red
+// file-status in desk. product tests are the test folders under spirit/run/.").
+const PRODUCT_TEST = /^spirit\/run\/(?:[^/]+\/)*test\//;
+function watchCheckout(root) {
+  try {
+    const skip = function (full) {
+      const rel = path.relative(root, String(full)).split(path.sep).join('/');
+      return rel.split('/').some(function (part) { return part === '.git'; }) || VENDORED_FOLDERS.holds(rel);
+    };
+    spirit.require('spirit/job/chokidar/index.js').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
+      if (!WHAT[event] || !full) return;
+      const rel = path.relative(root, String(full)).split(path.sep).join('/');
+      if (!statusWorthy(rel)) return;
+      const id = heldPhase();
+      if (!id) return;
+      ignored(root, rel).then(function (skipped) {
+        if (skipped) return;
+        let to = '';
+        try { to = deskKey(); } catch (e) { return; }
+        askDesk(to, 'item.status', { id: id, word: rel + ' ' + WHAT[event], tone: PRODUCT_TEST.test(rel) ? 'test' : 'code' }).catch(function () {});
+      });
+    }).on('error', function (e) { console.error('deskClient: the checkout watch stopped: ' + ((e && e.message) || e)); });
+  } catch (e) { console.error('deskClient: the checkout cannot be watched: ' + ((e && e.message) || e)); }
+}
+if (globalThis.spirit && globalThis.spirit.data && typeof globalThis.spirit.data.followStream === 'function') globalThis.spirit.data.followStream();
+gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });

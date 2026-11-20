@@ -92,7 +92,7 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 
 ## The chokidar part: deskClient watches its clone with chokidar from spirit/job/
 
-goal/G43.25, `spirit/run/spirit/app/deskClient/test/deskClient.js`, its chokidar part: `deskClient.js`'s part of the move of chokidar and readdirp into spirit/job/.
+goal/G43.25, `spirit/run/spirit/app/deskClient/server/test/server.js`, its chokidar part: `deskClient.js`'s part of the move of chokidar and readdirp into spirit/job/.
 
 Andy: "can we hide those suckers in spirit/jobs/ for now? without the damn node_modules container?"
 

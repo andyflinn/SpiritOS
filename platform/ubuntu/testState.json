@@ -977,15 +977,15 @@
       "newestAt": "2026-11-18T11:02:01.469Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
-      "suite": "spirit/app/agent/test/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
+      "suite": "spirit/app/agent/server/test/server.js",
       "tests": 41,
       "green": 41,
       "red": 0,
       "newestAt": "2026-11-18T11:04:17.802Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 23,
       "green": 23,
@@ -993,7 +993,7 @@
       "newestAt": "2026-11-18T11:00:51.357Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 1,
@@ -1001,7 +1001,7 @@
       "newestAt": "2026-11-18T23:54:17.920Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 67,
       "green": 65,
@@ -1009,7 +1009,7 @@
       "newestAt": "2026-11-18T21:05:10.977Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -1458,7 +1458,7 @@
     },
     {
       "script": "spirit/app/backup/backup.js",
-      "suite": "spirit/app/backup/test/backup.js",
+      "suite": "spirit/app/backup/server/test/server.js",
       "tests": 7,
       "green": 7,
       "red": 0,
@@ -1769,15 +1769,15 @@
       "newestAt": "2026-11-18T11:02:25.515Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
-      "suite": "spirit/app/chat/test/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
+      "suite": "spirit/app/chat/server/test/server.js",
       "tests": 22,
       "green": 22,
       "red": 0,
       "newestAt": "2026-11-18T03:15:49.414Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 23,
       "green": 23,
@@ -1785,7 +1785,7 @@
       "newestAt": "2026-11-18T03:21:50.959Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 1,
@@ -1793,7 +1793,7 @@
       "newestAt": "2026-11-18T23:54:18.293Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 68,
       "green": 66,
@@ -1801,7 +1801,7 @@
       "newestAt": "2026-11-18T21:05:13.525Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -2321,15 +2321,15 @@
       "newestAt": "2026-11-18T11:02:37.961Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
-      "suite": "spirit/app/desk/test/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
+      "suite": "spirit/app/desk/server/test/server.js",
       "tests": 15,
       "green": 15,
       "red": 0,
       "newestAt": "2026-11-18T11:08:16.028Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 23,
       "green": 23,
@@ -2337,7 +2337,7 @@
       "newestAt": "2026-11-18T11:00:53.424Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 1,
@@ -2345,7 +2345,7 @@
       "newestAt": "2026-11-18T23:54:18.575Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 68,
       "green": 66,
@@ -2353,7 +2353,7 @@
       "newestAt": "2026-11-18T21:05:18.979Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -2458,7 +2458,7 @@
     },
     {
       "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/app/deskClient/test/deskClient.js",
+      "suite": "spirit/app/deskClient/server/test/server.js",
       "tests": 60,
       "green": 60,
       "red": 0,
@@ -2785,15 +2785,15 @@
       "newestAt": "2026-11-16T07:16:45.516Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
-      "suite": "spirit/app/icons/test/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
+      "suite": "spirit/app/icons/server/test/server.js",
       "tests": 42,
       "green": 42,
       "red": 0,
       "newestAt": "2026-11-16T07:26:00.012Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 23,
       "green": 23,
@@ -2801,7 +2801,7 @@
       "newestAt": "2026-11-18T03:47:30.562Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 2,
       "green": 1,
@@ -2809,7 +2809,7 @@
       "newestAt": "2026-11-18T23:54:19.076Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 68,
       "green": 68,
@@ -2817,7 +2817,7 @@
       "newestAt": "2026-11-18T11:02:49.118Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 1,
       "green": 1,
@@ -4282,7 +4282,7 @@
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "tests": 269,
       "green": 161,
       "red": 108,
@@ -10732,21 +10732,21 @@
       "at": "2026-11-18T23:54:17.898Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "title": "classifyable",
       "severity": 0.8,
       "at": "2026-11-18T23:54:17.920Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "title": "it requires spirit.js first",
       "severity": 0.4,
       "at": "2026-11-18T21:05:09.671Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "title": "it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require",
       "severity": 0.4,
@@ -10921,21 +10921,21 @@
       "at": "2026-11-18T23:54:18.279Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "title": "classifyable",
       "severity": 0.8,
       "at": "2026-11-18T23:54:18.293Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "title": "it requires spirit.js first",
       "severity": 0.4,
       "at": "2026-11-18T21:05:12.622Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "title": "it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require",
       "severity": 0.4,
@@ -11670,21 +11670,21 @@
       "at": "2026-11-18T23:54:18.558Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "title": "classifyable",
       "severity": 0.8,
       "at": "2026-11-18T23:54:18.575Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "title": "it requires spirit.js first",
       "severity": 0.4,
       "at": "2026-11-18T21:05:13.764Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "title": "it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require",
       "severity": 0.4,
@@ -11817,7 +11817,7 @@
       "at": "2026-11-18T23:54:19.003Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "title": "classifyable",
       "severity": 0.8,
@@ -13148,756 +13148,756 @@
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a -browser result for a node-only script is refused, and no current row of it stands",
       "severity": 0.4,
       "at": "2026-11-18T22:48:45.184Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a browser-only script is tested by -general and -browser general tests, and no -node one",
       "severity": 0.2,
       "at": "2026-11-18T22:57:45.482Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a change to a script holding a top red stops the running suite: zzLong's run ends without its end",
       "severity": 0.4,
       "at": "2026-11-18T21:19:19.898Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a failing test row sent alone leaves the suite row's outcome as testicle.suite.success left it: zzSucc stays green",
       "severity": 0.4,
       "at": "2026-11-18T21:34:19.919Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a file added to the tree flags the general test again for a script it judged red",
       "severity": 0.2,
       "at": "2026-11-18T21:46:05.943Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a flagged suite runs by itself, with no run asked: nu's and xi's own suites start",
       "severity": 0.2,
       "at": "2026-11-18T21:54:46.880Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a general test is started with the script as its argument, and reports for that script",
       "severity": 0.7,
       "at": "2026-11-18T21:36:45.495Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a load not complete in 3 seconds counts as a hang: not classifyable, its row red, severity 0.8",
       "severity": 0.2,
       "at": "2026-11-18T22:48:40.980Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a node-only script is tested by -general and -node general tests, and no -browser one",
       "severity": 0.2,
       "at": "2026-11-18T22:57:45.466Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a press in a script tab still runs a general test for that one script",
       "severity": 0.4,
       "at": "2026-11-18T21:14:19.935Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a result carries both hashes it ran against, the script's and the suite's",
       "severity": 0.2,
       "at": "2026-11-18T21:56:50.098Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a result of that run carries the script's hash as it stood when the run started",
       "severity": 0.2,
       "at": "2026-11-18T22:01:40.376Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a run stopped is re-assembled fresh from the flags: the next run is handed zzReB and zzReC, not zzReA",
       "severity": 0.4,
       "at": "2026-11-18T21:34:19.897Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a run with a title retires nothing: after testicle.run of \"stale one\" alone, \"stale two\" is still current",
       "severity": 0.4,
       "at": "2026-11-18T21:24:19.874Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a scratch copy is made with a run limit of 60 s, three planted scripts, and a general test that works past the limit on the second",
       "severity": 0.2,
       "at": "2026-11-18T23:05:43.631Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a script changed after the start is also classified with no press, within 30 seconds",
       "severity": 0.2,
       "at": "2026-11-18T22:38:00.671Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a script classified has no red classifyable row",
       "severity": 0.2,
       "at": "2026-11-18T22:48:40.994Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a script planted with no 'use strict' shows \"still red\" in the general test",
       "severity": 0.2,
       "at": "2026-11-18T21:46:05.928Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a script that crashes in both is not classifyable: its classifyable row is red, severity 0.8",
       "severity": 0.2,
       "at": "2026-11-18T22:48:40.962Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a script that crashes on the node for lack of document and loads in the page is browser-only",
       "severity": 0.2,
       "at": "2026-11-18T22:48:40.914Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a script that exits on the node with nothing thrown has loaded there: an app server comes out node-only",
       "severity": 0.2,
       "at": "2026-11-18T22:48:40.946Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a script that loads on the node and crashes in the page for lack of require is node-only",
       "severity": 0.2,
       "at": "2026-11-18T22:48:40.901Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a script's own test is started with no argument",
       "severity": 0.2,
       "at": "2026-11-18T21:33:15.483Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite asked by testicle.run goes to the head of the queue: tau runs before omicron's own suite",
       "severity": 0.2,
       "at": "2026-11-18T22:09:42.189Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite flagged twice is owed one run: nu's own suite ran once",
       "severity": 0.2,
       "at": "2026-11-18T21:54:49.882Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite that leaves a folder in the run folder is red on \"it leaves nothing new in the run folder\", at 0.7",
       "severity": 0.4,
       "at": "2026-11-18T21:39:15.607Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite that leaves its temp folder behind is red on \"it leaves no temp folder behind\", at 0.7",
       "severity": 0.4,
       "at": "2026-11-18T21:41:45.731Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite that leaves no temp folder is green on it",
       "severity": 0.4,
       "at": "2026-11-18T21:41:45.745Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite that leaves nothing in the run folder is green on it",
       "severity": 0.4,
       "at": "2026-11-18T21:39:15.626Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite that ran with a failed test for the script shows \"still red\"",
       "severity": 0.2,
       "at": "2026-11-18T21:42:05.887Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite that succeeded against a script and its hash stays a success in the suite table: aOk.js still green",
       "severity": 0.8,
       "at": "2026-11-18T23:05:43.643Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite the run never reached is not failed by the kill: cLater.js's suite row is not red, and none of its test rows",
       "severity": 0.8,
       "at": "2026-11-18T23:05:43.651Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite whose every test passed shows \"green\"",
       "severity": 0.2,
       "at": "2026-11-18T21:41:55.811Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a suite whose only test hangs, its process kept alive, fails too: sigma's suite shows \"still red\"",
       "severity": 0.2,
       "at": "2026-11-18T22:27:43.302Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "a test that hangs fails at its own limit: rho hangs is red, rho answers its first green",
       "severity": 0.2,
       "at": "2026-11-18T22:24:22.876Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "aOk.js reports its success in the run before the limit",
       "severity": 0.2,
       "at": "2026-11-18T23:05:43.659Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "after a restart, a classified script still shows only the suites that apply",
       "severity": 0.2,
       "at": "2026-11-18T22:48:44.162Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "after a whole run, a test it did not report is no longer current: \"stale two\" has no current row",
       "severity": 0.4,
       "at": "2026-11-18T21:24:19.905Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "after the start, interactive still, a script changed while down is classified with no press",
       "severity": 0.2,
       "at": "2026-11-18T22:37:30.541Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "after the start, the classifier having changed while down, every live script is classified again, right away",
       "severity": 0.2,
       "at": "2026-11-18T22:18:22.703Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "any other change waits its turn: zzLong's run ends with its end, and zzCalm's own suite starts after it",
       "severity": 0.4,
       "at": "2026-11-18T21:19:19.982Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "at a start, interactive and nothing pressed, every live script is classified",
       "severity": 0.2,
       "at": "2026-11-18T21:17:01.884Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "at once after it is classified, a browser-only script's suite search shows no -node suite",
       "severity": 0.2,
       "at": "2026-11-18T22:48:41.022Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "at once after it is classified, a node-only script's suite search shows no -browser suite",
       "severity": 0.2,
       "at": "2026-11-18T22:48:41.035Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "classified first, tested after: each one's own suite reports only after its reClassify cleared",
       "severity": 0.2,
       "at": "2026-11-18T22:52:45.299Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "each one is classified again in interactive mode with nothing pressed: reClassify is false on every one of the six",
       "severity": 0.2,
       "at": "2026-11-18T22:57:45.434Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "each row holds the result its test gave",
       "severity": 0.2,
       "at": "2026-11-18T21:33:15.471Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "every one is classified by the server by itself: reClassify false on each",
       "severity": 0.2,
       "at": "2026-11-18T22:48:40.879Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "general tests run first, though the own suite sorts first by name: every general result for early.js came before early's own suite started",
       "severity": 0.2,
       "at": "2026-11-18T21:56:50.086Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "general tests run first: every general result for nu.js came before nu's own suite started",
       "severity": 0.2,
       "at": "2026-11-18T21:54:49.895Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "in auto mode, the server processes everything by itself: psi's flagged suite is run",
       "severity": 0.2,
       "at": "2026-11-18T22:42:00.722Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "in debug mode, set to auto, it never runs testicle's own tests, only the dummies: none reports, and it comes to rest",
       "severity": 0.8,
       "at": "2026-11-18T22:04:41.881Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "in debug mode, the classifier judged only scripts under spirit/app/testicle/",
       "severity": 0.4,
       "at": "2026-11-18T21:11:31.621Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "in interactive mode, a press of testicle.run runs that suite, and only it",
       "severity": 0.2,
       "at": "2026-11-18T22:35:29.819Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "in interactive mode, nothing runs by itself: five seconds on, the server is idle and no suite of chi or psi was run",
       "severity": 0.2,
       "at": "2026-11-18T22:34:29.799Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "in interactive mode, the classifier's own suite row is no longer flagged for chi",
       "severity": 0.2,
       "at": "2026-11-18T22:34:24.804Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "in interactive mode, the server classifies by itself with no press: chi's reClassify turns false",
       "severity": 0.2,
       "at": "2026-11-18T22:34:24.793Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "it leaves nothing new in the run folder",
       "severity": 0.7,
       "at": "2026-11-18T23:05:43.678Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "once that work is done, busy answers false again",
       "severity": 0.2,
       "at": "2026-11-18T21:29:13.217Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "once zzdA's edited suite has run again, the test it lost is no longer current",
       "severity": 0.2,
       "at": "2026-11-18T21:09:19.860Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "pi.js changes, and changes again while its own suite runs",
       "severity": 0.2,
       "at": "2026-11-18T22:00:50.233Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "rho's suite shows \"still red\"",
       "severity": 0.2,
       "at": "2026-11-18T22:24:43.058Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "rho.js and sigma.js change",
       "severity": 0.2,
       "at": "2026-11-18T22:22:22.864Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "six scripts are written, each with its own test: node, page, both, broken, hang and exit",
       "severity": 0.2,
       "at": "2026-11-18T22:48:40.858Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "spirit/app/testicle/temp/zzBatch/ is planted with its three kinds of general test and three scripts, classified and run once",
       "severity": 0.7,
       "at": "2026-11-18T21:14:19.858Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "spirit/app/testicle/temp/zzRe/ is planted with its own -general test and three scripts, and run once",
       "severity": 0.7,
       "at": "2026-11-18T21:34:19.870Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "spirit/app/testicle/temp/zzStale/ is planted, its own suite reporting one test green and one red, and run once",
       "severity": 0.7,
       "at": "2026-11-18T21:24:19.858Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "spirit/app/testicle/temp/zzSucc/ is planted with its own suite and run once",
       "severity": 0.7,
       "at": "2026-11-18T21:29:19.864Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "spirit/app/testicle/temp/zzTop/ is planted with a long suite, a suite red at 0.9 and a green one, each run once",
       "severity": 0.7,
       "at": "2026-11-18T21:19:19.861Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "testicle hands the same node and the same Chrome to the next suite it runs",
       "severity": 0.4,
       "at": "2026-11-18T21:36:20.340Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "testicle hands the suites it runs a node that answers, and a Chrome that answers",
       "severity": 0.4,
       "at": "2026-11-18T21:36:20.325Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "testicle is switched to interactive while the classifying goes on",
       "severity": 0.2,
       "at": "2026-11-18T22:57:45.416Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "testicle.suite.success with success false is what turns zzSucc red",
       "severity": 0.4,
       "at": "2026-11-18T21:34:19.934Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "testicle.suite.success with success false sets that suite row at once: its outcome red, its flag cleared",
       "severity": 0.4,
       "at": "2026-11-18T21:29:19.879Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "testicle.suite.success with success true sets it green, at once, whatever its test rows say",
       "severity": 0.4,
       "at": "2026-11-18T21:29:19.891Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the -browser test then runs once, handed the two that run in a page, never the node-only one",
       "severity": 0.4,
       "at": "2026-11-18T21:14:19.904Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the -node test then runs once, handed the two that run on the node, never the browser-only one",
       "severity": 0.4,
       "at": "2026-11-18T21:14:19.891Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the changed script's red suite runs first: zzRed's own suite starts within 30 s of its change, before zzLong's 40 s were up",
       "severity": 0.4,
       "at": "2026-11-18T21:19:19.915Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the queue is worked off and the server is idle",
       "severity": 0.2,
       "at": "2026-11-18T21:50:46.135Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the run is computed again: cLater.js runs in a new run and its suite row turns green",
       "severity": 0.8,
       "at": "2026-11-18T23:05:43.690Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the run is killed at its limit while bHang.js works on",
       "severity": 0.2,
       "at": "2026-11-18T23:05:43.699Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the runner is idle, so the table holds still while every variation is asked",
       "severity": 0.2,
       "at": "2026-11-18T21:21:10.616Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the runner starts no sooner than 1 second after the last change: the second change pushed the start back",
       "severity": 0.2,
       "at": "2026-11-18T21:54:46.895Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the running job is not killed by a change: pi's first run ends",
       "severity": 0.2,
       "at": "2026-11-18T22:01:20.285Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the server is idle again after chi and psi",
       "severity": 0.2,
       "at": "2026-11-18T22:46:40.774Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the stopped run goes back flagged: zzLong's own suite runs again, after zzRed's",
       "severity": 0.4,
       "at": "2026-11-18T21:19:19.949Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the stopped run's results are untouched: zzLong's current row is the one from before",
       "severity": 0.4,
       "at": "2026-11-18T21:19:19.932Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the suite comes round again behind it: pi's own suite runs a second time, after the first ended",
       "severity": 0.2,
       "at": "2026-11-18T22:05:40.524Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the suite running at the kill fails: bHang.js red",
       "severity": 0.4,
       "at": "2026-11-18T23:05:43.707Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the suite's status follows the tests it now has: zzStale's own suite shows \"green\"",
       "severity": 0.4,
       "at": "2026-11-18T21:24:19.917Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "the tests aOk.js's suite reported keep their results: every one of aOk.js's rows still passed",
       "severity": 0.8,
       "at": "2026-11-18T23:05:43.715Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "there is never a second run beside the running one: tau started after every run before it ended",
       "severity": 0.2,
       "at": "2026-11-18T22:09:42.219Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "there is one runner: nu's and xi's runs never overlap",
       "severity": 0.2,
       "at": "2026-11-18T21:54:46.905Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "two planted UI suites, each pressed, write down what testicle handed them",
       "severity": 0.2,
       "at": "2026-11-18T21:36:20.309Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "when the classifier changes, a script classified before reads reClassify true again",
       "severity": 0.7,
       "at": "2026-11-18T22:57:45.378Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "when the classifier changes, a script that failed is tried again, though it did not change: its classifyable row is tested anew",
       "severity": 0.2,
       "at": "2026-11-18T22:57:45.395Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "with nothing changing, busy answers false",
       "severity": 0.2,
       "at": "2026-11-18T21:12:21.725Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "with one script changed later, the -general test runs once, handed that one",
       "severity": 0.4,
       "at": "2026-11-18T21:14:19.923Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "with rows flagged when the server starts, the runner runs them by itself",
       "severity": 0.2,
       "at": "2026-11-18T22:13:42.631Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "with testicle given, the suite runs up to that test and no test after it",
       "severity": 0.2,
       "at": "2026-11-18T21:35:45.497Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "with three scripts changed in one quiet second, the -general test runs once, handed all three",
       "severity": 0.4,
       "at": "2026-11-18T21:14:19.877Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "without testicle, the whole suite runs: every test of it reports to testicle",
       "severity": 0.2,
       "at": "2026-11-18T21:33:15.454Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "zzLong.js changes again, and zzCalm.js, holding no red, changes while zzLong's own suite runs",
       "severity": 0.2,
       "at": "2026-11-18T21:19:19.963Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "zzLong.js changes, and zzRed.js changes while zzLong's own suite runs",
       "severity": 0.2,
       "at": "2026-11-18T21:19:19.881Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "zzReA, which reported before the stop, is done: its suite row green, its flag cleared",
       "severity": 0.4,
       "at": "2026-11-18T21:34:19.908Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "zzReA, zzReB and zzReC change, and while the batch waits on zzReB, another suite is pressed",
       "severity": 0.2,
       "at": "2026-11-18T21:34:19.883Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "zzStale's suite is rewritten to report \"stale one\" alone, and run whole",
       "severity": 0.2,
       "at": "2026-11-18T21:24:19.887Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "title": "zzdA, zzdC and their own tests run while testicle is on",
       "severity": 0.2,
       "at": "2026-11-18T23:02:25.394Z"

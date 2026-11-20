@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/app/chat/test/api.js
-// The tests of spirit/app/chat/api.js, and of no other module (spec: ./api.md; goal/G43.31). The box: "nodeChat.js ...
+// The tests of spirit/app/chat/api.js, and of no other module (spec: ./api.md; goal/G43.31). The box: "chat/server/server.js ...
 // its verbs as api.js lists them", and "The branch name is the folder's: chat ... the verbs are chat.<verb>". Read from
 // the disc; then on a scratch node of its own with the app switched on, the node's own answer for the branch and every
 // verb it lists asked as the owner asks it. One test.run per test (goal/G47.2).

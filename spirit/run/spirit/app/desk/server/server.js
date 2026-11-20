@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/app/desk/nodeDesk.js (the node half of desk.js, goal/G43.27)
+// spirit/run/spirit/app/desk/server/server.js (the node half of desk.js, goal/G43.27)
 // THE DESK SERVER — desk/G1.3.
 //
 //   Andy, 2026-09-29: "i might want a process that serves the data through
@@ -25,7 +25,7 @@
 // the probability bucket, and says so with more (tableSearch, below).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../spirit.js');
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');

@@ -1,8 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/app/chat/nodeChat.js (goal/G43.31: the branch is chat, as its folder, Andy: "The BRANCH
+// spirit/run/spirit/app/chat/server/server.js (goal/G43.31: the branch is chat, as its folder, Andy: "The BRANCH
 // name ... is motherfucking <name> in spirit/app/<name>...."). Loaded by ./chat.js in a node. Its contract and its test:
-// ./test/nodeChat.md and ./test/nodeChat.js.
+// ./server/test/server.md and ./server/test/server.js.
 // THE CHAT SERVER — goal/G4. Faceless and p2p: every node that takes part runs one, and each holds its own record of
 // the chats it is a party to. No server in the middle; no core module.
 //
@@ -26,7 +26,7 @@
 // (peers.search, chats.search since goal/G29.18) and goal/G29.18 (chat.search).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../spirit.js');
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');

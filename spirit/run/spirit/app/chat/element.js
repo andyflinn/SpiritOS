@@ -2,7 +2,7 @@
 // spirit/run/spirit/app/chat/element.js
 // THE CHAT APP'S ELEMENT (goal/G43.31; Andy: "the app-element must be spirit/app/chat/element.js", "all it's custom (app
 // specific) elements go into spirit/app/chat/element/"), what was chatter.js, the face of this node's chat server
-// (./nodeChat.js), goal/G4.9 to G4.11. Its contract and its test: ./test/element.md and ./test/element.js.
+// (./server/server.js), goal/G4.9 to G4.11. Its contract and its test: ./test/element.md and ./test/element.js.
 //
 //   spirit.element.spirit.app.chat.element.create(container, { open }) -> { destroy() }
 //

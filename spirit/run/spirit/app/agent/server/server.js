@@ -1,9 +1,9 @@
 'use strict';
 
-// spirit/run/spirit/app/agent/nodeAgent.js
+// spirit/run/spirit/app/agent/server/server.js
 // THE AGENT SERVER (goal/G41.1): the server process behind the agent face app. It keeps all of the app's state, in
 // agent.db, an SQLite database in the folder the node hands it as --state (spirit/state/agent/data/ on a node, goal/G43.10,
-// never in git), and streams that state to its clients. Its contract and its test: ./test/nodeAgent.md and ./test/nodeAgent.js.
+// never in git), and streams that state to its clients. Its contract and its test: ./server/test/server.md and ./server/test/server.js.
 //
 // NO AGENTS TALK TO EACH OTHER THROUGH IT (goal/G41.1, Q1, Andy: "the rules of this app will have no agents talking to
 // each other either, each agent will see itself as the only agent/user of the node"; the ruling of 2026-10-02, goal/G3.1,
@@ -13,7 +13,7 @@
 // appServer's DEBUG switches it, the node keeps it across restarts, and its config.json and debug verb are gone.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../spirit.js');
+require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');

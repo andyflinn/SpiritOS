@@ -147,7 +147,7 @@ The tree is read as it is. The watcher runs in a child process on a scratch fold
   with core; changed back, without again.
 - **No file names spirit/run/node_modules.** That covers the .gitignore exception and the two installers.
 
-deskClient's use of the library is the chokidar part of `spirit/app/deskClient/test/deskClient.md`; fileSystem.js's one list of vendored folders is the vendoredFolders part of `./fileSystem.md`.
+deskClient's use of the library is the chokidar part of `spirit/app/deskClient/server/test/server.md`; fileSystem.js's one list of vendored folders is the vendoredFolders part of `./fileSystem.md`.
 
 ## The mount part: the node starts a server from spirit/app/<name>/ (once in ./appServer.js, goal/G47.1)
 

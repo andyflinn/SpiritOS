@@ -1,6 +1,6 @@
-# spirit/app/icons/nodeIcons.js, the icon set's node half
+# spirit/app/icons/server/server.js, the icon set's node half
 
-Its test is `./nodeIcons.js`. The box (goal/G43.19, v16): *"./node<Name>.js will maintain the table (run://spirit/state/icons/data/iconSet.json)"*, *"it is initialized from run://spirit/iconSet.json when it does not exist yet"*, *"only ./nodeIcons.js writes the table"*; 9: *"two saves never write iconSet.json at once"*; 10: it publishes on the job `spirit.app.icons`. Andy, of a duplicate: *"the icon app allowed me to add a duplicate icon.... that shouldn't work"*.
+Its test is `./server/server.js`. The box (goal/G43.19, v16): *"./node<Name>.js will maintain the table (run://spirit/state/icons/data/iconSet.json)"*, *"it is initialized from run://spirit/iconSet.json when it does not exist yet"*, *"only ./server/server.js writes the table"*; 9: *"two saves never write iconSet.json at once"*; 10: it publishes on the job `spirit.app.icons`. Andy, of a duplicate: *"the icon app allowed me to add a duplicate icon.... that shouldn't work"*.
 
 Raw calls to a scratch node with Icons switched on, `icons.icon` with the ops its `api.js` names; what was written is read from the disc. Glyphs the system set does not hold are taken from the pictograph blocks by code point.
 

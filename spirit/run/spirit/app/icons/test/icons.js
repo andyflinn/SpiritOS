@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/icons/test/icons.js
 // The tests of spirit/app/icons/icons.js, the one file the node and the page load, and of no other module (spec: ./icons.md;
 // goal/G43.19, box v16): the app's files, its one-shot runs, its job, its tile. Its halves have tests of their own
-// (./nodeIcons.js, ./browserIcons.js, ./data.js, ./api.js). Andy:
+// (./server/server.js, ./browserIcons.js, ./data.js, ./api.js). Andy:
 // "icons is an app with a face, and an api, no fucking process for some trivial shit like a quickie applet", "for apps
 // with only shell:mount:true and node:mount:false or missing, BUT with a api.js and data.js, the node must execute
 // spirit/app/<name>/<name>.js with the request, instead of routing it to a server, like a cgi-script, and that process
@@ -64,7 +64,7 @@ test.after(function () {
 test.run('spirit/app/icons/api.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'api.js')) || false; }, test.limit.quick);
 test.run('spirit/app/icons/data.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'data.js')) || false; }, test.limit.quick);
 test.run('spirit/app/icons/icons.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'icons.js')) || false; }, test.limit.quick);
-test.run('spirit/app/icons/nodeIcons.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'nodeIcons.js')) || false; }, test.limit.quick);
+test.run('spirit/app/icons/server/server.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'icons/server/server.js')) || false; }, test.limit.quick);
 test.run('spirit/app/icons/element.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'element.js')) || false; }, test.limit.quick);
 test.run('api.js sits at the app\'s top, with no api/ folder', 0.2, function () { return !fs.existsSync(path.join(APP, 'api')) || false; }, test.limit.quick);
 test.run('icons.json keeps node mount false and shell mount true', 0.2, function () {
@@ -72,7 +72,7 @@ test.run('icons.json keeps node mount false and shell mount true', 0.2, function
   return !(own.node && own.node.mount === true) && !!(own.shell && own.shell.mount === true) ? true : false;
 }, test.limit.quick);
 // goal/G43.32: by spirit.require and its run-root path, as every script loads the tree.
-test.run('icons.js, run in node, loads spirit/app/icons/nodeIcons.js through spirit.require', 0.2, function () {
+test.run('icons.js, run in node, loads spirit/app/icons/server/server.js through spirit.require', 0.2, function () {
   const main = code(read(path.join(APP, 'icons.js')) || '');
   return (/\.require\(\s*['"]spirit\/app\/icons\/nodeIcons\.js['"]\s*\)/).test(main) || false;
 }, test.limit.quick);
@@ -179,7 +179,7 @@ const LAYER = 'Array.prototype.filter.call(document.querySelectorAll("#faces .ap
 const field = function (which) { return '(function () { var l = ' + LAYER + '; if (!l) return null; return Array.prototype.filter.call(l.querySelectorAll("input"), function (i) { var p = String(i.placeholder || ""); return i.getClientRects().length && (' + (which === 'glyph' ? '/icon/i.test(p) && !/keyword/i.test(p)' : '/keywords, comma separated/i.test(p)') + '); })[0] || null; }())'; };
 const ADD = '(function () { var l = ' + LAYER + '; if (!l) return null; return Array.prototype.filter.call(l.querySelectorAll("button"), function (b) { return b.getClientRects().length && String(b.textContent).trim() === "Add"; })[0] || null; }())';
 // What the face itself does (its add row, the duplicate, a second page) is browserIcons.js's test; what the table holds,
-// nodeIcons.js's. Here: the app's tile opens the face, and an Add through it is one run of icons.js, ended.
+// icons/server/server.js's. Here: the app's tile opens the face, and an Add through it is one run of icons.js, ended.
 const add = function (page, glyph, words) { return page.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + ', b = ' + ADD + '; if (!g || !k || !b) return false; g.value = ' + JSON.stringify(glyph) + '; g.dispatchEvent(new Event("input", { bubbles: true })); k.value = ' + JSON.stringify(words) + '; k.dispatchEvent(new Event("input", { bubbles: true })); b.click(); return true; }())'); };
 test.run('the Icons tile is there and is pressed', 0.2, async function () {
   if (!W.ready) return false;

@@ -2,7 +2,7 @@
 
 Its test is `./browserIcons.js`. `spirit.element.spirit.app.icons.icons.create(container)`, mounted alone in a box of a real Chrome on a scratch node's face page with Icons switched on.
 
-The box (goal/G43.19, v16): *"the page asks icons through its api branch; only ./nodeIcons.js writes the table, the page writes no file of its own"*; 10: *"data.js on every open page follows that one job"*. Andy, its add row (G41.27): *"[➕] [an icon:paste] [keywords, comma separated][Add]"*; of a duplicate (G40.5): *"if add icon cannot add because the icon already exists, the open the edit dialog for the existing icon."*
+The box (goal/G43.19, v16): *"the page asks icons through its api branch; only ./server/server.js writes the table, the page writes no file of its own"*; 10: *"data.js on every open page follows that one job"*. Andy, its add row (G41.27): *"[➕] [an icon:paste] [keywords, comma separated][Add]"*; of a duplicate (G40.5): *"if add icon cannot add because the icon already exists, the open the edit dialog for the existing icon."*
 
 ## Requirements
 

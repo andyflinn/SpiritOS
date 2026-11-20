@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/app/agent/test/nodeAgent.js
-// The tests of spirit/app/agent/nodeAgent.js, the agent server, and of no other module (spec: ./nodeAgent.md; goal/G41.1).
+// spirit/run/spirit/app/agent/server/test/server.js
+// The tests of spirit/app/agent/server/server.js, the agent server, and of no other module (spec: ./server/server.md; goal/G41.1).
 // The server is started as the node starts it, through agent.js, on a pipe of the test's own and a scratch --state
 // folder, and asked through the pipe. It is
 // started without a job id, so what it publishes reaches no node. One test.run per test (goal/G47.2).
@@ -23,7 +23,7 @@ const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 const DIR = path.join(__dirname, '..');
 const SERVER = path.join(DIR, 'agent.js');
 // The server's own code: agent.js only loads it in a node (goal/G43.13).
-const CODE = path.join(DIR, 'nodeAgent.js');
+const CODE = path.join(DIR, 'agent/server/server.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

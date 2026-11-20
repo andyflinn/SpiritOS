@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/app/testicle/test/testicle.js
+// spirit/run/spirit/app/testicle/server/test/server.js
 // The tests of spirit/app/testicle/testicle.js, testicle's server, and of no other module (spec: ./testicle.md;
 // goal/G47.1, the server cycle). The box: "This cycle builds testicle's server, which keeps the first two tables of
 // testicle.db, file and suite, in sync with run:// by itself", "The server mounts beside the face (testicle.json:

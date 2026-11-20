@@ -83,7 +83,7 @@ function seed(stateDir, sessions) {
 function plantOldRules(stateDir) {
   const db = new DatabaseSync(path.join(stateDir, 'desk.db'));
   try {
-    // As the desk made them before rules went out (spirit/app/desk/nodeDesk.js, before goal/G47.4).
+    // As the desk made them before rules went out (spirit/app/desk/server/server.js, before goal/G47.4).
     db.exec('CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, rule INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL, autoAttach INTEGER NOT NULL DEFAULT 0);' +
       'CREATE INDEX IF NOT EXISTS rules_rule ON rules (rule);' +
       'CREATE TABLE IF NOT EXISTS rule_drafts (rule INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL);' +

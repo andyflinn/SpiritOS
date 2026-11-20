@@ -2,7 +2,7 @@
 // spirit/run/spirit/type/string/deskPress.js
 // THE TYPE spirit.type.string.deskPress (goal/G48.4, the box: "options for a multiple-choice will be held in a separate script file for each
 // field type that has its own options. so that interpreters of data descriptions can use the same function for validation"):
-// a button pressed on a Desk item, one of its OPTIONS (nodeDesk.js press: every what it answers). The same file on the node and on a page: on the node it is this module,
+// a button pressed on a Desk item, one of its OPTIONS (desk/server/server.js press: every what it answers). The same file on the node and on a page: on the node it is this module,
 // on a page it stands at spirit.required.spirit.type.string.deskPress. Its test: ./test/deskPress.js.
 (function (root) {
   var OPTIONS = ['abandon', 'bring-back', 'claim-done', 'close', 'code', 'design-complete', 'done', 'end-design', 'go', 'go-all', 'make-current', 'reopen', 'seen', 'start-design', 'waive'];

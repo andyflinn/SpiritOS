@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/table/model/test/server.js
 // The tests of spirit/app/agent/table/model/, its server.js, elementTable.js and elementRow.js, and of no other module
 // (spec: ./server.md; goal/G41.4, goal/G41.18, goal/G41.26). What the tables share is tested in ../../test/. The Update
-// model list pane is gone (goal/G41.26): its Ask form sits at the top of the model list, tested here. The server is made on a scratch agent.db as nodeAgent.js
+// model list pane is gone (goal/G41.26): its Ask form sits at the top of the model list, tested here. The server is made on a scratch agent.db as agent/server/server.js
 // makes it, beside the provider table it names; the page files run in node on a window of their own, the shared
 // elements stubs that keep what they were handed.
 

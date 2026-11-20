@@ -1,9 +1,9 @@
 'use strict';
 
-// spirit/run/spirit/app/icons/test/nodeIcons.js
-// The tests of spirit/app/icons/nodeIcons.js, and of no other module (spec: ./nodeIcons.md; goal/G43.19, box v16): the
+// spirit/run/spirit/app/icons/server/test/server.js
+// The tests of spirit/app/icons/server/server.js, and of no other module (spec: ./server/server.md; goal/G43.19, box v16): the
 // icon set's node half, one table. The box: "./node<Name>.js will maintain the table (run://spirit/state/icons/data/iconSet.json)",
-// "it is initialized from run://spirit/iconSet.json when it does not exist yet", "only ./nodeIcons.js writes the table";
+// "it is initialized from run://spirit/iconSet.json when it does not exist yet", "only ./server/server.js writes the table";
 // 9: "two saves never write iconSet.json at once"; 10: it publishes on its job before the answer. Andy, of a duplicate:
 // "the icon app allowed me to add a duplicate icon.... that shouldn't work". Raw calls to a scratch node with Icons
 // switched on, its verb as its api.js names it; what was written is read from the disc. Neither Andy's node nor an agent's
@@ -21,7 +21,7 @@ function read(f) { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return
 function json(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 const bare = function (g) { return String(g || '').replace(/[︎️]/g, ''); };
 
-// nodeIcons.js: the icon set, one table, written only here (goal/G43.19).
+// icons/server/server.js: the icon set, one table, written only here (goal/G43.19).
 // One test.run per test (goal/G47.2). What the world made, for the tests after it.
 const W = {};
 test.after(function () {

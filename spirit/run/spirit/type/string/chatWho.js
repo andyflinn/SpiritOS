@@ -2,7 +2,7 @@
 // spirit/run/spirit/type/string/chatWho.js
 // THE TYPE spirit.type.string.chatWho (goal/G48.4, the box: "options for a multiple-choice will be held in a separate script
 // file for each field type that has its own options"): whose lines the chat app's chat.search keeps, one of its OPTIONS: '' both
-// sides, me the caller's own, them the peer's (nodeChat.js chat.search). The same file on the node and on a page: on
+// sides, me the caller's own, them the peer's (chat/server/server.js chat.search). The same file on the node and on a page: on
 // the node it is this module, on a page it stands at spirit.required.spirit.type.string.chatWho.
 (function (root) {
   var OPTIONS = ['', 'me', 'them'];

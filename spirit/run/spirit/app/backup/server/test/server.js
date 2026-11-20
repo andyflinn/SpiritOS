@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/app/backup/test/backup.js
+// spirit/run/spirit/app/backup/server/test/server.js
 // THE BACKUP SERVER COPIES THE NODE'S STATE (goal/G43.23, item 5; spec: ./backup.md). The box: "backup copies
 // nothing: it copies only its own state folder and reads a config path that does not exist". The real backup.js of this
 // tree, started as the node starts it (job.js runServer: --state spirit/state/backup/data, --node {name, publicKey}), on

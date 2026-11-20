@@ -1,8 +1,8 @@
 'use strict';
 
-// spirit/run/spirit/app/chat/test/nodeChat.js
-// The tests of spirit/app/chat/nodeChat.js, and of no other module (spec: ./nodeChat.md; goal/G43.31). The box:
-// "nodeChat.js is today's chatClerver.js, working as it does, its verbs as api.js lists them. Its database is chat.db in
+// spirit/run/spirit/app/chat/server/test/server.js
+// The tests of spirit/app/chat/server/server.js, and of no other module (spec: ./server/server.md; goal/G43.31). The box:
+// "chat/server/server.js is today's chatClerver.js, working as it does, its verbs as api.js lists them. Its database is chat.db in
 // the node's state" (Andy: "how about calling the db chat.db ??????", and "that ruling is replaced."); "The branch name is
 // the folder's: chat"; "No old chat data is rescued" (Andy: "don't even THINK of rescuing any old chat data, that an
 // ABSOLUTE NO."). Written from reading chatClerver.js. A scratch node of its own (spirit/test/headLessChrome.js), the
@@ -16,7 +16,7 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
-const FILE = path.join(__dirname, '..', 'nodeChat.js');
+const FILE = path.join(__dirname, '..', 'chat/server/server.js');
 
 // A file's code, comments blanked; '' when it is not there.
 function code(f) {
@@ -34,7 +34,7 @@ test.after(function () {
 
 // ── its code: no held path and no contact.accept (goal/G43.23, the checks of chatClerver-noHeld.js) ──
 // Andy, G43.17: "Didn't i say remove ALL code referencing "admit" and "hold". it was a hair-brained scheme, and it HAS TO GO."
-test.run('spirit/app/chat/nodeChat.js is there, and its code holds line.write', 0.2, function () {
+test.run('spirit/app/chat/server/server.js is there, and its code holds line.write', 0.2, function () {
   X.src = code(FILE);
   return (/'line\.write'/).test(X.src) ? true : false;
 }, test.limit.quick);

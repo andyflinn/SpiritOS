@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/type/string/commit.js
 // THE TYPE spirit.type.string.commit (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*"; the rule desk's claim
-// already held, nodeDesk.js: "a commit is 7 to 40 hex characters (lower case)"): a git commit, by its full or short hash.
+// already held, desk/server/server.js: "a commit is 7 to 40 hex characters (lower case)"): a git commit, by its full or short hash.
 // The same file on the node and on a page: on the node it is this module, on a page it stands at
 // spirit.required.spirit.type.string.commit.
 (function (root) {

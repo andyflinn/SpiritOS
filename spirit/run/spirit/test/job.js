@@ -761,7 +761,7 @@ test.run('with backup\'s app folder gone, the state layout holds with nothing ou
 // hide those suckers in spirit/jobs/ for now? without the damn node_modules container?". The two libraries sit in spirit/job/,
 // job.js's own folder, and job.js is the user that brings them: they move whole, chokidar finds readdirp by path, job.js
 // requires it by path, its fs-watcher job works as before, nothing names spirit/run/node_modules. deskClient's use is
-// spirit/app/deskClient/test/deskClient.js, its chokidar part; fileSystem.js's one list of vendored folders is
+// spirit/app/deskClient/server/test/server.js, its chokidar part; fileSystem.js's one list of vendored folders is
 // ./fileSystem.js, its vendoredFolders part. The tree read as it is; the watcher run in a child process on a scratch folder.
 
 // The tree before the move: the commit the red was written on, which holds spirit/run/node_modules/.

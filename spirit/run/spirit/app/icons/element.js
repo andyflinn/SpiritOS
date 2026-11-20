@@ -1,12 +1,12 @@
 'use strict';
 // spirit/run/spirit/app/icons/element.js
-// THE ICONS FACE (goal/G43.19, box v16; Q6: icons gets nodeIcons.js and browserIcons.js, as desk has them). Its contract and
+// THE ICONS FACE (goal/G43.19, box v16; Q6: icons gets icons/server/server.js and browserIcons.js, as desk has them). Its contract and
 // its test: ./test/icons.md and ./test/icons.js.
 //
 //   spirit.element.spirit.app.icons.icons.create(container, { open }) -> { destroy() }; also spirit.elements.iconsFace, which icons.js's
 //   stand-in calls while it waited for this file
 //
-// The app's own icon set (the box: "the page asks icons through its api branch; only ./nodeIcons.js writes the table, the
+// The app's own icon set (the box: "the page asks icons through its api branch; only ./server/server.js writes the table, the
 // page writes no file of its own"): listed from the icons family's cache (./data.js), which a search fills and every run's
 // publish keeps current, so a change on one page shows on every open page with no reload. On top Andy's add row (G41.27:
 // "[➕] [an icon:paste] [keywords, comma separated][Add]"); a press on an icon opens it OVER THE APP (Andy: "the icon detail

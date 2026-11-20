@@ -1,6 +1,6 @@
 # Test state: wsl
 
-- `spirit/app/testicle/testicle.js`: 10 reds, the worst `spirit/app/testicle/test/testicle.js` a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again (severity 0.8)
+- `spirit/app/testicle/testicle.js`: 10 reds, the worst `spirit/app/testicle/server/test/server.js` a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again (severity 0.8)
 - `spirit/faceHome.js`: 9 reds, the worst `spirit/test/faceHome.js` with no star, the face draws none of the apps of the home desktop (severity 0.8)
 - `spirit/app/app/element.js`: 117 reds, the worst `spirit/app/app/test/element.js` a launched app's title bar is the same rowForm as the title bar of all panels (severity 0.7)
 - `spirit/spirit.js`: 2 reds, the worst `spirit/test/spirit.js` a scratch node is up, on its own copy of the tree (severity 0.7)
@@ -138,11 +138,11 @@
 | spirit/app/agent/element/table/tableElement.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:57.207Z |
 | spirit/app/agent/element/table/tableElement.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:20:51.190Z |
 | spirit/app/agent/element/table/tableElement.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:33.930Z |
-| spirit/app/agent/nodeAgent.js | spirit/app/agent/test/nodeAgent.js | 41 | 41 | 0 | 2026-11-18T10:20:50.314Z |
-| spirit/app/agent/nodeAgent.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T10:15:58.401Z |
-| spirit/app/agent/nodeAgent.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:57.593Z |
-| spirit/app/agent/nodeAgent.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T10:16:04.275Z |
-| spirit/app/agent/nodeAgent.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T10:16:11.414Z |
+| spirit/app/agent/server/server.js | spirit/app/agent/server/test/server.js | 41 | 41 | 0 | 2026-11-18T10:20:50.314Z |
+| spirit/app/agent/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T10:15:58.401Z |
+| spirit/app/agent/server/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:57.593Z |
+| spirit/app/agent/server/server.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T10:16:04.275Z |
+| spirit/app/agent/server/server.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T10:16:11.414Z |
 | spirit/app/agent/provider/anthropic/anthropic.js | spirit/app/agent/provider/anthropic/test/anthropic.js | 15 | 15 | 0 | 2026-11-16T03:33:41.598Z |
 | spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:08.521Z |
 | spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:57.702Z |
@@ -198,7 +198,7 @@
 | spirit/app/backup/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:20:54.836Z |
 | spirit/app/backup/api.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T07:53:54.502Z |
 | spirit/app/backup/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:33.189Z |
-| spirit/app/backup/backup.js | spirit/app/backup/test/backup.js | 7 | 7 | 0 | 2026-11-18T00:29:40.816Z |
+| spirit/app/backup/backup.js | spirit/app/backup/server/test/server.js | 7 | 7 | 0 | 2026-11-18T00:29:40.816Z |
 | spirit/app/backup/backup.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:31.452Z |
 | spirit/app/backup/backup.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.201Z |
 | spirit/app/backup/backup.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:02.137Z |
@@ -237,11 +237,11 @@
 | spirit/app/chat/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:03.895Z |
 | spirit/app/chat/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:20:59.305Z |
 | spirit/app/chat/element.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T07:54:05.183Z |
-| spirit/app/chat/nodeChat.js | spirit/app/chat/test/nodeChat.js | 22 | 22 | 0 | 2026-11-18T00:29:45.359Z |
-| spirit/app/chat/nodeChat.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:33.960Z |
-| spirit/app/chat/nodeChat.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:03.972Z |
-| spirit/app/chat/nodeChat.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:06.942Z |
-| spirit/app/chat/nodeChat.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:27.954Z |
+| spirit/app/chat/server/server.js | spirit/app/chat/server/test/server.js | 22 | 22 | 0 | 2026-11-18T00:29:45.359Z |
+| spirit/app/chat/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:33.960Z |
+| spirit/app/chat/server/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:03.972Z |
+| spirit/app/chat/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:06.942Z |
+| spirit/app/chat/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:27.954Z |
 | spirit/app/contact/element.js | spirit/app/contact/test/element.js | 24 | 23 | 1 | 2026-11-18T05:49:07.788Z |
 | spirit/app/contact/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.258Z |
 | spirit/app/contact/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T00:36:34.300Z |
@@ -307,11 +307,11 @@
 | spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:08.092Z |
 | spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T05:45:12.319Z |
 | spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:54:24.898Z |
-| spirit/app/desk/nodeDesk.js | spirit/app/desk/test/nodeDesk.js | 15 | 15 | 0 | 2026-11-18T10:20:51.294Z |
-| spirit/app/desk/nodeDesk.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T10:15:59.057Z |
-| spirit/app/desk/nodeDesk.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:08.534Z |
-| spirit/app/desk/nodeDesk.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T10:16:05.862Z |
-| spirit/app/desk/nodeDesk.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T10:16:11.490Z |
+| spirit/app/desk/server/server.js | spirit/app/desk/server/test/server.js | 15 | 15 | 0 | 2026-11-18T10:20:51.294Z |
+| spirit/app/desk/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T10:15:59.057Z |
+| spirit/app/desk/server/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:08.534Z |
+| spirit/app/desk/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T10:16:05.862Z |
+| spirit/app/desk/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T10:16:11.490Z |
 | spirit/app/deskClient/api.js | spirit/app/deskClient/test/api.js | 19 | 19 | 0 | 2026-11-18T07:56:18.692Z |
 | spirit/app/deskClient/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T07:59:00.825Z |
 | spirit/app/deskClient/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T07:52:22.331Z |
@@ -326,7 +326,7 @@
 | spirit/app/deskClient/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:06.282Z |
 | spirit/app/deskClient/data.js | spirit/test/spirit-sibling-general.js | 66 | 66 | 0 | 2026-11-18T07:54:30.075Z |
 | spirit/app/deskClient/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.053Z |
-| spirit/app/deskClient/deskClient.js | spirit/app/deskClient/test/deskClient.js | 60 | 60 | 0 | 2026-11-18T07:56:32.184Z |
+| spirit/app/deskClient/deskClient.js | spirit/app/deskClient/server/test/server.js | 60 | 60 | 0 | 2026-11-18T07:56:32.184Z |
 | spirit/app/deskClient/deskClient.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T07:52:22.736Z |
 | spirit/app/deskClient/deskClient.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.402Z |
 | spirit/app/deskClient/deskClient.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:09.541Z |
@@ -369,11 +369,11 @@
 | spirit/app/icons/icons.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:12.200Z |
 | spirit/app/icons/icons.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:41.965Z |
 | spirit/app/icons/icons.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:53.259Z |
-| spirit/app/icons/nodeIcons.js | spirit/app/icons/test/nodeIcons.js | 42 | 42 | 0 | 2026-11-16T03:40:59.840Z |
-| spirit/app/icons/nodeIcons.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:49.922Z |
-| spirit/app/icons/nodeIcons.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:12.597Z |
-| spirit/app/icons/nodeIcons.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:43.677Z |
-| spirit/app/icons/nodeIcons.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:53.331Z |
+| spirit/app/icons/server/server.js | spirit/app/icons/server/test/server.js | 42 | 42 | 0 | 2026-11-16T03:40:59.840Z |
+| spirit/app/icons/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:49.922Z |
+| spirit/app/icons/server/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:12.597Z |
+| spirit/app/icons/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:43.677Z |
+| spirit/app/icons/server/server.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:53.331Z |
 | spirit/app/info/element.js | spirit/app/info/test/element.js | 43 | 43 | 0 | 2026-11-16T13:52:01.882Z |
 | spirit/app/info/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.536Z |
 | spirit/app/info/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:50.397Z |
@@ -558,7 +558,7 @@
 | spirit/app/testicle/testAll.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T20:58:20.070Z |
 | spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T22:52:42.566Z |
 | spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-18T22:52:42.916Z |
-| spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle.js | 289 | 279 | 10 | 2026-11-19T00:34:19.884Z |
+| spirit/app/testicle/testicle.js | spirit/app/testicle/server/test/server.js | 289 | 279 | 10 | 2026-11-19T00:34:19.884Z |
 | spirit/app/testicle/testicle.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T22:55:13.549Z |
 | spirit/app/testicle/testicle.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.471Z |
 | spirit/app/testicle/testicle.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:23.162Z |
@@ -1503,16 +1503,16 @@
 - `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the script unselected, alpha's own suite chosen and green alone, alpha's quiet pass shows (severity 0.2, 2026-11-18T00:43:58.518Z)
 - `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the suite unselected and no script chosen, every script's tests show again (severity 0.2, 2026-11-18T00:42:39.145Z)
 - `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the words cleared, the reds show first again (severity 0.2, 2026-11-18T00:44:14.562Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again (severity 0.8, 2026-11-19T00:33:56.979Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a require inside a function, made only when lazy.js's own suite runs, is recorded too: lazy.js pulls in lazyLib.js (severity 0.8, 2026-11-19T00:33:56.957Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a scratch copy in auto mode is made with four planted scripts and their own tests: one requiring another as it loads, one only inside a function (severity 0.2, 2026-11-19T00:29:16.863Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a scratch copy is made with three planted scripts whose general test crashes, hangs and answers false (severity 0.2, 2026-11-19T00:24:27.868Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite whose test answered false is red with no reason: its verdict was reached (severity 0.8, 2026-11-19T00:29:08.217Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite whose test never answered within its limit is red with the reason hung (severity 0.8, 2026-11-19T00:29:08.196Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite whose test threw is red with the reason crashed (severity 0.8, 2026-11-19T00:29:08.175Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` testicle keeps a dependency table, and it records that user.js pulls in lib.js as it loads (severity 0.8, 2026-11-19T00:33:56.846Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the four are classified and their own suites run green (severity 0.2, 2026-11-19T00:33:56.818Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the run judges the three planted scripts' general suite: each suite row ends red (severity 0.2, 2026-11-19T00:29:08.073Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again (severity 0.8, 2026-11-19T00:33:56.979Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a require inside a function, made only when lazy.js's own suite runs, is recorded too: lazy.js pulls in lazyLib.js (severity 0.8, 2026-11-19T00:33:56.957Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a scratch copy in auto mode is made with four planted scripts and their own tests: one requiring another as it loads, one only inside a function (severity 0.2, 2026-11-19T00:29:16.863Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a scratch copy is made with three planted scripts whose general test crashes, hangs and answers false (severity 0.2, 2026-11-19T00:24:27.868Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite whose test answered false is red with no reason: its verdict was reached (severity 0.8, 2026-11-19T00:29:08.217Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite whose test never answered within its limit is red with the reason hung (severity 0.8, 2026-11-19T00:29:08.196Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite whose test threw is red with the reason crashed (severity 0.8, 2026-11-19T00:29:08.175Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` testicle keeps a dependency table, and it records that user.js pulls in lib.js as it loads (severity 0.8, 2026-11-19T00:33:56.846Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the four are classified and their own suites run green (severity 0.2, 2026-11-19T00:33:56.818Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the run judges the three planted scripts' general suite: each suite row ends red (severity 0.2, 2026-11-19T00:29:08.073Z)
 - `spirit/appClient.js` `spirit/test/appClient.js` icons is switched on and no permanent process runs icons.js (severity 0.2, 2026-11-16T04:26:24.577Z)
 - `spirit/appClient.js` `spirit/test/appClient.js` no run of icons.js is left running after the six trees (severity 0.2, 2026-11-16T04:26:32.307Z)
 - `spirit/appClient.js` `spirit/test/appClient.js` the run that answered the tree has ended (severity 0.2, 2026-11-16T04:26:27.874Z)

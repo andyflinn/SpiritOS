@@ -5,7 +5,7 @@
 // identity icon 💬, label "Chat", not intrinsic; shell.mount true, with a tile; node.mount true, because the server runs on
 // the node (Andy: "app icon remains the same. manifest shows node:mount AND shell:mount")", and "chat.js is the one file the
 // node and the page load (Andy: "chat.js splits between browser and node.... the usual pattern"). In node it requires
-// nodeChat.js. On a page it brings element.js and draws it." Its json and code read from the disc; then a scratch node of
+// chat/server/server.js. On a page it brings element.js and draws it." Its json and code read from the disc; then a scratch node of
 // its own, the app switched on: the process the node runs for it, and its tile in a real Chrome, opened as a user opens it.
 // One test.run per test (goal/G47.2).
 
@@ -51,7 +51,7 @@ test.run('its node mount is true, so the server runs on the node', 0.2, function
 
 // Since goal/G43.32 a page loads the main element, element.js, itself (rule 4), and chat.js is the node's alone.
 // ── chat.js: the node's script; element.js: the page's (goal/G43.32, rule 4) ──
-test.run('chat.js names nodeChat.js, for the node', 0.2, function () {
+test.run('chat.js names chat/server/server.js, for the node', 0.2, function () {
   X.src = code(path.join(APP, 'chat.js'));
   return (/nodeChat\.js/).test(X.src) ? true : false;
 }, test.limit.quick);

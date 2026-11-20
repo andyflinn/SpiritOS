@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/app/deskClient/test/deskClient.js
+// spirit/run/spirit/app/deskClient/server/test/server.js
 // The tests of spirit/app/deskClient/deskClient.js, and of no other module (spec: ./deskClient.md; goal/G41.11). The
 // server runs in this process on a state folder of its own: the spirit object, appServer and the file watcher are
 // stubs, the data set and the desk's translator are the real ones, and the desk is a fake that keeps every ask and

@@ -1,6 +1,6 @@
 # Test state: ubuntu
 
-- `spirit/app/testicle/testicle.js`: 112 reds, the worst `spirit/app/testicle/test/testicle.js` a suite that succeeded against a script and its hash stays a success in the suite table: aOk.js still green (severity 0.8)
+- `spirit/app/testicle/testicle.js`: 112 reds, the worst `spirit/app/testicle/server/test/server.js` a suite that succeeded against a script and its hash stays a success in the suite table: aOk.js still green (severity 0.8)
 - `spirit/app/desk/desk.js`: 92 reds, the worst `spirit/test/scriptClassify.js` classifyable (severity 0.8)
 - `spirit/app/testicle/element.js`: 82 reds, the worst `spirit/test/scriptClassify.js` classifyable (severity 0.8)
 - `spirit/job.js`: 80 reds, the worst `spirit/test/job.js` /bin/sh with a command line is refused with a code (severity 0.8)
@@ -138,11 +138,11 @@
 | spirit/app/agent/element/table/tableElement.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:17.898Z |
 | spirit/app/agent/element/table/tableElement.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T03:08:14.092Z |
 | spirit/app/agent/element/table/tableElement.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T11:02:01.469Z |
-| spirit/app/agent/nodeAgent.js | spirit/app/agent/test/nodeAgent.js | 41 | 41 | 0 | 2026-11-18T11:04:17.802Z |
-| spirit/app/agent/nodeAgent.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T11:00:51.357Z |
-| spirit/app/agent/nodeAgent.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:17.920Z |
-| spirit/app/agent/nodeAgent.js | spirit/test/spirit-sibling-general.js | 67 | 65 | 2 | 2026-11-18T21:05:10.977Z |
-| spirit/app/agent/nodeAgent.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T11:04:16.099Z |
+| spirit/app/agent/server/server.js | spirit/app/agent/server/test/server.js | 41 | 41 | 0 | 2026-11-18T11:04:17.802Z |
+| spirit/app/agent/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T11:00:51.357Z |
+| spirit/app/agent/server/server.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:17.920Z |
+| spirit/app/agent/server/server.js | spirit/test/spirit-sibling-general.js | 67 | 65 | 2 | 2026-11-18T21:05:10.977Z |
+| spirit/app/agent/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T11:04:16.099Z |
 | spirit/app/agent/provider/anthropic/anthropic.js | spirit/app/agent/provider/anthropic/test/anthropic.js | 15 | 15 | 0 | 2026-11-16T07:19:19.775Z |
 | spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T03:07:32.852Z |
 | spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:17.949Z |
@@ -198,7 +198,7 @@
 | spirit/app/backup/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T03:08:17.112Z |
 | spirit/app/backup/api.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T11:02:15.671Z |
 | spirit/app/backup/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:43.827Z |
-| spirit/app/backup/backup.js | spirit/app/backup/test/backup.js | 7 | 7 | 0 | 2026-11-18T03:15:46.203Z |
+| spirit/app/backup/backup.js | spirit/app/backup/server/test/server.js | 7 | 7 | 0 | 2026-11-18T03:15:46.203Z |
 | spirit/app/backup/backup.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T03:21:49.229Z |
 | spirit/app/backup/backup.js | spirit/test/job.js | 1 | 0 | 1 | 2026-11-18T23:54:39.968Z |
 | spirit/app/backup/backup.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.188Z |
@@ -237,11 +237,11 @@
 | spirit/app/chat/element.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.279Z |
 | spirit/app/chat/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T03:08:22.677Z |
 | spirit/app/chat/element.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T11:02:25.515Z |
-| spirit/app/chat/nodeChat.js | spirit/app/chat/test/nodeChat.js | 22 | 22 | 0 | 2026-11-18T03:15:49.414Z |
-| spirit/app/chat/nodeChat.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T03:21:50.959Z |
-| spirit/app/chat/nodeChat.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.293Z |
-| spirit/app/chat/nodeChat.js | spirit/test/spirit-sibling-general.js | 68 | 66 | 2 | 2026-11-18T21:05:13.525Z |
-| spirit/app/chat/nodeChat.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T03:13:13.635Z |
+| spirit/app/chat/server/server.js | spirit/app/chat/server/test/server.js | 22 | 22 | 0 | 2026-11-18T03:15:49.414Z |
+| spirit/app/chat/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T03:21:50.959Z |
+| spirit/app/chat/server/server.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.293Z |
+| spirit/app/chat/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 66 | 2 | 2026-11-18T21:05:13.525Z |
+| spirit/app/chat/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T03:13:13.635Z |
 | spirit/app/contact/element.js | spirit/app/contact/test/element.js | 24 | 22 | 2 | 2026-11-18T03:15:56.717Z |
 | spirit/app/contact/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T03:07:21.190Z |
 | spirit/app/contact/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T03:21:51.213Z |
@@ -306,11 +306,11 @@
 | spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.558Z |
 | spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T11:01:02.114Z |
 | spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T11:02:37.961Z |
-| spirit/app/desk/nodeDesk.js | spirit/app/desk/test/nodeDesk.js | 15 | 15 | 0 | 2026-11-18T11:08:16.028Z |
-| spirit/app/desk/nodeDesk.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T11:00:53.424Z |
-| spirit/app/desk/nodeDesk.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.575Z |
-| spirit/app/desk/nodeDesk.js | spirit/test/spirit-sibling-general.js | 68 | 66 | 2 | 2026-11-18T21:05:18.979Z |
-| spirit/app/desk/nodeDesk.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T11:04:16.416Z |
+| spirit/app/desk/server/server.js | spirit/app/desk/server/test/server.js | 15 | 15 | 0 | 2026-11-18T11:08:16.028Z |
+| spirit/app/desk/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T11:00:53.424Z |
+| spirit/app/desk/server/server.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.575Z |
+| spirit/app/desk/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 66 | 2 | 2026-11-18T21:05:18.979Z |
+| spirit/app/desk/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T11:04:16.416Z |
 | spirit/app/deskClient/api.js | spirit/app/deskClient/test/api.js | 19 | 19 | 0 | 2026-11-18T11:08:16.381Z |
 | spirit/app/deskClient/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T11:00:53.704Z |
 | spirit/app/deskClient/api.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.601Z |
@@ -323,7 +323,7 @@
 | spirit/app/deskClient/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T03:08:29.238Z |
 | spirit/app/deskClient/data.js | spirit/test/spirit-sibling-general.js | 66 | 66 | 0 | 2026-11-18T11:02:40.987Z |
 | spirit/app/deskClient/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T12:12:08.910Z |
-| spirit/app/deskClient/deskClient.js | spirit/app/deskClient/test/deskClient.js | 60 | 60 | 0 | 2026-11-18T11:08:28.918Z |
+| spirit/app/deskClient/deskClient.js | spirit/app/deskClient/server/test/server.js | 60 | 60 | 0 | 2026-11-18T11:08:28.918Z |
 | spirit/app/deskClient/deskClient.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T11:00:53.993Z |
 | spirit/app/deskClient/deskClient.js | spirit/test/job.js | 1 | 0 | 1 | 2026-11-18T23:55:09.967Z |
 | spirit/app/deskClient/deskClient.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:18.658Z |
@@ -364,11 +364,11 @@
 | spirit/app/icons/icons.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:19.003Z |
 | spirit/app/icons/icons.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T11:02:48.343Z |
 | spirit/app/icons/icons.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:45.516Z |
-| spirit/app/icons/nodeIcons.js | spirit/app/icons/test/nodeIcons.js | 42 | 42 | 0 | 2026-11-16T07:26:00.012Z |
-| spirit/app/icons/nodeIcons.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T03:47:30.562Z |
-| spirit/app/icons/nodeIcons.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:19.076Z |
-| spirit/app/icons/nodeIcons.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T11:02:49.118Z |
-| spirit/app/icons/nodeIcons.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:45.610Z |
+| spirit/app/icons/server/server.js | spirit/app/icons/server/test/server.js | 42 | 42 | 0 | 2026-11-16T07:26:00.012Z |
+| spirit/app/icons/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T03:47:30.562Z |
+| spirit/app/icons/server/server.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:19.076Z |
+| spirit/app/icons/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T11:02:49.118Z |
+| spirit/app/icons/server/server.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:45.610Z |
 | spirit/app/info/element.js | spirit/app/info/test/element.js | 43 | 43 | 0 | 2026-11-16T07:26:04.252Z |
 | spirit/app/info/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T03:07:21.363Z |
 | spirit/app/info/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T03:47:30.833Z |
@@ -551,7 +551,7 @@
 | spirit/app/testicle/testAll.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T19:59:08.894Z |
 | spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T10:57:04.847Z |
 | spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-18T10:57:05.131Z |
-| spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle.js | 269 | 161 | 108 | 2026-11-18T23:05:43.744Z |
+| spirit/app/testicle/testicle.js | spirit/app/testicle/server/test/server.js | 269 | 161 | 108 | 2026-11-18T23:05:43.744Z |
 | spirit/app/testicle/testicle.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T11:00:54.294Z |
 | spirit/app/testicle/testicle.js | spirit/test/job.js | 1 | 0 | 1 | 2026-11-18T23:55:19.994Z |
 | spirit/app/testicle/testicle.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:20.860Z |
@@ -1363,9 +1363,9 @@
 - `spirit/app/agent/element/table/provider/elementTable.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:17.864Z)
 - `spirit/app/agent/element/table/row.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:17.880Z)
 - `spirit/app/agent/element/table/tableElement.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:17.898Z)
-- `spirit/app/agent/nodeAgent.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:17.920Z)
-- `spirit/app/agent/nodeAgent.js` `spirit/test/spirit-sibling-general.js` it requires spirit.js first (severity 0.4, 2026-11-18T21:05:09.671Z)
-- `spirit/app/agent/nodeAgent.js` `spirit/test/spirit-sibling-general.js` it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require (severity 0.4, 2026-11-18T21:05:09.630Z)
+- `spirit/app/agent/server/server.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:17.920Z)
+- `spirit/app/agent/server/server.js` `spirit/test/spirit-sibling-general.js` it requires spirit.js first (severity 0.4, 2026-11-18T21:05:09.671Z)
+- `spirit/app/agent/server/server.js` `spirit/test/spirit-sibling-general.js` it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require (severity 0.4, 2026-11-18T21:05:09.630Z)
 - `spirit/app/agent/provider/anthropic/anthropic.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:17.949Z)
 - `spirit/app/agent/provider/openai/openai.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:17.980Z)
 - `spirit/app/agent/table/job/server.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.005Z)
@@ -1390,9 +1390,9 @@
 - `spirit/app/chat/chat.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.244Z)
 - `spirit/app/chat/data.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.259Z)
 - `spirit/app/chat/element.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.279Z)
-- `spirit/app/chat/nodeChat.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.293Z)
-- `spirit/app/chat/nodeChat.js` `spirit/test/spirit-sibling-general.js` it requires spirit.js first (severity 0.4, 2026-11-18T21:05:12.622Z)
-- `spirit/app/chat/nodeChat.js` `spirit/test/spirit-sibling-general.js` it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require (severity 0.4, 2026-11-18T21:05:12.611Z)
+- `spirit/app/chat/server/server.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.293Z)
+- `spirit/app/chat/server/server.js` `spirit/test/spirit-sibling-general.js` it requires spirit.js first (severity 0.4, 2026-11-18T21:05:12.622Z)
+- `spirit/app/chat/server/server.js` `spirit/test/spirit-sibling-general.js` it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require (severity 0.4, 2026-11-18T21:05:12.611Z)
 - `spirit/app/contact/element.js` `spirit/app/contact/test/element.js` its icon is 🤩 (severity 0.2, 2026-11-18T03:15:49.776Z)
 - `spirit/app/contact/element.js` `spirit/app/contact/test/element.js` shell/contacts/ is gone (severity 0.2, 2026-11-18T03:15:49.695Z)
 - `spirit/app/contact/element.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.308Z)
@@ -1497,9 +1497,9 @@
 - `spirit/app/desk/element.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.469Z)
 - `spirit/app/desk/element/desk/desk.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.541Z)
 - `spirit/app/desk/element/deskDetails/deskDetails.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.558Z)
-- `spirit/app/desk/nodeDesk.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.575Z)
-- `spirit/app/desk/nodeDesk.js` `spirit/test/spirit-sibling-general.js` it requires spirit.js first (severity 0.4, 2026-11-18T21:05:13.764Z)
-- `spirit/app/desk/nodeDesk.js` `spirit/test/spirit-sibling-general.js` it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require (severity 0.4, 2026-11-18T21:05:13.744Z)
+- `spirit/app/desk/server/server.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.575Z)
+- `spirit/app/desk/server/server.js` `spirit/test/spirit-sibling-general.js` it requires spirit.js first (severity 0.4, 2026-11-18T21:05:13.764Z)
+- `spirit/app/desk/server/server.js` `spirit/test/spirit-sibling-general.js` it starts with 'use strict', takes spirit first, and loads the tree only through spirit.require (severity 0.4, 2026-11-18T21:05:13.744Z)
 - `spirit/app/deskClient/api.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.601Z)
 - `spirit/app/deskClient/data.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:18.623Z)
 - `spirit/app/deskClient/deskClient.js` `spirit/test/job.js` each app server's door.sock is spirit/state/<name>/door.sock (severity 0.7, 2026-11-18T23:55:09.967Z)
@@ -1518,7 +1518,7 @@
 - `spirit/app/icons/icons.js` `spirit/app/icons/test/icons.js` the process list finds the permanent desk.js running, once (severity 0.7, 2026-11-17T07:20:02.340Z)
 - `spirit/app/icons/icons.js` `spirit/app/icons/test/icons.js` two runs of icons.js never happen at once (severity 0.2, 2026-11-17T07:20:11.435Z)
 - `spirit/app/icons/icons.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:19.003Z)
-- `spirit/app/icons/nodeIcons.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:19.076Z)
+- `spirit/app/icons/server/server.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:19.076Z)
 - `spirit/app/info/element.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:19.143Z)
 - `spirit/app/introSpector/element.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:19.199Z)
 - `spirit/app/introSpector/element.js` `spirit/test/spirit-sibling-browser.js` a change written into what it watches redraws it (severity 0.4, 2026-11-18T21:05:01.998Z)
@@ -1708,114 +1708,114 @@
 - `spirit/app/testicle/element/statusBox.js` `spirit/app/testicle/element/test/statusBox.js` while testicle classified, the box showed 🚶‍➡️ and what it was doing, as the stream said (severity 0.2, 2026-11-18T20:03:01.078Z)
 - `spirit/app/testicle/element/statusBox.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:20.803Z)
 - `spirit/app/testicle/testAll.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:20.831Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a -browser result for a node-only script is refused, and no current row of it stands (severity 0.4, 2026-11-18T22:48:45.184Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a browser-only script is tested by -general and -browser general tests, and no -node one (severity 0.2, 2026-11-18T22:57:45.482Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a change to a script holding a top red stops the running suite: zzLong's run ends without its end (severity 0.4, 2026-11-18T21:19:19.898Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a failing test row sent alone leaves the suite row's outcome as testicle.suite.success left it: zzSucc stays green (severity 0.4, 2026-11-18T21:34:19.919Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a file added to the tree flags the general test again for a script it judged red (severity 0.2, 2026-11-18T21:46:05.943Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a flagged suite runs by itself, with no run asked: nu's and xi's own suites start (severity 0.2, 2026-11-18T21:54:46.880Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a general test is started with the script as its argument, and reports for that script (severity 0.7, 2026-11-18T21:36:45.495Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a load not complete in 3 seconds counts as a hang: not classifyable, its row red, severity 0.8 (severity 0.2, 2026-11-18T22:48:40.980Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a node-only script is tested by -general and -node general tests, and no -browser one (severity 0.2, 2026-11-18T22:57:45.466Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a press in a script tab still runs a general test for that one script (severity 0.4, 2026-11-18T21:14:19.935Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a result carries both hashes it ran against, the script's and the suite's (severity 0.2, 2026-11-18T21:56:50.098Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a result of that run carries the script's hash as it stood when the run started (severity 0.2, 2026-11-18T22:01:40.376Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a run stopped is re-assembled fresh from the flags: the next run is handed zzReB and zzReC, not zzReA (severity 0.4, 2026-11-18T21:34:19.897Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a run with a title retires nothing: after testicle.run of "stale one" alone, "stale two" is still current (severity 0.4, 2026-11-18T21:24:19.874Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a scratch copy is made with a run limit of 60 s, three planted scripts, and a general test that works past the limit on the second (severity 0.2, 2026-11-18T23:05:43.631Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a script changed after the start is also classified with no press, within 30 seconds (severity 0.2, 2026-11-18T22:38:00.671Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a script classified has no red classifyable row (severity 0.2, 2026-11-18T22:48:40.994Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a script planted with no 'use strict' shows "still red" in the general test (severity 0.2, 2026-11-18T21:46:05.928Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a script that crashes in both is not classifyable: its classifyable row is red, severity 0.8 (severity 0.2, 2026-11-18T22:48:40.962Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a script that crashes on the node for lack of document and loads in the page is browser-only (severity 0.2, 2026-11-18T22:48:40.914Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a script that exits on the node with nothing thrown has loaded there: an app server comes out node-only (severity 0.2, 2026-11-18T22:48:40.946Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a script that loads on the node and crashes in the page for lack of require is node-only (severity 0.2, 2026-11-18T22:48:40.901Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a script's own test is started with no argument (severity 0.2, 2026-11-18T21:33:15.483Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite asked by testicle.run goes to the head of the queue: tau runs before omicron's own suite (severity 0.2, 2026-11-18T22:09:42.189Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite flagged twice is owed one run: nu's own suite ran once (severity 0.2, 2026-11-18T21:54:49.882Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite that leaves a folder in the run folder is red on "it leaves nothing new in the run folder", at 0.7 (severity 0.4, 2026-11-18T21:39:15.607Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite that leaves its temp folder behind is red on "it leaves no temp folder behind", at 0.7 (severity 0.4, 2026-11-18T21:41:45.731Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite that leaves no temp folder is green on it (severity 0.4, 2026-11-18T21:41:45.745Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite that leaves nothing in the run folder is green on it (severity 0.4, 2026-11-18T21:39:15.626Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite that ran with a failed test for the script shows "still red" (severity 0.2, 2026-11-18T21:42:05.887Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite that succeeded against a script and its hash stays a success in the suite table: aOk.js still green (severity 0.8, 2026-11-18T23:05:43.643Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite the run never reached is not failed by the kill: cLater.js's suite row is not red, and none of its test rows (severity 0.8, 2026-11-18T23:05:43.651Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite whose every test passed shows "green" (severity 0.2, 2026-11-18T21:41:55.811Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a suite whose only test hangs, its process kept alive, fails too: sigma's suite shows "still red" (severity 0.2, 2026-11-18T22:27:43.302Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` a test that hangs fails at its own limit: rho hangs is red, rho answers its first green (severity 0.2, 2026-11-18T22:24:22.876Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` aOk.js reports its success in the run before the limit (severity 0.2, 2026-11-18T23:05:43.659Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` after a restart, a classified script still shows only the suites that apply (severity 0.2, 2026-11-18T22:48:44.162Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` after a whole run, a test it did not report is no longer current: "stale two" has no current row (severity 0.4, 2026-11-18T21:24:19.905Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` after the start, interactive still, a script changed while down is classified with no press (severity 0.2, 2026-11-18T22:37:30.541Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` after the start, the classifier having changed while down, every live script is classified again, right away (severity 0.2, 2026-11-18T22:18:22.703Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` any other change waits its turn: zzLong's run ends with its end, and zzCalm's own suite starts after it (severity 0.4, 2026-11-18T21:19:19.982Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` at a start, interactive and nothing pressed, every live script is classified (severity 0.2, 2026-11-18T21:17:01.884Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` at once after it is classified, a browser-only script's suite search shows no -node suite (severity 0.2, 2026-11-18T22:48:41.022Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` at once after it is classified, a node-only script's suite search shows no -browser suite (severity 0.2, 2026-11-18T22:48:41.035Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` classified first, tested after: each one's own suite reports only after its reClassify cleared (severity 0.2, 2026-11-18T22:52:45.299Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` each one is classified again in interactive mode with nothing pressed: reClassify is false on every one of the six (severity 0.2, 2026-11-18T22:57:45.434Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` each row holds the result its test gave (severity 0.2, 2026-11-18T21:33:15.471Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` every one is classified by the server by itself: reClassify false on each (severity 0.2, 2026-11-18T22:48:40.879Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` general tests run first, though the own suite sorts first by name: every general result for early.js came before early's own suite started (severity 0.2, 2026-11-18T21:56:50.086Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` general tests run first: every general result for nu.js came before nu's own suite started (severity 0.2, 2026-11-18T21:54:49.895Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` in auto mode, the server processes everything by itself: psi's flagged suite is run (severity 0.2, 2026-11-18T22:42:00.722Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` in debug mode, set to auto, it never runs testicle's own tests, only the dummies: none reports, and it comes to rest (severity 0.8, 2026-11-18T22:04:41.881Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` in debug mode, the classifier judged only scripts under spirit/app/testicle/ (severity 0.4, 2026-11-18T21:11:31.621Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` in interactive mode, a press of testicle.run runs that suite, and only it (severity 0.2, 2026-11-18T22:35:29.819Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` in interactive mode, nothing runs by itself: five seconds on, the server is idle and no suite of chi or psi was run (severity 0.2, 2026-11-18T22:34:29.799Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` in interactive mode, the classifier's own suite row is no longer flagged for chi (severity 0.2, 2026-11-18T22:34:24.804Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` in interactive mode, the server classifies by itself with no press: chi's reClassify turns false (severity 0.2, 2026-11-18T22:34:24.793Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` it leaves nothing new in the run folder (severity 0.7, 2026-11-18T23:05:43.678Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` once that work is done, busy answers false again (severity 0.2, 2026-11-18T21:29:13.217Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` once zzdA's edited suite has run again, the test it lost is no longer current (severity 0.2, 2026-11-18T21:09:19.860Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` pi.js changes, and changes again while its own suite runs (severity 0.2, 2026-11-18T22:00:50.233Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` rho's suite shows "still red" (severity 0.2, 2026-11-18T22:24:43.058Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` rho.js and sigma.js change (severity 0.2, 2026-11-18T22:22:22.864Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` six scripts are written, each with its own test: node, page, both, broken, hang and exit (severity 0.2, 2026-11-18T22:48:40.858Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` spirit/app/testicle/temp/zzBatch/ is planted with its three kinds of general test and three scripts, classified and run once (severity 0.7, 2026-11-18T21:14:19.858Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` spirit/app/testicle/temp/zzRe/ is planted with its own -general test and three scripts, and run once (severity 0.7, 2026-11-18T21:34:19.870Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` spirit/app/testicle/temp/zzStale/ is planted, its own suite reporting one test green and one red, and run once (severity 0.7, 2026-11-18T21:24:19.858Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` spirit/app/testicle/temp/zzSucc/ is planted with its own suite and run once (severity 0.7, 2026-11-18T21:29:19.864Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` spirit/app/testicle/temp/zzTop/ is planted with a long suite, a suite red at 0.9 and a green one, each run once (severity 0.7, 2026-11-18T21:19:19.861Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` testicle hands the same node and the same Chrome to the next suite it runs (severity 0.4, 2026-11-18T21:36:20.340Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` testicle hands the suites it runs a node that answers, and a Chrome that answers (severity 0.4, 2026-11-18T21:36:20.325Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` testicle is switched to interactive while the classifying goes on (severity 0.2, 2026-11-18T22:57:45.416Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` testicle.suite.success with success false is what turns zzSucc red (severity 0.4, 2026-11-18T21:34:19.934Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` testicle.suite.success with success false sets that suite row at once: its outcome red, its flag cleared (severity 0.4, 2026-11-18T21:29:19.879Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` testicle.suite.success with success true sets it green, at once, whatever its test rows say (severity 0.4, 2026-11-18T21:29:19.891Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the -browser test then runs once, handed the two that run in a page, never the node-only one (severity 0.4, 2026-11-18T21:14:19.904Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the -node test then runs once, handed the two that run on the node, never the browser-only one (severity 0.4, 2026-11-18T21:14:19.891Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the changed script's red suite runs first: zzRed's own suite starts within 30 s of its change, before zzLong's 40 s were up (severity 0.4, 2026-11-18T21:19:19.915Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the queue is worked off and the server is idle (severity 0.2, 2026-11-18T21:50:46.135Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the run is computed again: cLater.js runs in a new run and its suite row turns green (severity 0.8, 2026-11-18T23:05:43.690Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the run is killed at its limit while bHang.js works on (severity 0.2, 2026-11-18T23:05:43.699Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the runner is idle, so the table holds still while every variation is asked (severity 0.2, 2026-11-18T21:21:10.616Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the runner starts no sooner than 1 second after the last change: the second change pushed the start back (severity 0.2, 2026-11-18T21:54:46.895Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the running job is not killed by a change: pi's first run ends (severity 0.2, 2026-11-18T22:01:20.285Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the server is idle again after chi and psi (severity 0.2, 2026-11-18T22:46:40.774Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the stopped run goes back flagged: zzLong's own suite runs again, after zzRed's (severity 0.4, 2026-11-18T21:19:19.949Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the stopped run's results are untouched: zzLong's current row is the one from before (severity 0.4, 2026-11-18T21:19:19.932Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the suite comes round again behind it: pi's own suite runs a second time, after the first ended (severity 0.2, 2026-11-18T22:05:40.524Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the suite running at the kill fails: bHang.js red (severity 0.4, 2026-11-18T23:05:43.707Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the suite's status follows the tests it now has: zzStale's own suite shows "green" (severity 0.4, 2026-11-18T21:24:19.917Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` the tests aOk.js's suite reported keep their results: every one of aOk.js's rows still passed (severity 0.8, 2026-11-18T23:05:43.715Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` there is never a second run beside the running one: tau started after every run before it ended (severity 0.2, 2026-11-18T22:09:42.219Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` there is one runner: nu's and xi's runs never overlap (severity 0.2, 2026-11-18T21:54:46.905Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` two planted UI suites, each pressed, write down what testicle handed them (severity 0.2, 2026-11-18T21:36:20.309Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` when the classifier changes, a script classified before reads reClassify true again (severity 0.7, 2026-11-18T22:57:45.378Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` when the classifier changes, a script that failed is tried again, though it did not change: its classifyable row is tested anew (severity 0.2, 2026-11-18T22:57:45.395Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` with nothing changing, busy answers false (severity 0.2, 2026-11-18T21:12:21.725Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` with one script changed later, the -general test runs once, handed that one (severity 0.4, 2026-11-18T21:14:19.923Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` with rows flagged when the server starts, the runner runs them by itself (severity 0.2, 2026-11-18T22:13:42.631Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` with testicle given, the suite runs up to that test and no test after it (severity 0.2, 2026-11-18T21:35:45.497Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` with three scripts changed in one quiet second, the -general test runs once, handed all three (severity 0.4, 2026-11-18T21:14:19.877Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` without testicle, the whole suite runs: every test of it reports to testicle (severity 0.2, 2026-11-18T21:33:15.454Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` zzLong.js changes again, and zzCalm.js, holding no red, changes while zzLong's own suite runs (severity 0.2, 2026-11-18T21:19:19.963Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` zzLong.js changes, and zzRed.js changes while zzLong's own suite runs (severity 0.2, 2026-11-18T21:19:19.881Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` zzReA, which reported before the stop, is done: its suite row green, its flag cleared (severity 0.4, 2026-11-18T21:34:19.908Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` zzReA, zzReB and zzReC change, and while the batch waits on zzReB, another suite is pressed (severity 0.2, 2026-11-18T21:34:19.883Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` zzStale's suite is rewritten to report "stale one" alone, and run whole (severity 0.2, 2026-11-18T21:24:19.887Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/test/testicle.js` zzdA, zzdC and their own tests run while testicle is on (severity 0.2, 2026-11-18T23:02:25.394Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a -browser result for a node-only script is refused, and no current row of it stands (severity 0.4, 2026-11-18T22:48:45.184Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a browser-only script is tested by -general and -browser general tests, and no -node one (severity 0.2, 2026-11-18T22:57:45.482Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a change to a script holding a top red stops the running suite: zzLong's run ends without its end (severity 0.4, 2026-11-18T21:19:19.898Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a failing test row sent alone leaves the suite row's outcome as testicle.suite.success left it: zzSucc stays green (severity 0.4, 2026-11-18T21:34:19.919Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a file added to the tree flags the general test again for a script it judged red (severity 0.2, 2026-11-18T21:46:05.943Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a flagged suite runs by itself, with no run asked: nu's and xi's own suites start (severity 0.2, 2026-11-18T21:54:46.880Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a general test is started with the script as its argument, and reports for that script (severity 0.7, 2026-11-18T21:36:45.495Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a load not complete in 3 seconds counts as a hang: not classifyable, its row red, severity 0.8 (severity 0.2, 2026-11-18T22:48:40.980Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a node-only script is tested by -general and -node general tests, and no -browser one (severity 0.2, 2026-11-18T22:57:45.466Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a press in a script tab still runs a general test for that one script (severity 0.4, 2026-11-18T21:14:19.935Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a result carries both hashes it ran against, the script's and the suite's (severity 0.2, 2026-11-18T21:56:50.098Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a result of that run carries the script's hash as it stood when the run started (severity 0.2, 2026-11-18T22:01:40.376Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a run stopped is re-assembled fresh from the flags: the next run is handed zzReB and zzReC, not zzReA (severity 0.4, 2026-11-18T21:34:19.897Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a run with a title retires nothing: after testicle.run of "stale one" alone, "stale two" is still current (severity 0.4, 2026-11-18T21:24:19.874Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a scratch copy is made with a run limit of 60 s, three planted scripts, and a general test that works past the limit on the second (severity 0.2, 2026-11-18T23:05:43.631Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a script changed after the start is also classified with no press, within 30 seconds (severity 0.2, 2026-11-18T22:38:00.671Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a script classified has no red classifyable row (severity 0.2, 2026-11-18T22:48:40.994Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a script planted with no 'use strict' shows "still red" in the general test (severity 0.2, 2026-11-18T21:46:05.928Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a script that crashes in both is not classifyable: its classifyable row is red, severity 0.8 (severity 0.2, 2026-11-18T22:48:40.962Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a script that crashes on the node for lack of document and loads in the page is browser-only (severity 0.2, 2026-11-18T22:48:40.914Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a script that exits on the node with nothing thrown has loaded there: an app server comes out node-only (severity 0.2, 2026-11-18T22:48:40.946Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a script that loads on the node and crashes in the page for lack of require is node-only (severity 0.2, 2026-11-18T22:48:40.901Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a script's own test is started with no argument (severity 0.2, 2026-11-18T21:33:15.483Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite asked by testicle.run goes to the head of the queue: tau runs before omicron's own suite (severity 0.2, 2026-11-18T22:09:42.189Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite flagged twice is owed one run: nu's own suite ran once (severity 0.2, 2026-11-18T21:54:49.882Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite that leaves a folder in the run folder is red on "it leaves nothing new in the run folder", at 0.7 (severity 0.4, 2026-11-18T21:39:15.607Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite that leaves its temp folder behind is red on "it leaves no temp folder behind", at 0.7 (severity 0.4, 2026-11-18T21:41:45.731Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite that leaves no temp folder is green on it (severity 0.4, 2026-11-18T21:41:45.745Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite that leaves nothing in the run folder is green on it (severity 0.4, 2026-11-18T21:39:15.626Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite that ran with a failed test for the script shows "still red" (severity 0.2, 2026-11-18T21:42:05.887Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite that succeeded against a script and its hash stays a success in the suite table: aOk.js still green (severity 0.8, 2026-11-18T23:05:43.643Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite the run never reached is not failed by the kill: cLater.js's suite row is not red, and none of its test rows (severity 0.8, 2026-11-18T23:05:43.651Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite whose every test passed shows "green" (severity 0.2, 2026-11-18T21:41:55.811Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite whose only test hangs, its process kept alive, fails too: sigma's suite shows "still red" (severity 0.2, 2026-11-18T22:27:43.302Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a test that hangs fails at its own limit: rho hangs is red, rho answers its first green (severity 0.2, 2026-11-18T22:24:22.876Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` aOk.js reports its success in the run before the limit (severity 0.2, 2026-11-18T23:05:43.659Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` after a restart, a classified script still shows only the suites that apply (severity 0.2, 2026-11-18T22:48:44.162Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` after a whole run, a test it did not report is no longer current: "stale two" has no current row (severity 0.4, 2026-11-18T21:24:19.905Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` after the start, interactive still, a script changed while down is classified with no press (severity 0.2, 2026-11-18T22:37:30.541Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` after the start, the classifier having changed while down, every live script is classified again, right away (severity 0.2, 2026-11-18T22:18:22.703Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` any other change waits its turn: zzLong's run ends with its end, and zzCalm's own suite starts after it (severity 0.4, 2026-11-18T21:19:19.982Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` at a start, interactive and nothing pressed, every live script is classified (severity 0.2, 2026-11-18T21:17:01.884Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` at once after it is classified, a browser-only script's suite search shows no -node suite (severity 0.2, 2026-11-18T22:48:41.022Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` at once after it is classified, a node-only script's suite search shows no -browser suite (severity 0.2, 2026-11-18T22:48:41.035Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` classified first, tested after: each one's own suite reports only after its reClassify cleared (severity 0.2, 2026-11-18T22:52:45.299Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` each one is classified again in interactive mode with nothing pressed: reClassify is false on every one of the six (severity 0.2, 2026-11-18T22:57:45.434Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` each row holds the result its test gave (severity 0.2, 2026-11-18T21:33:15.471Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` every one is classified by the server by itself: reClassify false on each (severity 0.2, 2026-11-18T22:48:40.879Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` general tests run first, though the own suite sorts first by name: every general result for early.js came before early's own suite started (severity 0.2, 2026-11-18T21:56:50.086Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` general tests run first: every general result for nu.js came before nu's own suite started (severity 0.2, 2026-11-18T21:54:49.895Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` in auto mode, the server processes everything by itself: psi's flagged suite is run (severity 0.2, 2026-11-18T22:42:00.722Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` in debug mode, set to auto, it never runs testicle's own tests, only the dummies: none reports, and it comes to rest (severity 0.8, 2026-11-18T22:04:41.881Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` in debug mode, the classifier judged only scripts under spirit/app/testicle/ (severity 0.4, 2026-11-18T21:11:31.621Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` in interactive mode, a press of testicle.run runs that suite, and only it (severity 0.2, 2026-11-18T22:35:29.819Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` in interactive mode, nothing runs by itself: five seconds on, the server is idle and no suite of chi or psi was run (severity 0.2, 2026-11-18T22:34:29.799Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` in interactive mode, the classifier's own suite row is no longer flagged for chi (severity 0.2, 2026-11-18T22:34:24.804Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` in interactive mode, the server classifies by itself with no press: chi's reClassify turns false (severity 0.2, 2026-11-18T22:34:24.793Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` it leaves nothing new in the run folder (severity 0.7, 2026-11-18T23:05:43.678Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` once that work is done, busy answers false again (severity 0.2, 2026-11-18T21:29:13.217Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` once zzdA's edited suite has run again, the test it lost is no longer current (severity 0.2, 2026-11-18T21:09:19.860Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` pi.js changes, and changes again while its own suite runs (severity 0.2, 2026-11-18T22:00:50.233Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` rho's suite shows "still red" (severity 0.2, 2026-11-18T22:24:43.058Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` rho.js and sigma.js change (severity 0.2, 2026-11-18T22:22:22.864Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` six scripts are written, each with its own test: node, page, both, broken, hang and exit (severity 0.2, 2026-11-18T22:48:40.858Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` spirit/app/testicle/temp/zzBatch/ is planted with its three kinds of general test and three scripts, classified and run once (severity 0.7, 2026-11-18T21:14:19.858Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` spirit/app/testicle/temp/zzRe/ is planted with its own -general test and three scripts, and run once (severity 0.7, 2026-11-18T21:34:19.870Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` spirit/app/testicle/temp/zzStale/ is planted, its own suite reporting one test green and one red, and run once (severity 0.7, 2026-11-18T21:24:19.858Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` spirit/app/testicle/temp/zzSucc/ is planted with its own suite and run once (severity 0.7, 2026-11-18T21:29:19.864Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` spirit/app/testicle/temp/zzTop/ is planted with a long suite, a suite red at 0.9 and a green one, each run once (severity 0.7, 2026-11-18T21:19:19.861Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` testicle hands the same node and the same Chrome to the next suite it runs (severity 0.4, 2026-11-18T21:36:20.340Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` testicle hands the suites it runs a node that answers, and a Chrome that answers (severity 0.4, 2026-11-18T21:36:20.325Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` testicle is switched to interactive while the classifying goes on (severity 0.2, 2026-11-18T22:57:45.416Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` testicle.suite.success with success false is what turns zzSucc red (severity 0.4, 2026-11-18T21:34:19.934Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` testicle.suite.success with success false sets that suite row at once: its outcome red, its flag cleared (severity 0.4, 2026-11-18T21:29:19.879Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` testicle.suite.success with success true sets it green, at once, whatever its test rows say (severity 0.4, 2026-11-18T21:29:19.891Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the -browser test then runs once, handed the two that run in a page, never the node-only one (severity 0.4, 2026-11-18T21:14:19.904Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the -node test then runs once, handed the two that run on the node, never the browser-only one (severity 0.4, 2026-11-18T21:14:19.891Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the changed script's red suite runs first: zzRed's own suite starts within 30 s of its change, before zzLong's 40 s were up (severity 0.4, 2026-11-18T21:19:19.915Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the queue is worked off and the server is idle (severity 0.2, 2026-11-18T21:50:46.135Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the run is computed again: cLater.js runs in a new run and its suite row turns green (severity 0.8, 2026-11-18T23:05:43.690Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the run is killed at its limit while bHang.js works on (severity 0.2, 2026-11-18T23:05:43.699Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the runner is idle, so the table holds still while every variation is asked (severity 0.2, 2026-11-18T21:21:10.616Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the runner starts no sooner than 1 second after the last change: the second change pushed the start back (severity 0.2, 2026-11-18T21:54:46.895Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the running job is not killed by a change: pi's first run ends (severity 0.2, 2026-11-18T22:01:20.285Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the server is idle again after chi and psi (severity 0.2, 2026-11-18T22:46:40.774Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the stopped run goes back flagged: zzLong's own suite runs again, after zzRed's (severity 0.4, 2026-11-18T21:19:19.949Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the stopped run's results are untouched: zzLong's current row is the one from before (severity 0.4, 2026-11-18T21:19:19.932Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the suite comes round again behind it: pi's own suite runs a second time, after the first ended (severity 0.2, 2026-11-18T22:05:40.524Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the suite running at the kill fails: bHang.js red (severity 0.4, 2026-11-18T23:05:43.707Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the suite's status follows the tests it now has: zzStale's own suite shows "green" (severity 0.4, 2026-11-18T21:24:19.917Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the tests aOk.js's suite reported keep their results: every one of aOk.js's rows still passed (severity 0.8, 2026-11-18T23:05:43.715Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` there is never a second run beside the running one: tau started after every run before it ended (severity 0.2, 2026-11-18T22:09:42.219Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` there is one runner: nu's and xi's runs never overlap (severity 0.2, 2026-11-18T21:54:46.905Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` two planted UI suites, each pressed, write down what testicle handed them (severity 0.2, 2026-11-18T21:36:20.309Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` when the classifier changes, a script classified before reads reClassify true again (severity 0.7, 2026-11-18T22:57:45.378Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` when the classifier changes, a script that failed is tried again, though it did not change: its classifyable row is tested anew (severity 0.2, 2026-11-18T22:57:45.395Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` with nothing changing, busy answers false (severity 0.2, 2026-11-18T21:12:21.725Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` with one script changed later, the -general test runs once, handed that one (severity 0.4, 2026-11-18T21:14:19.923Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` with rows flagged when the server starts, the runner runs them by itself (severity 0.2, 2026-11-18T22:13:42.631Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` with testicle given, the suite runs up to that test and no test after it (severity 0.2, 2026-11-18T21:35:45.497Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` with three scripts changed in one quiet second, the -general test runs once, handed all three (severity 0.4, 2026-11-18T21:14:19.877Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` without testicle, the whole suite runs: every test of it reports to testicle (severity 0.2, 2026-11-18T21:33:15.454Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` zzLong.js changes again, and zzCalm.js, holding no red, changes while zzLong's own suite runs (severity 0.2, 2026-11-18T21:19:19.963Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` zzLong.js changes, and zzRed.js changes while zzLong's own suite runs (severity 0.2, 2026-11-18T21:19:19.881Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` zzReA, which reported before the stop, is done: its suite row green, its flag cleared (severity 0.4, 2026-11-18T21:34:19.908Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` zzReA, zzReB and zzReC change, and while the batch waits on zzReB, another suite is pressed (severity 0.2, 2026-11-18T21:34:19.883Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` zzStale's suite is rewritten to report "stale one" alone, and run whole (severity 0.2, 2026-11-18T21:24:19.887Z)
+- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` zzdA, zzdC and their own tests run while testicle is on (severity 0.2, 2026-11-18T23:02:25.394Z)
 - `spirit/app/testicle/testicle.js` `spirit/test/job.js` each app server's door.sock is spirit/state/<name>/door.sock (severity 0.7, 2026-11-18T23:55:19.994Z)
 - `spirit/app/testicle/testicle.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:20.860Z)
 - `spirit/app/testicle/testicle.js` `spirit/test/spirit-sibling-general.js` it requires spirit.js first (severity 0.4, 2026-11-18T21:05:33.648Z)

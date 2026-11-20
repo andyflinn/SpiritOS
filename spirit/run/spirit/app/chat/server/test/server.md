@@ -1,6 +1,6 @@
-# spirit/app/chat/nodeChat.js
+# spirit/app/chat/server/server.js
 
-The chat server (goal/G4), faceless and p2p: this node's record of the chats it is a party to. goal/G43.31, the box: *"nodeChat.js is today's chatClerver.js, working as it does, its verbs as api.js lists them. Its database is chat.db in the node's state"* (Andy: *"how about calling the db chat.db ??????"*, and *"that ruling is replaced."*, G4's *"it is called memory.db"*); *"The branch name is the folder's: chat"*; *"No old chat data is rescued"* (Andy: *"don't even THINK of rescuing any old chat data, that an ABSOLUTE NO."*).
+The chat server (goal/G4), faceless and p2p: this node's record of the chats it is a party to. goal/G43.31, the box: *"chat/server/server.js is today's chatClerver.js, working as it does, its verbs as api.js lists them. Its database is chat.db in the node's state"* (Andy: *"how about calling the db chat.db ??????"*, and *"that ruling is replaced."*, G4's *"it is called memory.db"*); *"The branch name is the folder's: chat"*; *"No old chat data is rescued"* (Andy: *"don't even THINK of rescuing any old chat data, that an ABSOLUTE NO."*).
 
 ## How it is tested
 

@@ -1,4 +1,4 @@
-# spirit/app/agent/nodeAgent.js
+# spirit/app/agent/server/server.js
 
 The agent server (goal/G41.1): the server process behind the agent face app. It keeps all of the app's state, in
 `agent.db`, an SQLite database, and streams that state to its clients: the rows of its four tables.
@@ -8,7 +8,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 ## Its files
 
-- `spirit/app/agent/nodeAgent.js`, the server. The node starts `agent.js` (`./agent.md`), which loads it.
+- `spirit/app/agent/server/server.js`, the server. The node starts `agent.js` (`./agent.md`), which loads it.
 - `spirit/app/agent/agent.json`, its manifest, in the new shape: `node.mount` true, no `kind`, no `operated`.
 - `spirit/app/agent/api.js`, its interface, and one `<verb>.json` per verb beside it: one verb per table, provider, model, persona and job, and the publisher's subscribe and unsubscribe; no `debug`
   (goal/G43.15, below).

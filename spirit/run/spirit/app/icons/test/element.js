@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/icons/test/element.js
 // The tests of spirit/app/icons/element.js, and of no other module (spec: ./browserIcons.md; goal/G43.19, box v16):
 // the Icons face, spirit.element.spirit.app.icons.element.create(container), mounted in a box of a real Chrome on a scratch node's face page
-// with Icons switched on. The box: "the page asks icons through its api branch; only ./nodeIcons.js writes the table, the
+// with Icons switched on. The box: "the page asks icons through its api branch; only ./server/server.js writes the table, the
 // page writes no file of its own"; 10: "data.js on every open page follows that one job". Andy, its add row (G41.27):
 // "[➕] [an icon:paste] [keywords, comma separated][Add]"; of a duplicate (G40.5): "if add icon cannot add because the icon
 // already exists, the open the edit dialog for the existing icon." What was written is read from the disc.

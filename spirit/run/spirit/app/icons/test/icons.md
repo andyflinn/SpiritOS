@@ -17,8 +17,8 @@ box leaves open is guessed. What is written is read from the disc, what runs fro
 ## Requirements
 
 - **Its files** (the box; Q5, Q6): `api.js` at the app's top with no `api/` folder, `data.js`, `icons.js`,
-  `nodeIcons.js`, `browserIcons.js`. `icons.json` keeps node mount false and shell mount true (the box, 1).
-- **One file the node and the page load** (the box, 7): `icons.js`, run in node, does `require('./nodeIcons.js')`.
+  `icons/server/server.js`, `browserIcons.js`. `icons.json` keeps node mount false and shell mount true (the box, 1).
+- **One file the node and the page load** (the box, 7): `icons.js`, run in node, does `require('./server/server.js')`.
   Neither `icons.js` nor `browserIcons.js` mounts through `spirit.shell.activateApp`, nor writes through the fs family.
 - **No process of its own** (the box, 1): switched on and idle, nothing runs `icons.js`; after the api tree, an Add, or
   five Adds, its run has ended.
@@ -31,7 +31,7 @@ box leaves open is guessed. What is written is read from the disc, what runs fro
 - **Switched off** (the box, 4): `icons.<verb>` answers `app-not-served`, the tree holds no icons branch, its job is no
   longer open, nothing runs. Switched on again, its branch is back with no restart of the node.
 
-What the face does is `./browserIcons.md`'s, what the table holds `./nodeIcons.md`'s, what a page keeps `./data.md`'s, the
+What the face does is `./browserIcons.md`'s, what the table holds `./server/server.md`'s, what a page keeps `./data.md`'s, the
 interface `./api.md`'s.
 
 ## What its test must try to break

@@ -977,15 +977,15 @@
       "newestAt": "2026-11-18T07:46:13.454Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
-      "suite": "spirit/app/agent/test/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
+      "suite": "spirit/app/agent/server/test/server.js",
       "tests": 41,
       "green": 40,
       "red": 1,
       "newestAt": "2026-11-18T10:07:27.496Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 23,
       "green": 23,
@@ -993,7 +993,7 @@
       "newestAt": "2026-11-18T10:07:04.312Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -1001,7 +1001,7 @@
       "newestAt": "2026-11-18T23:47:56.375Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 67,
       "green": 67,
@@ -1009,7 +1009,7 @@
       "newestAt": "2026-11-18T10:07:10.718Z"
     },
     {
-      "script": "spirit/app/agent/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 3,
       "green": 3,
@@ -1458,7 +1458,7 @@
     },
     {
       "script": "spirit/app/backup/backup.js",
-      "suite": "spirit/app/backup/test/backup.js",
+      "suite": "spirit/app/backup/server/test/server.js",
       "tests": 5,
       "green": 5,
       "red": 0,
@@ -1769,15 +1769,15 @@
       "newestAt": "2026-11-18T07:46:49.011Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
-      "suite": "spirit/app/chat/test/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
+      "suite": "spirit/app/chat/server/test/server.js",
       "tests": 22,
       "green": 22,
       "red": 0,
       "newestAt": "2026-11-17T23:24:38.004Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 23,
       "green": 23,
@@ -1785,7 +1785,7 @@
       "newestAt": "2026-11-17T23:18:33.638Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -1793,7 +1793,7 @@
       "newestAt": "2026-11-18T23:48:02.104Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 68,
       "green": 68,
@@ -1801,7 +1801,7 @@
       "newestAt": "2026-11-18T07:46:50.923Z"
     },
     {
-      "script": "spirit/app/chat/nodeChat.js",
+      "script": "spirit/app/chat/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -2329,15 +2329,15 @@
       "newestAt": "2026-11-18T07:47:10.986Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
-      "suite": "spirit/app/desk/test/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
+      "suite": "spirit/app/desk/server/test/server.js",
       "tests": 15,
       "green": 15,
       "red": 0,
       "newestAt": "2026-11-18T10:07:28.786Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 23,
       "green": 23,
@@ -2345,7 +2345,7 @@
       "newestAt": "2026-11-18T10:07:04.894Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -2353,7 +2353,7 @@
       "newestAt": "2026-11-18T23:48:06.709Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 68,
       "green": 68,
@@ -2361,7 +2361,7 @@
       "newestAt": "2026-11-18T10:07:13.156Z"
     },
     {
-      "script": "spirit/app/desk/nodeDesk.js",
+      "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -2482,7 +2482,7 @@
     },
     {
       "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/app/deskClient/test/deskClient.js",
+      "suite": "spirit/app/deskClient/server/test/server.js",
       "tests": 60,
       "green": 60,
       "red": 0,
@@ -2825,15 +2825,15 @@
       "newestAt": "2026-11-16T03:07:14.519Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
-      "suite": "spirit/app/icons/test/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
+      "suite": "spirit/app/icons/server/test/server.js",
       "tests": 42,
       "green": 42,
       "red": 0,
       "newestAt": "2026-11-16T03:20:54.837Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 23,
       "green": 23,
@@ -2841,7 +2841,7 @@
       "newestAt": "2026-11-17T23:27:44.502Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -2849,7 +2849,7 @@
       "newestAt": "2026-11-18T23:48:10.089Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 68,
       "green": 68,
@@ -2857,7 +2857,7 @@
       "newestAt": "2026-11-18T07:47:30.097Z"
     },
     {
-      "script": "spirit/app/icons/nodeIcons.js",
+      "script": "spirit/app/icons/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 1,
       "green": 1,
@@ -4338,7 +4338,7 @@
     },
     {
       "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/app/testicle/test/testicle.js",
+      "suite": "spirit/app/testicle/server/test/server.js",
       "tests": 289,
       "green": 289,
       "red": 0,
@@ -10835,8 +10835,8 @@
   ],
   "reds": [
     {
-      "script": "spirit/app/agent/nodeAgent.js",
-      "suite": "spirit/app/agent/test/nodeAgent.js",
+      "script": "spirit/app/agent/server/server.js",
+      "suite": "spirit/app/agent/server/test/server.js",
       "title": "it leaves no temp folder behind",
       "severity": 0.7,
       "at": "2026-11-18T10:07:27.496Z"

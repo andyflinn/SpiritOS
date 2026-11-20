@@ -45,8 +45,8 @@
 - `spirit/app/agent/element/table/row.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
 - `spirit/app/agent/element/table/tableElement.js`, its suite `spirit/app/agent/element/table/test/tableElement.js`: 33 green, 0 red
 - `spirit/app/agent/element/table/tableElement.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
-- `spirit/app/agent/nodeAgent.js`, its suite `spirit/app/agent/test/nodeAgent.js`: 41 green, 0 red
-- `spirit/app/agent/nodeAgent.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
+- `spirit/app/agent/server/server.js`, its suite `spirit/app/agent/server/test/server.js`: 41 green, 0 red
+- `spirit/app/agent/server/server.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/agent/provider/anthropic/anthropic.js`, its suite `spirit/app/agent/provider/anthropic/test/anthropic.js`: 15 green, 0 red
 - `spirit/app/agent/provider/anthropic/anthropic.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/agent/provider/openai/openai.js`, its suite `spirit/app/agent/provider/openai/test/openai.js`: 12 green, 0 red
@@ -67,7 +67,7 @@
 - `spirit/app/app/element.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/backup/api.js`, its suite `spirit/app/backup/test/api.js`: 6 green, 0 red
 - `spirit/app/backup/api.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
-- `spirit/app/backup/backup.js`, its suite `spirit/app/backup/test/backup.js`: 7 green, 0 red
+- `spirit/app/backup/backup.js`, its suite `spirit/app/backup/server/test/server.js`: 7 green, 0 red
 - `spirit/app/backup/backup.js`, its suite `spirit/test/job.js`: 1 green, 0 red
 - `spirit/app/backup/backup.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/backup/data.js`, its suite `spirit/app/backup/test/data.js`: 12 green, 0 red
@@ -81,8 +81,8 @@
 - `spirit/app/chat/data.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/chat/element.js`, its suite `spirit/app/chat/test/element.js`: 14 green, 0 red
 - `spirit/app/chat/element.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
-- `spirit/app/chat/nodeChat.js`, its suite `spirit/app/chat/test/nodeChat.js`: 22 green, 0 red
-- `spirit/app/chat/nodeChat.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
+- `spirit/app/chat/server/server.js`, its suite `spirit/app/chat/server/test/server.js`: 22 green, 0 red
+- `spirit/app/chat/server/server.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/contact/element.js`, its suite `spirit/app/contact/test/element.js`: 23 green, 1 red
 - `spirit/app/contact/element.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/data.js`, its suite `spirit/app/test/data.js`: 21 green, 0 red
@@ -105,13 +105,13 @@
 - `spirit/app/desk/element/desk/desk.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/desk/element/deskDetails/deskDetails.js`, its suite `spirit/app/desk/element/deskDetails/test/deskDetails.js`: 70 green, 0 red
 - `spirit/app/desk/element/deskDetails/deskDetails.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
-- `spirit/app/desk/nodeDesk.js`, its suite `spirit/app/desk/test/nodeDesk.js`: 15 green, 0 red
-- `spirit/app/desk/nodeDesk.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
+- `spirit/app/desk/server/server.js`, its suite `spirit/app/desk/server/test/server.js`: 15 green, 0 red
+- `spirit/app/desk/server/server.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/deskClient/api.js`, its suite `spirit/app/deskClient/test/api.js`: 19 green, 0 red
 - `spirit/app/deskClient/api.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/deskClient/data.js`, its suite `spirit/app/deskClient/test/data.js`: 5 green, 0 red
 - `spirit/app/deskClient/data.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
-- `spirit/app/deskClient/deskClient.js`, its suite `spirit/app/deskClient/test/deskClient.js`: 60 green, 0 red
+- `spirit/app/deskClient/deskClient.js`, its suite `spirit/app/deskClient/server/test/server.js`: 60 green, 0 red
 - `spirit/app/deskClient/deskClient.js`, its suite `spirit/test/job.js`: 1 green, 0 red
 - `spirit/app/deskClient/deskClient.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/file/element.js`, its suite `spirit/app/file/test/element.js`: 74 green, 0 red
@@ -126,8 +126,8 @@
 - `spirit/app/icons/element.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/icons/icons.js`, its suite `spirit/app/icons/test/icons.js`: 38 green, 0 red
 - `spirit/app/icons/icons.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
-- `spirit/app/icons/nodeIcons.js`, its suite `spirit/app/icons/test/nodeIcons.js`: 42 green, 0 red
-- `spirit/app/icons/nodeIcons.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
+- `spirit/app/icons/server/server.js`, its suite `spirit/app/icons/server/test/server.js`: 42 green, 0 red
+- `spirit/app/icons/server/server.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/info/element.js`, its suite `spirit/app/info/test/element.js`: 43 green, 0 red
 - `spirit/app/info/element.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/introSpector/element.js`, its suite `spirit/app/introSpector/test/element.js`: 16 green, 0 red
@@ -180,7 +180,7 @@
 - `spirit/app/testicle/element/statusBox.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/testicle/testAll.js`, its suite `spirit/app/testicle/test/testAll.js`: 7 green, 0 red
 - `spirit/app/testicle/testAll.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
-- `spirit/app/testicle/testicle.js`, its suite `spirit/app/testicle/test/testicle.js`: 279 green, 10 red
+- `spirit/app/testicle/testicle.js`, its suite `spirit/app/testicle/server/test/server.js`: 279 green, 10 red
 - `spirit/app/testicle/testicle.js`, its suite `spirit/test/job.js`: 1 green, 0 red
 - `spirit/app/testicle/testicle.js`, its suite `spirit/test/scriptClassify.js`: 2 green, 0 red
 - `spirit/app/testicle/words.js`, its suite `spirit/app/testicle/test/words.js`: 7 green, 0 red

@@ -1,6 +1,6 @@
 # spirit/app/chat/api.js
 
-The interface of the branch chat: every verb its server serves, each argument with its rule. goal/G43.31, the box: *"nodeChat.js ... its verbs as api.js lists them"*, and *"The branch name is the folder's: chat ... the verbs are chat.<verb>"*.
+The interface of the branch chat: every verb its server serves, each argument with its rule. goal/G43.31, the box: *"chat/server/server.js ... its verbs as api.js lists them"*, and *"The branch name is the folder's: chat ... the verbs are chat.<verb>"*.
 
 ## How it is tested
 
