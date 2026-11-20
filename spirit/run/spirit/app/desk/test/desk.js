@@ -342,6 +342,21 @@ test.run('seen.set takes a UTC time, a number, and seen.get answers the newest',
   const got = await call('seen.get', { id: 'goal/G100.1' }, CW);
   return got.at === t || false;
 }, test.limit.quick);
+// chat.search's since and before are UTC times (goal/G48.4, Q5): since keeps the lines from that time on, before the lines
+// before it; 0 is no limit.
+test.run('chat.search keeps the lines since a UTC time, and before one', 0.2, async function () {
+  if (!W.up) return false;
+  const pause = function () { return new Promise(function (r) { setTimeout(r, 30); }); };
+  await call('chat.add', { id: 'goal/G100.1', text: 'zzOlderLine' }, CW);
+  await pause();
+  const mid = Date.now();
+  await pause();
+  await call('chat.add', { id: 'goal/G100.1', text: 'zzNewerLine' }, CW);
+  const said = function (r) { return ((r && r.items) || []).map(function (x) { try { return JSON.parse(x.label).text; } catch (e) { return ''; } }); };
+  const since = said(await call('chat.search', { id: 'goal/G100.1', text: '', by: '', since: mid, before: 0, scope: '' }, CW));
+  const before = said(await call('chat.search', { id: 'goal/G100.1', text: '', by: '', since: 0, before: mid, scope: '' }, CW));
+  return (since.indexOf('zzNewerLine') !== -1 && since.indexOf('zzOlderLine') === -1 && before.indexOf('zzOlderLine') !== -1 && before.indexOf('zzNewerLine') === -1) || false;
+}, test.limit.quick);
 
 // RULES GO OUT OF DESK (goal/G47.4, box v36; Andy: "Next we kill rules from desk. nobody observes them", "are we ready to
 // strip rules out of desk now?", "go!"): "The rules list on each goal and item goes", "The part that works out which rules

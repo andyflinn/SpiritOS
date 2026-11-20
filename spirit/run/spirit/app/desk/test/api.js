@@ -101,7 +101,7 @@ test.run('box.write needs its version, and the version is a number', 0.2, functi
   if (!W.api) return false;
   return (refusedAs('box.write', { id: 'goal/G1.1', text: 'x', version: '3' }) === 'bad-request' && refusedAs('box.write', { id: 'goal/G1.1', text: 'x' }) === 'bad-request') ? true : false;
 }, test.limit.quick);
-const filters = { id: 'goal/G1', text: '', by: '', since: '', before: '', scope: '' };
+const filters = { id: 'goal/G1', text: '', by: '', since: 0, before: 0, scope: '' };
 test.run('in chat.search an empty filter filters nothing', 0.2, function () {
   if (!W.api) return false;
   return (passes('chat.search', filters)) ? true : false;

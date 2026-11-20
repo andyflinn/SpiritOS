@@ -2242,7 +2242,9 @@ appServer.serve(withDeskOwners({
   // one of its items' chats, ranked together. Each line's label carries item, the id it was said in, which the goal
   // dialog draws as a link to that item; across chats the key is item#index, so keys stay unique.
   'chat.search': tableSearch({
-    request: { id: '', by: '', since: '', before: '', scope: '' },
+    // since and before are UTC times, milliseconds since 1970, 0 for no limit (goal/G48.4, Q5, Andy: "times are fucking
+    // numbers ... spirit.type.number.UTC"); a line's own time stays as the desk writes it, read as a time to compare.
+    request: { id: '', by: '', since: 0, before: 0, scope: '' },
     room: SEARCH_ROOM,
     rows: function (a, st) {
       const id = String(a.id);
@@ -2262,8 +2264,8 @@ appServer.serve(withDeskOwners({
         for (let i = chat.length - 1; i >= 0; i--) {
           const l = chat[i];
           if (a.by && l.by !== a.by) continue;
-          if (a.since && !(String(l.at) >= a.since)) continue;
-          if (a.before && !(String(l.at) < a.before)) continue;
+          if (a.since && !(Date.parse(l.at) >= a.since)) continue;
+          if (a.before && !(Date.parse(l.at) < a.before)) continue;
           lines.push({ item: c, i: i, l: l });
         }
       });

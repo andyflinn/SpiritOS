@@ -1,11 +1,11 @@
 {
-  "description": "Search an item's chat lines ranked by text, filtered by by, since, before; scope items on a goal searches its items' chats too, each line naming its item; more when cut.",
+  "description": "Search an item's chat lines ranked by text, filtered by by, since and before, UTC times in milliseconds since 1970 (0 for no limit); scope items on a goal searches its items' chats too, each line naming its item; more when cut.",
   "request": {
     "id": "id",
     "text": "spirit.type.string.lineFilter",
     "by": "text",
-    "since": "text",
-    "before": "text",
+    "since": "spirit.type.number.UTC",
+    "before": "spirit.type.number.UTC",
     "scope": "text"
   }
 }

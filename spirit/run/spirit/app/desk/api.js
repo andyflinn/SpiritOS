@@ -24,7 +24,7 @@ module.exports = {
     'box.write': { id: 'id', text: 'text', version: 'spirit.type.number.integer' },
     'chat.add': { id: 'id', text: 'spirit.type.string.line' },
     // Each filter left '' filters nothing; scope is '', goal or items.
-    'chat.search': { id: 'id', text: 'spirit.type.string.lineFilter', by: 'text', since: 'text', before: 'text', scope: 'text' },
+    'chat.search': { id: 'id', text: 'spirit.type.string.lineFilter', by: 'text', since: 'spirit.type.number.UTC', before: 'spirit.type.number.UTC', scope: 'text' },
     // kind is C, T, G or Q; words and test may be ''.
     'check.add': { id: 'id', kind: 'spirit.type.string.checkKind', words: 'text', test: 'text' },
     // check is a check's number, or 'all' for his Grant-All.
