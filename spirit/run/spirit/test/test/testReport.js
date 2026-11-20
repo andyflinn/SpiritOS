@@ -220,22 +220,35 @@ test.run('the tests after a crash and a hang still run', 0.2, function () {
 test.run('test.after runs once every test has run', 0.2, function () {
   return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'after.txt')) || false;
 }, test.limit.quick);
-// goal/G48.4: a suite asked to stop (SIGTERM, as testicle will ask before it kills) runs its test.after and ends by
-// itself, so what it started is cleaned up; nothing of it is left to be killed.
-test.run('a suite sent SIGTERM while a test runs runs its test.after and ends by itself within 10 seconds', 0.4, async function () {
+// goal/G48.4: a suite asked to stop runs its test.after and ends by itself, so what it started is cleaned up and nothing
+// of it is left to be killed. Asked by a stop message on its message channel, as testicle will ask on every system (cw: "on
+// Windows a child cannot catch SIGTERM ... testicle starts each suite with a message channel to it (node's ipc) ... and
+// asks it to stop by sending a stop message on that channel"), the message { stop: true }; and by SIGTERM where a system
+// has one.
+const stopProbe = async function (stop, file) {
   if (!W.tree) return false;
+  const dir = path.join(W.tree.run, 'probe', 'test');
+  ['stopped-started.txt', 'stopped-after.txt'].forEach(function (f) { try { fs.rmSync(path.join(dir, f), { force: true }); } catch (e) { /* none */ } });
   const env = Object.assign({}, process.env);
   Object.keys(env).forEach(function (k) { if (/^SPIRIT_/.test(k)) delete env[k]; });
-  const kid = spawn(process.execPath, [path.join(W.tree.run, 'probe', 'test', 'stopped.js')], { cwd: W.tree.run, env: env, stdio: 'ignore' });
+  const kid = spawn(process.execPath, [path.join(dir, file)], { cwd: W.tree.run, env: env, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   let ended = false;
   kid.on('exit', function () { ended = true; });
-  const started = await until(function () { return Promise.resolve(fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'stopped-started.txt'))); }, 20000);
+  const started = await until(function () { return Promise.resolve(fs.existsSync(path.join(dir, 'stopped-started.txt'))); }, 20000);
   if (!started) { try { kid.kill('SIGKILL'); } catch (e) { /* gone */ } return false; }
-  kid.kill('SIGTERM');
+  stop(kid);
   const gone = await until(function () { return Promise.resolve(ended); }, 10000);
   if (!gone) { try { kid.kill('SIGKILL'); } catch (e) { /* gone */ } }
-  return (!!gone && fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'stopped-after.txt'))) || false;
+  return !!gone && fs.existsSync(path.join(dir, 'stopped-after.txt'));
+};
+test.run('a suite sent the stop message while a test runs runs its test.after and ends by itself within 10 seconds', 0.4, async function () {
+  return (await stopProbe(function (kid) { kid.send({ stop: true }); }, 'stopped.js')) || false;
 }, test.limit.slow);
+if (process.platform !== 'win32') {
+  test.run('a suite sent SIGTERM while a test runs runs its test.after and ends by itself within 10 seconds', 0.4, async function () {
+    return (await stopProbe(function (kid) { kid.kill('SIGTERM'); }, 'stopped.js')) || false;
+  }, test.limit.slow);
+}
 test.run('the completion line counts every test, and the exit code says a test failed', 0.2, function () {
   return (/✅:3\s+❌:5/.test(W.probe.out) && W.probe.code === 1) || false;
 }, test.limit.quick);

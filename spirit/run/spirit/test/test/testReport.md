@@ -69,5 +69,6 @@ node is touched.
 - A suite that stops printing when no node is there.
 
 - **Stopped, it cleans up** (goal/G48.4; Andy: *"WHY THE FUCK ARE TEST RUNS STILL LITTERING SHIT ALL OVER THE PLACE"*): a
-  suite sent SIGTERM while a test runs runs its `test.after` and ends by itself within 10 seconds, so what it started is
-  cleaned up before anything has to kill it.
+  suite asked to stop while a test runs runs its `test.after` and ends by itself within 10 seconds, so what it started is
+  cleaned up before anything has to kill it. Asked by the message `{ stop: true }` on its message channel (node's ipc),
+  which works on every system, and by SIGTERM where the system has one (not on Windows, where a child cannot catch it).
