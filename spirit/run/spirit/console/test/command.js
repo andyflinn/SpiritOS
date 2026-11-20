@@ -129,6 +129,83 @@ test.run('"path <<" at the root is refused with an error, and the path stays the
   const p = await go('path <<');
   return refused(p, '') || false;
 }, test.limit.slow);
+// THE api COMMAND (goal/G48.3, the box): "if I'm at a branch folder, this command without arguments lists all verbs, in
+// simple json format, sorted by name. This is a simple list, without any detailed description. IN JSON FORMAT!!!!"; "if
+// there's no branch's api.js it returns a json error."; "if the api command names a verb: it returns that verbs
+// command-line-format in json, human and machine readable, with a field \"usage\" at the very bottom". Andy: "the console
+// command: \"api search\" will return a JSON.stringify(search,null,2) desription. period." What the branch has is read from
+// this tree's own files, by the test only: its api.js names the verbs, each <verb>.json describes one.
+// The verbs an api.js names, read in a process of its own, so this test's spirit object stays its own.
+const verbsOf = function (rel) {
+  const r = require('child_process').spawnSync(process.execPath, ['-e', 'process.stdout.write(JSON.stringify(Object.keys(require(process.argv[1]).verbs || {}).sort()))', path.join(W.node.run, 'spirit', rel, 'api.js')], { encoding: 'utf8', timeout: 30000 });
+  try { return JSON.parse(r.stdout); } catch (e) { return null; }
+};
+const fileOf = function (rel, verb) { try { return JSON.parse(fs.readFileSync(path.join(W.node.run, 'spirit', rel, verb + '.json'), 'utf8')); } catch (e) { return null; } };
+const json = function (out) { try { return JSON.parse(String(out).trim()); } catch (e) { return undefined; } };
+// One verb's answer: one JSON object holding its file's description and request as they stand, "usage" its last field, a
+// line naming the verb.
+const describes = function (out, verb, file) {
+  const o = json(out);
+  if (!o || typeof o !== 'object' || Array.isArray(o) || !file) return false;
+  const keys = Object.keys(o);
+  return keys[keys.length - 1] === 'usage' && typeof o.usage === 'string' && o.usage.split(' ')[0] === verb &&
+    o.description === file.description && JSON.stringify(o.request) === JSON.stringify(file.request);
+};
+test.run('"api" at the root, where spirit has no api.js, answers a JSON error', 0.4, async function () {
+  if (!up() || at() !== '') return false;
+  const p = await go('api');
+  return refused(p, '') || false;
+}, test.limit.slow);
+test.run('"api" at spirit.node lists its verbs in JSON, by name only and sorted, as its api.js names them', 0.4, async function () {
+  if (!up()) return false;
+  await go('path node');
+  if (at() !== 'node') return false;
+  const p = await go('api');
+  const want = verbsOf('node');
+  const got = json(p.out);
+  return (!!want && want.length > 0 && Array.isArray(got) && JSON.stringify(got) === JSON.stringify(want)) || false;
+}, test.limit.slow);
+test.run('"api card" at spirit.node answers card.json\'s description and request in JSON, with "usage" at the very bottom', 0.4, async function () {
+  if (!up() || at() !== 'node') return false;
+  const p = await go('api card');
+  return describes(p.out, 'card', fileOf('node', 'card')) || false;
+}, test.limit.slow);
+test.run('a verb\'s answer is printed as JSON.stringify(it, null, 2)', 0.4, async function () {
+  if (!up() || at() !== 'node') return false;
+  const p = await go('api card');
+  const o = json(p.out);
+  return (!!o && typeof o.usage === 'string' && String(p.out).trim() === JSON.stringify(o, null, 2)) || false;
+}, test.limit.slow);
+test.run('"api nope", a verb spirit.node does not have, answers a JSON error, and the path stays', 0.4, async function () {
+  if (!up() || at() !== 'node') return false;
+  const p = await go('api nope');
+  return refused(p, 'node') || false;
+}, test.limit.slow);
+test.run('"api item.get" at spirit.app.desk answers item.get.json\'s description and request, its usage naming item.get and its id', 0.4, async function () {
+  if (!up()) return false;
+  await go('path <<');
+  await go('path app.desk');
+  if (at() !== 'app.desk') return false;
+  const p = await go('api item.get');
+  const o = json(p.out);
+  return (describes(p.out, 'item.get', fileOf('app/desk', 'item.get')) && /\bid=/.test(o.usage)) || false;
+}, test.limit.slow);
+test.run('"api" at spirit.app.desk lists the desk branch\'s verbs, sorted', 0.4, async function () {
+  if (!up() || at() !== 'app.desk') return false;
+  const p = await go('api');
+  const want = verbsOf('app/desk');
+  return (!!want && JSON.stringify(json(p.out)) === JSON.stringify(want)) || false;
+}, test.limit.slow);
+test.run('"api" at spirit.app.agent.test, a folder with no api.js, answers a JSON error', 0.4, async function () {
+  if (!up()) return false;
+  await go('path <<');
+  await go('path app.agent.test');
+  if (at() !== 'app.agent.test') return false;
+  const p = await go('api');
+  const r = refused(p, 'app.agent.test');
+  await go('path <<');
+  return r || false;
+}, test.limit.slow);
 // "a 256 rolling command history": 300 lines given, the newest 256 kept, the oldest gone.
 test.run('the command history rolls at 256: after 300 more lines it holds 256, the newest last', 0.4, async function () {
   if (!up()) return false;
