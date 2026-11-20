@@ -191,6 +191,23 @@ if (withApi.length) {
       });
     });
   }, test.limit.quick);
+  // EVERY ARGUMENT NAMES ITS TYPE (goal/G48.4, the box): "a verb's arguments would name types: \"type.string.label\", the full
+  // path of a fucking type under spirit"; "a type identifier is ALWAYS spirit.type.*"; "\"text\" dies. unlimited strings are
+  // forbidden in SpiritOS."; "\"flags\" must be booleans". An argument's rule is spirit.type.<...>, a trailing ? making it
+  // optional, and its type file spirit/type/<...>.js is there.
+  test.run('each argument of its api.js names its type by its full path, spirit.type.<...>, whose type file is there', 0.4, function () {
+    return overAll(withApi, function (b) {
+      if (!b.verbs) return false;
+      return Object.keys(b.verbs).every(function (v) {
+        const args = b.verbs[v] || {};
+        return Object.keys(args).every(function (a) {
+          const rule = String(args[a]).replace(/\?$/, '');
+          if (!/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule)) return false;
+          return fs.existsSync(path.join(RUN, rule.split('.').join('/') + '.js'));
+        });
+      });
+    });
+  }, test.limit.quick);
 }
 
 // ── 1a. AN APP BRANCH'S DESCRIPTION ─────────────────────────────────────────────────────────────────────────────────
