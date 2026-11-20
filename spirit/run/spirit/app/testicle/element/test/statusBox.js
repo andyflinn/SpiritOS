@@ -40,8 +40,8 @@ const idle = function (ms) {
 // The page's hands: mount the box alone, record every pair of rows and every busy icon it shows, in order, and whether the
 // monitor the stream fills ever held a doing text.
 // While a row reads anything it records how the number heading it is drawn: the row's first element, its width against its
-// own em, its alignment, its text and whether it can be seen.
-const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false, nums: [],' +
+// own em, its alignment, its text and whether it can be seen; each way it was drawn kept once, however often it shows.
+const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false, nums: [], numsSeen: {},' +
   ' mount: function () { var b = document.createElement("div"); b.id = "zzA"; b.style.cssText = "width:500px;height:60px"; document.body.appendChild(b);' +
   '   window.m_zzA = window.spirit.element.spirit.app.testicle.element.statusBox.create(b);' +
   '   var note = function () { var r = document.querySelectorAll("#zzA .testicle-rows > .testicle-row"), i = document.querySelector("#zzA .testicle-busy"), m = document.querySelector("#zzA .testicle-mode");' +
@@ -49,7 +49,7 @@ const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false, n
   '     if (pair.length === 2 && (!last || last[0] !== pair[0] || last[1] !== pair[1])) window.zz.rows.push(pair);' +
   '     Array.prototype.forEach.call(r, function (x) { if (!String(x.textContent || "").trim()) return; var n = x.firstElementChild; var s = { none: !n };' +
   '       if (n) { var c = getComputedStyle(n); s = { w: n.getBoundingClientRect().width, em: parseFloat(c.fontSize), align: c.textAlign, txt: String(n.textContent || "").trim(), seen: c.visibility !== "hidden" && c.display !== "none" && c.opacity !== "0" }; }' +
-  '       var k = JSON.stringify(s); if (window.zz.nums.length < 2000 && k !== window.zz.numsLast) { window.zz.numsLast = k; window.zz.nums.push(s); } });' +
+  '       var k = JSON.stringify(s); if (!window.zz.numsSeen[k]) { window.zz.numsSeen[k] = true; window.zz.nums.push(s); } });' +
   '     var g = i ? String(i.innerText || i.textContent || "").trim() : ""; if (g && g !== window.zz.icons[window.zz.icons.length - 1]) window.zz.icons.push(g);' +
   '     window.zz.mode = m ? String(m.innerText || m.textContent || "").trim() : "";' +
   '     try { var mo = window.spirit.data.testicle.data.monitor.get(); if (mo && mo.doing) window.zz.doing = true; } catch (e) {} };' +
