@@ -120,13 +120,19 @@ test.run('the whole status block is one shared bubble holding the icons and the 
   const r = await ev('(function () { var s = document.querySelector("#zzA .testicle-status"); return !!s && s.classList.contains("shell-bubble") && !!s.querySelector(".testicle-icons") && !!s.querySelector(".testicle-rows"); }())');
   return r === true || false;
 }, test.limit.quick);
+// Each icon glyph's distance from the middle of the bubble's inside, in pixels; 99 for one not drawn yet.
+const CENTRED = '(function () { var s = document.querySelector("#zzA .testicle-status"); if (!s) return null; var b = s.getBoundingClientRect(), c = getComputedStyle(s);' +
+    ' var top = b.top + parseFloat(c.borderTopWidth) + parseFloat(c.paddingTop), bottom = b.bottom - parseFloat(c.borderBottomWidth) - parseFloat(c.paddingBottom), mid = (top + bottom) / 2;' +
+    ' return Array.prototype.map.call(s.querySelectorAll(".testicle-mode, .testicle-busy"), function (x) { var g = document.createRange(); g.selectNodeContents(x); var q = g.getBoundingClientRect(); return q.height > 0 ? Math.abs((q.top + q.bottom) / 2 - mid) : 99; }); }())';
 test.run('its mode and busy icons stand vertically centred in the bubble', 0.4, async function () {
   if (!W.ok) return false;
-  const r = await ev('(function () { var s = document.querySelector("#zzA .testicle-status"); if (!s) return null; var b = s.getBoundingClientRect(), c = getComputedStyle(s);' +
-    ' var top = b.top + parseFloat(c.borderTopWidth) + parseFloat(c.paddingTop), bottom = b.bottom - parseFloat(c.borderBottomWidth) - parseFloat(c.paddingBottom), mid = (top + bottom) / 2;' +
-    ' return Array.prototype.map.call(s.querySelectorAll(".testicle-mode, .testicle-busy"), function (x) { var g = document.createRange(); g.selectNodeContents(x); var q = g.getBoundingClientRect(); return q.height > 0 ? Math.abs((q.top + q.bottom) / 2 - mid) : 99; }); }())');
-  return (Array.isArray(r) && r.length === 2 && r.every(function (d) { return d <= 1.5; })) || false;
-}, test.limit.quick);
+  // Waited for: the icons are drawn once the icon element has loaded, a moment after the mount; measured before that, each
+  // reads 99, not drawn.
+  const ok = function (v) { return Array.isArray(v) && v.length === 2 && v.every(function (d) { return d <= 1.5; }); };
+  let r = null;
+  await H.until(function () { return ev(CENTRED).then(function (v) { r = v; return ok(v); }); }, H.WAIT);
+  return ok(r) || false;
+}, test.limit.slow);
 test.run('its mode and busy icons are drawn at 2em, twice the font size of its container', 0.4, async function () {
   if (!W.ok) return false;
   const r = await ev('(function () { var b = document.getElementById("zzA"), m = b.querySelector(".testicle-mode"), i = b.querySelector(".testicle-busy"); if (!m || !i) return null; var f = parseFloat(getComputedStyle(b).fontSize); return [m, i].every(function (x) { return Math.abs(parseFloat(getComputedStyle(x).fontSize) - 2 * f) < 0.5; }); }())');
