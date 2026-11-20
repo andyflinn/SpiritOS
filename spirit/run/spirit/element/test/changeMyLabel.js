@@ -156,8 +156,9 @@ test.run('its bytes left and its message stand below the bubble, not in it', 0.2
 test.run('it has its Save, its bytes left and its message', 0.2, function () {
   return (!!save && !!left && !!said) ? true : false;
 }, test.limit.quick);
-test.run('the input is held at its byte limit by fieldInput, the name rule', 0.2, function () {
-  return (w.attached.some(function (a) { return a.input === input && a.rule === 'name'; })) ? true : false;
+// Its type by path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*"): a label.
+test.run('the input is held at its byte limit by fieldInput, the label type', 0.2, function () {
+  return (w.attached.some(function (a) { return a.input === input && a.rule === 'spirit.type.string.label'; })) ? true : false;
 }, test.limit.quick);
 test.run('set puts the stored name in the field', 0.2, function () {
   // it shows what the node holds, and the bytes left

@@ -78,7 +78,10 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     var stop = null;
     function show(card) {
       if (gone || !card) return;
-      input.value = String(card.name == null ? '' : card.name);
+      // The name in the field and in its value attribute both, so the page shows the card's change as a change of the field.
+      var name = String(card.name == null ? '' : card.name);
+      input.defaultValue = name;
+      input.value = name;
       count();
     }
     root.spirit.require('spirit/node/api.js').then(function () {
