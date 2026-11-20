@@ -2131,10 +2131,10 @@ test.run('the stopped run\'s results are untouched: zzLong\'s current row is the
 }, test.limit.quick);
 test.run('the stopped run goes back flagged: zzLong\'s own suite runs again, after zzRed\'s', 0.4, async function () {
   if (!redChanged) return false;
-  const ok = await until(function () { return Promise.resolve(runlog().some(function (l) { return l.suite === 'zzLong' && l.ev === 'end' && l.at > redChanged; })); }, 280000);
-  const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at;
-  const again = runlog().filter(function (l) { return l.suite === 'zzLong' && l.ev === 'start' && l.at > (redAt || Infinity); })[0];
-  return (!!ok && !!again) || false;
+  // The stopped run logs an end of its own as it cleans up (the check above), so the wait is for a start after zzRed's.
+  const redAt = function () { return (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at; };
+  const again = await until(function () { const r = redAt(); return Promise.resolve(!!r && runlog().some(function (l) { return l.suite === 'zzLong' && l.ev === 'start' && l.at > r; })); }, 280000);
+  return !!again || false;
 }, test.limit.long);
 let calmChanged = 0, longStart2 = 0;
 test.run('zzLong.js changes again, and zzCalm.js, holding no red, changes while zzLong\'s own suite runs', 0.2, async function () {
