@@ -65,9 +65,10 @@
       ROW_HTML + ROW_HTML + '</span>' +
       // THE NUMBER OF REDS IN A LARGE RED BOX AT THE RIGHT EDGE (goal/G48.4, Andy: "the number of reds, and displaying it in a
       // large, RED box at the right windows edge of the status bar"): the count the stream keeps (../data.js, monitor.reds),
-      // invisible at zero as the bar's other numbers are, its room kept.
+      // invisible at zero as the bar's other numbers are, its room kept. DOUBLE LARGE, 3EM WIDE (Andy: "the box is at the right
+      // window edge or the status bar, double large, like the icons on the right side of the status bar, fixed width 3em").
       '<span class="testicle-reds" data-reds="" style="flex:none;align-self:stretch;display:inline-flex;align-items:center;justify-content:center;' +
-      'min-width:2em;font-size:2em;font-weight:bold;line-height:1;color:#fff;background:#d00;border-radius:0.2em;visibility:hidden"></span></div>';
+      'width:3em;overflow:hidden;font-size:2em;font-weight:bold;line-height:1;color:#fff;background:#d00;border-radius:0.2em;visibility:hidden"></span></div>';
     var redBox = container.querySelector('.testicle-reds');
     var mode = container.querySelector('.testicle-mode');
     var icon = container.querySelector('.testicle-busy');
