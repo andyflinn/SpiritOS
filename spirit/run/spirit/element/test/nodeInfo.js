@@ -567,7 +567,7 @@ function formsPart() {
     // 10. the face form only for a starred relay
     return (!plain.shows(plain.face, '.sp-face-name')) ? true : false;
   }, test.limit.quick);
-  test.run('with A starred, the face form shows', 0.2, function () {
+  test.run('with A faceable, the face form shows', 0.2, function () {
     return (starred.shows(starred.face, '.sp-face-name')) ? true : false;
   }, test.limit.quick);
   test.run('the face form offers the starred relay alone', 0.2, function () {
