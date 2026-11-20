@@ -13,6 +13,10 @@
 //                                           must be fixed width, 6em, right aligned, and invisible when zero")
 //   classified(n, total, script)            ["<n>", " of <total>: <script>"], row 2 while the classifier runs (the box: "precede
 //                                           it with a constant 'of <total-number-of-scripts-being classified>' before <script-file-name>")
+//   leadTest(n, test, suite)                ["<n>:", " <test> (<suite>)"], row 1 when idle: the test red for the most scripts
+//                                           (goal/G48.4, Andy: "when idle, the status bar could show the most relevant
+//                                           information regarding these priorities")
+//   leadScript(n, script)                   ["<n>:", " <script>"], row 2 when idle: the script with the most reds
 //
 // On a page it stands at spirit.required.spirit.app.testicle.words; on the node it is this module.
 (function (root) {
@@ -20,6 +24,8 @@
     result: function (ok) { return ok ? '✅' : '❌'; },
     counted: function (n, file) { return [n + ':', ' ' + String(file || '')]; },
     classified: function (n, total, script) { return [String(n), ' of ' + total + ': ' + String(script || '')]; },
+    leadTest: function (n, test, suite) { return [n + ':', ' ' + String(test || '') + ' (' + String(suite || '') + ')']; },
+    leadScript: function (n, script) { return [n + ':', ' ' + String(script || '')]; },
   };
   if (typeof module === 'object' && module && module.exports) module.exports = W;
   const S = root && root.spirit;

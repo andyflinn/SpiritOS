@@ -34,7 +34,14 @@
   // The two rows for the run going, each [number, words] with its number apart, or two empty rows when none is.
   function rowsOf(m) {
     var run = runningOf(m);
-    if (!run) return [['', ''], ['', '']];
+    // IDLE, THE TWO LEADERS OF THE REDS (goal/G48.4, Andy: "when idle, the status bar could show the most relevant information
+    // regarding these priorities", then "go!"): row 1 the test red for the most scripts, row 2 the script with the most reds,
+    // each with its count, as the stream keeps them (../data.js, monitor.leaders); empty when nothing is red.
+    if (!run) {
+      var l = m && m.leaders;
+      var t = l && l.test, s = l && l.script;
+      return [t ? W().leadTest(t.n, t.test, t.suite) : ['', ''], s ? W().leadScript(s.n, s.script) : ['', '']];
+    }
     var owed = m.owed && typeof m.owed.suites === 'number' ? m.owed.suites : 0;
     if (run.classifier) return [W().counted(owed, run.classifier), run.script ? W().classified(Number(run.classified) || 0, Number(run.total) || 0, run.script) : ['', '']];
     return [W().counted(owed, run.suite), W().counted(Number(run.tested) || 0, run.script || '')];

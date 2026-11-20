@@ -1117,18 +1117,36 @@ const owedClassifications = db.prepare('SELECT COUNT(*) AS n FROM script WHERE r
 // at the right windows edge of the status bar????", then "NOW! including test."): the current test rows that failed, counted
 // by the reds index, sent beside owed, the same way: when it moved, and kept in the job's data for a page that connects.
 const redCount = db.prepare('SELECT COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0');
+// THE TWO LEADERS OF THE REDS (goal/G48.4, Andy: "would knowledge of the largest contributors to the reds help in prioritizing
+// a fixing strategy?", "when idle, the status bar could show the most relevant information regarding these priorities", then
+// "agreed on the how of streaming the info... then go!"): the test, a title in its suite, red for the most scripts, and the
+// script with the most reds, each with its count; counted from the current reds when their number moves, sent beside it.
+const topTest = db.prepare('SELECT suite, test, COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0 GROUP BY suite, test ORDER BY n DESC, MAX(severity) DESC LIMIT 1');
+const topScript = db.prepare('SELECT script, COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0 GROUP BY script ORDER BY n DESC, MAX(severity) DESC LIMIT 1');
+function leadersNow() {
+  const t = topTest.get();
+  const s = topScript.get();
+  return { test: t ? { suite: t.suite, test: t.test, n: Number(t.n) } : null, script: s ? { script: s.script, n: Number(s.n) } : null };
+}
 let owedTold = '';
+let leadersAt = -1;
+let leaders = { test: null, script: null };
 function owedNow() { return { suites: Number(owedSuites.get().n) || 0, classifications: Number(owedClassifications.get().n) || 0 }; }
 function toldOwed() {
   let o = null;
   let reds = 0;
-  try { o = owedNow(); reds = Number(redCount.get().n) || 0; } catch (e) { return; }
-  const s = JSON.stringify([o, reds]);
+  try {
+    o = owedNow();
+    reds = Number(redCount.get().n) || 0;
+    if (reds !== leadersAt) { leaders = leadersNow(); leadersAt = reds; }
+  } catch (e) { return; }
+  const top = leaders;
+  const s = JSON.stringify([o, reds, top]);
   if (s === owedTold) return;
   owedTold = s;
   // The job's data first, then the message: every job event after carries the new numbers, none the old.
-  const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o, reds: reds } }); };
-  Promise.resolve(spirit.job.report({ data: { owed: o, reds: reds } })).then(say, say);
+  const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o, reds: reds, leaders: top } }); };
+  Promise.resolve(spirit.job.report({ data: { owed: o, reds: reds, leaders: top } })).then(say, say);
 }
 let busyTold = false;
 let runningTold = '';
