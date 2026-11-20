@@ -214,7 +214,12 @@ const runRows = async function (script, suite) {
   if (!r || r.started !== true) return null;
   await H.until(function () { return ev('window.zz.rows.slice(' + from + ')').then(function (rows) { return (rows || []).some(function (p) { const m = NUM_NAME.exec(p[1]); return !!m && Number(m[1]) >= 1; }); }); }, 120000);
   await idle(120000);
-  return (await ev('window.zz.rows.slice(' + from + ')')) || [];
+  // The rows drawn while the run was on: since goal/G48.4 the idle bar names the reds' leaders, so the pair it shows once idle,
+  // the last one drawn, is left out with every copy of it at the end.
+  const all = (await ev('window.zz.rows.slice(' + from + ')')) || [];
+  const last = JSON.stringify(all[all.length - 1]);
+  while (all.length && JSON.stringify(all[all.length - 1]) === last) all.pop();
+  return all;
 };
 const names = function (row, file) { const m = NUM_NAME.exec(row); return !!m && (m[2] === file || m[2].endsWith('/' + file.slice(file.lastIndexOf('/') + 1))); };
 test.run('while zzOk\'s own suite runs, row 1 reads a number and its suite\'s file name', 0.4, async function () {
@@ -270,6 +275,16 @@ const leadersInDb = function () {
 const ROWS_NOW = '(function () { return Array.prototype.map.call(document.querySelectorAll("#zzA .testicle-rows > .testicle-row"), function (x) { return String(x.textContent || "").trim(); }); }())';
 const holds = function (row, n, words) { return String(row).indexOf(String(n)) !== -1 && words.some(function (w) { return !!w && String(row).indexOf(w) !== -1; }); };
 const fileOf = function (f) { return String(f).slice(String(f).lastIndexOf('/') + 1); };
+// The stream carries them: monitor.get().leaders, { test: { suite, test, n }, script: { script, n } } (cw's field).
+test.run('the stream carries the test red for the most scripts and the script with the most reds, as the database counts them', 0.4, async function () {
+  if (!W.ok) return false;
+  let got = null, L = null;
+  const ok = await H.until(function () { return ev('(function () { try { return JSON.stringify(window.spirit.data.testicle.data.monitor.get().leaders || null); } catch (e) { return null; } }())').then(function (t) {
+    got = t ? JSON.parse(t) : null; L = leadersInDb();
+    return !!got && !!L && !!got.test && !!got.script && L.tests.some(function (x) { return x.suite === got.test.suite && x.test === got.test.test && Number(x.n) === Number(got.test.n); }) && L.scripts.some(function (x) { return x.script === got.script.script && Number(x.n) === Number(got.script.n); });
+  }); }, H.WAIT);
+  return !!ok || false;
+}, test.limit.slow);
 test.run('once the runs are over and reds are left, row 1 names the test red for the most scripts, with its count', 0.4, async function () {
   if (!W.ok) return false;
   let rows = null, L = null;
