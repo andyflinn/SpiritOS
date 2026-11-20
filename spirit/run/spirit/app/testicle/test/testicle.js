@@ -91,6 +91,15 @@ const PLANT = {
   'spirit/app/testicle/temp/zzTesticle/test/xi.js': LOGGED('xi', 3000, ["test.run('xi answers', 0.2, function () { return true; }, test.limit.quick);"]),
   'spirit/app/testicle/temp/zzTesticle/pi.js': '\'use strict\';\n// pi\n',
   'spirit/app/testicle/temp/zzTesticle/test/pi.js': LOGGED('pi', 3000, ["test.run('pi answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  // goal/G48.4, the run times (Andy: "do we time a test or a suite record the runtime?", "go! test and build."): a slow green
+  // suite, a quick green one and a red one; zzFresh comes later, never timed. zzAslow sorts before zzFresh and zzQuick by name,
+  // so only the order by time puts them ahead of it.
+  'spirit/app/testicle/temp/zzTesticle/zzAslow.js': '\'use strict\';\n// zzAslow\n',
+  'spirit/app/testicle/temp/zzTesticle/test/zzAslow.js': LOGGED('zzAslow', 3000, ["test.run('zzAslow answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/zzQuick.js': '\'use strict\';\n// zzQuick\n',
+  'spirit/app/testicle/temp/zzTesticle/test/zzQuick.js': LOGGED('zzQuick', 0, ["test.run('zzQuick answers', 0.2, function () { return true; }, test.limit.quick);"]),
+  'spirit/app/testicle/temp/zzTesticle/zzRedSuite.js': '\'use strict\';\n// zzRedSuite\n',
+  'spirit/app/testicle/temp/zzTesticle/test/zzRedSuite.js': LOGGED('zzRedSuite', 3000, ["test.run('zzRedSuite fails', 0.2, function () { return false; }, test.limit.quick);"]),
   'spirit/app/testicle/temp/zzTesticle/omicron.js': '\'use strict\';\n// omicron\n',
   'spirit/app/testicle/temp/zzTesticle/test/omicron.js': LOGGED('omicron', 0, ["test.run('omicron answers', 0.2, function () { return true; }, test.limit.quick);"]),
   'spirit/app/testicle/temp/zzTesticle/tau.js': '\'use strict\';\n// tau\n',
@@ -1418,6 +1427,56 @@ test.run('a result carries both hashes it ran against, the script\'s and the sui
   const t = tables(DB);
   const r = currentOf(t, NU, NUS, 'nu answers')[0], sc = scriptRow(t, NU), su = suiteRow(t, NU, NUS);
   return (!!r && !!sc && !!su && holds(r, sc.hash) && holds(r, su.hash)) || false;
+}, test.limit.quick);
+
+// THE RUN TIME ON THE SUITE ROW, AND THE ORDER IT GIVES (goal/G48.4; Andy: "we want the most results as quickly as possible",
+// "do we time a test or a suite record the runtime?", "if we to, can those measurements contribute to returning more results
+// faster?", "first we gather the date on a new suite-field (no testicle.db delete required?)", "we adjust prioritization at the
+// same time?", then "go! test and build."; agreed under it: one column on the suite row, its last run's time; among suites
+// owed alike, a red suite first, then the quickest; a suite never timed counts as quick). The column is read as the one number
+// the suite row holds beside the ones it held before (cw's ms, 0 while never timed).
+const OLD_SUITE_COLUMNS = ['script', 'suite', 'test', 'deleted', 'hash', 'outcome', 'changed', 'reason'];
+const ranMs = function (row) { const k = row ? Object.keys(row).filter(function (c) { return OLD_SUITE_COLUMNS.indexOf(c) === -1; }) : []; return k.length === 1 && row[k[0]] !== null && row[k[0]] !== '' && Number.isFinite(Number(row[k[0]])) ? Number(row[k[0]]) : null; };
+const SLOW = Z + 'zzAslow.js', SLOWS = Z + 'test/zzAslow.js', QUICK = Z + 'zzQuick.js', QUICKS = Z + 'test/zzQuick.js', REDS_ = Z + 'zzRedSuite.js', REDSS = Z + 'test/zzRedSuite.js';
+const FRESH = Z + 'zzFresh.js', FRESHS = Z + 'test/zzFresh.js';
+let orderFrom = 0;
+test.run('a suite run keeps its time on its suite row: zzAslow\'s, which waits 3 s, holds 3000 ms or more, zzQuick\'s less', 0.4, async function () {
+  if (!up()) return false;
+  let t = null;
+  const ok = await until(function () { t = tables(DB); const a = ranMs(suiteRow(t, SLOW, SLOWS)), b = ranMs(suiteRow(t, QUICK, QUICKS)); return Promise.resolve(a > 0 && b > 0); }, 280000);
+  if (!ok) return false;
+  const slow = ranMs(suiteRow(t, SLOW, SLOWS)), quick = ranMs(suiteRow(t, QUICK, QUICKS));
+  return (slow >= 3000 && quick > 0 && quick < slow) || false;
+}, test.limit.long);
+test.run('zzRedSuite\'s own suite is red, and testicle is idle', 0.2, async function () {
+  if (!up()) return false;
+  const ok = await idle(280000);
+  return (!!ok && (suiteRow(tables(DB), REDS_, REDSS) || {}).outcome === 'red') || false;
+}, test.limit.long);
+test.run('zzAslow, zzQuick and zzRedSuite change at once, and zzFresh, never run, is planted with them', 0.2, function () {
+  if (!up()) return false;
+  orderFrom = runlog().length;
+  fs.mkdirSync(path.dirname(path.join(s.run, FRESHS)), { recursive: true });
+  fs.writeFileSync(path.join(s.run, FRESH), "'use strict';\n// zzFresh\n");
+  fs.writeFileSync(path.join(s.run, FRESHS), LOGGED('zzFresh', 0, ["test.run('zzFresh answers', 0.2, function () { return true; }, test.limit.quick);"]));
+  append(SLOW, '// zzAslow, changed\n'); append(QUICK, '// zzQuick, changed\n'); append(REDS_, '// zzRedSuite, changed\n');
+  return true;
+}, test.limit.quick);
+let order = [];
+test.run('the four own suites each start once', 0.2, async function () {
+  if (!up()) return false;
+  const names = ['zzAslow', 'zzQuick', 'zzRedSuite', 'zzFresh'];
+  const ok = await until(function () { const st = runlog().slice(orderFrom).filter(function (l) { return l.ev === 'start' && names.indexOf(l.suite) !== -1; }); order = st.map(function (l) { return l.suite; }); return Promise.resolve(names.every(function (n) { return order.indexOf(n) !== -1; })); }, 280000);
+  return !!ok || false;
+}, test.limit.long);
+test.run('among suites owed alike, the red one runs first: zzRedSuite before zzAslow, zzQuick and zzFresh', 0.4, function () {
+  return (order.length >= 4 && order.indexOf('zzRedSuite') === 0) || false;
+}, test.limit.quick);
+test.run('among green suites owed alike, the quicker runs first: zzQuick before zzAslow', 0.4, function () {
+  return (order.indexOf('zzQuick') !== -1 && order.indexOf('zzAslow') !== -1 && order.indexOf('zzQuick') < order.indexOf('zzAslow')) || false;
+}, test.limit.quick);
+test.run('a suite never timed counts as quick: zzFresh runs before zzAslow', 0.4, function () {
+  return (order.indexOf('zzFresh') !== -1 && order.indexOf('zzAslow') !== -1 && order.indexOf('zzFresh') < order.indexOf('zzAslow')) || false;
 }, test.limit.quick);
 
 // A change during a run: the run keeps the hashes it started with, and the suite comes round again behind it.
