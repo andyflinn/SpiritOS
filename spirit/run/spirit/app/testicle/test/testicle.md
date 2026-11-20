@@ -307,6 +307,9 @@ the suite is red on a test like 'it leaves no process behind', and they are ende
 tree"*. A scratch copy with two planted scripts and their own suites: aLeft.js's starts a detached process that would sleep
 120 s and answers at once; pressed, its suite is red on "it leaves no process behind", and that process is ended.
 bKilled.js's starts a process and never answers; stopped by a press of another suite, the process it started ends with it.
+A stopped run cleans up (goal/G48.4; Andy: *"WHY THE FUCK ARE TEST RUNS STILL LITTERING SHIT ALL OVER THE PLACE"*):
+testicle asks it to stop before it kills, so stopped for a top red, zzLong's suite runs its test.after and logs its end
+before its 40 s are up and before zzRed's suite starts.
 
 ## Classifying reconciles all four tables with the tree (goal/G47.1)
 

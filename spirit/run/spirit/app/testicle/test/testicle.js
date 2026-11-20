@@ -2072,7 +2072,9 @@ test.run('a press in a script tab still runs a general test for that one script'
 // stopped run goes back flagged, its results untouched; any other change waits its turn"; Andy: "if the changed file is not
 // a top 10 fix, the run may as well continue...."). A planted folder, spirit/app/testicle/temp/zzTop/: zzLong's own suite waits 40 s before its
 // one test; zzRed's own suite fails at 0.9, the most severe red of the scratch world; zzCalm's passes, no red. Each logs its
-// start and end to runlog.txt; a stopped run logs no end.
+// start and end to runlog.txt. A STOPPED RUN CLEANS UP (goal/G48.4; Andy: "WHY THE FUCK ARE TEST RUNS STILL LITTERING
+// SHIT ALL OVER THE PLACE"): testicle asks it to stop, so it runs its test.after and logs its end at once, long before its
+// 40 s are up; once it was killed outright and logged none.
 const TZ = 'spirit/app/testicle/temp/zzTop/';
 const TLONG = TZ + 'zzLong.js', TLONGS = TZ + 'test/zzLong.js', TRED = TZ + 'zzRed.js', TREDS = TZ + 'test/zzRed.js', TCALM = TZ + 'zzCalm.js', TCALMS = TZ + 'test/zzCalm.js';
 const TOP_LOG = "const LOG = path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', 'runlog.txt');\n" +
@@ -2108,13 +2110,12 @@ test.run('zzLong.js changes, and zzRed.js changes while zzLong\'s own suite runs
   redChanged = Date.now();
   return (!!ok && !!longStart) || false;
 }, test.limit.long);
-test.run('a change to a script holding a top red stops the running suite: zzLong\'s run ends without its end', 0.4, async function () {
+test.run('stopped for a top red, zzLong\'s suite cleans up: its end is logged before its 40 s and before zzRed starts', 0.4, async function () {
   if (!redChanged) return false;
   await until(function () { return Promise.resolve(runlog().some(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })); }, 120000);
-  const ended = ends('zzLong').some(function (l) { return l.at >= longStart && l.at <= longStart + 39000; });
   const done = ends('zzLong').filter(function (l) { return l.at >= longStart; })[0];
   const redAt = (runlog().filter(function (l) { return l.suite === 'zzRed' && l.ev === 'start' && l.at >= redChanged; })[0] || {}).at;
-  return (!ended && !!redAt && (!done || done.at > redAt)) || false;
+  return (!!done && !!redAt && done.at >= redChanged && done.at < longStart + 39000 && done.at <= redAt) || false;
 }, test.limit.long);
 test.run('the changed script\'s red suite runs first: zzRed\'s own suite starts within 30 s of its change, before zzLong\'s 40 s were up', 0.4, function () {
   if (!redChanged) return false;
