@@ -13,7 +13,7 @@ module.exports = {
     // Andy, box: "it's minimum, no filters, just a search string."
     search: { q: 'text?' },
     // goal/G43.9, peer review wsl, yes, Andy's yes on Q1: "spirit.app gains a verb: "active"."
-    active: { key: 'text', active: 'bool' },
+    active: { key: 'text', active: 'spirit.type.boolean' },
     // Q4, Andy: "yes.": the node's choices, over what <name>.json says.
     label: { key: 'text', label: 'text' },
     icon: { key: 'text', icon: 'text' },

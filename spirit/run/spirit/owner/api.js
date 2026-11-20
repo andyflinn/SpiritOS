@@ -12,6 +12,6 @@ module.exports = {
   verbs: {
     boxSearch: { q: 'text?' },
     boxGet: { key: 'id' },
-    command: { to: 'key', command: 'id', body: 'object?' },
+    command: { to: 'spirit.type.string.ID', command: 'id', body: 'spirit.type.object.payload?' },
   },
 };

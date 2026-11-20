@@ -3,6 +3,6 @@
   "request": {
     "family": "id",
     "run": "text?",
-    "since": "number?"
+    "since": "spirit.type.number.integer?"
   }
 }

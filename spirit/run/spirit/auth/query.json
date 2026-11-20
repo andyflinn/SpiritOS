@@ -1,7 +1,7 @@
 {
   "description": "Whether a member's key is granted one api path (\"app\" or \"app.verb\"): {allowed}.",
   "request": {
-    "key": "key",
+    "key": "spirit.type.string.ID",
     "path": "text"
   }
 }

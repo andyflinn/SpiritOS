@@ -2,12 +2,12 @@
   "description": "The agent's persona table, one verb (goal/G41.4): op add, set, delete, get or search; a persona carries its text, a bundle and a provider.",
   "request": {
     "op": "id",
-    "id": "key?",
+    "id": "spirit.type.string.ID?",
     "icon": "text?",
-    "label": "name?",
+    "label": "spirit.type.string.label?",
     "persona": "text?",
     "bundle": "text?",
-    "provider": "key?",
+    "provider": "spirit.type.string.ID?",
     "text": "text?"
   }
 }

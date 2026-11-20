@@ -1,7 +1,7 @@
 {
   "description": "Change the name the allow-table shows for a member's key (label), on every grant that key holds: {key, label}. Refused bad-request without a key and a label, and no-such-peer (404) when the table knows no such key.",
   "request": {
-    "key": "key",
-    "label": "name"
+    "key": "spirit.type.string.ID",
+    "label": "spirit.type.string.label"
   }
 }

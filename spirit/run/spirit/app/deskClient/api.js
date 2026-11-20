@@ -18,11 +18,11 @@ module.exports = {
     clearSignoff: { agent: 'text?' },
     // One ask of the desk: name the desk verb, json its arguments as a JSON object ('{}' when left out).
     // kept (goal/G41.11): true answers from deskClient's cache alone, never asking the desk, or refuses not-kept.
-    desk: { name: 'id', json: 'text?', kept: 'bool?' },
+    desk: { name: 'id', json: 'text?', kept: 'spirit.type.boolean?' },
     // read (goal/G41.11): the key of the wake the agent last read; deskClient drops that wake only then.
     next: { read: 'text?' },
     // The key of the node that runs the desk.
-    setDesk: { key: 'key' },
+    setDesk: { key: 'spirit.type.string.ID' },
     signoff: { agent: 'text?' },
     // goal/G33.4 (box v40): the desk's stream, one row as the desk publishes it, JSON; appServer's verb for a server
     // that follows a stream (spirit/appServer.js withStreamListener), heard from the key setDesk named alone.

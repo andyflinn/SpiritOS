@@ -10,18 +10,18 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/auth/data.js'); else window.spirit.require('spirit/auth/data.js');
 module.exports = {
   verbs: {
-    query: { key: 'key', path: 'text' },
+    query: { key: 'spirit.type.string.ID', path: 'text' },
     search: { text: 'text?' },
-    peer: { key: 'key' },
-    grant: { key: 'key', path: 'text' },
-    revoke: { key: 'key', path: 'text' },
-    relabel: { key: 'key', label: 'name' },
+    peer: { key: 'spirit.type.string.ID' },
+    grant: { key: 'spirit.type.string.ID', path: 'text' },
+    revoke: { key: 'spirit.type.string.ID', path: 'text' },
+    relabel: { key: 'spirit.type.string.ID', label: 'spirit.type.string.label' },
     // goal/G41.14: the node's bundles and their branches, one flat verb per table as the agent tables' are, op one of
     // add, set, delete, get and search; which arguments an op takes the node checks per op (apiAuth.js).
     // goal/G41.25: its owner, given at the add and narrowing a search; one that is not valid the node reads as "node", so
     // the rule here takes any text (Andy, box: "changes to the auth.bundle verb for the addition of the \"owner\" field
     // are approved by andy and need no review.").
-    bundle: { op: 'id', id: 'number?', label: 'name?', text: 'text?', owner: 'text?' },
-    branch: { op: 'id', id: 'number?', bundle: 'number?', family: 'text?', verb: 'text?', text: 'text?' },
+    bundle: { op: 'id', id: 'spirit.type.number.integer?', label: 'spirit.type.string.label?', text: 'text?', owner: 'text?' },
+    branch: { op: 'id', id: 'spirit.type.number.integer?', bundle: 'spirit.type.number.integer?', family: 'text?', verb: 'text?', text: 'text?' },
   },
 };

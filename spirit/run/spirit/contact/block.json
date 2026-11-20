@@ -1,7 +1,7 @@
 {
   "description": "Block a key (publicKey), so the node refuses that peer: {publicKey, keep, blocked}. A key with no row yet gets one, named by publicLabel when one is given. Refused 400 without a publicKey, for this node's own key, and for a publicLabel that breaks the name rule.",
   "request": {
-    "publicKey": "key",
-    "publicLabel": "name?"
+    "publicKey": "spirit.type.string.ID",
+    "publicLabel": "spirit.type.string.label?"
   }
 }

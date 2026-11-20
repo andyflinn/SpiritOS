@@ -118,6 +118,19 @@
     if (extra) Object.keys(extra).forEach(function (k) { e[k] = extra[k]; });
     return e;
   }
+  // A RULE THAT NAMES A TYPE (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*"; wsl's red: "an argument's
+  // rule is spirit.type.<...>, a trailing ? making it optional, and its type file spirit/type/<...>.js is there"): the type
+  // file's isValid asked, '' when it answers true, its error's words when it throws. On the node the file is required; on a
+  // page it is what spirit.required holds, and a type not loaded there yet is left to the node, which checks every call again.
+  // null for a name that is not a type's.
+  function typeRule(raw) {
+    if (!/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(raw)) return null;
+    var T = null;
+    if (isNode()) { try { T = require(require('path').join(__dirname, raw.split('.').slice(1).join('/') + '.js')); } catch (e) { return null; } }
+    else T = raw.split('.').slice(1).reduce(function (o, k) { return o && o[k]; }, (root.spirit || {}).required && root.spirit.required.spirit);
+    if (!T) return isNode() ? null : function () { return ''; };
+    return function (v) { try { return T.isValid(v) === true ? '' : 'a valid ' + raw; } catch (e) { return (e && e.message) || ('a valid ' + raw); } };
+  }
   // Every argument checked against the verb's declaration; the first fault refuses the whole call.
   function check(name, spec, args) {
     var a = args === undefined ? {} : args;
@@ -131,7 +144,8 @@
       var arg = names[j];
       var raw = String(spec[arg]);
       var optional = raw.charAt(raw.length - 1) === '?';
-      var rule = RULES[optional ? raw.slice(0, -1) : raw];
+      var bare = optional ? raw.slice(0, -1) : raw;
+      var rule = typeRule(bare) || RULES[bare];
       if (!rule) return refusal('bad-request', name + ': no rule ' + raw + ' for ' + arg);
       if (a[arg] === undefined) {
         if (optional) continue;

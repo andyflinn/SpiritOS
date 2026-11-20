@@ -3,6 +3,6 @@
   "request": {
     "name": "id",
     "json": "text?",
-    "kept": "bool?"
+    "kept": "spirit.type.boolean?"
   }
 }

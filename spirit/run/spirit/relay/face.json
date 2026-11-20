@@ -1,7 +1,7 @@
 {
   "description": "Apply to a relay on this node's list (url) for a face name (name); the relay pairs it with the verified email it holds for this node, and its answer is kept on that relay's row. Answers {ok, url, name, email}. Refused 400 without a url and a name, 404 when the relay is not on the list, 503 with no router to ask with, the relay's own refusal under its status, and 502 when the relay does not answer or answers something unreadable.",
   "request": {
-    "url": "url",
-    "name": "name"
+    "url": "spirit.type.string.URL",
+    "name": "spirit.type.string.label"
   }
 }

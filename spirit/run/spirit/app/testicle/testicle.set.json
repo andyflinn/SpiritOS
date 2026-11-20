@@ -4,7 +4,7 @@
     "script": "text",
     "suite": "text",
     "test": "text",
-    "verified": "bool",
-    "severity": "number"
+    "verified": "spirit.type.boolean",
+    "severity": "spirit.type.number.probability"
   }
 }

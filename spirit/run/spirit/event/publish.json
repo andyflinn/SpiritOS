@@ -3,8 +3,8 @@
   "request": {
     "id": "id",
     "status": "text?",
-    "data": "object?",
+    "data": "spirit.type.object.payload?",
     "logMessage": "text?",
-    "app": "object?"
+    "app": "spirit.type.object.payload?"
   }
 }

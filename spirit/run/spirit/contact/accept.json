@@ -1,6 +1,6 @@
 {
   "description": "Add a key you already have a row for to your contacts (publicKey), kept and unblocked: {publicKey, keep, blocked}. Refused 400 without a publicKey or for this node's own key, 404 when there is no row for it, and 507 when the memory is full of the people you added.",
   "request": {
-    "publicKey": "key"
+    "publicKey": "spirit.type.string.ID"
   }
 }

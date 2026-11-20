@@ -1,7 +1,7 @@
 {
   "description": "Set your own name for a key (myLabel), never sent to anybody; an empty one clears it: {publicKey, myLabel, caption}, the caption being what the contact now shows, and every label showing that contact is redrawn. Refused 400 without a publicKey, for this node's own key, or for a myLabel that breaks the name rule, and 404 when there is no row for it.",
   "request": {
-    "publicKey": "key",
-    "myLabel": "name"
+    "publicKey": "spirit.type.string.ID",
+    "myLabel": "spirit.type.string.label"
   }
 }

@@ -12,14 +12,14 @@ module.exports = {
   verbs: {
     // The one table, people and relays (goal/G40.11): a yes-filter per flag.
     search: { q: 'text?', keep: 'flag?', mine: 'flag?', relay: 'flag?', seated: 'flag?', blocked: 'flag?' },
-    get: { key: 'key' },
-    block: { publicKey: 'key', publicLabel: 'name?' },
-    unblock: { publicKey: 'key' },
-    accept: { publicKey: 'key' },
-    label: { publicKey: 'key', myLabel: 'name' },
-    forget: { publicKey: 'key' },
+    get: { key: 'spirit.type.string.ID' },
+    block: { publicKey: 'spirit.type.string.ID', publicLabel: 'spirit.type.string.label?' },
+    unblock: { publicKey: 'spirit.type.string.ID' },
+    accept: { publicKey: 'spirit.type.string.ID' },
+    label: { publicKey: 'spirit.type.string.ID', myLabel: 'spirit.type.string.label' },
+    forget: { publicKey: 'spirit.type.string.ID' },
     // goal/G47.4, box v33: "😏 is the row field faceable, set by the new verb contact.faceable {key, faceable}, for a relay
     // this node holds a seat on only; it does what own did", "contact.own goes". Never from a face, never from a peer.
-    faceable: { key: 'key', faceable: 'bool' },
+    faceable: { key: 'spirit.type.string.ID', faceable: 'spirit.type.boolean' },
   },
 };

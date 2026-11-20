@@ -1,8 +1,8 @@
 {
   "description": "Send one of this node's puppets (to, a key) a command (command, the verb it would call locally, with body), signed by this node as its owner, and wait for its answer: the puppet's answer as it came, its hash beside it. Refused 400 without a puppet or a command, 503 when this node is not connected to a relay or the puppet cannot be reached, and 504 (no-reply-from-puppet) when no answer comes within 20 seconds.",
   "request": {
-    "to": "key",
+    "to": "spirit.type.string.ID",
     "command": "id",
-    "body": "object?"
+    "body": "spirit.type.object.payload?"
   }
 }

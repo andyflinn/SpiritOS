@@ -21,7 +21,7 @@ module.exports = {
     'box.release': { id: 'id' },
     'box.take': { id: 'id' },
     // An empty box is a box: text may be ''.
-    'box.write': { id: 'id', text: 'text', version: 'number' },
+    'box.write': { id: 'id', text: 'text', version: 'spirit.type.number.integer' },
     'chat.add': { id: 'id', text: 'text' },
     // Each filter left '' filters nothing; scope is '', goal or items.
     'chat.search': { id: 'id', text: 'text', by: 'text', since: 'text', before: 'text', scope: 'text' },
@@ -34,7 +34,7 @@ module.exports = {
     // The handler trims and refuses an empty title; it applies no label rule to a goal's.
     'goal.add': { title: 'id' },
     // The title passes the label rule (fieldWhy); blocks may be left out or '' (the goal).
-    'item.add': { goal: 'id', title: 'name', blocks: 'text?' },
+    'item.add': { goal: 'id', title: 'spirit.type.string.label', blocks: 'text?' },
     'item.box': { id: 'id' },
     'item.chat': { id: 'id' },
     'item.checks': { id: 'id' },
@@ -58,10 +58,10 @@ module.exports = {
     'item.status': { id: 'id', word: 'text', tone: 'text?' },
     'item.take': { id: 'id' },
     'agents.search': { text: 'text' },
-    'items.search': { text: 'text', currentGoalOnly: 'bool', goalsOnly: 'bool', includeClosed: 'bool' },
+    'items.search': { text: 'text', currentGoalOnly: 'spirit.type.boolean', goalsOnly: 'spirit.type.boolean', includeClosed: 'spirit.type.boolean' },
     'line.take': { id: 'id' },
     // pass and why only for a verify; red and build send neither.
-    'phase.done': { id: 'id', phase: 'id', pass: 'bool?', why: 'text?' },
+    'phase.done': { id: 'id', phase: 'id', pass: 'spirit.type.boolean?', why: 'text?' },
     'phase.may': { id: 'id' },
     'phase.take': { id: 'id', phase: 'id' },
     // id is '' for start-design with nothing open, which starts a new goal.
@@ -71,7 +71,7 @@ module.exports = {
     'profile.get': { agent: 'text' },
     // His alone. A name or nick left '' is no name or no nick; a name otherwise passes the label rule.
     // owner (goal/G47.5, Q7): the desk owner mark, changed by the owner on his node's loopback alone.
-    'profile.set': { agent: 'id', name: 'name', nick: 'text', included: 'bool?', cap: 'bool?', owner: 'bool?' },
+    'profile.set': { agent: 'id', name: 'spirit.type.string.label', nick: 'text', included: 'spirit.type.boolean?', cap: 'spirit.type.boolean?', owner: 'spirit.type.boolean?' },
     // goal/G33.7: seen per item, the arrival time of the newest thing he looked at under it.
     'seen.get': { id: 'id' },
     'seen.set': { id: 'id', at: 'text' },
@@ -80,7 +80,7 @@ module.exports = {
     // its family of that name; unsubscribe stops it. Who may is the node's grant.
     // run and since (goal/G41.12): the subscriber's position, the run of the desk and the number of the last row it took
     // in it; the desk's log hands what came after, or the desk pushes in full.
-    subscribe: { family: 'id', run: 'text?', since: 'number?' },
+    subscribe: { family: 'id', run: 'text?', since: 'spirit.type.number.integer?' },
     unsubscribe: {},
     unblock: { id: 'id', blocks: 'id' },
     // The jobs open to the caller; it takes nothing.

@@ -13,14 +13,14 @@ if (typeof require === 'function') require('../../spirit.js').require('spirit/ap
 module.exports = {
   verbs: {
     // One chat, by the peer's key; before and after are the writer's times ('' for none), after wins.
-    'chat.read': { peer: 'key', before: 'text?', after: 'text?' },
+    'chat.read': { peer: 'spirit.type.string.ID', before: 'text?', after: 'text?' },
     // One chat searched: text ('' matches every line), who 'me', 'them', 'both' or ''.
-    'chat.search': { peer: 'key', text: 'text?', who: 'text?' },
+    'chat.search': { peer: 'spirit.type.string.ID', text: 'text?', who: 'text?' },
     'chats.search': {},
     // A peer's line, posted by its chat server: the writer is the sealed caller, so no key travels. seq above 0;
     // re {writer, seq} names the line answered, none when left out.
-    'line.receive': { seq: 'number', at: 'text', text: 'text', re: 'object?' },
+    'line.receive': { seq: 'spirit.type.number.integer', at: 'text', text: 'text', re: 'spirit.type.object.payload?' },
     // The owner writes to a peer, named by its key (the chat server matches no label); re as above.
-    'line.write': { to: 'key', text: 'text', re: 'object?' },
+    'line.write': { to: 'spirit.type.string.ID', text: 'text', re: 'spirit.type.object.payload?' },
   },
 };

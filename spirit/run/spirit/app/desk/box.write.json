@@ -3,6 +3,6 @@
   "request": {
     "id": "id",
     "text": "text",
-    "version": "number"
+    "version": "spirit.type.number.integer"
   }
 }

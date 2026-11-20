@@ -10,8 +10,8 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/peer/data.js'); else window.spirit.require('spirit/peer/data.js');
 module.exports = {
   verbs: {
-    post: { to: 'key', text: 'text', via: 'text?', patienceMs: 'number?', kind: 'text?' },
+    post: { to: 'spirit.type.string.ID', text: 'text', via: 'text?', patienceMs: 'spirit.type.number.integer?', kind: 'text?' },
     // No via since goal/G40.11: how a key arrived went with acquiredVia; acquiring keeps the row.
-    acquire: { publicKey: 'key', publicLabel: 'name?', url: 'url?' },
+    acquire: { publicKey: 'spirit.type.string.ID', publicLabel: 'spirit.type.string.label?', url: 'spirit.type.string.URL?' },
   },
 };

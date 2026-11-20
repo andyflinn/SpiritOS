@@ -3,7 +3,7 @@
   "request": {
     "id": "id",
     "phase": "id",
-    "pass": "bool?",
+    "pass": "spirit.type.boolean?",
     "why": "text?"
   }
 }

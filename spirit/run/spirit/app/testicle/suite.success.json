@@ -3,7 +3,7 @@
   "request": {
     "script": "text",
     "suite": "text",
-    "success": "bool",
+    "success": "spirit.type.boolean",
     "reason": "text?",
     "requires": "list?"
   }
