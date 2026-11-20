@@ -52,7 +52,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       var input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'label';
-      window.spirit.required.spirit.element.fieldInput.attach(input, 'name');
+      window.spirit.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.label');
       form.span.appendChild(input);
       var said = document.createElement('div');
       said.className = 'job-manifest-note';

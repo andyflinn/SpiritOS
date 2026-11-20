@@ -146,8 +146,10 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
         // Every other typed field, a URL, a secret, a list, is a line (fieldRules' LINE_MAX_BYTES; goal/G47.1, -browser: every
         // input has a maxlength, and stops at it).
         var FI = window.spirit.required.spirit.element.fieldInput;
-        if ((f.kind === 'name' || f.kind === 'description') && FI) FI.attach(el, f.kind);
-        else if (FI && el && el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'password')) FI.attach(el, 'line');
+        // Each field held to its type (goal/G48.4, box v22): a name a label, a description a description.
+        if (f.kind === 'name' && FI) FI.attach(el, 'spirit.type.string.label');
+        else if (f.kind === 'description' && FI) FI.attach(el, 'spirit.type.string.description');
+        else if (FI && el && el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'password')) FI.attach(el, 'spirit.type.string.line');
         // A FIELD CHANGED SAVES THE ROW (Andy: "and why the fuck does a row not automatically save when i make a change to a
         // field?"; on Q2: "yes, send the whole row for update. it costs nothing, and we don't need more fucking verbs than
         // necessary."): an input's change, a pick, a bundle picked; there is no Save.

@@ -86,7 +86,7 @@ function ddArming() {
     var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.spirit.element.armingButton;
     var F = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.required.spirit.element.fieldInput;
     var say = document.getElementById('dd-say');
-    if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'line'); say.setAttribute('data-held', 'line'); }
+    if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'spirit.type.string.line'); say.setAttribute('data-held', 'line'); }
     var body = document.getElementById('dd-body');
     if (!A || !body || typeof body.querySelectorAll !== 'function') return;
     Array.prototype.forEach.call(body.querySelectorAll('[data-arming]'), function (b) {

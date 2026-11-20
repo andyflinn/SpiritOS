@@ -75,7 +75,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       '</select>' +
       '<input type="email" class="sp-join-email" placeholder="your email" autocomplete="email" value="' + escape(w.email) + '">';
     var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
-    if (FI) FI.attach(f.span.querySelector('.sp-join-email'), 'email');
+    if (FI) FI.attach(f.span.querySelector('.sp-join-email'), 'spirit.type.string.email');
   }
 
   function send(opts) {

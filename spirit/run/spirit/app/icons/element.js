@@ -62,7 +62,7 @@
           '<div data-icons="said" class="job-manifest-note"></div></div>';
         var said = host.querySelector('[data-icons="said"]');
         var field = host.querySelector('[data-icons="keywords"]');
-        S.required.spirit.element.fieldInput.attach(field, 'description');
+        S.required.spirit.element.fieldInput.attach(field, 'spirit.type.string.description');
         var close = function () { if (layer) layer.hide(); };
         var off = S.data.icons.data.watch(function (g, v) {
           if (g !== glyph) return;
@@ -98,8 +98,8 @@
       form.button.setAttribute('data-icons', 'add');
       // The keywords to the description rule, the glyph to the glyph rule (goal/G41.27; Andy: "icon text follows description
       // rules.", "glyph field rule: max 1 char/glyph, 8-bytes maximum.").
-      window.spirit.required.spirit.element.fieldInput.attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'description');
-      window.spirit.required.spirit.element.fieldInput.attach(container.querySelector('[data-icons="new-glyph"]'), 'glyph');
+      window.spirit.required.spirit.element.fieldInput.attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'spirit.type.string.description');
+      window.spirit.required.spirit.element.fieldInput.attach(container.querySelector('[data-icons="new-glyph"]'), 'spirit.type.string.glyph');
       list = E.spirit.element.search.create(part('pane'), {
         // Its own data source: icon.search on its branch, the rows seated into the icons family's cache it is a view of.
         search: function (args) {

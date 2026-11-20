@@ -109,7 +109,7 @@
       input.value = test;
       named.span.appendChild(document.createTextNode('Title '));
       named.span.appendChild(input);
-      S.required.spirit.element.fieldInput.attach(input, 'description');
+      S.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.description');
       function rename() {
         var to = input.value;
         said('');

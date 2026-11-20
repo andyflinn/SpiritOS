@@ -992,10 +992,9 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       '</div>';
     // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11).
     var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
-    if (FI) [['desk-goal-title', 'name']].forEach(function (f) {
-      var el = container.querySelector('#' + f[0]);
-      if (el) FI.attach(el, f[1]);
-    });
+    // Held to its type (goal/G48.4, box v22), the label a goal title is.
+    var goalTitle = FI ? container.querySelector('#desk-goal-title') : null;
+    if (goalTitle) FI.attach(goalTitle, 'spirit.type.string.label');
     deskHeader();
     // goal/G41.23: every icon that stands alone in the page, through the icon element (deskGlyph).
     deskWatchIcons(container);
