@@ -63,6 +63,10 @@ gone. From `./app.js`: that an app's description names its icon and label. A scr
   precisely"*, *"including defined arguments"*): each verb has its `<verb>.json` beside `api.js`, each `.json` there is a
   verb's, but the branch's own `<name>.json`; each `.json`'s `request` lists every argument with its rule exactly as
   `api.js` writes it (a verb with none may leave it out). It replaces the apps' one-way check and every hand list of verbs.
+- **Every input field validates by its type** (goal/G48.4, box v22: *"ever input field in every element must validate the
+  input with the new type checks."*): a script that makes input fields (an `<input>` of any type but checkbox, radio,
+  button, submit or hidden, or a `<textarea>`) hands as many to `fieldInput.attach` with a `spirit.type.<...>` as it makes,
+  and none of its attach calls names anything else.
 - **Every argument names its type** (goal/G48.4; the box: *"a type identifier is ALWAYS spirit.type.*"*, *"\"text\" dies.
   unlimited strings are forbidden in SpiritOS."*, *"\"flags\" must be booleans"*): each argument of `api.js` is
   `spirit.type.<...>`, a trailing `?` making it optional, and its type file `spirit/type/<...>.js` is there.

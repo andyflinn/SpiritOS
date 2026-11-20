@@ -65,6 +65,21 @@ const BATCH = 10;
 // A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
 function code(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function has(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
+// THE INPUT FIELDS A SCRIPT MAKES (goal/G48.4, box v22), read from its code: every createElement of an input or a textarea,
+// and every <input or <textarea it writes as markup, but for an <input of type checkbox, radio, button, submit or hidden.
+const NOT_A_FIELD = /^<input\b[^>]*\btype\s*=\s*\\?["']?(checkbox|radio|button|submit|hidden)\b/i;
+function inputsMade(file) {
+  const c = code(file);
+  const made = (c.match(/createElement\(\s*['"](input|textarea)['"]\s*\)/g) || []).length;
+  const marked = (c.match(/<(input|textarea)\b[^>]*/gi) || []).filter(function (m) { return !NOT_A_FIELD.test(m); }).length;
+  return made + marked;
+}
+// Its fieldInput.attach calls: those naming a spirit.type.<...> as their rule, and those naming anything else.
+function typedAttaches(file) {
+  const calls = code(file).match(/\.attach\(\s*[^,()]+,\s*['"][^'"]*['"]/g) || [];
+  const typed = calls.filter(function (k) { return /,\s*['"]spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+['"]$/.test(k); }).length;
+  return { typed: typed, untyped: calls.length - typed };
+}
 
 // NOBODY ADDS A BRANCH PAST THE RULES: the tree is every file git keeps and every file not yet added that git does not
 // ignore, so a new app's branch is judged before it is committed.
@@ -2111,6 +2126,16 @@ function oneFile(P) {
     // <address>: use strict, spirit first, the tree only through spirit.require
     test.run('it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.require', 0.4, function () {
       return !shapeBreaks(rel);
+    }, test.limit.quick);
+  }
+  // EVERY INPUT FIELD VALIDATES BY ITS TYPE (goal/G48.4, box v22: "ever input field in every element must validate the input
+  // with the new type checks."): a script that makes input fields, an <input> of any type but checkbox, radio, button,
+  // submit or hidden, or a <textarea>, hands as many to fieldInput.attach with a spirit.type.<...> as it makes, and no
+  // attach of it names anything but a spirit.type.
+  if (/^spirit\/.+\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel) && inputsMade(full) > 0) {
+    test.run('each input field it makes is handed to fieldInput.attach with the spirit.type of its field', 0.4, function () {
+      const t = typedAttaches(full);
+      return (t.typed >= inputsMade(full) && t.untyped === 0) || false;
     }, test.limit.quick);
   }
   // The general rules of a module (moduleRules above), on any file handed, a product script or not.
