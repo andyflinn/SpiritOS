@@ -17,7 +17,24 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/joinStepsJob/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/joinStepsJob'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G48.4; Andy, of the 0.7s: "it leaves no temp folder behind"): on Windows a
+// folder holding an open database cannot be removed, and nodeStore keeps each store it opened open; every one under the
+// suite's folder (a node.db at <root>/spirit/state/node.db) is closed first.
+function closeStoresUnder(top) {
+  const NS = require(path.join(RUN, 'spirit', 'nodeStore.js'));
+  (function walk(dir, depth) {
+    let names = [];
+    try { names = fs.readdirSync(dir); } catch (e) { return; }
+    if (names.indexOf('node.db') !== -1 && path.basename(dir) === 'state') { try { NS.open(path.dirname(path.dirname(dir))).close(); } catch (e) { /* closed */ } }
+    if (depth > 6) return;
+    names.forEach(function (n) { const p = path.join(dir, n); try { if (fs.statSync(p).isDirectory()) walk(p, depth + 1); } catch (e) { /* gone */ } });
+  }(top, 0));
+}
+test.after(function () {
+  const top = tempFolder.path('spirit/test/joinStepsJob');
+  closeStoresUnder(top);
+  try { fs.rmSync(top, { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
+});
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const J = require(path.join(RUN, 'spirit', 'joinStepsJob.js'));
 const relayKeys = spirit.require('spirit/relayKeys.js');
