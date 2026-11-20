@@ -13,7 +13,7 @@ module.exports = {
     query: { key: 'spirit.type.string.ID', path: 'text' },
     search: { text: 'spirit.type.string.lineSelect?' },
     peer: { key: 'spirit.type.string.ID' },
-    grant: { key: 'spirit.type.string.ID', path: 'text' },
+    grant: { key: 'spirit.type.string.IDNew', path: 'text' },
     revoke: { key: 'spirit.type.string.ID', path: 'text' },
     relabel: { key: 'spirit.type.string.ID', label: 'spirit.type.string.label' },
     // goal/G41.14: the node's bundles and their branches, one flat verb per table as the agent tables' are, op one of

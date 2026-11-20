@@ -12,6 +12,8 @@
   var MAX_BYTES = 60;
   var T = {
     MAX_BYTES: MAX_BYTES,
+    // ITS FORM, the one place it is written: IDNew takes a key of this form that nobody here knows yet.
+    FORM: KEY,
     // ITS DEFAULT (goal/G48.4, the box v33: "default: \"the nodes own public key\""): spirit.node.key, the node's own on the
     // node and the key of the node a page came from once it has answered; until then the key of all zero bytes, which passes
     // the check and is nobody's (Andy, of that first moment: fine as long as nothing sends it).
@@ -24,6 +26,11 @@
     isValid: function (v) {
       if (typeof v !== 'string') no('an ID is a string');
       if (!KEY.test(v)) no('an ID is a public key: MCowBQYDK2VwAyEA, 43 more base64 characters, then =');
+      // A KEY THIS NODE KNOWS, WHERE THE NODE CAN SAY (goal/G48.4; Andy: "the validity check for an ID must either check in
+      // the browser data, or node side the shadow roll and the own ID", and Q12: a new key is IDNew's): where spirit.knownKey
+      // is given, the node's own key or one in its shadow roll, a key it does not know is refused; elsewhere the form decides.
+      var known = root && root.spirit && root.spirit.knownKey;
+      if (typeof known === 'function' && !known(v)) no('an ID is a key this node knows: its own, or one in its shadow roll');
       return true;
     },
   };

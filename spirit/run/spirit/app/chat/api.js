@@ -21,6 +21,6 @@ module.exports = {
     // re {writer, seq} names the line answered, none when left out.
     'line.receive': { seq: 'spirit.type.number.integer', at: 'spirit.type.number.UTC', text: 'text', re: 'spirit.type.object.payload?' },
     // The owner writes to a peer, named by its key (the chat server matches no label); re as above.
-    'line.write': { to: 'spirit.type.string.ID', text: 'text', re: 'spirit.type.object.payload?' },
+    'line.write': { to: 'spirit.type.string.IDNew', text: 'text', re: 'spirit.type.object.payload?' },
   },
 };

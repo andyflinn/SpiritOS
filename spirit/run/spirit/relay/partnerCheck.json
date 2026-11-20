@@ -1,7 +1,7 @@
 {
   "description": "Whether the peer with publicKey owns the relay at url, read off that relay's card: {ok: true, url, relayKey, relayLabel, ownerLabel} when it does; otherwise {ok: false, error}, saying the relay has no owner yet, is owned by somebody else, or did not say who runs it. Refused 400 without both a publicKey and a url.",
   "request": {
-    "publicKey": "spirit.type.string.ID",
+    "publicKey": "spirit.type.string.IDNew",
     "url": "spirit.type.string.URL"
   }
 }

@@ -12,6 +12,6 @@ module.exports = {
   verbs: {
     post: { to: 'spirit.type.string.ID', text: 'text', via: 'text?', patienceMs: 'spirit.type.number.integer?', kind: 'text?' },
     // No via since goal/G40.11: how a key arrived went with acquiredVia; acquiring keeps the row.
-    acquire: { publicKey: 'spirit.type.string.ID', publicLabel: 'name?', url: 'spirit.type.string.URL?' },
+    acquire: { publicKey: 'spirit.type.string.IDNew', publicLabel: 'name?', url: 'spirit.type.string.URL?' },
   },
 };

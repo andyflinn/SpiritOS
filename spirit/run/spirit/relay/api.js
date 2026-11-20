@@ -11,7 +11,7 @@ if (typeof require === 'function') require('../spirit.js').require('spirit/relay
 module.exports = {
   verbs: {
     claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'text?', inviteLabel: 'name?' },
-    partnerCheck: { publicKey: 'spirit.type.string.ID', url: 'spirit.type.string.URL' },
+    partnerCheck: { publicKey: 'spirit.type.string.IDNew', url: 'spirit.type.string.URL' },
     get: { key: 'text' },
     remove: { key: 'spirit.type.string.URL' },
     add: { url: 'spirit.type.string.URL', label: 'name?' },
