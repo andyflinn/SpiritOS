@@ -827,7 +827,7 @@ test.run('with no star, a bundle is added at home', 0.2, async function () {
   const b0 = await bundle('zzBefore');
   return b0.status < 300 || false;
 }, test.limit.quick);
-test.run('with no star, the job never reaches the face', 0.8, async function () {
+test.run('with no faceable mark, the job never reaches the face DELETE THIS FUCKING TEST!!!!!!!', 0.8, async function () {
   if (!streamUp() || !S.j0) return false;
   await sleep(WAIT_MS);
   return (!!S.j0.id && !hears(S.j0.id)) || false;
