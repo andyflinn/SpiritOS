@@ -63,43 +63,7 @@ const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VEND
 const ASK_MS = 8000;
 const BATCH = 10;
 // A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
-function code(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function has(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
-// THE INPUT FIELDS A SCRIPT MAKES (goal/G48.4, box v22), read from its code: every createElement of an input or a textarea,
-// and every <input or <textarea it writes as markup, but for an <input of type checkbox, radio, button, submit or hidden.
-const NOT_A_FIELD = /^<input\b[^>]*\btype\s*=\s*\\?["']?(checkbox|radio|button|submit|hidden)\b/i;
-function inputsMade(file) {
-  const c = code(file);
-  const made = (c.match(/createElement\(\s*['"](input|textarea)['"]\s*\)/g) || []).length;
-  const marked = (c.match(/<(input|textarea)\b[^>]*/gi) || []).filter(function (m) { return !NOT_A_FIELD.test(m); }).length;
-  return made + marked;
-}
-// Its fieldInput.attach calls: those naming a spirit.type.<...> as their rule, and those naming anything else.
-// The element handed may be a call of its own (document.getElementById('x')): its second argument is found past the first
-// comma outside any bracket.
-function typedAttaches(file) {
-  const c = code(file);
-  let typed = 0, untyped = 0;
-  const at = /\.attach\(/g;
-  let m;
-  while ((m = at.exec(c))) {
-    let i = m.index + m[0].length, depth = 0, q = '';
-    for (; i < c.length; i++) {
-      const ch = c[i];
-      if (q) { if (ch === '\\') i++; else if (ch === q) q = ''; continue; }
-      if (ch === '"' || ch === "'" || ch === '`') q = ch;
-      else if (ch === '(' || ch === '[' || ch === '{') depth++;
-      else if (ch === ')' || ch === ']' || ch === '}') { if (depth === 0) break; depth--; }
-      else if (ch === ',' && depth === 0) break;
-    }
-    if (c[i] !== ',') continue;
-    const rule = /^\s*['"]([^'"]*)['"]/.exec(c.slice(i + 1));
-    if (!rule) continue;
-    if (/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule[1])) typed++; else untyped++;
-  }
-  return { typed: typed, untyped: untyped };
-}
-
 // NOBODY ADDS A BRANCH PAST THE RULES: the tree is every file git keeps and every file not yet added that git does not
 // ignore, so a new app's branch is judged before it is committed.
 const tracked = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
@@ -2092,6 +2056,43 @@ function every() {
   });
 }
 
+
+// fieldCode, not code: a function of that name further down, taking source, would stand in its place (both hoisted).
+function fieldCode(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
+// THE INPUT FIELDS A SCRIPT MAKES (goal/G48.4, box v22), read from its code: every createElement of an input or a textarea,
+// and every <input or <textarea it writes as markup, but for an <input of type checkbox, radio, button, submit or hidden.
+const NOT_A_FIELD = /^<input\b[^>]*\btype\s*=\s*\\?["']?(checkbox|radio|button|submit|hidden)\b/i;
+function inputsMade(file) {
+  const c = fieldCode(file);
+  const made = (c.match(/createElement\(\s*['"](input|textarea)['"]\s*\)/g) || []).length;
+  const marked = (c.match(/<(input|textarea)\b[^>]*/gi) || []).filter(function (m) { return !NOT_A_FIELD.test(m); }).length;
+  return made + marked;
+}
+// Its fieldInput.attach calls: those naming a spirit.type.<...> as their rule, and those naming anything else.
+// The element handed may be a call of its own (document.getElementById('x')): its second argument is found past the first
+// comma outside any bracket.
+function typedAttaches(file) {
+  const c = fieldCode(file);
+  let typed = 0, untyped = 0;
+  const at = /\.attach\(/g;
+  let m;
+  while ((m = at.exec(c))) {
+    let i = m.index + m[0].length, depth = 0, q = '';
+    for (; i < c.length; i++) {
+      const ch = c[i];
+      if (q) { if (ch === '\\') i++; else if (ch === q) q = ''; continue; }
+      if (ch === '"' || ch === "'" || ch === '`') q = ch;
+      else if (ch === '(' || ch === '[' || ch === '{') depth++;
+      else if (ch === ')' || ch === ']' || ch === '}') { if (depth === 0) break; depth--; }
+      else if (ch === ',' && depth === 0) break;
+    }
+    if (c[i] !== ',') continue;
+    const rule = /^\s*['"]([^'"]*)['"]/.exec(c.slice(i + 1));
+    if (!rule) continue;
+    if (/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule[1])) typed++; else untyped++;
+  }
+  return { typed: typed, untyped: untyped };
+}
 
 function oneFile(P) {
   // goal/G43.31, a branch named as its folder, is judged on each branch folder by ./spirit-sibling-branchRules.js (goal/G43.32).
