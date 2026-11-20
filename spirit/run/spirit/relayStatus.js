@@ -117,9 +117,7 @@ function report(opts) {
     // budget (the partner pool beside it went with partnering, goal/G22.6).
     caps: o.caps || undefined,
 
-    // THE OWNER'S CONFIGURED BOUND (cycle 1). The Governor's lever moves
-    // that travelled beside it went with the Governor (cycle 8); `levers`
-    // below is the read-outs of the gauges lever.js still makes, fixed at boot. Absent rather than zeroed on a
+    // THE OWNER'S CONFIGURED BOUND (cycle 1). Absent rather than zeroed on a
     // relay with no configuration, for the same reason as `meter`: "no
     // bound" and "a bound not yet read" must not be drawn the same.
     ramLimitMB: typeof o.ramLimitMB === 'number' ? o.ramLimitMB : undefined,
@@ -163,7 +161,6 @@ function report(opts) {
     discUsedMB: typeof o.discUsedMB === 'number' ? o.discUsedMB : undefined,
     binding: o.binding || undefined,
 
-    levers: o.levers || undefined,
     // WHAT THE RELAY HOLDS, IN PARTS (goal/G30.15): its memory at rest, the streams by kind and their cost, the RAM
     // still free, the members it serves at three streams a seat. Passed through whole, like the rest.
     capacity: o.capacity || undefined,

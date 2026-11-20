@@ -112,7 +112,6 @@ var SEARCH_WORDS_MAX = 200;
 // saves a hop; the ledger is written here, and every claim and rename
 // is checked here whatever any page believed.
 var fieldRules = spirit.require('spirit/fieldRules.js');
-var lever = spirit.require('spirit/lever.js');
 
 // ── HOW MANY STREAMS THE OWNER'S RAM ALLOWS (cycle 8) ────────────────────
 //
@@ -491,11 +490,7 @@ function createRelay(rootDir, deps) {
   // runtime hazard, a member that stops reading, at a fixed bound. So the
   // ceiling IS the allowance, fixed at boot, and nothing moves it after.
   //
-  // THE LEVER STAYS AS A PATTERN, READ-ONLY. Andy: "as design pattern
-  // relay-internally, they still make sense to me." A gauge is described
-  // once — label, floor, ceiling, value — and the owner's monitor draws it
-  // generically, as metering. It has no setter (lever.js), so no governor
-  // can grow back from it.
+  // THE LEVER WENT TOO (goal/G48.4; Andy: "get RID OF IT!!!"): the allowance is one number, reported in capacity.
   //
   // Present only when the startup module handed this relay a
   // configuration (relayServer.js reads spirit/state/config.json); a relay
@@ -503,13 +498,7 @@ function createRelay(rootDir, deps) {
   var config = deps.config || null;
   var atRestMB = 0;
   var allowance = config ? allowanceFor(config.ramLimitMB, atRestMB) : null;
-  var gauges = null;
   function setAllowance() {
-    gauges = allowance ? {
-      connections1: lever.make('connections1', {
-        floor: 1, ceiling: allowance, value: allowance, worseAt: 'floor',
-      }),
-    } : null;
     if (allowance) presentNow.setAllowed(allowance);
   }
   setAllowance();
@@ -2963,7 +2952,7 @@ function createRelay(rootDir, deps) {
     // fall through to `no such peer` like any verb nobody has heard of.
 
     // `body.lever` — the owner's lever verb — STOOD HERE, deleted with the
-    // Governor (cycle 8). Nothing is left to move; a lever is a gauge now.
+    // Governor (cycle 8).
 
     if (body && body.revoke && owner) {
       var revokedLabel = String(body.revoke.label || '');
@@ -3753,9 +3742,7 @@ function createRelay(rootDir, deps) {
       // not built. One budget, the members' (the partner budget went with
       // partnering, goal/G22.6).
       caps: { memberPerMin: MEMBER_PER_MIN },
-      // THE BOUND THE OWNER CONFIGURED, and the gauges fixed inside it at
-      // boot (cycle 8 — the Governor that moved them is gone). Absent on a
-      // relay with no configuration.
+      // THE BOUND THE OWNER CONFIGURED. Absent on a relay with no configuration.
       ramLimitMB: config ? config.ramLimitMB : undefined,
       // AND THE DISC BOUND BESIDE IT (cycle 9), with which of the two the
       // next member will meet. An owner told only "256 MB of RAM" cannot
@@ -3774,10 +3761,6 @@ function createRelay(rootDir, deps) {
         var room = discLimit.limitMB() * 1024 * 1024 - discLimit.usedBytes();
         return room <= discLimit.limitMB() * 1024 * 1024 * 0.1 ? 'disc' : 'ram';
       }()),
-      // EVERY GAUGE, KEYED BY ITS OWN LABEL — never a list the app has to
-      // know the order of, and never one named in the app's code. Sent
-      // under `levers`, the name the owner's monitor already draws.
-      levers: gauges ? Object.keys(gauges).reduce(function (o, k) { o[k] = gauges[k].readOut(); return o; }, {}) : undefined,
       // WHAT IT HOLDS, IN PARTS (goal/G30.15).
       capacity: capacity(),
       // WHEN THIS WAS TAKEN. Without it a stale view reads as a live one:

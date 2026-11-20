@@ -921,7 +921,8 @@ function ndReportHtml() {
 // design/principles/NODE-AND-RELAY.md §4: ACTIVITY (what is happening)
 // and LEVER POSITIONS (the limits it runs under right now, and why the
 // last one moved). The data was on the wire already — `meter`, `routes`,
-// `memory` — and cycle 1 adds `ramLimitMB`, `levers` and `decision`.
+// `memory` — and cycle 1 adds `ramLimitMB` and `decision`; the lever went (goal/G48.4; Andy: "get RID OF IT!!!"), its
+// allowance shown once, as the members it can serve.
 //
 // Each row appears only when the relay sent its field, so a relay with no
 // Governor draws no lever row rather than a blank one (AGENT.md: no chrome
@@ -949,13 +950,6 @@ function ndGovernorFacts(report) {
   // members can be served with a relay given so much RAM"): the relay's own members, its allowance in seats.
   var c = report.capacity;
   if (c && typeof c.members === 'number') rows.push(['Members it can serve', c.members + (typeof c.ramLimitMB === 'number' ? ' with ' + c.ramLimitMB + ' MB of RAM' : '')]);
-  var lever = report.levers && report.levers.connections1;
-  if (lever) {
-    // The lever's readOut (lever.js) is {value, floor, ceiling, ...}: the allowance is its value, as relayMonitor
-    // reads it (goal/G30.7; it read position and allowed, which the relay has not sent since cycle 1).
-    rows.push(['Connections', 'allowing ' + lever.value +
-      ' (floor ' + lever.floor + ', ceiling ' + lever.ceiling + ')']);
-  }
   var d = report.decision;
   if (d) {
     rows.push(['Last move', d.from + ' → ' + d.to + ': ' + d.why +

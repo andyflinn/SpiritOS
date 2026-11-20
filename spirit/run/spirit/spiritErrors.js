@@ -789,7 +789,6 @@ define('no-such-family', { status: 404, texts: ['no such family on this node'] }
 define('already-in-bundle', { status: 409, texts: ['that family and verb are in the bundle already'] });
 define('store-unavailable', { status: 503, texts: ['the grants cannot be read'], fault: 'node' });
 define('no-governor', { status: 404, texts: ['no Governor'] });
-define('no-such-lever', { status: 404, texts: ['no such lever'] });
 define('no-such-request', { status: 404, texts: ['no such request'] });
 define('key-claimed', { status: 409, texts: ['key already claimed'] });
 define('slot-held', { status: 409, texts: ['this name is held by another id'] });
@@ -823,7 +822,7 @@ define('bad-request', {
     'bad token', 'claim needs publicKey', 'claim needs publicKey and sig',
     'forward needs from, to, text and sig',
     'hash required', 'hash, requester and target required', 'invite label required',
-    'not a lever name', 'partner relay key required', 'partner relay url required',
+    'partner relay key required', 'partner relay url required',
     'pick a relay url', 'that is the peer’s own key, not their relay’s',
     'that is this relay', 'Invalid JSON body', 'bad body',
     'publicKey and url required', 'publicKey required', 'that key is this node', 'key required', 'path outside the run folder'],

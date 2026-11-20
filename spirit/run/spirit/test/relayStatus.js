@@ -79,7 +79,7 @@ test.run('report gives the capture time passed through to it, not a clock read h
 }, test.limit.quick);
 test.run('report leaves out what the relay did not report, rather than zeroing it ("not told yet" is not "nothing to tell")', 0.2, function () {
   const bare = S.report({ now: NOW });
-  const absent = ['meter', 'caps', 'ramLimitMB', 'discLimitMB', 'discUsedMB', 'binding', 'seats', 'capacity', 'levers'].filter(function (k) { return bare[k] !== undefined; });
+  const absent = ['meter', 'caps', 'ramLimitMB', 'discLimitMB', 'discUsedMB', 'binding', 'seats', 'capacity'].filter(function (k) { return bare[k] !== undefined; });
   return absent.length === 0 || false;
 }, test.limit.quick);
 test.run('report, with nothing handed in, gives zero counts and empty lists, and nothing throws', 0.2, function () {
