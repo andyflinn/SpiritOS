@@ -392,3 +392,8 @@ vendored code left out; with no file, all of them in one check; with a file, tha
 - A script that loads but stands nowhere in `spirit.required`, or answers a promise on the node.
 - An element script that loads on a page with no factory at its place, or one that does not load there at all.
 - `spirit.element.x = ...` or `spirit.elements.x = ...` written by hand outside the helper.
+
+- **Cleaned up, checked by doing it again** (goal/G48.4; Andy: *"please use an effective test in spirit-sibling-browser to make
+  sure that elements get cleaned up."*): an element with a destroy is created once more in a box of its own, left a second,
+  destroyed, and the box taken away. The page then holds no more listeners on window or document, no more intervals and no
+  more elements than before, and the box was empty.

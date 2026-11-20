@@ -190,6 +190,20 @@ const WATCH = String.raw`(function () {
   // The longest a probe waits for a redraw before it says none came (a limit, not a wait: its redraw ends it).
   var PROBE_LIMIT_MS = 1000;
   var W = window.spiritWatch = { net: [], subs: [], writes: [], moved: [], out: 0, searches: [], families: [] };
+  // WHAT AN ELEMENT HOLDS ON THE PAGE (goal/G48.4, Andy: "please use an effective test in spirit-sibling-browser to make
+  // sure that elements get cleaned up."): every listener put on window or document and every interval started, live until
+  // taken off or cleared.
+  W.listeners = []; W.intervals = [];
+  [window, document].forEach(function (t) {
+    var add = t.addEventListener, remove = t.removeEventListener;
+    t.addEventListener = function (type, fn, opt) { W.listeners.push({ t: t, type: type, fn: fn, capture: !!(opt === true || (opt && opt.capture)), live: true }); return add.apply(this, arguments); };
+    t.removeEventListener = function (type, fn, opt) { var c = !!(opt === true || (opt && opt.capture)); W.listeners.forEach(function (x) { if (x.t === t && x.type === type && x.fn === fn && x.capture === c) x.live = false; }); return remove.apply(this, arguments); };
+  });
+  var setI = window.setInterval, clearI = window.clearInterval;
+  window.setInterval = function () { var id = setI.apply(window, arguments); W.intervals.push({ id: id, live: true }); return id; };
+  window.clearInterval = function (id) { W.intervals.forEach(function (x) { if (x.id === id) x.live = false; }); return clearI.apply(window, arguments); };
+  // What lives now: listeners, intervals, and the elements on the page.
+  W.held = function () { return { listeners: W.listeners.filter(function (x) { return x.live; }).length, intervals: W.intervals.filter(function (x) { return x.live; }).length, nodes: document.querySelectorAll('*').length }; };
   var SPIRIT = /(\/spirit\.js|spirit-interface\/|spirit\/client\/|spirit\/data\.js|shell\/boot\.js)$/;
   function frames() { return String(new Error().stack || '').split('\n').slice(1).map(function (l) { return l.trim(); }).filter(function (l) { return l.indexOf('spiritWatch.js') === -1 && /^at /.test(l); }); }
   function file(f) { var m = /\(?([^()\s]+?):\d+:\d+\)?$/.exec(f); return m ? m[1].replace(/^https?:\/\/[^/]+/, '') : ''; }
@@ -994,6 +1008,17 @@ async function session() {
   if (P.destroyed !== 'none') {
     await quiet();
     P.after = JSON.parse(await page.evaluate('JSON.stringify((window.spiritWatch || { subs: [] }).subs)'));
+    // A CREATE AND A DESTROY MORE, IN A BOX OF ITS OWN (goal/G48.4, Andy: "make sure that elements get cleaned up"): what
+    // the page holds before, and after the element was created there, left a second to draw, and destroyed; the box taken
+    // away. All it made is gone again: no listener on window or document, no interval, no element anywhere on the page.
+    P.cycle = JSON.parse(await page.evaluate('(function () { var W = window.spiritWatch; var file = ' + JSON.stringify(rel) + ';' +
+      ' var el = file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.element);' +
+      ' if (!W || !W.held || !el || typeof el.create !== "function") return JSON.stringify(null);' +
+      ' var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+      ' var box = document.createElement("div"); document.body.appendChild(box); var before = W.held(); box.remove();' +
+      ' document.body.appendChild(box);' +
+      ' return Promise.resolve(el.create(box)).then(function (m) { return wait(1000).then(function () { if (m && typeof m.destroy === "function") m.destroy(); return wait(500); }); })' +
+      '   .then(function () { var after = W.held(); return JSON.stringify({ before: before, after: after, emptied: box.childElementCount === 0 }); }, function (e) { return JSON.stringify({ error: String(e && e.message || e) }); }); }())'));
   }
   P.stage = 'done';
   return P;
@@ -1246,6 +1271,12 @@ function oneFile(P) {
         return !held.length || false;
       }, test.limit.quick);
     }
+    // goal/G48.4, Andy: "please use an effective test in spirit-sibling-browser to make sure that elements get cleaned up."
+    test.run('created once more and destroyed, it leaves no listener on window or document, no interval and no element on the page', 0.4, function () {
+      if (notDrawn()) return false;
+      const c = P.cycle;
+      return (!!c && !c.error && c.emptied && c.after.listeners <= c.before.listeners && c.after.intervals <= c.before.intervals && c.after.nodes <= c.before.nodes) || false;
+    }, test.limit.quick);
   }
   pageAfter(P);
 }
