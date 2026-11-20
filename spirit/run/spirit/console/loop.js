@@ -18,9 +18,11 @@ const command = spirit.require('spirit/console/command.js');
 function promptOf(p) { return (p ? 'spirit.' + p : 'spirit') + ': '; }
 
 // A logged line as it reads from where the loop stands, or null when it cannot be used there.
+// EVERY OTHER COMMAND (Andy: "the up key isn't for navigation only, it's for every command that is successful"): logged
+// with the path it ran at ahead of it, "app.desk item.get id=goal/G48", it is offered only at that path, without it.
 function inScope(line, here) {
   const m = /^path (.+)$/.exec(line);
-  if (!m) return null;
+  if (!m) return here && line.indexOf(here + ' ') === 0 ? line.slice(here.length + 1) : null;
   if (m[1] === '<<') return here ? line : null;
   if (!here) return line;
   return m[1].indexOf(here + '.') === 0 ? 'path ' + m[1].slice(here.length + 1) : null;

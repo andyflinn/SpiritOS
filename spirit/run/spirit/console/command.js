@@ -52,6 +52,15 @@ function there(p) {
 // A REFUSAL, PRINTED AS JSON (the box v12: "errors are return in JSON.stringify(error,null,2) format."): the node's own
 // refusal shape, { ok: false, code, error }, and the path left as it was.
 function refused(s, code, why) { return { ok: false, out: JSON.stringify({ ok: false, code: code, error: why }, null, 2), path: s.path }; }
+// EVERY SUCCESSFUL COMMAND LOGGED (Andy: "a successfully run command must be logged in state and be available for re-use
+// with the up-key on the keyboad, the up key isn't for navigation only, it's for every command that is successful."), as
+// if typed from the root: a command run at a path is logged with that path ahead of it, "node card", "app.desk api"; a
+// refused one is not logged.
+function logged(s, line) {
+  const l = String(line || '').trim();
+  s.history.push(s.path ? s.path + ' ' + l : l);
+  save(s);
+}
 function moved(s, to) {
   s.path = to;
   s.history.push(to ? 'path ' + to : 'path <<');
@@ -96,15 +105,16 @@ function usageOf(verb, request) {
     return /\?$/.test(rule) ? '[' + one + ']' : one;
   })).join(' ');
 }
-function apiCommand(s, verb) {
+function apiCommand(s, verb, line) {
   return verbsAt(s.path).then(function (verbs) {
     if (!verbs) return refused(s, 'no-branch', 'no branch here: ' + shown(s.path) + ' has no api.js');
-    if (!verb) return { ok: true, out: JSON.stringify(Object.keys(verbs).sort(), null, 2), path: s.path };
+    if (!verb) { logged(s, line); return { ok: true, out: JSON.stringify(Object.keys(verbs).sort(), null, 2), path: s.path }; }
     if (!Object.prototype.hasOwnProperty.call(verbs, verb)) return refused(s, 'no-such-verb', 'no such verb at ' + shown(s.path) + ': ' + verb);
     const file = 'spirit/' + s.path.split('.').join('/') + '/' + verb + '.json';
     return spirit.require(spirit.familyPath('fs')).then(function (f) { return f.load({ path: file }); }).then(function (r) {
       const j = JSON.parse(String((r && r.text) || ''));
       const out = Object.assign({}, j, { usage: usageOf(verb, verbs[verb]) });
+      logged(s, line);
       return { ok: true, out: JSON.stringify(out, null, 2), path: s.path };
     }, function () { return refused(s, 'no-such-verb', 'no description of ' + verb + ' at ' + shown(s.path)); });
   });
@@ -146,7 +156,7 @@ function valueOf(rule, text) {
 // EXECUTING A VERB (the box, ## executing verbs: "at a branch, a line typed as its usage shows ... executes that verb, and
 // the console shows the json it returns, as JSON.stringify(answer,null,2)", "a verb the node refuses shows that refusal as
 // a json error"): the branch bound through spirit.require, the verb asked with the arguments typed name=value.
-function verbCommand(s, verbs, words) {
+function verbCommand(s, verbs, words, line) {
   const verb = words[0];
   const rules = verbs[verb] || {};
   const args = {};
@@ -158,6 +168,7 @@ function verbCommand(s, verbs, words) {
     args[name] = valueOf(rules[name], words[i].slice(eq + 1));
   }
   return Promise.resolve(spirit.require(apiFile(s.path))).then(function (branch) { return branch[verb](args); }).then(function (answer) {
+    logged(s, line);
     return { ok: true, out: JSON.stringify(answer === undefined ? null : answer, null, 2), path: s.path };
   }, function (e) {
     const body = e && e.body && typeof e.body === 'object' && !Array.isArray(e.body) && Object.keys(e.body).length ? e.body : { ok: false, code: (e && e.code) || 'refused', error: (e && e.message) || String(e) };
@@ -171,10 +182,10 @@ function run(line) {
   if (words === null) return Promise.resolve(refused(s, 'open-quote', 'a quote is left open: ' + String(line).trim()));
   if (!words.length) return Promise.resolve({ ok: true, out: '', path: s.path });
   if (words[0] === 'path' && words.length <= 2) return pathCommand(s, words[1] || '');
-  if (words[0] === 'api' && words.length <= 2) return apiCommand(s, words[1] || '');
+  if (words[0] === 'api' && words.length <= 2) return apiCommand(s, words[1] || '', line);
   // A verb of the branch at the path, typed with its arguments.
   return verbsAt(s.path).then(function (verbs) {
-    if (verbs && Object.prototype.hasOwnProperty.call(verbs, words[0])) return verbCommand(s, verbs, words);
+    if (verbs && Object.prototype.hasOwnProperty.call(verbs, words[0])) return verbCommand(s, verbs, words, line);
     return refused(s, 'no-such-command', 'no such command: ' + words.join(' '));
   });
 }
