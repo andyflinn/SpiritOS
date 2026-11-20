@@ -825,7 +825,14 @@ function withAgents(verbs, script) {
 // and "appClient.js has no business running or parsing code. that must be done by the plugin. i don't care if it's
 // spirit/appServer.js, since it'll crash with the server process and leave the node intact." So the same spirit.check the
 // page runs, against the branch's api.js where spirit.require placed it (spirit.required.spirit.app.<name>.api), before the
-// handler; a verb its api.js does not declare (this server's own, DEBUG, the stream's) goes on unchecked, as before.
+// handler. THE AUTO-VERBS' ARGUMENTS NAME THEIR TYPES TOO (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*";
+// Andy: "aren't there more undefined args?"): appServer's own DEBUG, listener and remote, which no api.js declares, are
+// checked by the same spirit.check against AUTO_RULES; a verb neither declares goes on unchecked, as before.
+const AUTO_RULES = {
+  DEBUG: { on: 'spirit.type.boolean?' },
+  listener: { json: 'spirit.type.string.json' },
+  remote: { id: 'spirit.type.string.IDNew?' },
+};
 function withChecked(verbs, script) {
   const m = /(?:^|[\/\\])spirit[\/\\]app[\/\\]([^\/\\]+)[\/\\]\1\.js$/.exec(String(script || ''));
   if (!m) return verbs;
@@ -839,9 +846,10 @@ function withChecked(verbs, script) {
   if (!declaredVerbs) return verbs;
   const out = Object.assign({}, verbs);
   Object.keys(out).forEach(function (v) {
-    if (!Object.prototype.hasOwnProperty.call(declaredVerbs, v) || !out[v] || typeof out[v].handler !== 'function') return;
+    const declared = Object.prototype.hasOwnProperty.call(declaredVerbs, v);
+    if ((!declared && !Object.prototype.hasOwnProperty.call(AUTO_RULES, v)) || !out[v] || typeof out[v].handler !== 'function') return;
     const own = out[v].handler;
-    const rule = declaredVerbs[v];
+    const rule = declared ? declaredVerbs[v] : AUTO_RULES[v];
     out[v] = Object.assign({}, out[v], {
       handler: function (a, caller) {
         const bad = spirit.check(branch + '.' + v, rule, a);
