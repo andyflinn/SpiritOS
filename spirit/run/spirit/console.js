@@ -1,53 +1,16 @@
 'use strict';
 // spirit/run/spirit/console.js
-// THE CONSOLE, ITS HELLO WORLD (goal/G48.1; Andy: "we need a hallo word version first with extremely modest feature
-// requirements. that way we can experiment with the prototype...."; "console is core."). Its spirit object is a client
-// of this checkout's node, as an app server's or a one-shot job's is (Andy: "it's js spirit object is in node-client
-// mode, same as app servers or one shot jobs"): the node it asks is the one spirit/state/environment.json names.
+// THE CONSOLE'S ONE WAY IN FROM A SYSTEM SHELL (goal/G48.2, the box: "there is only one system shell way into console:
+// \"node spirit/console.js\", the console itself knows that it must enter the loop if no arguments was specified."). The
+// console is core (Andy: "console is core."); its spirit object a client of this checkout's node, as an app server's or a
+// one-shot job's is.
 //
-//   node spirit/run/spirit/console.js card   prints the node's card, JSON.stringify(card, 0, 2), and ends
-//   node spirit/run/spirit/console.js        the "spirit: " prompt; at it, card prints the card and the prompt stays,
-//                                             exit leaves the loop and the script
-//
-// Its words are the namespace's own (Andy: "to keep with the namespace"): card is the node's card verb, asked as it is
-// named, nothing translated.
-require('./spirit.js');
-const readline = require('readline');
-
-// The node's card, as its card verb answers it; a node that does not answer refuses it.
-function card() {
-  return spirit.require(spirit.familyPath('node')).then(function (n) { return n.card({}); });
-}
-const COMMANDS = { card: function () { return card().then(function (c) { return JSON.stringify(c, 0, 2); }); } };
-
-// One line: its command's output, or what is wrong with it.
-function line(text) {
-  const word = String(text || '').trim();
-  if (!word) return Promise.resolve('');
-  if (!Object.prototype.hasOwnProperty.call(COMMANDS, word)) return Promise.resolve('no such command: ' + word);
-  return COMMANDS[word]().then(null, function (e) { return 'refused: ' + ((e && e.message) || e); });
-}
-
-function prompt() {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: 'spirit: ' });
-  // The lines in the order typed, each answered before the next, so a quick 'card' then 'exit' prints the card first.
-  let queue = Promise.resolve();
-  let closed = false;
-  rl.prompt();
-  rl.on('line', function (text) {
-    queue = queue.then(function () {
-      if (String(text).trim() === 'exit') process.exit(0);
-      return line(text).then(function (out) { if (out) console.log(out); if (!closed) rl.prompt(); });
-    });
-  });
-  // Input ended without exit (a pipe drained): what was typed is answered, then the script ends.
-  rl.on('close', function () { closed = true; queue.then(function () { process.exit(0); }); });
-}
-
+//   node spirit/run/spirit/console.js <line>   the line to ./console/command.js once: what it answers is printed, and the
+//                                               script ends, 1 when it refused
+//   node spirit/run/spirit/console.js          ./console/loop.js, the prompt
+// The hello world's card is gone (the box, ## reversals: "the card feature from 48.1 will be completely dropped").
 if (require.main === module) {
   const words = process.argv.slice(2).join(' ');
-  if (!words) prompt();
-  else line(words).then(function (out) { if (out) console.log(out); process.exit(/^(no such command|refused): /.test(out) ? 1 : 0); });
+  if (!words) require('./console/loop.js').start();
+  else require('./console/command.js').run(words).then(function (r) { if (r.out) console.log(r.out); process.exit(r.ok ? 0 : 1); });
 }
-
-module.exports = { line: line };
