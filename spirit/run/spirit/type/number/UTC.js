@@ -8,7 +8,8 @@
 (function (root) {
   function no(why) { throw new Error(why); }
   var T = {
-    defaultValue: function () { return 0; },
+    // Its default is now (goal/G48.4, the box v33: "default: now").
+    defaultValue: function () { return Date.now(); },
     ruleDescription: function () { return 'a UTC date: whole milliseconds since 1970'; },
     isValid: function (v) {
       if (typeof v !== 'number' || !isFinite(v)) no('a UTC date is a number, milliseconds since 1970');

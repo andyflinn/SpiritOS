@@ -11,7 +11,14 @@
   function no(why) { throw new Error(why); }
   var T = {
     MAX_BYTES: MAX_BYTES,
-    defaultValue: function () { return 'http://127.0.0.1'; },
+    // ITS DEFAULT (goal/G48.4, the box v33: "default: on any face \"the pages own URL\", on a node \"the nodes loopback URL
+    // with port\""): a page's own address; on the node, its loopback address at the port spirit.js read for it.
+    defaultValue: function () {
+      var L = root && root.location;
+      if (L && /^https?:\/\//.test(String(L.href || ''))) return String(L.href);
+      var N = root && root.spirit && root.spirit.node;
+      return N && Number(N.port) > 0 ? 'http://127.0.0.1:' + Number(N.port) : 'http://127.0.0.1';
+    },
     ruleDescription: function () { return 'a URL: http:// or https://, no spaces, at most 1024 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a URL is a string');

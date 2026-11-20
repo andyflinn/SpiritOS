@@ -28,3 +28,9 @@ test.run('isValid throws an error for "2026-11-20", NaN, Infinity, null, new Dat
   if (!T) return false;
   return ['2026-11-20', NaN, Infinity, null, new Date()].every(throws) || false;
 }, test.limit.quick);
+// goal/G48.4, the box v33: "spirit/type/number/UTC.js (YES, DATE IS A FUCKING NUMBER!, default: now".
+test.run('its default is now: Date.now() as it is asked', 0.4, function () {
+  if (!T) return false;
+  const before = Date.now(); const d = T.defaultValue(); const after = Date.now();
+  return (typeof d === 'number' && d >= before && d <= after) || false;
+}, test.limit.quick);

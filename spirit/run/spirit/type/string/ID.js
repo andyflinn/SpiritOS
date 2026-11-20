@@ -12,7 +12,14 @@
   var MAX_BYTES = 60;
   var T = {
     MAX_BYTES: MAX_BYTES,
-    defaultValue: function () { return 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '='; },
+    // ITS DEFAULT (goal/G48.4, the box v33: "default: \"the nodes own public key\""): spirit.node.key, the node's own on the
+    // node and the key of the node a page came from once it has answered; until then the key of all zero bytes, which passes
+    // the check and is nobody's (Andy, of that first moment: fine as long as nothing sends it).
+    defaultValue: function () {
+      var N = root && root.spirit && root.spirit.node;
+      var own = N && typeof N.key === 'string' ? N.key : '';
+      return KEY.test(own) ? own : 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '=';
+    },
     ruleDescription: function () { return 'an ID: a public key, MCowBQYDK2VwAyEA then 43 base64 characters and ='; },
     isValid: function (v) {
       if (typeof v !== 'string') no('an ID is a string');

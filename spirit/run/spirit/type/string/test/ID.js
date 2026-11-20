@@ -29,3 +29,11 @@ test.run('isValid throws an error for "goal/G48", "", a key cut short at either 
   if (!T) return false;
   return ['goal/G48', '', 'MCowBQYDK2VwAyEA', 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lz', 5, null].every(throws) || false;
 }, test.limit.quick);
+// goal/G48.4, the box v33: "spirit/type/string/ID.js (public keys), default: \"the nodes own public key\"".
+test.run('its default is the node\'s own public key, once the node is known', 0.4, function () {
+  if (!T) return false;
+  const S = globalThis.spirit; const was = S.node && S.node.key;
+  const own = 'MCowBQYDK2VwAyEA' + 'B'.repeat(43) + '=';
+  S.node = S.node || {}; S.node.key = own;
+  try { return T.defaultValue() === own || false; } finally { S.node.key = was; }
+}, test.limit.quick);
