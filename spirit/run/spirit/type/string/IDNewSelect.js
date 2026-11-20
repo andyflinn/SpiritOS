@@ -19,11 +19,11 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   function no(why) { throw new Error(why); }
   var T = {
     defaultValue: function () { return ''; },
-    ruleDescription: function () { var D = baseType(); return 'empty for none, else ' + (D ? D.ruleDescription() : 'a IDNew'); },
+    ruleDescription: function () { return 'empty for none, else a public key in its ID form, known here or not'; },
     isValid: function (v) {
       if (v === '') return true;
       var D = baseType();
-      if (!D) no('a IDNew select needs spirit.type.string.IDNew, not loaded yet');
+      if (!D) no('an IDNew select needs spirit.type.string.IDNew, not loaded yet');
       return D.isValid(v);
     },
   };
