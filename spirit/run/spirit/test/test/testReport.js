@@ -69,6 +69,19 @@ const TWICE = [
   // goal/G47.4, box v52: "that field rule will demand that desctiptions are NOT empty": an empty title, passing by its body.
   "test.run('', 0.2, function () { return true; }, 1000);",
 ].join('\n');
+// Asked every 200 ms until it holds or the time is up.
+const until = async function (fn, ms) { const end = Date.now() + ms; while (Date.now() < end) { try { if (await fn()) return true; } catch (e) { /* not yet */ } await new Promise(function (r) { setTimeout(r, 200); }); } return false; };
+// A SUITE STOPPED WHILE IT RUNS (goal/G48.4; Andy: "WHY THE FUCK ARE TEST RUNS STILL LITTERING SHIT ALL OVER THE PLACE",
+// "step 1 for now. and we continue."; the cause, testicle ending runs with SIGKILL, and testReport.js with no stop handler
+// at all): its first test says it started and then waits; its test.after writes stopped-after.txt.
+const STOPPED = [
+  "'use strict';",
+  "const fs = require('fs');",
+  "const path = require('path');",
+  "const test = " + REPORTER_FROM(2) + ";",
+  "test.run('it waits to be stopped', 0.2, function () { fs.writeFileSync(path.join(__dirname, 'stopped-started.txt'), 'started'); return new Promise(function () {}); }, 60000);",
+  "test.after(function () { fs.writeFileSync(path.join(__dirname, 'stopped-after.txt'), 'after ran'); });",
+].join('\n');
 const GENERAL = [
   "'use strict';",
   "const test = " + REPORTER_FROM(2) + ";",
@@ -107,6 +120,7 @@ function scratchTree(port) {
   put('probe/test/probe.js', PROBE);
   put('probe/test/twice.js', TWICE);
   put('probe/twice.js', "'use strict';\n");
+  put('probe/test/stopped.js', STOPPED);
   // A general test is named <name>-sibling-<what>.js beside ./<name>.js: spirit/spirit.js is in the copy.
   put('spirit/test/spirit-sibling-zzProbeRules.js', GENERAL);
   put('spirit/test/spirit-sibling-zzProbeTwo.js', GENERAL_TWO);
@@ -206,6 +220,22 @@ test.run('the tests after a crash and a hang still run', 0.2, function () {
 test.run('test.after runs once every test has run', 0.2, function () {
   return fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'after.txt')) || false;
 }, test.limit.quick);
+// goal/G48.4: a suite asked to stop (SIGTERM, as testicle will ask before it kills) runs its test.after and ends by
+// itself, so what it started is cleaned up; nothing of it is left to be killed.
+test.run('a suite sent SIGTERM while a test runs runs its test.after and ends by itself within 10 seconds', 0.4, async function () {
+  if (!W.tree) return false;
+  const env = Object.assign({}, process.env);
+  Object.keys(env).forEach(function (k) { if (/^SPIRIT_/.test(k)) delete env[k]; });
+  const kid = spawn(process.execPath, [path.join(W.tree.run, 'probe', 'test', 'stopped.js')], { cwd: W.tree.run, env: env, stdio: 'ignore' });
+  let ended = false;
+  kid.on('exit', function () { ended = true; });
+  const started = await until(function () { return Promise.resolve(fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'stopped-started.txt'))); }, 20000);
+  if (!started) { try { kid.kill('SIGKILL'); } catch (e) { /* gone */ } return false; }
+  kid.kill('SIGTERM');
+  const gone = await until(function () { return Promise.resolve(ended); }, 10000);
+  if (!gone) { try { kid.kill('SIGKILL'); } catch (e) { /* gone */ } }
+  return (!!gone && fs.existsSync(path.join(W.tree.run, 'probe', 'test', 'stopped-after.txt'))) || false;
+}, test.limit.slow);
 test.run('the completion line counts every test, and the exit code says a test failed', 0.2, function () {
   return (/✅:3\s+❌:5/.test(W.probe.out) && W.probe.code === 1) || false;
 }, test.limit.quick);

@@ -67,3 +67,7 @@ node is touched.
 - A crash or a hang that ends the suite, or is reported under another test, or at another severity.
 - `--test` running tests after the one named, or not the ones before it.
 - A suite that stops printing when no node is there.
+
+- **Stopped, it cleans up** (goal/G48.4; Andy: *"WHY THE FUCK ARE TEST RUNS STILL LITTERING SHIT ALL OVER THE PLACE"*): a
+  suite sent SIGTERM while a test runs runs its `test.after` and ends by itself within 10 seconds, so what it started is
+  cleaned up before anything has to kill it.
