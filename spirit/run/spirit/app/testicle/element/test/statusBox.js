@@ -112,6 +112,21 @@ test.run('its icons stand in a block on the left, and right of it a block of two
   return (!!r && r.icons && r.left && r.stacked) || false;
 }, test.limit.quick);
 // goal/G47.4, Andy: "status bar: the icons must be of size 2m." (taken as 2em: twice the font size of the box's container).
+// goal/G47.4, Andy: "the whole status block in a bubble, the icons vertically centered in that bubble.", then "the two
+// icons should be vertically centered": the box is the shared bubble, holding the icons and the rows; each icon's glyph
+// stands with its middle at the middle of the bubble's inside, within a pixel and a half.
+test.run('the whole status block is one shared bubble holding the icons and the two rows', 0.4, async function () {
+  if (!W.ok) return false;
+  const r = await ev('(function () { var s = document.querySelector("#zzA .testicle-status"); return !!s && s.classList.contains("shell-bubble") && !!s.querySelector(".testicle-icons") && !!s.querySelector(".testicle-rows"); }())');
+  return r === true || false;
+}, test.limit.quick);
+test.run('its mode and busy icons stand vertically centred in the bubble', 0.4, async function () {
+  if (!W.ok) return false;
+  const r = await ev('(function () { var s = document.querySelector("#zzA .testicle-status"); if (!s) return null; var b = s.getBoundingClientRect(), c = getComputedStyle(s);' +
+    ' var top = b.top + parseFloat(c.borderTopWidth) + parseFloat(c.paddingTop), bottom = b.bottom - parseFloat(c.borderBottomWidth) - parseFloat(c.paddingBottom), mid = (top + bottom) / 2;' +
+    ' return Array.prototype.map.call(s.querySelectorAll(".testicle-mode, .testicle-busy"), function (x) { var g = document.createRange(); g.selectNodeContents(x); var q = g.getBoundingClientRect(); return q.height > 0 ? Math.abs((q.top + q.bottom) / 2 - mid) : 99; }); }())');
+  return (Array.isArray(r) && r.length === 2 && r.every(function (d) { return d <= 1.5; })) || false;
+}, test.limit.quick);
 test.run('its mode and busy icons are drawn at 2em, twice the font size of its container', 0.4, async function () {
   if (!W.ok) return false;
   const r = await ev('(function () { var b = document.getElementById("zzA"), m = b.querySelector(".testicle-mode"), i = b.querySelector(".testicle-busy"); if (!m || !i) return null; var f = parseFloat(getComputedStyle(b).fontSize); return [m, i].every(function (x) { return Math.abs(parseFloat(getComputedStyle(x).fontSize) - 2 * f) < 0.5; }); }())');
@@ -213,13 +228,14 @@ test.run('while zzBad\'s own suite runs, its rows read its suite and script, and
   const rows = await runRows(BAD, BADS);
   return ((rows || []).some(function (p) { return names(p[0], BADS) && names(p[1], BAD); }) && noTitleNoResult(rows || [], 'zzBad fails')) || false;
 }, test.limit.long);
-// goal/G47.4, Andy: "the two numbers, starting the tow rows must be fixed width, 6em, right aligned, and invisible when zero."
+// goal/G47.4, Andy: "the two numbers, starting the tow rows must be fixed width, 6em, right aligned, and invisible when zero.",
+// then: "a width of 4em for the two numbers is likely enough."
 // Judged on every row drawn through classifying and both runs.
 const NUM_OF = function (s) { const m = /^(\d*)/.exec(s.txt || ''); return m[1] === '' ? 0 : Number(m[1]); };
-test.run('through classifying and both runs, every row began with its number in an element of its own, 6em wide, right aligned', 0.4, async function () {
+test.run('through classifying and both runs, every row began with its number in an element of its own, 4em wide, right aligned', 0.4, async function () {
   if (!W.ok) return false;
   const nums = (await ev('window.zz.nums')) || [];
-  return (nums.length > 0 && nums.every(function (s) { return !s.none && s.em > 0 && Math.abs(s.w - 6 * s.em) < 1 && (s.align === 'right' || s.align === 'end'); })) || false;
+  return (nums.length > 0 && nums.every(function (s) { return !s.none && s.em > 0 && Math.abs(s.w - 4 * s.em) < 1 && (s.align === 'right' || s.align === 'end'); })) || false;
 }, test.limit.quick);
 test.run('through classifying and both runs, a number that was zero was never seen, and one that was not was', 0.4, async function () {
   if (!W.ok) return false;

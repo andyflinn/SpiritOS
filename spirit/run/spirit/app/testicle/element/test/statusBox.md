@@ -26,7 +26,8 @@ testicle's face is an element of its own"*, *"element/statusBox.js (the monitor 
 - **In a bubble** (Andy: *"the whole status block in a bubble, the icons vertically centered in that bubble."*): the box is
   the shared `.shell-bubble`, the icons centred in its height.
 - **Sized** (Andy: *"the icons must be of size 2em. the two numbers, starting the two rows must be fixed width, 6em, right
-  aligned, and invisible when zero."*): the icons at 2em; each row's number in a box of its own (`.testicle-num`), 6em
+  aligned, and invisible when zero."*, then *"a width of 4em for the two numbers is likely enough."*): the icons at 2em;
+  each row's number in a box of its own (`.testicle-num`), 4em
   wide, right aligned, hidden at zero with its room kept, its words after it (`.testicle-words`).
 - **No test titles and no results** of suites or tests in the bar; **both rows empty** when no run is active.
 - **The stream:** suites owed and classifications owed, sent when either changes and once to a page as it connects; while
@@ -40,8 +41,8 @@ that loaded it by itself; one box with the mode and the busy icon; the icons in 
 right of it; the mode the node answers (🖖, interactive); 🚶‍➡️ while testicle classified the tree, row 1 naming the classifier
 and row 2 counting *"<n> of <total>"* up; 🛌 and both rows empty once idle; two planted scripts with their own tests pressed,
 one holding and one failing: row 1 their suite, row 2 the tests reported (1) and their script, never a title or a result,
-both rows empty after; no doing text from the stream; the icons at twice the container's font size; every row drawn
-beginning with its number in an element of its own, 6em wide, right aligned, a zero never seen and any other number seen; overflow hidden, each row one line, ellipsed; the node set to auto and
+both rows empty after; no doing text from the stream; the whole block one shared bubble, the icons vertically centred in it; the icons at twice the container's font size; every row drawn
+beginning with its number in an element of its own, 4em wide, right aligned, a zero never seen and any other number seen; overflow hidden, each row one line, ellipsed; the node set to auto and
 back, 🤖 then 🖖 by itself (box v143); in auto mode row 1's number equal to the suites testicle's database holds marked, and
 following them down as suites report; a page loaded anew while nothing changes holding suites owed and classifications owed
 as the database says them; destroyed, an empty container.
