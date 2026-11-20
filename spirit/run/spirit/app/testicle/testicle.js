@@ -66,6 +66,10 @@ db.exec('CREATE TABLE IF NOT EXISTS suite (script TEXT NOT NULL, suite TEXT NOT 
 // explanation of a suite's red: crashed or hung when no verdict was reached."): added to a table made before it, nothing else
 // of it touched. '' when the verdict was reached.
 if (!db.prepare('PRAGMA table_info(suite)').all().some(function (c) { return c.name === 'reason'; })) db.exec("ALTER TABLE suite ADD COLUMN reason TEXT NOT NULL DEFAULT ''");
+// HOW LONG ITS LAST RUN TOOK (goal/G48.4, Andy: "do we time a test or a suite record the runtime?", "can those measurements
+// contribute to returning more results faster?", then "go! test and build."): ms, the milliseconds a suite row's last run took
+// for its script, 0 for one never timed; added to a table made before it, as reason was, nothing else of it touched.
+if (!db.prepare('PRAGMA table_info(suite)').all().some(function (c) { return c.name === 'ms'; })) db.exec('ALTER TABLE suite ADD COLUMN ms INTEGER NOT NULL DEFAULT 0');
 // THE DEPENDENCY TABLE (goal/G47.6, box point 3: "They are kept in a new table of testicle's, dependency, one row per script
 // and each file in its chain, replaced each time the classifier classifies that script."): requires is a file the script's
 // load pulled in (script.classify), or its own suite pulled in while it ran (suite.success).
@@ -146,6 +150,7 @@ function fieldRules() { return spirit.require('spirit/fieldRules.js'); }
 // \"still red\" if one failed"). Its outcome column holds 'green' or 'red' once judged; the flag, test, says needs running.
 const judgeSuite = db.prepare('UPDATE suite SET test = 0, outcome = ?, changed = ?, reason = \'\' WHERE script = ? AND suite = ?');
 const setReason = db.prepare('UPDATE suite SET reason = ? WHERE script = ? AND suite = ?');
+const setMs = db.prepare('UPDATE suite SET ms = ? WHERE script = ? AND suite = ?');
 const D = {
   drop: db.prepare('DELETE FROM dependency WHERE script = ?'),
   add: db.prepare('INSERT OR IGNORE INTO dependency (script, requires) VALUES (?, ?)'),
@@ -211,7 +216,7 @@ const QUIET_MS = 1000;
 // stop long run... so make the mimit 120 minutes...."; it was 2 minutes a script): past it the job is killed and its tests
 // failed. A classifying run and a general test's run of many scripts have the same one limit.
 const JOB_LIMIT_MS = 120 * 60 * 1000;
-const flaggedRows = db.prepare('SELECT script, suite FROM suite WHERE test = 1 AND deleted = 0');
+const flaggedRows = db.prepare('SELECT script, suite, outcome, ms FROM suite WHERE test = 1 AND deleted = 0');
 let job = null;          // { script, suite, title, scriptHash, suiteHash, started, kid, timer, killed }
 const front = [];        // [{ script, suite, title }], pressed: run first, the newest press first
 let quiet = null;
@@ -338,8 +343,12 @@ function chooseJob() {
   // Interactive: only what was pressed runs; the flagged rows wait for a press, or for auto.
   if (prefs.interactive) return null;
   const rows = flaggedRows.all().filter(function (r) { return r.suite !== CLASSIFY && there(r.script) && there(r.suite) && !ownSuite(r.suite) && !blocked(r.script) && !unfit(r.script, r.suite); });
-  // General tests first, "because they tend to get most coverage fastest" (Andy); then by name, so the order is stable.
-  rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
+  // General tests first, "because they tend to get most coverage fastest" (Andy); THEN THE REDS, THEN THE QUICKEST (goal/G48.4,
+  // Andy: "we want fixing-work to appear as fast as possible at the top of the queue", "we want the most results as quickly as
+  // possible", then "go! test and build."): a row last judged red before one that was not, then the shorter last run first, a
+  // row never timed (ms 0) counting as quick, so new work is not held back; then by name, so the order is stable.
+  const red = function (r) { return r.outcome === 'red' ? 1 : 0; };
+  rows.sort(function (a, b) { return (isGeneral(b.suite) - isGeneral(a.suite)) || (red(b) - red(a)) || ((Number(a.ms) || 0) - (Number(b.ms) || 0)) || (a.suite < b.suite ? -1 : a.suite > b.suite ? 1 : 0) || (a.script < b.script ? -1 : a.script > b.script ? 1 : 0); });
   if (!rows.length) return null;
   // A GENERAL TEST IS HANDED A LIST (goal/G47.1, box v94, 2: "else it will process all scripts listed in the arguments that
   // fit"; Andy: "optimizing the testicle server so it gives the general tests a LIST instead of calling them one-by-one"):
@@ -1443,6 +1452,13 @@ appServer.serve({
       // What the run left in the run folder, judged for this script (judgeLitter).
       if (ran && job && job.suite === suite) judgeLitter(job, script, ran);
       judgeSuite.run(a.success ? 'green' : 'red', Date.now(), script, suite);
+      // ITS RUN TIMED (goal/G48.4): from the run's start, or in a general test's run of many scripts from the verdict of the
+      // script before it, to this verdict; only a verdict of the run going is timed.
+      if (ran && job && job.suite === suite) {
+        const now = Date.now();
+        setMs.run(Math.max(0, now - (job.lastVerdict || job.started || now)), script, suite);
+        job.lastVerdict = now;
+      }
       // WHY A RED REACHED NO VERDICT (goal/G47.6, box point 1): crashed or hung, as the reporter knows it; '' otherwise.
       const broke = !a.success && (a.reason === 'crashed' || a.reason === 'hung');
       if (broke) setReason.run(a.reason, script, suite);
