@@ -324,7 +324,10 @@ test.run('no folder or file below takes a word reserved above it', 0.2, function
     const where = path.dirname(e.rel);
     if (where === '.' || e.name === 'word.json' || borrows(e)) return;
     above(where).forEach(function (l) {
-      if (l.words.indexOf(stem(e.name)) !== -1 && !(l.at !== 'hard-coded' && path.dirname(l.at) === where)) taken.push(e.rel);
+      // A NAME THAT IS A HARD-CODED WORD IS THAT WORD'S RESERVED USE (goal/G48.5, Q1: "Is a folder or file named by a hard-coded
+      // word, as an app's server/, api.js or element.js, that word's reserved use, so word's test lets it stand?" Andy: "yes.").
+      if (l.at === 'hard-coded') return;
+      if (l.words.indexOf(stem(e.name)) !== -1 && path.dirname(l.at) !== where) taken.push(e.rel);
     });
   });
   return !taken.length || false;

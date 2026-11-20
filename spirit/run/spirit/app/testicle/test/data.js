@@ -75,8 +75,8 @@ test.run('a suite row is kept at suite/<its key>, or script|suite when it carrie
 // The box: "The script column and the suite column show the file name only, no path".
 test.run('a test row is kept with scriptName and suiteName, the last part of each path', 0.2, function () {
   if (!W.T) return false;
-  const key = 'spirit/seal.js|spirit/test/seal.js|it seals|0';
-  job({ testicle: { table: 'testicle', row: { key: key, script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'it seals', flipped: 0, current: true, verified: true, severity: 0.2 } } });
+  const key = 'spirit/seal.js|spirit/test/seal.js|it seals|1';
+  job({ testicle: { table: 'testicle', row: { key: key, id: 1, script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'it seals', current: true, verified: true, severity: 0.2 } } });
   const r = at('testicle', key);
   return (!!r && r.scriptName === 'seal.js' && r.suiteName === 'seal.js' && r.test === 'it seals') || false;
 }, test.limit.quick);

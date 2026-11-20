@@ -140,7 +140,6 @@ const waitFor = function (expr, ms) { return until(function () { return c.evalua
 const mounted = function () { return !N || !N.up || !c || !!c.error || !c.evaluate || made !== 'made' || !planted; };
 // The title cell: by its field where the list names it (while words are typed the list draws a column more), else the third.
 const titleOf = function (row) { const t = row && row.cells ? row.cells.filter(function (cl) { return cl.field === 'test'; })[0] || row.cells[2] : null; return t ? t.text : ''; };
-const keyOf = function (script, suite, title, flipped) { return script + '|' + suite + '|' + title + '|' + flipped; };
 let current = {};
 
 test.after(async function () {
