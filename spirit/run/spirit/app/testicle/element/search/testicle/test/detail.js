@@ -143,10 +143,12 @@ test.run('row 1 is a row form holding the title, with its run button on the righ
 // single time...."
 // then: "give a row on top to the full script filename", "give a row on top to the full suite filename", "and eliminate those
 // columns, too."
-test.run('the detail\'s columns are Flipped, then the test row\'s Result and Severity, with no Title, Script or Suite', 0.4, async function () {
+// goal/G48.4, Andy: "a run that doesn't flip needs to update the run date in any event.", then "who the fuck said it need two
+// motherfucking dates?????": one date, the last run.
+test.run('the detail\'s columns are Last run, then the test row\'s Result and Severity, with no Title, Script or Suite', 0.4, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
-  return (!!v && JSON.stringify(v.heads) === JSON.stringify(['Flipped', 'Result', 'Severity'])) || false;
+  return (!!v && JSON.stringify(v.heads) === JSON.stringify(['Last run', 'Result', 'Severity'])) || false;
 }, test.limit.quick);
 // the box: "given a valid test title ... it answers every row matching that script, suite and title, current or not, newest
 // first. A test's history in its detail comes from that, no new verb."
@@ -185,10 +187,14 @@ test.run('each row is drawn by the test row, with its result as an icon and its 
   const want = ['✅', '❌', '✅'].map(function (i) { return [i, '0.30'].join(' | '); });
   return JSON.stringify(tail) === JSON.stringify(want) || false;
 }, test.limit.quick);
-test.run('each row shows the date it flipped', 0.2, async function () {
+// Each row's date is its last run, the row's tested, as the node answers the row.
+test.run('each row shows the date it last ran', 0.2, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
-  const bad = (v && v.rows || []).filter(function (r) { const f = Number(String(r.key).split('|').pop()); return r.cells[0] !== new Date(f).toISOString().replace('T', ' ').slice(0, 19); });
+  const got = await call(N.base, 'testicle.testicle.search', { script: A, suite: AS, test: FLIPS, text: '' });
+  const ran = {};
+  ((got.body && got.body.items) || []).forEach(function (it) { let row = null; try { row = JSON.parse(it.label); } catch (e) { row = null; } if (row && row.tested) ran[it.key] = Number(row.tested); });
+  const bad = (v && v.rows || []).filter(function (r) { return !ran[r.key] || r.cells[0] !== new Date(ran[r.key]).toISOString().replace('T', ' ').slice(0, 19); });
   return (!!v && v.rows.length === 3 && !bad.length) || false;
 }, test.limit.quick);
 // "It asks again whenever testicle publishes a row of this test."
