@@ -65,6 +65,8 @@
         // suites-owed and classifications-owed numbers once"): the server keeps the last in its job's data, which the
         // snapshot a page connects with carries; after that the owed message of its own moves them.
         if (job.data && isOwed(job.data.owed)) V.merge(MONITOR, { owed: { suites: job.data.owed.suites, classifications: job.data.owed.classifications } });
+        // THE NUMBER OF REDS (goal/G48.4), kept and sent as owed is: on connect from the job's data, then with owed's message.
+        if (job.data && typeof job.data.reds === 'number') V.merge(MONITOR, { reds: job.data.reds });
         var a = job.app && job.app.testicle;
         if (!a || typeof a !== 'object') return;
         // THE MONITOR (goal/G47.1, the box: the monitor row's busy "as the server streams it" and "the last change: a row
@@ -76,6 +78,7 @@
         if (typeof a.running === 'string') mon.running = a.running;
         // What is owed, a message of its own sent when a number moves: { owed: { suites, classifications } }.
         if (isOwed(a.owed)) mon.owed = { suites: a.owed.suites, classifications: a.owed.classifications };
+        if (typeof a.reds === 'number') mon.reds = a.reds;
         var row = TABLES.indexOf(a.table) !== -1 && a.row && typeof a.row === 'object' ? a.row : null;
         var k = row ? keyOf(a.table, row) : '';
         // A TEST ROW ERASED (goal/G47.4: a title a completed run did not report) leaves the mirror.
@@ -107,7 +110,7 @@
     TABLES.forEach(function (t) {
       testicleReads[t] = { watch: function (fn) { return HOME.watch(t, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, t), v); }); } };
     });
-    //   monitor.get()      { busy, running, owed: { suites, classifications }, last: { table, key, change, at } } as the stream last
+    //   monitor.get()      { busy, running, owed: { suites, classifications }, reds, last: { table, key, change, at } } as the stream last
     //                      told it; {} before anything came
     //   monitor.watch(fn)  fn(monitor) on every change; answers its release
     testicleReads.monitor = {

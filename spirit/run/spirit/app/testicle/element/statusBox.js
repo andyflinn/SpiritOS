@@ -62,7 +62,13 @@
     container.innerHTML = '<div class="testicle-status shell-bubble" style="display:flex;align-items:center;height:calc(2.6em + 0.6em + 2px);overflow:hidden;white-space:nowrap">' +
       '<span class="testicle-icons" style="display:inline-flex;align-items:center;flex:none;font-size:2em;line-height:1;align-self:stretch"><span class="testicle-mode" style="' + ICON + '"></span>&nbsp;<span class="testicle-busy" style="' + ICON + '"></span>&nbsp;</span>' +
       '<span class="testicle-rows" style="display:inline-flex;flex-direction:column;flex:1;min-width:0;overflow:hidden">' +
-      ROW_HTML + ROW_HTML + '</span></div>';
+      ROW_HTML + ROW_HTML + '</span>' +
+      // THE NUMBER OF REDS IN A LARGE RED BOX AT THE RIGHT EDGE (goal/G48.4, Andy: "the number of reds, and displaying it in a
+      // large, RED box at the right windows edge of the status bar"): the count the stream keeps (../data.js, monitor.reds),
+      // invisible at zero as the bar's other numbers are, its room kept.
+      '<span class="testicle-reds" data-reds="" style="flex:none;align-self:stretch;display:inline-flex;align-items:center;justify-content:center;' +
+      'min-width:2em;font-size:2em;font-weight:bold;line-height:1;color:#fff;background:#d00;border-radius:0.2em;visibility:hidden"></span></div>';
+    var redBox = container.querySelector('.testicle-reds');
     var mode = container.querySelector('.testicle-mode');
     var icon = container.querySelector('.testicle-busy');
     var rows = container.querySelectorAll('.testicle-row');
@@ -81,6 +87,13 @@
       var glyph = busy ? '🚶‍➡️' : '🛌';
       if (glyph !== shown && paint(icon, glyph)) shown = glyph;
       icon.title = busy ? 'working' : 'idle';
+      var reds = m && typeof m.reds === 'number' ? m.reds : 0;
+      if (redBox.getAttribute('data-reds') !== String(reds)) {
+        redBox.setAttribute('data-reds', String(reds));
+        redBox.textContent = String(reds);
+        redBox.title = reds + ' red';
+        redBox.style.visibility = reds ? '' : 'hidden';
+      }
       var words = rowsOf(m || {});
       [0, 1].forEach(function (i) {
         var num = rows[i].querySelector('.testicle-num'), say = rows[i].querySelector('.testicle-words'), w = words[i];

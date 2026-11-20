@@ -1113,17 +1113,22 @@ function runningNow() {
 // a job's data merged, its app object replaced by the next publish): that is the once on connect.
 const owedSuites = db.prepare('SELECT COUNT(DISTINCT suite) AS n FROM suite WHERE test = 1 AND deleted = 0');
 const owedClassifications = db.prepare('SELECT COUNT(*) AS n FROM script WHERE reClassify = 1 AND deleted = 0');
+// THE NUMBER OF REDS (goal/G48.4, Andy: "what's the cost of streaming the number of reds, and displaying it in a large, RED box
+// at the right windows edge of the status bar????", then "NOW! including test."): the current test rows that failed, counted
+// by the reds index, sent beside owed, the same way: when it moved, and kept in the job's data for a page that connects.
+const redCount = db.prepare('SELECT COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0');
 let owedTold = '';
 function owedNow() { return { suites: Number(owedSuites.get().n) || 0, classifications: Number(owedClassifications.get().n) || 0 }; }
 function toldOwed() {
   let o = null;
-  try { o = owedNow(); } catch (e) { return; }
-  const s = JSON.stringify(o);
+  let reds = 0;
+  try { o = owedNow(); reds = Number(redCount.get().n) || 0; } catch (e) { return; }
+  const s = JSON.stringify([o, reds]);
   if (s === owedTold) return;
   owedTold = s;
   // The job's data first, then the message: every job event after carries the new numbers, none the old.
-  const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o } }); };
-  Promise.resolve(spirit.job.report({ data: { owed: o } })).then(say, say);
+  const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o, reds: reds } }); };
+  Promise.resolve(spirit.job.report({ data: { owed: o, reds: reds } })).then(say, say);
 }
 let busyTold = false;
 let runningTold = '';
