@@ -74,6 +74,10 @@ const up = function () { return !!W.node && W.node.up; };
 // "\"path\" with \"<<\" as an argument navigates to the root, where the prompt always is \"spirit: \""
 test.run('the loop starts at the root with the prompt "spirit: "', 0.4, async function () {
   if (!up()) return false;
+  // ITS OWN START STATE (goal/G48.4; Andy: "not if spirit/state/console/node.json has an other current path"): the loop shows
+  // the stored path (./loop.md), so the test plants the root, no history, before the loop opens, whatever the tree held.
+  fs.mkdirSync(path.dirname(STATE()), { recursive: true });
+  fs.writeFileSync(STATE(), JSON.stringify({ path: '', history: [] }));
   W.t = open();
   const ok = await H.until(function () { return Promise.resolve(plain(W.t.out).indexOf('spirit: ') !== -1); }, 20000);
   return (!!ok && !W.t.ended) || false;
