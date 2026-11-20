@@ -948,7 +948,7 @@ test.run('the relay has sent this node its owner\'s report', 0.2, async function
   S.report = !!(report && Object.keys(report).length);
   return S.report || false;
 }, test.limit.slow);
-test.run('its report sets no star', 0.8, async function () {
+test.run('its report sets no faceable mark, WHAT THE FUCK????????????????????', 0.8, async function () {
   if (!S.O || S.ok2 !== true) return false;
   return !(await starOf(S.O.relayKey)) || false;
 }, test.limit.quick);
