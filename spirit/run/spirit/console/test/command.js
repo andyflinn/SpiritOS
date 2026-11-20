@@ -206,6 +206,68 @@ test.run('"api" at spirit.app.agent.test, a folder with no api.js, answers a JSO
   await go('path <<');
   return r || false;
 }, test.limit.slow);
+// EXECUTING VERBS (goal/G48.3, box v7, ## executing verbs): "at a branch, a line typed as its usage shows ... executes that
+// verb, and the console shows the json it returns, as JSON.stringify(answer,null,2)."; "a verb the node refuses shows that
+// refusal as a json error, as every other console error." ## typing values: "a value with a space in it is put in double
+// quotes"; "a value is read as its argument's rule in the verb's own file says: a number argument as a number, a yes/no
+// argument as true or false, a list or object argument as JSON". What the node holds is asked over its own door, by the test.
+async function call(verb, args) {
+  try {
+    const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    return { status: r.status, body: await r.json() };
+  } catch (e) { return { status: 0, body: null }; }
+}
+const answered = function (p) { const o = json(p.out); return p.ended && !!o && typeof o === 'object' && o.ok !== false && String(p.out).trim() === JSON.stringify(o, null, 2) ? o : null; };
+test.run('at spirit.node, "card" executes node.card and shows its answer as JSON.stringify(answer, null, 2)', 0.4, async function () {
+  if (!up()) return false;
+  await go('path <<');
+  await go('path node');
+  if (at() !== 'node') return false;
+  const p = await go('card');
+  const o = answered(p);
+  const want = await call('node.card');
+  return (!!o && want.status === 200 && JSON.stringify(o) === JSON.stringify(want.body)) || false;
+}, test.limit.slow);
+test.run('a value with a space, put in double quotes, arrives whole: setDescription description="said in four words"', 0.4, async function () {
+  if (!up() || at() !== 'node') return false;
+  const p = await run(['setDescription', 'description="said in four words"']);
+  const card = await call('node.card');
+  return (!!answered(p) && card.status === 200 && card.body.description === 'said in four words') || false;
+}, test.limit.slow);
+test.run('an object argument is read as JSON: debug debug={"on":...} sets the node\'s debug flag', 0.4, async function () {
+  if (!up() || at() !== 'node') return false;
+  const before = await call('node.debug', { debug: {} });
+  if (before.status !== 200 || typeof before.body.debug !== 'boolean') return false;
+  const want = !before.body.debug;
+  const p = await run(['debug', 'debug={"on":' + want + '}']);
+  const after = await call('node.debug', { debug: {} });
+  return (!!answered(p) && after.body.debug === want) || false;
+}, test.limit.slow);
+test.run('a number argument is read as a number: at spirit.auth, bundle op=get id=<the id bundle op=add answered>', 0.4, async function () {
+  if (!up()) return false;
+  await go('path <<');
+  await go('path auth');
+  if (at() !== 'auth') return false;
+  const made = answered(await go('bundle op=add label=zzConsole'));
+  if (!made || typeof made.id !== 'number') return false;
+  const got = answered(await go('bundle op=get id=' + made.id));
+  return (!!got && got.label === 'zzConsole' && got.id === made.id) || false;
+}, test.limit.slow);
+test.run('a verb the node refuses shows the refusal as a JSON error, and the path stays: bundle op=get id=987654', 0.4, async function () {
+  if (!up() || at() !== 'auth') return false;
+  const p = await go('bundle op=get id=987654');
+  const o = json(p.out);
+  return (refused(p, 'auth') && o.ok === false) || false;
+}, test.limit.slow);
+test.run('a yes/no argument is read as true or false: at spirit.contact, search keep=true answers', 0.4, async function () {
+  if (!up()) return false;
+  await go('path <<');
+  await go('path contact');
+  if (at() !== 'contact') return false;
+  const o = answered(await go('search keep=true'));
+  await go('path <<');
+  return (!!o && Array.isArray(o.items)) || false;
+}, test.limit.slow);
 // "a 256 rolling command history": 300 lines given, the newest 256 kept, the oldest gone.
 test.run('the command history rolls at 256: after 300 more lines it holds 256, the newest last', 0.4, async function () {
   if (!up()) return false;
