@@ -20,7 +20,7 @@ itself"*). `createContactLabel` is no more.
   left it removes its listener at the next rename; one never placed keeps listening.
 - **Mode 1** (display): no click.
 - **Mode 2** (editable): a click opens one `input.contact-label-input` holding the caption, before the error span,
-  the text hidden; Escape closes it. Enter saves: an empty name asks nothing; a name `spirit.fieldRules.problem`
+  the text hidden; Escape closes it. Enter saves: an empty name asks nothing; a name the label type (`spirit/type/string/label.js`, `isValid`)
   refuses is said in the error span and not asked; otherwise `contact.label { publicKey, myLabel }` with the name
   trimmed. The answer's caption (or the name typed, if it has none) is drawn and known, the input closed, the error
   cleared; a refusal is said and the old name kept.

@@ -42,7 +42,10 @@ window.spirit.ready = Promise.resolve({ contact: {
   label: function (b) { asked.push({ verb: 'contact.label', body: b });
     return labelRefuse ? Promise.reject(new Error(labelRefuse)) : Promise.resolve(labelAnswer); },
 } });
-window.spirit.fieldRules = { problem: function (t) { return t.length > 8 ? 'too long' : ''; } };
+// The label type as it stands on a page (spirit.required.spirit.type.string.label, goal/G48.4): a stand-in that refuses past 8.
+window.spirit.required = window.spirit.required || {};
+window.spirit.required.spirit = window.spirit.required.spirit || {};
+window.spirit.required.spirit.type = { string: { label: { isValid: function (t) { if (t.length > 8) throw new Error('too long'); return true; } } } };
 // The element, once the first test has run its file.
 let made = null;
 // Box v23: "every element gets a container and appends itself": each label here is made into a container of its own.

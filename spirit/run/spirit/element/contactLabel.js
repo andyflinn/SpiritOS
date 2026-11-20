@@ -21,7 +21,7 @@
 //   hit on the keyboard, and the string is not empty."
 //   Andy: "the label listens to changes in both modes."
 //
-// Mode 2 checks what is typed with spirit/fieldRules.js before it asks; the
+// Mode 2 checks what is typed with the label type (spirit/type/string/label.js) before it asks; the
 // node checks again (contact.label, goal/G4.16). Every label hears a
 // rename from anywhere: the node writes contact.rename {key, caption} on
 // its stream and the shell says it once on document (the old shell,
@@ -29,8 +29,11 @@
 // contact.rename").
 
 (function () {
-  // WHAT IT USES, IT LOADS ITSELF (goal/G43.27): fieldRules, the rule mode 2 checks a name with, through spirit.require.
-  if (window.spirit && window.spirit.require) window.spirit.require('spirit/fieldRules.js');
+  // WHAT IT USES, IT LOADS ITSELF (goal/G43.27): the label type, which mode 2 checks a name with, through spirit.require
+  // (goal/G48.4, the box: "fieldRules.js dies").
+  if (window.spirit && window.spirit.require) window.spirit.require('spirit/type/string/label.js');
+  // And fieldInput, which holds the name typed in mode 2 to that type as it is typed.
+  if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/fieldInput.js');
   // ONE NAME PER KEY FOR THE PAGE (Andy, goal/G4.10: "the pane and dropdown seem to still initialize with keys. this
   // makes the keys flashing briefly every time an update occurs"). A list redrawn makes new labels; a name already
   // known draws at once, and one key is asked of the node once, however many labels wait for it.
@@ -88,8 +91,10 @@
     function save(typed) {
       var name = String(typed || '').trim();
       if (!name) return;
-      var rule = window.spirit.fieldRules || null;
-      var bad = rule ? rule.problem(name) : '';
+      var R = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.type && window.spirit.required.spirit.type.string;
+      var L = R && R.label;
+      var bad = '';
+      if (L) { try { L.isValid(name); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { why.textContent = bad; return; }
       spirit.ready.then(function (s) { return s.contact.label({ publicKey: key, myLabel: name }); }).then(function (body) {
         caption = (body && typeof body.caption === 'string') ? body.caption : name;
@@ -105,6 +110,8 @@
       editing.type = 'text';
       editing.className = 'contact-label-input';
       editing.value = caption;
+      var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+      if (FI) FI.attach(editing, 'spirit.type.string.label');
       editing.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
           if (event.preventDefault) event.preventDefault();
