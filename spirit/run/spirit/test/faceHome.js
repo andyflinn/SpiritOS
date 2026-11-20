@@ -856,7 +856,7 @@ test.run('when starred, the running job reaches the face', 0.2, async function (
   await until(function () { return heardEvent('job-deleted', S.j1b.id); }, 5000);
   return (!!S.j1b.id && heardEvent('job-updated', S.j1b.id)) || false;
 }, test.limit.quick);
-test.run('when starred, the deleted job reaches the face', 0.2, function () {
+test.run('when the relay is faceable, the deleted job reaches the face WHAT THE FUCK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 0.2, function () {
   if (!streamUp() || !S.j1b) return false;
   return (!!S.j1b.id && heardEvent('job-deleted', S.j1b.id)) || false;
 }, test.limit.quick);
