@@ -1,7 +1,7 @@
 {
   "description": "Claim a phase of an item as finished, with the commit it was finished at: phase build is the claim-done (Done is then offered to Andy, who alone presses it); phase red claims a code item's red. commit is 7 to 40 lower-case hex characters, pushed first; it may be empty only for a plain item's build claim, which has no code. An agent claims done only with ALL of its own testicle green (goal/G47.1).",
   "request": {
-    "id": "id",
+    "id": "spirit.type.string.deskId",
     "phase": "spirit.type.string.phase",
     "commit": "spirit.type.string.commitSelect"
   }

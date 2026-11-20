@@ -1,7 +1,7 @@
 {
   "description": "Set seen for an item by id: at is a UTC time, milliseconds since 1970 such as 1795166400000, anything else refused bad-request; a time no later than the one kept changes nothing. Answers {change}.",
   "request": {
-    "id": "id",
+    "id": "spirit.type.string.deskId",
     "at": "spirit.type.number.UTC"
   }
 }

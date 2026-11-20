@@ -1,7 +1,7 @@
 {
   "description": "Search an item's chat lines ranked by text, filtered by by, since and before, UTC times in milliseconds since 1970 (0 for no limit); scope items on a goal searches its items' chats too, each line naming its item; more when cut.",
   "request": {
-    "id": "id",
+    "id": "spirit.type.string.deskId",
     "text": "spirit.type.string.descriptionSelect",
     "by": "spirit.type.string.wordSelect",
     "since": "spirit.type.number.UTC",

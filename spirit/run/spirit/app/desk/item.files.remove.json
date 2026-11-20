@@ -1,7 +1,7 @@
 {
   "description": "Take one file off your list for an item, by its repository path (goal/G40.3); a path not on your list is refused.",
   "request": {
-    "id": "id",
+    "id": "spirit.type.string.deskId",
     "path": "spirit.type.string.file"
   }
 }
