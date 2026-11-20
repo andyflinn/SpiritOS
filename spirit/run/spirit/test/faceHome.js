@@ -813,7 +813,7 @@ test.run('with no star, the stream carries nothing of the node, not even its fil
   // Box v29: no star, the node answers the face nothing, so no file tree, no presence, no job.
   return (!hears('spirit.fs') && !hears('presence')) || false;
 }, test.limit.slow);
-test.run('with no faceable mark, a job runs and is deleted at home', 0.2, async function () {
+test.run('with no faceable mark, a job runs and is deleted at home WHAT THE FUCK!!!!!!!!!!', 0.2, async function () {
   if (!streamUp()) return false;
   const script2 = path.join(S.run, 'spirit/app/zzStream/zzStream.js');
   fs.mkdirSync(path.dirname(script2), { recursive: true });
