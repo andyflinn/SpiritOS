@@ -5,6 +5,6 @@
     "suite": "spirit.type.string.fileSelect?",
     "test": "text?",
     "result": "spirit.type.string.testResult?",
-    "text": "spirit.type.string.lineSelect"
+    "text": "spirit.type.string.descriptionSelect"
   }
 }

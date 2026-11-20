@@ -94,7 +94,7 @@ function contactCreate(container, options) {
     // The private label holds to the label rule (goal/G47.1, -browser: every input has a maxlength).
     window.spirit.required.spirit.element.fieldInput.attach(document.getElementById('contacts-relay-label'), 'spirit.type.string.label');
     // The address too, a line (fieldRules' LINE_MAX_BYTES): its maxlength and its own listener, so it is never deaf.
-    window.spirit.required.spirit.element.fieldInput.attach(document.getElementById('contacts-relay-url'), 'spirit.type.string.line');
+    window.spirit.required.spirit.element.fieldInput.attach(document.getElementById('contacts-relay-url'), 'spirit.type.string.URL');
     document.getElementById('contacts-relay-add').addEventListener('click', function () {
       var out = document.getElementById('contacts-relay-add-out');
       var label = String(document.getElementById('contacts-relay-label').value || '').trim();

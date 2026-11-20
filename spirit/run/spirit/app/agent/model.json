@@ -7,6 +7,6 @@
     "label": "name?",
     "providerId": "spirit.type.string.IDNew?",
     "capabilities": "spirit.type.string.json?",
-    "text": "spirit.type.string.lineSelect?"
+    "text": "spirit.type.string.descriptionSelect?"
   }
 }

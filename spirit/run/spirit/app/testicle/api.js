@@ -19,7 +19,7 @@ module.exports = {
     // goal/G47.1, box v94, 1: the classifier's verb: a script row's two flags, browserOnly and nodeOnly, never both.
     'script.classify': { script: 'spirit.type.string.file', browserOnly: 'spirit.type.boolean', nodeOnly: 'spirit.type.boolean', requires: 'spirit.type.string.json?' },
     // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
-    'suite.search': { script: 'spirit.type.string.fileSelect?', text: 'spirit.type.string.lineSelect' },
+    'suite.search': { script: 'spirit.type.string.fileSelect?', text: 'spirit.type.string.descriptionSelect' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
     'testicle.set': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', test: 'text', verified: 'spirit.type.boolean', severity: 'spirit.type.number.probability' },
     // goal/G47.4, the box: "a new verb testicle.title will change a testicle title, the script, suite AND oldTitle arguments
@@ -32,7 +32,7 @@ module.exports = {
     // goal/G47.1: the current test rows, the failed first, then most severe first; script, suite and result (red or green)
     // each optional, the words narrowing them; from, the rows already held, asks the following answer.
     // Given a test with its script and suite, that test's every row, the newest flip first (its history).
-    'testicle.search': { script: 'spirit.type.string.fileSelect?', suite: 'spirit.type.string.fileSelect?', test: 'text?', result: 'spirit.type.string.testResult?', text: 'spirit.type.string.lineSelect' },
+    'testicle.search': { script: 'spirit.type.string.fileSelect?', suite: 'spirit.type.string.fileSelect?', test: 'text?', result: 'spirit.type.string.testResult?', text: 'spirit.type.string.descriptionSelect' },
     // goal/G47.1, G45: every failed current test, most severe first. It takes nothing.
     red: {},
     // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it; answered at once.

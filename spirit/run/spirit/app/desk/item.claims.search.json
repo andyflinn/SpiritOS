@@ -2,6 +2,6 @@
   "description": "Search the claims on an item by id, each {by, at}, ranked by text, newest first among equals; answers {items: [{key: who claimed, label}], more}. Refused no-such-item when there is none.",
   "request": {
     "id": "id",
-    "text": "spirit.type.string.lineSelect"
+    "text": "spirit.type.string.descriptionSelect"
   }
 }

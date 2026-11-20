@@ -4,7 +4,7 @@
     "id": "id",
     "status": "text?",
     "data": "spirit.type.object.payload?",
-    "logMessage": "spirit.type.string.line?",
+    "logMessage": "spirit.type.string.paragraph?",
     "app": "spirit.type.object.payload?"
   }
 }

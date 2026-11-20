@@ -2,7 +2,7 @@
   "description": "The one table of the IDs this node knows (goal/G40.11): the people and relays its owner keeps, owns or blocked, searched by text (q; empty means everything), as a bounded list of {key: publicKey, label}; a label is the row as JSON: its name, its flags keep, mine, relay, blocked and seated, its publicLabel, present, and a relay's url. keep, mine, relay, seated and blocked are yes-filters. It also starts one network search across the relays if none is in flight; what it finds streams to the page as the peer-search job and is not stored as listed (goal/G43.17).",
   "parameters": "q is optional; each filter is optional and takes true or false (goal/G48.4: \"flags\" must be booleans).",
   "request": {
-    "q": "spirit.type.string.lineSelect?",
+    "q": "spirit.type.string.descriptionSelect?",
     "keep": "spirit.type.boolean?",
     "mine": "spirit.type.boolean?",
     "relay": "spirit.type.boolean?",

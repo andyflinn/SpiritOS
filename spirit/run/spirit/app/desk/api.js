@@ -24,7 +24,7 @@ module.exports = {
     'box.write': { id: 'id', text: 'text', version: 'spirit.type.number.integer' },
     'chat.add': { id: 'id', text: 'spirit.type.string.paragraph' },
     // Each filter left '' filters nothing; scope is '', goal or items.
-    'chat.search': { id: 'id', text: 'spirit.type.string.lineSelect', by: 'text', since: 'spirit.type.number.UTC', before: 'spirit.type.number.UTC', scope: 'text' },
+    'chat.search': { id: 'id', text: 'spirit.type.string.descriptionSelect', by: 'text', since: 'spirit.type.number.UTC', before: 'spirit.type.number.UTC', scope: 'text' },
     // kind is C, T, G or Q; words and test may be ''.
     'check.add': { id: 'id', kind: 'spirit.type.string.checkKind', words: 'text', test: 'text' },
     // check is a check's number, or 'all' for his Grant-All.
@@ -39,9 +39,9 @@ module.exports = {
     'item.chat': { id: 'id' },
     'item.checks': { id: 'id' },
     // goal/G33.7: each table's search, one component (desk.js tableSearch), ranked by text, bounded, more.
-    'item.checks.search': { id: 'id', text: 'spirit.type.string.lineSelect' },
-    'item.claims.search': { id: 'id', text: 'spirit.type.string.lineSelect' },
-    'item.files.search': { id: 'id', text: 'spirit.type.string.lineSelect' },
+    'item.checks.search': { id: 'id', text: 'spirit.type.string.descriptionSelect' },
+    'item.claims.search': { id: 'id', text: 'spirit.type.string.descriptionSelect' },
+    'item.files.search': { id: 'id', text: 'spirit.type.string.descriptionSelect' },
     'item.delete': { id: 'id' },
     // under '' keeps every path; the door's shape needs it sent.
     'item.files': { id: 'id', under: 'text?' },
@@ -57,8 +57,8 @@ module.exports = {
     // here, the spirit object refused every report before it left (found on goal/G40.3).
     'item.status': { id: 'id', word: 'text', tone: 'spirit.type.string.statusTone?' },
     'item.take': { id: 'id' },
-    'agents.search': { text: 'spirit.type.string.lineSelect' },
-    'items.search': { text: 'spirit.type.string.lineSelect', currentGoalOnly: 'spirit.type.boolean', goalsOnly: 'spirit.type.boolean', includeClosed: 'spirit.type.boolean' },
+    'agents.search': { text: 'spirit.type.string.descriptionSelect' },
+    'items.search': { text: 'spirit.type.string.descriptionSelect', currentGoalOnly: 'spirit.type.boolean', goalsOnly: 'spirit.type.boolean', includeClosed: 'spirit.type.boolean' },
     'line.take': { id: 'id' },
     // pass and why only for a verify; red and build send neither.
     'phase.done': { id: 'id', phase: 'spirit.type.string.phase', pass: 'spirit.type.boolean?', why: 'text?' },

@@ -61,9 +61,9 @@ test.run('fits counts bytes, never characters: a name of 64 bytes fits, 65 does 
   const got = [F.fits('a'.repeat(64), 'spirit.type.string.label'), F.fits('a'.repeat(65), 'spirit.type.string.label'), F.fits('é'.repeat(32), 'spirit.type.string.label'), F.fits('é'.repeat(33), 'spirit.type.string.label')];
   return JSON.stringify(got) === JSON.stringify([true, false, true, false]) || false;
 }, test.limit.quick);
-test.run('fits holds each type to its limit: description 128, paragraph 2048, line 1024 bytes', 0.2, function () {
+test.run('fits holds each type to its limit: description 128, paragraph 2048 bytes', 0.2, function () {
   if (!F) return false;
-  const bad = [['spirit.type.string.description', 128], ['spirit.type.string.paragraph', 2048], ['spirit.type.string.line', 1024]].filter(function (p) {
+  const bad = [['spirit.type.string.description', 128], ['spirit.type.string.paragraph', 2048]].filter(function (p) {
     return !(F.fits('x'.repeat(p[1]), p[0]) && !F.fits('x'.repeat(p[1] + 1), p[0]));
   });
   return !bad.length || false;
@@ -105,7 +105,7 @@ test.run('a paste that would take the text past its limit is refused', 0.2, func
 }, test.limit.quick);
 test.run('a line break counts as the byte it adds', 0.2, function () {
   if (!F) return false;
-  const i = F.attach(input('x'.repeat(1024)), 'spirit.type.string.line');
+  const i = F.attach(input('x'.repeat(2048)), 'spirit.type.string.paragraph');
   return i.type('insertLineBreak', null) === true || false;
 }, test.limit.quick);
 test.run('typing over a selection counts what it replaces', 0.2, function () {
@@ -129,10 +129,10 @@ test.run('it never says how far past the limit: a refusal leaves the text as it 
 }, test.limit.quick);
 // goal/G47.1, the box: "every INPUT field must be checked for a length constraint", "a maxlength on the input DOES count as its
 // length constraint": attach sets the input's maxlength to its rule's bytes, a ceiling on its characters.
-test.run('attach sets the input\'s maxlength to its rule\'s bytes: name 64, description 128, paragraph 2048, line 1024, glyph 32', 0.4, function () {
+test.run('attach sets the input\'s maxlength to its rule\'s bytes: name 64, description 128, paragraph 2048, glyph 32', 0.4, function () {
   if (!F) return false;
-  const got = ['spirit.type.string.label', 'spirit.type.string.description', 'spirit.type.string.paragraph', 'spirit.type.string.line', 'spirit.type.string.glyph'].map(function (r) { return F.attach(input(''), r).maxLength; });
-  return JSON.stringify(got) === JSON.stringify([64, 128, 2048, 1024, 32]) || false;
+  const got = ['spirit.type.string.label', 'spirit.type.string.description', 'spirit.type.string.paragraph', 'spirit.type.string.glyph'].map(function (r) { return F.attach(input(''), r).maxLength; });
+  return JSON.stringify(got) === JSON.stringify([64, 128, 2048, 32]) || false;
 }, test.limit.quick);
 // goal/G47.1, cw's fix of join's email field: fieldInput takes fieldRules' email rule (fieldRules.js: "THE EMAIL RULE
 // (goal/G40.10, box v20; Andy: \"no fieldRules.js for emails?\", and \"254\")").

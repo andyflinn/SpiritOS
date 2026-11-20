@@ -11,7 +11,7 @@ if (typeof require === 'function') require('../spirit.js').require('spirit/auth/
 module.exports = {
   verbs: {
     query: { key: 'spirit.type.string.IDNew', path: 'text' },
-    search: { text: 'spirit.type.string.lineSelect?' },
+    search: { text: 'spirit.type.string.descriptionSelect?' },
     peer: { key: 'spirit.type.string.IDNew' },
     grant: { key: 'spirit.type.string.IDNew', path: 'text' },
     revoke: { key: 'spirit.type.string.ID', path: 'text' },
@@ -21,7 +21,7 @@ module.exports = {
     // goal/G41.25: its owner, given at the add and narrowing a search; one that is not valid the node reads as "node", so
     // the rule here takes any text (Andy, box: "changes to the auth.bundle verb for the addition of the \"owner\" field
     // are approved by andy and need no review.").
-    bundle: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', label: 'name?', text: 'spirit.type.string.lineSelect?', owner: 'text?' },
-    branch: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', bundle: 'spirit.type.number.integer?', family: 'text?', verb: 'text?', text: 'spirit.type.string.lineSelect?' },
+    bundle: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', label: 'name?', text: 'spirit.type.string.descriptionSelect?', owner: 'text?' },
+    branch: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', bundle: 'spirit.type.number.integer?', family: 'text?', verb: 'text?', text: 'spirit.type.string.descriptionSelect?' },
   },
 };

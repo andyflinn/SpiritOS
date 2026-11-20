@@ -149,7 +149,10 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
         // Each field held to its type (goal/G48.4, box v22): a name a label, a description a description.
         if (f.kind === 'name' && FI) FI.attach(el, 'spirit.type.string.label');
         else if (f.kind === 'description' && FI) FI.attach(el, 'spirit.type.string.description');
-        else if (FI && el && el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'password')) FI.attach(el, 'spirit.type.string.line');
+        // A secret by its password input, every other text field a label (goal/G48.4, Q22: "the agent row a label"; an api key
+        // is longer than a label, and is spirit.type.string.secret, Q4).
+        else if (FI && el && el.tagName === 'INPUT' && el.type === 'password') FI.attach(el, 'spirit.type.string.secret');
+        else if (FI && el && el.tagName === 'INPUT' && el.type === 'text') FI.attach(el, 'spirit.type.string.label');
         // A FIELD CHANGED SAVES THE ROW (Andy: "and why the fuck does a row not automatically save when i make a change to a
         // field?"; on Q2: "yes, send the whole row for update. it costs nothing, and we don't need more fucking verbs than
         // necessary."): an input's change, a pick, a bundle picked; there is no Save.
