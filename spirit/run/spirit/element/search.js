@@ -755,13 +755,14 @@
       var tag = String(t.tagName || '').toUpperCase();
       return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable === true;
     }
-    if (container.ownerDocument && typeof container.ownerDocument.addEventListener === 'function') {
-      container.ownerDocument.addEventListener('keydown', function (e) {
-        if (e.defaultPrevented || (typeof container.contains === 'function' && container.contains(e.target))) return;
-        if (typesElsewhere(e.target) || !onScreen()) return;
-        onKeys(e);
-      });
+    // Taken off again by destroy (goal/G48.4, Andy: "make sure that elements get cleaned up").
+    var keysDoc = container.ownerDocument && typeof container.ownerDocument.addEventListener === 'function' ? container.ownerDocument : null;
+    function docKeys(e) {
+      if (e.defaultPrevented || (typeof container.contains === 'function' && container.contains(e.target))) return;
+      if (typesElsewhere(e.target) || !onScreen()) return;
+      onKeys(e);
     }
+    if (keysDoc) keysDoc.addEventListener('keydown', docKeys);
     // A press or a key inside the 🪣 row is its selector's own, never this list's.
     function inSelectors(t) { var row = selectors.length ? el('selectors') : null; return !!(row && t && typeof row.contains === 'function' && row.contains(t)); }
     own.addEventListener('keydown', function (e) {
@@ -850,6 +851,7 @@
       if (typeof unwatch === 'function') unwatch();
       if (typeof unreconnect === 'function') unreconnect();
       if (dropdown && typeof document !== 'undefined' && typeof document.removeEventListener === 'function') document.removeEventListener('click', outside);
+      if (keysDoc && typeof keysDoc.removeEventListener === 'function') keysDoc.removeEventListener('keydown', docKeys);
       floating(false);
       if (sized) sized.disconnect();
       off = null;
