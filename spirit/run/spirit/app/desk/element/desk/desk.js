@@ -314,6 +314,9 @@ function deskAgentOpen(name) {
       return input;
     };
     deskAgentProfile = { name: field(one, 'name', 'text', '12em'), nick: field(one, 'nick', 'text', '5em') };
+    // Each held by its type as it is typed (goal/G48.4, box v22): the name a label, the nick one word.
+    var FIp = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+    if (FIp) { FIp.attach(deskAgentProfile.name, 'spirit.type.string.label'); FIp.attach(deskAgentProfile.nick, 'spirit.type.string.word'); }
     var save = document.createElement('button');
     save.setAttribute('type', 'button');
     save.setAttribute('data-profile-save', '1');

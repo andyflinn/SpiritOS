@@ -87,6 +87,11 @@ function ddArming() {
     var F = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.required.spirit.element.fieldInput;
     var say = document.getElementById('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'spirit.type.string.paragraph'); say.setAttribute('data-held', 'paragraph'); }
+    // The blocking item's title and your name for the item, each a label (goal/G48.4, box v22).
+    var addTitle = document.getElementById('dd-add-title');
+    if (F && addTitle && !addTitle.getAttribute('data-held')) { F.attach(addTitle, 'spirit.type.string.label'); addTitle.setAttribute('data-held', 'label'); }
+    var myName = document.getElementById('dd-name');
+    if (F && myName && !myName.getAttribute('data-held')) { F.attach(myName, 'spirit.type.string.label'); myName.setAttribute('data-held', 'label'); }
     var body = document.getElementById('dd-body');
     if (!A || !body || typeof body.querySelectorAll !== 'function') return;
     Array.prototype.forEach.call(body.querySelectorAll('[data-arming]'), function (b) {
