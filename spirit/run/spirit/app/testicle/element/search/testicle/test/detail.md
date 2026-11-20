@@ -16,6 +16,8 @@ the detail mounted alone on `/face.html` in a real Chrome.
   horizontal alignment as their column content."*).
 - Every row of the test, current or not, the newest flip first (the box: *"given a valid test title ... it answers every
   row matching that script, suite and title, current or not, newest first"*); no row of another test.
+- The current row, the newest flip, in bold, the older rows not; a new flip takes the bold from the row it replaces
+  (Andy: *"current row in bold sound like the most simple approach. let's try it."*).
 - Each row drawn by the test row (❌/✅, two decimals, no title or file names) with the date it flipped.
 - A flip set on the node shows at the top with no press; a test with no row says *No row of this test.*
 - Row 1's run button asks `testicle.run` for its script and suite. Row 2, right under it, a row form holds the title in an

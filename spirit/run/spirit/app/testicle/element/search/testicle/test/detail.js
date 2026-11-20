@@ -164,6 +164,15 @@ test.run('each column heading is aligned as the cells of its column', 0.4, async
   const o = v ? JSON.parse(v) : null;
   return (!!o && o.n === 3 && o.bad === 0) || false;
 }, test.limit.quick);
+// goal/G47.4, Andy, of the history: "the one thing not instantly obbvious is the fact that the first row IS the \"current\"
+// and the one that counts \"right now\"", then "current row in bold sound like the most simple approach. let's try it.":
+// every cell of the current row bold, no cell of an older row.
+const BOLDS = '(function () { return Array.prototype.map.call(document.querySelectorAll("#zzBox tbody tr"), function (r) { var d = r.querySelectorAll("td"); var b = Array.prototype.filter.call(d, function (x) { return Number(getComputedStyle(x).fontWeight) >= 600; }).length; return d.length && b === d.length ? "bold" : b === 0 ? "plain" : "mixed"; }); }())';
+test.run('the current row, the newest flip, is drawn bold, and no older row is', 0.4, async function () {
+  if (mounted()) return false;
+  const b = await c.evaluate(BOLDS);
+  return (Array.isArray(b) && b.length === 3 && b[0] === 'bold' && b.slice(1).every(function (x) { return x === 'plain'; })) || false;
+}, test.limit.quick);
 test.run('no row of another test of the same suite shows', 0.2, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
@@ -188,6 +197,11 @@ test.run('a flip set on the node shows at the top with no press', 0.2, async fun
   const r = await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: false, severity: 0.3 });
   if (r.status !== 200 || !r.body || !r.body.key) return false;
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && v.rows.length === 4 && v.rows[0].key === r.body.key && v.rows[0].cells[1] === '❌'; }); }, 10000);
+  return !!ok || false;
+}, test.limit.slow);
+test.run('after that flip, its row is the bold one, and the row it replaced is no longer bold', 0.4, async function () {
+  if (mounted()) return false;
+  const ok = await until(function () { return c.evaluate(BOLDS).then(function (b) { return Array.isArray(b) && b.length === 4 && b[0] === 'bold' && b.slice(1).every(function (x) { return x === 'plain'; }); }); }, 10000);
   return !!ok || false;
 }, test.limit.slow);
 // goal/G47.1, box v130: "the testicle detail has a 🏃 run button for its script and suite; a press stops the running suite
