@@ -18,7 +18,9 @@ const spirit = globalThis.spirit;
 
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 // A peer's public key as the key rule takes one, and one it does not.
-const KEY = 'MCowBQYDK2VwAyEA' + 'ownerApiTest'.padEnd(43, 'A') + '=';
+// A key the node of this tree knows, its own, ID's default (goal/G48.4, Q14: a spirit.type.string.ID is a key the node
+// knows; one made up here would be refused).
+const KEY = require(path.join(RUN, 'spirit', 'type', 'string', 'ID.js')).defaultValue();
 const NOT_KEY = 'not-a-key';
 
 // THE TABLE THE NODE MOUNTS, read from server.js's text: loopbackVerbs.mount('<family>', <folder>, { '<verb>': { request:

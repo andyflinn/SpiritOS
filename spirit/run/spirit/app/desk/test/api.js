@@ -154,7 +154,9 @@ test.run('the pass of phase.done, when sent, is true or false', 0.2, function ()
 }, test.limit.quick);
 test.run('profile.set takes an empty name and nick as no name and no nick, with included and cap optional', 0.2, function () {
   if (!W.api) return false;
-  return (passes('profile.set', { agent: 'K', name: '', nick: '' }) && passes('profile.set', { agent: 'K', name: 'n', nick: 'x', included: true, cap: false })) ? true : false;
+  // An agent is named by its key, a well-formed one (spirit.type.string.IDNew, goal/G48.4).
+  const K = 'MCowBQYDK2VwAyEA' + 'deskApiAgent'.padEnd(43, 'A') + '=';
+  return (passes('profile.set', { agent: K, name: '', nick: '' }) && passes('profile.set', { agent: K, name: 'n', nick: 'x', included: true, cap: false })) ? true : false;
 }, test.limit.quick);
 test.run('items.search needs all three of its flags sent, each true or false', 0.2, function () {
   if (!W.api) return false;

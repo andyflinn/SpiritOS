@@ -10,9 +10,9 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/auth/data.js'); else window.spirit.require('spirit/auth/data.js');
 module.exports = {
   verbs: {
-    query: { key: 'spirit.type.string.ID', path: 'text' },
+    query: { key: 'spirit.type.string.IDNew', path: 'text' },
     search: { text: 'spirit.type.string.lineSelect?' },
-    peer: { key: 'spirit.type.string.ID' },
+    peer: { key: 'spirit.type.string.IDNew' },
     grant: { key: 'spirit.type.string.IDNew', path: 'text' },
     revoke: { key: 'spirit.type.string.ID', path: 'text' },
     relabel: { key: 'spirit.type.string.ID', label: 'spirit.type.string.label' },

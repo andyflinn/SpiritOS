@@ -37,12 +37,12 @@ function runCopy(dir, port) {
   return path.join(dir, 'spirit', 'app', 'desk', 'desk.js');
 }
 
-const CW = { key: 'MCowBQYDK2VwAyEAdeskProductTestCWAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
-const WSL = { key: 'MCowBQYDK2VwAyEAdeskProductTestWSLAAAAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
-const UBI = { key: 'MCowBQYDK2VwAyEAdeskProductTestUBIAAAAAAAAAAAAAAAAAAAAA=', label: 'ubuntu-claude' };
-const KEYED = { key: 'MCowBQYDK2VwAyEAdeskProductTestKEYEDAAAAAAAAAAAAAAAAAAA=', label: 'keyed-only' };
-const OUT = { key: 'MCowBQYDK2VwAyEAdeskProductTestOUTAAAAAAAAAAAAAAAAAAAAA=', label: 'excluded' };
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskProductTestOwnerAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const CW = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestCW'.padEnd(43, 'A') + '=', label: 'claude-windows' };
+const WSL = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestWSL'.padEnd(43, 'A') + '=', label: 'wsl-claude' };
+const UBI = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestUBI'.padEnd(43, 'A') + '=', label: 'ubuntu-claude' };
+const KEYED = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestKEYED'.padEnd(43, 'A') + '=', label: 'keyed-only' };
+const OUT = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestOUT'.padEnd(43, 'A') + '=', label: 'excluded' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEA' + 'deskProductTestOwner'.padEnd(43, 'A') + '=', label: 'andy' };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -537,7 +537,7 @@ test.run('after that box write an agent with cap on takes the box, held for one 
 }, test.limit.quick);
 
 // the position: a subscribe without since bootstraps as before
-const FRESH = { key: 'MCowBQYDK2VwAyEAdeskProductTestFRESHAAAAAAAAAAAAAAAAAAA=', label: 'fresh' };
+const FRESH = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestFRESH'.padEnd(43, 'A') + '=', label: 'fresh' };
 test.run('a subscribe with no since brings the current goal\'s facts whole, the goal and each of its six items', 0.2, async function () {
   if (!W.up) return false;
   const f0 = W.node.sent.length;
@@ -813,8 +813,8 @@ test.run('two agents add one path: it is one row, and the other file stays', 0.2
 // keeps all agent rows in its db, to preserve label and nick, but without grant, no matter how small, there's no point
 // showing an agent bubble." The page draws its bubbles from the goal row's agents and live. ─────────────────────
 // goal/G43.3: a bubble for each key with a grant to desk, and for no other
-const NOBODY = { key: 'MCowBQYDK2VwAyEAdeskProductTestNOGRANTAAAAAAAAAAAAAAAAA=', label: 'no-grant' };
-const CLIENT_ONLY = { key: 'MCowBQYDK2VwAyEAdeskProductTestCLIENTAAAAAAAAAAAAAAAAA=', label: 'client-only' };
+const NOBODY = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestNOGRANT'.padEnd(43, 'A') + '=', label: 'no-grant' };
+const CLIENT_ONLY = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestCLIENT'.padEnd(43, 'A') + '=', label: 'client-only' };
 const goalG = async function () { const r = await W.askG('item.get', { id: PULL.id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
 const bubbled = function (f) {
   const byKey = Object.keys(f.agents || {}).map(function (l) { return f.agents[l]; });
@@ -980,7 +980,7 @@ test.run('a claim on a checkout with an uncommitted edit pulls nothing and keeps
 // the checkmark in the agent-bubble that can only be set via loopback"; Q7, owner "as one more yes/no on profile.set, beside
 // included and cap": "yes"). His WSL node reaches this desk as a peer, andy-wsl; marked owner in its profile, its calls are
 // his: a line by andy with no take, his presses accepted. The mark is set by the loopback owner alone.
-const ANDY_WSL = { key: 'MCowBQYDK2VwAyEAdeskProductTestANDYWSLAAAAAAAAAAAAAAAA=', label: 'andy-wsl' };
+const ANDY_WSL = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestANDYWSL'.padEnd(43, 'A') + '=', label: 'andy-wsl' };
 const OWNER_ITEM = 'goal/G300.1';
 // The owner on his node's loopback, as its loopback door marks him (Q8): the one caller that may change the mark.
 const ANDY_LOOP = Object.assign({}, ANDY, { loopback: true });

@@ -15,7 +15,9 @@ require(path.join(RUN, 'spirit', 'spirit.js'));
 const spirit = globalThis.spirit;
 
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
-const KEY = 'MCowBQYDK2VwAyEA' + 'deskClientApiTest'.padEnd(43, 'A') + '=';
+// A key the node of this tree knows, its own, ID's default (goal/G48.4, Q14: a spirit.type.string.ID is a key the node
+// knows; one made up here would be refused).
+const KEY = require(path.join(RUN, 'spirit', 'type', 'string', 'ID.js')).defaultValue();
 
 // What the world test loads, read by the tests after it.
 const W = { api: null, verbs: {}, names: [] };
