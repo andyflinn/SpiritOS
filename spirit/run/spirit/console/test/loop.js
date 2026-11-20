@@ -6,12 +6,13 @@
 // loop uses the up/down arrow keys, only those history items will be offered that can be used from the current path. since
 // the log stores all commands as if typed from root prompt \"spirit: \", the loop must translate those back into its scope".
 // The loop is entered as the box says, "node spirit/console.js" with no words, on a scratch node of its own. The arrow keys
-// are a terminal's: the loop is run in one, made by script(1) (util-linux), and its keys are written to it as a terminal
-// sends them.
+// are a terminal's: the loop's node is told its input and output are a terminal (isTTY, set before console.js loads, by
+// --require), so readline reads keys and draws its line as in one, on every machine; its keys are written to it as a
+// terminal sends them (goal/G48.4; Andy's Windows run: script(1), util-linux, which the test used before, is Linux only).
 
 const fs = require('fs');
 const path = require('path');
-const { spawn, spawnSync } = require('child_process');
+const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
@@ -23,10 +24,11 @@ const stateOf = function () { try { return JSON.parse(fs.readFileSync(STATE(), '
 const at = function () { const s = stateOf(); return s ? String(s.path || '') : null; };
 // What a terminal shows of it: escapes and carriage returns taken out.
 const plain = function (t) { return String(t).replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\r/g, '\n'); };
-// The loop in a terminal of its own.
+// The loop in a terminal of its own: node spirit/console.js, its streams marked a terminal before it loads.
 function open() {
-  const cmd = JSON.stringify(process.execPath) + ' ' + JSON.stringify(path.join(W.node.run, 'spirit', 'console.js'));
-  const kid = spawn('script', ['-qfec', cmd, '/dev/null'], { cwd: W.node.root, stdio: ['pipe', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TERM: 'xterm' }) });
+  const tty = path.join(W.node.root, 'terminal.js');
+  fs.writeFileSync(tty, 'process.stdin.isTTY = true; process.stdout.isTTY = true; process.stdout.columns = 200;');
+  const kid = spawn(process.execPath, ['--require', tty, path.join(W.node.run, 'spirit', 'console.js')], { cwd: W.node.root, stdio: ['pipe', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TERM: 'xterm' }) });
   const t = { kid: kid, out: '', ended: false };
   kid.stdout.on('data', function (d) { t.out += String(d); });
   kid.on('exit', function () { t.ended = true; });
@@ -56,9 +58,6 @@ async function offers(t, prompt, n) {
 
 test.run('spirit/console/loop.js exists', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'console', 'loop.js')) || false;
-}, test.limit.quick);
-test.run('this machine has script(1) to give the loop a terminal', 0.2, function () {
-  return spawnSync('script', ['--version'], { encoding: 'utf8' }).status === 0 || false;
 }, test.limit.quick);
 test.run('a scratch node comes up', 0.2, async function () {
   W.node = await H.scratchNode({});
