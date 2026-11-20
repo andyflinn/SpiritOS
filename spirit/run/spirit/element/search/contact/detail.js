@@ -268,6 +268,7 @@ function cdRender() {
     cdFaceBlock() +
     '<div class="job-manifest-note" id="cd-status">' +
       cdEscapeHtml(cdMessage) + '</div>';
+  cdTypeFields(body);
 
   cdArming('cd-block', 'Block', 'Block — press again', cdBlock);
   cdArming('cd-forget', 'Forget', 'Forget — press again', cdForget);
@@ -1666,6 +1667,7 @@ function ndRender() {
     ndLeaveHtml() +
     ndRemoveHtml();
     // The device panel was removed by goal/G16.2 with the device enrolment.
+  ndTypeFields(body);
   ndMountForms(body);
   ndArming(body);
 }
@@ -2098,6 +2100,32 @@ return panel;
 
 // The armingButton it draws Block and Forget with, it loads itself (goal/G41.3), through spirit.require.
 if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/armingButton.js');
+// EVERY FIELD HELD BY ITS TYPE AS IT IS TYPED (goal/G48.4, box v22: "ever input field in every element must validate the input
+// with the new type checks."): fieldInput, asked as this file runs, and each field it draws handed to it with its type.
+if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/fieldInput.js');
+function typedField() { var r = window.spirit && window.spirit.required; return (r && r.spirit && r.spirit.element && r.spirit.element.fieldInput) || null; }
+// The contact's own name for it.
+function cdTypeFields(scope) {
+  var FI = typedField();
+  if (!FI || !scope) return;
+  var label = scope.querySelector('#cd-label-input');
+  if (label) FI.attach(label, 'spirit.type.string.label');
+}
+// A relay's detail: the claim (the word read out, the token sent, the name peers see), the relay's label, the memory it may
+// hold, and an invite (its name, its days, its spoken token).
+function ndTypeFields(scope) {
+  var FI = typedField();
+  if (!FI || !scope) return;
+  var one = function (sel) { return scope.querySelector(sel); };
+  if (one('.nd-claim-invite')) FI.attach(one('.nd-claim-invite'), 'spirit.type.string.word');
+  if (one('.nd-claim-token')) FI.attach(one('.nd-claim-token'), 'spirit.type.string.word');
+  if (one('.nd-claim-name')) FI.attach(one('.nd-claim-name'), 'spirit.type.string.label');
+  if (one('.nd-relay-label')) FI.attach(one('.nd-relay-label'), 'spirit.type.string.label');
+  if (one('.nd-alloc-ram')) FI.attach(one('.nd-alloc-ram'), 'spirit.type.number.integer');
+  if (one('.natter-inv-label')) FI.attach(one('.natter-inv-label'), 'spirit.type.string.label');
+  if (one('.natter-inv-days')) FI.attach(one('.natter-inv-days'), 'spirit.type.number.integer');
+  if (one('.natter-inv-token')) FI.attach(one('.natter-inv-token'), 'spirit.type.string.word');
+}
 // A PANEL, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic shell elements"; since
 // goal/G43.18 no page on the navigation: "the details of relays and contacts ... taking over the screen new-style"): the
 // contact row opens it over its list as a layer, its title and ✕ the layer's (options.layer: close, setTitle);
