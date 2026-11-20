@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/element/test/changeMyLabel.js
 // The tests of spirit/element/changeMyLabel.js, and of no other module (spec: ./changeMyLabel.md; goal/G41.6). The browser
-// file runs in node on a window of its own: the field rules are the real ones (spirit/fieldRules.js), fieldInput is a
+// file runs in node on a window of its own: the label type is the real one (spirit/type/string/label.js), fieldInput is a
 // stub that keeps what was attached, and the node is a stub that answers node.setName.
 
 const fs = require('fs');
@@ -81,7 +81,7 @@ function world(answer) {
   win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   win.spirit.required.spirit.element.fieldInput = { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } };
   vm.createContext(win);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'fieldRules.js'), 'utf8'), win, { filename: 'fieldRules.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'type', 'string', 'label.js'), 'utf8'), win, { filename: 'label.js' });
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+LABEL/NODE==' };
@@ -105,7 +105,7 @@ function world(answer) {
 const stored = function (name, args) { return { status: 200, body: { ok: true, name: String(args.name).trim() } }; };
 
 // What the tests make, shared by the tests after them.
-let w, host, el, input, rf, save, left, said, inSpan, spanText, nameBefore, c, N, r, h2, i2, s2;
+let w, host, el, input, rf, save, said, inSpan, spanText, nameBefore, c, N, r, h2, i2, s2;
 test.run('spirit/element/changeMyLabel.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
@@ -125,7 +125,6 @@ test.run('its input is marked data-field="label"', 0.2, async function () {
   rf = w.forms[0];
   // Since goal/G41.27 its Save is the rowForm's button.
   save = rf ? rf.button : host.querySelector('[data-label="save"]');
-  left = host.querySelector('[data-label="left"]');
   said = host.querySelector('[data-label="said"]');
   return (!!input) ? true : false;
 }, test.limit.quick);
@@ -150,28 +149,22 @@ test.run('its span says Name, then holds the name input, and nothing else', 0.2,
 test.run('its Save is the rowForm\'s button, and it draws no Save of its own', 0.2, function () {
   return (!!rf && !host.querySelector('[data-label="save"]') && !/<button/.test(host.innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('its bytes left and its message stand below the bubble, not in it', 0.2, function () {
-  return (!!rf && !!left && !!said && under(rf.root).indexOf(left) === -1 && under(rf.root).indexOf(said) === -1) ? true : false;
+test.run('its message stands below the bubble, not in it', 0.2, function () {
+  return (!!rf && !!said && under(rf.root).indexOf(said) === -1) ? true : false;
 }, test.limit.quick);
-test.run('it has its Save, its bytes left and its message', 0.2, function () {
-  return (!!save && !!left && !!said) ? true : false;
+// goal/G41.27's box v8, Andy: "those fucking character counter OUTSIDE the fucking form ... they ALL have to go".
+test.run('it has its Save and its message, and outside the form nothing but its message', 0.2, function () {
+  const outside = under(host).filter(function (k) { return under(rf.root).indexOf(k) === -1 && k !== rf.root && /^<div/.test(k.tag) && k.getAttribute && k.getAttribute('data-label'); });
+  return (!!save && !!said && outside.every(function (k) { return k.getAttribute('data-label') === 'said' || k.getAttribute('data-label') === 'form'; })) ? true : false;
 }, test.limit.quick);
 // Its type by path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*"): a label.
 test.run('the input is held at its byte limit by fieldInput, the label type', 0.2, function () {
   return (w.attached.some(function (a) { return a.input === input && a.rule === 'spirit.type.string.label'; })) ? true : false;
 }, test.limit.quick);
 test.run('set puts the stored name in the field', 0.2, function () {
-  // it shows what the node holds, and the bytes left
+  // it shows what the node holds
   el.set('Andy');
   return (input.value === 'Andy') ? true : false;
-}, test.limit.quick);
-test.run('the bytes left are counted in bytes as typed', 0.2, function () {
-  return (/60 left/.test(left.textContent)) ? true : false;
-}, test.limit.quick);
-test.run('an emoji costs four bytes', 0.2, function () {
-  input.value = 'Andy 😀';
-  input.fire('input');
-  return (/55 left/.test(left.textContent)) ? true : false;
 }, test.limit.quick);
 test.run('an empty name never reaches the wire, and the field says why', 0.2, async function () {
   // Save is refused while the rule says no, and says why

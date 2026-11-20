@@ -5,22 +5,23 @@
 //
 //   changeMyLabel.create(host) -> { set(value), destroy() }
 //
-// The field is marked with its rule (rule/12, data-field="label") and held at the name rule's byte limit by fieldInput,
-// the bytes left beside it, counted in bytes as typed: an emoji costs four. Save asks here first and the wire is not
-// troubled when the rule already says no (spirit/fieldRules.js, the rule the node checks with). Then node.setName, and the
-// field shows what the node STORED, not what was typed (rule/19): the node normalises what it keeps.
+// The field is marked with its rule (rule/12, data-field="label") and held at the label type's byte limit by fieldInput.
+// Save asks here first and the wire is not troubled when the type already says no (spirit/type/string/label.js). Then
+// node.setName, and the field shows what the node STORED, not what was typed (rule/19): the node normalises what it keeps.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.require.
-  var parts = root.spirit.require ? root.spirit.require('spirit/element/fieldInput.js') : Promise.resolve();
+  // And its type, spirit.type.string.label, which Save asks before the wire is troubled (goal/G48.4, the box: "fieldRules.js
+  // dies").
+  var parts = root.spirit.require ? Promise.all([root.spirit.require('spirit/element/fieldInput.js'), root.spirit.require('spirit/type/string/label.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
   if (root.spirit.require) root.spirit.require('spirit/element/rowForm.js');
 
-  function rules() { return (root.spirit && root.spirit.fieldRules) || null; }
+  function label() { var r = root.spirit && root.spirit.required; return (r && r.spirit && r.spirit.type && r.spirit.type.string && r.spirit.type.string.label) || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
   // object's escapeHtml and the node family's setName, no api handed.
   function esc(s) { return root.spirit.escapeHtml ? root.spirit.escapeHtml(s) : String(s); }
@@ -29,12 +30,12 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     var o = opts || {};
     // Its blocks stacked 1em apart (rule/2): the shell's stack class.
     // A ROWFORM (goal/G41.27; Andy: "Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the changeMyLabel
-    // element...."): ✏️, the word Name and the input in its span, Save its button; the bytes left and what Save did stand
-    // below the bubble.
+    // element...."): ✏️, the word Name and the input in its span, Save its button; what Save did stands below the bubble.
+    // NO COUNTER OUTSIDE THE FORM (goal/G41.27's box v8, Andy: "the most fucking miserable example are those fucking character
+    // counter OUTSIDE the fucking form ... they ALL have to go"): fieldInput holds the field at its limit as it is typed.
     host.innerHTML =
       // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
       '<div class="stack" style="overflow:hidden"><div data-label="form"></div>' +
-      '<div data-label="left" class="job-manifest-note"></div>' +
       '<div data-label="said" class="job-start-error"></div></div>';
     var form = E.spirit.element.rowForm.create(host.querySelector('[data-label="form"]'), { icon: '✏️', button: 'Save', press: function () { return save(); } });
     // ITS SAVE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
@@ -42,7 +43,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     form.span.innerHTML = 'Name' +
       '<input type="text" data-field="label" placeholder="' + esc('what people see, everywhere') + '">';
     var input = host.querySelector('[data-field="label"]');
-    var left = host.querySelector('[data-label="left"]');
     var said = host.querySelector('[data-label="said"]');
     var gone = false;
 
@@ -51,20 +51,12 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
       said.textContent = text || '';
       said.className = isError ? 'job-start-error' : 'job-manifest-note';
     }
-    // DISCREPANCY WITH ANDY's RULES: goal/G41.27's box (v8) says "character counters outside a form go: a field is limited
-    // by fieldRules.js as it is typed, so a counter says nothing" (Andy: "the most fucking miserable example are those
-    // fucking character counter OUTSIDE the fucking form, the damned fields are supposed limit input based on
-    // fieldRules.js, they ALL have to go"); this element still writes the bytes left below the
-    // rowForm's bubble, outside the form, and its test asserts that counter.
-    function count() {
-      var R = rules();
-      if (!R) { left.textContent = ''; return; }
-      left.textContent = Math.max(0, R.MAX_BYTES - R.byteLength(R.normalize(input.value))) + ' left';
-    }
+    // Save asks the label type first, and a name it refuses never troubles the wire: the reason it gives is said.
     function save() {
       if (gone) return Promise.resolve();
-      var R = rules();
-      var bad = R ? R.problem(input.value) : '';
+      var L = label();
+      var bad = '';
+      if (L) { try { L.isValid(input.value); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { say(bad, true); return Promise.resolve(); }
       return root.spirit.outcome(Promise.resolve(root.spirit.ready).then(function (s) { return s.node.setName({ name: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
@@ -82,7 +74,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
       var name = String(card.name == null ? '' : card.name);
       input.defaultValue = name;
       input.value = name;
-      count();
     }
     root.spirit.require('spirit/node/api.js').then(function () {
       if (gone) return;
@@ -93,17 +84,15 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     parts.then(function () {
       if (!gone && window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.label');
     }, function () { /* the node still refuses what the rule refuses */ });
-    input.addEventListener('input', count);
     // Return saves, as the button does: the hand that never leaves the keyboard.
     input.addEventListener('keydown', function (e) {
       if (!e || e.key !== 'Enter') return;
       if (typeof e.preventDefault === 'function') e.preventDefault();
       if (typeof form.button.click === 'function') form.button.click(); else save();
     });
-    count();
 
     return {
-      set: function (value) { input.value = String(value == null ? '' : value); count(); },
+      set: function (value) { input.value = String(value == null ? '' : value); },
       // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it"), and lets the card go.
       destroy: function () { gone = true; if (stop) stop(); stop = null; host.innerHTML = ''; },
     };
