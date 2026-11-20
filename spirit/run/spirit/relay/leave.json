@@ -1,6 +1,6 @@
 {
   "description": "Give up this node's seat on one relay by its url (key): the relay is asked to remove this node's key, and on its yes the seat and the face held there are cleared and the relay stays on the list: {ok, key}. Refused 400 without a key, 404 when this node holds no seat there, 409 for a relay this node owns, 503 with no router to ask with, the relay's own refusal under its status, and 502 when it does not answer or answers something unreadable.",
   "request": {
-    "key": "text"
+    "key": "spirit.type.string.URL"
   }
 }

@@ -13,13 +13,13 @@ module.exports = {
     claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'text?', inviteLabel: 'name?' },
     partnerCheck: { publicKey: 'spirit.type.string.ID', url: 'spirit.type.string.URL' },
     get: { key: 'text' },
-    remove: { key: 'text' },
+    remove: { key: 'spirit.type.string.URL' },
     add: { url: 'spirit.type.string.URL', label: 'name?' },
     face: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label' },
     // link: the caller's link the relay mails, its code and key added (goal/G40.10; Andy: "{email, URL, card}").
     join: { url: 'spirit.type.string.URL', email: 'spirit.type.string.email', code: 'text?', link: 'spirit.type.string.URL?' },
     // Leaving a relay (goal/G40.10; Andy: "add the leave verb to node"): the seat given up, the relay kept on the list.
-    leave: { key: 'text' },
+    leave: { key: 'spirit.type.string.URL' },
   },
   // HIS RELAYS AS A SCREEN WANTS THEM (puppets/G2), moved here from the old kernel (goal/G40.8: no kernel on a face).
   // status(name): the relays this node keeps, listed by contact.search (goal/G40.11: relay.search went, a relay is a
