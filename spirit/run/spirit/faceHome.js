@@ -329,8 +329,8 @@ function createFaceHome(opts) {
     if (/^spirit\.app\.[^.]+$/.test(String(job.id || '')) && (job.kind === 'server' || (job.app && typeof job.app === 'object'))) return FACE_PRIORITY.app;
     return 0;
   }
-  // EVERY OPEN FACE ON A STARRED RELAY (goal/G43.18, box v29: "The home node answers a face only from a starred relay"): a
-  // stream opened without the star carries nothing until the star comes, and nothing it missed. A face this node no longer
+  // EVERY OPEN FACE ON A STARRED RELAY (goal/G43.18, box v29: "The home node answers a face only from a starred relay"): no
+  // stream opens without the star (open, Q19); one whose star is gone hears nothing more. A face this node no longer
   // holds is closed here at the next event: "A star taken off a relay that has a face takes that face away (Q21)".
   function toFaces(priority, event) {
     Object.keys(faces).forEach(function (url) {
@@ -382,6 +382,9 @@ function createFaceHome(opts) {
     close(url);
     // No stream of this node's events to a relay where it set no face (goal/G41.30, RC1).
     if (!faceIsHere(url)) { say('face: ' + url + ' asked for a stream, and this node set no face there'); return; }
+    // A RELAY WITHOUT THE STAR GETS NO STREAM (goal/G48.4, Q19; Andy: "absolutely. either there is a face, or there is not.
+    // NO inbetween."): refused as every call there is; the star put on opens it.
+    if (!faceIsOwned(url)) { say('face: ' + url + ' asked for a stream, and that relay has no star: refused'); return; }
     const req = upload(url, '/api/relay/face/stream', signed(url, 'stream'));
     if (!req) return;
     const key = String(k || '');
@@ -389,7 +392,6 @@ function createFaceHome(opts) {
     const encode = key ? function (line) { return JSON.stringify(seal.seal(key, me.publicKey, key, line)); } : null;
     const face = { req: req, queue: createFaceQueue(req, encode) };
     // Looked at four times a second, so no quiet gap grows much past the second; stopped with the face (close, and the relay's end).
-    // A relay without the star gets no beat either: its stream carries nothing (box v29).
     face.beating = setInterval(function () { if (faces[url] !== face) { clearInterval(face.beating); return; } if (faceIsOwned(url)) face.queue.beat(FACE_BEAT_MS); }, FACE_BEAT_MS / 4);
     if (typeof face.beating.unref === 'function') face.beating.unref();
     faces[url] = face;
@@ -398,9 +400,6 @@ function createFaceHome(opts) {
       // The relay ending the upload while the face is still open (a refusal, a network drop): said, not retried.
       req.on('close', function () { clearInterval(face.beating); if (faces[url] === face) { delete faces[url]; say('face: the stream to ' + url + ' ended'); } });
     }
-    // A RELAY WITHOUT THE STAR (goal/G43.18, box v29): the stream stands and carries nothing, not even the file tree, until the
-    // star comes (toFaces); a star taken off takes the face itself away.
-    if (!faceIsOwned(url)) { say('face: ' + url + ' opened its stream, and that relay has no star: it carries nothing'); return; }
     const all =(jobs && typeof jobs.listJobs === 'function') ? jobs.listJobs() : [];
     const fsJob = all.filter(function (j) { return j.id === 'spirit.fs'; })[0];
     if (fsJob && typeof jobs.fsTreeCommands === 'function') {
