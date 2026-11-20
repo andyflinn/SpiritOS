@@ -31,7 +31,8 @@ test.run('isValid answers true, the boolean, for "MCowBQYDK2VwAyEANrNqPPaIac2/Nl
   if (!T) return false;
   try { return ['MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ='].every(function (v) { return T.isValid(v) === true; }) || false; } catch (e) { return false; }
 }, test.limit.quick);
-test.run('isValid throws an error for "goal/G48", "", "MCowBQYDK2VwAyEA", "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lz", 5, null', 0.4, function () {
+// Its title in words, not the cut key itself: a title is bounded by spirit.type.string.description's 128 bytes.
+test.run('isValid throws an error for "goal/G48", "", a key cut short at either end, 5 and null', 0.4, function () {
   if (!T) return false;
   return ['goal/G48', '', 'MCowBQYDK2VwAyEA', 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lz', 5, null].every(throws) || false;
 }, test.limit.quick);
