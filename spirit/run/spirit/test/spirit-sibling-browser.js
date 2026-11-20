@@ -974,7 +974,10 @@ async function session() {
     await quiet();
     await page.evaluate('window.spiritWatch.settle()');
   }
-  const W = P.W = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch || null)')) || { net: [], subs: [], writes: [], moved: [] };
+  // Read without the live listeners and intervals (goal/G48.4): each holds the window or the document it was put on, which no
+  // JSON holds, so the whole read came back undefined for any element that listened there; the cleanup check reads them on
+  // the page (held()).
+  const W = P.W = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch || null, function (k, v) { return k === "listeners" || k === "intervals" ? undefined : v; })')) || { net: [], subs: [], writes: [], moved: [] };
   // THE FAMILIES IT USES, AND WHETHER IT LOADED THEIR INTERFACES ITSELF (Andy: "JUST BECAUSE api branches are intrinsic doesn't
   // fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT
   // FUCKING NEEDS"): the families it called, and those whose spirit.data branches it watched; on a bare page each one's api.js
