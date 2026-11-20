@@ -19,7 +19,6 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/provider/test/server/' + name + tempAsked); }
-test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/agent/table/provider/test/server'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { DatabaseSync } = require('node:sqlite');
 
 const TABLE = 'provider';
@@ -593,3 +592,9 @@ test.run('each row says its model', 0.2, function () {
   if (!m) return false;
   return m.rows.length > 0 && m.rows.every(function (r) { return (/claude-(alpha|beta)/).test(r.text); }) ? true : false;
 }, test.limit.quick);
+// ITS FOLDER GOES LAST, ITS DATABASE CLOSED FIRST (Andy, of the 0.7s: 'it leaves no temp folder behind' on his Windows node):
+// on Windows a folder holding an open database cannot be removed, so the database is closed, then the folder removed.
+test.after(function () {
+  try { if (X.db) X.db.close(); } catch (e) { /* closed */ }
+  try { require('fs').rmSync(tempFolder.path('spirit/app/agent/table/provider/test/server'), { recursive: true, force: true }); } catch (e) { /* a door still closing */ }
+});
