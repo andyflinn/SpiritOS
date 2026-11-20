@@ -398,6 +398,72 @@ function sweepProfiles() {
     const w = spawn(process.execPath, ['-e', code, tempFolder.path(PROFILES)], { stdio: 'ignore', detached: true, windowsHide: true });
     w.unref();
   } catch (e) { /* swept by the next test */ }
+  // Under every node's temp root too, since each scratch node has its own (Andy: "WHERE ARE THE FIXES FOR TESTS THAT
+  // LITTER ALL OVER THE FUCKING PLACE?"; 150 Chrome processes found on WSL, up to 38 hours old, their watchers gone).
+  try {
+    const base = path.resolve(tempFolder.path(PROFILES), '..', '..', '..', '..');
+    const w = spawn(process.execPath, ['-e', '(' + endOrphans.toString() + ')(process.argv[1], process.argv[2])', base, PROFILES], { stdio: 'ignore', detached: true, windowsHide: true });
+    w.unref();
+  } catch (e) { /* swept by the next test */ }
+}
+// A TEST CHROME NOBODY OWNS IS ENDED, AND THE EMPTY FOLDERS ITS PROFILES LEFT GO. Run in a process apart, given the temp
+// base (<tmp>/spirit) and this file's route. A Chrome is nobody's when its parent is gone (on Linux re-parented to init, on
+// WSL /init): a test's Chrome ends with the test (above), and a run's live Chrome, of any testicle on the machine, has its
+// parent, so it is never touched. It is ended and its profile removed. Then each <base>/<node>/<route> left empty is
+// removed, with every parent folder of it that is empty, up to the base; and so, first, is a profile there older than an
+// hour that no process runs on.
+function endOrphans(base, route) {
+  const fs = require('fs');
+  const path = require('path');
+  const cp = require('child_process');
+  const marker = ('--user-data-dir=' + path.join(base, '')).toLowerCase();
+  const sep = route.split('/').join(path.sep).toLowerCase() + path.sep + 'chrome-';
+  let rows = [];
+  try {
+    if (process.platform === 'linux') {
+      rows = fs.readdirSync('/proc').filter(function (d) { return /^\d+$/.test(d); }).map(function (d) {
+        let args = ''; let ppid = 0; let parent = null;
+        try { args = fs.readFileSync('/proc/' + d + '/cmdline', 'utf8').split('\0').join(' '); } catch (e) { return null; }
+        try { ppid = Number(/^PPid:\s*(\d+)/m.exec(fs.readFileSync('/proc/' + d + '/status', 'utf8'))[1]); } catch (e) { ppid = 0; }
+        try { parent = fs.readFileSync('/proc/' + ppid + '/cmdline', 'utf8').split('\0')[0]; } catch (e) { parent = null; }
+        return { pid: Number(d), args: args, orphan: ppid <= 1 || parent === null || parent === '/init' || parent === '/sbin/init' };
+      }).filter(Boolean);
+    } else if (process.platform === 'win32') {
+      const out = cp.execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', '$a = @{}; Get-CimInstance Win32_Process | ForEach-Object { $a[[int]$_.ProcessId] = 1 }; Get-CimInstance Win32_Process -Filter "Name=\'chrome.exe\'" | ForEach-Object { "$($_.ProcessId) $(if ($a.ContainsKey([int]$_.ParentProcessId)) {1} else {0}) $($_.CommandLine)" }'], { encoding: 'utf8', windowsHide: true, timeout: 60000, maxBuffer: 1 << 24 });
+      rows = out.split(/\r?\n/).map(function (l) { const m = /^\s*(\d+)\s+([01])\s+(.*)$/.exec(l); return m ? { pid: Number(m[1]), args: m[3], orphan: m[2] === '0' } : null; }).filter(Boolean);
+    }
+  } catch (e) { rows = []; }
+  rows.forEach(function (r) {
+    const low = r.args.toLowerCase();
+    const at = low.indexOf(marker);
+    if (at === -1 || low.indexOf('--type=') !== -1 || low.indexOf(sep) === -1 || !r.orphan) return;
+    const profile = r.args.slice(at + '--user-data-dir='.length).split(/\s+--/)[0].replace(/^"|"$/g, '').trim();
+    try { process.kill(r.pid, 'SIGKILL'); } catch (e) { /* gone */ }
+    if (profile.toLowerCase().indexOf(sep) !== -1) setTimeout(function () { try { fs.rmSync(profile, { recursive: true, force: true }); } catch (e) { /* locked: the next sweep */ } }, 1500);
+  });
+  let nodes = [];
+  try { nodes = fs.readdirSync(base); } catch (e) { nodes = []; }
+  // A profile no process runs on, older than an hour, is the hourly sweep's rule (above) on every node's root.
+  const old = Date.now() - 3600000;
+  const inUse = rows.map(function (r) { return r.args.toLowerCase(); }).join('\n');
+  nodes.forEach(function (n) {
+    const at = path.join(base, n, route.split('/').join(path.sep));
+    let names = [];
+    try { names = fs.readdirSync(at); } catch (e) { names = []; }
+    names.forEach(function (c) {
+      if (c.indexOf('chrome-') !== 0) return;
+      const p = path.join(at, c);
+      if (inUse.indexOf(p.toLowerCase()) !== -1) return;
+      try { if (fs.statSync(p).mtimeMs < old) fs.rmSync(p, { recursive: true, force: true }); } catch (e) { /* locked: the next sweep */ }
+    });
+  });
+  nodes.forEach(function (n) {
+    let dir = path.join(base, n, route.split('/').join(path.sep));
+    while (dir.length > base.length + 1) {
+      try { if (fs.readdirSync(dir).length) break; fs.rmdirSync(dir); } catch (e) { break; }
+      dir = path.dirname(dir);
+    }
+  });
 }
 // ONE CHROME FOR A WHOLE RUN (goal/G47.1, box v144: "run on one node and one Chrome for the whole run"): a run that judges many
 // scripts starts one Chrome by sharedChrome() and names its debugging port to the processes it starts, in SPIRIT_CHROME_PORT;
