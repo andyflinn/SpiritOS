@@ -24,6 +24,16 @@ test.run('isValid answers true, the boolean, for "one line\\nand another", "a".r
   if (!T) return false;
   try { return ['one line\nand another', 'a'.repeat(2048)].every(function (v) { return T.isValid(v) === true; }) || false; } catch (e) { return false; }
 }, test.limit.quick);
+// Q21 (Andy: "DAMN FCUKING RIGHT: spirit/type/string/paragraph.js"): a chat line is a paragraph, and takes the joiner inside an
+// emoji such as testicle's runner; every other invisible character stays out.
+test.run('isValid answers true for a runner emoji with its joiner, U+200D', 0.4, function () {
+  if (!T) return false;
+  try { return T.isValid('red: \u{1F3C3}\u200D\u2642\uFE0F a test') === true || false; } catch (e) { return false; }
+}, test.limit.quick);
+test.run('isValid throws an error for a zero width space, U+200B, and a soft hyphen, U+00AD', 0.4, function () {
+  if (!T) return false;
+  return ['zero\u200Bwidth', 'soft\u00ADhyphen'].every(throws) || false;
+}, test.limit.quick);
 test.run('isValid throws an error for "", "a".repeat(2049), 3, null', 0.4, function () {
   if (!T) return false;
   return ['', 'a'.repeat(2049), 3, null].every(throws) || false;
