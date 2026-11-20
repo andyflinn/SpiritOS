@@ -96,7 +96,7 @@ function pieced(call) { return { piece: { id: 'p' + (n + 1), n: 0, of: 1, text: 
 const refused = function (a) { return !a.thrown && a.status >= 400 && a.status < 500 && !!a.body && typeof a.body.code === 'string' && a.body.code !== ''; };
 
 const CARD = { call: 'node.card', args: {} };
-const SHELL = { call: 'job.create', args: { command: '/bin/sh', args: ['-c', 'id'] } };
+const SHELL = { call: 'job.create', args: { command: '/bin/sh', args: JSON.stringify(['-c', 'id']) } };
 
 // A request sent to a stand-in world, its answer kept under key; then that the answer never reached the door.
 function sentAndHeld(key, worldKey, makeWorld, url, makeReq) {
@@ -522,7 +522,7 @@ function letGo(r) {
 const NOBODY = 'MCowBQYDK2VwAyEA' + 'zzStarNobodyzzStarNobodyzzStarNobodyzzStarNob'.slice(0, 43) + '=';
 const OWNER = { call: 'owner.command', args: { to: NOBODY, command: 'zzNothing' } };
 const SAVED = 'spirit/app/zzStar/saved.txt';
-const JOB = { call: 'job.create', args: { command: process.execPath, args: ['spirit/app/zzStar/zzStar.js', 'fromTheFace'] } };
+const JOB = { call: 'job.create', args: { command: process.execPath, args: JSON.stringify(['spirit/app/zzStar/zzStar.js', 'fromTheFace']) } };
 const SAVE = { call: 'fs.save', args: { path: SAVED, content: 'from the face' } };
 const face = function (req) { return page(S.R, 'harbour', '/face/call', req, S.L.sid); };
 // 😏 as the row says it (goal/G47.4, box v33: "😏 is the row field faceable").
@@ -615,7 +615,7 @@ test.run('job.create of an included process runs it', 0.2, async function () {
 test.run('job.create of /bin/sh is still refused, starred or not', 0.8, async function () {
   if (!loggedIn()) return false;
   const shMark = path.join(S.marks, 'sh');
-  const sh = await face({ call: 'job.create', args: { command: '/bin/sh', args: ['-c', 'echo x > ' + shMark] } });
+  const sh = await face({ call: 'job.create', args: { command: '/bin/sh', args: JSON.stringify(['-c', 'echo x > ' + shMark]) } });
   await sleep(WAIT_MS);
   return (sh.status >= 400 && sh.status < 500 && !fs.existsSync(shMark)) || false;
 }, test.limit.slow);
@@ -657,7 +657,7 @@ const heardEvent = function (kind, id) { return S.got.some(function (l) { const 
 const streamUp = function () { return !!(S.LS && S.LS.sid && S.got); };
 // One failed job, to delete: a process that ends with an exit code of its own stays until it is deleted.
 const runOne = async function () {
-  const c = await home(S.N.base, 'job.create', { command: process.execPath, args: ['spirit/app/zzStream/zzStream.js'] });
+  const c = await home(S.N.base, 'job.create', { command: process.execPath, args: JSON.stringify(['spirit/app/zzStream/zzStream.js']) });
   const id = c.body && c.body.id;
   if (!id) return {};
   await until(function () { return home(S.N.base, 'job.get', { key: id }).then(function (a) { const j = a.body && a.body.job; return !!j && j.status === 'failed'; }); }, 8000);
