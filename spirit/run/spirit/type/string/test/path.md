@@ -4,10 +4,10 @@ The type spirit.type.string.path: a path: it designates a folder and always star
 
 ## What it is
 
-An object of two static functions (the box: *"defaultValue() returns a default value that passes validation, and
-isValid(something) return boolean true if something is valid and throws and error if something is NOT valid."*).
+An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription) is judged by
+`../../test/boolean-sibling-general.js`.
 
 ## What its test judges
 
-It exists and loads; it holds defaultValue and isValid; isValid answers true for 'spirit', 'spirit.app.desk'; isValid throws an
+It exists and loads; isValid answers true for 'spirit', 'spirit.app.desk'; isValid throws an
 error for 'app.desk', 'spirit/app', '', 'spirit..app', 'spirit.app.', 5, null.

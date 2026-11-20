@@ -20,9 +20,6 @@ test.run('spirit/type/string/paragraph.js exists and loads', 0.2, function () {
   try { require(path.join(RUN, 'spirit', 'spirit.js')); T = require(FILE); } catch (e) { T = null; }
   return (!!T && typeof T === 'object') || false;
 }, test.limit.quick);
-test.run('it is an object of two static functions, defaultValue and isValid', 0.4, function () {
-  return (!!T && typeof T.defaultValue === 'function' && typeof T.isValid === 'function') || false;
-}, test.limit.quick);
 test.run('isValid answers true, the boolean, for "one line\\nand another", "a".repeat(2048)', 0.4, function () {
   if (!T) return false;
   try { return ['one line\nand another', 'a'.repeat(2048)].every(function (v) { return T.isValid(v) === true; }) || false; } catch (e) { return false; }

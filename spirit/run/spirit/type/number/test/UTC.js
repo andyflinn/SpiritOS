@@ -20,9 +20,6 @@ test.run('spirit/type/number/UTC.js exists and loads', 0.2, function () {
   try { require(path.join(RUN, 'spirit', 'spirit.js')); T = require(FILE); } catch (e) { T = null; }
   return (!!T && typeof T === 'object') || false;
 }, test.limit.quick);
-test.run('it is an object of two static functions, defaultValue and isValid', 0.4, function () {
-  return (!!T && typeof T.defaultValue === 'function' && typeof T.isValid === 'function') || false;
-}, test.limit.quick);
 test.run('isValid answers true, the boolean, for 0, Date.now()', 0.4, function () {
   if (!T) return false;
   try { return [0, Date.now()].every(function (v) { return T.isValid(v) === true; }) || false; } catch (e) { return false; }
