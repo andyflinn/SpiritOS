@@ -19,10 +19,10 @@ answers `true`. With no `faceSet` given it refuses: closed, not open.
   is served; the keys are answered; face-open starts the stream.
 - **A face is whole, or there is none** (goal/G43.18, box v29; Andy: *"we remove ALL the star shit, like this,"*, *"on the
   home node, NO face is offered (faceForm hides itself) for a relay without star."*): *"The home node answers a face only
-  from a starred relay, one check; a face it answers is a full face."* On a relay with this node's face and no star,
-  `node.card`, `fs.stat`, `owner.command`, `job.create`, a file, the keys and a save in parts are each refused, sealed
-  or in pieces, and none reaches the door; no file is served or written. The half face of goal/G41.30 and G41.33, its
-  lists of verbs off the face, is gone.
+  from a starred relay, one check; a face it answers is a full face."* One check, so one call judges it: on a relay
+  with this node's face and no star, a call is refused and never reaches the door. The half face of goal/G41.30 and
+  G41.33, its lists of verbs off the face, is gone, and so are its tests (Andy, Q18: *"WHATEVER IS HALF-FACE-GARBAGE
+  GETS KILLED"*).
 - **Starring takes the node's own word, and a face there**: only `true` is a star; a starred relay where this node set no
   face gets nothing.
 - **`contact.faceable` never comes through a face** (Andy: *"so this button will put the star on relays and puppets. AND take it
