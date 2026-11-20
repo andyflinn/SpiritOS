@@ -384,7 +384,10 @@ function chCreate(container) {
     // Every watch it took let go (rule/8), its contact pane's with it.
     chStops.splice(0).forEach(function (stop) { try { stop(); } catch (e) { /* its own */ } });
     if (chPane && typeof chPane.destroy === 'function') chPane.destroy();
-    chPane = null; chRoot = null; container.innerHTML = '';
+    // ITS SEARCH GOES WITH IT (goal/G48.4, Andy: "make sure that elements get cleaned up"): the shared list it made, and the
+    // listeners that list put on the page.
+    if (chSearch && typeof chSearch.destroy === 'function') chSearch.destroy();
+    chSearch = null; chPane = null; chRoot = null; container.innerHTML = '';
   } };
 }
 // The releases of what the open chat watches; one taken after the app was destroyed is let go at once.
