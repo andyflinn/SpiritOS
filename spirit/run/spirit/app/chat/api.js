@@ -15,7 +15,7 @@ module.exports = {
     // One chat, by the peer's key; before and after are the writer's times, UTC milliseconds since 1970 (0 for none), after wins.
     'chat.read': { peer: 'spirit.type.string.ID', before: 'spirit.type.number.UTC?', after: 'spirit.type.number.UTC?' },
     // One chat searched: text ('' matches every line), who 'me', 'them', 'both' or ''.
-    'chat.search': { peer: 'spirit.type.string.ID', text: 'spirit.type.string.lineFilter?', who: 'text?' },
+    'chat.search': { peer: 'spirit.type.string.ID', text: 'spirit.type.string.lineSelect?', who: 'text?' },
     'chats.search': {},
     // A peer's line, posted by its chat server: the writer is the sealed caller, so no key travels. seq above 0;
     // re {writer, seq} names the line answered, none when left out.

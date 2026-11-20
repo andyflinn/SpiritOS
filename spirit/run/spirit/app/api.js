@@ -11,7 +11,7 @@ if (typeof require === 'function') require('../spirit.js').require('spirit/app/d
 module.exports = {
   verbs: {
     // Andy, box: "it's minimum, no filters, just a search string."
-    search: { q: 'spirit.type.string.lineFilter?' },
+    search: { q: 'spirit.type.string.lineSelect?' },
     // goal/G43.9, peer review wsl, yes, Andy's yes on Q1: "spirit.app gains a verb: "active"."
     active: { key: 'spirit.type.string.word', active: 'spirit.type.boolean' },
     // Q4, Andy: "yes.": the node's choices, over what <name>.json says.

@@ -10,7 +10,7 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/owner/data.js'); else window.spirit.require('spirit/owner/data.js');
 module.exports = {
   verbs: {
-    boxSearch: { q: 'spirit.type.string.lineFilter?' },
+    boxSearch: { q: 'spirit.type.string.lineSelect?' },
     boxGet: { key: 'id' },
     command: { to: 'spirit.type.string.ID', command: 'id', body: 'spirit.type.object.payload?' },
   },

@@ -4,6 +4,6 @@
     "op": "spirit.type.string.tableOp",
     "glyph": "spirit.type.string.glyph?",
     "keywords": "spirit.type.string.json?",
-    "text": "spirit.type.string.lineFilter?"
+    "text": "spirit.type.string.lineSelect?"
   }
 }

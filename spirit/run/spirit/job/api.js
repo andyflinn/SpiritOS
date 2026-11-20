@@ -10,7 +10,7 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/job/data.js'); else window.spirit.require('spirit/job/data.js');
 module.exports = {
   verbs: {
-    search: { q: 'spirit.type.string.lineFilter?' },
+    search: { q: 'spirit.type.string.lineSelect?' },
     get: { key: 'id' },
     create: { command: 'id', args: 'spirit.type.string.json?', type: 'text?' },
     cancel: { id: 'id' },

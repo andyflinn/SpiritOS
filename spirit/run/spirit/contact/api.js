@@ -11,7 +11,7 @@ if (typeof require === 'function') require('../spirit.js').require('spirit/conta
 module.exports = {
   verbs: {
     // The one table, people and relays (goal/G40.11): a yes-filter per flag.
-    search: { q: 'spirit.type.string.lineFilter?', keep: 'spirit.type.boolean?', mine: 'spirit.type.boolean?', relay: 'spirit.type.boolean?', seated: 'spirit.type.boolean?', blocked: 'spirit.type.boolean?' },
+    search: { q: 'spirit.type.string.lineSelect?', keep: 'spirit.type.boolean?', mine: 'spirit.type.boolean?', relay: 'spirit.type.boolean?', seated: 'spirit.type.boolean?', blocked: 'spirit.type.boolean?' },
     get: { key: 'spirit.type.string.ID' },
     block: { publicKey: 'spirit.type.string.ID', publicLabel: 'name?' },
     unblock: { publicKey: 'spirit.type.string.ID' },

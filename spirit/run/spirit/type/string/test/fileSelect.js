@@ -1,0 +1,34 @@
+'use strict';
+
+// spirit/run/spirit/type/string/test/fileSelect.js
+// The tests of spirit/type/string/fileSelect.js, and of no other module (spec: ./fileSelect.md). goal/G48.4, Andy:
+// "<type>Select.js requires <type>.js, when validating <type>Select.js FIRST checks for \"\", and returns true if the value
+// is \"\", it otherwise it lets <type>.js handle the check". spirit.type.string.fileSelect: the file a search narrows to: empty for all, else a file as spirit.type.string.file is.
+
+const fs = require('fs');
+const path = require('path');
+const RUN = path.resolve(__dirname, '../../../..');
+const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const FILE = path.join(RUN, 'spirit', 'type', 'string/fileSelect.js');
+
+let T = null;
+const throws = function (v) { try { T.isValid(v); return false; } catch (e) { return e instanceof Error; } };
+
+test.run('spirit/type/string/fileSelect.js exists and loads', 0.2, function () {
+  if (!fs.existsSync(FILE)) return false;
+  try { require(path.join(RUN, 'spirit', 'spirit.js')); T = require(FILE); } catch (e) { T = null; }
+  return (!!T && typeof T === 'object') || false;
+}, test.limit.quick);
+test.run('isValid answers true, the boolean, for "", "spirit/app/desk/item.get.json"', 0.4, function () {
+  if (!T) return false;
+  try { return ["","spirit/app/desk/item.get.json"].every(function (v) { return T.isValid(v) === true; }) || false; } catch (e) { return false; }
+}, test.limit.quick);
+test.run('isValid throws an error for "/abs", "../up", a backslash path, 5, {}', 0.4, function () {
+  if (!T) return false;
+  return ['/abs', '../up', 'a' + String.fromCharCode(92) + 'b', 5, {}].every(throws) || false;
+}, test.limit.quick);
+test.run('its description says empty for all, then the description of its sibling', 0.2, function () {
+  if (!T) return false;
+  const sib = require(path.join(RUN, 'spirit', 'type', 'string', 'file.js'));
+  return T.ruleDescription() === 'empty for all, else ' + sib.ruleDescription() || false;
+}, test.limit.quick);

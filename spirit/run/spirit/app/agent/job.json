@@ -10,6 +10,6 @@
     "bundle": "text?",
     "provider": "spirit.type.string.ID?",
     "persona": "spirit.type.string.ID?",
-    "text": "spirit.type.string.lineFilter?"
+    "text": "spirit.type.string.lineSelect?"
   }
 }

@@ -8,6 +8,6 @@
     "url": "spirit.type.string.URL?",
     "apiKey": "spirit.type.string.secret?",
     "model": "spirit.type.string.ID?",
-    "text": "spirit.type.string.lineFilter?"
+    "text": "spirit.type.string.lineSelect?"
   }
 }
