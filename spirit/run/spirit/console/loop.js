@@ -9,9 +9,11 @@
 // a logged "path app.agent" is offered at spirit.app as "path agent", at the root as it is, and nowhere else; "path <<"
 // everywhere but the root.
 //
-//   start() -> runs until exit, or until its input ends
+///   start() -> runs until exit, or until its input ends
+require('../spirit.js');
 const readline = require('readline');
-const command = require('./command.js');
+// The processor, through spirit.require (the general rules).
+const command = spirit.require('spirit/console/command.js');
 
 function promptOf(p) { return (p ? 'spirit.' + p : 'spirit') + ': '; }
 

@@ -9,8 +9,10 @@
 //                                               script ends, 1 when it refused
 //   node spirit/run/spirit/console.js          ./console/loop.js, the prompt
 // The hello world's card is gone (the box, ## reversals: "the card feature from 48.1 will be completely dropped").
+require('./spirit.js');
 if (require.main === module) {
   const words = process.argv.slice(2).join(' ');
-  if (!words) require('./console/loop.js').start();
-  else require('./console/command.js').run(words).then(function (r) { if (r.out) console.log(r.out); process.exit(r.ok ? 0 : 1); });
+  // Its parts through spirit.require, as every file of the tree loads another (the general rules).
+  if (!words) spirit.require('spirit/console/loop.js').start();
+  else spirit.require('spirit/console/command.js').run(words).then(function (r) { if (r.out) console.log(r.out); process.exit(r.ok ? 0 : 1); });
 }

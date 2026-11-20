@@ -8,7 +8,8 @@
 // through the node's verbs (Andy: "the only way it can access files inside of run:// is through the node api's"): whether
 // a path is there, it asks the node's fs stat.
 //
-//   run(line) -> Promise<{ ok, out, path }>   out what to print, path the path after the line ('' at the root)
+//   run(line) -> Promise<{ ok, out, path }>   out what to print (a refusal as JSON), path the path after the line ('' at
+//                                             the root)
 //   state()   -> { path, history }            as the state file holds it now
 //
 // ITS ONE COMMAND, path (the box, ### behavior):
@@ -47,7 +48,9 @@ function there(p) {
     .then(function () { return true; }, function () { return false; });
 }
 
-function refused(s, why) { return { ok: false, out: why, path: s.path }; }
+// A REFUSAL, PRINTED AS JSON (the box v12: "errors are return in JSON.stringify(error,null,2) format."): the node's own
+// refusal shape, { ok: false, code, error }, and the path left as it was.
+function refused(s, code, why) { return { ok: false, out: JSON.stringify({ ok: false, code: code, error: why }, null, 2), path: s.path }; }
 function moved(s, to) {
   s.path = to;
   s.history.push(to ? 'path ' + to : 'path <<');
@@ -58,13 +61,13 @@ function moved(s, to) {
 function pathCommand(s, arg) {
   if (!arg) return Promise.resolve({ ok: true, out: shown(s.path), path: s.path });
   if (arg === '<' || arg === '<<') {
-    if (!s.path) return Promise.resolve(refused(s, 'already at the root: spirit'));
+    if (!s.path) return Promise.resolve(refused(s, 'at-the-root', 'already at the root: spirit'));
     return Promise.resolve(moved(s, arg === '<<' ? '' : s.path.split('.').slice(0, -1).join('.')));
   }
   const asked = arg.split('.');
-  if (!asked.every(function (n) { return NAME.test(n); })) return Promise.resolve(refused(s, 'no such path: ' + arg));
+  if (!asked.every(function (n) { return NAME.test(n); })) return Promise.resolve(refused(s, 'no-such-path', 'no such path: ' + arg));
   const to = (s.path ? s.path + '.' : '') + asked.join('.');
-  return there(to).then(function (yes) { return yes ? moved(s, to) : refused(s, 'no such path: ' + shown(to)); });
+  return there(to).then(function (yes) { return yes ? moved(s, to) : refused(s, 'no-such-path', 'no such path: ' + shown(to)); });
 }
 
 function run(line) {
@@ -72,7 +75,7 @@ function run(line) {
   const s = state();
   if (!words.length) return Promise.resolve({ ok: true, out: '', path: s.path });
   if (words[0] === 'path' && words.length <= 2) return pathCommand(s, words[1] || '');
-  return Promise.resolve(refused(s, 'no such command: ' + words.join(' ')));
+  return Promise.resolve(refused(s, 'no-such-command', 'no such command: ' + words.join(' ')));
 }
 
 module.exports = { run: run, state: state, HISTORY_MAX: HISTORY_MAX };
