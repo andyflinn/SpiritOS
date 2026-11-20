@@ -2879,7 +2879,12 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   const ST = { s: null, N: null, DB: '', stray: 0, pressed: false };
   const strayUp = function () { return !!ST.N && ST.N.up; };
   const aliveS = function (pid) { if (!pid) return false; try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+  // THE START MARKS GO, BEFORE THE SUITES ARE WRITTEN AND WHEN THE TEST ENDS (goal/G48.4; Andy: "this one flips too much",
+  // and "NO POLLUTION! NO LITTERING!!!!"): the lab copy is reused, so a mark the last run left would read as the second suite
+  // already running, before any sweep.
+  const dropMarks = function () { if (!ST.s) return; ['sB', 'sC'].forEach(function (n) { try { fs.rmSync(path.join(ST.s.root, 'started-' + n), { force: true }); } catch (e) { /* none */ } }); };
   const letGoST = async function () {
+    dropMarks();
     if (aliveS(ST.stray)) { try { process.kill(ST.stray); } catch (e) { /* gone */ } }
     if (ST.N) await stop(ST.N.child);
     try { if (ST.s) LABH.freeTree(ST.s); } catch (e) { /* scratch */ }
@@ -2941,6 +2946,7 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
       if (!strayUp()) return false;
       const set = await call(ST.N.base, 'testicle.preferences', { interactive: false });
       if (set.status !== 200) return false;
+      dropMarks();
       [SB, SC].forEach(function (rel) {
         fs.writeFileSync(path.join(ST.s.run, rel), "'use strict';\n// " + path.posix.basename(rel) + '\n');
         fs.writeFileSync(path.join(ST.s.run, ownOfS(rel)), SUITE_HEAD + SLOW(rel));
