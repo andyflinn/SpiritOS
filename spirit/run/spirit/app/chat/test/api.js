@@ -91,7 +91,7 @@ test.run('chat.line.write is a verb of the node', 0.2, function () { return serv
 // ── the attacker: arguments its rules refuse, before the server hears them ──
 test.run('chat.read without the peer it requires is refused 400', 0.2, async function () {
   if (!X.call) return false;
-  const noPeer = await X.call('chat.chat.read', { before: '', after: '' });
+  const noPeer = await X.call('chat.chat.read', { before: 0, after: 0 });
   return noPeer.status === 400 ? true : false;
 }, test.limit.quick);
 test.run('line.write without the to it requires is refused 400', 0.2, async function () {

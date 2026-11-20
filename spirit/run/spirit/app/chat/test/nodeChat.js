@@ -98,7 +98,7 @@ test.run('line.write answers seq 1, refused or pending, because nobody took it',
 }, test.limit.quick);
 test.run('chat.read holds the line as written here, with seq 1 and its text, marked unsent', 0.2, async function () {
   if (!X.K) return false;
-  const read = await X.call('chat.chat.read', { peer: X.K, before: '', after: '' });
+  const read = await X.call('chat.chat.read', { peer: X.K, before: 0, after: 0 });
   const lines = labels(read.body);
   return lines.length === 1 && lines[0].sent === 1 && lines[0].seq === 1 && lines[0].text === 'zz hello there' && !!lines[0].refused ? true : false;
 }, test.limit.quick);
@@ -149,6 +149,16 @@ test.run('a line too large to travel is refused line-too-large', 0.2, async func
 }, test.limit.quick);
 test.run('neither refused line was kept, and the chat holds its two lines', 0.2, async function () {
   if (!X.K) return false;
-  const after = labels((await X.call('chat.chat.read', { peer: X.K, before: '', after: '' })).body);
+  const after = labels((await X.call('chat.chat.read', { peer: X.K, before: 0, after: 0 })).body);
   return after.length === 2 ? true : false;
+}, test.limit.quick);
+// before and after are UTC times, milliseconds since 1970, 0 for none (goal/G48.4, Q5, Andy: "times are fucking numbers").
+test.run('chat.read before a line\'s UTC time answers the line before it, and after the first line\'s time the one after', 0.2, async function () {
+  if (!X.K) return false;
+  const two = labels((await X.call('chat.chat.read', { peer: X.K, before: 0, after: 0 })).body);
+  if (two.length !== 2) return false;
+  const newer = two[0].seq === 2 ? two[0] : two[1], older = two[0].seq === 2 ? two[1] : two[0];
+  const before = labels((await X.call('chat.chat.read', { peer: X.K, before: Date.parse(newer.at), after: 0 })).body);
+  const after = labels((await X.call('chat.chat.read', { peer: X.K, before: 0, after: Date.parse(older.at) })).body);
+  return (before.length === 1 && before[0].seq === 1 && after.length === 1 && after[0].seq === 2) || false;
 }, test.limit.quick);

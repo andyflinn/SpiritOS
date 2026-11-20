@@ -122,9 +122,13 @@ function answered(peer, re) {
   return sent === -1 ? undefined : oneLine.get(peer, sent, re.seq) || undefined;
 }
 
-// One line as it travels: the peer's chat server takes it with line.receive (goal/G4.2), on its chat branch.
+// One line as it travels: the peer's chat server takes it with line.receive (goal/G4.2), on its chat branch. Its time
+// travels as a UTC time, milliseconds since 1970 (goal/G48.4, Q5, Andy: "times are fucking numbers ...
+// spirit.type.number.UTC"); this table keeps it as the text it always kept, turned at this door both ways.
+function utcOf(at) { const t = Date.parse(String(at || '')); return isFinite(t) ? t : 0; }
+function keptAt(utc) { return new Date(utc).toISOString(); }
 function bodyOf(l) {
-  return { chat: { 'line.receive': { seq: l.seq, at: l.at, text: l.text, re: { writer: l.reWriter, seq: l.reSeq } } } };
+  return { chat: { 'line.receive': { seq: l.seq, at: utcOf(l.at), text: l.text, re: { writer: l.reWriter, seq: l.reSeq } } } };
 }
 // One post of one line, and what came back: kept, or the peer's refusal (its door's, sealed) kept as proof that
 // contact was attempted (goal/G4.6, Andy: "the writers keeps refusals, they are proof that contact was attempted.").
@@ -306,7 +310,7 @@ appServer.serve({
   // A PEER'S LINE ARRIVES (goal/G4.2). The writer is the caller's key, proven by the sealed packet; the door let it
   // in only under the grant this node gave (G4.6). Kept once, as received; the same line again is answered kept.
   'line.receive': {
-    request: { seq: 0, at: '', text: '', re: { writer: '', seq: 0 } }, reply: { kept: true },
+    request: { seq: 0, at: 0, text: '', re: { writer: '', seq: 0 } }, reply: { kept: true },
     handler: function (a, caller) {
       const peer = caller && caller.key ? String(caller.key) : '';
       if (!peer) throw refused('not-granted');
@@ -315,7 +319,8 @@ appServer.serve({
       const re = { writer: String((a.re && a.re.writer) || ''), seq: Number((a.re && a.re.seq) || 0) };
       const receivedAt = new Date().toISOString();
       if (!getPeer.get(peer)) addPeer.run(peer, receivedAt);
-      const fresh = takeLine.run(peer, seq, String(a.at), String(a.text), receivedAt, re.writer, re.seq).changes > 0;
+      if (typeof a.at !== 'number' || !isFinite(a.at) || Math.floor(a.at) !== a.at) throw refused('bad-request', 'a line\'s at is a UTC time, milliseconds since 1970');
+      const fresh = takeLine.run(peer, seq, keptAt(a.at), String(a.text), receivedAt, re.writer, re.seq).changes > 0;
       setReceived.run(seq, peer);
       if (fresh) {
         // The answered line first, then the received one; a re this record lacks is said, by writer and seq.
@@ -333,11 +338,12 @@ appServer.serve({
   // selected one are added to the chat, so that context is visible...", then "chat.read gains after"): with after,
   // the lines newer than it, oldest first, so the first is the one right after; before is then not read.
   'chat.read': {
-    request: { peer: '', before: '', after: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    // before and after are UTC times, 0 for none (goal/G48.4, Q5), read against the kept text times.
+    request: { peer: '', before: 0, after: 0 }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a, caller) {
       ownerOnly(caller);
-      const before = String(a.before || '');
-      const after = String(a.after || '');
+      const before = a.before ? keptAt(Number(a.before)) : '';
+      const after = a.after ? keptAt(Number(a.after)) : '';
       const pairs = after
         ? (function* () { for (const r of chatLinesAfter.iterate(String(a.peer), after)) yield linePair(r); })()
         : (function* () { for (const r of chatLines.iterate(String(a.peer), before, before)) yield linePair(r); })();

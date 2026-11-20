@@ -275,7 +275,7 @@ function chOpen(key) {
   chSay('');
   // What is kept of this chat already is drawn at once; the read brings the rest.
   if (chData()) chData().lines(key).forEach(chUpsert);
-  return chAsk('chat.read', { peer: key, before: '', after: '' }).then(function (body) {
+  return chAsk('chat.read', { peer: key, before: 0, after: 0 }).then(function (body) {
     if (mine !== chOpenSeq) return;
     chMore = !!body.more;
     chKeep(key, chItemsToLines(body.items));
@@ -285,13 +285,16 @@ function chOpen(key) {
   }, function (e) { if (mine === chOpenSeq) chSay('the chat could not be read: ' + e.message); });
 }
 
+// A line's time as chat.read takes it: a UTC time, milliseconds since 1970, 0 for none (goal/G48.4, Q5).
+function chUTC(at) { var t = Date.parse(String(at || '')); return isFinite(t) ? t : 0; }
+
 function chOlder() {
   if (!chPeer || !chMore || chLoadingOlder || !chOrder.length) return;
   chLoadingOlder = true;
   var peer = chPeer;
   var list = chEl('ch-lines');
   var height = list ? list.scrollHeight : 0;
-  chAsk('chat.read', { peer: peer, before: chLines[chOrder[0]].line.at, after: '' }).then(function (body) {
+  chAsk('chat.read', { peer: peer, before: chUTC(chLines[chOrder[0]].line.at), after: 0 }).then(function (body) {
     chLoadingOlder = false;
     if (peer !== chPeer) return;
     chMore = !!body.more;
@@ -614,8 +617,8 @@ function chMount(container) {
           var peer = chPeer;
           chSetCurrent(chKey(l.sent, l.seq));
           var one = function (body) { chKeep(peer, chItemsToLines((body && body.items) || []).slice(0, 1)); };
-          chAsk('chat.read', { peer: peer, before: String(l.at || ''), after: '' }).then(one)
-            .then(function () { return chAsk('chat.read', { peer: peer, before: '', after: String(l.at || '') }); }).then(one)
+          chAsk('chat.read', { peer: peer, before: chUTC(l.at), after: 0 }).then(one)
+            .then(function () { return chAsk('chat.read', { peer: peer, before: 0, after: chUTC(l.at) }); }).then(one)
             .catch(function () { /* the picked line stands; its neighbours come with the next read */ });
         },
         empty: 'Type words to search this chat.',
