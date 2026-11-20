@@ -100,6 +100,9 @@
     var fields = [];
     var reply = null;
     var picker = null;
+    // THE FAMILY AND VERB PICKER, KEPT TO BE DESTROYED WITH IT (goal/G48.4, Andy: "make sure that elements get cleaned up"):
+    // its two lists put listeners on the page.
+    var apiPick = null;
     // Its spacing is shell.css's (box v109: "style issues like margin, padding and gap do NOT belong in UI scripts"): the line's
     // .introspector-line, its blocks 1em apart by .stack (rule/2). Its box keeps what it holds inside (-browser: overflow).
     container.innerHTML =
@@ -161,7 +164,7 @@
       var line = part('line');
       var hold = document.createElement('span');
       line.appendChild(hold);
-      var branch = S.element.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return treeOf(party); } });
+      var branch = apiPick = S.element.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return treeOf(party); } });
       // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/list.js), the book and
       // this node's relays; no pick is self, this node.
       picker = S.element.spirit.element.search.contact.list.create(hold, {
@@ -198,7 +201,8 @@
       destroy: function () {
         gone = true;
         if (picker && typeof picker.destroy === 'function') picker.destroy();
-        picker = null;
+        if (apiPick && typeof apiPick.destroy === 'function') apiPick.destroy();
+        picker = null; apiPick = null;
         reply = null;
         container.innerHTML = '';
       },
