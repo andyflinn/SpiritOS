@@ -1,20 +1,19 @@
 # spirit/console.js
 
-The console, core (goal/G48, Andy: *"console is core."*). Its first version is the hello world of goal/G48.1 (Andy: *"we
-need a hallo word version first with extremely modest feature requirements. that way we can experiment with the
-prototype...."*). It uses spirit word vocabulary, and its js spirit object is in node-client mode, same as app servers or
-one-shot jobs. Its test: `./console.js`.
+The console's one door from a system shell (goal/G48.2, the box: *"there is only one system shell way into console:
+"node spirit/console.js", the console itself knows that it must enter the loop if no arguments was specified."*). The
+console is core (goal/G48, Andy: *"console is core."*); its parts are `./console/command.js`, the command processor, and
+`./console/loop.js`, the interactive loop. Its test: `./console.js`.
 
 ## What it does
 
-- `node spirit/run/spirit/console.js card` prints the node's card using `JSON.stringify(card,0,2)`.
-- `node spirit/run/spirit/console.js` puts the console into interactive mode, where
-  - `exit` exits the interactive loop and the console script;
-  - `card` prints the node's card using `JSON.stringify(card,0,2)`.
+- With no words it enters the loop (`./console/loop.js`), which shows the prompt `spirit: ` at the root.
+- With words it hands them to the command processor (`./console/command.js`) once, and ends.
+- The card of goal/G48.1 is gone (*"the card feature from 48.1 will be completely dropped and the console will feature
+  namevation only."*).
 
 ## What its test judges
 
-On a scratch node of its own, the console of that node's tree run there: `card` in one go prints exactly the card the node
-answers to `node.card`, as `JSON.stringify(card,0,2)`, and ends without an error; with no word it stays running and prints
-nothing until a line comes; `card` at it prints the card, the console stays, and `card` again prints it again; `exit`
-ends the console without an error.
+On a scratch node of its own, the console of that node's tree run there: with no words it stays running and shows
+`spirit: `, and a line typed there (`path app`) moves the stored path; with words (`path agent`) it does them once and ends,
+the stored path then `app.agent`; `card` prints no card.
