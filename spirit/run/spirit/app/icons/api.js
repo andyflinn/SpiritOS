@@ -10,7 +10,7 @@ module.exports = {
   verbs: {
     // THE ICON SET, ONE TABLE (the box: "it implements a database-table interface, also reflected in api.js and data.js"):
     // op one of search, get, add, set and delete. The glyph is the row's key; the keywords are what it is found by. search
-    // takes text, get and delete a glyph, add and set a glyph and its keywords.
-    icon: { op: 'spirit.type.string.tableOp', glyph: 'spirit.type.string.glyph?', keywords: 'list?', text: 'spirit.type.string.lineFilter?' },
+    // takes text, get and delete a glyph, add and set a glyph and its keywords, a list in JSON (goal/G48.4, Q6).
+    icon: { op: 'spirit.type.string.tableOp', glyph: 'spirit.type.string.glyph?', keywords: 'spirit.type.string.json?', text: 'spirit.type.string.lineFilter?' },
   },
 };

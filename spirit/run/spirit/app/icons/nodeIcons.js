@@ -51,7 +51,14 @@ function writeSet(set) {
 }
 function known(set, glyph) { return Object.keys(set).filter(function (g) { return bare(g) === bare(glyph); })[0] || ''; }
 function rowOf(glyph, words) { return { glyph: glyph, keywords: Array.isArray(words) ? words.map(String) : [] }; }
-function words(list) { return (Array.isArray(list) ? list : []).map(function (w) { return String(w).trim(); }).filter(Boolean); }
+// THE KEYWORDS COME AS A LIST IN JSON, ONE STRING (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json"): a list of
+// strings, or null for anything else.
+function listOf(json) {
+  let v = null;
+  try { v = JSON.parse(json); } catch (e) { return null; }
+  return Array.isArray(v) && v.every(function (w) { return typeof w === 'string'; }) ? v : null;
+}
+function words(json) { return (listOf(json) || []).map(function (w) { return String(w).trim(); }).filter(Boolean); }
 // A row seen by its glyph and keywords, as the shared search reads it.
 function itemOf(glyph, keywords) { return { key: glyph, label: JSON.stringify(rowOf(glyph, keywords)) }; }
 function matchesText(glyph, keywords, text) {
@@ -68,7 +75,7 @@ function accepts(a) {
   if (Object.keys(a).some(function (k) { return allowed.indexOf(k) === -1; })) return false;
   if ('glyph' in a && typeof a.glyph !== 'string') return false;
   if ('text' in a && typeof a.text !== 'string') return false;
-  if ('keywords' in a && !(Array.isArray(a.keywords) && a.keywords.every(function (w) { return typeof w === 'string'; }))) return false;
+  if ('keywords' in a && !(typeof a.keywords === 'string' && listOf(a.keywords))) return false;
   if ((a.op === 'get' || a.op === 'delete' || a.op === 'add' || a.op === 'set') && !String(a.glyph || '').trim()) return false;
   return true;
 }
@@ -128,7 +135,7 @@ function publish(row) { return Promise.resolve(spirit.job.report({ app: row })).
 
 appServer.serve({
   icon: {
-    request: { op: '', glyph: '', keywords: [''], text: '' },
+    request: { op: '', glyph: '', keywords: '', text: '' },
     reply: {},
     accepts: accepts,
     handler: function (a) {

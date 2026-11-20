@@ -70,7 +70,7 @@
           if (document.activeElement !== field) field.value = (v.keywords || []).join(', ');
         });
         field.addEventListener('change', function () {
-          icon({ op: 'set', glyph: glyph, keywords: words(field.value) }).then(function (r) { said.textContent = r && r.changed ? 'saved' : 'not saved'; },
+          icon({ op: 'set', glyph: glyph, keywords: JSON.stringify(words(field.value)) }).then(function (r) { said.textContent = r && r.changed ? 'saved' : 'not saved'; },
             function (e) { said.textContent = 'not saved: ' + ((e && e.message) || e); });
         });
         // REMOVE ARMS FIRST (Andy: "icon detail, delete should be an armingButton."): the first press arms it and writes
@@ -126,9 +126,9 @@
       var glyph = String((container.querySelector('[data-icons="new-glyph"]') || {}).value || '').trim();
       var kw = words((container.querySelector('[data-icons="new-keywords"]') || {}).value);
       if (!glyph) { say('paste an icon first'); return; }
-      if (!S.required.spirit.element.fieldInput.fits(kw.join(', '), 'description')) { say('too many keywords'); return; }
+      if (!S.required.spirit.element.fieldInput.fits(kw.join(', '), 'spirit.type.string.description')) { say('too many keywords'); return; }
       // Its answer is rowForm's to wait for (the button busy until then).
-      return icon({ op: 'add', glyph: glyph, keywords: kw }).then(function (r) {
+      return icon({ op: 'add', glyph: glyph, keywords: JSON.stringify(kw) }).then(function (r) {
         if (gone) return;
         // A DUPLICATE IS REFUSED (Andy: "the icon app allowed me to add a duplicate icon.... that shouldn't work"), AND IT OPENS
         // THAT ICON (goal/G40.5; Andy: "if add icon cannot add because the icon already exists, the open the edit dialog for

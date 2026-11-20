@@ -45,10 +45,11 @@ test.run('the icons api.js names its verbs', 0.2, function () {
   return W.verbs.length >= 1 || false;
 }, test.limit.quick);
 // Its one verb, icon, written out so that its check has a plain title.
+// A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
 test.run('each argument of the icon verb carries a rule', 0.2, function () {
   if (!W.verbs || !W.verbs.length) return false;
   const rules = W.api.verbs.icon || {};
-  const bad = Object.keys(rules).filter(function (a) { return typeof rules[a] !== 'string' || !/^[a-z]+\??$/i.test(rules[a]); });
+  const bad = Object.keys(rules).filter(function (a) { return typeof rules[a] !== 'string' || !(/^[a-z]+\??$/i.test(rules[a]) || /^spirit\.type(\.[A-Za-z]+)+\??$/.test(rules[a])); });
   return !bad.length || false;
 }, test.limit.quick);
 // goal/G47.1, Andy: "every api.js requires it's companion data.js, and is the only script to require that data.js": the one
@@ -117,7 +118,7 @@ test.run('a glyph that is no text is refused', 0.2, async function () {
 }, test.limit.quick);
 test.run('a glyph that is no text is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 test.run('keywords that are no list are refused', 0.2, async function () {
-  const c = await crooked('icons.' + W.v, { op: 'add', glyph: 'x', keywords: 'not a list' });
+  const c = await crooked('icons.' + W.v, { op: 'add', glyph: 'x', keywords: '"not a list"' });
   return !c ? false : c.refused || false;
 }, test.limit.quick);
 test.run('keywords that are no list are refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
