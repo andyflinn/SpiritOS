@@ -144,13 +144,14 @@ function wordsOf(line) {
 }
 // A VALUE AS ITS ARGUMENT'S RULE SAYS (the box: "a value is read as its argument's rule in the verb's own file says: a number
 // argument as a number, a yes/no argument as true or false, a list or object argument as JSON"); anything else as typed.
+// The rules are type paths since goal/G48.4 (each argument of its api.js names its type by its full path, spirit.type.<...>):
+// spirit.type.number.* a number, spirit.type.boolean true or false, spirit.type.object.* JSON. A list is spirit.type.string.json,
+// a string of JSON, so it goes as typed.
 function valueOf(rule, text) {
   const r = String(rule || '').replace(/\?$/, '');
-  if (r === 'number') return text.trim() === '' ? text : Number(text);
-  if (r === 'bool') return text === 'true' ? true : text === 'false' ? false : text;
-  // A yes/no the node spells '' or 'yes' (spirit.js's flag rule): true or yes is 'yes', false or nothing is ''.
-  if (r === 'flag') return text === 'true' || text === 'yes' ? 'yes' : text === 'false' || text === '' ? '' : text;
-  if (r === 'list' || r === 'object') { try { return JSON.parse(text); } catch (e) { return text; } }
+  if (r.indexOf('spirit.type.number.') === 0) return text.trim() === '' ? text : Number(text);
+  if (r === 'spirit.type.boolean') return text === 'true' ? true : text === 'false' ? false : text;
+  if (r.indexOf('spirit.type.object.') === 0) { try { return JSON.parse(text); } catch (e) { return text; } }
   return text;
 }
 // EXECUTING A VERB (the box, ## executing verbs: "at a branch, a line typed as its usage shows ... executes that verb, and
