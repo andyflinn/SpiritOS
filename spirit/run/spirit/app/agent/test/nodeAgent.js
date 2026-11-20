@@ -165,10 +165,11 @@ test.run('the agent\'s interface declares the four verbs, provider, model, perso
   const verbs = V.verbs = (fam && fam.verbs) || {};
   return TABLES.every(function (t) { return verbs[t] && typeof verbs[t] === 'object'; }) && !('grant' in verbs) ? true : false;
 }, test.limit.quick);
-// goal/G41.26: the persona's provider is declared as the job's is, a key the call may leave out.
+// goal/G41.26: the persona's provider is declared as the job's is, a key the call may leave out; a key is
+// spirit.type.string.ID (goal/G48.4).
 test.run('the persona verb takes a provider, declared as the job\'s', 0.2, function () {
   const verbs = V.verbs;
-  return verbs.persona && verbs.job && verbs.persona.provider === verbs.job.provider && /^key\??$/.test(String(verbs.persona.provider || '')) ? true : false;
+  return verbs.persona && verbs.job && verbs.persona.provider === verbs.job.provider && /^spirit\.type\.string\.ID\??$/.test(String(verbs.persona.provider || '')) ? true : false;
 }, test.limit.quick);
 test.run('each table has a folder of its own name under spirit/app/agent/table with server.js, and its elementTable.js and elementRow.js', 0.2, function () {
   const files = [];
@@ -229,7 +230,7 @@ test.run('setting a provider changes the field it names, keeps the rest, and ans
 }, test.limit.quick);
 test.run('adding a model keys its own row, naming its provider by the provider\'s id', 0.2, async function () {
   if (!isKey(R.pid)) return false;
-  const modelAdd = await ask('model', { op: 'add', label: 'test-model-1', providerId: R.pid, capabilities: ['text'] });
+  const modelAdd = await ask('model', { op: 'add', label: 'test-model-1', providerId: R.pid, capabilities: JSON.stringify(['text']) });
   const mid = modelAdd.body && modelAdd.body.id;
   const mrow = rowOf(tableOf('model'), mid);
   return isKey(mid) && mid !== R.pid && !!mrow && mrow.providerId === R.pid && mrow.label === 'test-model-1' ? true : false;

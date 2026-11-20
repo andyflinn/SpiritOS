@@ -18,7 +18,7 @@ module.exports = {
     // \"ask\", which does the model-list fetching and model-table updating"): it answers { models, updated }. Its
     // unusable flag is the server's to set when a provider fails, so the page sends no such argument.
     provider: { op: 'spirit.type.string.providerOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'name?', url: 'spirit.type.string.URL?', apiKey: 'spirit.type.string.secret?', model: 'spirit.type.string.ID?', text: 'spirit.type.string.lineFilter?' },
-    model: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'name?', providerId: 'spirit.type.string.ID?', capabilities: 'list?', text: 'spirit.type.string.lineFilter?' },
+    model: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'name?', providerId: 'spirit.type.string.ID?', capabilities: 'spirit.type.string.json?', text: 'spirit.type.string.lineFilter?' },
     persona: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'name?', persona: 'text?', bundle: 'text?', provider: 'spirit.type.string.ID?', text: 'spirit.type.string.lineFilter?' },
     job: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'name?', loop: 'spirit.type.boolean?', job: 'text?', bundle: 'text?', provider: 'spirit.type.string.ID?', persona: 'spirit.type.string.ID?', text: 'spirit.type.string.lineFilter?' },
     // A search may name one of the table's fields, narrowed to the rows holding it (goal/G41.21: providerId above).

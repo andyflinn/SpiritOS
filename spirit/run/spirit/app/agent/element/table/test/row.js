@@ -337,7 +337,7 @@ test.run('changing the label saves the whole row at once, every field and its ic
   const whole = sets()[0];
   // The whole row as the editor shows it: every field, the icon its chooser shows (the table's while the row has none:
   // "all table rows will have an icon, by default the tables icon"); a secret only when typed, so an untyped key is kept.
-  return sets().length === 1 && whole.table === 'provider' && JSON.stringify(whole.args) === JSON.stringify({ op: 'set', id: 'KR', icon: '🏢', label: 'Typed', url: 'https://one.example', on: true, tags: ['a', 'b'] })
+  return sets().length === 1 && whole.table === 'provider' && JSON.stringify(whole.args) === JSON.stringify({ op: 'set', id: 'KR', icon: '🏢', label: 'Typed', url: 'https://one.example', on: true, tags: JSON.stringify(['a', 'b']) })
     ? true : false;
 }, test.limit.quick);
 test.run('the editor draws nothing it typed into the row: the row changes only by the server\'s stream', 0.2, function () {

@@ -255,7 +255,8 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
         else if (f.kind === 'pick') v = picks[f.field] && picks[f.field].value ? picks[f.field].value : row[f.field];
         else if (f.kind === 'bundle') v = bundles[f.field] && bundles[f.field].value !== '' && bundles[f.field].value != null ? String(bundles[f.field].value) : row[f.field];
         else if (f.kind === 'icon') v = icons[f.field] && icons[f.field].value ? String(icons[f.field].value) : row[f.field];
-        else if (f.kind === 'list') v = String((el && el.value) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+        // A list goes as JSON, one string (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json").
+        else if (f.kind === 'list') v = JSON.stringify(String((el && el.value) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean));
         else v = el ? String(el.value || '') : undefined;
         if (f.kind === 'output') return;
         if (f.kind === 'secret' && !v) return;

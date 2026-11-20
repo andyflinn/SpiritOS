@@ -41,7 +41,10 @@ const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items
 
 function refuse(code, why) { const e = new Error(why); e.refusal = code; e.extra = { why: why }; return e; }
 
-// The table's SQL type of a field from its rule: a bool is 0 or 1, a list is kept as JSON text.
+// The table's SQL type of a field from its rule: a bool is 0 or 1, a list is kept as the JSON text it comes as (goal/G48.4,
+// Q6, Andy: lists are "spirit.type.string.json").
+const JSON_RULE = 'spirit.type.string.json';
+function parsed(text) { try { return JSON.parse(text || '[]'); } catch (e) { return []; } }
 function sqlType(rule) { return String(rule).replace(/\?$/, '') === 'bool' ? 'INTEGER' : 'TEXT'; }
 
 // def: { name, fields: { field: rule }, secret: [field], check(fields, db) -> why or '', shows(row) -> fields shown too,
@@ -78,7 +81,7 @@ function rowTable(db, def, publish) {
     Object.keys(r).forEach(function (k) {
       if (PRIVATE.indexOf(k) !== -1 || secret.indexOf(k) !== -1) return;
       const rule = String(fields[k] || '').replace(/\?$/, '');
-      out[k] = rule === 'bool' ? r[k] === 1 : rule === 'list' ? JSON.parse(r[k] || '[]') : r[k];
+      out[k] = rule === 'bool' ? r[k] === 1 : rule === JSON_RULE ? parsed(r[k]) : r[k];
     });
     secret.forEach(function (k) { out[k + 'Set'] = !!r[k]; });
     // What the table says with each row and keeps nowhere (the model's providerIcon, goal/G41.18).
@@ -88,7 +91,7 @@ function rowTable(db, def, publish) {
   // A field as the table keeps it.
   function stored(f, v) {
     const rule = String(fields[f]).replace(/\?$/, '');
-    return rule === 'bool' ? (v ? 1 : 0) : rule === 'list' ? JSON.stringify(v) : v;
+    return rule === 'bool' ? (v ? 1 : 0) : v;
   }
 
   // Which arguments each op takes, checked by spirit.js's rules (spirit.check), so a refusal says why.

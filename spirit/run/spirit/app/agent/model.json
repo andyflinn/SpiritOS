@@ -6,7 +6,7 @@
     "icon": "spirit.type.string.glyph?",
     "label": "name?",
     "providerId": "spirit.type.string.ID?",
-    "capabilities": "list?",
+    "capabilities": "spirit.type.string.json?",
     "text": "spirit.type.string.lineFilter?"
   }
 }

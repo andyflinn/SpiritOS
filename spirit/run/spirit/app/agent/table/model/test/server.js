@@ -107,7 +107,7 @@ test.run('the model table has no other column, and no model name column, as the 
 test.run('a model is added with its provider\'s id, its label the model name as the provider gives it', 0.2, function () {
   if (!X.t) return false;
   X.provider = call(X.ctx.tables.provider.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: 'https://api.anthropic.example' });
-  X.added = call(X.t.verb, { op: 'add', label: 'claude-opus-5-5', providerId: X.provider.id, capabilities: ['text', 'tools'] });
+  X.added = call(X.t.verb, { op: 'add', label: 'claude-opus-5-5', providerId: X.provider.id, capabilities: JSON.stringify(['text', 'tools']) });
   X.got = X.added.id ? call(X.t.verb, { op: 'get', id: X.added.id }) : null;
   const got = X.got;
   return got && got.providerId === X.provider.id && got.label === 'claude-opus-5-5' ? true : false;

@@ -234,7 +234,7 @@ test.run('a model the provider no longer lists is removed; a new one is added', 
   // With no claude-b from the first ask, one stands in for it, so what follows still tries the update.
   A.keep = modelsOf(anth.id).filter(function (m) { return m.label === 'claude-b'; })[0] ||
     ctx.tables.model.verb.handler({ op: 'add', providerId: anth.id, label: 'claude-b' });
-  ctx.tables.model.verb.handler({ op: 'set', id: A.keep.id, capabilities: ['mine'] });
+  ctx.tables.model.verb.handler({ op: 'set', id: A.keep.id, capabilities: JSON.stringify(['mine']) });
   A.openaiRow = call(X.t.verb, { op: 'add', icon: '🏢', label: 'OpenAI', url: A.host + '/v1', apiKey: 'sk-other' });
   A.otherModel = ctx.tables.model.verb.handler({ op: 'add', providerId: A.openaiRow.id, label: 'gpt-kept' });
   stand.anthropic = [['claude-b', 'Claude B'], ['claude-c', 'Claude C']];

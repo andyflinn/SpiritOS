@@ -57,7 +57,7 @@ test.run('it answers its verb, has, label and icon', 0.2, function () {
   X.dbFile = path.join(X.scratch, 'agent.db');
   X.db = new DatabaseSync(X.dbFile);
   X.def = {
-    name: 'thing', fields: { url: 'url?', apiKey: 'text?', on: 'bool?', tags: 'list?' }, secret: ['apiKey'],
+    name: 'thing', fields: { url: 'url?', apiKey: 'text?', on: 'bool?', tags: 'spirit.type.string.json?' }, secret: ['apiKey'],
     check: function (a) { X.checked = a; return a.url === 'https://refused.example' ? 'that url is refused' : ''; },
     deleted: function (id) { X.deleted = id; },
   };
@@ -92,7 +92,7 @@ test.run('a bool field is kept as an INTEGER', 0.2, function () {
 // ── add makes the row with its whole key set ──
 test.run('add answers the id alone, an ed25519 public key', 0.2, function () {
   if (!X.verb) return false;
-  const added = X.added = call(X.verb, { op: 'add', label: 'First', url: 'https://one.example', apiKey: SECRET, on: true, tags: ['a', 'b'] });
+  const added = X.added = call(X.verb, { op: 'add', label: 'First', url: 'https://one.example', apiKey: SECRET, on: true, tags: JSON.stringify(['a', 'b']) });
   X.id = added && added.id;
   X.raw = isKey(X.id) ? X.db.prepare('SELECT * FROM "thing" WHERE id = ?').get(X.id) : null;
   return isKey(X.id) && Object.keys(added).length === 1 ? true : false;
@@ -204,7 +204,7 @@ test.run('it still ranks by the fields it does not answer: a word of the url fin
 // and a secret, which no get serves, is never searched.
 test.run('a word in a list field its get serves finds its row: the tag zebra', 0.2, function () {
   if (!X.verb) return false;
-  SR.striped = call(X.verb, { op: 'add', label: 'Third', tags: ['zebra'], apiKey: 'quokkasecret' });
+  SR.striped = call(X.verb, { op: 'add', label: 'Third', tags: JSON.stringify(['zebra']), apiKey: 'quokkasecret' });
   const byTag = call(X.verb, { op: 'search', text: 'zebra' });
   return !!SR.striped.id && byTag.items.length >= 1 && byTag.items[0].key === SR.striped.id ? true : false;
 }, test.limit.quick);
