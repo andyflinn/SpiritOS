@@ -25,6 +25,11 @@ function runRel(a) {
   return String(a).split(p.sep).join('/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '');
 }
 const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; }).map(runRel);
+// ONE SCRATCH NODE FOR THE WHOLE RUN (goal/G47.1; Andy: "are the tests not ordered in the general test so that all tests
+// requiring a scratch node can use the same one?"): handed a list, the node part runs once a script, and each asked lab for
+// a node of its own, kept until the run ended; lab holds a few, so past them every node part and every node global check
+// after it went red. The first one asked is the run's, for every script; the one testicle hands is the same for all anyway.
+const ONE_NODE = { node: null };
 
 // ── branchRules (was spirit/test/spirit-sibling-branchRules.js) ─────────────────────────────────────────────────────────────────────
 function branchRules(ARGS) {
@@ -434,7 +439,7 @@ if (served.length) {
   // would boot once a branch; the node testicle hands its run (shared: true, as -browser.js takes it) serves them all. Run
   // by hand, with none handed, it gets one of its own.
   test.run('a scratch node comes up for this suite', 0.2, async function () {
-    if (!N.node) N.node = await H.scratchNode({ shared: true });
+    if (!N.node) N.node = ONE_NODE.node || (ONE_NODE.node = await H.scratchNode({ shared: true }));
     return N.node.up || false;
   }, test.limit.slow);
   // An app's branch is served once its server runs (the owner's app.active); the node's own are served by the node.
@@ -561,6 +566,9 @@ if (served.length) {
 }
 
 test.after(async function () {
+  // The run's one node is let go once, by the first script's after.
+  if (!N.node || N.node.letGo) return;
+  N.node.letGo = true;
   // A handed node is the run's: let go, never stopped and its tree never freed.
   if (N.node && N.node.shared) { try { await N.node.release(); } catch (e) { /* the run's */ } }
   else if (N.node) {
