@@ -12,7 +12,8 @@
 //                                             the root)
 //   state()   -> { path, history }            as the state file holds it now
 //
-// ITS ONE COMMAND, path (the box, ### behavior):
+/// ITS COMMANDS: path (goal/G48.2, the box, ### behavior), and api (goal/G48.3, below run's helpers).
+// path:
 //   path          shows the path stored in state
 //   path <        to the parent; refused at the root
 //   path <<       to the root, where the prompt is "spirit: "; refused at the root
@@ -70,11 +71,51 @@ function pathCommand(s, arg) {
   return there(to).then(function (yes) { return yes ? moved(s, to) : refused(s, 'no-such-path', 'no such path: ' + shown(to)); });
 }
 
+// THE api COMMAND (goal/G48.3, the box: "if I'm at a branch folder, this command without arguments lists all verbs, in
+// simple json format, sorted by name", "if there's no branch's api.js it returns a json error", "if the api command names
+// a verb: it returns that verbs command-line-format in json, human and machine readable, with a field \"usage\" at the very
+// bottom"; Andy: "the console command: \"api search\" will return a JSON.stringify(search,null,2) desription"). The branch
+// at the path is spirit/<its folders>/api.js, asked whether it is there through the node's fs stat and loaded through
+// spirit.require; its verbs are its own verbs table. One verb is its <verb>.json as the node's fs load serves it, with usage
+/// added last: the line a person types, each argument a placeholder named by its rule in the branch's own verbs table, an
+// optional one in brackets.
+function apiFile(p) { return 'spirit/' + p.split('.').join('/') + '/api.js'; }
+function verbsAt(p) {
+  if (!p) return Promise.resolve(null);
+  const file = apiFile(p);
+  return spirit.require(spirit.familyPath('fs')).then(function (f) { return f.stat({ path: file }); }).then(function () {
+    spirit.require(file);
+    const at = file.replace(/\.js$/, '').split('/').reduce(function (o, k) { return o && o[k]; }, spirit.required);
+    return at && at.verbs && typeof at.verbs === 'object' ? at.verbs : null;
+  }, function () { return null; });
+}
+function usageOf(verb, request) {
+  return [verb].concat(Object.keys(request || {}).map(function (k) {
+    const rule = String(request[k]);
+    const one = k + '=<' + rule.replace(/\?$/, '') + '>';
+    return /\?$/.test(rule) ? '[' + one + ']' : one;
+  })).join(' ');
+}
+function apiCommand(s, verb) {
+  return verbsAt(s.path).then(function (verbs) {
+    if (!verbs) return refused(s, 'no-branch', 'no branch here: ' + shown(s.path) + ' has no api.js');
+    if (!verb) return { ok: true, out: JSON.stringify(Object.keys(verbs).sort(), null, 2), path: s.path };
+    if (!Object.prototype.hasOwnProperty.call(verbs, verb)) return refused(s, 'no-such-verb', 'no such verb at ' + shown(s.path) + ': ' + verb);
+    const file = 'spirit/' + s.path.split('.').join('/') + '/' + verb + '.json';
+    return spirit.require(spirit.familyPath('fs')).then(function (f) { return f.load({ path: file }); }).then(function (r) {
+      const j = JSON.parse(String((r && r.text) || ''));
+      const out = Object.assign({}, j, { usage: usageOf(verb, verbs[verb]) });
+      return { ok: true, out: JSON.stringify(out, null, 2), path: s.path };
+    }, function () { return refused(s, 'no-such-verb', 'no description of ' + verb + ' at ' + shown(s.path)); });
+  });
+}
+
 function run(line) {
   const words = String(line || '').trim().split(/\s+/).filter(Boolean);
   const s = state();
   if (!words.length) return Promise.resolve({ ok: true, out: '', path: s.path });
   if (words[0] === 'path' && words.length <= 2) return pathCommand(s, words[1] || '');
+  if (words[0] === 'api' && words.length <= 2) return apiCommand(s, words[1] || '');
   return Promise.resolve(refused(s, 'no-such-command', 'no such command: ' + words.join(' ')));
 }
 
