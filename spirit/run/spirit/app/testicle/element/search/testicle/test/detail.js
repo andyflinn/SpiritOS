@@ -156,6 +156,14 @@ test.run('below the title, every row of the test shows, current or not, the newe
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && JSON.stringify(v.rows.map(function (r) { return r.key; })) === JSON.stringify(want); }); }, 10000);
   return !!ok || false;
 }, test.limit.slow);
+// goal/G47.4, Andy: "Column headings should always have the same horizontal alignment as their column content. In this
+// horrendous example the column ceadings are centered, wher the column itself os left aligned... UNREADABLE!"
+test.run('each column heading is aligned as the cells of its column', 0.4, async function () {
+  if (mounted()) return false;
+  const v = await c.evaluate('(function () { function a(e) { var s = getComputedStyle(e).textAlign; return s === "start" ? "left" : s === "end" ? "right" : s; } var t = document.querySelector("#zzBox table[data-history=rows]"); if (!t) return ""; var hs = t.querySelectorAll("thead th"); var rs = t.querySelectorAll("tbody tr"); if (!hs.length || !rs.length) return ""; var bad = 0; Array.prototype.forEach.call(rs, function (r) { Array.prototype.forEach.call(hs, function (h, i) { var d = r.children[i]; if (!d || a(d) !== a(h)) bad++; }); }); return JSON.stringify({ n: hs.length, bad: bad }); }())');
+  const o = v ? JSON.parse(v) : null;
+  return (!!o && o.n === 3 && o.bad === 0) || false;
+}, test.limit.quick);
 test.run('no row of another test of the same suite shows', 0.2, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');

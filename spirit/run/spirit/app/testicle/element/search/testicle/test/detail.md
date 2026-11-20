@@ -12,6 +12,8 @@ the detail mounted alone on `/face.html` in a real Chrome.
 - Its columns: Flipped, then Result, Severity; no Title, Script or Suite (Andy: *"the list does NOT need to have a
   description/title column, that repeats the above information EVERY single time...."*, then *"and eliminate those
   columns, too."*).
+- Each column heading is aligned as the cells of its column (Andy: *"Column headings should always have the same
+  horizontal alignment as their column content."*).
 - Every row of the test, current or not, the newest flip first (the box: *"given a valid test title ... it answers every
   row matching that script, suite and title, current or not, newest first"*); no row of another test.
 - Each row drawn by the test row (❌/✅, two decimals, no title or file names) with the date it flipped.
