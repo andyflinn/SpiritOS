@@ -37,3 +37,38 @@ test.run('its default is the node\'s own public key, once the node is known', 0.
   S.node = S.node || {}; S.node.key = own;
   try { return T.defaultValue() === own || false; } finally { S.node.key = was; }
 }, test.limit.quick);
+// THE TIGHT CHECK AT THE NODE (goal/G48.4, Q12; Andy: "the validity check for an ID must either check in the browser data, or
+// node side the shadow roll and the own ID"; cw: "ID's tight check would run where the node lets a call in"): on a scratch
+// node of its own, contact.get, whose key is a spirit.type.string.ID, takes the node's own key past its argument check, and
+// refuses a well-formed key nobody there has seen, naming key.
+const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const N = {};
+async function call(verb, args) {
+  try {
+    const r = await fetch(N.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    return { status: r.status, body: await r.json() };
+  } catch (e) { return { status: 0, body: null }; }
+}
+const typeRefused = function (r) { return !!r && r.status === 400 && !!r.body && r.body.code === 'bad-request' && (r.body.argument === 'key' || (r.body.extra && r.body.extra.argument === 'key') || /\bkey\b/.test(String(r.body.error || ''))); };
+test.run('a scratch node comes up and answers its card', 0.2, async function () {
+  N.node = await H.scratchNode({});
+  if (!N.node || !N.node.up) return false;
+  N.card = await call('node.card');
+  return (N.card.status === 200 && typeof N.card.body.publicKey === 'string') || false;
+}, test.limit.slow);
+test.after(async function () {
+  try { if (N.node) await N.node.release(); } catch (e) { /* gone */ }
+  try { if (N.node) H.freeTree(N.node); } catch (e) { /* left */ }
+});
+test.run('at the node, contact.get takes the node\'s own key past its argument check', 0.4, async function () {
+  if (!N.card || N.card.status !== 200) return false;
+  const r = await call('contact.get', { key: N.card.body.publicKey });
+  return (r.status !== 0 && !typeRefused(r)) || false;
+}, test.limit.slow);
+test.run('at the node, contact.get refuses a well-formed key nobody there has seen, naming key', 0.4, async function () {
+  if (!N.card || N.card.status !== 200) return false;
+  let fresh = '';
+  try { fresh = spirit.require('spirit/relayAuth.js').generateIdentity('zz-stranger').publicKey; } catch (e) { return false; }
+  const r = await call('contact.get', { key: fresh });
+  return typeRefused(r) || false;
+}, test.limit.slow);

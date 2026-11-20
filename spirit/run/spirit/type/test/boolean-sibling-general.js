@@ -89,6 +89,31 @@ if (!asked || /Select\.js$/.test(asked)) {
     return everySelect(function (T, B) { try { return typeof T.ruleDescription() === 'string' && T.ruleDescription() !== B.ruleDescription(); } catch (e) { return false; } }) || false;
   }, test.limit.quick);
 }
+
+// A <type>New.js, EVERY ONE (goal/G48.4, Q12; Andy: "similar to <type>Select.js <type>New.js expands to allowable values."):
+// it requires its <type>.js beside it and takes all that takes, and more; the values tried are the sibling's own default,
+// and a number, an object and true, which neither takes.
+const NEWS = TARGETS.filter(function (rel) { return /New\.js$/.test(rel); });
+const siblingOfNew = function (rel) { return rel.replace(/New\.js$/, '.js'); };
+const everyNew = function (fn) { return NEWS.length > 0 && NEWS.every(function (rel) { const T = load(rel), B = load(siblingOfNew(rel)); return !!T && !!B && fn(T, B, rel); }); };
+if (!asked || /New\.js$/.test(asked)) {
+  test.run('the key type for adding is a New: spirit/type/string/IDNew.js is there', 0.4, function () {
+    return fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'IDNew.js')) || false;
+  }, test.limit.quick);
+  test.run('every <type>New.js has its <type>.js beside it and requires it', 0.4, function () {
+    return everyNew(function (T, B, rel) { const sib = siblingOfNew(rel); let code = ''; try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; } return fs.existsSync(path.join(RUN, sib)) && code.indexOf(path.basename(sib, '.js')) !== -1 && /require\(/.test(code); }) || false;
+  }, test.limit.quick);
+  test.run('every <type>New.js takes what its <type>.js takes, and throws for a number, an object and true', 0.4, function () {
+    return everyNew(function (T, B) {
+      let ok = false;
+      try { ok = B.isValid(B.defaultValue()) === true && T.isValid(B.defaultValue()) === true; } catch (e) { return false; }
+      return ok && [5, {}, true].every(function (v) { return throws(T, v); });
+    }) || false;
+  }, test.limit.quick);
+  test.run('every <type>New.js has a ruleDescription() of its own, not its <type>.js\'s', 0.4, function () {
+    return everyNew(function (T, B) { try { return typeof T.ruleDescription() === 'string' && T.ruleDescription() !== B.ruleDescription(); } catch (e) { return false; } }) || false;
+  }, test.limit.quick);
+}
 }
 if (!GIVEN.length) typeRules([]);
 else GIVEN.forEach(function (one) { require('../../test/testReport.js').forScript(one, function () { typeRules([one]); }); });
