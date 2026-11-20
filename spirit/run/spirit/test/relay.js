@@ -14,7 +14,28 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relay/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relay'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G48.4; Andy, of the 0.7s: "it leaves no temp folder behind"): on Windows a
+// folder holding an open database cannot be removed, and nodeStore keeps each store it opened open; every one under the
+// suite's folder (a node.db or a relay.db at <root>/spirit/state) is closed first.
+function closeStoresUnder(top) {
+  const NS = require(path.join(RUN, 'spirit', 'nodeStore.js'));
+  (function walk(dir, depth) {
+    let names = [];
+    try { names = fs.readdirSync(dir); } catch (e) { return; }
+    if (names.indexOf('node.db') !== -1 && path.basename(dir) === 'state') { try { NS.open(path.dirname(path.dirname(dir))).close(); } catch (e) { /* closed */ } }
+    // A relay's own store too (relay.db beside it), which relayStore keeps open the same way.
+    // Through every copy of relayStore this process loaded (a relay made on a scratch tree loads that tree's own), so it is
+    // the store that relay holds open.
+    if (names.indexOf('relay.db') !== -1 && path.basename(dir) === 'state') {
+      Object.keys(require.cache).filter(function (k) { return /[\\/]relayStore\.js$/.test(k); }).forEach(function (k) {
+        try { require.cache[k].exports.open(path.dirname(path.dirname(dir))).close(); } catch (e) { /* closed */ }
+      });
+    }
+    if (depth > 6) return;
+    names.forEach(function (n) { const p = path.join(dir, n); try { if (fs.statSync(p).isDirectory()) walk(p, depth + 1); } catch (e) { /* gone */ } });
+  }(top, 0));
+}
+// Its folder goes last, below, once every relay of it is shut.
 
 // A relay on a scratch folder: its identity planted as the relay keeps it (relayAuth beside it), its face domain
 // relay.example, its mail kept.
@@ -350,4 +371,12 @@ test.after(function () {
   if (LS.home) { try { fs.rmSync(LS.home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   F.opened.forEach(function (f) { try { f.req.destroy(); } catch (e) { /* gone */ } });
   if (F.R && F.R.stop) F.R.stop();
+});
+
+// THE FOLDER GOES LAST (goal/G48.4): registered after every other after hook, so the relays are shut and their stores
+// closable before the folder is removed.
+test.after(function () {
+  const top = tempFolder.path('spirit/test/relay');
+  closeStoresUnder(top);
+  try { fs.rmSync(top, { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
 });
