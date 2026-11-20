@@ -65,17 +65,13 @@ test.run('a scratch origin, Andy\'s tree cloned from it, and another clone that 
 }, test.limit.quick);
 test.after(function () { try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
 
-test.run('while testicle is busy, it pulls nothing', 0.2, async function () {
+// goal/G47.4, Andy: "i myself se absolutely no reason to not modify the code, while my testicle is running. when new code
+// arrives, testicle will simple adjust and re-run what needs re-running"; "testicle i meant to simple catch up with the
+// state of the code".
+test.run('while testicle is busy, it pulls Andy\'s tree up to the origin all the same', 0.2, async function () {
   if (!andy) return false;
   pushed('README.md', 'two\n');
   busy = true;
-  const before = head(andy);
-  await run();
-  return head(andy) === before && asked.some(function (a) { return a.verb === 'testicle.busy'; }) ? true : false;
-}, test.limit.slow);
-test.run('once testicle is idle, it pulls Andy\'s tree up to the origin', 0.2, async function () {
-  if (!andy) return false;
-  busy = false;
   await run();
   return head(andy) === head(other) ? true : false;
 }, test.limit.slow);
@@ -111,6 +107,27 @@ test.run('a pull that changed testicle\'s own files switches testicle off, then 
   const sw = asked.filter(function (a) { return a.verb === 'app.active'; });
   return head(andy) === head(other) && sw.length === 2 &&
     sw[0].args.key === 'testicle' && sw[0].args.active === false && sw[1].args.key === 'testicle' && sw[1].args.active === true ? true : false;
+}, test.limit.slow);
+// Switching testicle off and on kills its run: a pull of testicle's own files while it is busy waits for it to be idle.
+test.run('a pull while testicle is busy that changed testicle\'s own files pulls, but switches nothing off or on', 0.2, async function () {
+  if (!andy) return false;
+  pushed(TESTICLE, '// testicle, changed again\n');
+  busy = true;
+  await run();
+  return head(andy) === head(other) && !asked.some(function (a) { return a.verb === 'app.active'; }) ? true : false;
+}, test.limit.slow);
+test.run('the next look with testicle idle switches testicle off, then on, though nothing new was pulled', 0.2, async function () {
+  if (!andy) return false;
+  busy = false;
+  await run();
+  const sw = asked.filter(function (a) { return a.verb === 'app.active'; });
+  return sw.length === 2 && sw[0].args.active === false && sw[1].args.active === true ? true : false;
+}, test.limit.slow);
+test.run('a look after that switches nothing off or on', 0.2, async function () {
+  if (!andy) return false;
+  busy = false;
+  await run();
+  return !asked.some(function (a) { return a.verb === 'app.active'; }) ? true : false;
 }, test.limit.slow);
 test.run('it never restarts Andy\'s node: it asks nothing but testicle.busy and app.active of testicle', 0.2, function () {
   if (!asked) return false;
