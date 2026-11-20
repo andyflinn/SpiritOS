@@ -250,11 +250,37 @@ test.run('through classifying and both runs, a number that was zero was never se
   const more = nums.filter(function (s) { return NUM_OF(s) > 0; });
   return (zero.length > 0 && more.length > 0 && zero.every(function (s) { return !s.seen || s.txt === ''; }) && more.every(function (s) { return s.seen; })) || false;
 }, test.limit.quick);
-test.run('once the runs are over, both rows are empty again', 0.4, async function () {
+// WHEN IDLE, THE LARGEST CONTRIBUTORS TO THE REDS (goal/G48.4; Andy: "when idle, the status bar could show the most relevant
+// information regarding these priorities?", "would knowledge of the largest contributors to the reds help in prioritizing a
+// fixing strategy?", then "agreed on the how of streaming the info... then go!"; cw, agreed: "Row 1 could show the test red for
+// the most scripts, with its count and its suite; row 2 the script with the most reds, with its count"). Counted from
+// testicle's database, read only: the current failed rows, by suite and title, and by script; a leader tied with another may
+// be either.
+const leadersInDb = function () {
+  let db = null;
+  try {
+    db = new DatabaseSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', 'testicle', 'data', 'testicle.db'), { readOnly: true });
+    db.exec('PRAGMA busy_timeout = 5000');
+    const tests = db.prepare('SELECT suite, test, COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0 GROUP BY suite, test ORDER BY n DESC').all();
+    const scripts = db.prepare('SELECT script, COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0 GROUP BY script ORDER BY n DESC').all();
+    const top = function (l) { return l.filter(function (x) { return l.length && Number(x.n) === Number(l[0].n); }); };
+    return { tests: top(tests), scripts: top(scripts) };
+  } catch (e) { return null; } finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
+};
+const ROWS_NOW = '(function () { return Array.prototype.map.call(document.querySelectorAll("#zzA .testicle-rows > .testicle-row"), function (x) { return String(x.textContent || "").trim(); }); }())';
+const holds = function (row, n, words) { return String(row).indexOf(String(n)) !== -1 && words.some(function (w) { return !!w && String(row).indexOf(w) !== -1; }); };
+const fileOf = function (f) { return String(f).slice(String(f).lastIndexOf('/') + 1); };
+test.run('once the runs are over and reds are left, row 1 names the test red for the most scripts, with its count', 0.4, async function () {
   if (!W.ok) return false;
-  const ok = await H.until(function () { return ev(EMPTY_ROWS).then(function (v) { return v === true; }); }, H.WAIT);
-  return !!ok || false;
+  let rows = null, L = null;
+  await H.until(function () { return ev(ROWS_NOW).then(function (r) { rows = r; L = leadersInDb(); return !!L && L.tests.length > 0 && Array.isArray(r) && r.length === 2 && L.tests.some(function (t) { return holds(r[0], t.n, [t.test, fileOf(t.suite)]); }); }); }, H.WAIT);
+  W.leaders = { rows: rows, L: L };
+  return (!!L && L.tests.length > 0 && Array.isArray(rows) && L.tests.some(function (t) { return holds(rows[0], t.n, [t.test, fileOf(t.suite)]); })) || false;
 }, test.limit.slow);
+test.run('once the runs are over and reds are left, row 2 names the script with the most reds, with its count', 0.4, function () {
+  const w = W.leaders;
+  return (!!w && !!w.L && w.L.scripts.length > 0 && Array.isArray(w.rows) && w.L.scripts.some(function (x) { return holds(w.rows[1], x.n, [fileOf(x.script), x.script]); })) || false;
+}, test.limit.quick);
 // The box: "the doing text goes: nothing reads it."
 test.run('through classifying and both runs, the stream never brought a doing text', 0.4, async function () {
   if (!W.ok) return false;
@@ -307,6 +333,73 @@ test.run('as suites report, row 1\'s number follows them down: still the count m
   await ask('testicle.preferences', { interactive: true });
   return later !== null || false;
 }, test.limit.long);
+// THE NUMBER OF REDS (goal/G48.4; Andy: "what's the cost of streaming the number of reds, and displaying it in a large, RED box
+// at the right windows edge of the status bar????", then "NOW! including test."; cw, as built: "a red that comes or goes
+// changes the number in the box without a press"). The reds are the current rows testicle's database holds failed, read only.
+const redsInDb = function () {
+  let db = null;
+  try {
+    db = new DatabaseSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', 'testicle', 'data', 'testicle.db'), { readOnly: true });
+    db.exec('PRAGMA busy_timeout = 5000');
+    return Number(db.prepare('SELECT COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0').get().n);
+  } catch (e) { return null; } finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
+};
+// The box drawn in red: the element of the status bar whose text is a number alone and whose colour or background is red;
+// where it stands against the status bar it is drawn in (that bar's inner right edge, inside its bubble's padding), how large its number is drawn against the bar's font, and how wide the box is in its own em.
+const RED_BOX = '(function () { var b = document.getElementById("zzA"); if (!b) return null; var bar = b.getBoundingClientRect();' +
+  ' var red = function (c) { var m = /rgba?\\((\\d+), (\\d+), (\\d+)(?:, ([\\d.]+))?\\)/.exec(c || ""); return !!m && (m[4] === undefined || Number(m[4]) > 0) && Number(m[1]) >= 150 && Number(m[2]) <= 110 && Number(m[3]) <= 110; };' +
+    ' var hit = Array.prototype.filter.call(b.querySelectorAll("*"), function (e) { if (e.children.length) return false; var t = String(e.textContent || "").trim(); if (!/^\\d+$/.test(t)) return false;' +
+  '   if (!e.getClientRects().length) return false; var c = getComputedStyle(e); if (c.visibility === "hidden" || c.opacity === "0") return false;' +
+  '   for (var x = e; x && x !== b; x = x.parentElement) { var s = getComputedStyle(x); if (red(s.color) || red(s.backgroundColor)) return true; } return false; })[0];' +
+  ' if (!hit) return JSON.stringify({ none: true });' +
+  ' var box = hit; for (var x = hit; x && x !== b; x = x.parentElement) { var s = getComputedStyle(x); if (red(s.backgroundColor) || red(s.borderTopColor) && parseFloat(s.borderTopWidth) > 0) box = x; }' +
+  ' var r = box.getBoundingClientRect(); var sb = box.parentElement && box.parentElement !== b ? box.parentElement : b; var sr = sb.getBoundingClientRect(), sc = getComputedStyle(sb);' +
+  ' var inner = sr.right - parseFloat(sc.paddingRight) - parseFloat(sc.borderRightWidth); return JSON.stringify({ n: Number(String(hit.textContent).trim()), right: r.right, barRight: inner, px: parseFloat(getComputedStyle(hit).fontSize), barPx: parseFloat(getComputedStyle(b).fontSize), w: r.width, boxPx: parseFloat(getComputedStyle(box).fontSize) }); }())';
+const redBox = function () { return ev(RED_BOX).then(function (t) { return t ? JSON.parse(t) : null; }); };
+const streamedReds = function () { return ev('(function () { try { var m = window.spirit.data.testicle.data.monitor.get(); return m && typeof m.reds === "number" ? m.reds : null; } catch (e) { return null; } }())'); };
+test.run('the stream carries the number of reds, as testicle\'s database counts its current failed rows', 0.4, async function () {
+  if (!W.ok) return false;
+  await idle(120000);
+  let got = null, want = null;
+  await H.until(function () { return streamedReds().then(function (n) { got = n; want = redsInDb(); return n !== null && n === want && n > 0; }); }, H.WAIT);
+  W.reds = got;
+  return (got !== null && got === want && got > 0) || false;
+}, test.limit.slow);
+test.run('the status bar shows that number in a red box', 0.4, async function () {
+  if (W.reds === undefined || W.reds === null) return false;
+  let b = null;
+  await H.until(function () { return redBox().then(function (x) { b = x; return !!x && x.n === W.reds; }); }, H.WAIT);
+  W.box = b;
+  return (!!b && !b.none && b.n === W.reds) || false;
+}, test.limit.slow);
+test.run('the red box stands at the right edge of the status bar', 0.4, function () {
+  const b = W.box;
+  return (!!b && !b.none && Math.abs(b.barRight - b.right) <= 2) || false;
+}, test.limit.quick);
+// Andy: "the box is at the right window edge or the status bar, double large, like the icons on the right side of the status bar,
+// fixed width 3em".
+test.run('the red box\'s number is double large: 2em, twice the font size of the bar, as its icons are', 0.4, function () {
+  const b = W.box;
+  return (!!b && !b.none && b.barPx > 0 && Math.abs(b.px - 2 * b.barPx) < 0.5) || false;
+}, test.limit.quick);
+test.run('the red box is a fixed 3em wide', 0.4, function () {
+  const b = W.box;
+  return (!!b && !b.none && b.boxPx > 0 && Math.abs(b.w - 3 * b.boxPx) < 1) || false;
+}, test.limit.quick);
+test.run('a red set on the node raises the number in the box, with no press', 0.4, async function () {
+  if (!W.box || W.box.none) return false;
+  const r = await ask('testicle.testicle.set', { script: OK, suite: OKS, test: 'zzOk holds', verified: false, severity: 0.2 });
+  if (!r || r.ok === false) return false;
+  const ok = await H.until(function () { return redBox().then(function (x) { return !!x && x.n === W.reds + 1 && x.n === redsInDb(); }); }, H.WAIT);
+  return !!ok || false;
+}, test.limit.slow);
+test.run('the red cleared on the node lowers the number in the box again, with no press', 0.4, async function () {
+  if (!W.box || W.box.none) return false;
+  const r = await ask('testicle.testicle.set', { script: OK, suite: OKS, test: 'zzOk holds', verified: true, severity: 0.2 });
+  if (!r || r.ok === false) return false;
+  const ok = await H.until(function () { return redBox().then(function (x) { return !!x && x.n === W.reds && x.n === redsInDb(); }); }, H.WAIT);
+  return !!ok || false;
+}, test.limit.slow);
 // The box: "on connect: a page that connects to testicle's stream is sent the current suites-owed and classifications-owed
 // numbers once, so a page opened or reloaded while nothing changes shows them at once". A page loaded anew while testicle is
 // idle and nothing is marked or unmarked holds both, as the database says them, with no change between.
