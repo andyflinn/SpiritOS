@@ -914,7 +914,7 @@ test.run('the star is taken off at home while the stream is open', 0.2, async fu
   return sOff.status === 200 || false;
 }, test.limit.quick);
 // A job's id is its route, the same for every run (goal/G43.20): only what the stream says from here on is judged.
-test.run('with the star off, the next job stays home', 0.8, async function () {
+test.run('with no faceable mark on the relay, the next job stays home WHAT THE FUCK IS THIS TEST STILL FOR?????????', 0.8, async function () {
   if (!streamUp()) return false;
   const sinceOff = S.got.length;
   const j2b = await runOne();
