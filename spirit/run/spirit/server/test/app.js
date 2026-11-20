@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/server/test/app.js
-// The tests of spirit/server/app.js, and of no other module (spec: ./appServer.md; goal/G41.11, goal/G41.12). The real
+// The tests of spirit/server/app.js, and of no other module (spec: ./app.md; goal/G41.11, goal/G41.12). The real
 // appServer serves one server on a pipe of its own in a temp folder, publishing a stream and following it: its client
 // half subscribes to its own publisher half, and the publisher hands its rows back over the same pipe, to its own
 // streamListener. The one spirit object is a stand-in, so nothing reaches a real node: the families answer by posting to
@@ -17,10 +17,10 @@ const path = require('path');
 const http = require('http');
 const Module = require('module');
 const { spawnSync } = require('child_process');
-const RUN = path.resolve(__dirname, '../..');
+const RUN = path.resolve(__dirname, '../../..');
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const FILE = path.join(__dirname, '..', 'appServer.js');
+const FILE = path.join(__dirname, '..', 'app.js');
 const SELF_FILE = __filename;
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
 // THE FAMILIES IT FOLLOWS ARE ITS OWN, PLANTED IN THE TREE FOR THE RUN AND REMOVED AFTER (goal/G47.4; Andy: "you make
@@ -60,7 +60,7 @@ function removeFamilies() { [FAMILY, SHED_FAMILY].forEach(function (n) { try { f
 const test = CHILD ? null : require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends (by the parent; a child is handed its folder).
-const tempFolder = require('../tempFolder.js');
+const tempFolder = require('../../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/appServer/' + name + tempAsked); }
 if (test) test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/appServer'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
@@ -461,12 +461,12 @@ function putBackTheRealSpirit() {
 // THE AGENTSFILE PART, once appServer-agentsFile.js.
 function agentsFilePart() {
   // Once spirit/run/spirit/test/appServer-agentsFile.js.
-  // THE AGENT'S AGENTS.md THROUGH spirit.fs.loadFile AT ITS PATH (goal/G43.27, requirement 8; spec: ./appServer.md),
+  // THE AGENT'S AGENTS.md THROUGH spirit.fs.loadFile AT ITS PATH (goal/G43.27, requirement 8; spec: ./app.md),
   // not through the family's FS: appServer.js's AGENTS paragraph. Andy: "easily changed, no?". appServer.js read as it is.
 
   const fs = require('fs');
   const path = require('path');
-  const RUN = path.resolve(__dirname, '..', '..');
+  const RUN = path.resolve(__dirname, '..', '..', '..');
 
   // Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
   function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
@@ -490,7 +490,7 @@ function agentsFilePart() {
 function stateCachePart() {
   // Once spirit/run/spirit/test/appServer-stateCache.js.
   // The tests of spirit/server/app.js by name: ITS CACHE IN spirit/state/<name>/cache/ (goal/G43.20, its box; spec:
-  // ./appServer.md). Andy: "cache, which is written by spirit/server/app.js was ALWAYS supposed to go into
+  // ./app.md). Andy: "cache, which is written by spirit/server/app.js was ALWAYS supposed to go into
   // spirit/state/<name>/cache/", and "NO FUCKING RESCUE CODE, MOVE YOUR OWN deskClient cache where it belongs." A throwaway
   // follower app, planted in a scratch copy of the tracked files, is run as the node runs a server: what it kept is read back
   // at its start, and its saveCaches (deskClient's cache.dump) writes it again. Never a live node.
@@ -499,7 +499,7 @@ function stateCachePart() {
   const os = require('os');
   const path = require('path');
   const { spawn, spawnSync, execSync } = require('child_process');
-  const RUN = path.resolve(__dirname, '..', '..');
+  const RUN = path.resolve(__dirname, '..', '..', '..');
   const REPO = path.resolve(RUN, '..', '..');
   let until, sleep;
 
@@ -558,7 +558,7 @@ function stateCachePart() {
     fs.writeFileSync(path.join(app, NAME + '.js'), [
       "require('../../spirit.js');",
       "const path = require('path');",
-      "const S = require('../../appServer.js');",
+      "const S = require('../../server/app.js');",
       "S.serve({}, { stream: { translator: path.join(__dirname, 'rows.js'), cache: true, module: 'a.test' } });",
       "setTimeout(function () { require('fs').writeFileSync(process.env.SAVED, JSON.stringify(S.saveCaches())); }, 1500);",
     ].join('\n') + '\n');

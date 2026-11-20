@@ -1,27 +1,27 @@
 'use strict';
 
 // spirit/run/spirit/server/test/relay.js
-// The tests of spirit/server/relay.js, and of no other module, in this one file (spec: ./relayServer.md; goal/G41.3). Its
+// The tests of spirit/server/relay.js, and of no other module, in this one file (spec: ./relay.md; goal/G41.3). Its
 // sections: the attacker's garbage at the relay's door (goal/G41.30), after its own: how it serves a
 // face its files. Its map and its folder are lifted out of the source and asked, with no relay running; the /face/ posts
 // at the end (goal/G41.30) go to a scratch relay with faces.
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '../..');
+const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const http = require('http');
 const net = require('net');
 const { sleep, scratchRelay, scratchFaceRelay } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 
-const FILE = path.join(__dirname, '..', 'relayServer.js');
+const FILE = path.join(__dirname, '..', 'relay.js');
 
 const src = fs.readFileSync(FILE, 'utf8');
 const dirSrc = (/^const FACE_DIR = (path\.join\(__dirname, [^;]*\));/m.exec(src) || [])[1];
 const mapSrc = (/^const FACE_FILES = (\{[^;]*\});/m.exec(src) || [])[1];
 // goal/G43.18 (Q25, Andy: "the browser should see them the same."): an address is served from its file, serveCommon.pageFile.
-const common = require(path.join(RUN, 'spirit', 'serveCommon.js'));
+const common = require(path.join(RUN, 'spirit', 'server', 'serveCommon.js'));
 let dir = null; let map = null;
 try { dir = dirSrc ? new Function('path', '__dirname', 'return ' + dirSrc + ';')(path, path.dirname(FILE)) : null; } catch (e) { dir = null; }
 try { map = mapSrc ? new Function('common', 'return ' + mapSrc + ';')(common) : null; } catch (e) { map = null; }
@@ -167,7 +167,7 @@ test.run('the face\'s own page still reaches /face/api', 0.2, async function () 
 }, test.limit.quick);
 
 // ── THE GARBAGE PART ──
-// THE ATTACKER AT THE RELAY'S DOOR (goal/G41.30; spec: ./relayServer.md, its section). The box: "all servers (node
+// THE ATTACKER AT THE RELAY'S DOOR (goal/G41.30; spec: ./relay.md, its section). The box: "all servers (node
 // and relay, or serveCommon) are tested by throwing malformed paths at them, and malformed, invalid arguments", "an
 // appserver api can be called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at
 // the api. Imitate that attacker", and "the server MUST not CRASH or HANG"; Andy, on the gap: "The relay's door is not
