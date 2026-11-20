@@ -64,8 +64,11 @@ test.run('a scratch node comes up', 0.2, async function () {
   W.node = await H.scratchNode({});
   return (!!W.node && W.node.up) || false;
 }, test.limit.slow);
+// The loop's state file, planted at start below, goes at end: a lab copy keeps it between runs.
+const dropState = function () { try { if (W.node) fs.rmSync(STATE(), { force: true }); } catch (e) { /* none */ } };
 test.after(async function () {
   shut(W.t);
+  dropState();
   try { if (W.node) await W.node.release(); } catch (e) { /* gone */ }
   try { if (W.node) H.freeTree(W.node); } catch (e) { /* left */ }
 });
