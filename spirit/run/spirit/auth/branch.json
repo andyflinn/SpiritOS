@@ -6,6 +6,6 @@
     "bundle": "spirit.type.number.integer?",
     "family": "text?",
     "verb": "text?",
-    "text": "text?"
+    "text": "spirit.type.string.lineFilter?"
   }
 }

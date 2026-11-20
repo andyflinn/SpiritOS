@@ -8,6 +8,6 @@
     "persona": "text?",
     "bundle": "text?",
     "provider": "spirit.type.string.ID?",
-    "text": "text?"
+    "text": "spirit.type.string.lineFilter?"
   }
 }

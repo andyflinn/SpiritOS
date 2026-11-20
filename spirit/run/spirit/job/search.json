@@ -2,6 +2,6 @@
   "description": "This node's jobs, every one, ranked by the words (q) over the whole job as it is served, best first (empty or '*' is every job in the listing's order), as a bounded list of {key: job id, label: \"type (status)\"}.",
   "parameters": "q is optional.",
   "request": {
-    "q": "text?"
+    "q": "spirit.type.string.lineFilter?"
   }
 }

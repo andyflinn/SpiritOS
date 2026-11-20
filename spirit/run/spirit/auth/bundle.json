@@ -4,7 +4,7 @@
     "op": "spirit.type.string.tableOp",
     "id": "spirit.type.number.integer?",
     "label": "name?",
-    "text": "text?",
+    "text": "spirit.type.string.lineFilter?",
     "owner": "text?"
   }
 }

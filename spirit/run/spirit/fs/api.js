@@ -10,7 +10,7 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/fs/data.js'); else window.spirit.require('spirit/fs/data.js');
 module.exports = {
   verbs: {
-    search: { q: 'text?', contents: 'spirit.type.boolean?' },
+    search: { q: 'spirit.type.string.lineFilter?', contents: 'spirit.type.boolean?' },
     stat: { path: 'path' },
     load: { path: 'path' },
     save: { path: 'path', content: 'spirit.type.string.fileContent' },

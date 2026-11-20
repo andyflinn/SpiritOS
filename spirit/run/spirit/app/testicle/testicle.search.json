@@ -5,6 +5,6 @@
     "suite": "text?",
     "test": "text?",
     "result": "spirit.type.string.testResult?",
-    "text": "text"
+    "text": "spirit.type.string.lineFilter"
   }
 }
