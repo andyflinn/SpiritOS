@@ -24,13 +24,13 @@ module.exports = {
     'box.write': { id: 'id', text: 'text', version: 'spirit.type.number.integer' },
     'chat.add': { id: 'id', text: 'spirit.type.string.paragraph' },
     // Each filter left '' filters nothing; scope is '', goal or items.
-    'chat.search': { id: 'id', text: 'spirit.type.string.descriptionSelect', by: 'text', since: 'spirit.type.number.UTC', before: 'spirit.type.number.UTC', scope: 'text' },
+    'chat.search': { id: 'id', text: 'spirit.type.string.descriptionSelect', by: 'spirit.type.string.wordSelect', since: 'spirit.type.number.UTC', before: 'spirit.type.number.UTC', scope: 'spirit.type.string.chatScope' },
     // kind is C, T, G or Q; words and test may be ''.
-    'check.add': { id: 'id', kind: 'spirit.type.string.checkKind', words: 'text', test: 'text' },
+    'check.add': { id: 'id', kind: 'spirit.type.string.checkKind', words: 'spirit.type.string.paragraphSelect', test: 'spirit.type.string.fileSelect' },
     // check is a check's number, or 'all' for his Grant-All.
     'check.set': { id: 'id', check: 'spirit.type.string.word', state: 'spirit.type.string.checkState' },
     // commit may be '' only for a plain item's build claim.
-    claim: { id: 'id', phase: 'spirit.type.string.phase', commit: 'text' },
+    claim: { id: 'id', phase: 'spirit.type.string.phase', commit: 'spirit.type.string.commitSelect' },
     // The handler trims and refuses an empty title; it applies no label rule to a goal's.
     'goal.add': { title: 'spirit.type.string.description' },
     // The title passes the label rule (fieldWhy); blocks may be left out or '' (the goal).
@@ -44,7 +44,7 @@ module.exports = {
     'item.files.search': { id: 'id', text: 'spirit.type.string.descriptionSelect' },
     'item.delete': { id: 'id' },
     // under '' keeps every path; the door's shape needs it sent.
-    'item.files': { id: 'id', under: 'text?' },
+    'item.files': { id: 'id', under: 'spirit.type.string.fileSelect?' },
     // One row a write (goal/G40.3): one path; no '..'. A path already there (add) or not there (remove) is refused,
     // naming it. goal/G41.11, for the desk only: item.files.add takes
     // path or paths, a list in JSON (goal/G48.4, Q6), cut at one answer (the server answers added and more).
@@ -55,23 +55,23 @@ module.exports = {
     'item.rename': { id: 'id', title: 'spirit.type.string.label' },
     // tone (goal/G33.11): test or code, the deskClient's file report; '' or left out for a plain status word. Missing
     // here, the spirit object refused every report before it left (found on goal/G40.3).
-    'item.status': { id: 'id', word: 'text', tone: 'spirit.type.string.statusTone?' },
+    'item.status': { id: 'id', word: 'spirit.type.string.description', tone: 'spirit.type.string.statusTone?' },
     'item.take': { id: 'id' },
     'agents.search': { text: 'spirit.type.string.descriptionSelect' },
     'items.search': { text: 'spirit.type.string.descriptionSelect', currentGoalOnly: 'spirit.type.boolean', goalsOnly: 'spirit.type.boolean', includeClosed: 'spirit.type.boolean' },
     'line.take': { id: 'id' },
     // pass and why only for a verify; red and build send neither.
-    'phase.done': { id: 'id', phase: 'spirit.type.string.phase', pass: 'spirit.type.boolean?', why: 'text?' },
+    'phase.done': { id: 'id', phase: 'spirit.type.string.phase', pass: 'spirit.type.boolean?', why: 'spirit.type.string.paragraphSelect?' },
     'phase.may': { id: 'id' },
     'phase.take': { id: 'id', phase: 'spirit.type.string.phase' },
     // id is '' for start-design with nothing open, which starts a new goal.
     press: { id: 'text', what: 'spirit.type.string.deskPress' },
     // goal/G41.22: Andy's alone; the current goal, so no argument.
     // agent '' is the caller.
-    'profile.get': { agent: 'text' },
+    'profile.get': { agent: 'spirit.type.string.IDNewSelect' },
     // His alone. A name or nick left '' is no name or no nick; a name otherwise passes the label rule.
     // owner (goal/G47.5, Q7): the desk owner mark, changed by the owner on his node's loopback alone.
-    'profile.set': { agent: 'spirit.type.string.IDNew', name: 'spirit.type.string.label', nick: 'spirit.type.string.word', included: 'spirit.type.boolean?', cap: 'spirit.type.boolean?', owner: 'spirit.type.boolean?' },
+    'profile.set': { agent: 'spirit.type.string.IDNew', name: 'spirit.type.string.labelSelect', nick: 'spirit.type.string.wordSelect', included: 'spirit.type.boolean?', cap: 'spirit.type.boolean?', owner: 'spirit.type.boolean?' },
     // goal/G33.7: seen per item, the arrival time of the newest thing he looked at under it.
     'seen.get': { id: 'id' },
     'seen.set': { id: 'id', at: 'spirit.type.number.UTC' },

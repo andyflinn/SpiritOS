@@ -2,6 +2,6 @@
   "description": "The files touched for an item by id, each {path, by}, by path; under, when given, keeps the paths that start with it ('' keeps every path). Answers {files, filesMore}: as many as fit one answer, filesMore when some were left out. Refused no-such-item when there is none.",
   "request": {
     "id": "id",
-    "under": "text?"
+    "under": "spirit.type.string.fileSelect?"
   }
 }

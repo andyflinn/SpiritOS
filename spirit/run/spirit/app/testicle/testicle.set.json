@@ -3,7 +3,7 @@
   "request": {
     "script": "spirit.type.string.file",
     "suite": "spirit.type.string.file",
-    "test": "text",
+    "test": "spirit.type.string.description",
     "verified": "spirit.type.boolean",
     "severity": "spirit.type.number.probability"
   }

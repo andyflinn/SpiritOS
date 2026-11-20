@@ -3,6 +3,6 @@
   "request": {
     "script": "spirit.type.string.file",
     "suite": "spirit.type.string.file",
-    "testicle": "text?"
+    "testicle": "spirit.type.string.description?"
   }
 }

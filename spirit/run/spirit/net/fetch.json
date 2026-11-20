@@ -4,7 +4,7 @@
     "url": "spirit.type.string.URL",
     "method": "spirit.type.string.httpMethod?",
     "headers": "spirit.type.object.payload?",
-    "body": "text?",
+    "body": "spirit.type.string.fileContent?",
     "timeoutMs": "spirit.type.number.integer?"
   }
 }

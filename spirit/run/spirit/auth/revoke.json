@@ -2,6 +2,6 @@
   "description": "Take one grant of an api path back from a member's key: {revoked: true}; every open grants list lets it go. Refused bad-request without a key and a path, and not-granted (403) when that key does not hold that path.",
   "request": {
     "key": "spirit.type.string.ID",
-    "path": "text"
+    "path": "spirit.type.string.word"
   }
 }

@@ -11,7 +11,7 @@ if (typeof require === 'function') require('../spirit.js').require('spirit/owner
 module.exports = {
   verbs: {
     boxSearch: { q: 'spirit.type.string.descriptionSelect?' },
-    boxGet: { key: 'id' },
-    command: { to: 'spirit.type.string.ID', command: 'id', body: 'spirit.type.object.payload?' },
+    boxGet: { key: 'spirit.type.string.description' },
+    command: { to: 'spirit.type.string.ID', command: 'spirit.type.string.word', body: 'spirit.type.object.payload?' },
   },
 };

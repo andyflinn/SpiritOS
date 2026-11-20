@@ -2,8 +2,8 @@
   "description": "Set an agent's profile by its key: name (it passes the label rule) and nick (1 to 8 of a-z and 0-9, one agent's alone, else refused taken), each '' for none; included, cap and owner, optional, keep what the profile held when left out. An agent set not included is released from everything it holds. owner marks the agent desk owner: the desk takes its calls as his; only he, on his node's loopback, changes it. His alone. Answers {change}.",
   "request": {
     "agent": "spirit.type.string.IDNew",
-    "name": "spirit.type.string.label",
-    "nick": "spirit.type.string.word",
+    "name": "spirit.type.string.labelSelect",
+    "nick": "spirit.type.string.wordSelect",
     "included": "spirit.type.boolean?",
     "cap": "spirit.type.boolean?",
     "owner": "spirit.type.boolean?"

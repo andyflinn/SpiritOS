@@ -15,12 +15,12 @@ module.exports = {
     // One chat, by the peer's key; before and after are the writer's times, UTC milliseconds since 1970 (0 for none), after wins.
     'chat.read': { peer: 'spirit.type.string.IDNew', before: 'spirit.type.number.UTC?', after: 'spirit.type.number.UTC?' },
     // One chat searched: text ('' matches every line), who 'me', 'them', 'both' or ''.
-    'chat.search': { peer: 'spirit.type.string.IDNew', text: 'spirit.type.string.descriptionSelect?', who: 'text?' },
+    'chat.search': { peer: 'spirit.type.string.IDNew', text: 'spirit.type.string.descriptionSelect?', who: 'spirit.type.string.chatWho?' },
     'chats.search': {},
     // A peer's line, posted by its chat server: the writer is the sealed caller, so no key travels. seq above 0;
     // re {writer, seq} names the line answered, none when left out.
-    'line.receive': { seq: 'spirit.type.number.integer', at: 'spirit.type.number.UTC', text: 'text', re: 'spirit.type.object.payload?' },
+    'line.receive': { seq: 'spirit.type.number.integer', at: 'spirit.type.number.UTC', text: 'spirit.type.string.paragraph', re: 'spirit.type.object.payload?' },
     // The owner writes to a peer, named by its key (the chat server matches no label); re as above.
-    'line.write': { to: 'spirit.type.string.IDNew', text: 'text', re: 'spirit.type.object.payload?' },
+    'line.write': { to: 'spirit.type.string.IDNew', text: 'spirit.type.string.paragraph', re: 'spirit.type.object.payload?' },
   },
 };

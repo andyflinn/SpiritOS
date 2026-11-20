@@ -4,6 +4,6 @@
     "id": "id",
     "phase": "spirit.type.string.phase",
     "pass": "spirit.type.boolean?",
-    "why": "text?"
+    "why": "spirit.type.string.paragraphSelect?"
   }
 }

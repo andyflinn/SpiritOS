@@ -3,6 +3,6 @@
   "request": {
     "id": "id",
     "phase": "spirit.type.string.phase",
-    "commit": "text"
+    "commit": "spirit.type.string.commitSelect"
   }
 }

@@ -3,7 +3,7 @@
   "request": {
     "url": "spirit.type.string.URL",
     "name": "spirit.type.string.label",
-    "invite": "text?",
+    "invite": "spirit.type.string.word?",
     "inviteLabel": "spirit.type.string.label?"
   }
 }

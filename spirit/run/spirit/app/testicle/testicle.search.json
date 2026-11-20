@@ -3,7 +3,7 @@
   "request": {
     "script": "spirit.type.string.fileSelect?",
     "suite": "spirit.type.string.fileSelect?",
-    "test": "text?",
+    "test": "spirit.type.string.description?",
     "result": "spirit.type.string.testResult?",
     "text": "spirit.type.string.descriptionSelect"
   }

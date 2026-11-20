@@ -5,6 +5,6 @@
     "id": "spirit.type.number.integer?",
     "label": "spirit.type.string.label?",
     "text": "spirit.type.string.descriptionSelect?",
-    "owner": "text?"
+    "owner": "spirit.type.string.word?"
   }
 }

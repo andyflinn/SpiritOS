@@ -11,9 +11,9 @@ if (typeof require === 'function') require('../spirit.js').require('spirit/job/d
 module.exports = {
   verbs: {
     search: { q: 'spirit.type.string.descriptionSelect?' },
-    get: { key: 'id' },
-    create: { command: 'id', args: 'spirit.type.string.json?', type: 'text?' },
-    cancel: { id: 'id' },
-    delete: { id: 'id' },
+    get: { key: 'spirit.type.string.path' },
+    create: { command: 'spirit.type.string.word', args: 'spirit.type.string.json?', type: 'spirit.type.string.word?' },
+    cancel: { id: 'spirit.type.string.path' },
+    delete: { id: 'spirit.type.string.path' },
   },
 };

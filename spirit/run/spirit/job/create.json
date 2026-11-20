@@ -1,8 +1,8 @@
 {
   "description": "Start one of this node's apps as a job: command is node, args (a JSON list in a string) name an app's own script on this node (alone, or after the node's own appServer.js), and type changes nothing about what starts. The job's id is spirit.app.<name> and it starts pending; the answer is the job, 201. A clean exit removes it and a failed one stays. Refused not-a-process (403) for any other program or script, process-not-included (403) for an app this node does not run, and already-running (409) while a job with that id runs or waits.",
   "request": {
-    "command": "id",
+    "command": "spirit.type.string.word",
     "args": "spirit.type.string.json?",
-    "type": "text?"
+    "type": "spirit.type.string.word?"
   }
 }

@@ -4,8 +4,8 @@
     "op": "spirit.type.string.tableOp",
     "id": "spirit.type.number.integer?",
     "bundle": "spirit.type.number.integer?",
-    "family": "text?",
-    "verb": "text?",
+    "family": "spirit.type.string.word?",
+    "verb": "spirit.type.string.wordSelect?",
     "text": "spirit.type.string.descriptionSelect?"
   }
 }

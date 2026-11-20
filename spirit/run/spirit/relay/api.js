@@ -10,14 +10,14 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/relay/data.js'); else window.spirit.require('spirit/relay/data.js');
 module.exports = {
   verbs: {
-    claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'text?', inviteLabel: 'spirit.type.string.label?' },
+    claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'spirit.type.string.word?', inviteLabel: 'spirit.type.string.label?' },
     partnerCheck: { publicKey: 'spirit.type.string.IDNew', url: 'spirit.type.string.URL' },
-    get: { key: 'text' },
+    get: { key: 'spirit.type.string.relay' },
     remove: { key: 'spirit.type.string.URL' },
     add: { url: 'spirit.type.string.URL', label: 'spirit.type.string.label?' },
     face: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label' },
     // link: the caller's link the relay mails, its code and key added (goal/G40.10; Andy: "{email, URL, card}").
-    join: { url: 'spirit.type.string.URL', email: 'spirit.type.string.email', code: 'text?', link: 'spirit.type.string.URL?' },
+    join: { url: 'spirit.type.string.URL', email: 'spirit.type.string.email', code: 'spirit.type.string.word?', link: 'spirit.type.string.URL?' },
     // Leaving a relay (goal/G40.10; Andy: "add the leave verb to node"): the seat given up, the relay kept on the list.
     leave: { key: 'spirit.type.string.URL' },
   },

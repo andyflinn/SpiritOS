@@ -6,8 +6,8 @@
     "icon": "spirit.type.string.glyph?",
     "label": "spirit.type.string.label?",
     "loop": "spirit.type.boolean?",
-    "job": "text?",
-    "bundle": "text?",
+    "job": "spirit.type.string.fileContent?",
+    "bundle": "spirit.type.string.word?",
     "provider": "spirit.type.string.IDNew?",
     "persona": "spirit.type.string.IDNew?",
     "text": "spirit.type.string.descriptionSelect?"

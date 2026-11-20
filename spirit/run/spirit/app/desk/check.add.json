@@ -3,7 +3,7 @@
   "request": {
     "id": "id",
     "kind": "spirit.type.string.checkKind",
-    "words": "text",
-    "test": "text"
+    "words": "spirit.type.string.paragraphSelect",
+    "test": "spirit.type.string.fileSelect"
   }
 }

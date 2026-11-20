@@ -3,7 +3,7 @@
   "request": {
     "seq": "spirit.type.number.integer",
     "at": "spirit.type.number.UTC",
-    "text": "text",
+    "text": "spirit.type.string.paragraph",
     "re": "spirit.type.object.payload?"
   }
 }

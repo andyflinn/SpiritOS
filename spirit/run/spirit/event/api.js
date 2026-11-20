@@ -12,6 +12,6 @@ if (typeof require === 'function') require('../spirit.js').require('spirit/event
 module.exports = {
   verbs: {
     subscribe: {},
-    publish: { id: 'id', status: 'text?', data: 'spirit.type.object.payload?', logMessage: 'spirit.type.string.paragraph?', app: 'spirit.type.object.payload?' },
+    publish: { id: 'spirit.type.string.path', status: 'spirit.type.string.word?', data: 'spirit.type.object.payload?', logMessage: 'spirit.type.string.paragraph?', app: 'spirit.type.object.payload?' },
   },
 };

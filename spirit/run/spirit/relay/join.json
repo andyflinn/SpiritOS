@@ -3,7 +3,7 @@
   "request": {
     "url": "spirit.type.string.URL",
     "email": "spirit.type.string.email",
-    "code": "text?",
+    "code": "spirit.type.string.word?",
     "link": "spirit.type.string.URL?"
   }
 }

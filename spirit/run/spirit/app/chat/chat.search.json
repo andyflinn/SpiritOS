@@ -3,6 +3,6 @@
   "request": {
     "peer": "spirit.type.string.IDNew",
     "text": "spirit.type.string.descriptionSelect?",
-    "who": "text?"
+    "who": "spirit.type.string.chatWho?"
   }
 }

@@ -5,8 +5,8 @@
     "id": "spirit.type.string.IDNew?",
     "icon": "spirit.type.string.glyph?",
     "label": "spirit.type.string.label?",
-    "persona": "text?",
-    "bundle": "text?",
+    "persona": "spirit.type.string.fileContent?",
+    "bundle": "spirit.type.string.word?",
     "provider": "spirit.type.string.IDNew?",
     "text": "spirit.type.string.descriptionSelect?"
   }

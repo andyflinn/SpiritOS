@@ -3,9 +3,9 @@
   "request": {
     "id": "id",
     "text": "spirit.type.string.descriptionSelect",
-    "by": "text",
+    "by": "spirit.type.string.wordSelect",
     "since": "spirit.type.number.UTC",
     "before": "spirit.type.number.UTC",
-    "scope": "text"
+    "scope": "spirit.type.string.chatScope"
   }
 }

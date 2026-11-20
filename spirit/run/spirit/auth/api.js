@@ -10,18 +10,18 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/auth/data.js'); else window.spirit.require('spirit/auth/data.js');
 module.exports = {
   verbs: {
-    query: { key: 'spirit.type.string.IDNew', path: 'text' },
+    query: { key: 'spirit.type.string.IDNew', path: 'spirit.type.string.word' },
     search: { text: 'spirit.type.string.descriptionSelect?' },
     peer: { key: 'spirit.type.string.IDNew' },
-    grant: { key: 'spirit.type.string.IDNew', path: 'text' },
-    revoke: { key: 'spirit.type.string.ID', path: 'text' },
+    grant: { key: 'spirit.type.string.IDNew', path: 'spirit.type.string.word' },
+    revoke: { key: 'spirit.type.string.ID', path: 'spirit.type.string.word' },
     relabel: { key: 'spirit.type.string.ID', label: 'spirit.type.string.label' },
     // goal/G41.14: the node's bundles and their branches, one flat verb per table as the agent tables' are, op one of
     // add, set, delete, get and search; which arguments an op takes the node checks per op (apiAuth.js).
     // goal/G41.25: its owner, given at the add and narrowing a search; one that is not valid the node reads as "node", so
     // the rule here takes any text (Andy, box: "changes to the auth.bundle verb for the addition of the \"owner\" field
     // are approved by andy and need no review.").
-    bundle: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', label: 'spirit.type.string.label?', text: 'spirit.type.string.descriptionSelect?', owner: 'text?' },
-    branch: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', bundle: 'spirit.type.number.integer?', family: 'text?', verb: 'text?', text: 'spirit.type.string.descriptionSelect?' },
+    bundle: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', label: 'spirit.type.string.label?', text: 'spirit.type.string.descriptionSelect?', owner: 'spirit.type.string.word?' },
+    branch: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', bundle: 'spirit.type.number.integer?', family: 'spirit.type.string.word?', verb: 'spirit.type.string.wordSelect?', text: 'spirit.type.string.descriptionSelect?' },
   },
 };
