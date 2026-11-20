@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/element/test/changeMyDescription.js
 // The tests of spirit/element/changeMyDescription.js, and of no other module (spec: ./changeMyDescription.md; goal/G41.6). The
-// browser file runs in node on a window of its own: the field rules are the real ones (spirit/fieldRules.js),
+// browser file runs in node on a window of its own: the description type is the real one (spirit/type/string/description.js),
 // fieldInput is a stub that keeps what was attached, and the node is a stub that answers node.setDescription.
 
 const fs = require('fs');
@@ -78,7 +78,7 @@ function world(answer) {
   win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   win.spirit.required.spirit.element.fieldInput = { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } };
   vm.createContext(win);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'fieldRules.js'), 'utf8'), win, { filename: 'fieldRules.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'type', 'string', 'description.js'), 'utf8'), win, { filename: 'description.js' });
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+DESCRIPTION/NODE==' };
@@ -102,7 +102,7 @@ function world(answer) {
 const stored = function (name, args) { return { status: 200, body: { ok: true, description: String(args.description).trim() } }; };
 
 // What the tests make, shared by the tests after them.
-let w, host, el, input, rf, save, left, said, inSpan, spanText, c, N, r, h2, i2, s2;
+let w, host, el, input, rf, save, said, inSpan, spanText, c, N, r, h2, i2, s2;
 test.run('spirit/element/changeMyDescription.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
@@ -122,7 +122,6 @@ test.run('its input is marked data-field="description"', 0.2, async function () 
   rf = w.forms[0];
   // Since goal/G41.27 its Save is the rowForm's button.
   save = rf ? rf.button : host.querySelector('[data-description="save"]');
-  left = host.querySelector('[data-description="left"]');
   said = host.querySelector('[data-description="said"]');
   return (!!input) ? true : false;
 }, test.limit.quick);
@@ -143,27 +142,22 @@ test.run('its span holds the description input alone: no word beside it', 0.2, f
 test.run('its Save is the rowForm\'s button, and it draws no Save of its own', 0.2, function () {
   return (!!rf && !host.querySelector('[data-description="save"]') && !/<button/.test(host.innerHTML)) ? true : false;
 }, test.limit.quick);
-test.run('its bytes left and its message stand below the bubble, not in it', 0.2, function () {
-  return (!!rf && !!left && !!said && under(rf.root).indexOf(left) === -1 && under(rf.root).indexOf(said) === -1) ? true : false;
+test.run('its message stands below the bubble, not in it', 0.2, function () {
+  return (!!rf && !!said && under(rf.root).indexOf(said) === -1) ? true : false;
 }, test.limit.quick);
-test.run('it has its Save, its bytes left and its message', 0.2, function () {
-  return (!!save && !!left && !!said) ? true : false;
+// goal/G41.27's box v8, Andy: "those fucking character counter OUTSIDE the fucking form ... they ALL have to go".
+test.run('it has its Save and its message, and outside the form nothing but its message', 0.2, function () {
+  const outside = under(host).filter(function (k) { return under(rf.root).indexOf(k) === -1 && k !== rf.root && /^<div/.test(k.tag) && k.getAttribute && k.getAttribute('data-description'); });
+  return (!!save && !!said && outside.every(function (k) { return k.getAttribute('data-description') === 'said' || k.getAttribute('data-description') === 'form'; })) ? true : false;
 }, test.limit.quick);
-test.run('the input is held at its byte limit by fieldInput, the description rule', 0.2, function () {
-  return (w.attached.some(function (a) { return a.input === input && a.rule === 'description'; })) ? true : false;
+// Its type by path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*"): a description.
+test.run('the input is held at its byte limit by fieldInput, the description type', 0.2, function () {
+  return (w.attached.some(function (a) { return a.input === input && a.rule === 'spirit.type.string.description'; })) ? true : false;
 }, test.limit.quick);
 test.run('set puts the stored description it is handed in the field', 0.2, function () {
-  // it shows what the node holds, and the bytes left
+  // it shows what the node holds
   el.set('Andy');
   return (input.value === 'Andy') ? true : false;
-}, test.limit.quick);
-test.run('the bytes left are counted in bytes as typed', 0.2, function () {
-  return (/124 left/.test(left.textContent)) ? true : false;
-}, test.limit.quick);
-test.run('an emoji costs four bytes', 0.2, function () {
-  input.value = 'Andy 😀';
-  input.fire('input');
-  return (/119 left/.test(left.textContent)) ? true : false;
 }, test.limit.quick);
 test.run('a description past its limit never reaches the wire, and the field says why', 0.2, async function () {
   // Save is refused while the rule says no, and says why

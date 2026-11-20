@@ -6,21 +6,22 @@
 //
 //   changeMyDescription.create(host) -> { set(value), destroy() }
 //
-// The field is marked with its rule (rule/12, data-field="description") and held at the description rule's byte limit
-// by fieldInput, the bytes left beside it (fieldRules.describeRemaining), counted in bytes as typed. Save asks here first
-// (fieldRules.describeProblem); then node.setDescription, and the field shows what the node STORED (rule/19).
+// The field is marked with its rule (rule/12, data-field="description") and held at the description type's byte limit
+// by fieldInput. Save asks here first (spirit/type/string/description.js, its isValid); then node.setDescription, and
+// the field shows what the node STORED (rule/19).
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
-  // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.require.
-  var parts = root.spirit.require ? Promise.all([root.spirit.require('spirit/element/fieldInput.js'), root.spirit.require('spirit/fieldRules.js')]) : Promise.resolve();
+  // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput and its type, through spirit.require (goal/G48.4, the box:
+  // "fieldRules.js dies").
+  var parts = root.spirit.require ? Promise.all([root.spirit.require('spirit/element/fieldInput.js'), root.spirit.require('spirit/type/string/description.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
   if (root.spirit.require) root.spirit.require('spirit/element/rowForm.js');
 
-  function rules() { return (root.spirit && root.spirit.fieldRules) || null; }
+  function description() { var r = root.spirit && root.spirit.required; return (r && r.spirit && r.spirit.type && r.spirit.type.string && r.spirit.type.string.description) || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
   // object's escapeHtml and the node family's setDescription, no api handed.
   function esc(s) { return root.spirit.escapeHtml ? root.spirit.escapeHtml(s) : String(s); }
@@ -29,18 +30,18 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     var o = opts || {};
     // Its blocks stacked 1em apart (rule/2): the shell's stack class.
     // A ROWFORM (goal/G41.27; Andy: "changeMyDescription:\n\n[✏️][Description-input][Save]"): ✏️, the input alone in its
-    // span, Save its button; the bytes left and what Save did stand below the bubble.
+    // span, Save its button; what Save did stands below the bubble.
+    // NO COUNTER OUTSIDE THE FORM (goal/G41.27's box v8, Andy: "the most fucking miserable example are those fucking character
+    // counter OUTSIDE the fucking form ... they ALL have to go"): fieldInput holds the field at its limit as it is typed.
     host.innerHTML =
       // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
       '<div class="stack" style="overflow:hidden"><div data-description="form"></div>' +
-      '<div data-description="left" class="job-manifest-note"></div>' +
       '<div data-description="said" class="job-start-error"></div></div>';
     var form = E.spirit.element.rowForm.create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save', press: function () { return save(); } });
     // ITS SAVE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, so Save is busy until the node answers; Return presses it.
     form.span.innerHTML = '<input type="text" data-field="description" placeholder="' + esc('a sentence somebody who has just found you would want to read') + '">';
     var input = host.querySelector('[data-field="description"]');
-    var left = host.querySelector('[data-description="left"]');
     var said = host.querySelector('[data-description="said"]');
     var gone = false;
 
@@ -49,22 +50,12 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
       said.textContent = text || '';
       said.className = isError ? 'job-start-error' : 'job-manifest-note';
     }
-    // DISCREPANCY WITH ANDY's RULES: goal/G41.27's box (v8) says "character counters outside a form go: a field is limited
-    // by fieldRules.js as it is typed, so a counter says nothing" (Andy: "the most fucking miserable example are those
-    // fucking character counter OUTSIDE the fucking form, the damned fields are supposed limit input based on
-    // fieldRules.js, they ALL have to go"); this element still writes the bytes left below the
-    // rowForm's bubble, outside the form, and its test asserts that counter.
-    // THE COUNTDOWN IS IN BYTES, because the cap is: a counter of characters would say there was room where the node
-    // refuses.
-    function count() {
-      var R = rules();
-      if (!R) { left.textContent = ''; return; }
-      left.textContent = Math.max(0, R.describeRemaining(input.value)) + ' left';
-    }
+    // Save asks the description type first, and a description it refuses never troubles the wire: its reason is said.
     function save() {
       if (gone) return Promise.resolve();
-      var R = rules();
-      var bad = R ? R.describeProblem(input.value) : '';
+      var D = description();
+      var bad = '';
+      if (D) { try { D.isValid(input.value); } catch (e) { bad = (e && e.message) || 'not a description'; } }
       if (bad) { say(bad, true); return Promise.resolve(); }
       return root.spirit.outcome(Promise.resolve(root.spirit.ready).then(function (s) { return s.node.setDescription({ description: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
@@ -78,8 +69,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     var stop = null;
     function show(card) {
       if (gone || !card) return;
-      input.value = String(card.description == null ? '' : card.description);
-      count();
+      // The description in the field and in its value attribute both, so the page shows the card's change as a change of the
+      // field.
+      var text = String(card.description == null ? '' : card.description);
+      input.defaultValue = text;
+      input.value = text;
     }
     root.spirit.require('spirit/node/api.js').then(function () {
       if (gone) return;
@@ -90,17 +84,15 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     parts.then(function () {
       if (!gone && window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.description');
     }, function () { /* the node still refuses what the rule refuses */ });
-    input.addEventListener('input', count);
     // Return saves, as the button does.
     input.addEventListener('keydown', function (e) {
       if (!e || e.key !== 'Enter') return;
       if (typeof e.preventDefault === 'function') e.preventDefault();
       if (typeof form.button.click === 'function') form.button.click(); else save();
     });
-    count();
 
     return {
-      set: function (value) { input.value = String(value == null ? '' : value); count(); },
+      set: function (value) { input.value = String(value == null ? '' : value); },
       // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it"), and lets the card go.
       destroy: function () { gone = true; if (stop) stop(); stop = null; host.innerHTML = ''; },
     };
