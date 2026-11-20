@@ -110,13 +110,73 @@ function apiCommand(s, verb) {
   });
 }
 
+// A LINE IN WORDS (goal/G48.3, the box, ## typing values: "a value with a space in it is put in double quotes"): split at
+// the spaces outside double quotes; a word or a value wholly in quotes (text="hello all") has them taken off, while a
+// value with quotes inside it, JSON like debug={"on":true}, keeps them. null when a quote is left open.
+function wordsOf(line) {
+  const text = String(line || '');
+  const out = [];
+  let word = '';
+  let open = false;
+  for (const c of text) {
+    if (c === '"') open = !open;
+    if (!open && /\s/.test(c)) { if (word) out.push(word); word = ''; continue; }
+    word += c;
+  }
+  if (open) return null;
+  if (word) out.push(word);
+  return out.map(function (w) {
+    const eq = w.indexOf('=');
+    const name = eq > 0 && w.charAt(0) !== '"' ? w.slice(0, eq + 1) : '';
+    const value = w.slice(name.length);
+    return name + (/^"[^"]*"$/.test(value) ? value.slice(1, -1) : value);
+  });
+}
+// A VALUE AS ITS ARGUMENT'S RULE SAYS (the box: "a value is read as its argument's rule in the verb's own file says: a number
+// argument as a number, a yes/no argument as true or false, a list or object argument as JSON"); anything else as typed.
+function valueOf(rule, text) {
+  const r = String(rule || '').replace(/\?$/, '');
+  if (r === 'number') return text.trim() === '' ? text : Number(text);
+  if (r === 'bool') return text === 'true' ? true : text === 'false' ? false : text;
+  // A yes/no the node spells '' or 'yes' (spirit.js's flag rule): true or yes is 'yes', false or nothing is ''.
+  if (r === 'flag') return text === 'true' || text === 'yes' ? 'yes' : text === 'false' || text === '' ? '' : text;
+  if (r === 'list' || r === 'object') { try { return JSON.parse(text); } catch (e) { return text; } }
+  return text;
+}
+// EXECUTING A VERB (the box, ## executing verbs: "at a branch, a line typed as its usage shows ... executes that verb, and
+// the console shows the json it returns, as JSON.stringify(answer,null,2)", "a verb the node refuses shows that refusal as
+// a json error"): the branch bound through spirit.require, the verb asked with the arguments typed name=value.
+function verbCommand(s, verbs, words) {
+  const verb = words[0];
+  const rules = verbs[verb] || {};
+  const args = {};
+  for (let i = 1; i < words.length; i++) {
+    const eq = words[i].indexOf('=');
+    if (eq < 1) return Promise.resolve(refused(s, 'bad-argument', 'not name=value: ' + words[i]));
+    const name = words[i].slice(0, eq);
+    if (!Object.prototype.hasOwnProperty.call(rules, name)) return Promise.resolve(refused(s, 'no-such-argument', verb + ' has no argument ' + name));
+    args[name] = valueOf(rules[name], words[i].slice(eq + 1));
+  }
+  return Promise.resolve(spirit.require(apiFile(s.path))).then(function (branch) { return branch[verb](args); }).then(function (answer) {
+    return { ok: true, out: JSON.stringify(answer === undefined ? null : answer, null, 2), path: s.path };
+  }, function (e) {
+    const body = e && e.body && typeof e.body === 'object' && !Array.isArray(e.body) && Object.keys(e.body).length ? e.body : { ok: false, code: (e && e.code) || 'refused', error: (e && e.message) || String(e) };
+    return { ok: false, out: JSON.stringify(body, null, 2), path: s.path };
+  });
+}
+
 function run(line) {
-  const words = String(line || '').trim().split(/\s+/).filter(Boolean);
+  const words = wordsOf(line);
   const s = state();
+  if (words === null) return Promise.resolve(refused(s, 'open-quote', 'a quote is left open: ' + String(line).trim()));
   if (!words.length) return Promise.resolve({ ok: true, out: '', path: s.path });
   if (words[0] === 'path' && words.length <= 2) return pathCommand(s, words[1] || '');
   if (words[0] === 'api' && words.length <= 2) return apiCommand(s, words[1] || '');
-  return Promise.resolve(refused(s, 'no-such-command', 'no such command: ' + words.join(' ')));
+  // A verb of the branch at the path, typed with its arguments.
+  return verbsAt(s.path).then(function (verbs) {
+    if (verbs && Object.prototype.hasOwnProperty.call(verbs, words[0])) return verbCommand(s, verbs, words);
+    return refused(s, 'no-such-command', 'no such command: ' + words.join(' '));
+  });
 }
 
 module.exports = { run: run, state: state, HISTORY_MAX: HISTORY_MAX };
