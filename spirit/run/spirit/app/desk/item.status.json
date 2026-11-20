@@ -3,6 +3,6 @@
   "request": {
     "id": "id",
     "word": "text",
-    "tone": "text?"
+    "tone": "spirit.type.string.statusTone?"
   }
 }

@@ -1,9 +1,9 @@
 {
   "description": "The agent's model table, one verb (goal/G41.4): op add, set, delete, get or search; a search may name providerId, narrowed to that provider's models.",
   "request": {
-    "op": "id",
+    "op": "spirit.type.string.tableOp",
     "id": "spirit.type.string.ID?",
-    "icon": "text?",
+    "icon": "spirit.type.string.glyph?",
     "label": "spirit.type.string.label?",
     "providerId": "spirit.type.string.ID?",
     "capabilities": "list?",

@@ -15,24 +15,24 @@ if (typeof require === 'function') require('../../spirit.js').require('spirit/ap
 module.exports = {
   verbs: {
     // Only listening or working; the server refuses any other word.
-    'agent.state': { word: 'id' },
+    'agent.state': { word: 'spirit.type.string.agentWord' },
     block: { id: 'id', blocks: 'id' },
     'block.targets': { id: 'id' },
     'box.release': { id: 'id' },
     'box.take': { id: 'id' },
     // An empty box is a box: text may be ''.
     'box.write': { id: 'id', text: 'text', version: 'spirit.type.number.integer' },
-    'chat.add': { id: 'id', text: 'text' },
+    'chat.add': { id: 'id', text: 'spirit.type.string.line' },
     // Each filter left '' filters nothing; scope is '', goal or items.
     'chat.search': { id: 'id', text: 'text', by: 'text', since: 'text', before: 'text', scope: 'text' },
     // kind is C, T, G or Q; words and test may be ''.
-    'check.add': { id: 'id', kind: 'id', words: 'text', test: 'text' },
+    'check.add': { id: 'id', kind: 'spirit.type.string.checkKind', words: 'text', test: 'text' },
     // check is a check's number, or 'all' for his Grant-All.
-    'check.set': { id: 'id', check: 'id', state: 'id' },
+    'check.set': { id: 'id', check: 'id', state: 'spirit.type.string.checkState' },
     // commit may be '' only for a plain item's build claim.
-    claim: { id: 'id', phase: 'id', commit: 'text' },
+    claim: { id: 'id', phase: 'spirit.type.string.phase', commit: 'text' },
     // The handler trims and refuses an empty title; it applies no label rule to a goal's.
-    'goal.add': { title: 'id' },
+    'goal.add': { title: 'spirit.type.string.description' },
     // The title passes the label rule (fieldWhy); blocks may be left out or '' (the goal).
     'item.add': { goal: 'id', title: 'spirit.type.string.label', blocks: 'text?' },
     'item.box': { id: 'id' },
@@ -52,20 +52,20 @@ module.exports = {
     'item.files.remove': { id: 'id', path: 'text' },
     'item.get': { id: 'id' },
     'item.release': { id: 'id' },
-    'item.rename': { id: 'id', title: 'text' },
+    'item.rename': { id: 'id', title: 'spirit.type.string.label' },
     // tone (goal/G33.11): test or code, the deskClient's file report; '' or left out for a plain status word. Missing
     // here, the spirit object refused every report before it left (found on goal/G40.3).
-    'item.status': { id: 'id', word: 'text', tone: 'text?' },
+    'item.status': { id: 'id', word: 'text', tone: 'spirit.type.string.statusTone?' },
     'item.take': { id: 'id' },
     'agents.search': { text: 'text' },
     'items.search': { text: 'text', currentGoalOnly: 'spirit.type.boolean', goalsOnly: 'spirit.type.boolean', includeClosed: 'spirit.type.boolean' },
     'line.take': { id: 'id' },
     // pass and why only for a verify; red and build send neither.
-    'phase.done': { id: 'id', phase: 'id', pass: 'spirit.type.boolean?', why: 'text?' },
+    'phase.done': { id: 'id', phase: 'spirit.type.string.phase', pass: 'spirit.type.boolean?', why: 'text?' },
     'phase.may': { id: 'id' },
-    'phase.take': { id: 'id', phase: 'id' },
+    'phase.take': { id: 'id', phase: 'spirit.type.string.phase' },
     // id is '' for start-design with nothing open, which starts a new goal.
-    press: { id: 'text', what: 'id' },
+    press: { id: 'text', what: 'spirit.type.string.deskPress' },
     // goal/G41.22: Andy's alone; the current goal, so no argument.
     // agent '' is the caller.
     'profile.get': { agent: 'text' },

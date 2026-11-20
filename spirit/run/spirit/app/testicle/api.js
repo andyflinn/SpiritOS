@@ -25,14 +25,14 @@ module.exports = {
     // goal/G47.4, the box: "a new verb testicle.title will change a testicle title, the script, suite AND oldTitle arguments
     // must match an existing row exactly" (Andy: "GO!"; wsl reviewed it): the title replaced in its suite file, committed and
     // pushed, then every row of that suite and title renamed.
-    'testicle.title': { script: 'text', suite: 'text', oldTitle: 'text', title: 'text' },
+    'testicle.title': { script: 'text', suite: 'text', oldTitle: 'spirit.type.string.description', title: 'spirit.type.string.description' },
     // goal/G47.1, box v129-131: a suite's success or failure for one script, sent by the reporter once that suite is through
     // with it; the only thing that sets a suite row's outcome.
     'suite.success': { script: 'text', suite: 'text', success: 'spirit.type.boolean', reason: 'text?', requires: 'list?' },
     // goal/G47.1: the current test rows, the failed first, then most severe first; script, suite and result (red or green)
     // each optional, the words narrowing them; from, the rows already held, asks the following answer.
     // Given a test with its script and suite, that test's every row, the newest flip first (its history).
-    'testicle.search': { script: 'text?', suite: 'text?', test: 'text?', result: 'text?', text: 'text' },
+    'testicle.search': { script: 'text?', suite: 'text?', test: 'text?', result: 'spirit.type.string.testResult?', text: 'text' },
     // goal/G47.1, G45: every failed current test, most severe first. It takes nothing.
     red: {},
     // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it; answered at once.

@@ -17,7 +17,7 @@ module.exports = {
     add: { url: 'spirit.type.string.URL', label: 'spirit.type.string.label?' },
     face: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label' },
     // link: the caller's link the relay mails, its code and key added (goal/G40.10; Andy: "{email, URL, card}").
-    join: { url: 'spirit.type.string.URL', email: 'text', code: 'text?', link: 'spirit.type.string.URL?' },
+    join: { url: 'spirit.type.string.URL', email: 'spirit.type.string.email', code: 'text?', link: 'spirit.type.string.URL?' },
     // Leaving a relay (goal/G40.10; Andy: "add the leave verb to node"): the seat given up, the relay kept on the list.
     leave: { key: 'text' },
   },

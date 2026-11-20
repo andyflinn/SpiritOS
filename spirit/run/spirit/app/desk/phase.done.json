@@ -2,7 +2,7 @@
   "description": "Finish your phase; verify sends pass and why (a fail goes back to build).",
   "request": {
     "id": "id",
-    "phase": "id",
+    "phase": "spirit.type.string.phase",
     "pass": "spirit.type.boolean?",
     "why": "text?"
   }

@@ -17,10 +17,10 @@ module.exports = {
     // The provider verb also takes op ask, with id (goal/G41.18; Andy, box v17: "the provider table gets a new verb:
     // \"ask\", which does the model-list fetching and model-table updating"): it answers { models, updated }. Its
     // unusable flag is the server's to set when a provider fails, so the page sends no such argument.
-    provider: { op: 'id', id: 'spirit.type.string.ID?', icon: 'text?', label: 'spirit.type.string.label?', url: 'spirit.type.string.URL?', apiKey: 'text?', model: 'spirit.type.string.ID?', text: 'text?' },
-    model: { op: 'id', id: 'spirit.type.string.ID?', icon: 'text?', label: 'spirit.type.string.label?', providerId: 'spirit.type.string.ID?', capabilities: 'list?', text: 'text?' },
-    persona: { op: 'id', id: 'spirit.type.string.ID?', icon: 'text?', label: 'spirit.type.string.label?', persona: 'text?', bundle: 'text?', provider: 'spirit.type.string.ID?', text: 'text?' },
-    job: { op: 'id', id: 'spirit.type.string.ID?', icon: 'text?', label: 'spirit.type.string.label?', loop: 'spirit.type.boolean?', job: 'text?', bundle: 'text?', provider: 'spirit.type.string.ID?', persona: 'spirit.type.string.ID?', text: 'text?' },
+    provider: { op: 'spirit.type.string.providerOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', url: 'spirit.type.string.URL?', apiKey: 'text?', model: 'spirit.type.string.ID?', text: 'text?' },
+    model: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', providerId: 'spirit.type.string.ID?', capabilities: 'list?', text: 'text?' },
+    persona: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', persona: 'text?', bundle: 'text?', provider: 'spirit.type.string.ID?', text: 'text?' },
+    job: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.ID?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', loop: 'spirit.type.boolean?', job: 'text?', bundle: 'text?', provider: 'spirit.type.string.ID?', persona: 'spirit.type.string.ID?', text: 'text?' },
     // A search may name one of the table's fields, narrowed to the rows holding it (goal/G41.21: providerId above).
     // No grant verb since goal/G41.21 (box v17: "agent.grant is removed altogether").
     // appServer's streamPublisher (spirit/appServer.js), as desk's: the caller's key subscribes to agent's rows, sent to its

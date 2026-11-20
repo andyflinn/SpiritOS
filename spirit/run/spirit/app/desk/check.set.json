@@ -3,6 +3,6 @@
   "request": {
     "id": "id",
     "check": "id",
-    "state": "id"
+    "state": "spirit.type.string.checkState"
   }
 }

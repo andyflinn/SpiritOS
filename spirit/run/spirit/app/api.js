@@ -15,8 +15,8 @@ module.exports = {
     // goal/G43.9, peer review wsl, yes, Andy's yes on Q1: "spirit.app gains a verb: "active"."
     active: { key: 'text', active: 'spirit.type.boolean' },
     // Q4, Andy: "yes.": the node's choices, over what <name>.json says.
-    label: { key: 'text', label: 'text' },
-    icon: { key: 'text', icon: 'text' },
+    label: { key: 'text', label: 'spirit.type.string.label' },
+    icon: { key: 'text', icon: 'spirit.type.string.glyph' },
   },
   // THE PAGE'S FUNCTION IS NOT THE VERB (goal/G43.7; Andy: "spirit.app.searchApp() which IMPLEMENTS the verb search, but isn't the
   // verb itself."): the verb stays a word on the wire, and spirit.app holds no word of its own.

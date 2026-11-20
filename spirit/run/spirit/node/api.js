@@ -16,6 +16,6 @@ module.exports = {
     setDescription: { description: 'spirit.type.string.description' },
     rotateCipher: {},
     // goal/G43.18, box v29: "The verb is node.shell", reviewed by wsl, Andy's "box it.": the shell the node names, at home or face.
-    shell: { at: 'text', name: 'text?' },
+    shell: { at: 'spirit.type.string.shellPlace', name: 'spirit.type.string.word?' },
   },
 };
