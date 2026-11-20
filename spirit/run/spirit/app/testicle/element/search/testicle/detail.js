@@ -52,7 +52,7 @@
     container.innerHTML = '<div class="testicle-history fill" style="overflow:auto"><div data-history="runForm"></div>' +
       '<div data-history="titleForm"></div><div class="testicle-path shell-bubble" data-history="script"></div>' +
       '<div class="testicle-path shell-bubble" data-history="suite"></div><div class="testicle-said" data-history="said"></div>' +
-      '<table class="testicle-flips" data-history="rows"><thead><tr><th style="text-align:left">Flipped</th><th style="text-align:left">Result</th><th style="text-align:left">Severity</th></tr></thead><tbody></tbody></table></div>';
+      '<table class="testicle-flips" data-history="rows"><thead><tr><th style="text-align:left">Flipped</th><th style="text-align:left">Last run</th><th style="text-align:left">Result</th><th style="text-align:left">Severity</th></tr></thead><tbody></tbody></table></div>';
     container.querySelector('[data-history="script"]').textContent = script;
     container.querySelector('[data-history="suite"]').textContent = suite;
     // The title's line, put into row 1 once the row form is loaded.
@@ -70,13 +70,17 @@
       body.innerHTML = rows.map(function (r) {
         var el = S.element.spirit.app.testicle.element.search.testicle.row.create(r);
         drawn.push(el);
-        var when = r.flipped ? new Date(Number(r.flipped)).toISOString().replace('T', ' ').slice(0, 19) : '';
+        var at = function (ms) { return ms ? new Date(Number(ms)).toISOString().replace('T', ' ').slice(0, 19) : ''; };
+        var when = at(r.flipped);
+        // ITS LAST RUN BESIDE ITS FLIP (goal/G48.4, Andy: "a run that doesn't flip needs to update the run date in any
+        // event."): every run sets the row's tested and publishes it, so a test that stays red shows when it last ran.
+        var ran = at(r.tested);
         // THE CURRENT ROW IN BOLD (goal/G47.4, Andy: "the one thing not instantly obvious is the fact that the first row IS the
         // 'current' and the one that counts 'right now'", then "current row in bold sound like the most simple approach. let's
         // try it."): marked by its own current flag, not by standing on top.
-        return '<tr data-key="' + esc(r.key) + '"' + (r.current ? ' data-current="true" style="font-weight:bold"' : '') + '><td data-field="flipped">' + esc(when) + '</td>' +
+        return '<tr data-key="' + esc(r.key) + '"' + (r.current ? ' data-current="true" style="font-weight:bold"' : '') + '><td data-field="flipped">' + esc(when) + '</td><td data-field="tested">' + esc(ran) + '</td>' +
           el.cells().filter(function (c) { return c.name !== 'test' && c.name !== 'script' && c.name !== 'suite'; }).map(function (c) { return '<td data-field="' + esc(c.name) + '">' + c.html + '</td>'; }).join('') + '</tr>';
-      }).join('') || '<tr><td colspan="3">' + esc('No row of this test.') + '</td></tr>';
+      }).join('') || '<tr><td colspan="4">' + esc('No row of this test.') + '</td></tr>';
     }
     // ITS ROWS ARE THE BRANCH'S (goal/G47.1, the box: "Every element of testicle's face updates itself in response to the
     // server stream"): the history is asked once and kept in testicle's branch; what is drawn is every row of this test the
@@ -90,7 +94,7 @@
     }
     function ask() {
       return Promise.resolve(S.testicle['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
-        .then(function (b) { S.data.testicle.data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
+        .then(function (b) { S.data.testicle.data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="4">' + esc((e && e.message) || e) + '</td></tr>'; });
     }
 
     function said(text) { var el = container.querySelector('[data-history="said"]'); if (el) el.textContent = text || ''; }
