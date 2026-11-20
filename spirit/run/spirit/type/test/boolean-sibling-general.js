@@ -59,6 +59,36 @@ test.run('for every type file, ruleDescription() answers a short description of 
     try { return typeof d === 'string' && D.isValid(d) === true; } catch (e) { return false; }
   }) || false;
 }, test.limit.quick);
+
+// A <type>Select.js, EVERY ONE (goal/G48.4; Andy: "every <type>Select.js requires its <type>.js and takes \"\" plus whatever
+// <type>.js"; "<type>Select.js requires <type>.js, when validating <type>Select.js FIRST checks for \"\", and returns true if
+// the value is \"\", it otherwise it lets <type>.js handle the check."; "<type>Select.js has it's own ruleDescription() and
+// defaultValue() which is usually \"\""). Its sibling is the <type>.js beside it; the values tried are the sibling's own
+// default, and a number, an object and true, which no string type takes.
+const SELECTS = TARGETS.filter(function (rel) { return /Select\.js$/.test(rel); });
+const siblingOf = function (rel) { return rel.replace(/Select\.js$/, '.js'); };
+const everySelect = function (fn) { return SELECTS.length > 0 && SELECTS.every(function (rel) { const T = load(rel), B = load(siblingOf(rel)); return !!T && !!B && fn(T, B, rel); }); };
+if (!asked || /Select\.js$/.test(asked)) {
+  test.run('the line and file filters are selects: spirit/type/string/lineSelect.js and fileSelect.js are there', 0.4, function () {
+    return (fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'lineSelect.js')) && fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'fileSelect.js'))) || false;
+  }, test.limit.quick);
+  test.run('every <type>Select.js has its <type>.js beside it and requires it', 0.4, function () {
+    return everySelect(function (T, B, rel) { const sib = siblingOf(rel); let code = ''; try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; } return fs.existsSync(path.join(RUN, sib)) && code.indexOf(path.basename(sib, '.js')) !== -1 && /require\(/.test(code); }) || false;
+  }, test.limit.quick);
+  test.run('every <type>Select.js takes "", and its defaultValue() is ""', 0.4, function () {
+    return everySelect(function (T) { try { return T.isValid('') === true && T.defaultValue() === ''; } catch (e) { return false; } }) || false;
+  }, test.limit.quick);
+  test.run('every <type>Select.js takes what its <type>.js takes, and throws where it throws', 0.4, function () {
+    return everySelect(function (T, B) {
+      let ok = false;
+      try { ok = B.isValid(B.defaultValue()) === true && T.isValid(B.defaultValue()) === true; } catch (e) { return false; }
+      return ok && [5, {}, true].every(function (v) { return throws(B, v) && throws(T, v); });
+    }) || false;
+  }, test.limit.quick);
+  test.run('every <type>Select.js has a ruleDescription() of its own, not its <type>.js\'s', 0.4, function () {
+    return everySelect(function (T, B) { try { return typeof T.ruleDescription() === 'string' && T.ruleDescription() !== B.ruleDescription(); } catch (e) { return false; } }) || false;
+  }, test.limit.quick);
+}
 }
 if (!GIVEN.length) typeRules([]);
 else GIVEN.forEach(function (one) { require('../../test/testReport.js').forScript(one, function () { typeRules([one]); }); });
