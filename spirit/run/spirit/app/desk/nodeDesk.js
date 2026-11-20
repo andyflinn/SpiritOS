@@ -274,25 +274,30 @@ function listRowVerb(verb, has, adding) {
   };
 }
 // A LIST OF PATHS IN ONE WRITE, FOR THE DESK ONLY (goal/G41.11). Andy: "agreed to publishing lists, FOR DESK ONLY, this
-// is NOT a general rule". item.files.add {id, paths: [...]} beside the one row's {id, path}: the caller's list in its
+// is NOT a general rule". item.files.add {id, paths: '[...]'} beside the one row's {id, path}: the caller's list in its
 // order, cut at one answer's room by a sized probability bucket (every path at probability 0, so the order stands);
 // what fits lands on the caller's list in one write, each path checked as the one row's is, and the answer says how
 // many landed (added) and whether the rest was cut (more), so the caller sends the rest again. Not a pattern for other
-// verbs: his ruling names the desk alone.
+/// verbs: his ruling names the desk alone. The list comes as JSON, one string (goal/G48.4, Q6, Andy: lists are
+// "spirit.type.string.json"); what is written on the stream stays the list it holds.
+function pathsOf(json) {
+  let v = null;
+  try { v = JSON.parse(json); } catch (e) { return null; }
+  return Array.isArray(v) && v.length > 0 && v.every(function (p) { return typeof p === 'string' && p !== ''; }) ? v : null;
+}
 function filesAddVerb(one) {
   return {
     request: { id: '', path: '' }, reply: { change: 0, added: 0, more: false },
     accepts: function (x) {
       if (!x || typeof x !== 'object' || Array.isArray(x) || typeof x.id !== 'string') return false;
       if (!Object.prototype.hasOwnProperty.call(x, 'paths')) return one.accepts(x);
-      return Object.keys(x).length === 2 && Array.isArray(x.paths) && x.paths.length > 0 &&
-        x.paths.every(function (p) { return typeof p === 'string' && p !== ''; });
+      return Object.keys(x).length === 2 && typeof x.paths === 'string' && !!pathsOf(x.paths);
     },
     handler: function (a, caller) {
-      if (!Array.isArray(a.paths)) return { change: one.handler(a, caller).change, added: 1, more: false };
+      if (a.paths === undefined) return { change: one.handler(a, caller).change, added: 1, more: false };
       const w = writerOf(caller);
       const it = itemFor(walkState(), a);
-      const asked = a.paths.map(String).filter(function (p, i, all) { return all.indexOf(p) === i; });
+      const asked = pathsOf(a.paths).map(String).filter(function (p, i, all) { return all.indexOf(p) === i; });
       const bucket = createProbabilityBucket(asked.length);
       asked.forEach(function (p) { bucket.seatFor(0, p); });
       const cut = bucket.serialize(null, ANSWER_ROOM);

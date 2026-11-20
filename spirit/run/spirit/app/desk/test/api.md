@@ -21,7 +21,7 @@ the handlers (Andy, 2026-10-22: "request validation worth a damn?").
   - `box.write` version is a number; `items.search`'s three flags are booleans; `rules.search` types and statuses lists.
   - `item.add` title and `profile.set` name pass the label rule; `rule.add` text the paragraph rule.
   - One row a write (goal/G40.3): every `.add`/`.remove` of files takes its `path` as one path, never a
-    list; `item.files.add` may instead take `paths`, a list, for the desk only (goal/G41.11).
+    list; `item.files.add` may instead take `paths`, a list in JSON, for the desk only (goal/G41.11).
 - An argument a verb does not take is refused (no-such-argument).
 
 ## What its test must try to break

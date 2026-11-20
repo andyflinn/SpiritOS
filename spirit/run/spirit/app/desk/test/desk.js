@@ -326,7 +326,7 @@ test.run('adding a list of paths to an item lands every path of the list on the 
   if (!W.up) return false;
   await call('item.take', { id: 'goal/G100.1' }, CW);
   const paths = ['spirit/run/a.js', 'spirit/run/b.js', 'spirit/run/c.js'];
-  const bundle = await call('item.files.add', { id: 'goal/G100.1', paths: paths }, CW);
+  const bundle = await call('item.files.add', { id: 'goal/G100.1', paths: JSON.stringify(paths) }, CW);
   const listed = (await filesOf('goal/G100.1')).map(function (f) { return f.path; });
   return (bundle.ok !== false && paths.every(function (p) { return listed.indexOf(p) !== -1; })) ||
     false;
