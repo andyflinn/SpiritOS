@@ -114,18 +114,18 @@ test.run('checking Item at spirit.app.table.add answers item, from the word.json
 test.run('checking THING at spirit.app.table.add answers thing, from one level up', 0.2, function () { return checked(1); }, test.limit.quick);
 test.run('checking aCtIvAtE at spirit.app.table.add answers activate, from two levels up', 0.2, function () { return checked(2); }, test.limit.quick);
 test.run('checking thing at spirit.app.table.none answers thing, as a level with no word.json of its own still looks up', 0.2, function () { return checked(3); }, test.limit.quick);
-test.run('checking ' + mixed(A_HARD) + ' at spirit.app.table.add answers ' + A_HARD + ', a hard-coded word lower-cased from any path', 0.2, function () { return checked(4); }, test.limit.quick);
-test.run('checking ' + A_HARD.toUpperCase() + ' at spirit answers ' + A_HARD + ', a hard-coded word at the root', 0.2, function () { return checked(5); }, test.limit.quick);
+test.run('checking a hard-coded word in mixed case at spirit.app.table.add answers it lower-cased, from any path', 0.2, function () { return checked(4); }, test.limit.quick);
+test.run('checking a hard-coded word in upper case at spirit answers it lower-cased, at the root', 0.2, function () { return checked(5); }, test.limit.quick);
 test.run('checking thing at spirit.app answers null, as a word lower down is not seen from above', 0.2, function () { return checked(6); }, test.limit.quick);
 test.run('checking sibling at spirit.app.table.add answers null, as a word in another branch is not seen', 0.2, function () { return checked(7); }, test.limit.quick);
 test.run('checking nothing at spirit.app.table.add answers null, as no level holds that word', 0.2, function () { return checked(8); }, test.limit.quick);
 test.run('checking app1 at spirit.app answers null, as a digit makes it no word', 0.2, function () { return checked(9); }, test.limit.quick);
 test.run('checking an empty word at spirit.app answers null, as empty is no word', 0.2, function () { return checked(10); }, test.limit.quick);
 test.run('checking constructor at spirit.app answers null, as a word an object inherits is no reserved word', 0.2, function () { return checked(11); }, test.limit.quick);
-// Each hard-coded word word.js holds, its own check under its own title.
-HARD.forEach(function (w, k) {
-  test.run('checking the hard-coded word ' + w + ' at spirit answers ' + w, 0.2, function () { return checked(12 + k); }, test.limit.quick);
-});
+// Each hard-coded word word.js holds, in one check (a title is one plain string, nothing built into it).
+test.run('checking each hard-coded word word.js holds at spirit answers that word', 0.2, function () {
+  return (HARD.length > 0 && HARD.every(function (w, k) { return checked(12 + k); })) || false;
+}, test.limit.quick);
 
 // a change to a word.json is seen by the next check
 test.run('a word written to the file answers', 0.2, function () {
@@ -197,7 +197,7 @@ test.run('adding an empty word at spirit.app answers false', 0.2, function () { 
 test.run('adding "a b", which holds a space, at spirit.app answers false', 0.2, function () { return added('noWord', 2, false); }, test.limit.quick);
 test.run('adding new-word, which holds a dash, at spirit.app answers false', 0.2, function () { return added('noWord', 3, false); }, test.limit.quick);
 // add refuses what check finds: "no words can be added that already exists toward the root of the tree"
-test.run('adding ' + mixed(A_HARD) + ', a hard-coded word in any case, at spirit.app.table answers false', 0.2, function () {
+test.run('adding a hard-coded word in mixed case at spirit.app.table answers false', 0.2, function () {
   return firstOf('rootward', [['spirit.app.table', mixed(A_HARD)], ['spirit.app.table.add', 'THING'], ['spirit.app.table.add', 'later']], false);
 }, test.limit.quick);
 test.run('adding THING at spirit.app.table.add answers false, as the word stands one level toward the root', 0.2, function () { return added('rootward', 1, false); }, test.limit.quick);
