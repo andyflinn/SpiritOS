@@ -243,8 +243,12 @@ let g1 = null, d1 = null, wantDelta = [], b1 = null, tz = 0, zeta = null, zt = n
 let ts0 = 0, set1 = null, k1 = null, wantTheta = [], tr1 = null, ts1 = 0, k2 = null, tr2 = null, k3 = null, tr3 = null, ts2 = 0, k4 = null, all4 = [], cur4 = [];
 let sr = null, srRows = [], red = [], n1 = null, reach = [], seen = [], r1 = null, x1 = null;
 
+// THE PLANTED SUITES' LOG GOES WHEN THE TEST STARTS AND WHEN IT ENDS (goal/G48.4; Andy: "you better delete that fucking log
+// when the test starts AND especially when it ends.... NO POLLUTION! NO LITTERING!!!!"): a lab copy is released, not removed.
+const dropRunlog = function () { try { if (s) fs.rmSync(path.join(s.root, 'runlog.txt'), { force: true }); } catch (e) { /* gone */ } };
 test.after(async function () {
   for (const k of live) await stop(k);
+  dropRunlog();
   try { if (s) LABH.freeTree(s); } catch (e) { /* scratch */ }
 });
 
@@ -262,6 +266,7 @@ test.run('spirit/app/testicle/testicle.js is there', 0.2, function () {
 
 test.run('a scratch node comes up', 0.2, async function () {
   s = scratch();
+  dropRunlog();
   DB = path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
   N = await boot(s.run); live.push(N.child);
   return N.up || false;
@@ -1366,7 +1371,7 @@ test.run('nu.js and xi.js change, nu.js twice, 600 ms apart', 0.2, async functio
   if (!up()) return false;
   // THE LOG STARTS HERE (goal/G47.1): the planted suites are written at the start, so in auto each has run once by itself
   // before this world; what the checks below judge is only what these changes start.
-  try { fs.writeFileSync(path.join(s.root, 'runlog.txt'), ''); } catch (e) { return false; }
+  try { fs.rmSync(path.join(s.root, 'runlog.txt'), { force: true }); } catch (e) { return false; }
   append(NU, '// nu, changed\n'); append(XI, '// xi, changed\n'); append(EARLY, '// early, changed\n');
   await sleep(600);
   append(NU, '// nu, changed again\n');
