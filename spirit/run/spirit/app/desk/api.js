@@ -74,7 +74,7 @@ module.exports = {
     'profile.set': { agent: 'id', name: 'name', nick: 'text', included: 'spirit.type.boolean?', cap: 'spirit.type.boolean?', owner: 'spirit.type.boolean?' },
     // goal/G33.7: seen per item, the arrival time of the newest thing he looked at under it.
     'seen.get': { id: 'id' },
-    'seen.set': { id: 'id', at: 'text' },
+    'seen.set': { id: 'id', at: 'spirit.type.number.UTC' },
     signoff: {},
     // goal/G33.8: appServer's streamPublisher (spirit/appServer.js): the caller's key subscribes to the desk's rows, sent to
     // its family of that name; unsubscribe stops it. Who may is the node's grant.

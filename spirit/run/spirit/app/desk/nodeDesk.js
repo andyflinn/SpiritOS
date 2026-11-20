@@ -1223,7 +1223,8 @@ function apply(s, r, b, item, goalOf) {
     // claim-done, applied by the same press() so the two can never drift, and the item keeps the commit it was claimed
     // at; a red claim changes nothing but the commit kept ("they should be red. at the time"). The refusals are at the
     // verb, so a replay only records.
-    case 'seen.set': if (it) it.seenAt = String(b.at || ''); return;
+    // A UTC time, milliseconds since 1970 (goal/G48.4, Q5); anything else on the stream is no time seen.
+    case 'seen.set': if (it) it.seenAt = typeof b.at === 'number' && isFinite(b.at) ? b.at : 0; return;
     case 'claim':
       if (!it) return;
       if (String(b.phase) === 'build') { press(s, it, 'claim-done', r, goalOf, b); it.claimCommit = String(b.commit || ''); }
@@ -2932,23 +2933,21 @@ appServer.serve(withDeskOwners({
   },
   // No state.get or state.set (goal/G33.7, the approved verb list: nothing calls them).
   // SEEN, ONE ROW PER ITEM (goal/G33.7, the approved list: "one row per item, not one growing document"): the arrival
-  // time of the newest thing he has looked at under the item, kept in the item's row.
+  // time of the newest thing he has looked at under the item, kept in the item's row: a UTC time, milliseconds since 1970
+  // (goal/G48.4, Q5, Andy: "times are fucking numbers ... spirit.type.number.UTC"), 0 for none.
   'seen.get': {
-    request: { id: '' }, reply: { at: '' },
-    handler: function (a) { return { at: String(itemFor(walkState(), a).seenAt || '') }; },
+    request: { id: '' }, reply: { at: 0 },
+    handler: function (a) { const at = itemFor(walkState(), a).seenAt; return { at: typeof at === 'number' ? at : 0 }; },
   },
   'seen.set': {
-    request: { id: '', at: '' }, reply: { change: 0 },
+    request: { id: '', at: 0 }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
       const it = itemFor(walkState(), a);
-      // A time, as the desk writes them (ISO 8601), and nothing else: a seen value never grows. One past a time's size is
-      // refused as too large, as every write of text is.
-      const atBytes = Buffer.byteLength(String(a.at || ''), 'utf8');
-      if (atBytes > 64) throw tooLarge(atBytes, 64);
-      if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/.test(String(a.at || ''))) throw refusedWhy('bad-request', 'at is a time like 2026-10-23T12:00:00.000Z');
-      if (String(a.at || '') <= String(it.seenAt || '')) return { change: walkState().change };
-      return { change: write('seen.set', { id: it.id, at: String(a.at), by: w.by, key: w.key }).change };
+      // A UTC time, whole milliseconds (spirit.type.number.UTC); one no newer than the one kept changes nothing.
+      if (typeof a.at !== 'number' || !isFinite(a.at) || Math.floor(a.at) !== a.at) throw refusedWhy('bad-request', 'at is a UTC time, milliseconds since 1970');
+      if (a.at <= (typeof it.seenAt === 'number' ? it.seenAt : 0)) return { change: walkState().change };
+      return { change: write('seen.set', { id: it.id, at: a.at, by: w.by, key: w.key }).change };
     },
   },
 }),

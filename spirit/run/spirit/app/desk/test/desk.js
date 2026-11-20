@@ -332,6 +332,17 @@ test.run('adding a list of paths to an item lands every path of the list on the 
     false;
 }, test.limit.quick);
 
+// SEEN IS A UTC TIME (goal/G48.4, Q5, Andy: "times are fucking numbers ... spirit.type.number.UTC"): seen.set takes
+// milliseconds since 1970, and seen.get answers the newest one set; an older one changes nothing.
+test.run('seen.set takes a UTC time, a number, and seen.get answers the newest', 0.2, async function () {
+  if (!W.up) return false;
+  const t = Date.now();
+  await call('seen.set', { id: 'goal/G100.1', at: t }, CW);
+  await call('seen.set', { id: 'goal/G100.1', at: t - 1000 }, CW);
+  const got = await call('seen.get', { id: 'goal/G100.1' }, CW);
+  return got.at === t || false;
+}, test.limit.quick);
+
 // RULES GO OUT OF DESK (goal/G47.4, box v36; Andy: "Next we kill rules from desk. nobody observes them", "are we ready to
 // strip rules out of desk now?", "go!"): "The rules list on each goal and item goes", "The part that works out which rules
 // apply in which phase goes", "The three rule tables in the desk database (the rules, their drafts, their chat) are no

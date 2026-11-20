@@ -1,5 +1,5 @@
 {
-  "description": "Seen for an item by id: the arrival time of the newest thing Andy looked at under it ('' for none); answers {at}. Refused no-such-item when there is none.",
+  "description": "Seen for an item by id: the arrival time of the newest thing Andy looked at under it, a UTC time in milliseconds since 1970 (0 for none); answers {at}. Refused no-such-item when there is none.",
   "request": {
     "id": "id"
   }
