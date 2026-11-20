@@ -13,7 +13,7 @@ module.exports = {
     // The one table, people and relays (goal/G40.11): a yes-filter per flag.
     search: { q: 'spirit.type.string.lineSelect?', keep: 'spirit.type.boolean?', mine: 'spirit.type.boolean?', relay: 'spirit.type.boolean?', seated: 'spirit.type.boolean?', blocked: 'spirit.type.boolean?' },
     get: { key: 'spirit.type.string.IDNew' },
-    block: { publicKey: 'spirit.type.string.ID', publicLabel: 'name?' },
+    block: { publicKey: 'spirit.type.string.IDNew', publicLabel: 'name?' },
     unblock: { publicKey: 'spirit.type.string.ID' },
     accept: { publicKey: 'spirit.type.string.ID' },
     label: { publicKey: 'spirit.type.string.ID', myLabel: 'spirit.type.string.label' },

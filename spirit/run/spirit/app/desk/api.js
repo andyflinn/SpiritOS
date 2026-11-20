@@ -22,7 +22,7 @@ module.exports = {
     'box.take': { id: 'id' },
     // An empty box is a box: text may be ''.
     'box.write': { id: 'id', text: 'text', version: 'spirit.type.number.integer' },
-    'chat.add': { id: 'id', text: 'spirit.type.string.line' },
+    'chat.add': { id: 'id', text: 'spirit.type.string.paragraph' },
     // Each filter left '' filters nothing; scope is '', goal or items.
     'chat.search': { id: 'id', text: 'spirit.type.string.lineSelect', by: 'text', since: 'spirit.type.number.UTC', before: 'spirit.type.number.UTC', scope: 'text' },
     // kind is C, T, G or Q; words and test may be ''.
