@@ -841,7 +841,7 @@ test.run('the star is put on at home while the stream is still open', 0.2, async
   const sOn = await home(S.N.base, 'contact.faceable', { key: S.S.relayKey, faceable: true });
   return sOn.status === 200 || false;
 }, test.limit.quick);
-test.run('the star sends no catch-up, so what went before it does not come', 0.8, async function () {
+test.run('the faceable mark sends no catch-up, so what went before it does not come WHAT THE FUCK?????', 0.8, async function () {
   if (!streamUp() || !S.j0) return false;
   await sleep(WAIT_MS);
   return (!!S.j0.id && !hears(S.j0.id) && !hears('zzBefore')) || false;
