@@ -37,8 +37,10 @@ function run(words, input) {
   return H.until(function () { return Promise.resolve(p.ended); }, 120000).then(function () { if (!p.ended) { try { kid.kill(); } catch (e) { /* gone */ } } return p; });
 }
 const go = function (line) { return run(line.split(' ')); };
-// A refusal: said in words, and the path left as it was.
-const refused = function (p, before) { return p.ended && (p.code !== 0 || /\S/.test(p.out)) && at() === before; };
+// A refusal: said as an error, and the path left as it was. goal/G48.2, box v12: "errors are return in
+// JSON.stringify(error,null,2) format.": what it prints is one JSON value, printed by JSON.stringify(error, null, 2).
+const asError = function (out) { const t = String(out).trim(); try { const e = JSON.parse(t); return e !== null && typeof e === 'object' && t === JSON.stringify(e, null, 2); } catch (x) { return false; } };
+const refused = function (p, before) { return p.ended && asError(p.out) && at() === before; };
 
 test.run('spirit/console/command.js exists', 0.2, function () {
   return fs.existsSync(path.join(RUN, 'spirit', 'console', 'command.js')) || false;
