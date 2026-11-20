@@ -75,10 +75,29 @@ function inputsMade(file) {
   return made + marked;
 }
 // Its fieldInput.attach calls: those naming a spirit.type.<...> as their rule, and those naming anything else.
+// The element handed may be a call of its own (document.getElementById('x')): its second argument is found past the first
+// comma outside any bracket.
 function typedAttaches(file) {
-  const calls = code(file).match(/\.attach\(\s*[^,()]+,\s*['"][^'"]*['"]/g) || [];
-  const typed = calls.filter(function (k) { return /,\s*['"]spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+['"]$/.test(k); }).length;
-  return { typed: typed, untyped: calls.length - typed };
+  const c = code(file);
+  let typed = 0, untyped = 0;
+  const at = /\.attach\(/g;
+  let m;
+  while ((m = at.exec(c))) {
+    let i = m.index + m[0].length, depth = 0, q = '';
+    for (; i < c.length; i++) {
+      const ch = c[i];
+      if (q) { if (ch === '\\') i++; else if (ch === q) q = ''; continue; }
+      if (ch === '"' || ch === "'" || ch === '`') q = ch;
+      else if (ch === '(' || ch === '[' || ch === '{') depth++;
+      else if (ch === ')' || ch === ']' || ch === '}') { if (depth === 0) break; depth--; }
+      else if (ch === ',' && depth === 0) break;
+    }
+    if (c[i] !== ',') continue;
+    const rule = /^\s*['"]([^'"]*)['"]/.exec(c.slice(i + 1));
+    if (!rule) continue;
+    if (/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule[1])) typed++; else untyped++;
+  }
+  return { typed: typed, untyped: untyped };
 }
 
 // NOBODY ADDS A BRANCH PAST THE RULES: the tree is every file git keeps and every file not yet added that git does not
