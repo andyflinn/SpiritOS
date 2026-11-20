@@ -225,7 +225,7 @@ function classify(rel, broken) {
       }
     } catch (e) { k = null; }
     if (!k) return false;
-    try { await tell(Object.assign({ script: rel }, k, (node && Array.isArray(node.requires)) ? { requires: node.requires } : {})); } catch (e) { return false; }
+    try { await tell(Object.assign({ script: rel }, k, (node && Array.isArray(node.requires)) ? { requires: JSON.stringify(node.requires) } : {})); } catch (e) { return false; }
     return true;
   // Each load inside the scratch node is cut at LOAD_MS.
   }, test.limit.long, { script: rel });

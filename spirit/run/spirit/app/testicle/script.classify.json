@@ -4,6 +4,6 @@
     "script": "spirit.type.string.file",
     "browserOnly": "spirit.type.boolean",
     "nodeOnly": "spirit.type.boolean",
-    "requires": "list?"
+    "requires": "spirit.type.string.json?"
   }
 }

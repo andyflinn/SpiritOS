@@ -5,6 +5,6 @@
     "suite": "spirit.type.string.file",
     "success": "spirit.type.boolean",
     "reason": "text?",
-    "requires": "list?"
+    "requires": "spirit.type.string.json?"
   }
 }

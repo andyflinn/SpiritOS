@@ -257,7 +257,7 @@ async function runAll() {
     reported[script] = true;
     const rec = { script: script, suite: SUITE_FILE, success: held[script] !== false };
     if (!rec.success && reasonOf[script]) rec.reason = reasonOf[script];
-    if (SUITE_FILE === ownSuiteOf(script)) rec.requires = requiresOfSuite(script);
+    if (SUITE_FILE === ownSuiteOf(script)) rec.requires = JSON.stringify(requiresOfSuite(script));
     reportToTesticle(rec, 'suite.success');
   };
   for (let i = 0; ; i++) {

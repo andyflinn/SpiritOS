@@ -156,7 +156,10 @@ const D = {
 // On disc, whatever the scope: in debug mode a script of the scope still requires spirit/spirit.js.
 function dropStale() { D.named.all().forEach(function (r) { let on = false; try { on = fs.statSync(path.join(RUN, r.name)).isFile(); } catch (e) { on = false; } if (!on) D.gone.run(r.name, r.name); }); }
 // The files a script requires, as sent: run paths of production scripts, each once, never the script itself.
-function requiresOf(script, list) {
+// A list comes as JSON in a string (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json").
+function requiresOf(script, sent) {
+  let list = null;
+  try { list = typeof sent === 'string' ? JSON.parse(sent) : null; } catch (e) { list = null; }
   if (!Array.isArray(list)) return [];
   const out = [];
   list.forEach(function (p) {
@@ -1277,7 +1280,7 @@ appServer.serve({
       const stale = !!(job && job.classify && job.hashes && job.hashes[name] !== undefined && job.hashes[name] !== row.hash);
       setClass.run(a.browserOnly === true ? 1 : 0, a.nodeOnly === true ? 1 : 0, stale ? 1 : 0, Date.now(), name);
       // WHAT ITS LOAD PULLED IN, its rows replaced (goal/G47.6, box point 3); a classifier that sends none leaves them.
-      if (Array.isArray(a.requires)) { D.drop.run(name); requiresOf(name, a.requires).forEach(function (r) { D.add.run(name, r); }); }
+      if (typeof a.requires === 'string') { D.drop.run(name); requiresOf(name, a.requires).forEach(function (r) { D.add.run(name, r); }); }
       const now = served(Q.script.get(name));
       tell('script', now, 'updated');
       // Classified: the rows its class rules out leave at once, never shown (Andy: "why do you display -sibling-node suites

@@ -17,7 +17,7 @@ module.exports = {
     // scoped to run://. Named file.get until the rename of the table file to script.
     'script.get': { name: 'spirit.type.string.file' },
     // goal/G47.1, box v94, 1: the classifier's verb: a script row's two flags, browserOnly and nodeOnly, never both.
-    'script.classify': { script: 'spirit.type.string.file', browserOnly: 'spirit.type.boolean', nodeOnly: 'spirit.type.boolean', requires: 'list?' },
+    'script.classify': { script: 'spirit.type.string.file', browserOnly: 'spirit.type.boolean', nodeOnly: 'spirit.type.boolean', requires: 'spirit.type.string.json?' },
     // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
     'suite.search': { script: 'spirit.type.string.fileFilter?', text: 'spirit.type.string.lineFilter' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
@@ -28,7 +28,7 @@ module.exports = {
     'testicle.title': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', oldTitle: 'spirit.type.string.description', title: 'spirit.type.string.description' },
     // goal/G47.1, box v129-131: a suite's success or failure for one script, sent by the reporter once that suite is through
     // with it; the only thing that sets a suite row's outcome.
-    'suite.success': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', success: 'spirit.type.boolean', reason: 'text?', requires: 'list?' },
+    'suite.success': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', success: 'spirit.type.boolean', reason: 'text?', requires: 'spirit.type.string.json?' },
     // goal/G47.1: the current test rows, the failed first, then most severe first; script, suite and result (red or green)
     // each optional, the words narrowing them; from, the rows already held, asks the following answer.
     // Given a test with its script and suite, that test's every row, the newest flip first (its history).
