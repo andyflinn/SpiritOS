@@ -23,6 +23,9 @@ testicle's face is an element of its own"*, *"element/statusBox.js (the monitor 
   current run or not, a suite counted once), and the running suite. **Row 2:** *"<tests reported>: <script file name>"*,
   counting up as the running suite reports. During classification row 1 names the classifier's file and row 2 reads
   *"<n> of <total>"* and the script, n counting up. The numbers are related info, *"watching water boil"*.
+- **Sized** (Andy: *"the icons must be of size 2em. the two numbers, starting the two rows must be fixed width, 6em, right
+  aligned, and invisible when zero."*): the icons at 2em; each row's number in a box of its own (`.testicle-num`), 6em
+  wide, right aligned, hidden at zero with its room kept, its words after it (`.testicle-words`).
 - **No test titles and no results** of suites or tests in the bar; **both rows empty** when no run is active.
 - **The stream:** suites owed and classifications owed, sent when either changes and once to a page as it connects; while
   classifying, the running message names the classifier, its total and its count; no doing text.

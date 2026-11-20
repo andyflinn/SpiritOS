@@ -47,10 +47,12 @@
     // description/title column, that repeats the above information EVERY single time....", then "give a row on top to the full
     // script filename", "give a row on top to the full suite filename", "and eliminate those columns, too."): every row is this
     // test of this script and suite, so the history keeps the flip, the result and the severity.
+    // EACH HEADING ALIGNED AS ITS CELLS (goal/G47.4, Andy: "Column headings should always have the same horizontal alignment
+    // as their column content"): the cells are left, as text is; a table heading the browser would centre is set left too.
     container.innerHTML = '<div class="testicle-history fill" style="overflow:auto"><div data-history="runForm"></div>' +
       '<div data-history="titleForm"></div><div class="testicle-path shell-bubble" data-history="script"></div>' +
       '<div class="testicle-path shell-bubble" data-history="suite"></div><div class="testicle-said" data-history="said"></div>' +
-      '<table class="testicle-flips" data-history="rows"><thead><tr><th>Flipped</th><th>Result</th><th>Severity</th></tr></thead><tbody></tbody></table></div>';
+      '<table class="testicle-flips" data-history="rows"><thead><tr><th style="text-align:left">Flipped</th><th style="text-align:left">Result</th><th style="text-align:left">Severity</th></tr></thead><tbody></tbody></table></div>';
     container.querySelector('[data-history="script"]').textContent = script;
     container.querySelector('[data-history="suite"]').textContent = suite;
     // The title's line, put into row 1 once the row form is loaded.

@@ -31,16 +31,21 @@
   function runningOf(m) {
     try { var r = m && m.running ? JSON.parse(m.running) : null; return r && typeof r === 'object' && (r.suite || r.classifier) ? r : null; } catch (e) { return null; }
   }
-  // The two rows' words for the run going, or two empty rows when none is.
+  // The two rows for the run going, each [number, words] with its number apart, or two empty rows when none is.
   function rowsOf(m) {
     var run = runningOf(m);
-    if (!run) return ['', ''];
+    if (!run) return [['', ''], ['', '']];
     var owed = m.owed && typeof m.owed.suites === 'number' ? m.owed.suites : 0;
-    if (run.classifier) return [W().counted(owed, run.classifier), run.script ? W().classified(Number(run.classified) || 0, Number(run.total) || 0, run.script) : ''];
+    if (run.classifier) return [W().counted(owed, run.classifier), run.script ? W().classified(Number(run.classified) || 0, Number(run.total) || 0, run.script) : ['', '']];
     return [W().counted(owed, run.suite), W().counted(Number(run.tested) || 0, run.script || '')];
   }
 
   var ROW = 'display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3em';
+  // THE NUMBERS AND THE ICONS SIZED (goal/G47.4, Andy: "the icons must be of size 2em. the two numbers, starting the two rows
+  // must be fixed width, 6em, right aligned, and invisible when zero."): each row's number in a box of its own, 6em wide,
+  // right aligned, hidden (its room kept) when it is zero; the icons at 2em.
+  var NUM = 'display:inline-block;width:6em;text-align:right';
+  var ROW_HTML = '<span class="testicle-row" style="' + ROW + '"><span class="testicle-num" style="' + NUM + '"></span><span class="testicle-words"></span></span>';
   function create(container) {
     var gone = false;
     var release = null;
@@ -49,9 +54,9 @@
     var shownMode = null;
     // Its box keeps what it holds inside (overflow hidden); each row one line, ellipsed, never wrapped.
     container.innerHTML = '<div class="testicle-status" style="display:flex;align-items:center;height:2.6em;overflow:hidden;white-space:nowrap">' +
-      '<span class="testicle-icons" style="display:inline-flex;align-items:center;flex:none"><span class="testicle-mode"></span>&nbsp;<span class="testicle-busy"></span>&nbsp;</span>' +
+      '<span class="testicle-icons" style="display:inline-flex;align-items:center;flex:none;font-size:2em;line-height:1.3em"><span class="testicle-mode"></span>&nbsp;<span class="testicle-busy"></span>&nbsp;</span>' +
       '<span class="testicle-rows" style="display:inline-flex;flex-direction:column;flex:1;min-width:0;overflow:hidden">' +
-      '<span class="testicle-row" style="' + ROW + '"></span><span class="testicle-row" style="' + ROW + '"></span></span></div>';
+      ROW_HTML + ROW_HTML + '</span></div>';
     var mode = container.querySelector('.testicle-mode');
     var icon = container.querySelector('.testicle-busy');
     var rows = container.querySelectorAll('.testicle-row');
@@ -71,7 +76,13 @@
       if (glyph !== shown && paint(icon, glyph)) shown = glyph;
       icon.title = busy ? 'working' : 'idle';
       var words = rowsOf(m || {});
-      [0, 1].forEach(function (i) { if (rows[i].textContent !== words[i]) { rows[i].textContent = words[i]; rows[i].title = words[i]; } });
+      [0, 1].forEach(function (i) {
+        var num = rows[i].querySelector('.testicle-num'), say = rows[i].querySelector('.testicle-words'), w = words[i];
+        if (num.textContent !== w[0]) num.textContent = w[0];
+        num.style.visibility = /^0\D*$/.test(w[0]) ? 'hidden' : '';
+        if (say.textContent !== w[1]) say.textContent = w[1];
+        rows[i].title = w[0] + w[1];
+      });
     }
     function drawMode(p) {
       if (gone || !p || typeof p.interactive !== 'boolean') return;
