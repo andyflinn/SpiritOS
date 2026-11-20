@@ -669,7 +669,9 @@ test.run('given no script, a suite of two scripts is answered once', 0.2, async 
 // supplied ... no script in the search query searches tests for any script; the same for suite", "The new verb \"red\"
 // is shorthand for: search all failed, current tests, most severe first", "Most severe first applies to all test
 // searches", "The verb red is testicle.red". G45.1's columns:
-// script (file until the rename), suite, test, flipped, current, verified, tested, judged, severity.
+// script (file until the rename), suite, test, flipped, current, verified, tested, judged, severity. Since goal/G48.4 (Andy:
+// "FLIPPED IS KILLED NOW", "the \"date\" is changed on every report, if the test flips a new row is made current"): no flipped;
+// one date, tested, and a row's own number, id, in its key.
 test.run('testicle.set is served, and testicle.db holds the table testicle', 0.2, async function () {
   if (!up()) return false;
   ts0 = Date.now();
@@ -694,8 +696,8 @@ test.run('a test set for the first time has one row, current', 0.2, function () 
 test.run('the row holds its result and its severity', 0.2, function () {
   return (!!tr1 && yes(tr1.verified) && Number(tr1.severity) === 0.2) || false;
 }, test.limit.quick);
-test.run('the row holds when it flipped and when it was tested, numeric UTC timestamps', 0.2, function () {
-  return (!!tr1 && Number(tr1.flipped) >= ts0 - 1000 && Number(tr1.tested) >= ts0 - 1000 && Number(tr1.tested) <= Date.now()) || false;
+test.run('the row holds one date, when it was tested, a numeric UTC timestamp, and no flipped', 0.2, function () {
+  return (!!tr1 && !('flipped' in tr1) && Number(tr1.tested) >= ts0 - 1000 && Number(tr1.tested) <= Date.now()) || false;
 }, test.limit.quick);
 test.run('the row is judged at the script\'s hash', 0.2, function () {
   if (!k1) return false;
@@ -712,8 +714,8 @@ test.run('the same result again makes no new row', 0.2, async function () {
   tr2 = currentOf(k2, TH, THS, 'theta answers its first question')[0];
   return (testRows(k2, TH, THS, 'theta answers its first question').length === 1 && !!tr2) || false;
 }, test.limit.quick);
-test.run('the current row\'s tested moves, its flipped stays', 0.2, function () {
-  return (!!tr2 && !!tr1 && Number(tr2.tested) >= ts1 && Number(tr2.flipped) === Number(tr1.flipped)) || false;
+test.run('the current row\'s tested moves, and it stays the same row', 0.2, function () {
+  return (!!tr2 && !!tr1 && Number(tr2.tested) >= ts1 && tr2.id !== undefined && tr2.id === tr1.id) || false;
 }, test.limit.quick);
 test.run('a lower severity leaves the row\'s severity as it was', 0.2, function () {
   return (!!tr2 && Number(tr2.severity) === 0.2) || false;
@@ -741,12 +743,12 @@ test.run('a flip makes a second row, and one row alone is current', 0.2, async f
   cur4 = currentOf(k4, TH, THS, 'theta answers its first question');
   return (all4.length === 2 && cur4.length === 1) || false;
 }, test.limit.quick);
-test.run('the new current row holds the new result, flipped now', 0.2, function () {
-  return (cur4.length === 1 && no(cur4[0].verified) && Number(cur4[0].flipped) >= ts2) || false;
+test.run('the new current row holds the new result, tested now, a row of its own', 0.2, function () {
+  return (cur4.length === 1 && !!tr1 && no(cur4[0].verified) && Number(cur4[0].tested) >= ts2 && cur4[0].id !== tr1.id) || false;
 }, test.limit.quick);
 test.run('the row it replaces is kept, current no longer: the history', 0.2, function () {
   const old4 = all4.filter(function (r) { return !yes(r.current); })[0];
-  return (!!old4 && !!tr1 && yes(old4.verified) && Number(old4.flipped) === Number(tr1.flipped)) || false;
+  return (!!old4 && !!tr1 && yes(old4.verified) && old4.id === tr1.id) || false;
 }, test.limit.quick);
 // theta's first question passes again: a third row of it, the history the searches below read. (Its old check, that the
 // needs-testing flag stays, went with the struck line "This cycle does not clear a suite's needs-testing flag".)
@@ -844,7 +846,7 @@ test.run('given a test title, testicle.search answers every row of that test, cu
 }, test.limit.quick);
 test.run('the rows of a given test title come newest first', 0.2, function () {
   if (!up()) return false;
-  const f = hist.map(function (r) { return Number(r.flipped); });
+  const f = hist.map(function (r) { return Number(r.id); });
   return (f.length === 3 && f[0] > f[1] && f[1] > f[2]) || false;
 }, test.limit.quick);
 test.run('given a test title, testicle.search answers only rows of that script, suite and title', 0.2, function () {
