@@ -64,6 +64,8 @@ const ASK_MS = 8000;
 const BATCH = 10;
 // A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
 function has(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
+// A file's code, comments left out. This part's own: de889b3e took it away, and part 2 threw on it, so no test on a node ran.
+function code(file) { let t = ''; try { t = fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 // NOBODY ADDS A BRANCH PAST THE RULES: the tree is every file git keeps and every file not yet added that git does not
 // ignore, so a new app's branch is judged before it is committed.
 const tracked = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
@@ -359,40 +361,41 @@ if (withData.length) {
 }
 
 // ── 3. ON A NODE: SERVED, GATED, FOUND ──────────────────────────────────────────────────────────────────────────────
-// A value no rule of this kind takes, on the wire (spirit.js, THE RULES).
-function wrongFor(rule) {
+// THE VALUES, FROM THE TYPE FILES (Andy's type system): each argument names its type by its full path, spirit.type.<...>,
+// and that file is asked. The wrong value is the first of TRIES its isValid throws for; the good one its defaultValue,
+// or else the first of TRIES it answers true for. The old rule names (text, id, number, ...) are gone from here: their
+// good value "x" failed a real id, so every call was refused for it and the door was never judged.
+const TRIES = [true, 12345, 1.5, 'not a number', 'x', 'yes', 'http://192.0.2.1:9/', 'zz-no-such-file', 'a@b.example', {}, [], '', null];
+function typeOf(rule) {
   const r = String(rule).replace(/\?$/, '');
-  if (r === 'number') return 'not a number';
-  if (r === 'bool') return 'not a bool';
-  if (r === 'object') return 12345;
-  if (r === 'list') return 12345;
-  return true; // every string rule: text, flag, name, description, paragraph, key, path, url, id
+  if (!/^spirit\.type\.[A-Za-z0-9.]+$/.test(r)) return null;
+  try { return require(path.join(RUN, ...r.split('.')) + '.js'); } catch (e) { return null; }
 }
-// A valid-looking value, so that only the argument under test is wrong.
-function goodFor(rule) {
-  const r = String(rule).replace(/\?$/, '');
-  if (r === 'number') return 1;
-  if (r === 'bool') return true;
-  if (r === 'object') return {};
-  if (r === 'list') return [];
-  if (r === 'flag') return 'yes';
-  if (r === 'url') return 'http://192.0.2.1:9/';
-  if (r === 'path') return 'zz-no-such-file';
-  return 'x';
+function takes(T, v) { try { return T.isValid(v) === true; } catch (e) { return false; } }
+// undefined: the type takes every try, or none.
+function wrongFor(T) { return TRIES.find(function (v) { return !takes(T, v); }); }
+function goodFor(T) {
+  let d; try { d = T.defaultValue(); } catch (e) { d = undefined; }
+  if (d !== undefined && takes(T, d)) return d;
+  return TRIES.find(function (v) { return takes(T, v); });
 }
 function asksFor(fam, verb, decl) {
   const out = [];
   if (!decl || typeof decl !== 'object' || Array.isArray(decl)) return out;
   const keys = Object.keys(decl);
+  // An argument with no type file, or with no good or wrong value from it, cannot be judged: the verb is red, never a
+  // vacuous green (a call refused for that argument would pass for one refused for the argument under test).
+  const T = {};
+  keys.forEach(function (k) { T[k] = typeOf(decl[k]); });
+  if (keys.some(function (k) { return !T[k] || goodFor(T[k]) === undefined || wrongFor(T[k]) === undefined; })) return [{ fam: fam, verb: verb, unjudged: true }];
   const base = {};
-  keys.forEach(function (k) { if (!/\?$/.test(String(decl[k]))) base[k] = goodFor(decl[k]); });
+  keys.forEach(function (k) { if (!/\?$/.test(String(decl[k]))) base[k] = goodFor(T[k]); });
   keys.forEach(function (k) {
-    if (typeof decl[k] !== 'string') return;
-    const wrong = Object.assign({}, base); wrong[k] = wrongFor(decl[k]);
+    const wrong = Object.assign({}, base); wrong[k] = wrongFor(T[k]);
     out.push({ fam: fam, verb: verb, args: wrong });
     if (!/\?$/.test(decl[k])) { const miss = Object.assign({}, base); delete miss[k]; out.push({ fam: fam, verb: verb, args: miss }); }
   });
-  out.push({ fam: fam, verb: verb, args:Object.assign({}, base, { zzNoSuchArgument: 1 }) });
+  out.push({ fam: fam, verb: verb, args: Object.assign({}, base, { zzNoSuchArgument: 1 }) });
   return out;
 }
 
@@ -527,7 +530,7 @@ if (served.length) {
         let seen = 0;
         for (let i = 0; i < asks.length; i += BATCH) {
           const batch = asks.slice(i, i + BATCH);
-          const got = await Promise.all(batch.map(function (a) { return raw(a.fam + '.' + a.verb, a.args); }));
+          const got = await Promise.all(batch.map(function (a) { return a.unjudged ? { status: 0 } : raw(a.fam + '.' + a.verb, a.args); }));
           got.forEach(function (r) {
             seen += 1;
             const c = r.body && r.body.code;
@@ -2301,7 +2304,14 @@ else oneFile({});
 }
 
 const PARTS = [generalRules, branchRules, titleRules, noFuckingGarbage, searchRules, testReachRules];
-if (!GIVEN.length) PARTS.forEach(function (part) { part([]); });
+// A PART THAT THROWS IS RED, NEVER SILENT: a throw while a part makes its tests reaches no running test, so testReport
+// let it go and every part after it never ran (de889b3e: part 2 threw, and no test on a node ran for a branch with data).
+function runPart(part, given) {
+  try { part(given); } catch (e) {
+    test.run('its general part ' + part.name + ' makes its tests without throwing', 0.2, function () { return false; }, test.limit.quick);
+  }
+}
+if (!GIVEN.length) PARTS.forEach(function (part) { runPart(part, []); });
 // NO TRACKED FILE NAMES THE DELETED VERIFIER (goal/G47.1, box v101, the cycle that deletes the desk's verifier: no tracked
 // file names it). Over the whole repository, the files outside spirit/run too, by path and by content, in any case. The name
 // is built here, so this file names it nowhere itself.
@@ -2362,4 +2372,4 @@ if (!GIVEN.length) {
     return !starting.length || false;
   }, test.limit.slow);
 }
-else GIVEN.forEach(function (one) { test.forScript(one, function () { PARTS.forEach(function (part) { part([one]); }); }); });
+else GIVEN.forEach(function (one) { test.forScript(one, function () { PARTS.forEach(function (part) { runPart(part, [one]); }); }); });
