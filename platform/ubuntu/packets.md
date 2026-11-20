@@ -1,6 +1,6 @@
 # Packets: ubuntu
 
-20 read-only testicle asks of this node at `f4ceb1e1`, 2026-11-18T13:26:39.608Z, timed by its own traffic log.
+20 read-only testicle asks of this node at `d481e2e9`, 2026-11-19T01:24:31.399Z, timed by its own traffic log.
 
 | | median | worst |
 |---|---|---|
