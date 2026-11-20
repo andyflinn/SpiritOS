@@ -1108,7 +1108,7 @@ test.run('at home the desktop shows Text Editor and Media Viewer', 0.2, async fu
 // starless face shows nothing: "yes"): the relay refuses a face with no star its link home, so its page draws no app
 // of the home desktop at all.
 function noApp(names) { return !!names && A.atHome && A.atHome.length > 0 && !A.atHome.some(function (n) { return OWN.indexOf(n) === -1 && names.indexOf(n) !== -1; }); }
-test.run('with no star, the face draws none of the apps of the home desktop', 0.8, async function () {
+test.run('with no faceable mark on the relay, the face draws none of the apps of the home desktop, WHAT THE FUCK!!!!!!!!', 0.8, async function () {
   if (!browsing()) return false;
   A.plain = await desktop(A.chrome, A.FACE);
   return noApp(A.plain) || false;
