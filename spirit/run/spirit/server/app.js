@@ -1202,8 +1202,8 @@ module.exports = {
 };
 
 // THE NODE STARTS EVERY SERVER PROCESS THROUGH THE LAUNCHER, THE APP'S SCRIPT AFTER --app (goal/G48.5, the box: "the node starts
-// every server process as \"node spirit/server.js --app <script>\""; before it goal/G43.32, decided 9: "for one-shot servers, appClient
-// launches appServer with the argument \"spirit/app/<name>/name.js\", then the appServer module \"requires\" that script"):
+// every server process as "node spirit/server.js --app <script>""; before it goal/G43.32, decided 9: "for one-shot servers, appClient
+// launches appServer with the argument "spirit/app/<name>/name.js", then the appServer module "requires" that script"):
 // spirit/server.js hands its --app here with the arguments as they stand after it, so the script stands where it always stood
 // (argv[1]), is required through spirit.require, and serves through serve() above, where each call is checked by its api.js.
 function start(script) {

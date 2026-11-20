@@ -579,7 +579,7 @@ test.run('a relay the launcher starts with --relay, whose store cannot open, exi
 // The old paths, spelled in pieces so that this file names none of them itself.
 const OLD_PATHS = ['spirit/' + 'appServer.js', 'spirit/' + 'relayServer.js', 'spirit/' + 'serveCommon.js', 'node' + 'Agent.js', 'node' + 'Chat.js', 'node' + 'Desk.js', 'node' + 'Icons.js'];
 const OLD_FILES = ['spirit/' + 'appServer.js', 'spirit/' + 'relayServer.js', 'spirit/' + 'serveCommon.js', 'spirit/app/agent/node' + 'Agent.js', 'spirit/app/chat/node' + 'Chat.js', 'spirit/app/desk/node' + 'Desk.js', 'spirit/app/icons/node' + 'Icons.js'];
-test.run('no tracked file names an old path: spirit/server/app.js, spirit/server/relay.js, spirit/server/serveCommon.js or a node<Name>.js', 0.4, function () {
+test.run('no tracked file names an old path: none of the three moved core files, none of the four node<Name>.js', 0.4, function () {
   const REPO = path.resolve(RUN, '..', '..');
   const hits = OLD_PATHS.filter(function (p) { try { execL('git', ['grep', '-l', '-F', p], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }); return true; } catch (e) { return false; } });
   return !hits.length || false;
