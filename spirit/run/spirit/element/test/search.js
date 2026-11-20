@@ -95,6 +95,36 @@ require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window
 // The element, once the first test has run its file.
 let PS = null;
 
+// EVERY SEARCH IS A VIEW OF A spirit.data BRANCH (goal/G48.4; the browser rule: "its searches are each made with a
+// spirit.data branch, no rows of their own"): the search takes no rows of its own, so each list here is made with a branch
+// of the real spirit.data (spirit/data.js, which runs in node), and the rows it shows are written into that branch.
+// branchOf(rows) makes a branch holding them; fill(branch, rows) makes it hold those rows, in that order, and no other.
+function loadData() { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'spirit/data.js' }); return window.spirit.data; }
+let REAL_DATA = loadData();
+let BRANCHES = 0;
+function rowOf(r) { const v = Object.assign({}, r); delete v.key; return v; }
+function fill(b, rows) {
+  const D = window.spirit.data;
+  const want = (rows || []).map(function (r) { return String(r.key); });
+  const had = Object.keys(D.branchAt(b) || {});
+  had.filter(function (k) { return want.indexOf(k) === -1; }).forEach(function (k) { D.delPath(b + '/' + k); });
+  // A branch keeps its rows in the order they were first written: rows already there are rewritten in place when the order
+  // still holds, else every row is written anew, in order.
+  const kept = had.filter(function (k) { return want.indexOf(k) !== -1; });
+  const inPlace = kept.join('\n') === want.slice(0, kept.length).join('\n');
+  if (!inPlace) kept.forEach(function (k) { D.delPath(b + '/' + k); });
+  (rows || []).forEach(function (r) { D.setPath(b + '/' + r.key, rowOf(r)); });
+}
+function branchOf(rows) { const b = 'searchTest/search/b' + (++BRANCHES); fill(b, rows); return b; }
+// The same two on a page, over the page's own spirit.data (spirit.js loads spirit/data.js as it gets ready): window.__fill and
+// window.__branchOf, put on the page before a search is made there.
+const PAGE_DATA = 'window.__nb = window.__nb || 0; ' +
+  'window.__fill = function (b, rows) { var D = window.spirit.data; var want = (rows || []).map(function (r) { return String(r.key); }); ' +
+  'var had = Object.keys(D.branchAt(b) || {}); had.filter(function (k) { return want.indexOf(k) === -1; }).forEach(function (k) { D.delPath(b + "/" + k); }); ' +
+  'var kept = had.filter(function (k) { return want.indexOf(k) !== -1; }); if (kept.join("|") !== want.slice(0, kept.length).join("|")) kept.forEach(function (k) { D.delPath(b + "/" + k); }); ' +
+  '(rows || []).forEach(function (r) { var v = Object.assign({}, r); delete v.key; D.setPath(b + "/" + r.key, v); }); return b; }; ' +
+  'window.__branchOf = function (rows) { window.__nb += 1; return window.__fill("searchTest/search/p" + window.__nb, rows); }; ';
+
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 
 // ── the stubs ──────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -287,7 +317,7 @@ test.run('no words, or no text, give no marks', 0.2, function () {
 }, test.limit.quick);
 // ── create: the list on a page ──────────────────────────────────────────────────────────────────────────────────────
 // What the tests make, shared by the tests after them.
-let page, A, picks, c1, L, head, cleared, pick0, order0, e, calls0, ek, lent, why, n0, lentLater, n1, drawn, SRC,
+let B1, B6, page, A, picks, c1, L, head, cleared, pick0, order0, e, calls0, ek, lent, why, n0, lentLater, n1, drawn, SRC,
   asked, refuse, bound, SP, cs, Ls, refused, co, Lo, cd, Ld, cn, n2, Ln, c2, c3, L3, c4, A4, L4, fhtml, fWords, u4,
   before4, c4b, u4b, c4c, u4c, bF, preF, clsF, stF, bN, preN, clsN, stN, bD, preD, clsD, stD, s1, s2, c11, A11, p11,
   h11, b11, u11, asked11, c12, s3, u12, c5, det, pk5, folding, c6, made, destroyed, page6, L6, watched, seatedIn,
@@ -298,7 +328,8 @@ test.run('the pane draws its field, its search and clear buttons and its list', 
   A = source('srv');
   picks = [];
   c1 = container();
-  L = PS.create(c1, { search: A.search, published: A.published, server: 'srv', verb: 'search', rows: function () { return page; },
+  B1 = branchOf(page);
+  L = PS.create(c1, { search: A.search, published: A.published, server: 'srv', verb: 'search', data: B1,
     columns: [{ field: 'name', label: 'Name', sort: 'text' }, { field: 'size', sort: 'number' }, { field: 'note' }],
     args: function (text, values) { return { q: text, v: values }; }, pick: function (row, key) { picks.push([row, key]); }, empty: 'No one.' });
   return (c1.get('text') && c1.get('list') && c1.get('search') && c1.get('clear')) ? true : false;
@@ -401,6 +432,7 @@ test.run('sorting with no field clears the sort', 0.2, function () {
 test.run('a row the page no longer has is gone from the list', 0.2, function () {
   // create: the page's rows come and go
   page = [{ key: 'z', name: 'zed', size: 10 }, { key: 'b', name: 'bert', size: 2 }];
+  fill(B1, page);
   L.redraw();
   return (c1.shown().indexOf('q') === -1) ? true : false;
 }, test.limit.quick);
@@ -412,6 +444,7 @@ test.run('the page\'s rows stand in the page\'s order', 0.2, function () {
 }, test.limit.quick);
 test.run('a row the page brings back stands again', 0.2, function () {
   page = [{ key: 'q', name: 'quinn', size: 5 }].concat(page);
+  fill(B1, page);
   L.redraw();
   return (c1.shown().indexOf('q') !== -1) ? true : false;
 }, test.limit.quick);
@@ -540,6 +573,7 @@ test.run('destroy stops listening to publishes', 0.2, async function () {
 test.run('after destroy nothing draws and nothing is asked', 0.2, async function () {
   drawn = c1.get('list').innerHTML;
   page = [{ key: 'new', name: 'newcomer' }];
+  fill(B1, page);
   L.redraw();
   c1.type('ne');
   await tick();
@@ -573,7 +607,7 @@ test.run('typing asks srv.search on the family spirit.ready holds', 0.2, async f
       function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; });
   };
   cs = container();
-  Ls = PS.create(cs, { server: 'srv', verb: 'search', rows: function () { return []; }, columns: [{ field: 'name' }] });
+  Ls = PS.create(cs, { server: 'srv', verb: 'search', data: branchOf([]), columns: [{ field: 'name' }] });
   cs.type('ro');
   await tick();
   await tick();
@@ -596,7 +630,7 @@ test.run('a family not on spirit.ready is bound by requiring its family path thr
   refuse = null;
   Ls.destroy();
   co = container();
-  Lo = PS.create(co, { server: 'other', verb: 'find', rows: function () { return []; }, columns: [{ field: 'name' }] });
+  Lo = PS.create(co, { server: 'other', verb: 'find', data: branchOf([]), columns: [{ field: 'name' }] });
   co.type('x');
   await tick();
   await tick();
@@ -606,7 +640,7 @@ test.run('a family not on spirit.ready is bound by requiring its family path thr
 test.run('a dotted verb is a path into the family', 0.2, async function () {
   Lo.destroy();
   cd = container();
-  Ld = PS.create(cd, { server: 'desk', verb: 'items.search', rows: function () { return []; }, columns: [{ field: 'name' }] });
+  Ld = PS.create(cd, { server: 'desk', verb: 'items.search', data: branchOf([]), columns: [{ field: 'name' }] });
   cd.type('g');
   await tick();
   await tick();
@@ -617,7 +651,7 @@ test.run('with neither a source nor a server and verb it asks nobody', 0.2, asyn
   Ld.destroy();
   cn = container();
   n2 = asked.length;
-  Ln = PS.create(cn, { rows: function () { return []; }, columns: [{ field: 'name' }] });
+  Ln = PS.create(cn, { data: branchOf([]), columns: [{ field: 'name' }] });
   cn.type('y');
   await tick();
   await tick();
@@ -631,7 +665,7 @@ test.run('with nothing to show it shows its empty words', 0.2, function () {
   delete SP.outcome;
   // create: an empty list, and no rows given
   c2 = container();
-  PS.create(c2, { rows: function () { return []; }, empty: 'No one.' });
+  PS.create(c2, { data: branchOf([]), empty: 'No one.' });
   return (/No one\./.test(c2.get('list').innerHTML)) ? true : false;
 }, test.limit.quick);
 test.run('with no rows function and no data it draws nothing at once', 0.2, function () {
@@ -648,7 +682,7 @@ test.run('the filters are drawn as buttons', 0.2, function () {
   c4 = container();
   A4 = source('s');
   L4 = PS.create(c4, { search: A4.search, server: 's', verb: 'v', columns: [{ field: 'name' }],
-    rows: function () { return [{ key: 'a', name: 'a', mine: true, kind: 'x', n: 9 }, { key: 'b', name: 'b', mine: false, kind: 'y', n: 1 }]; },
+    data: branchOf([{ key: 'a', name: 'a', mine: true, kind: 'x', n: 9 }, { key: 'b', name: 'b', mine: false, kind: 'y', n: 1 }]),
     filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function (row, v) { return v ? (row.mine ? 1 : 0) : 1; } },
       { name: 'kind', multi: true, choices: [{ value: 'x', word: 'X' }, { value: 'y', word: 'Y' }], test: function (row, v) { return v[row.kind] ? 0 : 1; } },
       { name: 'size', choices: [{ value: 'all', word: 'All' }, { value: 'big', word: 'Big' }], test: function (row, v) { return v === 'big' ? (row.n > 5 ? 1 : 0) : 1; } }] });
@@ -684,7 +718,7 @@ let c4k = null;
 test.run('a keepOne multi choice pressed goes off while another is still on', 0.2, function () {
   c4k = container();
   PS.create(c4k, { search: source('s').search, server: 's', verb: 'v', columns: [{ field: 'name' }],
-    rows: function () { return [{ key: 'a', name: 'a', kind: 'x' }, { key: 'b', name: 'b', kind: 'y' }]; },
+    data: branchOf([{ key: 'a', name: 'a', kind: 'x' }, { key: 'b', name: 'b', kind: 'y' }]),
     filters: [{ name: 'kind', multi: true, keepOne: true, choices: [{ value: 'x', word: 'X' }, { value: 'y', word: 'Y' }], test: function (row, v) { return v[row.kind] ? 0 : 1; } }] });
   c4k.fire('click', { target: filterTarget('kind', 'x') });
   return (c4k.shown().join() === 'b') ? true : false;
@@ -713,13 +747,13 @@ test.run('a press that redraws the filters keeps their 🗜', 0.2, function () {
 }, test.limit.quick);
 test.run('with no filters there is no filter row and no 🗜, and 🔎 starts the search row', 0.2, function () {
   c4b = container();
-  PS.create(c4b, { rows: function () { return [{ key: 'a', name: 'a' }]; }, columns: [{ field: 'name' }] });
+  PS.create(c4b, { data: branchOf([{ key: 'a', name: 'a' }]), columns: [{ field: 'name' }] });
   u4b = upToInput(c4b);
   return (u4b === '🔎') ? true : false;
 }, test.limit.quick);
 test.run('in a dropdown\'s pane 🗜 starts the filter row and 🔎 the search row alike', 0.2, function () {
   c4c = container();
-  PS.create(c4c, { face: 'dropdown', placeholder: 'pick one', rows: function () { return [{ key: 'a', name: 'a' }]; }, columns: [{ field: 'name' }],
+  PS.create(c4c, { face: 'dropdown', placeholder: 'pick one', data: branchOf([{ key: 'a', name: 'a' }]), columns: [{ field: 'name' }],
     filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function () { return 1; } }] });
   u4c = upToInput(c4c);
   return (u4c !== null && /^[^🗜🔎]*🗜Mine🔎$/u.test(u4c)) ? true : false;
@@ -810,7 +844,7 @@ test.run('each selector it is handed is mounted in the search', 0.2, async funct
   c11 = container();
   A11 = source('s');
   PS.create(c11, { search: A11.search, server: 's', verb: 'v', columns: [{ field: 'name' }],
-    rows: function () { return [{ key: 'a', name: 'a', who: 'ann', kind: 'x' }, { key: 'b', name: 'b', who: 'bob', kind: 'y' }]; },
+    data: branchOf([{ key: 'a', name: 'a', who: 'ann', kind: 'x' }, { key: 'b', name: 'b', who: 'bob', kind: 'y' }]),
     selectors: [{ name: 'who', element: s1, test: function (row) { return !s1.value || row.who === s1.value ? 1 : 0; } },
       { name: 'kind', element: s2, test: function (row) { return !s2.value || row.kind === s2.value ? 1 : 0; } }],
     filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function () { return 1; } }] });
@@ -862,7 +896,7 @@ test.run('with no selectors there is no 🪣 row', 0.2, function () {
 test.run('a dropdown\'s pane alike shows 🪣 and its selector, no filter row, then 🔎', 0.2, async function () {
   c12 = container();
   s3 = selEl();
-  PS.create(c12, { face: 'dropdown', placeholder: 'pick', columns: [{ field: 'name' }], rows: function () { return [{ key: 'a', name: 'a' }]; },
+  PS.create(c12, { face: 'dropdown', placeholder: 'pick', columns: [{ field: 'name' }], data: branchOf([{ key: 'a', name: 'a' }]),
     selectors: [{ name: 'who', element: s3, test: function () { return 1; } }] });
   await tick();
   u12 = upToInput(c12);
@@ -874,7 +908,7 @@ test.run('a press that fold claims opens nothing and picks nothing, and the row 
   det = [];
   pk5 = [];
   folding = true;
-  PS.create(c5, { rows: function () { return [{ key: 'a', name: 'a' }]; }, columns: [{ field: 'name' }],
+  PS.create(c5, { data: branchOf([{ key: 'a', name: 'a' }]), columns: [{ field: 'name' }],
     fold: function () { return folding; }, details: function (row, key, el) { det.push([row, key, el]); }, pick: function (row, key) { pk5.push(key); } });
   c5.fire('click', { target: rowTarget('a') });
   return (det.length === 0 && pk5.length === 0 && c5.current() === 'a') ? true : false;
@@ -890,7 +924,8 @@ test.run('a row\'s element is made once per key', 0.2, function () {
   made = 0;
   destroyed = 0;
   page6 = [{ key: 'a', name: 'ann' }];
-  L6 = PS.create(c6, { rows: function () { return page6; }, columns: [{ field: 'name' }],
+  B6 = branchOf(page6);
+  L6 = PS.create(c6, { data: B6, columns: [{ field: 'name' }],
     element: function (row, key) { made += 1; return { key: key, row: Object.assign({}, row), apply: function (r) { Object.assign(this.row, r); }, mount: function () {}, destroy: function () { destroyed += 1; } }; } });
   L6.redraw();
   L6.redraw();
@@ -901,6 +936,7 @@ test.run('a row with an element leaves its cells to the element', 0.2, function 
 }, test.limit.quick);
 test.run('a page row\'s new values reach the element it already has', 0.2, function () {
   page6 = [{ key: 'a', name: 'anne' }];
+  fill(B6, page6);
   L6.redraw();
   return (made === 1) ? true : false;
 }, test.limit.quick);
@@ -915,6 +951,7 @@ test.run('with data its rows are the branch\'s, drawn at once', 0.2, function ()
   unwatched = 0;
   // The branch as spirit/data.js holds it, id -> fields: the search reads a view's rows by branchAt (goal/G47.4), each filed
   // by its id there.
+  REAL_DATA = window.spirit.data;
   window.spirit.data = { branchAt: function (type) { return type === 'people' ? { p1: { name: 'pia' } } : {}; },
     seatRows: function (type, items) { seatedIn.push([type, items]); },
     watchPath: function (type, fn) { watched.push([type, fn]); return function () { unwatched += 1; }; } };
@@ -964,17 +1001,17 @@ test.run('over the real spirit.data, two rows filed apart in the branch but shar
   await tick();
   const shown = c7b.shown().length;
   L.destroy();
-  delete window.spirit.data;
+  window.spirit.data = REAL_DATA;
   return (shown === 2) ? true : false;
 }, test.limit.quick);
 test.run('a dropdown starts shut, its list not drawn', 0.2, function () {
-  delete window.spirit.data;
+  window.spirit.data = REAL_DATA;
   // create: the dropdown
   c8 = container();
   pk8 = [];
   heard0 = docHeard.length;
   L8 = PS.create(c8, { face: 'dropdown', placeholder: 'pick one', all: 'everyone', columns: [{ field: 'name' }],
-    rows: function () { return [{ key: 'a', name: 'ann' }, { key: 'b', name: 'bo' }]; }, name: function (row) { return 'N:' + row.name; },
+    data: branchOf([{ key: 'a', name: 'ann' }, { key: 'b', name: 'bo' }]), name: function (row) { return 'N:' + row.name; },
     details: function () { throw new Error(); }, pick: function (row, key) { pk8.push([row, key]); } });
   return (c8.get('popup').hidden === true && c8.get('list').innerHTML === '') ? true : false;
 }, test.limit.quick);
@@ -1066,7 +1103,8 @@ test.run('once loaded, with nothing preloaded, it draws and ranks: typing ze put
   threw = null;
   c10 = container();
   try {
-    made10 = P2.create(c10, { search: source('srv').search, server: 'srv', verb: 'search', rows: function () { return [{ key: 'b', name: 'bert' }, { key: 'z', name: 'zed' }]; },
+    loadData();
+    made10 = P2.create(c10, { search: source('srv').search, server: 'srv', verb: 'search', data: branchOf([{ key: 'b', name: 'bert' }, { key: 'z', name: 'zed' }]),
       columns: [{ field: 'name', label: 'Name', sort: 'text' }], args: function (t) { return { q: t }; } });
     c10.type('ze');
   } catch (e) { threw = true; }
@@ -1149,10 +1187,10 @@ async function keptPart() {
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
       'var b = document.createElement("div"); b.id = "zzKept"; b.style.cssText = "position:absolute;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column"; document.body.appendChild(b); ' +
-      HANDS + '; ' +
-      'K.rows = ' + JSON.stringify(FIVE) + '; ' +
+      HANDS + '; ' + PAGE_DATA +
+      'K.rows = ' + JSON.stringify(FIVE) + '; K.b = window.__branchOf(K.rows); ' +
       'K.who = document.createElement("span"); K.who.value = ""; ' +
-      'K.list = spirit.element.spirit.element.search.create(b, { rows: function () { return K.rows; }, columns: [{ field: "name", label: "Name", sort: "text" }, { field: "n", label: "N", sort: "number" }], ' +
+      'K.list = spirit.element.spirit.element.search.create(b, { data: K.b, columns: [{ field: "name", label: "Name", sort: "text" }, { field: "n", label: "N", sort: "number" }], ' +
       '  filters: [{ name: "kind", multi: true, keepOne: true, choices: [{ value: "red", word: "red" }, { value: "green", word: "green" }], test: function (row, off) { var o = off || {}; return row && !o[row.kind] ? 1 : 0; } }], ' +
       '  selectors: [{ name: "who", element: K.who, test: function (row) { return !K.who.value || row.who === K.who.value ? 1 : 0; } }] }); ' +
       'return new Promise(function (r) { setTimeout(r, 300); }).then(function () { K.mark(); K.watch(); K.firstTable = K.table(); return K.trs().length === 5 ? "made" : null; }); }, function () { return null; })');
@@ -1187,7 +1225,7 @@ async function keptPart() {
   // the box: "a new record adds its one row at its place"
   test.run('a new record adds its one row, and the five row elements already drawn stay the same', 0.2, async function () {
     if (!ok()) return false;
-    await ev('K.rows = K.rows.concat([{ key: "c", name: "cat", who: "y", kind: "green", n: 9 }]); K.list.redraw(); return true;');
+    await ev('K.rows = K.rows.concat([{ key: "c", name: "cat", who: "y", kind: "green", n: 9 }]); window.__fill(K.b, K.rows); K.list.redraw(); return true;');
     await sleep(300);
     const notSame = await ev('return K.same(' + JSON.stringify(FIVE_KEYS) + ');');
     return !notSame.length || false;
@@ -1206,7 +1244,7 @@ async function keptPart() {
   // the box: "a changed record repaints its own row"
   test.run('a changed record repaints its own row with its new text, in the same element', 0.2, async function () {
     if (!ok()) return false;
-    await ev('K.rows = K.rows.map(function (r) { return r.key === "d" ? Object.assign({}, r, { n: 33 }) : r; }); K.list.redraw(); return true;');
+    await ev('K.rows = K.rows.map(function (r) { return r.key === "d" ? Object.assign({}, r, { n: 33 }) : r; }); window.__fill(K.b, K.rows); K.list.redraw(); return true;');
     await sleep(300);
     const t = await ev('return K.text("d");');
     const notSame = await ev('return K.same(["d"]);');
@@ -1488,10 +1526,10 @@ async function popupPart() {
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     // Each box cuts off what overflows it (overflow hidden), and stands under a sibling drawn later on the same spot's level.
     made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
-      'var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, name: "row " + i }); window.__z = {}; ' +
+      PAGE_DATA + 'var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, name: "row " + i }); window.__z = {}; ' +
       '[["a", 40, 100], ["b", 500, 100], ["low", 40, window.innerHeight - 70]].forEach(function (x) { var b = document.createElement("div"); b.id = "zz-" + x[0]; ' +
       'b.style.cssText = "position:absolute;left:" + x[1] + "px;top:" + x[2] + "px;width:320px;height:48px;overflow:hidden;border:1px solid"; document.body.appendChild(b); ' +
-      'spirit.element.spirit.element.search.create(b, { face: "dropdown", rows: function () { return rows; }, columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
+      'spirit.element.spirit.element.search.create(b, { face: "dropdown", data: window.__branchOf(rows), columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
       'window.__z[x[0]] = { box: b, list: b.querySelector("[id$=list]"), field: b.querySelector("[id$=field]") }; }); ' +
       'var cover = document.createElement("div"); cover.id = "zz-cover"; cover.style.cssText = "position:absolute;left:0;top:160px;width:900px;height:200px;background:#333;z-index:20"; document.body.appendChild(cover); ' +
       'return Object.keys(window.__z).every(function (k) { return !!window.__z[k].list && !!window.__z[k].field; }) ? "made" : null; }, function () { return null; })');
@@ -1642,7 +1680,7 @@ async function tilesPart() {
   const type = async function (w) { await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(w) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()'); await sleep(500); };
   test.run('the tiles face draws one tile per row', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
-    await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; window.__plainTile = function (row, key) { var n = document.createElement("div"); n.className = "app-icon"; var ic = document.createElement("span"); ic.className = "icon"; ic.textContent = row.icon || ""; var bar = document.createElement("div"); bar.className = "tile-bar"; var lb = document.createElement("span"); lb.className = "label"; lb.textContent = row.label || ""; n.appendChild(ic); n.appendChild(bar); n.appendChild(lb); n.addEventListener("click", function () { (window.__picked = window.__picked || []).push(key); }); return n; }; window.__made = window.spirit.element.spirit.element.search.create(d, { face: "tiles", tile: window.__plainTile, rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
+    await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; ' + PAGE_DATA + ' window.__rowsB = window.__branchOf(window.__rows); window.__plainTile = function (row, key) { var n = document.createElement("div"); n.className = "app-icon"; var ic = document.createElement("span"); ic.className = "icon"; ic.textContent = row.icon || ""; var bar = document.createElement("div"); bar.className = "tile-bar"; var lb = document.createElement("span"); lb.className = "label"; lb.textContent = row.label || ""; n.appendChild(ic); n.appendChild(bar); n.appendChild(lb); n.addEventListener("click", function () { (window.__picked = window.__picked || []).push(key); }); return n; }; window.__made = window.spirit.element.spirit.element.search.create(d, { face: "tiles", tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
     await until(function () { return js('window.__box.querySelectorAll(".app-icon").length > 0'); }, 3000);
     plain = await read();
     // "the same ranked rows, drawn as tiles", "No column headers or sorting"
@@ -1671,7 +1709,7 @@ async function tilesPart() {
   // SUPPOSED TO, GID OR NO GRID!!!!!!!!!!!!!!"). Forty rows in a 400 by 240 px box, once as tiles, once as the list: nothing
   // of it is drawn below the box, and the rows that do not fit are reached by scrolling inside it.
   const contained = async function (face) {
-    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); var made = window.spirit.element.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', tile: window.__plainTile, rows: function () { return rows; }, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
+    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); ' + PAGE_DATA + ' var rowsB = window.__branchOf(rows); var made = window.spirit.element.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', tile: window.__plainTile, data: rowsB, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
       ' return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var box = d.getBoundingClientRect(); var lowest = 0; [].forEach.call(d.querySelectorAll("*"), function (e) { var b = e.getBoundingClientRect(); if (!b.width || !b.height) return; var cut = false; for (var p = e.parentElement; p && p !== d; p = p.parentElement) { var o = getComputedStyle(p).overflowY; if ((o === "auto" || o === "scroll" || o === "hidden") && b.bottom > p.getBoundingClientRect().bottom + 1) { cut = true; break; } } if (!cut) lowest = Math.max(lowest, Math.round(b.bottom)); });' +
       ' var scrolls = [].some.call([d].concat([].slice.call(d.querySelectorAll("*"))), function (e) { var o = getComputedStyle(e).overflowY; return (o === "auto" || o === "scroll") && e.scrollHeight > e.clientHeight + 1; }); var out = { boxBottom: Math.round(box.bottom), lowest: lowest, scrolls: scrolls }; made.destroy(); d.remove(); return JSON.stringify(out); }); })()'));
   };
@@ -1836,11 +1874,11 @@ async function tilesPart() {
   test.run('a pane stays a table with headers', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // "Any list can use it": the other two faces stay
-    pane = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:500px;height:200px"; window.spirit.element.spirit.element.search.create(d, { rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }] }); return new Promise(function (r) { setTimeout(function () { var n = JSON.stringify({ tiles: d.querySelectorAll(".app-icon").length, headers: d.querySelectorAll("th").length }); d.remove(); r(n); }, 300); }); })()');
+    pane = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:500px;height:200px"; window.spirit.element.spirit.element.search.create(d, { data: window.__rowsB, columns: [{ field: "label", label: "Label" }] }); return new Promise(function (r) { setTimeout(function () { var n = JSON.stringify({ tiles: d.querySelectorAll(".app-icon").length, headers: d.querySelectorAll("th").length }); d.remove(); r(n); }, 300); }); })()');
     pn = JSON.parse(pane);
     return (pn.tiles === 0 && pn.headers > 0) ? true : false;
   }, test.limit.quick);
-  const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.element.spirit.element.search.create(d, Object.assign({ tile: window.__plainTile, rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
+  const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.element.spirit.element.search.create(d, Object.assign({ tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
   const drop = function () { return js('(function () { if (window.__t) window.__t.remove(); return true; })()'); };
   const toggles = function () { return js('window.__t.querySelectorAll(".list-toggle").length'); };
   test.run('a dropdown has no toggle, even with a tile part', 0.2, async function () {
@@ -1906,7 +1944,7 @@ async function tilesPart() {
   // row's (wsl and cw, agreed under the item); the node takes its own press. ──
   const makeT = function (o) {
     return js('(function () { if (window.__t) window.__t.remove(); var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__tilePressed = []; window.__tPicked = []; ' +
-      'var o = Object.assign({ rows: function () { return window.__rows; }, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__tPicked.push(key); } }, ' + JSON.stringify(o) + '); ' +
+      'var o = Object.assign({ data: window.__rowsB, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__tPicked.push(key); } }, ' + JSON.stringify(o) + '); ' +
       (o.withTile ? 'o.tile = function (row, key) { var n = document.createElement("div"); n.className = "zz-tile"; n.setAttribute("data-key", key); n.textContent = "tile " + key; n.addEventListener("click", function () { window.__tilePressed.push(key); }); return n; }; ' : '') +
       'delete o.withTile; window.__tl = window.spirit.element.spirit.element.search.create(d, o); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()');
   };

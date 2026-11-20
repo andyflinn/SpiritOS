@@ -64,7 +64,9 @@ draws and ranks.
 
 - **Drawing**:
   - It draws its search field, its list and its filters into the container.
-  - With `rows()` or `data`, it draws at once.
+  - With `data`, a branch of spirit.data, it draws at once (goal/G48.4; the browser rule: *"its searches are each made
+    with a spirit.data branch, no rows of their own"*). Every list in this test is made with a branch of the real
+    spirit.data (`spirit/data.js`), the rows it shows written into that branch; it takes no rows of its own.
   - Each row is a `tr` with `data-key`, its cells marked by `matchRanges`.
   - With no row to show, it shows `empty`, or "Nothing matches.".
 - **Typing**:
@@ -83,8 +85,8 @@ draws and ranks.
 - **ask**:
   - `ask(verb, args)` lends the wire. It resolves the answer's body.
   - It rejects a failed one with its error.
-- **The page's own rows**:
-  - `rows()` or `data` (`spirit.data.rowsOf`) join the cache.
+- **The branch's rows**:
+  - The rows of its `data` branch (`spirit.data.branchAt`) join the cache.
   - A row the page no longer has is gone from the list.
   - With `data`, the answers are seated into it, and its watch redraws.
 - **Headers**:
