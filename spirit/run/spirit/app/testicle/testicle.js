@@ -502,7 +502,7 @@ function nextJob() {
     if (!j.classify) j.runNames = runNames();
     j.mark = String(process.pid) + '-' + Date.now() + '-' + Math.random().toString(36).slice(2);
     j.launchedAt = Date.now();
-    j.kid = spawn(process.execPath, args, { cwd: RUN, env: Object.assign({}, process.env, extra || {}, { [RUN_MARK]: j.mark }), stdio: 'ignore', windowsHide: true });
+    j.kid = spawn(process.execPath, args, { cwd: RUN, env: Object.assign({}, process.env, extra || {}, { [RUN_MARK]: j.mark }), stdio: ['ignore', 'ignore', 'ignore', 'ipc'], windowsHide: true });
     j.kid.on('error', end);
     j.kid.on('exit', function (code) { j.exitCode = code; end(); });
   };
@@ -575,7 +575,7 @@ function killJob(j) {
   if (job !== j) { logError('killJob: the job had already ended', null); return; }
   j.killed = true;
   // A classifying run killed: its end fails every script it had not classified (jobEnded).
-  if (j.classify) { if (j.kid) { try { j.kid.kill(); } catch (e) { logError('killJob: the kill', e); } } return; }
+  if (j.classify) { if (j.kid) killTree(j, 'killJob'); return; }
   const at = scriptAt(j);
   j.killedAt = at;
   // A script removed while the run went takes no failure either (as testicle.set refuses it, wsl's red 3f6832e6).
@@ -834,11 +834,28 @@ function processesOf(j) {
 }
 function endPids(pids) { pids.forEach(function (p) { try { process.kill(p, 'SIGKILL'); } catch (e) { /* gone */ } }); }
 // A STOP OR A KILL TAKES THE TREE: what the run started is found while the suite still runs, then all of it ended.
+// ASKED FIRST, KILLED ONLY AFTER (goal/G48.4; Andy: "WHY THE FUCK ARE TEST RUNS STILL LITTERING SHIT ALL OVER THE PLACE!!!???",
+// then "step 1 for now. and we continue."): the run is sent a stop message on its channel, so its test.after cleanups run and
+// it ends by itself (testReport.js); what is still alive STOP_GRACE_MS later, or once it ended, is killed. A message, never a
+// signal: on Windows a process cannot catch one, and it would die with its cleanups unrun.
+const STOP_GRACE_MS = 5000;
 function killTree(j, who) {
-  processesOf(j).then(function (pids) {
-    endPids(pids);
-    try { j.kid.kill('SIGKILL'); } catch (e) { logError(who + ': the kill', e); }
-  }, function () { try { j.kid.kill('SIGKILL'); } catch (e) { logError(who + ': the kill', e); } });
+  processesOf(j).then(function (pids) { askThenEnd(j, pids, who); }, function () { askThenEnd(j, [], who); });
+}
+function askThenEnd(j, pids, who) {
+  const kid = j.kid;
+  const over = function () { return kid.exitCode !== null || kid.signalCode !== null; };
+  let done = false;
+  const finish = function () {
+    if (done) return;
+    done = true;
+    endPids(pids.filter(alive));
+    if (!over()) { try { kid.kill('SIGKILL'); } catch (e) { logError(who + ': the kill', e); } }
+  };
+  if (over()) { finish(); return; }
+  kid.once('exit', function () { setTimeout(finish, 500); });
+  try { if (kid.connected) kid.send({ stop: true }); } catch (e) { logError(who + ': the stop message', e); }
+  setTimeout(finish, STOP_GRACE_MS);
 }
 function judgeLeftovers(j) {
   if (!j || j.classify || j.batch || j.stopped || !j.script || !/\.js$/.test(j.suite) || !j.kid) return;
