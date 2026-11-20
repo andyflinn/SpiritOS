@@ -30,7 +30,7 @@ test.run('nothing of face/ is left: its files moved into shell/', 0.2, function 
   return !left.length || false;
 }, test.limit.quick);
 // goal/G43.18 (Andy: "i want all vital files under run://spirit/"): the boot, the page and their files are in spirit/shell/,
-// served at the addresses they always had (spirit/serveCommon.js, PAGE_FILES).
+// served at the addresses they always had (spirit/server/serveCommon.js, PAGE_FILES).
 test.run('the seal, the sheets, the icons and the pages are in spirit/shell/, spirit.js in spirit/', 0.2, function () {
   const moved = ['spirit/shell/seal.js', 'spirit/shell/face.css', 'spirit/shell/favicon.svg', 'spirit/shell/face.html', 'spirit/shell/shell.css', 'spirit/shell/ghost.svg', 'spirit/spirit.js'].filter(function (p) { return !fs.existsSync(path.join(RUN, p)); });
   return !moved.length || false;

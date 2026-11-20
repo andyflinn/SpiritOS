@@ -76,7 +76,7 @@ module.exports = {
     'seen.get': { id: 'spirit.type.string.deskId' },
     'seen.set': { id: 'spirit.type.string.deskId', at: 'spirit.type.number.UTC' },
     signoff: {},
-    // goal/G33.8: appServer's streamPublisher (spirit/appServer.js): the caller's key subscribes to the desk's rows, sent to
+    // goal/G33.8: appServer's streamPublisher (spirit/server/app.js): the caller's key subscribes to the desk's rows, sent to
     // its family of that name; unsubscribe stops it. Who may is the node's grant.
     // run and since (goal/G41.12): the subscriber's position, the run of the desk and the number of the last row it took
     // in it; the desk's log hands what came after, or the desk pushes in full.

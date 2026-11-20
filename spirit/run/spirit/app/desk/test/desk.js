@@ -180,7 +180,7 @@ function pretendNode() {
       if (!answer && sl) {
         let got = null; try { got = JSON.parse(sl.json); } catch (e) { got = null; }
         posts.push({ to: String(b.to), json: sl.json, got: got });
-        // A delivery is one bundle of entries (spirit/appServer.js, goal/G41.12): { run, n, row, full? }, or the end of a
+        // A delivery is one bundle of entries (spirit/server/app.js, goal/G41.12): { run, n, row, full? }, or the end of a
         // full push, { run, n, full: true, end: true }. sent holds each entry's row, and the end entry as it is.
         const rows = entriesOf(got).map(function (e) { return e && e.row && typeof e.row === 'object' ? Object.assign({ entry: e }, e.row) : e; });
         rows.forEach(function (row) { sent.push({ to: String(b.to), row: row }); });
@@ -379,7 +379,7 @@ test.run('an item answers no rules and no phase rules', 0.2, async function () {
   return (!!it && !('rules' in it) && !('phaseRules' in it)) || false;
 }, test.limit.quick);
 // THE LISTENER AND THE PUBLISHER'S VERBS, AUTO-VERBS OF EVERY appServer (goal/G47.5; Andy: "the streamListener must be an
-// auto-verb of spirit/appServer.js!", "they're both auto-verbs. MUST BE.", "PLEASE call the damn thing jus \"listener\", we
+// auto-verb of spirit/server/app.js!", "they're both auto-verbs. MUST BE.", "PLEASE call the damn thing jus \"listener\", we
 // won't start using camelCase on intrinsic verbs"): the desk, a publisher only, names listener, subscribe, unsubscribe and
 // remote in its api tree in server mode, and no streamListener.
 test.run('the desk names listener, subscribe, unsubscribe and remote in its api tree in server mode, and no streamListener', 0.2, async function () {

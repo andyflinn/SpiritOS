@@ -576,10 +576,10 @@
 | spirit/appClient.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:20.936Z |
 | spirit/appClient.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T11:03:12.334Z |
 | spirit/appClient.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:46.350Z |
-| spirit/appServer.js | spirit/test/appServer.js | 1 | 1 | 0 | 2026-11-18T11:22:44.259Z |
-| spirit/appServer.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:20.962Z |
-| spirit/appServer.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T11:03:12.826Z |
-| spirit/appServer.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T11:04:16.644Z |
+| spirit/server/app.js | spirit/server/test/app.js | 1 | 1 | 0 | 2026-11-18T11:22:44.259Z |
+| spirit/server/app.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:20.962Z |
+| spirit/server/app.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T11:03:12.826Z |
+| spirit/server/app.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T11:04:16.644Z |
 | spirit/arrivals.js | spirit/test/arrivals.js | 4 | 4 | 0 | 2026-11-18T03:48:17.484Z |
 | spirit/arrivals.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:20.991Z |
 | spirit/arrivals.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T11:03:13.323Z |
@@ -1233,10 +1233,10 @@
 | spirit/relayRequest.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:24.501Z |
 | spirit/relayRequest.js | spirit/test/spirit-sibling-general.js | 33 | 33 | 0 | 2026-11-15T22:17:16.514Z |
 | spirit/relayRequest.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:53.037Z |
-| spirit/relayServer.js | spirit/test/relayServer.js | 219 | 219 | 0 | 2026-11-16T12:26:46.158Z |
-| spirit/relayServer.js | spirit/test/scriptClassify.js | 2 | 0 | 2 | 2026-11-18T23:54:24.516Z |
-| spirit/relayServer.js | spirit/test/spirit-sibling-general.js | 33 | 33 | 0 | 2026-11-15T22:17:16.880Z |
-| spirit/relayServer.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:53.276Z |
+| spirit/server/relay.js | spirit/server/test/relay.js | 219 | 219 | 0 | 2026-11-16T12:26:46.158Z |
+| spirit/server/relay.js | spirit/test/scriptClassify.js | 2 | 0 | 2 | 2026-11-18T23:54:24.516Z |
+| spirit/server/relay.js | spirit/test/spirit-sibling-general.js | 33 | 33 | 0 | 2026-11-15T22:17:16.880Z |
+| spirit/server/relay.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:53.276Z |
 | spirit/relayStatus.js | spirit/test/relayStatus.js | 12 | 12 | 0 | 2026-11-16T08:09:41.601Z |
 | spirit/relayStatus.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:24.538Z |
 | spirit/relayStatus.js | spirit/test/spirit-sibling-general.js | 33 | 33 | 0 | 2026-11-15T22:17:17.271Z |
@@ -1277,10 +1277,10 @@
 | spirit/sendMail/mailgun.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:24.673Z |
 | spirit/sendMail/mailgun.js | spirit/test/spirit-sibling-general.js | 33 | 33 | 0 | 2026-11-15T22:17:20.826Z |
 | spirit/sendMail/mailgun.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:53.727Z |
-| spirit/serveCommon.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:24.689Z |
-| spirit/serveCommon.js | spirit/test/serveCommon.js | 37 | 37 | 0 | 2026-11-18T03:54:56.598Z |
-| spirit/serveCommon.js | spirit/test/spirit-sibling-general.js | 33 | 33 | 0 | 2026-11-15T22:17:21.310Z |
-| spirit/serveCommon.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:53.777Z |
+| spirit/server/serveCommon.js | spirit/test/scriptClassify.js | 2 | 1 | 1 | 2026-11-18T23:54:24.689Z |
+| spirit/server/serveCommon.js | spirit/server/test/serveCommon.js | 37 | 37 | 0 | 2026-11-18T03:54:56.598Z |
+| spirit/server/serveCommon.js | spirit/test/spirit-sibling-general.js | 33 | 33 | 0 | 2026-11-15T22:17:21.310Z |
+| spirit/server/serveCommon.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T07:16:53.777Z |
 | spirit/server.js | spirit/test/scriptClassify.js | 2 | 0 | 2 | 2026-11-18T23:54:24.704Z |
 | spirit/server.js | spirit/test/server.js | 72 | 72 | 0 | 2026-11-18T03:56:07.149Z |
 | spirit/server.js | spirit/test/spirit-sibling-general.js | 33 | 33 | 0 | 2026-11-15T22:17:21.866Z |
@@ -1827,7 +1827,7 @@
 - `spirit/appClient.js` `spirit/test/appClient.js` the run that answered the tree has ended (severity 0.2, 2026-11-16T08:05:03.018Z)
 - `spirit/appClient.js` `spirit/test/appClient.js` there are never two runs of icons.js at once (severity 0.2, 2026-11-16T08:05:04.123Z)
 - `spirit/appClient.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:20.936Z)
-- `spirit/appServer.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:20.962Z)
+- `spirit/server/app.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:20.962Z)
 - `spirit/arrivals.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:20.991Z)
 - `spirit/auth/api.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:21.016Z)
 - `spirit/auth/data.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:21.037Z)
@@ -1993,10 +1993,10 @@
 - `spirit/job.js` `spirit/test/job.js` a second script in a node run app's folder is refused with a code (severity 0.8, 2026-11-18T23:06:47.202Z)
 - `spirit/job.js` `spirit/test/job.js` a second script in a node run app's folder never ran (severity 0.8, 2026-11-18T23:06:47.217Z)
 - `spirit/job.js` `spirit/test/job.js` a second start while it runs is refused, "already running" (severity 0.7, 2026-11-18T23:07:58.240Z)
-- `spirit/job.js` `spirit/test/job.js` a spirit/appServer.js outside this node's tree, given before a node run app, is refused with a code (severity 0.8, 2026-11-18T23:06:47.246Z)
-- `spirit/job.js` `spirit/test/job.js` a spirit/appServer.js outside this node's tree, given before a node run app, never ran (severity 0.8, 2026-11-18T23:06:47.277Z)
-- `spirit/job.js` `spirit/test/job.js` a spirit/appServer.js planted inside an app folder of this node, given before a node run app, is refused with a code (severity 0.8, 2026-11-18T23:06:47.293Z)
-- `spirit/job.js` `spirit/test/job.js` a spirit/appServer.js planted inside an app folder of this node, given before a node run app, never ran (severity 0.8, 2026-11-18T23:06:47.325Z)
+- `spirit/job.js` `spirit/test/job.js` a spirit/server/app.js outside this node's tree, given before a node run app, is refused with a code (severity 0.8, 2026-11-18T23:06:47.246Z)
+- `spirit/job.js` `spirit/test/job.js` a spirit/server/app.js outside this node's tree, given before a node run app, never ran (severity 0.8, 2026-11-18T23:06:47.277Z)
+- `spirit/job.js` `spirit/test/job.js` a spirit/server/app.js planted inside an app folder of this node, given before a node run app, is refused with a code (severity 0.8, 2026-11-18T23:06:47.293Z)
+- `spirit/job.js` `spirit/test/job.js` a spirit/server/app.js planted inside an app folder of this node, given before a node run app, never ran (severity 0.8, 2026-11-18T23:06:47.325Z)
 - `spirit/job.js` `spirit/test/job.js` after its run ended, a new run is the same id, spirit.app.zzRun, running again (severity 0.7, 2026-11-18T23:08:03.097Z)
 - `spirit/job.js` `spirit/test/job.js` an app whose json does not say node run true is refused with a code (severity 0.8, 2026-11-18T23:06:47.010Z)
 - `spirit/job.js` `spirit/test/job.js` an app whose json does not say node run true never ran (severity 0.8, 2026-11-18T23:06:47.063Z)
@@ -2150,8 +2150,8 @@
 - `spirit/relayKeys.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.471Z)
 - `spirit/relayLimits.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.486Z)
 - `spirit/relayRequest.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.501Z)
-- `spirit/relayServer.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.516Z)
-- `spirit/relayServer.js` `spirit/test/scriptClassify.js` it loads, so it can be classified (severity 0.8, 2026-11-18T23:52:55.272Z)
+- `spirit/server/relay.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.516Z)
+- `spirit/server/relay.js` `spirit/test/scriptClassify.js` it loads, so it can be classified (severity 0.8, 2026-11-18T23:52:55.272Z)
 - `spirit/relayStatus.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.538Z)
 - `spirit/relayStore.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.553Z)
 - `spirit/relayStore.js` `spirit/test/spirit-sibling-general.js` every file in a test folder matches a production file: none is garbage (severity 0.4, 2026-11-15T22:17:17.695Z)
@@ -2169,7 +2169,7 @@
 - `spirit/seenPeers.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.644Z)
 - `spirit/sendMail.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.659Z)
 - `spirit/sendMail/mailgun.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.673Z)
-- `spirit/serveCommon.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.689Z)
+- `spirit/server/serveCommon.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.689Z)
 - `spirit/server.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.704Z)
 - `spirit/server.js` `spirit/test/scriptClassify.js` it loads, so it can be classified (severity 0.8, 2026-11-18T23:52:55.440Z)
 - `spirit/shell/boot.js` `spirit/test/scriptClassify.js` classifyable (severity 0.8, 2026-11-18T23:54:24.728Z)

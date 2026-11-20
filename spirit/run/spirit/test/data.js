@@ -579,7 +579,7 @@ test.run('appServer writes each sender\'s cache to its own file on disk', 0.2, f
 }, test.limit.quick);
 test.run('no other module writes a cache file of its own', 0.2, function () {
   cachesRead();
-  const writers = C.tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && f !== 'spirit/appServer.js' && /cache[^'"]*\.json/.test(cacheCode(path.join(RUN, f))) && /writeFile/.test(cacheCode(path.join(RUN, f))); });
+  const writers = C.tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && f !== 'spirit/server/app.js' && /cache[^'"]*\.json/.test(cacheCode(path.join(RUN, f))) && /writeFile/.test(cacheCode(path.join(RUN, f))); });
   return !writers.length ? true : false;
 }, test.limit.quick);
 

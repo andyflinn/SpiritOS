@@ -85,7 +85,7 @@ implied by the URL, Leaving \"DEBUG/\" out"*, so an element's own test can open 
 
 - `/DEBUG/spirit/element/test/workBench.md` answers 200 with that file as it is.
 - Only a file inside a `test/` folder: `/DEBUG/spirit/element/workBench.js` (the element's own script) and
-  `/DEBUG/spirit/serveCommon.js` are refused.
+  `/DEBUG/spirit/server/serveCommon.js` are refused.
 - Refused: no such generator and no such file (`/DEBUG/spirit/element/test/noSuchPage.html`); a test file asked with a
   forwarded-from header.
 
@@ -121,7 +121,7 @@ A lab node reset to the files under test (goal/G47.3), on servers of their own, 
 delete things, so neither Andy's node nor an agent's is touched.
 
 - The node: `spirit/server.js`, its DEBUG switched by its own verb, `node.debug { debug: { on } }`.
-- The relay: `spirit/relayServer.js`, in a process whose spirit object is switched on before the relay loads
+- The relay: `spirit/server/relay.js`, in a process whose spirit object is switched on before the relay loads
   (`spirit.debug(true)`): the relay's DEBUG verb is the owner's, by a signed packet, and a scratch relay has no owner.
   A second relay, not switched, is the DEBUG-off case.
 

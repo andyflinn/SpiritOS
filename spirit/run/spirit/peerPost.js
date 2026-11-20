@@ -1812,7 +1812,7 @@ function createPeerPost(opts) {
     var id = auth.nameIdentity(rootDir, name);
     // server.js fills the description on every boot; this stays for one
     // emptied by hand. A caption must never be the reason a claim fails.
-    try { spirit.require('spirit/serveCommon.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the claim still goes */ }
+    try { spirit.require('spirit/server/serveCommon.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the claim still goes */ }
     var body = {
       name: name,
       publicKey: id.publicKey,
@@ -1900,7 +1900,7 @@ function createPeerPost(opts) {
     }
     return keyed.then(function (key) {
       var mine = me();
-      try { spirit.require('spirit/serveCommon.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the join still goes */ }
+      try { spirit.require('spirit/server/serveCommon.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the join still goes */ }
       var card = nodeCard.describe(rootDir);
       var body = code
         ? { joinConfirm: { code: String(code), card: card } }

@@ -17,7 +17,7 @@ require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.require('spirit/appServer.js');
+const appServer = spirit.require('spirit/server/app.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');

@@ -177,7 +177,7 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     out.peerRan = globalThis.peerCodeRan === true;
     out.peerOwn = typeof both[0].hello === 'function' && typeof both[0].peerOnly === 'undefined';
     // THE STREAM'S AUTO-VERBS ON EVERY FAMILY (goal/G47.5; Andy: "both: \"publisher\" and \"listener\" belong in
-    // spirit/appServer.js", "they're both auto-verbs. MUST BE."): demo's api.js names none, yet its branch has listener,
+    // spirit/server/app.js", "they're both auto-verbs. MUST BE."): demo's api.js names none, yet its branch has listener,
     // subscribe and unsubscribe, as it has remote, and a call of listener goes to the peer as demo.listener.
     out.peerAuto = ['listener', 'subscribe', 'unsubscribe', 'remote'].filter(function (v) { return typeof both[0][v] === 'function'; });
     let posted = null;

@@ -67,7 +67,7 @@ test.run('DEBUG is appServer\'s verb and is not listed', 0.2, function () {
 // every verb it lists is one the server serves
 test.run('each verb listed is a handler of desk.js, or, for subscribe and unsubscribe, of appServer\'s streamPublisher', 0.2, function () {
   if (!W.api) return false;
-  const source = ['spirit/app/desk/nodeDesk.js', 'spirit/appServer.js']
+  const source = ['spirit/app/desk/nodeDesk.js', 'spirit/server/app.js']
     .map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   // A handler is a key of the verb table ('box.write': {, block: {), or appServer's all.<verb> = {.
   const unserved = W.names.filter(function (v) { return !new RegExp('[\'"]' + esc(v) + '[\'"]\\s*:|^\\s*' + esc(v) + '\\s*:|\\ball\\.' + esc(v) + '\\s*=', 'm').test(source); });

@@ -1,8 +1,8 @@
 'use strict';
 // The spirit object first, as the global spirit (goal/G40.1): it takes what it needs from spirit.
-require('./spirit.js');
+require('../spirit.js');
 
-// spirit/run/spirit/appServer.js
+// spirit/run/spirit/server/app.js
 // THE SERVER-SIDE REQUEST ROUTER — appPair/G1.2.
 //
 //   Andy, 2026-09-28: "the appServer is the request-router server-side".
@@ -390,7 +390,7 @@ function reportDebug() {
 // cut short is asked for again from where the client stood.
 const crypto = require('crypto');
 // The run root, where spirit.js sits: a family folder and a cache are found from here, never from the working folder.
-const RUN_ROOT = path.resolve(__dirname, '..');
+const RUN_ROOT = path.resolve(__dirname, '..', '..');
 
 // ── listener: A SERVER FOLLOWS ANOTHER SERVER'S STREAM (goal/G33.4, box v40) ──────
 //
@@ -432,7 +432,7 @@ function dataSet() {
 const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
 // THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28): its name the key as spirit.data names the node, <node id>.json.
-// ITS FOLDER IS spirit/state/<name>/cache/ (goal/G43.20; Andy: "cache, which is written by spirit/appServer.js was ALWAYS
+// ITS FOLDER IS spirit/state/<name>/cache/ (goal/G43.20; Andy: "cache, which is written by spirit/server/app.js was ALWAYS
 // supposed to go into spirit/state/<name>/cache/", "NO FUCKING RESCUE CODE"): read and written there and nowhere else; a
 // file left at an older place is not read, and is rebuilt from the stream.
 function cacheDir() { return path.join(RUN_ROOT, 'spirit', 'state', following.name, 'cache'); }
@@ -612,7 +612,7 @@ function withStreamListener(verbs, stream, followed, name) {
 
 // ── streamPublisher: subscribe, unsubscribe, and the one publish (goal/G33.8, box v8) ──────
 //
-//   Andy: "spirit/appServer.js should provide both, a client (listener) interface and a server (streamPublisher)
+//   Andy: "spirit/server/app.js should provide both, a client (listener) interface and a server (streamPublisher)
 //   interface", "the server part of it accepts connections from streamListeners in form of "ID-key.api-family" where
 //   the ID is implicit by the requestor, and then the publish function fans out and publishes to it's OWN id the way it
 //   always has and to the connected peer id's via peerPosts to ID-family-listener"; "Subscribe and unsubscribe are
@@ -823,7 +823,7 @@ function withAgents(verbs, script) {
 // EVERY CALL CHECKED BY THE APP'S api.js, IN THE APP'S OWN PROCESS (goal/G43.32, the box, decided 9). Andy: "the arguments
 // for an API call MUST be validated twice: a) on the browser ... b) ON THE FUCKING NODE ... and it MUST be the same code",
 // and "appClient.js has no business running or parsing code. that must be done by the plugin. i don't care if it's
-// spirit/appServer.js, since it'll crash with the server process and leave the node intact." So the same spirit.check the
+// spirit/server/app.js, since it'll crash with the server process and leave the node intact." So the same spirit.check the
 // page runs, against the branch's api.js where spirit.require placed it (spirit.required.spirit.app.<name>.api), before the
 // handler. THE AUTO-VERBS' ARGUMENTS NAME THEIR TYPES TOO (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*";
 // Andy: "aren't there more undefined args?"): appServer's own DEBUG, listener and remote, which no api.js declares, are
@@ -941,7 +941,7 @@ function refreshRemote() {
   }, function () { /* the list stands as it was */ }).then(function () { remote.refreshing = false; });
 }
 // EVERY SERVER HAS A listener, AN AUTO-VERB (goal/G47.5; Andy: "the listener must be an auto-verb of
-// spirit/appServer.js!"; box v12: "the replies and reply stream data ... also published to its own faces"): one that
+// spirit/server/app.js!"; box v12: "the replies and reply stream data ... also published to its own faces"): one that
 // follows no stream of its own (the desk) is given siblingListener below, which takes the chosen sibling's deliveries
 // alone, in client mode, and hands each row to this node's pages. On a switch the sibling is granted <server>.listener
 // and asked to subscribe this server. A server that follows a stream uses its own (heard, above).
@@ -1067,7 +1067,7 @@ function serve(verbs, opts) {
   try {
     // goal/G33.8: both halves, the stream it publishes (withPublisher) and the streams it listens to (withStreamListener).
     // THE PUBLISHER AND THE LISTENER ON EVERY SERVER (goal/G47.5; Andy: "both: \"publisher\" and \"listener\" belong in
-    // spirit/appServer.js"): a server that names no publisher publishes with no bootstrap, so any server can be a sibling
+    // spirit/server/app.js"): a server that names no publisher publishes with no bootstrap, so any server can be a sibling
     // that a remote in client mode subscribes to; withRemote gives every server its listener.
     listenersName = name;
     verbs = withDebug(withRemote(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), (opts && opts.publisher) || {}), argv[1]), name));
@@ -1201,15 +1201,12 @@ module.exports = {
   RESERVED: RESERVED,
 };
 
-// THE NODE STARTS EVERY APP SERVER AS THIS FILE, THE APP'S SCRIPT AFTER IT (goal/G43.32, the box, decided 9; Andy: "for
-// one-shot servers, appClient launches appServer with the argument "spirit/app/<name>/name.js", then the appServer module
-// "requires" that script"): node spirit/appServer.js <the app's script> <its arguments>. The script then stands where it
-// always stood in the arguments (argv[1]), is required through spirit.require, and serves through serve() above, where each
-// call is checked by its api.js before its handler.
-if (require.main === module) {
-  const script = process.argv[2];
-  if (!script) { console.error('appServer: no app script; the node starts an app server as appServer.js <script>'); process.exit(2); }
-  process.argv.splice(1, 1);
+// THE NODE STARTS EVERY SERVER PROCESS THROUGH THE LAUNCHER, THE APP'S SCRIPT AFTER --app (goal/G48.5, the box: "the node starts
+// every server process as \"node spirit/server.js --app <script>\""; before it goal/G43.32, decided 9: "for one-shot servers, appClient
+// launches appServer with the argument \"spirit/app/<name>/name.js\", then the appServer module \"requires\" that script"):
+// spirit/server.js hands its --app here with the arguments as they stand after it, so the script stands where it always stood
+// (argv[1]), is required through spirit.require, and serves through serve() above, where each call is checked by its api.js.
+function start(script) {
   spirit.require(path.relative(RUN_ROOT, path.resolve(script)).split(path.sep).join('/'));
 }
-
+module.exports.start = start;

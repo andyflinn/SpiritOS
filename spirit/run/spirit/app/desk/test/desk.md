@@ -43,7 +43,7 @@ THEY SHOULD NOT EXIST."*
   off is refused the box (taken, the cap's why), and an agent with cap on takes it under the one-write hold. A box write
   below red offers nothing.
 
-- **Every push ends with its end entry**, `{ run, n, full: true, end: true }` (spirit/appServer.js, the stream
+- **Every push ends with its end entry**, `{ run, n, full: true, end: true }` (spirit/server/app.js, the stream
   protocol of goal/G41.12), once, after its last row (Q5: the push has landed whole).
 - **Not required, so not checked**: a catch-up from a desk change number (a subscribe's position is the publisher's
   `(run, since)`, goal/G41.12), and a subscriber kept after a failed delivery (Andy: "take the 3 seconds out,

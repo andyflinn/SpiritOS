@@ -33,7 +33,7 @@ and this file.
   what it caught; a process that ends with nothing caught has loaded, whatever its exit code (an app server that exits at
   once, *"no --state"*, has loaded).
 - *"a load that is not complete in 3 seconds counts as crash/hang: not classifyable"*, on either side.
-- *"classify hard-codes server.js and relayServer.js as node-only"*: `spirit/server.js` and `spirit/relayServer.js` are
+- *"classify hard-codes server.js and relayServer.js as node-only"*: `spirit/server.js` and `spirit/server/relay.js` are
   never loaded.
 - One test per script, titled `it loads, so it can be classified`, severity 0.8 (*"its severity is 0.8"*), reported for that script (testReport's
   `opts.script`). Classified, it tells the node's testicle by `testicle.script.classify {script, browserOnly, nodeOnly}`

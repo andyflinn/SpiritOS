@@ -32,7 +32,7 @@ function folderGone(dir) {
 
 // WHAT WENT, NOW IN THE DESK'S OWN TEST (goal/G47.4; Andy: "you make bloody well sure that such stupid hard-coded tests move to
 // app-child-* immediately, or whatever is fucking appropriate"; cw: these "are about desk and deskClient themselves, not about
-// the app server"): moved here from spirit/test/appServer.js. Box v15, what goes: the desk keeps no bundled() of its own;
+// the app server"): moved here from spirit/server/test/app.js. Box v15, what goes: the desk keeps no bundled() of its own;
 // goal/G41.24, Andy: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself."
 function deskFiles(dir) { const out = []; (function walk(d) { fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) { const f = path.join(d, e.name); if (e.isDirectory()) { if (e.name !== 'test' && e.name !== 'node_modules') walk(f); } else if (/\.(js|json)$/.test(e.name)) out.push(f); }); }(dir)); return out; }
 test.run('the desk server has no bundled() of its own', 0.2, function () {

@@ -91,7 +91,7 @@ app; `zzMount`, an app without node run) and a script in no app folder. Never a 
 goal/G43.20, its box. job.js makes each app's folder and starts its server. Andy: *"WSL, YOU BETTER MAKE FUCKING SURE YOU
 GUARD FUCKING spirit/state/<name>/ and the rules relating to where things belong in that folder, AND you better not
 fucking cheat with the fucking tests!!!!!!!!!!!!!!!!!!!!"*, *"put those in spirit/state/<name>/ since they belong to the
-node."*, *"cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"*,
+node."*, *"cache, which is written by spirit/server/app.js was ALWAYS supposed to go into spirit/state/<name>/cache/"*,
 *"app data, which is written by the app, was ALWAYS supposed to go into spirit/state/<name>/data/"*.
 
 A real node on a lab node reset to the files under test (goal/G47.3) with no `run:/process` and no `relay-state` in it; every app whose

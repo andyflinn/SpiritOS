@@ -33,7 +33,7 @@ require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.require('spirit/appServer.js');
+const appServer = spirit.require('spirit/server/app.js');
 const limits = spirit.require('spirit/limits.js');
 const VENDORED_FOLDERS = spirit.require('spirit/fileSystem.js').VENDORED_FOLDERS;
 const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
@@ -910,7 +910,7 @@ const server = appServer.serve({
   // No history.search (goal/G47.1, Q16): no record of asks is kept, so there is none to search.
   // THE CACHE DUMP (goal/G41.11): a fixed file name for it. Owner-only like every verb here: the cache as it stands, saved
   // now, to appServer's cache file of the desk (goal/G41.12), spirit/state/deskClient/cache/<the desk's node id>.json
-  // (goal/G43.20: "cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"), the one the cache is read
+  // (goal/G43.20: "cache, which is written by spirit/server/app.js was ALWAYS supposed to go into spirit/state/<name>/cache/"), the one the cache is read
   // back from, and nowhere else; it takes no path, so a caller cannot name one.
   'cache.dump': {
     request: {}, reply: { file: '', bytes: 0 },
@@ -943,7 +943,7 @@ const server = appServer.serve({
   'signed-off': { status: 409, text: 'this agent is signed off' },
 } });
 
-// SUBSCRIBED TO THE DESK (goal/G33.8): appServer's client half (spirit/appServer.js server.subscribe): the desk setDesk
+// SUBSCRIBED TO THE DESK (goal/G33.8): appServer's client half (spirit/server/app.js server.subscribe): the desk setDesk
 // named, from the start and whenever setDesk names one, as family deskClient of the desk's family.
 // WITH THE POSITION IT HOLDS (goal/G41.11; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do
 // desk, (re-use that verb) with the position number as argument"): since goal/G41.12 appServer's own, the desk's run

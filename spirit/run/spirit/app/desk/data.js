@@ -18,7 +18,7 @@
 //               its own read (took), and the side rows the desk pushes keep it current from then on.
 //   deskState/current  the goal the stream last pushed whole;  deskState/change  the newest change number heard
 // The rows come as jobs of module spirit/app/desk: in the page as the desk's publishes, in a server that follows the
-// desk's stream (deskClient) through appServer's listener (spirit/appServer.js), which hands each row in exactly so.
+// desk's stream (deskClient) through appServer's listener (spirit/server/app.js), which hands each row in exactly so.
 // One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim); the
 // stream's bundles are appServer's, which hands their rows in one by one (goal/G41.12).
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.

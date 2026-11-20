@@ -1,4 +1,4 @@
-# spirit/appServer.js
+# spirit/server/app.js
 
 The app server of a node's process (goal/G19.1): it serves a server's verbs on its pipe, publishes its stream to its
 pages and subscribers (streamPublisher), and follows another server's stream into its own data set (listener,
@@ -51,7 +51,7 @@ stream"); Desk and deskClient move onto it.
   with a limit in bytes (4 MB per sender when not given). Without it no cache file is kept.
 - **Per sender, under the run root** (where spirit.js sits; goal/G41.28, box v19: *"this way an appServer in
   client-mode can derive the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"*):
-  `spirit/state/<client server>/cache/<sender key>.json` (goal/G43.20: *"cache, which is written by spirit/appServer.js was
+  `spirit/state/<client server>/cache/<sender key>.json` (goal/G43.20: *"cache, which is written by spirit/server/app.js was
   ALWAYS supposed to go into spirit/state/<name>/cache/"*), saved as it changes and read back into the data set at start,
   before any subscribe. The key is written in base64url (Andy, on G41.28: *"Shall the server key in spirit.data and in the
   cache file name be base64url (- for +, _ for /), since a plain base64 / splits both?"* *"yes"*): no `+`, no `/`,
@@ -143,7 +143,7 @@ The node starting a server from `spirit/app/<name>/` is `./job.js`'s, its mount 
 
 ## The stateCache part: its cache in spirit/state/<name>/cache/
 
-goal/G43.20, its box. Its test, once `./appServer-stateCache.js`, is a section of `./appServer.js`. Andy: *"cache, which is written by spirit/appServer.js was ALWAYS supposed to go into
+goal/G43.20, its box. Its test, once `./appServer-stateCache.js`, is a section of `./appServer.js`. Andy: *"cache, which is written by spirit/server/app.js was ALWAYS supposed to go into
 spirit/state/<name>/cache/"*, and *"NO FUCKING RESCUE CODE, MOVE YOUR OWN deskClient cache where it belongs."*
 
 A throwaway follower app planted in a lab node reset to the files under test (goal/G47.3), run as the node runs a server: a stream with

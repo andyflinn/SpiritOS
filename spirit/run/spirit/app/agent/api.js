@@ -23,7 +23,7 @@ module.exports = {
     job: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.IDNew?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', loop: 'spirit.type.boolean?', job: 'spirit.type.string.fileContent?', bundle: 'spirit.type.string.word?', provider: 'spirit.type.string.IDNew?', persona: 'spirit.type.string.IDNew?', text: 'spirit.type.string.descriptionSelect?' },
     // A search may name one of the table's fields, narrowed to the rows holding it (goal/G41.21: providerId above).
     // No grant verb since goal/G41.21 (box v17: "agent.grant is removed altogether").
-    // appServer's streamPublisher (spirit/appServer.js), as desk's: the caller's key subscribes to agent's rows, sent to its
+    // appServer's streamPublisher (spirit/server/app.js), as desk's: the caller's key subscribes to agent's rows, sent to its
     // family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared here
     // for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js", for agent as a client or a server; "later
     // they'll move into appServer.js, as auto-verbs for appServers ... oos for now.").

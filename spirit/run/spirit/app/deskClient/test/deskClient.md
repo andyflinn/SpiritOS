@@ -40,7 +40,7 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   the next wake says how many went; a line of a wake not yet read is never shed.
 - **The cache is appServer's** (goal/G41.12): deskClient follows the desk's stream with the cache switch on
   (`stream.cache: true`); saving within 10 ms of a row, and reading the cache back at a start, are appServer's
-  (`spirit/test/appServer.js`). deskClient writes no `cache.json`.
+  (`spirit/server/test/app.js`). deskClient writes no `cache.json`.
 - **A restart subscribes to its desk** (Andy: "(if it restarts or similar) it calls the \"subscribe/(connect)\" verb
   do desk"): a restarted deskClient subscribes to the desk it knew, family `desk`, and names no position of its own: the
   position is appServer's. `setDesk` naming the same desk subscribes to it again; naming another, to that one.

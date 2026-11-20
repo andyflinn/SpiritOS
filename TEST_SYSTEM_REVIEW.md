@@ -110,7 +110,7 @@ test/fileSystem.js:36-100
 Relay face, receipt, stream and claim signatures
 Weak: the forged-signature tests fail only on a hang, a 5xx or a dead relay, so an accepted forgery with 200 passes
 test/relayServer.js:363-423
-The refusal tests list known attack shapes rather than testing how the check is built. That is how the 2026-11-10 regression passed: no test had a first argument that merely ended in spirit/appServer.js.
+The refusal tests list known attack shapes rather than testing how the check is built. That is how the 2026-11-10 regression passed: no test had a first argument that merely ended in spirit/server/app.js.
 Tests that can pass for the wrong reason. No test body has catch { return true }. The weak spots are the forged-signature tests above, "X is gone" checks that pass for good once X is deleted, and two suites whose titles are built from values (test/word.js:127,200, and spirit-sibling-general.js:2108-2129, the title rule's own file).
 Approach
 The suites run headless from a fresh checkout, Chrome works, and they are stable: 13 suites run twice gave identical reds with wall times within 1 second. The problems are how you start them, what happens without a node, and what a red says.

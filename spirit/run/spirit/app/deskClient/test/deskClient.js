@@ -90,7 +90,7 @@ const subscribeArgs = [];   // what each subscribe was handed: { key, family, si
 let curD = D;   // the data set the running deskClient holds (a restarted one gets a fresh one)
 let cacheSaves = 0;   // each time deskClient asks appServer to save its cache now
 let cacheAnswer = [];   // what appServer answers: [{ file, bytes }], a file per sender it caches
-// goal/G41.22: the rows appServer's cache keeps, as it keeps them (the desk family's own cache.keep, spirit/appServer.js
+// goal/G41.22: the rows appServer's cache keeps, as it keeps them (the desk family's own cache.keep, spirit/server/app.js
 // keepRow), and, set before a restart, the rows it reads back into the fresh data set at the start, before deskClient
 // runs a line past serve() (appServer restoreCaches): through the translator, no onRow.
 // goal/G41.24: the desk's cache rules and its translator are one file in the desk's family folder, data.js.
@@ -161,7 +161,7 @@ function push(row) {
   return Promise.resolve(served.opts.stream.onRow(r, DESK));
 }
 // UNUSED: no case below calls pushNoted, and spirit/data.js has no noting or renewed for it to call; a push's end is
-// { full: true, end: true } since goal/G41.12, and appServer lands a push (spirit/test/appServer.js).
+// { full: true, end: true } since goal/G41.12, and appServer lands a push (spirit/server/test/app.js).
 function pushNoted(row) {
   if (row && row.bootstrapped === true) { curD.renewed(); return Promise.resolve(); }
   change += 1;
@@ -474,7 +474,7 @@ test.run('naming its key drops the wake: the next wait hands only what came afte
 
 // The desk's line addressed to the cap agents wakes them, with no take, and entitles them to the box.
 // A delivery of several rows is appServer's bundle (goal/G41.12: one JSON array, taken row by row before onRow);
-// deskClient sees each row alone (spirit/test/appServer.js); b1 is the last wake read above.
+// deskClient sees each row alone (spirit/server/test/app.js); b1 is the last wake read above.
 test.run('the desk\'s line whose to holds its key wakes it as its own, asking no take', 0.2, async function () {
   const b1 = V.w4 || {};
   const takesBefore = asksOf('line.take').length;
@@ -540,7 +540,7 @@ test.run('the line is handed within 3 s, never held behind a slow job ask or a s
 }, test.limit.quick);
 
 // ── THE POSITION, THE SAVED CACHE AND THE SWEEP (goal/G41.11) ──────────────────────────────────────────────────────
-// goal/G41.12: saving is appServer's (within 10 ms of each row, spirit/test/appServer.js); deskClient only switches it on.
+// goal/G41.12: saving is appServer's (within 10 ms of each row, spirit/server/test/app.js); deskClient only switches it on.
 // The cache is appServer's: deskClient switches it on and saves nothing itself.
 test.run('deskClient follows the desk\'s stream with the cache switch on', 0.2, function () {
   if (!served) return false;
@@ -560,7 +560,7 @@ test.run('a row lands in the data set, and deskClient writes no cache.json of it
 
 // goal/G41.15, Andy: "deskClient keeps what it cached outside the current goal; a push of one goal never drops another's",
 // and Q1: "nothing drops from the cache, unless the api.js from the server says so". A push is appServer's to land
-// (spirit/test/appServer.js); deskClient names nothing for it to replace and sweeps nothing itself.
+// (spirit/server/test/app.js); deskClient names nothing for it to replace and sweeps nothing itself.
 // A push drops nothing deskClient kept: it names nothing to replace, and sweeps nothing.
 test.run('deskClient names nothing for a push to replace (no renews)', 0.2, function () {
   if (!served) return false;
@@ -587,7 +587,7 @@ test.run('the push makes its goal current; the change heard and a kept file list
 }, test.limit.quick);
 
 // goal/G41.12: reading the cache back, and the position (run, n) a subscribe carries, are appServer's
-// (spirit/test/appServer.js: "started again, it reads its cache back before it subscribes"); deskClient subscribes to
+// (spirit/server/test/app.js: "started again, it reads its cache back before it subscribes"); deskClient subscribes to
 // the desk and leaves the position to appServer.
 // A restarted deskClient subscribes to its desk, the position appServer's.
 test.run('it subscribes to the desk it knew, family desk, and names no position of its own', 0.2, async function () {

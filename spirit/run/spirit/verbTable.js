@@ -418,7 +418,7 @@ function createVerbTable() {
 // that has already passed (found on a planted node, 2026-10-09: every family ask hung and the client saw no answer).
 // Moved here from introSpector with mount (goal/G30.4).
 function readBody(rq) {
-  return spirit.require('spirit/serveCommon.js').readJsonBody(rq);
+  return spirit.require('spirit/server/serveCommon.js').readJsonBody(rq);
 }
 
 module.exports = { createVerbTable: createVerbTable };

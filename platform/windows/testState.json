@@ -4545,15 +4545,15 @@
       "newestAt": "2026-11-16T03:07:16.314Z"
     },
     {
-      "script": "spirit/appServer.js",
-      "suite": "spirit/test/appServer.js",
+      "script": "spirit/server/app.js",
+      "suite": "spirit/server/test/app.js",
       "tests": 1,
       "green": 1,
       "red": 0,
       "newestAt": "2026-11-18T17:10:39.916Z"
     },
     {
-      "script": "spirit/appServer.js",
+      "script": "spirit/server/app.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -4561,7 +4561,7 @@
       "newestAt": "2026-11-18T23:48:23.427Z"
     },
     {
-      "script": "spirit/appServer.js",
+      "script": "spirit/server/app.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 42,
       "green": 42,
@@ -4569,7 +4569,7 @@
       "newestAt": "2026-11-18T17:09:30.615Z"
     },
     {
-      "script": "spirit/appServer.js",
+      "script": "spirit/server/app.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 3,
       "green": 3,
@@ -9977,15 +9977,15 @@
       "newestAt": "2026-11-16T03:07:28.207Z"
     },
     {
-      "script": "spirit/relayServer.js",
-      "suite": "spirit/test/relayServer.js",
+      "script": "spirit/server/relay.js",
+      "suite": "spirit/server/test/relay.js",
       "tests": 222,
       "green": 222,
       "red": 0,
       "newestAt": "2026-11-18T19:02:28.604Z"
     },
     {
-      "script": "spirit/relayServer.js",
+      "script": "spirit/server/relay.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -9993,7 +9993,7 @@
       "newestAt": "2026-11-18T23:47:37.477Z"
     },
     {
-      "script": "spirit/relayServer.js",
+      "script": "spirit/server/relay.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 41,
       "green": 41,
@@ -10001,7 +10001,7 @@
       "newestAt": "2026-11-18T16:01:59.493Z"
     },
     {
-      "script": "spirit/relayServer.js",
+      "script": "spirit/server/relay.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 1,
       "green": 1,
@@ -10345,7 +10345,7 @@
       "newestAt": "2026-11-16T03:07:30.429Z"
     },
     {
-      "script": "spirit/serveCommon.js",
+      "script": "spirit/server/serveCommon.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -10353,15 +10353,15 @@
       "newestAt": "2026-11-18T23:49:30.444Z"
     },
     {
-      "script": "spirit/serveCommon.js",
-      "suite": "spirit/test/serveCommon.js",
+      "script": "spirit/server/serveCommon.js",
+      "suite": "spirit/server/test/serveCommon.js",
       "tests": 35,
       "green": 35,
       "red": 0,
       "newestAt": "2026-11-17T16:19:15.148Z"
     },
     {
-      "script": "spirit/serveCommon.js",
+      "script": "spirit/server/serveCommon.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 42,
       "green": 42,
@@ -10369,7 +10369,7 @@
       "newestAt": "2026-11-18T17:13:22.233Z"
     },
     {
-      "script": "spirit/serveCommon.js",
+      "script": "spirit/server/serveCommon.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 1,
       "green": 1,

@@ -29,7 +29,7 @@ require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.require('spirit/appServer.js');
+const appServer = spirit.require('spirit/server/app.js');
 const limits = spirit.require('spirit/limits.js');
 
 const argv = process.argv;
@@ -1860,7 +1860,7 @@ function publishOne(o) {
 //   Andy: "What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it
 //   knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes."
 //
-// appServer's streamPublisher (spirit/appServer.js, opts.publisher) keeps the subscribers: a deskClient subscribes as family
+// appServer's streamPublisher (spirit/server/app.js, opts.publisher) keeps the subscribers: a deskClient subscribes as family
 // deskClient, the node's grants deciding who may; every publish goes to each of them, a line his to some agents to those
 // alone (the row's to, goal/G21.1). A new subscriber is handed the desk's bootstrap set: the current goal's row and its
 // items' rows, their facts alone; everything published afterwards has a home in its data set

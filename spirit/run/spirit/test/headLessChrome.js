@@ -293,7 +293,7 @@ async function scratchRelay(o) {
   fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
   if (opts.faceDomain) fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: opts.faceDomain }));
   const port = await freePort();
-  const code = 'require("./spirit/spirit.js").debug(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
+  const code = 'require("./spirit/spirit.js").debug(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
@@ -324,7 +324,7 @@ async function scratchFaceRelay(o) {
   // The child: relay.js's own createRelay, its mailer a stand-in that keeps the mail; then the real relayServer.js.
   const code = 'const path = require("path"); const R = require(path.resolve("spirit/relay.js")); const made = R.createRelay; const mails = []; let box = null;' +
     ' R.createRelay = function (root, deps) { box = made(root, Object.assign({}, deps, { sendMail: function (m) { mails.push(m); if (process.send) process.send({ mail: m }); return Promise.resolve({ ok: true }); } })); return box; };' +
-    ' process.argv[1] = path.resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");' +
+    ' process.argv[1] = path.resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");' +
     ' const auth = require(path.resolve("spirit/relayAuth.js")); const store = require(path.resolve("spirit/relayStore.js")).open(box.rootDir ? box.rootDir() : process.cwd());' +
     ' const out = { relayKey: box.relayPublicKey(), members: {} };' +
     ' ' + JSON.stringify(names) + '.forEach(function (name) { const id = auth.generateIdentity(name); const mail = name + "@example.org";' +

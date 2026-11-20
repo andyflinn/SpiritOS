@@ -28,7 +28,7 @@ const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 // "a load that is not complete in 3 seconds counts as crash/hang".
 const LOAD_MS = 3000;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
-const NODE_ONLY = ['spirit/server.js', 'spirit/relayServer.js'];
+const NODE_ONLY = ['spirit/server.js', 'spirit/server/relay.js'];
 // A FILE IN A TEST FOLDER IS NEVER LOADED (a tool of the test system with a test of its own, testReport.js, testModule.js,
 // or a test itself): loading a test runs it. Tests and their tools run on the node: node-only, as server.js is.
 function neverLoaded(rel) { return NODE_ONLY.indexOf(rel) !== -1 || /(^|\/)test\//.test(rel); }

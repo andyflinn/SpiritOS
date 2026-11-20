@@ -1,4 +1,4 @@
-# spirit/serveCommon.js — its own test
+# spirit/server/serveCommon.js — its own test
 
 What the node and the relay both answer HTTP with (cycle 0, NODE-AND-RELAY.md): reading a body, sending a file,
 refusing too big or malformed, saying which build this is, and the first-run defaults. Owed since the rule *"every

@@ -22,7 +22,7 @@
 require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
-const appServer = spirit.require('spirit/appServer.js');
+const appServer = spirit.require('spirit/server/app.js');
 const limits = spirit.require('spirit/limits.js');
 
 const argv = process.argv;

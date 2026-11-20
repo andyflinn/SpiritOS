@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/appServer.js
-// The tests of spirit/appServer.js, and of no other module (spec: ./appServer.md; goal/G41.11, goal/G41.12). The real
+// spirit/run/spirit/server/test/app.js
+// The tests of spirit/server/app.js, and of no other module (spec: ./appServer.md; goal/G41.11, goal/G41.12). The real
 // appServer serves one server on a pipe of its own in a temp folder, publishing a stream and following it: its client
 // half subscribes to its own publisher half, and the publisher hands its rows back over the same pipe, to its own
 // streamListener. The one spirit object is a stand-in, so nothing reaches a real node: the families answer by posting to
@@ -33,7 +33,7 @@ const SHED_FAMILY = 'zzshed';
 const TRANSLATOR = path.join(RUN, 'spirit', 'app', FAMILY, 'data.js');
 function plantFamilies() {
   const at = function (n) { const d = path.join(RUN, 'spirit', 'app', n); fs.mkdirSync(d, { recursive: true }); return d; };
-  const head = "'use strict';\n// Planted by spirit/test/appServer.js for its stream checks, and removed when it ends.\n";
+  const head = "'use strict';\n// Planted by spirit/server/test/app.js for its stream checks, and removed when it ends.\n";
   fs.writeFileSync(path.join(at(FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
   fs.writeFileSync(path.join(at(FAMILY), 'data.js'), head + [
     "const D = require('../../spirit.js').require('spirit/data.js');",
@@ -184,7 +184,7 @@ const item = function (n, extra, group) { return Object.assign({ id: (group || '
 const row = function (f) { return { item: f }; };
 // The client's cache file for the publisher (goal/G41.28, box v19; Andy: "this way an appServer in client-mode can derive
 // the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"): in spirit/state/<client server>/cache/
-// (goal/G43.20: "cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"),
+// (goal/G43.20: "cache, which is written by spirit/server/app.js was ALWAYS supposed to go into spirit/state/<name>/cache/"),
 // named by the sender's key in base64url (Andy, Q9 of Desk: "Shall the server key in spirit.data and in the cache file
 // name be base64url (- for +, _ for /), since a plain base64 / splits both?" "yes"): no + and no /, and it reads back
 // to the sender's key.
@@ -475,7 +475,7 @@ function agentsFilePart() {
   let block = '';
   test.run('appServer.js\'s AGENTS paragraph is read', 0.2, function () {
     putBackTheRealSpirit();
-    const as = read('spirit/appServer.js');
+    const as = read('spirit/server/app.js');
     block = (as.match(/AGENTS: AN APP'S RULES FOR AGENTS[\s\S]*?\n\n/) || [''])[0];
     return block.length > 100 || false;
   }, test.limit.quick);
@@ -489,8 +489,8 @@ function agentsFilePart() {
 // THE STATECACHE PART, once appServer-stateCache.js.
 function stateCachePart() {
   // Once spirit/run/spirit/test/appServer-stateCache.js.
-  // The tests of spirit/appServer.js by name: ITS CACHE IN spirit/state/<name>/cache/ (goal/G43.20, its box; spec:
-  // ./appServer.md). Andy: "cache, which is written by spirit/appServer.js was ALWAYS supposed to go into
+  // The tests of spirit/server/app.js by name: ITS CACHE IN spirit/state/<name>/cache/ (goal/G43.20, its box; spec:
+  // ./appServer.md). Andy: "cache, which is written by spirit/server/app.js was ALWAYS supposed to go into
   // spirit/state/<name>/cache/", and "NO FUCKING RESCUE CODE, MOVE YOUR OWN deskClient cache where it belongs." A throwaway
   // follower app, planted in a scratch copy of the tracked files, is run as the node runs a server: what it kept is read back
   // at its start, and its saveCaches (deskClient's cache.dump) writes it again. Never a live node.
@@ -1047,7 +1047,7 @@ function ownPart() {
   }, test.limit.long);
 
   // THE LISTENER AND THE PUBLISHER'S VERBS ARE AUTO-VERBS OF EVERY appServer (goal/G47.5; Andy: "the streamListener must be
-  // an auto-verb of spirit/appServer.js!", "both: \"publisher\" and \"listener\" belong in spirit/appServer.js", "they're both
+  // an auto-verb of spirit/server/app.js!", "both: \"publisher\" and \"listener\" belong in spirit/server/app.js", "they're both
   // auto-verbs. MUST BE.", "PLEASE call the damn thing jus \"listener\""): a server of one side alone names both sides' verbs, and
   // remote, and no streamListener.
   const SIDES = ['listener', 'remote', 'subscribe', 'unsubscribe'];

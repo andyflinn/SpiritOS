@@ -76,10 +76,10 @@ What it reports without judging (not a crash, so not red by the box's words): ho
 
 ### Beside it
 
-- **The relay's door** is spirit/test/relayServer.js's, on a scratch relay (spirit/test/headLessChrome.js,
+- **The relay's door** is spirit/server/test/relay.js's, on a scratch relay (spirit/test/headLessChrome.js,
   scratchRelay).
 - **The shared gate in memory** (the box: *"Every permutation is thrown at that check directly, in memory"*) is
-  `spirit/test/appServer.js`'s, not this file's.
+  `spirit/server/test/app.js`'s, not this file's.
 - **A server not up judges nothing**: every server it turns on must be in the api answer, on the scratch node and on
   each throwaway node, or the run is red saying which.
 - **The file routes hand out nothing outside what they serve** (goal/G47.6, box: *"the node's file routes refuse ../, also

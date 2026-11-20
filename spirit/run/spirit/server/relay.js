@@ -11,7 +11,7 @@
 //
 // `node spirit/server.js --relay` still works: server.js hands off to this
 // file before it loads anything (the systemd unit starts it that way).
-// `node spirit/relayServer.js` is the same process without the hand-off.
+// `node spirit/server/relay.js` is the same process without the hand-off.
 // (The Procfile and install-public-relay.js used to as well; both went in
 // cycle 3 — a relay needs a persistent disc and SSH.)
 //
@@ -20,7 +20,7 @@
 'use strict';
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('./spirit.js');
+require('../spirit.js');
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
@@ -33,7 +33,7 @@ const createRelay = spirit.require('spirit/relay.js');
 // The build stamp for GET /api/version stood here; that route is closed
 // (goal/G22.6), and a relay's version reaches its owner in relay-status
 // (relay.js, RUNNING).
-const common = spirit.require('spirit/serveCommon.js');
+const common = spirit.require('spirit/server/serveCommon.js');
 const streamSink = spirit.require('spirit/streamSink.js');
 // R36 phase B: a refusal carries the catalogue's code beside its sentence.
 const spiritErrors = spirit.require('spirit/spiritErrors.js');
@@ -42,7 +42,7 @@ const nodeRefusal = common.nodeRefusal;
 
 // THE RELAY'S PORT, which is not the node's (65432). Caddy proxies :443 to
 // 127.0.0.1:65430 on spirit-3 (bash/caddy/Caddyfile, bash/lib.sh), so a
-// bare `node spirit/relayServer.js` lands where Caddy looks. Andy, 2026-09-19.
+// bare `node spirit/server/relay.js` lands where Caddy looks. Andy, 2026-09-19.
 // --port and PORT still override it, and every deploy script passes one.
 const DEFAULT_RELAY_PORT = 65430;
 
@@ -59,7 +59,7 @@ const FULL_RETRY_S = 30;
 // regardless of which directory this was launched from.
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(
-    'Usage: node spirit/relayServer.js [--port <number>]\n' +
+    'Usage: node spirit/server/relay.js [--port <number>]\n' +
     '   or: node spirit/server.js --relay [--port <number>]   (the same process)\n\n' +
     '  Runs a public relay: answers only its one door (POST /api/relay/post, and\n' +
     '  /api/relay/reply) and its members\' stream (GET /api/relay/stream), and\n' +
@@ -74,7 +74,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.exit(0);
 }
 
-common.verifyStartupCwd('spirit/relayServer.js');
+common.verifyStartupCwd('spirit/server/relay.js');
 
 const ROOT_DIR = fileSystem.ROOT_DIR;
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || DEFAULT_RELAY_PORT;
@@ -381,7 +381,7 @@ if (process.env.INVOCATION_ID) setServiceCap(2 * CONFIG.ramLimitMB);
 // claimed, the relay is the box.
 spirit.require('spirit/relayAuth.js').nameIdentity(ROOT_DIR, 'relay');
 // FIRST-RUN DEFAULTS (goal/G30.7): a first description and a first public label, by the node's own rule (serveCommon).
-try { spirit.require('spirit/serveCommon.js').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
+try { spirit.require('spirit/server/serveCommon.js').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
 catch (e) { /* a caption must never be the reason a relay will not boot */ }
 
 // handleDeviceOffer (POST /api/relay/device) STOOD HERE, removed by
@@ -430,7 +430,7 @@ function isRelayPublicPath(method, pathname) {
 // new addresses; the old /face/<file> addresses are gone (the routes /face/allowed, call, file, stream and api stay).
 // goal/G43.18 (Q25, Andy: "the browser should see them the same."): the files moved under spirit/shell/, the addresses stay;
 // each address is served from its file (serveCommon.pageFile), the run root the base.
-const FACE_DIR = path.join(__dirname, '..');
+const FACE_DIR = path.join(__dirname, '..', '..');
 // THE PLAIN PAGE ONLY (goal/G43.18, box v29: "The relay serves a logged-out face one plain page, the one-field form, with
 // spirit.js and seal.js only"): face.html, spirit.js (which holds spirit.login and the link), the seal and the tab's icon.
 // boot.js, the sheets and every other part of the shell come from the home node over the link.
@@ -565,7 +565,7 @@ function faceDoor(req, res, url, pathname) {
 
 // { relay: { <verb>: { request, reply } } }, from relaySelf/<verb>.json, for DEBUG.js's garbageArguments.
 function relayApiTree() {
-  const dir = path.join(__dirname, 'relaySelf');
+  const dir = path.join(__dirname, '..', 'relaySelf');
   const out = {};
   fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f); }).forEach(function (f) {
     let file = {};
@@ -845,7 +845,7 @@ const server = http.createServer((req, res) => {
 // reads as "SpiritOS is broken" rather than as a bind mistake.
 const BIND_HOST = '0.0.0.0';
 
-common.refuseListenError(server, port, 'spirit/relayServer.js');
+common.refuseListenError(server, port, 'spirit/server/relay.js');
 
 // ── A RELAY THAT KNOWS IT IS GOING SAYS SO ───────────────────────────
 //

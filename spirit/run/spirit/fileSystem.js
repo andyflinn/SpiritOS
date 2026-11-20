@@ -86,13 +86,15 @@ const SIDECAR_SUFFIX = '.sidecar.json';
 // the boot-asset allowlist in server.js's static route (a separate,
 // narrower exception), never through the generic fileServable-gated
 // path loadFile/scanFolder/the rest of the static route all share.
-// relayServer.js and serveCommon.js joined the list with cycle 0, when
-// the relay got its own startup module: same kind of file as server.js.
 // fileSystem.js, this file, joined it when it was lifted out of the old kernel (goal/G40.6).
 // DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/test/DEBUG.md).
-const UNSERVABLE_FILES = ['spirit/fileSystem.js', 'spirit/job.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
+// spirit/server.js is the launcher since goal/G48.5; the servers it starts stand in spirit/server/, never served as a folder.
+const UNSERVABLE_FILES = ['spirit/fileSystem.js', 'spirit/job.js', 'spirit/server.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
 // goal/G43.9, Andy's box: "spirit/state/ is not servable, so a page cannot read other apps' state through a plain GET."
-const UNSERVABLE_FOLDERS = ['spirit/DEBUG/', 'spirit/state/'].map(function (p) { return p.toLowerCase(); });
+// goal/G48.5, the box: "never served: UNSERVABLE_FOLDERS in spirit/fileSystem.js names spirit/server/ and every
+// spirit/app/<name>/server/": the node's, the relay's and the server processes' code, and each app's server-only files.
+const UNSERVABLE_FOLDERS = ['spirit/DEBUG/', 'spirit/state/', 'spirit/server/'].map(function (p) { return p.toLowerCase(); });
+const APP_SERVER_FOLDER = /^spirit\/app\/[^/]+\/server\//;
 
 // Path-only, caller-independent by design: nothing server-side can verify
 // which app is really asking, only whether the path itself is allowed.
@@ -168,6 +170,7 @@ function fileServable(filePath) {
   if (canonical === null) return false;
   if (UNSERVABLE_FILES.indexOf(canonical) !== -1) return false;
   if (UNSERVABLE_FOLDERS.some(function (f) { return canonical.indexOf(f) === 0; })) return false;
+  if (APP_SERVER_FOLDER.test(canonical)) return false;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false;
   // AT ANY DEPTH, not only the node's own: a node's spirit/state/ (NODE_STATE), and an old tree's relay-state/ with its
   // keys, are refused wherever they sit, because a top-level-only check once served a nested identity's private key

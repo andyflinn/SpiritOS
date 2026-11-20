@@ -500,21 +500,24 @@ module.exports = function installJobs(port) {
   }
   // An app's own script, <root>/spirit/app/<name>/<name>.js, read as {root, name}; null for anything else, a helper beside
   // it included. The one reading of a script's path, for whether it may run and for the route its job is.
-  // THE APP'S SCRIPT OF A START (goal/G43.32): every app server runs as spirit/appServer.js with the app's script after it,
-  // so the script is the argument after appServer.js when that comes first.
-  // ONLY THIS NODE'S OWN appServer.js (RH1, the daily re-review: "A commit added a check that only looks at how the first
-  // argument ends, and anyone who can call jobs.create can get arbitrary code past it. The fix is to require that argument
-  // to be exactly the node's own spirit/appServer.js."): a first argument that merely ends in spirit/appServer.js is no
-  // app server, so it is checked as the script itself, and refused.
-  const OWN_APP_SERVER = path.join(path.resolve(__dirname, '..'), 'spirit', 'appServer.js');
+  // THE APP'S SCRIPT OF A START (goal/G43.32; goal/G48.5, the box: "the node starts every server process as \"node
+  // spirit/server.js --app <script>\""): every server process runs as the launcher, then --app, then the app's script, so the
+  // script is the argument after --app when the launcher comes first.
+  // ONLY THIS NODE'S OWN LAUNCHER (RH1, the daily re-review, of the check before it: "A commit added a check that only looks at
+  // how the first argument ends, and anyone who can call jobs.create can get arbitrary code past it. The fix is to require
+  // that argument to be exactly the node's own" server file; goal/G48.5, the box: "the start check carries over exactly"):
+  // the first argument exactly this node's own spirit/server.js and the second exactly --app; a first argument that merely
+  // ends in server.js is no server process, so it is checked as the script itself, and refused.
+  const OWN_LAUNCHER = path.join(path.resolve(__dirname, '..'), 'spirit', 'server.js');
   function sameFile(a, b) { return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b; }
   function appScriptOf(args, cwd) {
     const a = args || [];
-    return typeof a[0] === 'string' && sameFile(path.resolve(cwd || process.cwd(), a[0]), OWN_APP_SERVER) ? a[1] : a[0];
+    return typeof a[0] === 'string' && sameFile(path.resolve(cwd || process.cwd(), a[0]), OWN_LAUNCHER) && a[1] === '--app' ? a[2] : a[0];
   }
   // Andy: "The node starts every app server, one-shot and long-running alike, as appServer.js with the app's path" (the box,
-  // decided 9): appServer requires the app's script and checks each call by its api.js, in the app's own process.
-  function appServerArgs(rootDir, script) { return [path.join(rootDir, 'spirit', 'appServer.js'), script]; }
+  // decided 9), through the launcher since goal/G48.5: spirit/server/app.js requires the app's script and checks each call by
+  // its api.js, in the app's own process.
+  function appServerArgs(rootDir, script) { return [path.join(rootDir, 'spirit', 'server.js'), '--app', script]; }
   function appOf(script, cwd) {
     if (typeof script !== 'string' || !/\.js$/.test(script)) return null;
     const abs = path.resolve(cwd || process.cwd(), script);

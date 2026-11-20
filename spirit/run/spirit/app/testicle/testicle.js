@@ -28,7 +28,7 @@ const crypto = require('crypto');
 const { execFile, execFileSync, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 // Every status line and every result's icon, worded in one place (goal/G47.1; ./words.js).
-const appServer = spirit.require('spirit/appServer.js');
+const appServer = spirit.require('spirit/server/app.js');
 const { VENDORED_FOLDERS } = spirit.require('spirit/fileSystem.js');
 const { createProbabilityBucket } = spirit.require('spirit/listLimiter.js');
 const { probabilityStringObjectMatch } = spirit.require('spirit/search/object.js');

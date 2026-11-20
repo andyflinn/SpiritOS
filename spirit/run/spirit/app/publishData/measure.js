@@ -82,7 +82,7 @@ async function labRelay(lab, ownerKey) {
   const auth = spirit.require('spirit/relayAuth.js');
   auth.writeOwner(got.run, ownerKey);
   const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/relayServer.js'], { cwd: got.run, stdio: 'ignore', windowsHide: true, env: Object.assign({}, process.env, { PORT: String(port) }) });
+  const child = spawn(process.execPath, ['spirit/server/relay.js'], { cwd: got.run, stdio: 'ignore', windowsHide: true, env: Object.assign({}, process.env, { PORT: String(port) }) });
   got.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return fetch(base + '/').then(function (r) { return r.status > 0; }); }, UP_MS);

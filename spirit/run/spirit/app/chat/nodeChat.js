@@ -30,7 +30,7 @@ require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.require('spirit/appServer.js');
+const appServer = spirit.require('spirit/server/app.js');
 const packet = spirit.require('spirit/client/packet.js');
 const limits = spirit.require('spirit/limits.js');
 // The probability modules (goal/G29.18).

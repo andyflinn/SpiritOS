@@ -494,7 +494,7 @@ if (served.length) {
   // FS set among them. Beyond an api.js only by decision: appServer's DEBUG on every server (desk/G2.5: "DEBUG
   // auto-verb supplied by appServer is approved."), and appServer's remote on every server (goal/G47.5, box v12: "it created an
   // auto-verb called \"remote\"") and its listener (Andy: "the listener must be an auto-verb of
-  // spirit/appServer.js!"). Desk's item.rules verbs went with the rules (goal/G47.4, box v36).
+  // spirit/server/app.js!"). Desk's item.rules verbs went with the rules (goal/G47.4, box v36).
   test.run('it serves exactly the verbs of its api.js', 0.4, function () {
     if (!up()) return false;
     return overAll(served, function (b) {
@@ -1809,7 +1809,7 @@ function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElem
 // that pollutes global name-spaces.", "go on this"; judged in oneFile below). It took the place of requireOnNode, which
 // nothing called. Never loaded, as the classifier never loads them (spirit/test/scriptClassify.js): the node and the relay
 // themselves.
-const NODE_NEVER_LOADED = ['spirit/server.js', 'spirit/relayServer.js'];
+const NODE_NEVER_LOADED = ['spirit/server.js', 'spirit/server/relay.js'];
 // The one door to a temp folder, and its own test (judged in oneFile below); and the lab's own test, which reads the system
 // temp folder's top to find that no copy of the tree was made there ("no copy of the tree is made for the lab node in the
 // temp folder"): it builds no temp path.

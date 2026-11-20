@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/serveCommon.js
-// The tests of spirit/serveCommon.js, and of no other module (spec: ./serveCommon.md). Its own test, owed since the rule
+// spirit/run/spirit/server/test/serveCommon.js
+// The tests of spirit/server/serveCommon.js, and of no other module (spec: ./serveCommon.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // What the node and the relay both answer HTTP with: reading a body, sending a file, refusing too big or malformed,
@@ -78,7 +78,7 @@ test.run('verifyStartupCwd refuses to start from a folder that is not spirit/run
 test.run('verifyStartupCwd lets a start from spirit/run go on with the folders it names, and a relay needs only spirit/', 0.2, function () {
   const was = process.cwd();
   let got = null;
-  try { process.chdir(RUN); got = withExit(function () { C.verifyStartupCwd('spirit/relayServer.js'); C.verifyStartupCwd('spirit/server.js', ['spirit']); }); } finally { process.chdir(was); }
+  try { process.chdir(RUN); got = withExit(function () { C.verifyStartupCwd('spirit/server/relay.js'); C.verifyStartupCwd('spirit/server.js', ['spirit']); }); } finally { process.chdir(was); }
   return got.code === null || false;
 }, test.limit.quick);
 test.run('verifyStartupCwd refuses a folder the entry point names that is not there', 0.2, function () {

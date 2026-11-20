@@ -136,7 +136,7 @@ test.run('no run of icons.js is left running after the six trees', 0.2, async fu
 // ── THE NODE RUNS NO APP CODE; appServer CHECKS, IN THE APP'S PROCESS (goal/G43.32) ──
 // Andy: "isolation, we don't want the NODE to run the validation, because we want the node kept safe from "foreign"
 // code.", "so, really the appClient.js has no business running or parsing code. that must be done by the plugin. i
-// don't care if it's spirit/appServer.js, since it'll crash with the server process and leave the node intact.", and
+// don't care if it's spirit/server/app.js, since it'll crash with the server process and leave the node intact.", and
 // "for one-shot servers, appClient launches appServer with the argument "spirit/app/<name>/name.js", then the
 // appServer module "requires" that script and passes it a ready-made spirit-object with it's spirit.check already done".
 // The box: "The node starts every app server, one-shot and long-running alike, as appServer.js with the app's path".
@@ -148,7 +148,7 @@ test.run('appClient.js loads no app\'s api.js, nor any of its code', 0.2, functi
 const cmdOf = function (pid) { try { return fs.readFileSync('/proc/' + pid + '/cmdline', 'utf8').split('\0').join(' '); } catch (e) { return ''; } };
 // The process command lines are read on Linux only; elsewhere these tests are not registered, as they were not judged.
 if (process.platform === 'linux') {
-  test.run('the permanent zzbig runs as spirit/appServer.js with its path', 0.2, function () {
+  test.run('the permanent zzbig runs as spirit/server/app.js with its path', 0.2, function () {
     if (noNode()) return false;
     const perm = runsOf(W.s.root, NAME).map(cmdOf).filter(Boolean);
     return (perm.length === 1 && /spirit[\\/]appServer\.js\s/.test(perm[0]) && perm[0].indexOf(path.join('spirit', 'app', NAME, NAME + '.js')) > perm[0].indexOf('appServer.js')) || false;
@@ -181,7 +181,7 @@ if (process.platform === 'linux') {
     if (!W.oneShot) return false;
     return W.oneShot.fresh.length >= 1 || false;
   }, test.limit.quick);
-  test.run('the run started for that call is spirit/appServer.js with icons\'s path', 0.2, function () {
+  test.run('the run started for that call is spirit/server/app.js with icons\'s path', 0.2, function () {
     if (!W.oneShot) return false;
     const seenCmd = W.oneShot.seenCmd;
     return (seenCmd.length >= 1 && seenCmd.every(function (c) { return /spirit[\\/]appServer\.js\s/.test(c); })) || false;

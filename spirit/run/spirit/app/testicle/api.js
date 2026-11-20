@@ -37,7 +37,7 @@ module.exports = {
     red: {},
     // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it; answered at once.
     run: { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', testicle: 'spirit.type.string.description?' },
-    // appServer's streamPublisher (spirit/appServer.js), as agent's: the caller's key subscribes to testicle's rows, sent to
+    // appServer's streamPublisher (spirit/server/app.js), as agent's: the caller's key subscribes to testicle's rows, sent to
     // its family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared
     // here for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js").
     subscribe: { family: 'spirit.type.string.word', run: 'spirit.type.string.word?', since: 'spirit.type.number.integer?' },

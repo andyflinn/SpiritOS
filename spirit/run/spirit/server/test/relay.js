@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/relayServer.js
-// The tests of spirit/relayServer.js, and of no other module, in this one file (spec: ./relayServer.md; goal/G41.3). Its
+// spirit/run/spirit/server/test/relay.js
+// The tests of spirit/server/relay.js, and of no other module, in this one file (spec: ./relayServer.md; goal/G41.3). Its
 // sections: the attacker's garbage at the relay's door (goal/G41.30), after its own: how it serves a
 // face its files. Its map and its folder are lifted out of the source and asked, with no relay running; the /face/ posts
 // at the end (goal/G41.30) go to a scratch relay with faces.

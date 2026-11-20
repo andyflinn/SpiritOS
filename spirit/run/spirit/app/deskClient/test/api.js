@@ -59,7 +59,7 @@ test.run('every rule is one of spirit.js\'s standard rules, a trailing question 
 // every verb it lists is one the server serves
 test.run('each verb is a handler of deskClient.js, or appServer\'s listener, since deskClient follows the desk\'s stream', 0.2, function () {
   if (!W.api) return false;
-  const source = ['spirit/app/deskClient/deskClient.js', 'spirit/appServer.js'].map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
+  const source = ['spirit/app/deskClient/deskClient.js', 'spirit/server/app.js'].map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
   const unserved = W.names.filter(function (v) { return !new RegExp('[\'"]' + esc(v) + '[\'"]\\s*:|^\\s*' + esc(v) + '\\s*:|\\ball\\.' + esc(v) + '\\s*=', 'm').test(source); });
   return unserved.length === 0 || false;

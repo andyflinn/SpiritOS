@@ -189,8 +189,8 @@
 - `spirit/app/text/element.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
 - `spirit/appClient.js`, its suite `spirit/test/appClient.js`: 13 green, 0 red
 - `spirit/appClient.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
-- `spirit/appServer.js`, its suite `spirit/test/appServer.js`: 1 green, 0 red
-- `spirit/appServer.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
+- `spirit/server/app.js`, its suite `spirit/server/test/app.js`: 1 green, 0 red
+- `spirit/server/app.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
 - `spirit/arrivals.js`, its suite `spirit/test/arrivals.js`: 2 green, 0 red
 - `spirit/arrivals.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
 - `spirit/auth/api.js`, its suite `spirit/auth/test/api.js`: 13 green, 0 red
@@ -479,8 +479,8 @@
 - `spirit/relayLimits.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
 - `spirit/relayRequest.js`, its suite `spirit/test/relayRequest.js`: 23 green, 0 red
 - `spirit/relayRequest.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
-- `spirit/relayServer.js`, its suite `spirit/test/relayServer.js`: 222 green, 0 red
-- `spirit/relayServer.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
+- `spirit/server/relay.js`, its suite `spirit/server/test/relay.js`: 222 green, 0 red
+- `spirit/server/relay.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
 - `spirit/relayStatus.js`, its suite `spirit/test/relayStatus.js`: 12 green, 0 red
 - `spirit/relayStatus.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
 - `spirit/relayStore.js`, its suite `spirit/test/relayStore.js`: 71 green, 0 red
@@ -501,8 +501,8 @@
 - `spirit/sendMail.js`, its suite `spirit/test/sendMail.js`: 10 green, 0 red
 - `spirit/sendMail/mailgun.js`, its suite `spirit/sendMail/test/mailgun.js`: 13 green, 0 red
 - `spirit/sendMail/mailgun.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
-- `spirit/serveCommon.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
-- `spirit/serveCommon.js`, its suite `spirit/test/serveCommon.js`: 35 green, 0 red
+- `spirit/server/serveCommon.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
+- `spirit/server/serveCommon.js`, its suite `spirit/server/test/serveCommon.js`: 35 green, 0 red
 - `spirit/server.js`, its suite `spirit/test/scriptClassify.js`: 1 green, 0 red
 - `spirit/server.js`, its suite `spirit/test/server.js`: 73 green, 0 red
 - `spirit/shell/boot.js`, its suite `spirit/shell/test/boot.js`: 21 green, 0 red

@@ -1,7 +1,7 @@
 # spirit/shell/boot.js
 
 The face's boot (goal/G41.3): face/shell.js moved into shell/ as shell/boot.js, and the rest of face/ with it, under the
-same names; since goal/G43.18 they are in spirit/shell/, served at the addresses they always had (spirit/serveCommon.js,
+same names; since goal/G43.18 they are in spirit/shell/, served at the addresses they always had (spirit/server/serveCommon.js,
 PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream, its parts and the shell the node names
 (goal/G43.18). The old shell's face apps it once loaded alone went with `shell/` (goal/G43.30).
 

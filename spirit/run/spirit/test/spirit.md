@@ -330,7 +330,7 @@ included.
 
 ## The stream's auto-verbs on every branch (goal/G47.5)
 
-Andy: *"both: \"publisher\" and \"listener\" belong in spirit/appServer.js"*, *"they're both auto-verbs. MUST BE."* Found on his
+Andy: *"both: \"publisher\" and \"listener\" belong in spirit/server/app.js"*, *"they're both auto-verbs. MUST BE."* Found on his
 nodes: his Windows desk delivers to andy-wsl's desk branch by calling its listener, and desk's api.js names none, so the bound
 branch had no listener and nothing was sent. A peer's branch bound from demo's api.js, which names none of them:
 

@@ -61,7 +61,7 @@ async function startNode(run) {
 // to send its DEBUG verb.
 async function startRelay(run, debug) {
   const port = await freePort();
-  const code = 'require("./spirit/spirit.js").debug(' + (debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
+  const code = 'require("./spirit/spirit.js").debug(' + (debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   const up = await until(function () { return ask('127.0.0.1', port, '/').then(function (r) { return r.status > 0; }); }, 30000);
   return { port: port, child: child, up: up };
@@ -325,7 +325,7 @@ test.run('serveCommon.js requires DEBUG.js', 0.2, async function () {
   loaded = '';
   try {
   // Started by its path as an argument, not through a shell: on Windows node lives under "Program Files".
-  loaded = execFileSync(process.execPath, ['-e', 'require("./spirit/serveCommon.js"); console.log(Object.keys(require.cache).join("\\n"))'], { cwd: RUN, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 });
+  loaded = execFileSync(process.execPath, ['-e', 'require("./spirit/server/serveCommon.js"); console.log(Object.keys(require.cache).join("\\n"))'], { cwd: RUN, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 });
   } catch (e) { loaded = String(e.stdout || ''); }
   return (loaded.split('\n').some(function (f) { return path.resolve(f) === path.join(RUN, 'spirit', 'DEBUG.js'); })) ? true : false;
 }, test.limit.quick);
@@ -511,7 +511,7 @@ test.run('a file outside a test/ folder, the element\'s own script, is refused',
 
 test.run('a server script is refused', 0.8, async function () {
   if (!node || !node.up) return false;
-  rd = await refused('/DEBUG/spirit/serveCommon.js', {});
+  rd = await refused('/DEBUG/spirit/server/serveCommon.js', {});
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 

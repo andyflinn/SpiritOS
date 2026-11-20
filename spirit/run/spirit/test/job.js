@@ -68,7 +68,7 @@ const neverRan = function (k) { return RC[k] ? (!RC[k].ran ? true : false) : fal
 // boots, so no app of the tree coming or going ever changes what it judges.
 const PLANTED = {
   'zzserve/zzserve.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Serve', intrinsic: false }, mount: { 'zzserve.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }),
-  'zzserve/zzserve.js': ["'use strict';", "require('../../spirit.js');", "spirit.require('spirit/appServer.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
+  'zzserve/zzserve.js': ["'use strict';", "require('../../spirit.js');", "spirit.require('spirit/server/app.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
   'zzserve/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').require('spirit/app/zzserve/data.js'); else window.spirit.require('spirit/app/zzserve/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
   'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data; if (!D) return; D.makeFamily('zzserve', function () { return {}; }); }());", ''].join('\n'),
   'zzshot/zzshot.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Shot', intrinsic: false }, mount: { 'zzshot.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: false } }),
@@ -156,27 +156,27 @@ test.run('a second script in a node run app\'s folder is refused with a code', 0
 test.run('a second script in a node run app\'s folder never ran', 0.8, function () { return neverRan('helper'); }, test.limit.quick);
 // RH1 OPEN AGAIN (goal/G47.1, Andy's daily re-review): "A commit added a check that only looks at how the first argument
 // ends, and anyone who can call jobs.create can get arbitrary code past it. The fix is to require that argument to be
-// exactly the node's own spirit/appServer.js." Each first argument here ends in spirit/appServer.js and is not this
+// exactly the node's own spirit/server/app.js." Each first argument here ends in spirit/server/app.js and is not this
 // node's own; the app after it is a real node run app, so only the first argument can refuse it.
 const ownRunApp = function () {
   plant('spirit/app/zzRun/zzRun.js', mark('runAgain'));
   fs.writeFileSync(path.join(J.run, 'spirit/app/zzRun/zzRun.json'), JSON.stringify({ identity: { label: 'zz' }, node: { run: true } }));
   return 'spirit/app/zzRun/zzRun.js';
 };
-test.run('a spirit/appServer.js outside this node\'s tree, given before a node run app, is refused with a code', 0.8, async function () {
+test.run('a spirit/server/app.js outside this node\'s tree, given before a node run app, is refused with a code', 0.8, async function () {
   const fake = path.join(J.marks, 'elsewhere', 'spirit', 'appServer.js');
   fs.mkdirSync(path.dirname(fake), { recursive: true });
   fs.writeFileSync(fake, script(mark('fakeOutside')));
-  RC.fakeOutside = await refusedCase('a spirit/appServer.js outside this node\'s tree', mark('fakeOutside'), { command: process.execPath, args: [fake, ownRunApp()] });
+  RC.fakeOutside = await refusedCase('a spirit/server/app.js outside this node\'s tree', mark('fakeOutside'), { command: process.execPath, args: [fake, ownRunApp()] });
   return refused('fakeOutside');
 }, test.limit.slow);
-test.run('a spirit/appServer.js outside this node\'s tree, given before a node run app, never ran', 0.8, function () { return neverRan('fakeOutside'); }, test.limit.quick);
-test.run('a spirit/appServer.js planted inside an app folder of this node, given before a node run app, is refused with a code', 0.8, async function () {
-  const fake = plant('spirit/app/zzRun/spirit/appServer.js', mark('fakeInside'));
-  RC.fakeInside = await refusedCase('a spirit/appServer.js planted inside an app folder', mark('fakeInside'), { command: process.execPath, args: [fake, ownRunApp()] });
+test.run('a spirit/server/app.js outside this node\'s tree, given before a node run app, never ran', 0.8, function () { return neverRan('fakeOutside'); }, test.limit.quick);
+test.run('a spirit/server/app.js planted inside an app folder of this node, given before a node run app, is refused with a code', 0.8, async function () {
+  const fake = plant('spirit/app/zzRun/spirit/server/app.js', mark('fakeInside'));
+  RC.fakeInside = await refusedCase('a spirit/server/app.js planted inside an app folder', mark('fakeInside'), { command: process.execPath, args: [fake, ownRunApp()] });
   return refused('fakeInside');
 }, test.limit.slow);
-test.run('a spirit/appServer.js planted inside an app folder of this node, given before a node run app, never ran', 0.8, function () { return neverRan('fakeInside'); }, test.limit.quick);
+test.run('a spirit/server/app.js planted inside an app folder of this node, given before a node run app, never ran', 0.8, function () { return neverRan('fakeInside'); }, test.limit.quick);
 // RH1 CARRIED OVER (goal/G48.5, the box: "the node starts a server process only as its own spirit/server.js, then --app, then
 // the script; any other server.js as the first argument is refused", "the start check carries over exactly ... (RH1)").
 test.run('this node\'s own spirit/server.js, then --app, then a node run app, starts', 0.8, async function () {
@@ -589,7 +589,7 @@ test.run('the node still answers after all the crooked starts and ids', 0.2, asy
 // job.js makes each app's folder and starts its server. Andy: "WSL, YOU BETTER MAKE FUCKING SURE YOU GUARD FUCKING
 // spirit/state/<name>/ and the rules relating to where things belong in that folder, AND you better not fucking cheat with
 // the fucking tests!!!!!!!!!!!!!!!!!!!!", "put those in spirit/state/<name>/ since they belong to the node.", "cache, which is
-// written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/", "app data, which is written by
+// written by spirit/server/app.js was ALWAYS supposed to go into spirit/state/<name>/cache/", "app data, which is written by
 // the app, was ALWAYS supposed to go into spirit/state/<name>/data/". A real node on a scratch copy of the tracked files,
 // with no run:/process folder in it, the tree's app servers switched on. Never a live node.
 

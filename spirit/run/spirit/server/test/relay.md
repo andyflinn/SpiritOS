@@ -1,4 +1,4 @@
-# spirit/relayServer.js
+# spirit/server/relay.js
 
 The relay's server. This test holds parts of it: how it serves a face its files (goal/G41.3), the face page and a token
 in its address (goal/G41.29), and who may post to the face's routes (goal/G41.30). The map, the folder, `faceSend` and

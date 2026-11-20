@@ -2,7 +2,7 @@
 //
 // Cycle 0 (design/principles/NODE-AND-RELAY.md, 2026-09-19): the node and
 // the relay became separate startup modules — spirit/server.js and
-// spirit/relayServer.js — so a relay stops loading node code at all. What is
+// spirit/server/relay.js — so a relay stops loading node code at all. What is
 // here is what both of them answer HTTP with: reading a body, sending a
 // file, refusing too big or malformed, saying which build this is.
 //
@@ -12,7 +12,7 @@
 'use strict';
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('./spirit.js');
+require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const limits = spirit.require('spirit/limits.js');
