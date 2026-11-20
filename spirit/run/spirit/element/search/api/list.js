@@ -15,11 +15,13 @@
 //   spirit.element.spirit.element.search.api.list.create(container, options) -> root
 //     root.value   the chosen family's name; root.tree the api answer it was painted from, so the verb half can read one
 //                  family's verbs without asking again. One bubbling `change` once value is set; `tree` once a tree is in.
-//     root.load(fn)  lists another party's tree, fn() a promise of it, and clears the choice; none: this node's own
+//     root.load(fn, party)  lists another party's tree, fn() a promise of it, kept under party (a peer's key or a relay's
+//                  address), and clears the choice; no fn: this node's own. root.party is whose it draws, '' this node's
 //     options.face        'pane' is the list itself, a row pressed opening its detail under it; the default is the dropdown
 //     options.placeholder, options.all   the dropdown's words; all is what the field reads while nothing is chosen, and the
 //                         dropdown's None sets it back (Grants: unchosen means every family)
 //     options.tree        another party's tree (introSpector: a peer node's, a relay's), a function answering a promise of it
+//     options.party       whose that tree is, as root.load's party
 //
 // A PROBABILITYSEARCH (goal/G41.5; the old shell's list search, forbidden on the face, goal/G40.8), never a native select.
 (function () {
@@ -74,26 +76,23 @@
     root.value = '';
     root.tree = null;
 
-    // The node's own tree is the apiTree branch; another party's is its own rows.
-    var own = typeof options.tree !== 'function';
-    root.own = own;
-    function rows() {
-      var names = root.tree ? window.spirit.apiTreeIndex.servers(root.tree) : [];
-      return names.map(function (name) { return { key: name, name: name }; });
-    }
+    // EVERY TREE IS A spirit.data BRANCH (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
+    // branch, another party's the apiTree branch under that party's node (spirit/node/data.js keepTree's party); root.party
+    // names whose it draws, '' for this node's own.
+    root.party = typeof options.tree === 'function' ? partyOf(options.party) : '';
+    // A party's tree with no name of its party is kept under one shared party slot, never in this node's own.
+    function partyOf(p) { return String(p || '') || 'party'; }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
     var list = { redraw: function () {} };
     // THE LIST IS MADE FOR ITS SOURCE (goal/G47.1, wsl's red: a party's tree loaded later still drew the node's own branch):
-    // this node's own tree is the apiTree branch, a party's its own rows, and the shared search takes one or the other as it
-    // is made; so a load that changes between the two makes the list again, for the new source.
+    // the shared search takes its branch as it is made, so a load for another party makes the list again, on that party's.
     function makeList() {
       var E = window.spirit.element.spirit.element;
       list = E.search.create(host, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a server…'),
         all: isPane ? undefined : options.all,
-        data: own ? window.spirit.data.node.data.treeBranch : undefined,
-        rows: own ? undefined : rows,
+        data: window.spirit.data.node.data.treeBranchOf(root.party),
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         element: function (row, key) { return E.search.api.row.create(Object.assign({ name: key }, row)); },
@@ -114,27 +113,28 @@
     // ANY PARTY'S TREE (goal/G30.5): options.tree, a function answering a promise of the tree, lists another party's
     // families (introSpector: a peer node's, a relay's); root.load(fn) lists a new one and clears the choice. Without it,
     // this node's own.
-    root.load = function (fn) {
+    root.load = function (fn, p) {
       root.value = '';
       root.tree = null;
       clearDetail();
-      var nowOwn = typeof fn !== 'function';
-      if (nowOwn !== own) {
-        own = nowOwn;
-        root.own = own;
+      var party = typeof fn === 'function' ? partyOf(p) : '';
+      if (party !== root.party) {
+        root.party = party;
         made = made.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); host.innerHTML = ''; makeList(); });
       }
       list.redraw();
-      // The node's own api answer, through the spirit object (goal/G32.2), kept in the apiTree branch; a party's, its own.
+      // The node's own api answer, through the spirit object (goal/G32.2), kept in its apiTree branch; a party's, kept in
+      // that party's.
       var got = typeof fn === 'function' ? fn() : readOwnTree();
       return Promise.all([got, made]).then(function (both) {
         var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
+        if (party) window.spirit.data.node.data.keepTree(root.tree, window.spirit.apiTreeIndex, party);
         list.redraw();
         root.dispatchEvent(new Event('tree', { bubbles: false }));
       }, function () { /* the list stays empty; the node says why elsewhere */ });
     };
-    root.load(options.tree);
+    root.load(options.tree, options.party);
     // Its list and its detail destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go), and it
     // takes itself out of its container, which it leaves empty (goal/G41.19, box v23).
     root.destroy = function () { clearDetail(); if (root.parentNode) root.parentNode.removeChild(root); made.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); }); };

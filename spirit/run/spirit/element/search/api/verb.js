@@ -32,24 +32,20 @@
     var server = '';
     var list = { redraw: function () {} };
 
-    // THE NODE'S OWN VERBS ARE spirit.data's (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors draw from
-    // it"): a view of the verbs the node family's cache manager keeps, the chosen family's alone. Another party's tree
-    // (options.own false: introSpector's peer or relay) is listed from that tree: introSpector is the one exception, deferred
-    // (Andy, the box: "the only exception is introspector, deferred for network-scope design reasons.").
-    var own = options.own !== false;
-    function rows() {
-      var verbs = server && tree ? window.spirit.apiTreeIndex.verbs(tree, server) : [];
-      return verbs.map(function (v) { return { key: v, name: v }; });
-    }
-    // A PROBABILITYSEARCH DROPDOWN (the old shell's list search is forbidden on the face, goal/G40.8).
-    parts.then(function () {
+    // THE VERBS ARE spirit.data's (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors draw from it"): a view of
+    // the verbs the node family's cache manager keeps, the chosen family's alone. ANOTHER PARTY'S TOO (goal/G48.4; Andy:
+    // "fix the introSpector, too", ending the box's deferred exception): its verbs are the apiVerbs branch under that party's
+    // node, kept there by the family list (./list.js) that loaded its tree; party is whose, '' this node's own.
+    var party = String(options.party || '');
+    // A PROBABILITYSEARCH DROPDOWN (the old shell's list search is forbidden on the face, goal/G40.8), made on its party's branch.
+    var made = parts.then(makeList);
+    function makeList() {
       list = window.spirit.element.spirit.element.search.create(root, {
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
-        data: own ? window.spirit.data.node.data.verbsBranch : undefined,
-        rows: own ? undefined : rows,
-        filters: own ? [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server ? 1 : 0; } }] : [],
+        data: window.spirit.data.node.data.verbsBranchOf(party),
+        filters: [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server ? 1 : 0; } }],
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         pick: function (row, key) {
@@ -58,16 +54,22 @@
         },
         empty: 'No verb matches.',
       });
-    });
-    root.show = function (t, s) {
+    }
+    // party, when given, is whose tree it is now (the family list's root.party); another party's makes the list again, on
+    // that party's branch.
+    root.show = function (t, s, p) {
       tree = t || null;
       server = String(s || '');
       root.value = '';
       root.hidden = !server;
-      list.redraw();
+      if (p !== undefined && String(p || '') !== party) {
+        party = String(p || '');
+        made = made.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); list = { redraw: function () {} }; makeList(); });
+      }
+      made.then(function () { list.redraw(); });
     };
     // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go), and it takes itself out of its container, which it leaves empty (goal/G41.19, box v23).
-    root.destroy = function () { if (root.parentNode) root.parentNode.removeChild(root); parts.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); }); };
+    root.destroy = function () { if (root.parentNode) root.parentNode.removeChild(root); made.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); }); };
     return root;
   }
 

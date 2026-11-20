@@ -56,7 +56,7 @@
     var gone = false;
     parts.then(function () {
       if (gone) return;
-      families = window.spirit.element.spirit.element.search.api.list.create(root, { face: 'pane', tree: options.tree });
+      families = window.spirit.element.spirit.element.search.api.list.create(root, { face: 'pane', tree: options.tree, party: options.party });
       families.addEventListener('change', function (event) {
         if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
         root.family = root.value = families.value || '';
@@ -65,7 +65,7 @@
       families.addEventListener('tree', function () { root.tree = families.tree; root.dispatchEvent(new Event('tree', { bubbles: false })); });
       root.families = families;
     });
-    root.load = function (fn) { return parts.then(function () { root.family = root.value = ''; return families ? families.load(fn) : null; }); };
+    root.load = function (fn, party) { return parts.then(function () { root.family = root.value = ''; return families ? families.load(fn, party) : null; }); };
     root.destroy = function () { gone = true; if (root.parentNode) root.parentNode.removeChild(root); if (families) families.destroy(); families = null; };
     return root;
   }
@@ -95,14 +95,14 @@
     function quiet(event) { if (event && typeof event.stopPropagation === 'function') event.stopPropagation(); }
     var made = parts.then(function () {
       var E = window.spirit.element;
-      families = E.spirit.element.search.api.list.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
-      verbs = E.spirit.element.search.api.verb.create(root, { own: typeof options.tree !== 'function' });
+      families = E.spirit.element.search.api.list.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree, party: options.party });
+      verbs = E.spirit.element.search.api.verb.create(root, { party: families.party });
       families.addEventListener('change', function (event) {
         quiet(event);
         if (families.value === root.family) return;
         root.family = families.value || '';
         root.verb = '';
-        verbs.show(families.tree, root.family);
+        verbs.show(families.tree, root.family, families.party);
         settle();
       });
       verbs.addEventListener('change', function (event) {
@@ -115,13 +115,13 @@
       root.verbs = verbs;
     });
     // A NEW PARTY'S TREE (goal/G30.5): the choice clears, the verb half hides, and root.tree is the tree once loaded.
-    root.load = function (fn) {
+    root.load = function (fn, party) {
       return made.then(function () {
         root.family = '';
         root.verb = '';
         verbs.show(null, '');
         settle();
-        return families.load(fn);
+        return families.load(fn, party);
       });
     };
     // Both halves destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go), and it takes itself out of its container, which it leaves empty (goal/G41.19, box v23).

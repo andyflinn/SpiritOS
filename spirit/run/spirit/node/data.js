@@ -24,10 +24,14 @@
   if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
   D.makeFamily('node', function () {
     var HOME = D.viewAt(null, 'node');
+    var parties = {};
+    function viewOf(party) { var p = String(party || ''); return !p ? HOME : (parties[p] || (parties[p] = D.viewAt(p, 'node'))); }
     // THE READS AND THE ONE WRITE:
-    //   keepTree(tree, index)   the node's api answer kept, index being apiTreeIndex (servers(tree), verbs(tree, name))
-    //   families()  family -> row;  verbs()  'family.verb' -> row
-    //   treeBranch, verbsBranch  whole paths, for a list that is a view of one (probabilitySearch's data)
+    //   keepTree(tree, index, party)   the api answer kept, index being apiTreeIndex (servers(tree), verbs(tree, name)),
+    //                                  party '' for this node's own, else the peer's key or relay's address that answered it
+    //   families(party)  family -> row;  verbs(party)  'family.verb' -> row
+    //   treeBranch, verbsBranch  this node's whole paths, for a list that is a view of one (probabilitySearch's data);
+    //   treeBranchOf(party), verbsBranchOf(party)  the same for a party
     //   card.keep(fields)  node.card's answer, or one field a save stored ({ description }), merged into the card
     //   card.get()         the card kept, or null;  card.watch(fn)  fn(card) on every change; answers its release
     var nodeReads = {
@@ -43,22 +47,29 @@
         get: function () { return HOME.get(CARD + '/self') || null; },
         watch: function (fn) { return HOME.watch(CARD + '/self', function (whole, v) { if (typeof fn === 'function') fn(v || null); }); },
       },
-      keepTree: function (tree, index) {
+      // ANOTHER PARTY'S TREE IS ITS OWN NODE'S (goal/G48.4; Andy: "fix the introSpector, too", ending the box's "the only
+      // exception is introspector, deferred for network-scope design reasons."): party, a peer's key or a relay's address,
+      // keeps that party's tree in the same two branches under that party's own node, so every list of a tree is a view of a
+      // spirit.data branch; '' or left out is this node's own.
+      keepTree: function (tree, index, party) {
         var S = (typeof window !== 'undefined' ? window : globalThis).spirit;
         var I = index || (S && S.apiTreeIndex);
         if (!I) return;
+        var V = viewOf(party);
         var names = tree ? I.servers(tree) : [];
         var verbs = {};
         names.forEach(function (name) { I.verbs(tree, name).forEach(function (v) { verbs[name + '.' + v] = { family: name, name: v }; }); });
-        Object.keys(HOME.branch(TREE)).forEach(function (k) { if (names.indexOf(k) === -1) HOME.del(TREE + '/' + k); });
-        Object.keys(HOME.branch(VERBS)).forEach(function (k) { if (!verbs[k]) HOME.del(VERBS + '/' + k); });
-        names.forEach(function (name) { HOME.set(TREE + '/' + name, { name: name }); });
-        Object.keys(verbs).forEach(function (k) { HOME.set(VERBS + '/' + k, verbs[k]); });
+        Object.keys(V.branch(TREE)).forEach(function (k) { if (names.indexOf(k) === -1) V.del(TREE + '/' + k); });
+        Object.keys(V.branch(VERBS)).forEach(function (k) { if (!verbs[k]) V.del(VERBS + '/' + k); });
+        names.forEach(function (name) { V.set(TREE + '/' + name, { name: name }); });
+        Object.keys(verbs).forEach(function (k) { V.set(VERBS + '/' + k, verbs[k]); });
       },
-      families: function () { return HOME.branch(TREE); },
-      verbs: function () { return HOME.branch(VERBS); },
+      families: function (party) { return viewOf(party).branch(TREE); },
+      verbs: function (party) { return viewOf(party).branch(VERBS); },
       get treeBranch() { return HOME.path(TREE); },
       get verbsBranch() { return HOME.path(VERBS); },
+      treeBranchOf: function (party) { return viewOf(party).path(TREE); },
+      verbsBranchOf: function (party) { return viewOf(party).path(VERBS); },
     };
     return nodeReads;
   });

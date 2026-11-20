@@ -70,9 +70,8 @@
       return party.relayKey;
     }, function () { return ''; });
   }
-  // The tree a party answers to api.
+  // The tree a peer or a relay answers to api (self's is this node's own, which the family list reads itself).
   function treeOf(party) {
-    if (party.kind === 'self') return Promise.resolve(S.tree()).then(null, refusalOf);
     if (party.kind === 'relay') return relayKey(party).then(function (key) {
       if (!key) return { ok: false, error: 'this relay has not said what its key is' };
       return S.peerPost(key, 'relay', 'api').then(bodyOf);
@@ -164,7 +163,7 @@
       var line = part('line');
       var hold = document.createElement('span');
       line.appendChild(hold);
-      var branch = apiPick = S.element.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return treeOf(party); } });
+      var branch = apiPick = S.element.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…' });
       // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/list.js), the book and
       // this node's relays; no pick is self, this node.
       picker = S.element.spirit.element.search.contact.list.create(hold, {
@@ -177,7 +176,9 @@
             : { kind: relay ? 'relay' : 'peer', key: relay ? String(row.url || key) : key, name: String(row.name || key) };
           show('');
           say('asking ' + party.name + ' for its api…');
-          branch.load(function () { return treeOf(party); });
+          // EACH PARTY'S TREE IN spirit.data (goal/G48.4; Andy: "fix the introSpector, too"): self is this node's own branch,
+          // a peer or a relay is the branch under its own node, named by its key or its address.
+          branch.load(party.kind === 'self' ? undefined : function () { return treeOf(party); }, party.key);
         },
       });
       // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7), loaded with its parts.
