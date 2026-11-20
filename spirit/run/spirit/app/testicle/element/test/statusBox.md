@@ -38,7 +38,8 @@ that loaded it by itself; one box with the mode and the busy icon; the icons in 
 right of it; the mode the node answers (🖖, interactive); 🚶‍➡️ while testicle classified the tree, row 1 naming the classifier
 and row 2 counting *"<n> of <total>"* up; 🛌 and both rows empty once idle; two planted scripts with their own tests pressed,
 one holding and one failing: row 1 their suite, row 2 the tests reported (1) and their script, never a title or a result,
-both rows empty after; no doing text from the stream; overflow hidden, each row one line, ellipsed; the node set to auto and
+both rows empty after; no doing text from the stream; the icons at twice the container's font size; every row drawn
+beginning with its number in an element of its own, 6em wide, right aligned, a zero never seen and any other number seen; overflow hidden, each row one line, ellipsed; the node set to auto and
 back, 🤖 then 🖖 by itself (box v143); in auto mode row 1's number equal to the suites testicle's database holds marked, and
 following them down as suites report; a page loaded anew while nothing changes holding suites owed and classifications owed
 as the database says them; destroyed, an empty container.

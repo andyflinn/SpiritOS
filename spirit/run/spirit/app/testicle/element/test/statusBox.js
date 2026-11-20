@@ -39,12 +39,17 @@ const idle = function (ms) {
 };
 // The page's hands: mount the box alone, record every pair of rows and every busy icon it shows, in order, and whether the
 // monitor the stream fills ever held a doing text.
-const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false,' +
+// While a row reads anything it records how the number heading it is drawn: the row's first element, its width against its
+// own em, its alignment, its text and whether it can be seen.
+const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false, nums: [],' +
   ' mount: function () { var b = document.createElement("div"); b.id = "zzA"; b.style.cssText = "width:500px;height:60px"; document.body.appendChild(b);' +
   '   window.m_zzA = window.spirit.element.spirit.app.testicle.element.statusBox.create(b);' +
   '   var note = function () { var r = document.querySelectorAll("#zzA .testicle-rows > .testicle-row"), i = document.querySelector("#zzA .testicle-busy"), m = document.querySelector("#zzA .testicle-mode");' +
   '     var pair = Array.prototype.map.call(r, function (x) { return String(x.textContent || "").trim(); }); var last = window.zz.rows[window.zz.rows.length - 1];' +
   '     if (pair.length === 2 && (!last || last[0] !== pair[0] || last[1] !== pair[1])) window.zz.rows.push(pair);' +
+  '     Array.prototype.forEach.call(r, function (x) { if (!String(x.textContent || "").trim()) return; var n = x.firstElementChild; var s = { none: !n };' +
+  '       if (n) { var c = getComputedStyle(n); s = { w: n.getBoundingClientRect().width, em: parseFloat(c.fontSize), align: c.textAlign, txt: String(n.textContent || "").trim(), seen: c.visibility !== "hidden" && c.display !== "none" && c.opacity !== "0" }; }' +
+  '       var k = JSON.stringify(s); if (window.zz.nums.length < 2000 && k !== window.zz.numsLast) { window.zz.numsLast = k; window.zz.nums.push(s); } });' +
   '     var g = i ? String(i.innerText || i.textContent || "").trim() : ""; if (g && g !== window.zz.icons[window.zz.icons.length - 1]) window.zz.icons.push(g);' +
   '     window.zz.mode = m ? String(m.innerText || m.textContent || "").trim() : "";' +
   '     try { var mo = window.spirit.data.testicle.data.monitor.get(); if (mo && mo.doing) window.zz.doing = true; } catch (e) {} };' +
@@ -62,7 +67,8 @@ const owedInDb = function () {
     return { suites: Number(suites), classifications: Number(classifications) };
   } catch (e) { return null; } finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
 };
-const NUM_NAME = /^(\d+): (\S+)$/;
+// "<n>: <file>"; a zero may be drawn as no digits at all (goal/G47.4, Andy: "invisible when zero").
+const NUM_NAME = /^(\d*):? ?(\S+)$/;
 
 test.run('spirit/app/testicle/element/statusBox.js exists', 0.2, function () {
   return fs.existsSync(path.join(RUN, REL)) || false;
@@ -104,6 +110,12 @@ test.run('its icons stand in a block on the left, and right of it a block of two
     ' var rows = ro.querySelectorAll(":scope > .testicle-row"); if (rows.length !== 2) return null; var a = ic.getBoundingClientRect(), c = ro.getBoundingClientRect(), r1 = rows[0].getBoundingClientRect(), r2 = rows[1].getBoundingClientRect();' +
     ' return { icons: !!ic.querySelector(".testicle-mode") && !!ic.querySelector(".testicle-busy"), left: a.right <= c.left + 1, stacked: r2.top >= r1.bottom - 1 }; }())');
   return (!!r && r.icons && r.left && r.stacked) || false;
+}, test.limit.quick);
+// goal/G47.4, Andy: "status bar: the icons must be of size 2m." (taken as 2em: twice the font size of the box's container).
+test.run('its mode and busy icons are drawn at 2em, twice the font size of its container', 0.4, async function () {
+  if (!W.ok) return false;
+  const r = await ev('(function () { var b = document.getElementById("zzA"), m = b.querySelector(".testicle-mode"), i = b.querySelector(".testicle-busy"); if (!m || !i) return null; var f = parseFloat(getComputedStyle(b).fontSize); return [m, i].every(function (x) { return Math.abs(parseFloat(getComputedStyle(x).fontSize) - 2 * f) < 0.5; }); }())');
+  return r === true || false;
 }, test.limit.quick);
 test.run('it shows the mode the node\'s testicle stands at: 🖖, interactive, as the node answers it', 0.2, async function () {
   if (!W.ok) return false;
@@ -201,6 +213,21 @@ test.run('while zzBad\'s own suite runs, its rows read its suite and script, and
   const rows = await runRows(BAD, BADS);
   return ((rows || []).some(function (p) { return names(p[0], BADS) && names(p[1], BAD); }) && noTitleNoResult(rows || [], 'zzBad fails')) || false;
 }, test.limit.long);
+// goal/G47.4, Andy: "the two numbers, starting the tow rows must be fixed width, 6em, right aligned, and invisible when zero."
+// Judged on every row drawn through classifying and both runs.
+const NUM_OF = function (s) { const m = /^(\d*)/.exec(s.txt || ''); return m[1] === '' ? 0 : Number(m[1]); };
+test.run('through classifying and both runs, every row began with its number in an element of its own, 6em wide, right aligned', 0.4, async function () {
+  if (!W.ok) return false;
+  const nums = (await ev('window.zz.nums')) || [];
+  return (nums.length > 0 && nums.every(function (s) { return !s.none && s.em > 0 && Math.abs(s.w - 6 * s.em) < 1 && (s.align === 'right' || s.align === 'end'); })) || false;
+}, test.limit.quick);
+test.run('through classifying and both runs, a number that was zero was never seen, and one that was not was', 0.4, async function () {
+  if (!W.ok) return false;
+  const nums = ((await ev('window.zz.nums')) || []).filter(function (s) { return !s.none; });
+  const zero = nums.filter(function (s) { return NUM_OF(s) === 0; });
+  const more = nums.filter(function (s) { return NUM_OF(s) > 0; });
+  return (zero.length > 0 && more.length > 0 && zero.every(function (s) { return !s.seen || s.txt === ''; }) && more.every(function (s) { return s.seen; })) || false;
+}, test.limit.quick);
 test.run('once the runs are over, both rows are empty again', 0.4, async function () {
   if (!W.ok) return false;
   const ok = await H.until(function () { return ev(EMPTY_ROWS).then(function (v) { return v === true; }); }, H.WAIT);
