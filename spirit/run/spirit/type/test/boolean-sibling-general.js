@@ -38,14 +38,26 @@ function load(rel) { try { return require(path.join(RUN, rel)); } catch (e) { re
 function throws(T, v) { try { T.isValid(v); return false; } catch (e) { return e instanceof Error; } }
 const every = function (fn) { return TARGETS.length > 0 && TARGETS.every(function (rel) { const T = load(rel); return !!T && fn(T); }); };
 
-test.run('every type file under spirit/type/ is an object holding defaultValue and isValid', 0.4, function () {
-  return every(function (T) { return typeof T === 'object' && typeof T.defaultValue === 'function' && typeof T.isValid === 'function'; }) || false;
+test.run('every type file under spirit/type/ is an object holding defaultValue, isValid and ruleDescription', 0.4, function () {
+  return every(function (T) { return typeof T === 'object' && typeof T.defaultValue === 'function' && typeof T.isValid === 'function' && typeof T.ruleDescription === 'function'; }) || false;
 }, test.limit.quick);
 test.run('for every type file, isValid answers true for its own defaultValue()', 0.4, function () {
   return every(function (T) { try { return T.isValid(T.defaultValue()) === true; } catch (e) { return false; } }) || false;
 }, test.limit.quick);
 test.run('for every type file, isValid throws an error for null and for undefined', 0.4, function () {
   return every(function (T) { return throws(T, null) && throws(T, undefined); }) || false;
+}, test.limit.quick);
+// Box v23: "the third filed is ruleDesription(), it returns a short description if what the isValid() checks." Short: a
+// description as spirit.type.string.description takes it, not empty and at most 128 bytes.
+test.run('for every type file, ruleDescription() answers a short description of what isValid checks: a description of 1 to 128 bytes', 0.4, function () {
+  const D = load('spirit/type/string/description.js');
+  if (!D) return false;
+  return every(function (T) {
+    if (typeof T.ruleDescription !== 'function') return false;
+    let d = null;
+    try { d = T.ruleDescription(); } catch (e) { return false; }
+    try { return typeof d === 'string' && D.isValid(d) === true; } catch (e) { return false; }
+  }) || false;
 }, test.limit.quick);
 }
 if (!GIVEN.length) typeRules([]);
