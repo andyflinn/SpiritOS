@@ -30,6 +30,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
   if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/rowForm.js');
+  // And fieldInput, which holds the face name to its type as it is typed (goal/G48.4, box v22: "ever input field in every
+  // element must validate the input with the new type checks.").
+  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/fieldInput.js');
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
@@ -74,6 +77,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       '</select>' +
       '<input type="text" class="sp-face-name" placeholder="face name: one word, letters and digits" value="' +
         escape(o.name != null ? o.name : ((picked && picked.face && picked.face.name) || '')) + '">';
+    // A face name is one word (spirit.type.string.word).
+    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+    if (FI) FI.attach(f.span.querySelector('.sp-face-name'), 'spirit.type.string.word');
     if (!picked) box.querySelector('.sp-face-out').textContent = String(o.none);
   }
 
