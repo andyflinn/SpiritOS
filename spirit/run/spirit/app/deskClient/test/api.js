@@ -47,7 +47,8 @@ test.run('every rule is one of spirit.js\'s standard rules, a trailing question 
     Object.keys(W.verbs[v]).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) badRule.push(v);
+      // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
+      if ((spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) badRule.push(v);
     });
   });
   return badRule.length === 0 || false;

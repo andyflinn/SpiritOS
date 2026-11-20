@@ -112,7 +112,8 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
     Object.keys(W.verbs[v]).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) bad.push(true);
+      // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
+      if ((spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad.push(true);
     });
   });
   return bad.length === 0 || false;
@@ -208,9 +209,10 @@ test.run('status is asked with four relays listed: one owned, one claimed, one w
   try { S.out = await status(P, gets, 'andy'); } catch (e) { return false; }
   return (!!S.out && !!S.out.body) || false;
 }, test.limit.quick);
-test.run('status lists the relays with contact.search, relay and keep yes, asked of the one spirit object', 0.2, function () {
+// goal/G48.4: "\"flags\" must be booleans": relay and keep true.
+test.run('status lists the relays with contact.search, relay and keep true, asked of the one spirit object', 0.2, function () {
   if (!S.out) return false;
-  return JSON.stringify(S.P.asked) === JSON.stringify([{ q: '*', relay: 'yes', keep: 'yes' }]) || false;
+  return JSON.stringify(S.P.asked) === JSON.stringify([{ q: '*', relay: true, keep: true }]) || false;
 }, test.limit.quick);
 test.run('status then gets each relay listed by its key, through the family\'s own call, and asks it nothing else', 0.2, function () {
   if (!S.out) return false;

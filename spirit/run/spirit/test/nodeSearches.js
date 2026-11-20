@@ -112,7 +112,7 @@ test.run('fs.search is cut by bytes: a tree too big for one answer says more', 0
 }, test.limit.quick);
 
 // ── fs.search inside the text files (goal/G29.11) ──
-const C = N.fsSearch({ q: 'quokka', contents: 'yes' });
+const C = N.fsSearch({ q: 'quokka', contents: true });
 test.run('with contents set to yes, files are ranked by their contents alone, never by their names', 0.2, function () {
   const got = keys(C);
   return (got.indexOf('app/notes.txt') !== -1 && got.indexOf('app/quokka.txt') === -1) || false;
@@ -136,5 +136,5 @@ test.run('more matched lines score higher, by m / (m + 10) for m matched lines, 
   return (sc['app/notes.txt'] > sc['app/code.js'] && keys(C)[0] === 'app/notes.txt') || false;
 }, test.limit.quick);
 test.run('contents set to yes with no words answers the tree by name, never every file read', 0.2, function () {
-  return keys(N.fsSearch({ q: '', contents: 'yes' })).length === TREE.length || false;
+  return keys(N.fsSearch({ q: '', contents: true })).length === TREE.length || false;
 }, test.limit.quick);

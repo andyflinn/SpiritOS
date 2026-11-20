@@ -9,8 +9,8 @@ The contact family: the node's book of peers, people and relays in one table. Ow
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
   the verbs server.js mounts for the family, and each verb exactly the arguments its handler's `request` carries.
-- **goal/G40.11**, the one table: `search` takes a yes-filter per flag, `keep`, `mine`, `relay`, `seated` and
-  `blocked` (`''` or `'yes'`, never `true`).
+- **goal/G40.11**, the one table: `search` takes a filter per flag, `keep`, `mine`, `relay`, `seated` and
+  `blocked`, each true or false and never `'yes'` (goal/G48.4: *"\"flags\" must be booleans"*).
 - `get` names the contact by its key; `block`, `unblock`, `accept`, `label` and `forget` by its `publicKey`;
   `label`'s `myLabel` is needed and passes the name rule.
 - **goal/G47.4** (box v33: *"😏 is the row field faceable, set by the new verb contact.faceable {key, faceable}"*,

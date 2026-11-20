@@ -10,11 +10,11 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/relay/data.js'); else window.spirit.require('spirit/relay/data.js');
 module.exports = {
   verbs: {
-    claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'text?', inviteLabel: 'spirit.type.string.label?' },
+    claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'text?', inviteLabel: 'name?' },
     partnerCheck: { publicKey: 'spirit.type.string.ID', url: 'spirit.type.string.URL' },
     get: { key: 'text' },
     remove: { key: 'text' },
-    add: { url: 'spirit.type.string.URL', label: 'spirit.type.string.label?' },
+    add: { url: 'spirit.type.string.URL', label: 'name?' },
     face: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label' },
     // link: the caller's link the relay mails, its code and key added (goal/G40.10; Andy: "{email, URL, card}").
     join: { url: 'spirit.type.string.URL', email: 'spirit.type.string.email', code: 'text?', link: 'spirit.type.string.URL?' },
@@ -36,7 +36,7 @@ module.exports = {
       // load); in node, the instance itself.
       return Promise.resolve(one.ready || one).then(function (s) {
         if (!s || !s.contact || typeof s.contact.search !== 'function') throw new Error('no contact family on the spirit object');
-        return s.contact.search({ q: '*', relay: 'yes', keep: 'yes' });
+        return s.contact.search({ q: '*', relay: true, keep: true });
       });
     }
     return {

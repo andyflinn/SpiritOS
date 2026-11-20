@@ -20,7 +20,7 @@ The relay family: the relays this node is a member of, and his relays as a scree
   key alone.
 - **goal/G40.11**: it has no `search`; a relay is a row of the one table.
 - **`names(call).status(name)`**, with a planted spirit object as the global: it lists the relays with
-  `contact.search({ q: '*', relay: 'yes', keep: 'yes' })`, asked of the one spirit object (Andy: every module *"reaches
+  `contact.search({ q: '*', relay: true, keep: true })`, asked of the one spirit object (Andy: every module *"reaches
   everything through it"*); gets each relay listed by its key through the family's own call and asks it nothing else;
   requires the relay family's data script, `spirit/relay/data.js`, and hands each answer to it to keep (goal/G41.28); answers `{ status: 200, text, body }`,
   `body` `{ name, rows, ownedUrls, claimedUrls, mustPick, relayStatus, more }`: rows the relays got (a refused or

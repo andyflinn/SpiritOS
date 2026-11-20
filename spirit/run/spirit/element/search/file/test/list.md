@@ -15,7 +15,7 @@ dropdown. Its test is `./file.js`.
   `size` and `changed`; each row a file row element of its path; a picked file is shown by its path, and reaches
   `opts.pick`.
 - Names are answered from the mirror: a search of names asks the node nothing. By contents it asks
-  `fs.search { q, contents: 'yes' }`; each find carries its facts from the file tree (`spirit.data.fs.data.file`) and its matched line, a folder
+  `fs.search { q, contents: true }`; each find carries its facts from the file tree (`spirit.data.fs.data.file`) and its matched line, a folder
   without its trailing slash; by contents a file ranks by the node's score, by names the list ranks.
 - **The tree**: a filter drawn as no button. With no words a folder shows, and what is inside a folded one does not; a
   folder's press opens it and is never a pick, a file's press is no fold. `opts.accept` hides files of other types,

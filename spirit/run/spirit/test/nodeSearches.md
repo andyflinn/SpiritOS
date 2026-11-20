@@ -13,7 +13,7 @@ reads are in a scratch folder.
 - `fsSearch` (fs.search) by name and path: no words is the tree in path order, a folder with its trailing slash; words
   ranked best first, a non-match left out; the words are a person's, `*` and `?` nothing special (goal/G29.8); cut by
   bytes, `more`.
-- `fsSearch` with `contents: 'yes'` (goal/G29.11): ranked by contents alone, never names; only text files (text/,
+- `fsSearch` with `contents: true` (goal/G29.11): ranked by contents alone, never names; only text files (text/,
   json, javascript); a file above 1 MB never read; each answer `{path, score, line}`, the first matched line; more
   matched lines score higher, `m / (m + 10)`; no words is the tree by name.
 

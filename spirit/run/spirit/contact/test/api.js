@@ -109,7 +109,8 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
     Object.keys(W.verbs[v]).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) bad.push(v);
+      // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
+      if ((spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad.push(v);
     });
   });
   return bad.length === 0 || false;
@@ -133,13 +134,13 @@ test.run('each verb takes the arguments its handler\'s request carries, and no o
   return off.length === 0 || false;
 }, test.limit.quick);
 
-// goal/G40.11: the one table, people and relays, a yes-filter per flag
-test.run('search takes a yes-filter per flag: keep, mine, relay, seated and blocked', 0.2, function () {
+// goal/G40.11: the one table, people and relays, a filter per flag; goal/G48.4: '"flags" must be booleans'
+test.run('search takes a true or false filter per flag: keep, mine, relay, seated and blocked', 0.2, function () {
   if (!W.api) return false;
   const flags = ['keep', 'mine', 'relay', 'seated', 'blocked'];
-  const yes = {}; flags.forEach(function (f) { yes[f] = 'yes'; });
-  const ok = passes('search', Object.assign({ q: '*' }, yes)) && passes('search', {}) && flags.every(function (f) { const a = {}; a[f] = ''; return passes('search', a); });
-  const no = flags.every(function (f) { const a = {}; a[f] = true; return refusedAs('search', a) === 'bad-request'; });
+  const yes = {}; flags.forEach(function (f) { yes[f] = true; });
+  const ok = passes('search', Object.assign({ q: '*' }, yes)) && passes('search', {}) && flags.every(function (f) { const a = {}; a[f] = false; return passes('search', a); });
+  const no = flags.every(function (f) { const a = {}; a[f] = 'yes'; return refusedAs('search', a) === 'bad-request'; });
   return (ok && no) || false;
 }, test.limit.quick);
 test.run('get names the contact by its key', 0.2, function () {

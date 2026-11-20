@@ -136,7 +136,7 @@ test.run('a search by contents asks fs.search with the words as q and contents s
   if (!l) return false;
   D.takeJob({ id: 'spirit.fs', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
   found = await o.search(o.args('hello', { in: 'contents' }), 'search');
-  return asked.length === 1 && asked[0].q === 'hello' && asked[0].contents === 'yes' ? true : false;
+  return asked.length === 1 && asked[0].q === 'hello' && asked[0].contents === true ? true : false;
 }, test.limit.quick);
 test.run('each find carries its facts from the file tree and its matched line; a folder comes without its trailing slash', 0.2, function () {
   if (!found) return false;

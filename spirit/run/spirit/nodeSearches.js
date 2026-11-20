@@ -130,7 +130,7 @@ function createNodeSearches(opts) {
   }
   function fsSearch(body) {
     var words = String((body && body.q) == null ? '' : body.q).trim();
-    var contents = !!(body && body.contents === 'yes') && !!rootDir && !!words;
+    var contents = !!(body && body.contents === true) && !!rootDir && !!words;
     var ws = words.toLowerCase().split(/\s+/).filter(Boolean);
     var files = jobs.fsTreeEntries();
     var bucket = createProbabilityBucket(Infinity);

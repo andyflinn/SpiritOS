@@ -75,7 +75,7 @@ const call = async function (name, args) {
   return { status: r.status, body: body, text: text };
 };
 // The star, as the list reads it: contact.search with its yes-filter, whatever else the row is.
-const starred = async function (key) { const g = await call('contact.search', { q: '', mine: 'yes' }); return ((g.body && g.body.items) || []).some(function (i) { return i.key === key; }); };
+const starred = async function (key) { const g = await call('contact.search', { q: '', mine: true }); return ((g.body && g.body.items) || []).some(function (i) { return i.key === key; }); };
 const refused = function (r) { return r.status >= 400 && r.status < 500 && !!(r.body && r.body.code) && r.body.code !== 'no-such-verb' && r.body.code !== 'no-such-family'; };
 function noNode() { return !(W.node && W.node.up); }
 test.run('the scratch node comes up', 0.2, async function () {

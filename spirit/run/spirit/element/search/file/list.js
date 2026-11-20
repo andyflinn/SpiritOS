@@ -106,7 +106,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       all: o.all,
       // What the dropdown's field says once a file is picked: its path, or the mounter's words (text names it in its title bar).
       name: typeof o.name === 'function' ? o.name : function (row) { return String(row.path || row.key || ''); },
-      args: function (text, values) { return { q: text, contents: values.in === 'contents' ? 'yes' : '' }; },
+      args: function (text, values) { return { q: text, contents: values.in === 'contents' }; },
       columns: [
         { field: 'name', from: 'path', label: 'Name', sort: 'path' },
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },

@@ -1654,7 +1654,7 @@ catch (e) {
   // still red-green the same way.
   loopbackVerbs.mount('fs', path.join(__dirname, 'fs'), {
     // The node's files by path (puppets/G2). fs.stat stays the "get".
-    'search': { request: { q: '', contents: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.fsSearch(b); }) },
+    'search': { request: { q: '', contents: false }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.fsSearch(b); }) },
     'stat': { request: { path: '' }, reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: handleFsStat },
     // The file's text (goal/G14.8), the same read as the static route.
     'load': { request: { path: '' }, reply: { path: '', text: '' }, handler: handleFsLoad },
@@ -1834,7 +1834,7 @@ catch (e) {
   loopbackVerbs.mount('contact', path.join(__dirname, 'contact'), {
     // The one table, searched (goal/G40.11): people and relays, with a yes-filter per flag. peer.list is gone
     // (puppets/G2); the network search it starts asks the relays.
-    'search': { request: { q: '', keep: '', mine: '', relay: '', seated: '', blocked: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
+    'search': { request: { q: '', keep: false, mine: false, relay: false, seated: false, blocked: false }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', person: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b); }) },
     'block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
     'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },

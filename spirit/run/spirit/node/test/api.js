@@ -109,7 +109,8 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
     Object.keys(W.verbs[v]).forEach(function (arg) {
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
-      if (spirit.rules.indexOf(rule) === -1) bad.push(true);
+      // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
+      if ((spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad.push(true);
     });
   });
   return bad.length === 0 || false;

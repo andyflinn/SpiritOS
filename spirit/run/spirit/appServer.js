@@ -911,7 +911,7 @@ function refreshRemote() {
   remote.refreshing = true;
   const me = selfKey();
   Promise.resolve(spirit.require('spirit/contact/api.js')).then(function (c) {
-    return c && typeof c.search === 'function' ? c.search({ q: '', keep: 'yes' }) : { items: [] };
+    return c && typeof c.search === 'function' ? c.search({ q: '', keep: true }) : { items: [] };
   }).then(function (got) {
     const people = ((got && got.items) || []).filter(function (i) { return i && i.key && i.key !== me; }).slice(0, REMOTE_ASK_MAX);
     return Promise.all(people.map(function (p) {

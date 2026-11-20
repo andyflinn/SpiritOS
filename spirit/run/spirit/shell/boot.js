@@ -307,7 +307,7 @@
     var code = joinCode;
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
-    Promise.all([window.spirit.require('spirit/element/joinSteps.js'), Promise.resolve(spirit.ready).then(function (sp) { return sp.contact.search({ q: '*', relay: 'yes' }); })]).then(function (got) {
+    Promise.all([window.spirit.require('spirit/element/joinSteps.js'), Promise.resolve(spirit.ready).then(function (sp) { return sp.contact.search({ q: '*', relay: true }); })]).then(function (got) {
       var S = window.spirit.element && window.spirit.required.spirit.element.joinSteps;
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';

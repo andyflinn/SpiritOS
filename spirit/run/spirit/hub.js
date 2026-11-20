@@ -299,7 +299,7 @@ function searchPeople(people, q, filters) {
   var words = String(q == null ? '' : q).trim();
   if (/^\*+$/.test(words)) words = '';
   var f = filters || {};
-  var wanted = SEARCH_FLAGS.filter(function (k) { return f[k] === 'yes'; });
+  var wanted = SEARCH_FLAGS.filter(function (k) { return f[k] === true; });
   var bucket = createProbabilityBucket(MAX_SEARCHED_PEOPLE);
   var seen = 0;
   var cut = false;
@@ -1937,7 +1937,7 @@ function createHub(rootDir) {
     return facts;
   }
   // relaySearch STOOD HERE (goal/G19.17): the relays ranked by the words. Gone with goal/G40.11 (Andy: "yes. those
-  // names."): contact.search covers relays too, a relay one row of the one table, and relay: 'yes' asks for them alone.
+  // names."): contact.search covers relays too, a relay one row of the one table, and relay: true asks for them alone.
 
   // ── relay.remove: ONE RELAY OFF THIS NODE'S LIST (goal/G16.3) ────────
   //

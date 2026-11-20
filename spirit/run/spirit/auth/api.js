@@ -21,7 +21,7 @@ module.exports = {
     // goal/G41.25: its owner, given at the add and narrowing a search; one that is not valid the node reads as "node", so
     // the rule here takes any text (Andy, box: "changes to the auth.bundle verb for the addition of the \"owner\" field
     // are approved by andy and need no review.").
-    bundle: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', label: 'spirit.type.string.label?', text: 'text?', owner: 'text?' },
+    bundle: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', label: 'name?', text: 'text?', owner: 'text?' },
     branch: { op: 'spirit.type.string.tableOp', id: 'spirit.type.number.integer?', bundle: 'spirit.type.number.integer?', family: 'text?', verb: 'text?', text: 'text?' },
   },
 };
