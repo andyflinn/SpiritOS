@@ -52,8 +52,10 @@
     var releaseMode = null;
     var shown = null;
     var shownMode = null;
-    // Its box keeps what it holds inside (overflow hidden); each row one line, ellipsed, never wrapped.
-    container.innerHTML = '<div class="testicle-status" style="display:flex;align-items:center;height:2.6em;overflow:hidden;white-space:nowrap">' +
+    // Its box keeps what it holds inside (overflow hidden); each row one line, ellipsed, never wrapped. THE WHOLE BLOCK IN A
+    // BUBBLE (goal/G47.4, Andy: "the whole status block in a bubble, the icons vertically centered in that bubble."): the
+    // shared .shell-bubble, its two rows' height plus its padding and border, the icons centred in it.
+    container.innerHTML = '<div class="testicle-status shell-bubble" style="display:flex;align-items:center;height:calc(2.6em + 0.6em + 2px);overflow:hidden;white-space:nowrap">' +
       '<span class="testicle-icons" style="display:inline-flex;align-items:center;flex:none;font-size:2em;line-height:1.3em"><span class="testicle-mode"></span>&nbsp;<span class="testicle-busy"></span>&nbsp;</span>' +
       '<span class="testicle-rows" style="display:inline-flex;flex-direction:column;flex:1;min-width:0;overflow:hidden">' +
       ROW_HTML + ROW_HTML + '</span></div>';
