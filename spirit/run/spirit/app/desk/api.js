@@ -48,8 +48,8 @@ module.exports = {
     // One row a write (goal/G40.3): one path; no '..'. A path already there (add) or not there (remove) is refused,
     // naming it. goal/G41.11, for the desk only: item.files.add takes
     // path or paths, a list cut at one answer (the server answers added and more).
-    'item.files.add': { id: 'id', path: 'text?', paths: 'list?' },
-    'item.files.remove': { id: 'id', path: 'text' },
+    'item.files.add': { id: 'id', path: 'spirit.type.string.file?', paths: 'list?' },
+    'item.files.remove': { id: 'id', path: 'spirit.type.string.file' },
     'item.get': { id: 'id' },
     'item.release': { id: 'id' },
     'item.rename': { id: 'id', title: 'spirit.type.string.label' },

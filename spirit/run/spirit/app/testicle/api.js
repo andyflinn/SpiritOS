@@ -15,28 +15,28 @@ module.exports = {
     preferences: { interactive: 'spirit.type.boolean?' },
     // goal/G47.1, the verbs cycle: a production script's row, made with its suite rows if it has none. name is the script,
     // scoped to run://. Named file.get until the rename of the table file to script.
-    'script.get': { name: 'text' },
+    'script.get': { name: 'spirit.type.string.file' },
     // goal/G47.1, box v94, 1: the classifier's verb: a script row's two flags, browserOnly and nodeOnly, never both.
-    'script.classify': { script: 'text', browserOnly: 'spirit.type.boolean', nodeOnly: 'spirit.type.boolean', requires: 'list?' },
+    'script.classify': { script: 'spirit.type.string.file', browserOnly: 'spirit.type.boolean', nodeOnly: 'spirit.type.boolean', requires: 'list?' },
     // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
-    'suite.search': { script: 'text?', text: 'spirit.type.string.lineFilter' },
+    'suite.search': { script: 'spirit.type.string.fileFilter?', text: 'spirit.type.string.lineFilter' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
-    'testicle.set': { script: 'text', suite: 'text', test: 'text', verified: 'spirit.type.boolean', severity: 'spirit.type.number.probability' },
+    'testicle.set': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', test: 'text', verified: 'spirit.type.boolean', severity: 'spirit.type.number.probability' },
     // goal/G47.4, the box: "a new verb testicle.title will change a testicle title, the script, suite AND oldTitle arguments
     // must match an existing row exactly" (Andy: "GO!"; wsl reviewed it): the title replaced in its suite file, committed and
     // pushed, then every row of that suite and title renamed.
-    'testicle.title': { script: 'text', suite: 'text', oldTitle: 'spirit.type.string.description', title: 'spirit.type.string.description' },
+    'testicle.title': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', oldTitle: 'spirit.type.string.description', title: 'spirit.type.string.description' },
     // goal/G47.1, box v129-131: a suite's success or failure for one script, sent by the reporter once that suite is through
     // with it; the only thing that sets a suite row's outcome.
-    'suite.success': { script: 'text', suite: 'text', success: 'spirit.type.boolean', reason: 'text?', requires: 'list?' },
+    'suite.success': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', success: 'spirit.type.boolean', reason: 'text?', requires: 'list?' },
     // goal/G47.1: the current test rows, the failed first, then most severe first; script, suite and result (red or green)
     // each optional, the words narrowing them; from, the rows already held, asks the following answer.
     // Given a test with its script and suite, that test's every row, the newest flip first (its history).
-    'testicle.search': { script: 'text?', suite: 'text?', test: 'text?', result: 'spirit.type.string.testResult?', text: 'spirit.type.string.lineFilter' },
+    'testicle.search': { script: 'spirit.type.string.fileFilter?', suite: 'spirit.type.string.fileFilter?', test: 'text?', result: 'spirit.type.string.testResult?', text: 'spirit.type.string.lineFilter' },
     // goal/G47.1, G45: every failed current test, most severe first. It takes nothing.
     red: {},
     // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it; answered at once.
-    run: { script: 'text', suite: 'text', testicle: 'text?' },
+    run: { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', testicle: 'text?' },
     // appServer's streamPublisher (spirit/appServer.js), as agent's: the caller's key subscribes to testicle's rows, sent to
     // its family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared
     // here for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js").

@@ -4,13 +4,16 @@
 // but verify parsing...."): JSON carried inside a string, valid only when it parses, at most the node's payload limit,
 // spirit/limits.js PAYLOAD_MAX, in bytes. The same file on the node and on a page: on the node it is this module, on a page
 // it stands at spirit.required.spirit.type.string.json. Its test: ./test/json.js.
+// On the node the spirit object first, as every file of the tree takes it (the general rules).
+if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../spirit.js');
 (function (root) {
-  // The node's own limit, read where it is defined: required on the node, what spirit.required holds on a page.
+  // The node's own limit, read where it is defined, through spirit.require: on the node its module, on a page what
+  // spirit.required holds once it is in.
+  var S0 = root && root.spirit;
+  var L = S0 && typeof S0.require === 'function' ? S0.require('spirit/limits.js') : null;
   function limit() {
-    var L = null;
-    if (typeof module === 'object' && module && module.exports && typeof require === 'function') { try { L = require('../../limits.js'); } catch (e) { L = null; } }
-    else L = root && root.spirit && root.spirit.required && root.spirit.required.spirit && root.spirit.required.spirit.limits;
-    return L && typeof L.PAYLOAD_MAX === 'number' ? L.PAYLOAD_MAX : 22528;
+    var at = (L && typeof L.PAYLOAD_MAX === 'number') ? L : (S0 && S0.required && S0.required.spirit && S0.required.spirit.limits);
+    return at && typeof at.PAYLOAD_MAX === 'number' ? at.PAYLOAD_MAX : 22528;
   }
   function bytes(s) { return new TextEncoder().encode(s).length; }
   function no(why) { throw new Error(why); }
