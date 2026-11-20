@@ -18,4 +18,5 @@ On a scratch node of its own, the loop run in a terminal made by `script(1)` (ut
 sends them: `spirit: ` at the start; `path app` gives `spirit.app: `; `path agent` gives `spirit.app.agent: ` and app.agent
 in state; `path nope` leaves the prompt; `path <` gives `spirit.app: `; there the up key offers `path agent` and never
 `path app.agent` or `path app`; `path <<` gives `spirit: `, `path node` gives `spirit.node: `, where the up key offers
-neither `path agent` nor `path app.agent`.
+neither `path agent` nor `path app.agent`; there `card`, which ran, is offered again by the up key, and `nope`, which
+failed, is not (Andy: *"the up key isn't for navigation only, it's for every command that is successful."*).
