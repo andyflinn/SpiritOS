@@ -295,22 +295,19 @@ function arrivesOnce(i) {
     return on === 1 || false;
   };
 }
-// The i-th event, emitted above: it never reached the face with no star.
-function staysHome(i) {
-  return function () {
-    const sx = W.sx; if (!sx) return false;
-    const c = jobEvents[i];
-    return sx.got(PLAIN, c[1], c[2]) === 0 || false;
-  };
-}
 
-// A starred face hears what the loopback hears, each once, and a face with no star hears nothing (box v29).
-test.run('both faces have their stream open', 0.2, async function () {
+// A starred face hears what the loopback hears, each once. A relay with no faceable mark gets no stream at all (Q19; Andy:
+// "absolutely. either there is a face, or there is not. NO inbetween."), as a relay where this node set no face gets none.
+test.run('the starred face has its stream open', 0.2, async function () {
   const sx = W.sx = streams(starAt);
   sx.home.open(STARRED, '');
   sx.home.open(PLAIN, '');
   await settle();
-  return (!!sx.ups[STARRED] && !!sx.ups[PLAIN]) || false;
+  return !!sx.ups[STARRED] || false;
+}, test.limit.quick);
+test.run('face-open on a relay with no faceable mark starts no stream', 0.8, function () {
+  const sx = W.sx; if (!sx) return false;
+  return !sx.ups[PLAIN] || false;
 }, test.limit.quick);
 test.run('the home side subscribes to the node\'s events', 0.2, function () { if (!W.sx) return false; return W.sx.subs.length > 0 || false; }, test.limit.quick);
 test.run('when starred, a bundle arrives whole, once', 0.2, arrivesOnce(0), test.limit.quick);
@@ -326,45 +323,21 @@ test.run('when starred, a post among the monitor\'s relay events arrives whole, 
 test.run('when starred, a reply among the monitor\'s relay events arrives whole, once', 0.2, arrivesOnce(10), test.limit.quick);
 test.run('when starred, a refusal among the monitor\'s relay events arrives whole, once', 0.2, arrivesOnce(11), test.limit.quick);
 test.run('when starred, a relay\'s status arrives whole, once', 0.2, arrivesOnce(12), test.limit.quick);
-test.run('with no faceable mark on the relay, a bundle stays home: WHAT THE FUCK?????????????????????????', 0.8, staysHome(0), test.limit.quick);
-test.run('with no faceable mar on the fucking relay, a branch stays home, WHAT THE FUCK!!!!!!!!!!!!!!!!!!!!!!!!!!!', 0.8, staysHome(1), test.limit.quick);
-test.run('with no faceable mark, a grant stays home: WHAT THE FUCK!!!!!', 0.8, staysHome(2), test.limit.quick);
-test.run('with no star, a deleted job stays home', 0.8, staysHome(3), test.limit.quick);
-test.run('with no star, a running job of a process stays home', 0.8, staysHome(4), test.limit.quick);
-test.run('with no star, a running job of no module stays home', 0.8, staysHome(5), test.limit.quick);
-test.run('with no star, a job of an id nobody has listed stays home', 0.8, staysHome(6), test.limit.quick);
-test.run('with no star, a server\'s job as a whole stays home', 0.8, staysHome(7), test.limit.quick);
-test.run('with no star, the join steps stay home', 0.8, staysHome(8), test.limit.quick);
-test.run('with no star, a post among the monitor\'s relay events stays home', 0.8, staysHome(9), test.limit.quick);
-test.run('with no star, a reply among the monitor\'s relay events stays home', 0.8, staysHome(10), test.limit.quick);
-test.run('with no star, a refusal among the monitor\'s relay events stays home', 0.8, staysHome(11), test.limit.quick);
-test.run('with no star, a relay\'s status stays home', 0.8, staysHome(12), test.limit.quick);
 
-// Box v29: a face with no star gets nothing, not even the file tree. Each event is emitted by its no-star check, and the
-// starred check after it reads the same lines.
+// What the loopback hears today reaches the starred face, once.
 const today = [['the file tree', 'job-updated', { id: 'spirit.fs', kind: 'permanent', status: 'running', data: { command: { op: 'zz' } } }],
   ['a row of the one table', 'job-updated', { id: 'spirit.contact', kind: 'permanent', status: 'running', data: { row: 1 } }],
   ['a contact renamed', 'contact.rename', { key: 'K', name: 'zz' }]];
-function todayStaysHome(i) {
-  return function () {
-    const sx = W.sx; if (!sx) return false;
-    const c = today[i];
-    sx.emit(c[1], c[2]);
-    return sx.got(PLAIN, c[1], c[2]) === 0 || false;
-  };
-}
 function todayArrives(i) {
   return function () {
     const sx = W.sx; if (!sx) return false;
     const c = today[i];
+    sx.emit(c[1], c[2]);
     return sx.got(STARRED, c[1], c[2]) === 1 || false;
   };
 }
-test.run('with no star, the file tree stays home', 0.8, todayStaysHome(0), test.limit.quick);
 test.run('when starred, the file tree arrives, once', 0.2, todayArrives(0), test.limit.quick);
-test.run('with no star, a row of the one table stays home', 0.8, todayStaysHome(1), test.limit.quick);
 test.run('when starred, a row of the one table arrives, once', 0.2, todayArrives(1), test.limit.quick);
-test.run('with no star, a renamed contact stays home', 0.8, todayStaysHome(2), test.limit.quick);
 test.run('when starred, a renamed contact arrives, once', 0.2, todayArrives(2), test.limit.quick);
 // An owner's event reaches a face by the node's dispatcher alone (ownerEvent went with the half face, box v29): one line.
 const minted = { kind: 'invite-minted', relay: STARRED, invite: 'zz' };
@@ -373,38 +346,7 @@ test.run('when starred, an owner\'s relay event arrives once', 0.2, function () 
   sx.emit('relay-event', minted);
   return sx.got(STARRED, 'relay-event', minted) === 1 || false;
 }, test.limit.quick);
-test.run('with no star, an owner\'s relay event stays home', 0.8, function () {
-  const sx = W.sx; if (!sx) return false;
-  return sx.got(PLAIN, 'relay-event', minted) === 0 || false;
-}, test.limit.quick);
 
-// goal/G41.33: only true is a star, the star counts at each event, and it sends no catch-up.
-test.run('before the star is pressed, nothing arrives', 0.8, async function () {
-  W.pressed = false;
-  const sw = W.sw = streams(function () { return W.pressed; });
-  sw.home.open(STARRED, '');
-  await settle();
-  sw.emit('job-deleted', 'job_before');
-  return sw.got(STARRED, 'job-deleted', 'job_before') === 0 || false;
-}, test.limit.quick);
-test.run('when the star is pressed with the face open, the next event arrives with no reopening', 0.2, async function () {
-  const sw = W.sw; if (!sw) return false;
-  W.pressed = true;
-  await settle();
-  W.atPress = sw.lines(STARRED).length;
-  sw.emit('job-deleted', 'job_on');
-  return sw.got(STARRED, 'job-deleted', 'job_on') === 1 || false;
-}, test.limit.quick);
-test.run('pressing the star sends no catch-up, so what went before the press never comes', 0.8, function () {
-  const sw = W.sw; if (!sw || W.atPress === undefined) return false;
-  return (sw.got(STARRED, 'job-deleted', 'job_before') === 0 && sw.lines(STARRED).length === W.atPress + 1) || false;
-}, test.limit.quick);
-test.run('once the star is taken off, the next event stays home at once', 0.8, function () {
-  const sw = W.sw; if (!sw) return false;
-  W.pressed = false;
-  sw.emit('job-deleted', 'job_off');
-  return sw.got(STARRED, 'job-deleted', 'job_off') === 0 || false;
-}, test.limit.quick);
 
 // goal/G41.33: a starred face that opens gets what a loopback page gets on connect.
 // event.js handleSubscribe: "snapshot", { jobs: o.jobs.listJobs() }. The envelope is the builder's; the jobs are the box's.
@@ -414,7 +356,6 @@ async function snapshotStreams() {
   const sn = streams(starAt);
   sn.jobs = SNAPSHOT;
   sn.home.open(STARRED, '');
-  sn.home.open(PLAIN, '');
   await settle();
   W.sn = sn;
   return sn;
@@ -423,19 +364,11 @@ const onWire = function (sn, url, id) { return JSON.stringify(sn.lines(url)).ind
 function onOpening(id) {
   return async function () { const sn = await snapshotStreams(); return onWire(sn, STARRED, id) || false; };
 }
-function notOnOpening(id) {
-  return async function () { const sn = await snapshotStreams(); return !onWire(sn, PLAIN, id) || false; };
-}
 test.run('when starred, the job spirit.auth is there on opening', 0.2, onOpening('spirit.auth'), test.limit.quick);
-test.run('with no star, the job spirit.auth is not there on opening', 0.8, notOnOpening('spirit.auth'), test.limit.quick);
 test.run('when starred, the job spirit.app.zz is there on opening', 0.2, onOpening('spirit.app.zz'), test.limit.quick);
-test.run('with no star, the job spirit.app.zz is not there on opening', 0.8, notOnOpening('spirit.app.zz'), test.limit.quick);
 test.run('when starred, the job spirit.app.zzOther is there on opening', 0.2, onOpening('spirit.app.zzOther'), test.limit.quick);
-test.run('with no star, the job spirit.app.zzOther is not there on opening', 0.8, notOnOpening('spirit.app.zzOther'), test.limit.quick);
 test.run('when starred, the job spirit.zzNeverSeen is there on opening', 0.2, onOpening('spirit.zzNeverSeen'), test.limit.quick);
-test.run('with no star, the job spirit.zzNeverSeen is not there on opening', 0.8, notOnOpening('spirit.zzNeverSeen'), test.limit.quick);
 test.run('when starred, the job spirit is there on opening', 0.2, onOpening('spirit'), test.limit.quick);
-test.run('with no star, the job spirit is not there on opening', 0.8, notOnOpening('spirit'), test.limit.quick);
 
 // goal/G41.33: the queue does not change, and it loses none of the new ones.
 test.run('while the sink is busy only one event is written, and the rest wait for it', 0.2, async function () {
@@ -717,9 +650,8 @@ test.run('the star put back opens nothing, because the face is gone, not hidden'
 }, test.limit.quick);
 
 // GOAL/G41.33, ON THE REAL STREAM. "anything andy gets on his loopback screen, he can get on his face, if he "stars" any
-// relay"; "NO RESTRICTIONS AT ALL, except changing stars"; "Pressing the star sends no catch-up". Without the star the face
-// gets nothing (box v29, above). What a page reads from /face/stream, with its cookie, unsealed as a page that cannot seal.
-// The real stream: without the star it carries nothing; with it, a job, a bundle and the join steps.
+// relay"; "NO RESTRICTIONS AT ALL, except changing stars". Without the star there is no face (box v29, Q19). What a page
+// reads from /face/stream, with its cookie, unsealed as a page that cannot seal: a job, a bundle and the join steps.
 const hears = function (word) { return S.got.some(function (l) { return l.indexOf(word) !== -1; }); };
 const heardEvent = function (kind, id) { return S.got.some(function (l) { const v = parsed(l); return !!v && v.event === kind && (kind === 'job-deleted' ? v.data === id : !!v.data && v.data.id === id); }); };
 const streamUp = function () { return !!(S.LS && S.LS.sid && S.got); };
@@ -747,8 +679,19 @@ test.run('the face logs in', 0.2, async function () {
   S.LS = await logIn(S.S, 'stream');
   return !!S.LS.sid || false;
 }, test.limit.quick);
-test.run('with no star, the stream carries nothing of the node, not even its file tree', 0.8, async function () {
+// Q19 (Andy: "either there is a face, or there is not. NO inbetween."): no stream stands on a relay with no faceable mark,
+// so the mark goes on first and the stream opens on it.
+test.run('the star is put on at home', 0.2, async function () {
   if (!S.LS || !S.LS.sid) return false;
+  const sOn = await home(S.N.base, 'contact.faceable', { key: S.S.relayKey, faceable: true });
+  return sOn.status === 200 || false;
+}, test.limit.quick);
+test.run('the stream opens and carries the node\'s file tree', 0.2, async function () {
+  if (!S.LS || !S.LS.sid) return false;
+  const script2 = path.join(S.run, 'spirit/app/zzStream/zzStream.js');
+  fs.mkdirSync(path.dirname(script2), { recursive: true });
+  fs.writeFileSync(script2, 'setTimeout(function () { process.exit(4); }, 300);\n');
+  fs.writeFileSync(path.join(S.run, 'spirit/app/zzStream/zzStream.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
   S.got = [];
   let heldStream = '';
   S.q = http.request({ host: '127.0.0.1', port: S.S.port, path: '/face/stream', method: 'GET', headers: { Host: 'stream.relay.example', Cookie: 'spirit_face=' + S.LS.sid } }, function (r) {
@@ -757,42 +700,7 @@ test.run('with no star, the stream carries nothing of the node, not even its fil
   });
   S.q.on('error', function () { /* the stream ends with the relay */ });
   S.q.end();
-  await sleep(3000);
-  // Box v29: no star, the node answers the face nothing, so no file tree, no presence, no job.
-  return (!hears('spirit.fs') && !hears('presence')) || false;
-}, test.limit.slow);
-test.run('with no faceable mark, a job runs and is deleted at home WHAT THE FUCK!!!!!!!!!!', 0.2, async function () {
-  if (!streamUp()) return false;
-  const script2 = path.join(S.run, 'spirit/app/zzStream/zzStream.js');
-  fs.mkdirSync(path.dirname(script2), { recursive: true });
-  fs.writeFileSync(script2, 'setTimeout(function () { process.exit(4); }, 300);\n');
-  fs.writeFileSync(path.join(S.run, 'spirit/app/zzStream/zzStream.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
-  S.j0 = await runOne();
-  return !!S.j0.id || false;
-}, test.limit.quick);
-test.run('with no star, a bundle is added at home', 0.2, async function () {
-  if (!streamUp()) return false;
-  const b0 = await bundle('zzBefore');
-  return b0.status < 300 || false;
-}, test.limit.quick);
-test.run('with no faceable mark, the job never reaches the face DELETE THIS FUCKING TEST!!!!!!!', 0.8, async function () {
-  if (!streamUp() || !S.j0) return false;
-  await sleep(WAIT_MS);
-  return (!!S.j0.id && !hears(S.j0.id)) || false;
-}, test.limit.slow);
-test.run('with no star, the bundle never reaches the face', 0.8, function () {
-  if (!streamUp()) return false;
-  return !hears('zzBefore') || false;
-}, test.limit.quick);
-test.run('the star is put on at home while the stream is still open', 0.2, async function () {
-  if (!streamUp()) return false;
-  const sOn = await home(S.N.base, 'contact.faceable', { key: S.S.relayKey, faceable: true });
-  return sOn.status === 200 || false;
-}, test.limit.quick);
-test.run('the faceable mark sends no catch-up, so what went before it does not come WHAT THE FUCK?????', 0.8, async function () {
-  if (!streamUp() || !S.j0) return false;
-  await sleep(WAIT_MS);
-  return (!!S.j0.id && !hears(S.j0.id) && !hears('zzBefore')) || false;
+  return (await until(function () { return hears('spirit.fs'); }, 8000)) || false;
 }, test.limit.slow);
 test.run('when starred, a job runs and is deleted at home', 0.2, async function () {
   if (!streamUp()) return false;

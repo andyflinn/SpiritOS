@@ -45,12 +45,10 @@ stars."* Here `o.events` is a stand-in, and a relay event comes as `server.js` s
 
 - **A starred face hears each of those whole and once**, a job of a type nobody has listed too, and a server's job with its
   log. Packets are not judged: the box reduced this item to its five kinds, *"for now"*.
-- **A face with no star hears nothing** (box v29): not a job, not the file tree, not the one table's rows, not a contact
-  renamed, not a relay event.
+- **A relay with no faceable mark gets no stream** (Q19; Andy: *"absolutely. either there is a face, or there is not. NO
+  inbetween."*): face-open there starts none, as on a relay where this node set no face.
 - **An owner's relay event is one line**: it reaches a face by the node's dispatcher alone (`ownerEvent` went with the half
   face).
-- **Only `true` is a star, and it counts at each event**: pressed with the face open, the next event arrives; taken off, the
-  next stays home. *"Pressing the star sends no catch-up."*
 - **A starred face that opens gets the jobs a loopback page gets on connect** (line 1 of the box; `event.js`, the
   snapshot). The envelope is the builder's: only that each job is on the stream is judged.
 - **The queue does not change**: its levels are as they were, one write at a time, and nothing new is lost while it waits.
@@ -92,12 +90,10 @@ The face on the owned relay is set before the owner mark goes in (the relay rest
 
 ### On the real stream
 
-What a page reads from `/face/stream`, with its cookie. No star: the stream carries nothing of the node, not its file tree
-nor presence; a job run and deleted at home and a bundle added never reach the face. The star pressed with the stream open:
-none of that comes after it. Starred: the running job, the job deleted, the bundle and the join steps arrive. From the
+What a page reads from `/face/stream`, with its cookie. The star goes on first, since a relay with no faceable mark gets no
+stream (Q19), and the stream opens with the node's file tree. Starred: the running job, the job deleted, the bundle and the join steps arrive. From the
 starred face, `contact.faceable` of another relay and of its own star are refused and change nothing; `relay.face` through it is
-not refused, and the face answers at its new name. The star off: the next job stays home, and the node holds no face on
-that relay any more. Relay events are judged in `spirit/test/faceHome.js`, on stand-ins.
+not refused, and the face answers at its new name. The star off: the node holds no face on that relay any more. Relay events are judged in `spirit/test/faceHome.js`, on stand-ins.
 
 ## The starApps part: a star shows every app
 
