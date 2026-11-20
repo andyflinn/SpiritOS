@@ -18,8 +18,9 @@ that a name that reaches all type files?)"*). Given a file, it judges that type 
 
 - **A `<type>Select.js`** (goal/G48.4; Andy: *"every <type>Select.js requires its <type>.js and takes "" plus whatever
   <type>.js"*, *"FIRST checks for "", and returns true if the value is "", it otherwise it lets <type>.js handle the
-  check"*, *"has it's own ruleDescription() and defaultValue() which is usually ""*): the line and file filters are
-  `lineSelect.js` and `fileSelect.js`; each select has its `<type>.js` beside it and requires it, takes `""` with `""` its
+  check"*, *"has it's own ruleDescription() and defaultValue() which is usually ""*): the search and file filters are
+  `descriptionSelect.js` and `fileSelect.js` (Q22: *"get rid of spirit.type.string.line"*, *"description, 128 bytes for a
+  search string is plenty"*: `line.js` and `lineSelect.js` are gone, and no script of the tree names either); each select has its `<type>.js` beside it and requires it, takes `""` with `""` its
   default, takes its sibling's own default and throws where its sibling throws (a number, an object, true), and has a
   `ruleDescription()` of its own.
 

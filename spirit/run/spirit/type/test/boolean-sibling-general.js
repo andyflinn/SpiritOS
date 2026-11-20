@@ -69,8 +69,18 @@ const SELECTS = TARGETS.filter(function (rel) { return /Select\.js$/.test(rel); 
 const siblingOf = function (rel) { return rel.replace(/Select\.js$/, '.js'); };
 const everySelect = function (fn) { return SELECTS.length > 0 && SELECTS.every(function (rel) { const T = load(rel), B = load(siblingOf(rel)); return !!T && !!B && fn(T, B, rel); }); };
 if (!asked || /Select\.js$/.test(asked)) {
-  test.run('the line and file filters are selects: spirit/type/string/lineSelect.js and fileSelect.js are there', 0.4, function () {
-    return (fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'lineSelect.js')) && fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'fileSelect.js'))) || false;
+  // Q22 (Andy: "get rid of spirit.type.string.line", "description, 128 bytes for a search string is plenty"): a search's
+  // words are a descriptionSelect, and line.js goes, and lineSelect.js with it.
+  test.run('the search and file filters are selects: spirit/type/string/descriptionSelect.js and fileSelect.js are there', 0.4, function () {
+    return (fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'descriptionSelect.js')) && fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'fileSelect.js'))) || false;
+  }, test.limit.quick);
+  test.run('spirit/type/string/line.js and lineSelect.js are gone', 0.4, function () {
+    return (!fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'line.js')) && !fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'lineSelect.js'))) || false;
+  }, test.limit.quick);
+  test.run('no script of the tree names spirit.type.string.line or spirit.type.string.lineSelect', 0.4, function () {
+    const files = require('child_process').execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(function (f) { return /^spirit\/.+\.(js|json)$/.test(f) && !/(^|\/)test\//.test(f); });
+    if (!files.length) return false;
+    return !files.some(function (f) { let c = ''; try { c = fs.readFileSync(path.join(RUN, f), 'utf8'); } catch (e) { return false; } return /spirit\.type\.string\.line(Select)?\b/.test(c); }) || false;
   }, test.limit.quick);
   test.run('every <type>Select.js has its <type>.js beside it and requires it', 0.4, function () {
     return everySelect(function (T, B, rel) { const sib = siblingOf(rel); let code = ''; try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; } return fs.existsSync(path.join(RUN, sib)) && code.indexOf(path.basename(sib, '.js')) !== -1 && /require\(/.test(code); }) || false;
