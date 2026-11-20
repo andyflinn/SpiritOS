@@ -26,6 +26,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
   if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/rowForm.js');
   // Its email field's limit, fieldInput's email rule (goal/G47.1, -browser: "every input it draws has a maxlength").
   if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/fieldInput.js');
+  // And the email type, which a send asks first (goal/G48.4, the box: "fieldRules.js dies").
+  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/type/string/email.js');
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
@@ -82,8 +84,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     var o = opts || {};
     var url = String((typeof o.url === 'function' ? o.url() : o.url) || '');
     var email = String(o.email || '').trim();
-    // The one email rule (fieldRules.emailProblem, goal/G40.10, box v20): a malformed address is told what is wrong.
-    var bad = rules() ? rules().emailProblem(email) : (email ? '' : 'an email address is needed');
+    // The one email rule, the email type (spirit/type/string/email.js; goal/G40.10, box v20): a malformed address is told
+    // what is wrong.
+    var T = emailType();
+    var bad = '';
+    if (T) { try { T.isValid(email); } catch (e) { bad = (e && e.message) || 'not an email address'; } } else if (!email) bad = 'an email address is needed';
     if (bad) return Promise.resolve({ ok: false, text: bad });
     if (!url) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
     // Through the spirit object (goal/G32.2): spirit.relay.join answers the reply's body, or refuses with the node's words.
@@ -101,7 +106,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     }, function (e) { return { ok: false, text: String((e && e.message) || e) }; });
   }
 
-  function rules() { return (window.spirit && window.spirit.fieldRules) || null; }
+  function emailType() { var r = window.spirit && window.spirit.required; return (r && r.spirit && r.spirit.type && r.spirit.type.string && r.spirit.type.string.email) || null; }
   // The relays a place offers, out of relay.status' rows: 'seated' only those with a seat, else every one listed.
   function picking(rows, pick) {
     var list = Array.isArray(rows) ? rows : [];
@@ -150,13 +155,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       if (!left && ((window.spirit.data || {}).contact || {}).data) stop = window.spirit.data.contact.data.watch(take);
     });
     box._spJoinStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
-    // THE FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20): past fieldRules' 254 bytes nothing more is taken.
-    box.addEventListener('input', function (e) {
-      var f = e.target;
-      if (!f || !f.classList || !f.classList.contains('sp-join-email') || !rules()) return;
-      var held = rules().clip(f.value, rules().EMAIL_MAX_BYTES);
-      if (held !== f.value) f.value = held;
-    });
     function go() {
       var field = box.querySelector('.sp-join-email');
       var out = box.querySelector('.sp-join-out');
