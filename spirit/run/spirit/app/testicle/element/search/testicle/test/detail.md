@@ -24,6 +24,8 @@ the detail mounted alone on `/face.html` in a real Chrome.
   [change button]"*); rows 3 and 4 the full
   script path and the full suite path (*"row 3: script file name - fow 4: suite file name then the list"*). Its rename asks `testicle.title` with the script, the suite, the old title
   and the typed one; a refusal is said below the forms and the title line stays.
+- The current row (its own current flag) is drawn in bold, the older rows in normal weight (Andy: *"current row in bold
+  sound like the most simple approach. let's try it."*).
 - `destroy` empties its container, and nothing is drawn there after.
 
 ## What its test must try to break

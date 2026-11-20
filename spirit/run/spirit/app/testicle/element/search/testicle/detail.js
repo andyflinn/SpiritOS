@@ -71,7 +71,10 @@
         var el = S.element.spirit.app.testicle.element.search.testicle.row.create(r);
         drawn.push(el);
         var when = r.flipped ? new Date(Number(r.flipped)).toISOString().replace('T', ' ').slice(0, 19) : '';
-        return '<tr data-key="' + esc(r.key) + '"><td data-field="flipped">' + esc(when) + '</td>' +
+        // THE CURRENT ROW IN BOLD (goal/G47.4, Andy: "the one thing not instantly obvious is the fact that the first row IS the
+        // 'current' and the one that counts 'right now'", then "current row in bold sound like the most simple approach. let's
+        // try it."): marked by its own current flag, not by standing on top.
+        return '<tr data-key="' + esc(r.key) + '"' + (r.current ? ' data-current="true" style="font-weight:bold"' : '') + '><td data-field="flipped">' + esc(when) + '</td>' +
           el.cells().filter(function (c) { return c.name !== 'test' && c.name !== 'script' && c.name !== 'suite'; }).map(function (c) { return '<td data-field="' + esc(c.name) + '">' + c.html + '</td>'; }).join('') + '</tr>';
       }).join('') || '<tr><td colspan="3">' + esc('No row of this test.') + '</td></tr>';
     }
