@@ -9,5 +9,5 @@ isValid(something) return boolean true if something is valid and throws and erro
 
 ## What its test judges
 
-It exists and loads; it holds defaultValue and isValid; defaultValue() passes isValid; isValid answers true for 'https://example.com/a', 'http://127.0.0.1:45441'; isValid throws an
+It exists and loads; it holds defaultValue and isValid; isValid answers true for 'https://example.com/a', 'http://127.0.0.1:45441'; isValid throws an
 error for 'ftp://example.com', 'example.com', '', 'https://a b', 5.

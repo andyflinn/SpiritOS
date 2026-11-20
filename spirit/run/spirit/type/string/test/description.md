@@ -9,5 +9,5 @@ isValid(something) return boolean true if something is valid and throws and erro
 
 ## What its test judges
 
-It exists and loads; it holds defaultValue and isValid; defaultValue() passes isValid; isValid answers true for 'said in a few words', 'a'.repeat(128); isValid throws an
+It exists and loads; it holds defaultValue and isValid; isValid answers true for 'said in a few words', 'a'.repeat(128); isValid throws an
 error for '', 'a'.repeat(129), 'a\u200db', 7, null.

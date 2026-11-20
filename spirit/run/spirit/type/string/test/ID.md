@@ -9,5 +9,5 @@ isValid(something) return boolean true if something is valid and throws and erro
 
 ## What its test judges
 
-It exists and loads; it holds defaultValue and isValid; defaultValue() passes isValid; isValid answers true for 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ='; isValid throws an
+It exists and loads; it holds defaultValue and isValid; isValid answers true for 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ='; isValid throws an
 error for 'goal/G48', '', 'MCowBQYDK2VwAyEA', 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lz', 5, null.

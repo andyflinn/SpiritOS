@@ -9,5 +9,5 @@ isValid(something) return boolean true if something is valid and throws and erro
 
 ## What its test judges
 
-It exists and loads; it holds defaultValue and isValid; defaultValue() passes isValid; isValid answers true for 'spirit', 'spirit.app.desk'; isValid throws an
+It exists and loads; it holds defaultValue and isValid; isValid answers true for 'spirit', 'spirit.app.desk'; isValid throws an
 error for 'app.desk', 'spirit/app', '', 'spirit..app', 'spirit.app.', 5, null.

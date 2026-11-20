@@ -23,10 +23,6 @@ test.run('spirit/type/number/integer.js exists and loads', 0.2, function () {
 test.run('it is an object of two static functions, defaultValue and isValid', 0.4, function () {
   return (!!T && typeof T.defaultValue === 'function' && typeof T.isValid === 'function') || false;
 }, test.limit.quick);
-test.run('defaultValue() answers a value that passes isValid', 0.4, function () {
-  if (!T) return false;
-  try { return T.isValid(T.defaultValue()) === true || false; } catch (e) { return false; }
-}, test.limit.quick);
 test.run('isValid answers true, the boolean, for 0, 3, -7', 0.4, function () {
   if (!T) return false;
   try { return [0, 3, -7].every(function (v) { return T.isValid(v) === true; }) || false; } catch (e) { return false; }

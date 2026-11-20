@@ -9,5 +9,5 @@ isValid(something) return boolean true if something is valid and throws and erro
 
 ## What its test judges
 
-It exists and loads; it holds defaultValue and isValid; defaultValue() passes isValid; isValid answers true for '🛌', 'a'; isValid throws an
+It exists and loads; it holds defaultValue and isValid; isValid answers true for '🛌', 'a'; isValid throws an
 error for '', 'ab', '🛌🛌', 5, null.

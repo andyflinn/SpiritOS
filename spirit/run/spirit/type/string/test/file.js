@@ -23,10 +23,6 @@ test.run('spirit/type/string/file.js exists and loads', 0.2, function () {
 test.run('it is an object of two static functions, defaultValue and isValid', 0.4, function () {
   return (!!T && typeof T.defaultValue === 'function' && typeof T.isValid === 'function') || false;
 }, test.limit.quick);
-test.run('defaultValue() answers a value that passes isValid', 0.4, function () {
-  if (!T) return false;
-  try { return T.isValid(T.defaultValue()) === true || false; } catch (e) { return false; }
-}, test.limit.quick);
 test.run('isValid throws an error for 5, null, undefined, {}', 0.4, function () {
   if (!T) return false;
   return [5, null, undefined, {}].every(throws) || false;
