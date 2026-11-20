@@ -1743,6 +1743,12 @@ test.run('testicle.script.classify sets a script\'s browserOnly and nodeOnly', 0
   const row = scriptRow(tables(DB), KA);
   return (r.status === 200 && !!row && yes(row.browserOnly) && no(row.nodeOnly)) || false;
 }, test.limit.quick);
+// goal/G48.4, Q6, Andy: lists are "spirit.type.string.json": what a load pulled in comes as a list in JSON, and is taken.
+test.run('testicle.script.classify takes what the load pulled in as a list in JSON', 0.4, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false, requires: JSON.stringify(['spirit/limits.js']) });
+  return r.status === 200 || false;
+}, test.limit.quick);
 test.run('six scripts are written, each with its own test: node, page, both, broken, hang and exit', 0.2, async function () {
   if (!up()) return false;
   Object.keys(ZC).forEach(function (k) { put(ownOf(ZC[k]), ownSuite(k)); put(ZC[k], ZC_SRC[k]); });
@@ -2244,6 +2250,12 @@ test.run('testicle.suite.success with success true sets it green, at once, whate
   const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: true });
   const row = suiteRow(tables(DB), SUC, SUCS);
   return (r.status === 200 && !!row && row.outcome === 'green' && no(row.test)) || false;
+}, test.limit.quick);
+// goal/G48.4, Q6: what the suite pulled in comes as a list in JSON, and is taken.
+test.run('testicle.suite.success takes what the suite pulled in as a list in JSON', 0.4, async function () {
+  if (!succWorld) return false;
+  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: true, requires: JSON.stringify(['spirit/limits.js']) });
+  return r.status === 200 || false;
 }, test.limit.quick);
 
 // ── AN ABORTED RUN RE-ASSEMBLED (goal/G47.1, box v130: "a run aborted (stopped or killed): the server RE-ASSEMBLES a new run

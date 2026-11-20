@@ -1264,10 +1264,11 @@ appServer.serve({
   // the classifying run under way started on other bytes of it: then the next run takes it again. Answers the script row.
   'script.classify': {
     request: { script: '', browserOnly: false, nodeOnly: false }, reply: { name: '', hash: '', deleted: false, changed: 0 },
-    // requires may be left out (goal/G47.6, Andy: "both new arguments to the two existing verbs are approved.").
+    // requires may be left out (goal/G47.6, Andy: "both new arguments to the two existing verbs are approved."); it comes
+    // as a list in JSON, one string (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json").
     accepts: function (a) {
       if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.script !== 'string' || typeof a.browserOnly !== 'boolean' || typeof a.nodeOnly !== 'boolean') return false;
-      return Object.keys(a).every(function (k) { return k === 'script' || k === 'browserOnly' || k === 'nodeOnly' || (k === 'requires' && Array.isArray(a[k])); });
+      return Object.keys(a).every(function (k) { return k === 'script' || k === 'browserOnly' || k === 'nodeOnly' || (k === 'requires' && typeof a[k] === 'string'); });
     },
     handler: function (a) {
       const name = posix(String(a.script || '')).replace(/^\.?\//, '');
@@ -1373,7 +1374,7 @@ appServer.serve({
     // reason and requires may be left out (goal/G47.6, Andy: "both new arguments to the two existing verbs are approved.").
     accepts: function (a) {
       if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.script !== 'string' || typeof a.suite !== 'string' || typeof a.success !== 'boolean') return false;
-      return Object.keys(a).every(function (k) { return k === 'script' || k === 'suite' || k === 'success' || (k === 'reason' && typeof a[k] === 'string') || (k === 'requires' && Array.isArray(a[k])); });
+      return Object.keys(a).every(function (k) { return k === 'script' || k === 'suite' || k === 'success' || (k === 'reason' && typeof a[k] === 'string') || (k === 'requires' && typeof a[k] === 'string'); });
     },
     handler: function (a) {
       const script = posix(String(a.script || '')).replace(/^\.?\//, '');
