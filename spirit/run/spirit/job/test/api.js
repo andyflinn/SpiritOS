@@ -143,7 +143,8 @@ test.run('get, cancel and delete name the job, never by an empty name', 0.2, fun
   const no = refusedAs('get', { key: '' }) === 'bad-request' && refusedAs('cancel', { id: '' }) === 'bad-request' && refusedAs('delete', {}) === 'bad-request';
   return (ok && no) || false;
 }, test.limit.quick);
-test.run('create needs a command; its args are a list, its type a text, both optional', 0.2, function () {
+// goal/G48.4, Q6, Andy: lists are "spirit.type.string.json": args a JSON list in a string.
+test.run('create needs a command; its args are a JSON list in a string, its type a text, both optional', 0.2, function () {
   if (!W.api) return false;
-  return (passes('create', { command: 'node' }) && passes('create', { command: 'node', args: ['a.js'], type: 'server' }) && refusedAs('create', {}) === 'bad-request' && refusedAs('create', { command: 'node', args: 'a.js' }) === 'bad-request') || false;
+  return (passes('create', { command: 'node' }) && passes('create', { command: 'node', args: JSON.stringify(['a.js']), type: 'server' }) && refusedAs('create', {}) === 'bad-request' && refusedAs('create', { command: 'node', args: 'a.js' }) === 'bad-request') || false;
 }, test.limit.quick);

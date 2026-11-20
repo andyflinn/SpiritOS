@@ -10,7 +10,7 @@ The job family: the node's jobs and the servers it runs. Owed since the rule *"e
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
   the verbs server.js mounts for the family, and each verb exactly the arguments its handler's `request` carries.
 - `search`'s q is optional; `get`, `cancel` and `delete` name the job, never by an empty name.
-- `create` needs a command; its `args` are a list, its `type` a text, both optional.
+- `create` needs a command; its `args` are a JSON list in a string (goal/G48.4, Q6), its `type` a text, both optional.
 
 ## What its test must try to break
 

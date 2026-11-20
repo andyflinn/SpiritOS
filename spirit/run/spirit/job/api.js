@@ -12,7 +12,7 @@ module.exports = {
   verbs: {
     search: { q: 'spirit.type.string.lineFilter?' },
     get: { key: 'id' },
-    create: { command: 'id', args: 'list?', type: 'text?' },
+    create: { command: 'id', args: 'spirit.type.string.json?', type: 'text?' },
     cancel: { id: 'id' },
     delete: { id: 'id' },
   },

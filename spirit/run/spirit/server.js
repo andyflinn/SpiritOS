@@ -318,7 +318,11 @@ function handleCreateJob(req, res) {
     // (processes/G1.3, jobs.startJob). The request is unchanged.
     let job = null;
     // No opt-in to cleaning up (goal/G29.16): every transient job removes itself when it ends, unless it failed.
-    try { job = jobs.startJob(body.command, body.args || [], { type: body.type }); }
+    // ITS ARGS A JSON LIST IN A STRING (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json").
+    let args = [];
+    try { args = body.args ? JSON.parse(String(body.args)) : []; } catch (e) { args = null; }
+    if (!Array.isArray(args) || !args.every(function (x) { return typeof x === 'string'; })) { res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'bad-request', error: 'args is a JSON list of strings' })); return; }
+    try { job = jobs.startJob(body.command, args, { type: body.type }); }
     catch (e) {
       // A process this node does not include is refused by name (slim/G1.3).
       if (e && (e.refusal === 'process-not-included' || e.refusal === 'not-a-process' || e.refusal === 'already-running')) {
@@ -1612,7 +1616,7 @@ catch (e) {
   loopbackVerbs.mount('job', path.join(__dirname, 'job'), {
     'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', job: JOB }, handler: proxyVerb(function (b) { return nodeSearches.jobsGet(b); }) },
-    'create': { request: { command: '', args: [''], type: '' }, reply: JOB, handler: handleCreateJob },
+    'create': { request: { command: '', args: '', type: '' }, reply: JOB, handler: handleCreateJob },
     'cancel': { request: { id: '' }, reply: JOB, handler: handleCancelJob },
     // 204, no body.
     'delete': { request: { id: '' }, reply: {}, handler: handleDeleteJob },

@@ -118,7 +118,7 @@ test.run('a click puts the event line into the Extract box, written out as JSON 
 // a running process: Cancel; the node then removes it (G29.16), and the screen stays and says so
 test.run('zzSleep is started', 0.2, async function () {
   if (!call) return false;
-  const started = await call('job.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
+  const started = await call('job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzSleep/zzSleep.js']) });
   return started.status >= 200 && started.status < 300 ? true : false;
 }, test.limit.slow);
 test.run('a running job offers Cancel and no Delete', 0.2, async function () {
@@ -145,7 +145,7 @@ test.run('Cancel does not close the screen', 0.2, async function () {
 // a failed process stays (G29.16): Delete and no Cancel; Delete, and the screen goes with the job
 test.run('zzFail is started', 0.2, async function () {
   if (!call) return false;
-  const failed = await call('job.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
+  const failed = await call('job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzFail/zzFail.js']) });
   return failed.status >= 200 && failed.status < 300 ? true : false;
 }, test.limit.slow);
 test.run('zzFail fails and stays listed', 0.2, async function () {

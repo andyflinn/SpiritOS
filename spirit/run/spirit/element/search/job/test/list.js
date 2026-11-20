@@ -51,7 +51,7 @@ test.run('a scratch node of its own comes up with two planted apps, and Chrome o
 }, test.limit.slow);
 test.run('zzFail is started', 0.2, async function () {
   if (!call) return false;
-  const failed = await call('job.create', { command: 'node', args: ['spirit/app/zzFail/zzFail.js'] });
+  const failed = await call('job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzFail/zzFail.js']) });
   return failed.status >= 200 && failed.status < 300 ? true : false;
 }, test.limit.slow);
 test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.search.job.list.create, given container and open', 0.2, async function () {
@@ -133,7 +133,7 @@ test.run('all lists them all again', 0.2, async function () {
 // "one green dot hops between rows, always showing the most recent update"
 test.run('zzSleep is started', 0.2, async function () {
   if (!call) return false;
-  const started = await call('job.create', { command: 'node', args: ['spirit/app/zzSleep/zzSleep.js'] });
+  const started = await call('job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzSleep/zzSleep.js']) });
   return started.status >= 200 && started.status < 300 ? true : false;
 }, test.limit.slow);
 test.run('the one dot is on zzSleep, the job that changed last', 0.2, async function () {

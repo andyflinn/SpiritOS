@@ -67,7 +67,7 @@
       var a = actionOf(job());
       said.textContent = '';
       return S.ready.then(function (s) {
-        if (a === 'run') return s.job.create({ command: 'node', args: ['spirit/app/' + name + '/' + name + '.js'] });
+        if (a === 'run') return s.job.create({ command: 'node', args: JSON.stringify(['spirit/app/' + name + '/' + name + '.js']) });
         if (a === 'cancel') return s.job.cancel({ id: id });
         if (a === 'delete') return s.job['delete']({ id: id });
         return null;
