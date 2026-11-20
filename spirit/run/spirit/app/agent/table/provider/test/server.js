@@ -518,7 +518,7 @@ test.run('another table\'s rows, another module\'s, and a row with no id write n
 // ── /spirit/app/agent/table/provider/test/server-picker.html: the provider's Model field, opened ──
 const ADDRESS = '/DEBUG/spirit/app/agent/table/provider/test/server-picker.html';
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const PK = { pdir: '', node: null, page: null, m: null, mine: [], theirs: '' };
+const PK = { pdir: '', db: null, node: null, page: null, m: null, mine: [], theirs: '' };
 test.after(function () {
   const page = PK.page, node = PK.node;
   if (page && page.kid) page.kid.kill();
@@ -533,7 +533,7 @@ test.run('the page server-picker.html draws the provider\'s detail with the real
   // above put a stand-in in its place.
   global.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;
   const pdir = PK.pdir;
-  const pctx = { db: new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
+  const pctx = { db: PK.db = new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
   pctx.tables.provider = require(path.join(DIR, 'server.js'))(pctx);
   pctx.tables.model = require(path.join(DIR, '..', 'model', 'server.js'))(pctx);
   const PV = pctx.tables.provider.verb;
@@ -596,5 +596,7 @@ test.run('each row says its model', 0.2, function () {
 // on Windows a folder holding an open database cannot be removed, so the database is closed, then the folder removed.
 test.after(function () {
   try { if (X.db) X.db.close(); } catch (e) { /* closed */ }
+  // The picker world's database too, or its folder stays.
+  try { if (PK.db) PK.db.close(); } catch (e) { /* closed */ }
   try { require('fs').rmSync(tempFolder.path('spirit/app/agent/table/provider/test/server'), { recursive: true, force: true }); } catch (e) { /* a door still closing */ }
 });
