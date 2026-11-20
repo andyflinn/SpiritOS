@@ -8,7 +8,10 @@
 (function (root) {
   var KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
   function no(why) { throw new Error(why); }
+  // Its limit in bytes, as every limited string's (Andy: "ALL LIMITED STRING MUST BE LIMITED BY BYTES"): a key is 60.
+  var MAX_BYTES = 60;
   var T = {
+    MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '='; },
     ruleDescription: function () { return 'an ID: a public key, MCowBQYDK2VwAyEA then 43 base64 characters and ='; },
     isValid: function (v) {
