@@ -535,7 +535,16 @@ if (served.length) {
         let seen = 0;
         for (let i = 0; i < asks.length; i += BATCH) {
           const batch = asks.slice(i, i + BATCH);
-          const got = await Promise.all(batch.map(function (a) { return a.unjudged ? { status: 0 } : raw(a.fam + '.' + a.verb, a.args); }));
+          // NO ANSWER IS NO VERDICT (Andy: "too many flips are always suspicious."): a call the node left unanswered within
+          // ASK_MS, on a node busy with a long run, said nothing about the door, and flipped the check red and back. It is
+          // asked again, up to three times; any answer, right or wrong, is judged as it comes, and one never answered stays
+          // wrong.
+          const asked = function (a) {
+            if (a.unjudged) return Promise.resolve({ status: 0 });
+            const once = function (left) { return raw(a.fam + '.' + a.verb, a.args).then(function (r) { return r.status === 0 && left > 0 ? once(left - 1) : r; }); };
+            return once(2);
+          };
+          const got = await Promise.all(batch.map(asked));
           got.forEach(function (r) {
             seen += 1;
             const c = r.body && r.body.code;
