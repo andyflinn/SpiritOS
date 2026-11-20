@@ -54,7 +54,7 @@
 //                              the choices turned off; keepOne keeps its last choice on, a press that would turn it off ignored;
 //                              off, a list of a multi filter's choice values, starts those turned off (goal/G47.1: the testicle
 //                              search starts with reds only)
-//   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   the list's own; the words
+//   filters, score, fold(row, key), details(row, key, el), pick(row, key), empty   the list's own; the words
 //                              are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
 //                              element's change redraws the list, and its test narrows it as a filter's does
@@ -316,7 +316,6 @@
       ranges.forEach(function (r) { out += esc(s.slice(at, r[0])) + '<mark>' + esc(s.slice(r[0], r[1])) + '</mark>'; at = r[1]; });
       return out + esc(s.slice(at));
     }
-    // The page's own rows, when the app has them (rows()); each joins the cache by its key.
     var pageKeys = Object.create(null);
     // Each as { id, row }. A VIEW'S ROW IS FILED BY ITS ID IN THE BRANCH, never by a field of its own (goal/G47.4; Andy, of
     // the grants list: "i want to see every single fucking grant row that matches the fucking search"): rowsOf answers
@@ -327,8 +326,9 @@
         var held = window.spirit.data.branchAt(o.data) || {};
         return Object.keys(held).map(function (id) { return { id: id, row: Object.assign({ key: id }, held[id]) }; });
       }
-      var own = typeof o.rows === 'function' ? o.rows() : null;
-      return Array.isArray(own) ? own.map(function (r) { return { id: r ? r.key : null, row: r }; }) : null;
+      // EVERY SEARCH IS A VIEW OF A spirit.data BRANCH (goal/G48.4; the browser rule: "its searches are each made with a
+      // spirit.data branch, no rows of their own"): no rows of the page's own; with no branch it holds none.
+      return null;
     }
     function takePage() {
       var page = pageRows();
@@ -860,7 +860,7 @@
       container.innerHTML = '';
     };
     paintField();
-    if (typeof o.rows === 'function' || o.data) draw();
+    if (o.data) draw();
     return self;
   }
 
