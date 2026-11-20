@@ -570,7 +570,7 @@ function formsPart() {
   test.run('with A faceable, the face form shows', 0.2, function () {
     return (starred.shows(starred.face, '.sp-face-name')) ? true : false;
   }, test.limit.quick);
-  test.run('the face form offers the starred relay alone', 0.2, function () {
+  test.run('the face form offers one relays with with a faceable mark', 0.2, function () {
     drawn = starred.face ? [starred.face].concat(under(starred.face)).map(function (k) { return k.innerHTML; }).join(' ') : '';
     opts = (drawn.match(/<option value="([^"]*)"/g) || []).map(function (o) { return o.replace(/^<option value="|"$/g, ''); });
     return (opts.length === 1 && opts[0] === 'https://a.example') ? true : false;
