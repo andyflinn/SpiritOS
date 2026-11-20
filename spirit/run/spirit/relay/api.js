@@ -10,11 +10,11 @@
 if (typeof require === 'function') require('../spirit.js').require('spirit/relay/data.js'); else window.spirit.require('spirit/relay/data.js');
 module.exports = {
   verbs: {
-    claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'text?', inviteLabel: 'name?' },
+    claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'text?', inviteLabel: 'spirit.type.string.label?' },
     partnerCheck: { publicKey: 'spirit.type.string.IDNew', url: 'spirit.type.string.URL' },
     get: { key: 'text' },
     remove: { key: 'spirit.type.string.URL' },
-    add: { url: 'spirit.type.string.URL', label: 'name?' },
+    add: { url: 'spirit.type.string.URL', label: 'spirit.type.string.label?' },
     face: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label' },
     // link: the caller's link the relay mails, its code and key added (goal/G40.10; Andy: "{email, URL, card}").
     join: { url: 'spirit.type.string.URL', email: 'spirit.type.string.email', code: 'text?', link: 'spirit.type.string.URL?' },

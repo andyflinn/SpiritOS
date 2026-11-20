@@ -3,7 +3,7 @@
   "request": {
     "op": "spirit.type.string.tableOp",
     "id": "spirit.type.number.integer?",
-    "label": "name?",
+    "label": "spirit.type.string.label?",
     "text": "spirit.type.string.descriptionSelect?",
     "owner": "text?"
   }

@@ -4,7 +4,7 @@
     "op": "spirit.type.string.providerOp",
     "id": "spirit.type.string.IDNew?",
     "icon": "spirit.type.string.glyph?",
-    "label": "name?",
+    "label": "spirit.type.string.label?",
     "url": "spirit.type.string.URL?",
     "apiKey": "spirit.type.string.secret?",
     "model": "spirit.type.string.IDNew?",

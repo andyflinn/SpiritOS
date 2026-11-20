@@ -4,6 +4,6 @@
     "url": "spirit.type.string.URL",
     "name": "spirit.type.string.label",
     "invite": "text?",
-    "inviteLabel": "name?"
+    "inviteLabel": "spirit.type.string.label?"
   }
 }

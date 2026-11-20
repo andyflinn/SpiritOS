@@ -71,7 +71,7 @@ module.exports = {
     'profile.get': { agent: 'text' },
     // His alone. A name or nick left '' is no name or no nick; a name otherwise passes the label rule.
     // owner (goal/G47.5, Q7): the desk owner mark, changed by the owner on his node's loopback alone.
-    'profile.set': { agent: 'spirit.type.string.IDNew', name: 'name', nick: 'text', included: 'spirit.type.boolean?', cap: 'spirit.type.boolean?', owner: 'spirit.type.boolean?' },
+    'profile.set': { agent: 'spirit.type.string.IDNew', name: 'spirit.type.string.label', nick: 'spirit.type.string.word', included: 'spirit.type.boolean?', cap: 'spirit.type.boolean?', owner: 'spirit.type.boolean?' },
     // goal/G33.7: seen per item, the arrival time of the newest thing he looked at under it.
     'seen.get': { id: 'id' },
     'seen.set': { id: 'id', at: 'spirit.type.number.UTC' },
@@ -80,7 +80,7 @@ module.exports = {
     // its family of that name; unsubscribe stops it. Who may is the node's grant.
     // run and since (goal/G41.12): the subscriber's position, the run of the desk and the number of the last row it took
     // in it; the desk's log hands what came after, or the desk pushes in full.
-    subscribe: { family: 'spirit.type.string.word', run: 'text?', since: 'spirit.type.number.integer?' },
+    subscribe: { family: 'spirit.type.string.word', run: 'spirit.type.string.word?', since: 'spirit.type.number.integer?' },
     unsubscribe: {},
     unblock: { id: 'id', blocks: 'id' },
     // The jobs open to the caller; it takes nothing.

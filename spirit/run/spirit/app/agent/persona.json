@@ -4,7 +4,7 @@
     "op": "spirit.type.string.tableOp",
     "id": "spirit.type.string.IDNew?",
     "icon": "spirit.type.string.glyph?",
-    "label": "name?",
+    "label": "spirit.type.string.label?",
     "persona": "text?",
     "bundle": "text?",
     "provider": "spirit.type.string.IDNew?",
