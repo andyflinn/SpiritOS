@@ -54,20 +54,27 @@
       var status = test ? 'needs running' : outcome === 'red' ? 'still red' : outcome === 'green' ? 'green' : 'needs running';
       V.merge('suite/|' + suite, { key: '|' + suite, script: '', suite: suite, test: test, status: status, deleted: deleted, outcome: outcome, changed: changed });
     }
+    function isOwed(o) { return !!o && typeof o === 'object' && typeof o.suites === 'number' && typeof o.classifications === 'number'; }
     function keyOf(table, row) { return table === 'script' ? String(row.name || '') : String(row.key || (row.script && row.suite ? row.script + '|' + row.suite : '')); }
     D.addTranslator({
       onJob: function (job) {
-        var a = job && job.module === 'spirit.app.testicle' && job.app && job.app.testicle;
-        if (!a || typeof a !== 'object') return;
+        if (!job || job.module !== 'spirit.app.testicle') return;
         var V = D.viewAt(job.fromNode || null, 'testicle');
+        // WHAT IS OWED, ON CONNECT (goal/G47.4, box v55: "a page that connects to testicle's stream is sent the current
+        // suites-owed and classifications-owed numbers once"): the server keeps the last in its job's data, which the
+        // snapshot a page connects with carries; after that the owed message of its own moves them.
+        if (job.data && isOwed(job.data.owed)) V.merge(MONITOR, { owed: { suites: job.data.owed.suites, classifications: job.data.owed.classifications } });
+        var a = job.app && job.app.testicle;
+        if (!a || typeof a !== 'object') return;
         // THE MONITOR (goal/G47.1, the box: the monitor row's busy "as the server streams it" and "the last change: a row
         // added, deleted or updated in any of its three tables"): busy from whatever carries it; the last change from a row.
         var mon = {};
         if (typeof a.busy === 'boolean') mon.busy = a.busy;
-        // What it is doing, as the server says it ("classifying 120 of 253", "running <suite> for <script>", '' when idle).
-        if (typeof a.doing === 'string') mon.doing = a.doing;
-        // What runs and for which scripts (goal/G47.1, box v134-135), as JSON: {suite, scripts, started}, '' when nothing runs.
+        // What runs, as JSON (goal/G47.4, the box, ### status bar): {suite, scripts, started, tested, script} or, while the
+        // classifier runs, {classifier, total, classified, script}; '' when no run is active.
         if (typeof a.running === 'string') mon.running = a.running;
+        // What is owed, a message of its own sent when a number moves: { owed: { suites, classifications } }.
+        if (isOwed(a.owed)) mon.owed = { suites: a.owed.suites, classifications: a.owed.classifications };
         var row = TABLES.indexOf(a.table) !== -1 && a.row && typeof a.row === 'object' ? a.row : null;
         var k = row ? keyOf(a.table, row) : '';
         // A TEST ROW ERASED (goal/G47.4: a title a completed run did not report) leaves the mirror.
@@ -99,7 +106,8 @@
     TABLES.forEach(function (t) {
       testicleReads[t] = { watch: function (fn) { return HOME.watch(t, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, t), v); }); } };
     });
-    //   monitor.get()      { busy, doing, running, last: { table, key, change, at } } as the stream last told it; {} before anything came
+    //   monitor.get()      { busy, running, owed: { suites, classifications }, last: { table, key, change, at } } as the stream last
+    //                      told it; {} before anything came
     //   monitor.watch(fn)  fn(monitor) on every change; answers its release
     testicleReads.monitor = {
       get: function () { return HOME.get(MONITOR) || {}; },

@@ -125,7 +125,9 @@ test.run('one filter of choices holds the kinds, so only one is active at a time
   kindF = withChoices.length === 1 ? F[withChoices[0]] : null;
   return !!kindF ? true : false;
 }, test.limit.quick);
-test.run('its choices are 👨‍👩‍👧‍👦 People, ⭐ Puppets, 📡 Relays and ❌ Blocked, in that order', 0.2, function () {
+// Its title names the kinds in words: the family icon holds an invisible joiner, which the description rule refuses in a
+// test title (goal/G47.4, spirit/fieldRules.js).
+test.run('its choices are People, Puppets, Relays and Blocked, in that order', 0.2, function () {
   const c = choicesOf();
   return JSON.stringify(c.map(function (x) { return [x.icon, x.word]; })) === JSON.stringify([['👨‍👩‍👧‍👦', 'People'], ['⭐', 'Puppets'], ['📡', 'Relays'], ['❌', 'Blocked']]) ? true : false;
 }, test.limit.quick);

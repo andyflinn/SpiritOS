@@ -6,4 +6,4 @@ goal/G47.1. Andy: *"why is the formatting of the status messages etc not shared 
 
 - `spirit/app/testicle/words.js` is there.
 - No other script of testicle builds a result icon (✅, ❌) or a status phrase itself: "<x> of <n> reported", "running <suite> for <script>", "classifying <n> of <m>", the words success and failure.
-- The server (`testicle.js`), the status box (`element/statusBox.js`) and the result row (`element/search/testicle/row.js`) each require `words.js`.
+- The status box (`element/statusBox.js`) and the result row (`element/search/testicle/row.js`) each require `words.js`. The server words nothing since the doing text went (goal/G47.4, the box: *"the doing text goes: nothing reads it"*).

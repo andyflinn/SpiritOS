@@ -46,8 +46,9 @@ test.run('no other script of testicle builds a result icon or a status phrase it
   });
   return bad.length === 0 || false;
 }, test.limit.quick);
-test.run('the server, the status box and the result row each require words.js', 0.8, function () {
-  const need = ['spirit/app/testicle/testicle.js', 'spirit/app/testicle/element/statusBox.js', 'spirit/app/testicle/element/search/testicle/row.js'];
+// The server words nothing since the doing text went (goal/G47.4, the box: "the doing text goes: nothing reads it").
+test.run('the status box and the result row each require words.js', 0.8, function () {
+  const need = ['spirit/app/testicle/element/statusBox.js', 'spirit/app/testicle/element/search/testicle/row.js'];
   const not = need.filter(function (f) { try { return fs.readFileSync(path.join(RUN, f), 'utf8').indexOf('spirit/app/testicle/words.js') === -1; } catch (e) { return true; } });
   return not.length === 0 || false;
 }, test.limit.quick);

@@ -15,7 +15,7 @@ handed in as the stream hands them; in node it is loaded by its api.js, `spirit/
   stream"*): a suite row with its script makes `suite/|<suite>`, script `''`; green when all its rows are, red and
   `still red` when any is, `needs running` when any is flagged, deleted only when all are.
 - The monitor: `monitor.get()` is `{}` before anything; `busy` is what the stream last said; `last` is the last row
-- `monitor.get().doing` is what the stream last said the server is doing (`classifying 120 of 253`, `running <suite> for <script>`, `` when idle).
+- `monitor.get().running` is what the stream last said runs (JSON: its suite, scripts, tests reported and script, or the classifier, its total, its count and script; `` when no run is active), and `monitor.get().owed` the suites and classifications owed, from their own message or from testicle's job's data a page connects with (goal/G47.4, the box, ### status bar).
   published, `{ table, key, change, at }`, change `updated` when not named; `monitor.watch(fn)` is told on every change
   and answers its release.
 - The preferences (goal/G47.1, box v79, 4): `preferences.get()` is `{}` before anything, then what the stream last said, `{testicle: {preferences}}`, or what `preferences.keep(p)` kept; `preferences.watch(fn)` is told on every change and answers its release.

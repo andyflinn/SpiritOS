@@ -28,7 +28,6 @@ const crypto = require('crypto');
 const { execFile, execFileSync, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 // Every status line and every result's icon, worded in one place (goal/G47.1; ./words.js).
-const WORDS = spirit.require('spirit/app/testicle/words.js');
 const appServer = spirit.require('spirit/appServer.js');
 const { VENDORED_FOLDERS } = spirit.require('spirit/fileSystem.js');
 const { createProbabilityBucket } = spirit.require('spirit/listLimiter.js');
@@ -1068,37 +1067,50 @@ function apply(changed, P) {
 //   { testicle: { busy } }                       busy turned, true on waking, false back to listening
 // Every row carries busy too, so a page that opens late finds it in the last thing the job published.
 function busyNow() { return working || !!timer || pending.size > 0 || getting > 0 || !!job; }
-// WHAT IT IS DOING, SAID (goal/G47.1; Andy watched the status bar's 🚶‍➡️ and could not tell classifying from testing; his
-// "do that" to: while it classifies "classifying 120 of 253", while it tests "running <suite> for <script>", nothing
-// when idle): carried on every message beside busy, and told again whenever it changes.
-function doingNow() {
-  if (!job) return '';
-  if (job.classify) return WORDS.classifying(job.done, job.scripts.length);
-  // WHAT IT IS DOING, TEST BY TEST (goal/G47.1, Andy: "running testicle.js for spirit/app/testicle/testicle.js ... Does NOT report
-  // what it's doing!"): each result of the running suite that comes in (testicle.set) is named, worded by ./words.js.
-  return WORDS.running(job.suite, job.batch ? job.scripts : [job.script], job.tested || 0, job.last || null);
-}
-// WHAT RUNS, FOR WHICH SCRIPTS (goal/G47.1, box v134-135: the status box "knows which suite is running and for which scripts,
-// and shows \"<x> of <n> reported: <script> <success|failure>\""): the running suite, its scripts and when it started, carried on every
-// message beside busy and doing, as JSON; '' when nothing runs or the classifier does.
+// WHAT RUNS, AS THE STATUS BAR SHOWS IT (goal/G47.4, the box, ### status bar: row 1 "<suites owed>: <suite file name>", row 2
+// "<tests reported>: <script file name>"; during classification row 1 the classifier's file name and row 2 "<n> of <total>"
+// and the script; "the doing text goes: nothing reads it"), carried on every message beside busy, as JSON; '' when no run
+// is active, so the bar's rows are empty then.
+//   { suite, scripts, started, tested, script }       a suite runs: its scripts, the tests it reported, the script it last reported for
+//   { classifier, total, classified, script }         the classifier runs: its file, how many it classifies, how many it said, the last
 function runningNow() {
-  if (!job || job.classify) return '';
-  return JSON.stringify({ suite: job.suite, scripts: job.batch ? job.scripts.slice() : [job.script], started: job.started });
+  if (!job) return '';
+  if (job.classify) return JSON.stringify({ classifier: job.suite, total: job.scripts.length, classified: job.done || 0, script: job.lastClassified || '' });
+  return JSON.stringify({ suite: job.suite, scripts: job.batch ? job.scripts.slice() : [job.script], started: job.started, tested: job.tested || 0, script: (job.last && job.last.script) || (job.batch ? job.scripts[0] : job.script) || '' });
+}
+// WHAT IS OWED (goal/G47.4, the box, ### status bar: "suites owed is the number of suites marked needs running, in the current
+// run or not ... a general suite counts once"; wsl's shape, a message of its own, { testicle: { owed: { suites,
+// classifications } } }, "sent when either changes"; box v55: "a page that connects to testicle's stream is sent the current
+// suites-owed and classifications-owed numbers once"). Sent only when a number moved, never riding the other messages. The
+// last one is kept in testicle's job's data too, which the node hands a page in the snapshot it connects with (job.js keeps
+// a job's data merged, its app object replaced by the next publish): that is the once on connect.
+const owedSuites = db.prepare('SELECT COUNT(DISTINCT suite) AS n FROM suite WHERE test = 1 AND deleted = 0');
+const owedClassifications = db.prepare('SELECT COUNT(*) AS n FROM script WHERE reClassify = 1 AND deleted = 0');
+let owedTold = '';
+function owedNow() { return { suites: Number(owedSuites.get().n) || 0, classifications: Number(owedClassifications.get().n) || 0 }; }
+function toldOwed() {
+  let o = null;
+  try { o = owedNow(); } catch (e) { return; }
+  const s = JSON.stringify(o);
+  if (s === owedTold) return;
+  owedTold = s;
+  // The job's data first, then the message: every job event after carries the new numbers, none the old.
+  const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o } }); };
+  Promise.resolve(spirit.job.report({ data: { owed: o } })).then(say, say);
 }
 let busyTold = false;
-let doingTold = '';
 let runningTold = '';
 function told() {
   const b = busyNow();
-  const d = doingNow();
   const r = runningNow();
-  if (b === busyTold && d === doingTold && r === runningTold) return;
-  busyTold = b;
-  doingTold = d;
-  runningTold = r;
-  appServer.publish({ testicle: { busy: b, doing: d, running: r } });
+  if (b !== busyTold || r !== runningTold) {
+    busyTold = b;
+    runningTold = r;
+    appServer.publish({ testicle: { busy: b, running: r } });
+  }
+  toldOwed();
 }
-function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow(), doing: doingNow(), running: runningNow() } }); }
+function tell(table, row, change) { appServer.publish({ testicle: { table: table, row: row, change: change, busy: busyNow(), running: runningNow() } }); toldOwed(); }
 
 // THE QUEUE: what changed since the last write, and whether a write is under way. busy is either, or a script.get making
 // rows.
@@ -1435,7 +1447,7 @@ appServer.serve({
       // a browser-only one, refused before any row is made, so neither a test row nor a suite row of it stands.
       if (!fits(script, suite)) throw refused('not-applicable');
       const severity = Math.max(0, Math.min(1, Number(a.severity) || 0));
-      // A result of the running suite is what it is doing now (doingNow), told at once.
+      // A result of the running suite is what it is running now (runningNow: tested, script), told at once.
       if (job && !job.classify && job.suite === suite && (job.batch ? job.scripts.indexOf(script) !== -1 : job.script === script)) { job.tested = (job.tested || 0) + 1; job.last = { script: script, test: name, ok: a.verified === true }; told(); }
       const row = Q.script.get(script);
       // A FILE NOT ON DISC TAKES NO RESULT, its row deleted or never made (wsl's red, 3f6832e6: a classifier run begun before
@@ -1473,8 +1485,8 @@ appServer.serve({
         const isLate = !!late && late.scriptHash === scriptHash && late.suiteHash === suiteHash;
         if (late && !isLate) killed.delete(script + '|' + suite);
         const out = setResult(script, suite, name, isLate ? false : !!a.verified, severity, scriptHash, suiteHash);
-        // A classifying run's count moves with each script it has said its class of (doingNow), and is told.
-        if (asClassified && !asClassified.seen[script]) { asClassified.seen[script] = true; asClassified.done += 1; told(); }
+        // A classifying run's count moves with each script it has said its class of (runningNow), and is told.
+        if (asClassified && !asClassified.seen[script]) { asClassified.seen[script] = true; asClassified.done += 1; asClassified.lastClassified = script; told(); }
         return out;
       }).finally(function () { getting -= 1; told(); });
     },
