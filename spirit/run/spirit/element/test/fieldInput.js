@@ -68,10 +68,11 @@ test.run('fits holds each type to its limit: description 128, paragraph 2048, li
   });
   return !bad.length || false;
 }, test.limit.quick);
-test.run('fits takes one glyph of at most 8 bytes for the glyph type, never two', 0.2, function () {
+// goal/G48.4, Andy: "glyphs are capped at 32 bytes, one character.": a family emoji, 25 bytes, is one glyph.
+test.run('fits takes one glyph of at most 32 bytes for the glyph type, never two', 0.2, function () {
   if (!F) return false;
   const got = [F.fits('🙂', 'spirit.type.string.glyph'), F.fits('👩‍👩‍👧‍👦', 'spirit.type.string.glyph'), F.fits('ab', 'spirit.type.string.glyph'), F.fits('🙂🙂', 'spirit.type.string.glyph')];
-  return JSON.stringify(got) === JSON.stringify([true, false, false, false]) || false;
+  return JSON.stringify(got) === JSON.stringify([true, true, false, false]) || false;
 }, test.limit.quick);
 
 // attach: "refuses a keystroke or a paste that would take the text past it, before it lands; deleting always works"
@@ -128,10 +129,10 @@ test.run('it never says how far past the limit: a refusal leaves the text as it 
 }, test.limit.quick);
 // goal/G47.1, the box: "every INPUT field must be checked for a length constraint", "a maxlength on the input DOES count as its
 // length constraint": attach sets the input's maxlength to its rule's bytes, a ceiling on its characters.
-test.run('attach sets the input\'s maxlength to its rule\'s bytes: name 64, description 128, paragraph 2048, line 1024, glyph 8', 0.4, function () {
+test.run('attach sets the input\'s maxlength to its rule\'s bytes: name 64, description 128, paragraph 2048, line 1024, glyph 32', 0.4, function () {
   if (!F) return false;
   const got = ['spirit.type.string.label', 'spirit.type.string.description', 'spirit.type.string.paragraph', 'spirit.type.string.line', 'spirit.type.string.glyph'].map(function (r) { return F.attach(input(''), r).maxLength; });
-  return JSON.stringify(got) === JSON.stringify([64, 128, 2048, 1024, 8]) || false;
+  return JSON.stringify(got) === JSON.stringify([64, 128, 2048, 1024, 32]) || false;
 }, test.limit.quick);
 // goal/G47.1, cw's fix of join's email field: fieldInput takes fieldRules' email rule (fieldRules.js: "THE EMAIL RULE
 // (goal/G40.10, box v20; Andy: \"no fieldRules.js for emails?\", and \"254\")").
