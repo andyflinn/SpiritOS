@@ -688,7 +688,7 @@ test.run('the relay has no star', 0.8, async function () {
 test.run('with no faceable mark on the FUCKING RELAY, node.card from the face is refused... WHAT THE FUCK???????', 0.8, faceRefused({ call: 'node.card', args: {} }), test.limit.quick);
 test.run('with no faceable mark, fs.stat from the face is refused WHAT THE FUCK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 0.8, faceRefused({ call: 'fs.stat', args: { path: 'spirit/fs/data.js' } }), test.limit.quick);
 test.run('with no star, contact.search from the face is refused', 0.8, faceRefused({ call: 'contact.search', args: { q: '' } }), test.limit.quick);
-test.run('with no star, job.create from the face is refused', 0.8, faceRefused(JOB), test.limit.quick);
+test.run('with no faceable mark on the relay, job.create from the face is refused....... WHAT THE FUCK!!?!?!?', 0.8, faceRefused(JOB), test.limit.quick);
 test.run('with no faceable mark on the FUCKING relay, fs.save from the face is refused, WHAT THE FUCK IS THIS TEST STILL HANDING AROUND FO', 0.8, faceRefused(SAVE), test.limit.quick);
 test.run('with no star, owner.command from the face is refused', 0.8, faceRefused(OWNER), test.limit.quick);
 test.run('the job did not run', 0.8, async function () {
