@@ -7,7 +7,7 @@
 // the log stores all commands as if typed from root prompt \"spirit: \", the loop must translate those back into its scope".
 // The loop is entered as the box says, "node spirit/console.js" with no words, on a scratch node of its own. The arrow keys
 // are a terminal's: the loop's node is told its input and output are a terminal (isTTY, set before console.js loads, by
-// --require), so readline reads keys and draws its line as in one, on every machine; its keys are written to it as a
+// --import), so readline reads keys and draws its line as in one, on every machine; its keys are written to it as a
 // terminal sends them (goal/G48.4; Andy's Windows run: script(1), util-linux, which the test used before, is Linux only).
 
 const fs = require('fs');
@@ -26,9 +26,9 @@ const at = function () { const s = stateOf(); return s ? String(s.path || '') : 
 const plain = function (t) { return String(t).replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\r/g, '\n'); };
 // The loop in a terminal of its own: node spirit/console.js, its streams marked a terminal before it loads.
 function open() {
-  const tty = path.join(W.node.root, 'terminal.js');
-  fs.writeFileSync(tty, 'process.stdin.isTTY = true; process.stdout.isTTY = true; process.stdout.columns = 200;');
-  const kid = spawn(process.execPath, ['--require', tty, path.join(W.node.run, 'spirit', 'console.js')], { cwd: W.node.root, stdio: ['pipe', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TERM: 'xterm' }) });
+  // A data URL, not a file: nothing is left in the lab copy, which keeps its root between runs.
+  const tty = 'data:text/javascript,process.stdin.isTTY=true;process.stdout.isTTY=true;process.stdout.columns=200;';
+  const kid = spawn(process.execPath, ['--import', tty, path.join(W.node.run, 'spirit', 'console.js')], { cwd: W.node.root, stdio: ['pipe', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TERM: 'xterm' }) });
   const t = { kid: kid, out: '', ended: false };
   kid.stdout.on('data', function (d) { t.out += String(d); });
   kid.on('exit', function () { t.ended = true; });
@@ -64,7 +64,11 @@ test.run('a scratch node comes up', 0.2, async function () {
   return (!!W.node && W.node.up) || false;
 }, test.limit.slow);
 // The loop's state file, planted at start below, goes at end: a lab copy keeps it between runs.
-const dropState = function () { try { if (W.node) fs.rmSync(STATE(), { force: true }); } catch (e) { /* none */ } };
+// So does terminal.js, which b4607b92 wrote to the copy's root before the data URL.
+const dropState = function () {
+  try { if (W.node) fs.rmSync(STATE(), { force: true }); } catch (e) { /* none */ }
+  try { if (W.node) fs.rmSync(path.join(W.node.root, 'terminal.js'), { force: true }); } catch (e) { /* none */ }
+};
 test.after(async function () {
   shut(W.t);
   dropState();
