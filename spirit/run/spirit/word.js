@@ -20,6 +20,7 @@
   ['spirit', 
     'api', 
     'app', 
+    'console',
     'contact',
     'data',
     'detail', 
@@ -37,7 +38,8 @@
     'suite',
     'test', 
     'testicle',
-    'tile'
+    'tile',
+    'type',
   ].forEach(function (w) { HARD[w] = true; });
 
   function wordOf(word) { var w = String(word == null ? '' : word); return /^[A-Za-z]+$/.test(w) ? w.toLowerCase() : ''; }
