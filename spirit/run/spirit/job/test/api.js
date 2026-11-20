@@ -137,9 +137,10 @@ test.run('search\'s q is optional', 0.2, function () {
   if (!W.api) return false;
   return (passes('search', {}) && passes('search', { q: 'spirit' })) || false;
 }, test.limit.quick);
+// goal/G48.4: a job is named by a spirit.type.string.path, spirit and its folders joined by dots.
 test.run('get, cancel and delete name the job, never by an empty name', 0.2, function () {
   if (!W.api) return false;
-  const ok = passes('get', { key: 'spirit.fs' }) && passes('cancel', { id: 'j1' }) && passes('delete', { id: 'j1' });
+  const ok = passes('get', { key: 'spirit.fs' }) && passes('cancel', { id: 'spirit.j1' }) && passes('delete', { id: 'spirit.j1' });
   const no = refusedAs('get', { key: '' }) === 'bad-request' && refusedAs('cancel', { id: '' }) === 'bad-request' && refusedAs('delete', {}) === 'bad-request';
   return (ok && no) || false;
 }, test.limit.quick);

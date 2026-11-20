@@ -143,9 +143,10 @@ test.run('subscribe takes nothing', 0.2, function () {
   if (!W.api) return false;
   return (passes('subscribe', {}) && refusedAs('subscribe', { since: 1 }) === 'no-such-argument') || false;
 }, test.limit.quick);
+// goal/G48.4: a job's id is a spirit.type.string.path, spirit and its folders joined by dots.
 test.run('publish needs the job\'s id, while status, data, logMessage and app may be left out', 0.2, function () {
   if (!W.api) return false;
-  return (refusedAs('publish', {}) === 'bad-request' && refusedAs('publish', { id: '' }) === 'bad-request' && passes('publish', { id: 'my.job' }) && passes('publish', { id: 'my.job', status: 'running', data: { n: 1 }, logMessage: 'up', app: { rows: [] } })) || false;
+  return (refusedAs('publish', {}) === 'bad-request' && refusedAs('publish', { id: '' }) === 'bad-request' && passes('publish', { id: 'spirit.myJob' }) && passes('publish', { id: 'spirit.myJob', status: 'running', data: { n: 1 }, logMessage: 'up', app: { rows: [] } })) || false;
 }, test.limit.quick);
 test.run('its data and app are objects, never a list', 0.2, function () {
   if (!W.api) return false;

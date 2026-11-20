@@ -14,7 +14,7 @@ The auth family: who may call what on this node, the grants, and the node's bund
 - **goal/G41.14**: `bundle` and `branch` are one flat verb per table, `op` needed (`add`, `set`, `delete`, `get`,
   `search`), the rest left to the node per op (apiAuth.js); a bundle and a branch are named by a number.
 - **goal/G41.25** (Andy, box: *"changes to the auth.bundle verb for the addition of the \"owner\" field are approved by
-  andy and need no review."*): `bundle` takes an `owner`, any text, since one not valid the node reads as "node".
+  andy and need no review."*): `bundle` takes an `owner` as a word (spirit.type.string.word, goal/G48.4), since one not valid the node reads as "node".
 
 ## What its test must try to break
 

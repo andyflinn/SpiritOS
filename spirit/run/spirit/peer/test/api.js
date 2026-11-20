@@ -135,9 +135,11 @@ test.run('each verb takes the arguments its handler\'s request carries, and no o
   return off.length === 0 || false;
 }, test.limit.quick);
 
-test.run('post names the peer by its key and carries a text; via, patienceMs and kind may be left out', 0.2, function () {
+// goal/G48.4: its text is a spirit.type.string.json, JSON in a string; via a spirit.type.string.URL.
+test.run('post names the peer by its key and carries JSON text; via, patienceMs and kind may be left out', 0.2, function () {
   if (!W.api) return false;
-  return (passes('post', { to: KEY, text: 'hi' }) && passes('post', { to: KEY, text: '', via: 'relay', patienceMs: 3000, kind: 'chat' }) && refusedAs('post', { to: NOT_KEY, text: 'hi' }) === 'bad-request' && refusedAs('post', { to: KEY }) === 'bad-request' && refusedAs('post', { to: KEY, text: 'hi', patienceMs: '3000' }) === 'bad-request') || false;
+  const hi = JSON.stringify('hi');
+  return (passes('post', { to: KEY, text: hi }) && passes('post', { to: KEY, text: '{}', via: 'https://relay.example', patienceMs: 3000, kind: 'background' }) && refusedAs('post', { to: NOT_KEY, text: hi }) === 'bad-request' && refusedAs('post', { to: KEY }) === 'bad-request' && refusedAs('post', { to: KEY, text: 'hi' }) === 'bad-request' && refusedAs('post', { to: KEY, text: hi, patienceMs: '3000' }) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('acquire names the key, with a label and an address it may be given', 0.2, function () {
   if (!W.api) return false;

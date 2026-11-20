@@ -139,8 +139,9 @@ test.run('each verb takes the arguments its handler\'s request carries, and no o
 // a grant names a peer by its key and a path
 test.run('query, grant, revoke and peer name the peer by its public key', 0.2, function () {
   if (!W.api) return false;
-  const ok = passes('query', { key: KEY, path: 'spirit/fs' }) && passes('grant', { key: KEY, path: 'spirit/fs' }) && passes('revoke', { key: KEY, path: 'spirit/fs' }) && passes('peer', { key: KEY });
-  const no = ['query', 'grant', 'revoke'].every(function (v) { return refusedAs(v, { key: NOT_KEY, path: 'spirit/fs' }) === 'bad-request'; }) && refusedAs('peer', { key: NOT_KEY }) === 'bad-request';
+  // goal/G48.4: a grant's path is a spirit.type.string.word, a family or family.verb, as desk.chat.
+  const ok = passes('query', { key: KEY, path: 'desk.chat' }) && passes('grant', { key: KEY, path: 'desk.chat' }) && passes('revoke', { key: KEY, path: 'desk.chat' }) && passes('peer', { key: KEY });
+  const no = ['query', 'grant', 'revoke'].every(function (v) { return refusedAs(v, { key: NOT_KEY, path: 'desk.chat' }) === 'bad-request'; }) && refusedAs('peer', { key: NOT_KEY }) === 'bad-request';
   return (ok && no) || false;
 }, test.limit.quick);
 test.run('relabel takes a key and a label the name rule passes', 0.2, function () {
@@ -164,7 +165,8 @@ test.run('a bundle and a branch are named by a number', 0.2, function () {
   return (passes('bundle', { op: 'get', id: 3 }) && refusedAs('bundle', { op: 'get', id: '3' }) === 'bad-request' && passes('branch', { op: 'add', bundle: 3, family: 'fs', verb: 'load' }) && refusedAs('branch', { op: 'add', bundle: '3' }) === 'bad-request') || false;
 }, test.limit.quick);
 // goal/G41.25: "changes to the auth.bundle verb for the addition of the \"owner\" field are approved by andy"
-test.run('bundle takes an owner of any text, and the node reads one that is not valid as node', 0.2, function () {
+// goal/G48.4: the owner is a spirit.type.string.word (the box: "unlimited strings are forbidden in SpiritOS."), optional.
+test.run('bundle takes an owner as a word, and the node reads one that is not valid as node', 0.2, function () {
   if (!W.api) return false;
-  return (passes('bundle', { op: 'add', label: 'friends', owner: 'no such owner' }) && passes('bundle', { op: 'search', owner: '' }) && refusedAs('bundle', { op: 'add', owner: 7 }) === 'bad-request') || false;
+  return (passes('bundle', { op: 'add', label: 'friends', owner: 'nosuchowner' }) && passes('bundle', { op: 'search' }) && refusedAs('bundle', { op: 'add', owner: 7 }) === 'bad-request' && refusedAs('bundle', { op: 'add', owner: 'two words' }) === 'bad-request') || false;
 }, test.limit.quick);
