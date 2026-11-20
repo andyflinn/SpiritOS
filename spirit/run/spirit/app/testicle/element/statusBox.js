@@ -42,9 +42,13 @@
 
   var ROW = 'display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3em';
   // THE NUMBERS AND THE ICONS SIZED (goal/G47.4, Andy: "the icons must be of size 2em. the two numbers, starting the two rows
-  // must be fixed width, 6em, right aligned, and invisible when zero."): each row's number in a box of its own, 6em wide,
+  // must be fixed width, 6em, right aligned, and invisible when zero.", then "a width of 4em for the two numbers is likely
+  // enough"): each row's number in a box of its own, 4em wide,
   // right aligned, hidden (its room kept) when it is zero; the icons at 2em.
-  var NUM = 'display:inline-block;width:6em;text-align:right';
+  var NUM = 'display:inline-block;width:4em;text-align:right';
+  // EACH ICON CENTRED IN THE BUBBLE'S HEIGHT (Andy: "the two icons should be vertically centered"): a flex box of the
+  // block's full height, its icon in the middle, not on a text line's baseline.
+  var ICON = 'display:inline-flex;align-items:center;height:100%';
   var ROW_HTML = '<span class="testicle-row" style="' + ROW + '"><span class="testicle-num" style="' + NUM + '"></span><span class="testicle-words"></span></span>';
   function create(container) {
     var gone = false;
@@ -56,7 +60,7 @@
     // BUBBLE (goal/G47.4, Andy: "the whole status block in a bubble, the icons vertically centered in that bubble."): the
     // shared .shell-bubble, its two rows' height plus its padding and border, the icons centred in it.
     container.innerHTML = '<div class="testicle-status shell-bubble" style="display:flex;align-items:center;height:calc(2.6em + 0.6em + 2px);overflow:hidden;white-space:nowrap">' +
-      '<span class="testicle-icons" style="display:inline-flex;align-items:center;flex:none;font-size:2em;line-height:1.3em"><span class="testicle-mode"></span>&nbsp;<span class="testicle-busy"></span>&nbsp;</span>' +
+      '<span class="testicle-icons" style="display:inline-flex;align-items:center;flex:none;font-size:2em;line-height:1;align-self:stretch"><span class="testicle-mode" style="' + ICON + '"></span>&nbsp;<span class="testicle-busy" style="' + ICON + '"></span>&nbsp;</span>' +
       '<span class="testicle-rows" style="display:inline-flex;flex-direction:column;flex:1;min-width:0;overflow:hidden">' +
       ROW_HTML + ROW_HTML + '</span></div>';
     var mode = container.querySelector('.testicle-mode');
