@@ -15,6 +15,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return "nothing said yet"; },
+    ruleDescription: function () { return 'a line: one line of text, not empty, nothing invisible, at most 1024 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a line is a string');
       var n = words(v);

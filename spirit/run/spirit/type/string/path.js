@@ -12,6 +12,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return 'spirit'; },
+    ruleDescription: function () { return 'a path: spirit, then folders joined by dots, at most 1024 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a path is a string');
       if (!/^spirit(\.[A-Za-z0-9_-]+)*$/.test(v)) no('a path starts with spirit, its folders joined by dots: spirit.app.desk');

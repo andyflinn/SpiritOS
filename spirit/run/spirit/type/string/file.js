@@ -14,6 +14,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return 'untitled'; },
+    ruleDescription: function () { return 'a file: a name alone, no folder in it, nothing invisible, at most 255 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a file is a string');
       if (!v || v === '.' || v === '..') no('a file has a name');

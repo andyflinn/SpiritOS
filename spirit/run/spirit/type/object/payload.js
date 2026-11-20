@@ -9,6 +9,7 @@
   function no(why) { throw new Error(why); }
   var T = {
     defaultValue: function () { return {}; },
+    ruleDescription: function () { return 'a payload: an object, never a list or null'; },
     isValid: function (v) {
       if (v === null || typeof v !== 'object' || Array.isArray(v)) no('a payload is an object');
       return true;

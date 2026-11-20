@@ -13,7 +13,7 @@ module.exports = {
     search: { q: 'text?', contents: 'spirit.type.boolean?' },
     stat: { path: 'path' },
     load: { path: 'path' },
-    save: { path: 'path', content: 'text' },
+    save: { path: 'path', content: 'spirit.type.string.fileContent' },
     delete: { path: 'path' },
   },
   // THE KERNEL'S NAMES, async (Andy listed them): what the old shell's apps call, so an app ports by adding await.

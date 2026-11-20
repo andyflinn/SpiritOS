@@ -10,6 +10,7 @@
   var T = {
     OPTIONS: OPTIONS,
     defaultValue: function () { return OPTIONS[0]; },
+    ruleDescription: function () { return 'one of ' + OPTIONS.join(', '); },
     isValid: function (v) {
       if (OPTIONS.indexOf(v) === -1) no('an HTTP method is one of ' + OPTIONS.join(', '));
       return true;

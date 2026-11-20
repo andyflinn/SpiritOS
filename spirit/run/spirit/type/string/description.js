@@ -15,6 +15,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return "not described yet"; },
+    ruleDescription: function () { return 'a description: a sentence, not empty, nothing invisible, at most 128 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a description is a string');
       var n = words(v);

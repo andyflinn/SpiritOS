@@ -19,6 +19,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return 'new'; },
+    ruleDescription: function () { return 'a label: a few words, not empty, nothing invisible, at most 64 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a label is a string');
       var n = words(v);

@@ -9,6 +9,7 @@
   function no(why) { throw new Error(why); }
   var T = {
     defaultValue: function () { return 0; },
+    ruleDescription: function () { return 'an integer: a whole number'; },
     isValid: function (v) {
       if (typeof v !== 'number' || !isFinite(v)) no('an integer is a number');
       if (Math.floor(v) !== v) no('an integer is a whole number');

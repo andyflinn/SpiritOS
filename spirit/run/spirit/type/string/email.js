@@ -12,6 +12,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return 'nobody@example.com'; },
+    ruleDescription: function () { return 'an email address: one @ with something on each side, no spaces, at most 254 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string' || !v.trim()) no('an email address is needed');
       var s = v.trim();

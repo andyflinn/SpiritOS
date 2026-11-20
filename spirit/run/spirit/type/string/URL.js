@@ -12,6 +12,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return 'http://127.0.0.1'; },
+    ruleDescription: function () { return 'a URL: http:// or https://, no spaces, at most 1024 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a URL is a string');
       if (!/^https?:\/\/[^\s]+$/.test(v)) no('a URL starts with http:// or https:// and has no spaces');

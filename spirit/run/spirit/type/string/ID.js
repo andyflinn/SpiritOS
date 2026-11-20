@@ -10,6 +10,7 @@
   function no(why) { throw new Error(why); }
   var T = {
     defaultValue: function () { return 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '='; },
+    ruleDescription: function () { return 'an ID: a public key, MCowBQYDK2VwAyEA then 43 base64 characters and ='; },
     isValid: function (v) {
       if (typeof v !== 'string') no('an ID is a string');
       if (!KEY.test(v)) no('an ID is a public key: MCowBQYDK2VwAyEA, 43 more base64 characters, then =');

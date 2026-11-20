@@ -10,6 +10,8 @@
   var T = {
     OPTIONS: OPTIONS,
     defaultValue: function () { return OPTIONS[0]; },
+    // Its fifteen choices are too many for a short description; OPTIONS holds them all.
+    ruleDescription: function () { return 'a button pressed on a Desk item: one of its OPTIONS, claim-done, go, done, reopen and the others'; },
     isValid: function (v) {
       if (OPTIONS.indexOf(v) === -1) no('a button pressed on a Desk item is one of ' + OPTIONS.join(', '));
       return true;

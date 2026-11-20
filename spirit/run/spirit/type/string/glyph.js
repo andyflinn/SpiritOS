@@ -16,6 +16,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return '?'; },
+    ruleDescription: function () { return 'a glyph: one character, at most 8 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string' || !v.trim()) no('a glyph is needed');
       var s = v.trim();

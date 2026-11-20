@@ -10,6 +10,7 @@
   function no(why) { throw new Error(why); }
   var T = {
     defaultValue: function () { return 'word'; },
+    ruleDescription: function () { return 'a word: 1 to 32 letters, digits, dots, underscores or dashes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a word is a string');
       if (!WORD.test(v)) no('a word is 1 to 32 letters, digits, dots, underscores or dashes');

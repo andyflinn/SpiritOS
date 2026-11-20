@@ -9,6 +9,7 @@
   function no(why) { throw new Error(why); }
   var T = {
     defaultValue: function () { return 0; },
+    ruleDescription: function () { return 'a probability: a number from 0 to 1'; },
     isValid: function (v) {
       if (typeof v !== 'number' || !isFinite(v)) no('a probability is a number');
       if (v < 0 || v > 1) no('a probability is from 0 to 1');

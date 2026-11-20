@@ -9,6 +9,7 @@
   function no(why) { throw new Error(why); }
   var T = {
     defaultValue: function () { return false; },
+    ruleDescription: function () { return 'a boolean: true or false'; },
     isValid: function (v) {
       if (v !== true && v !== false) no('a boolean is true or false');
       return true;

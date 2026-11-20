@@ -14,6 +14,7 @@
   var T = {
     MAX_BYTES: MAX_BYTES,
     defaultValue: function () { return 'nothing written yet'; },
+    ruleDescription: function () { return 'a paragraph: text with its line breaks, not empty, nothing else invisible, at most 2048 bytes'; },
     isValid: function (v) {
       if (typeof v !== 'string') no('a paragraph is a string');
       var n = v.normalize('NFC').split(String.fromCharCode(13, 10)).join(String.fromCharCode(10));
