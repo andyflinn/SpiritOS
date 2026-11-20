@@ -300,7 +300,7 @@ const WATCH = String.raw`(function () {
       try { Object.defineProperty(o, k, { configurable: true, enumerable: true, get: function () { if (last) done(at); return at; }, set: function (v) { at = v; took(v); } }); } catch (e) { /* kept as it is */ }
       if (at) took(at);
     }
-    function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
+    function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane'), mount: !!host && (host === (window.spiritMount && window.spiritMount.box) || (typeof host.hasAttribute === 'function' && host.hasAttribute('data-spirit-cycle'))) }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
   // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.data path the module watches, and whether its
   // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
   // a branch, or '<node>/<family>/<branch>/<row>', a row; a watch of the home node holds '~' for the node, the page's
@@ -1018,7 +1018,7 @@ async function session() {
       ' var el = file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.element);' +
       ' if (!W || !W.held || !el || typeof el.create !== "function") return JSON.stringify(null);' +
       ' var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
-      ' var box = document.createElement("div"); document.body.appendChild(box); var before = W.held(); box.remove();' +
+      ' var box = document.createElement("div"); box.setAttribute("data-spirit-cycle", ""); document.body.appendChild(box); var before = W.held(); box.remove();' +
       ' document.body.appendChild(box);' +
       ' return Promise.resolve(el.create(box)).then(function (m) { return wait(1000).then(function () { if (m && typeof m.destroy === "function") m.destroy(); return wait(500); }); })' +
       '   .then(function () { var after = W.held(); return JSON.stringify({ before: before, after: after, emptied: box.childElementCount === 0 }); }, function (e) { return JSON.stringify({ error: String(e && e.message || e) }); }); }())'));
@@ -1233,11 +1233,10 @@ function oneFile(P) {
   // damn data is cached in spirit data.", and "every probabilitySearch on a page is made with a spirit.data branch (its
   // data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes red.").
   // <address>: every search it makes ranks spirit.data
-  const made = W.searches || [];
-  // ONE EXCEPTION, DEFERRED, AND STILL RED (Andy, the box: "the only exception is introspector, deferred for network-scope
-  // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
-  // its own page, mounted bare, still makes one (spirit/element/search.js, spirit/element/introSpector.js,
-  // spirit/app/introSpector/element.js); it is not met, so it is not green.
+  // ITS searches: the ones the module makes. When the module handed is the search itself (spirit/element/search.js),
+  // the test's own mounts of it, bare in the mount box and once more in the create-and-destroy box, are the test's, not
+  // searches the module made, and are not judged; every search the module makes inside them is.
+  const made = (W.searches || []).filter(function (x) { return !x.mount; });
   if (mounted && !made.length) {}
   else {
     test.run('its searches are each made with a spirit.data branch, no rows of their own', 0.4, function () {
