@@ -102,25 +102,28 @@ const Q = {
 // date, and, if it exists, the hash of the product file", "If the test flips, a new active row is created; this will keep
 // change history", "The server applies the severity to the row only if the new severity is higher than the old one" (on a
 // flip the old one is the row it replaces: a test's severity never goes down). "One index over the current rows, by
-// verified, then severity from high to low, then flipped" (G45.1): every test search reads the current rows alone.
-db.exec('CREATE TABLE IF NOT EXISTS testicle (script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, flipped INTEGER NOT NULL, ' +
+// verified, then severity from high to low" (G45.1): every test search reads the current rows alone.
+// ONE DATE, NO FLIPPED (goal/G48.4, Andy: "FLIPPED IS KILLED NOW!!!", "the \"date\" is changed on every report, if the test
+// flips a new row is made current....", "you KILL IT IN THE MOTHERFUCKING DATABASE, TOO"): tested is a row's one date, set
+// by every report; a row is named by its id, a number the table gives it, since a date that changes names nothing.
+db.exec('CREATE TABLE IF NOT EXISTS testicle (id INTEGER PRIMARY KEY, script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, ' +
   'current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT \'\', ' +
-  'severity REAL NOT NULL DEFAULT 0, suiteHash TEXT NOT NULL DEFAULT \'\', PRIMARY KEY (script, suite, test, flipped))');
+  'severity REAL NOT NULL DEFAULT 0, suiteHash TEXT NOT NULL DEFAULT \'\')');
 // BOTH HASHES ON A TEST ROW (goal/G47.1, the box: "A testicle row carries both hashes it ran against, the script's and the
 // suite's"): judged is the script's, suiteHash the suite's.
-db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, severity DESC, flipped DESC) WHERE current = 1');
+db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, severity DESC, tested DESC) WHERE current = 1');
 const T = {
   current: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND current = 1'),
-  add: db.prepare('INSERT INTO testicle (script, suite, test, flipped, current, verified, tested, judged, severity, suiteHash) VALUES (?, ?, ? , ?, 1, ?, ?, ?, ?, ?)'),
-  tested: db.prepare('UPDATE testicle SET tested = ?, judged = ?, severity = MAX(severity, ?), suiteHash = ? WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
-  retire: db.prepare('UPDATE testicle SET current = 0 WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
-  // The current rows in the index's order: the failed first, then most severe first, the newest flip first among equals
+  add: db.prepare('INSERT INTO testicle (script, suite, test, current, verified, tested, judged, severity, suiteHash) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)'),
+  tested: db.prepare('UPDATE testicle SET tested = ?, judged = ?, severity = MAX(severity, ?), suiteHash = ? WHERE id = ?'),
+  retire: db.prepare('UPDATE testicle SET current = 0 WHERE id = ?'),
+  // The current rows in the index's order: the failed first, then most severe first, the newest report first among equals
   // (goal/G47.1, the box: "Every test search answers its failed tests first, then by severity").
-  currents: db.prepare('SELECT * FROM testicle WHERE current = 1 ORDER BY verified, severity DESC, flipped DESC'),
-  reds: db.prepare('SELECT * FROM testicle WHERE current = 1 AND verified = 0 ORDER BY severity DESC, flipped DESC'),
-  row: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND flipped = ?'),
-  // A test's history: every row of it, the newest flip first.
-  history: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? ORDER BY flipped DESC'),
+  currents: db.prepare('SELECT * FROM testicle WHERE current = 1 ORDER BY verified, severity DESC, tested DESC'),
+  reds: db.prepare('SELECT * FROM testicle WHERE current = 1 AND verified = 0 ORDER BY severity DESC, tested DESC'),
+  row: db.prepare('SELECT * FROM testicle WHERE id = ?'),
+  // A test's history: every row of it, the newest first.
+  history: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? ORDER BY id DESC'),
   // The current rows of one script and suite: what its status is judged from.
   ofSuite: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND current = 1'),
   // Every title of one script and suite, with when it was last tested, and every row of one title (eraseUnreported).
@@ -170,11 +173,12 @@ function requiresOf(script, sent) {
   return out;
 }
 function statusOf(test, outcome) { return test ? 'needs running' : outcome === 'red' ? 'still red' : outcome === 'green' ? 'green' : 'needs running'; }
-// A test row as the verbs and the stream carry it: its key its full key, script|suite|test|flipped, its booleans booleans
-// (goal/G47.1, the box: "the page keeps test rows by their full key, script|suite|test|flipped, and shows a test's current
-// row"), so a flipped test's replaced row and its current row are two rows wherever they are kept.
+// A test row as the verbs and the stream carry it: its key its full key, script|suite|test|id, its booleans booleans
+// (goal/G47.1, the box: "the page keeps test rows by their full key ... and shows a test's current row"; the key's last part
+// the row's id since goal/G48.4 killed flipped), so a flipped test's replaced row and its current row are two rows wherever
+// they are kept.
 function testServed(r) {
-  return { key: r.script + '|' + r.suite + '|' + r.test + '|' + Number(r.flipped), script: r.script, suite: r.suite, test: r.test, flipped: Number(r.flipped), current: !!r.current,
+  return { key: r.script + '|' + r.suite + '|' + r.test + '|' + Number(r.id), id: Number(r.id), script: r.script, suite: r.suite, test: r.test, current: !!r.current,
     verified: !!r.verified, tested: Number(r.tested), judged: r.judged, suiteHash: String(r.suiteHash || ''), severity: Number(r.severity) };
 }
 
@@ -307,8 +311,8 @@ function unfit(script, suite) {
   if (dropRow.run(Date.now(), script, suite).changes) {
     tell('suite', suiteServed(Q.suiteRow.get(script, suite)), 'deleted');
     T.ofSuite.all(script, suite).forEach(function (t) {
-      T.retire.run(t.script, t.suite, t.test, Number(t.flipped));
-      tell('testicle', testServed(T.row.get(t.script, t.suite, t.test, Number(t.flipped))), 'updated');
+      T.retire.run(t.id);
+      tell('testicle', testServed(T.row.get(t.id)), 'updated');
     });
   }
   return true;
@@ -668,7 +672,7 @@ function renameTitle(script, suite, old, title) {
     try { T.retitle.run(title, suite, old); db.exec('COMMIT'); } catch (e) { db.exec('ROLLBACK'); throw e; }
     rows.forEach(function (r) {
       tell('testicle', testServed(r), 'deleted');
-      tell('testicle', testServed(T.row.get(r.script, r.suite, title, Number(r.flipped))), 'added');
+      tell('testicle', testServed(T.row.get(Number(r.id))), 'added');
     });
     return { renamed: rows.length };
   });
@@ -878,17 +882,20 @@ function judgeLeftovers(j) {
 function setResult(script, suite, name, verified, severity, scriptHash, suiteHash) {
   const now = Date.now();
   const was = T.current.get(script, suite, name);
-  let flipped = now;
+  const same = !!was && !!was.verified === !!verified;
+  let id = 0;
   db.exec('BEGIN');
   try {
-    if (!was) T.add.run(script, suite, name, now, verified ? 1 : 0, now, scriptHash, severity, suiteHash);
-    else if (!!was.verified === !!verified) { flipped = Number(was.flipped); T.tested.run(now, scriptHash, severity, suiteHash, script, suite, name, flipped); }
-    else { T.retire.run(script, suite, name, Number(was.flipped)); T.add.run(script, suite, name, now, verified ? 1 : 0, now, scriptHash, Math.max(severity, Number(was.severity) || 0), suiteHash); }
+    if (same) { id = Number(was.id); T.tested.run(now, scriptHash, severity, suiteHash, id); }
+    else {
+      if (was) T.retire.run(Number(was.id));
+      id = Number(T.add.run(script, suite, name, verified ? 1 : 0, now, scriptHash, was ? Math.max(severity, Number(was.severity) || 0) : severity, suiteHash).lastInsertRowid);
+    }
     db.exec('COMMIT');
   } catch (e) { db.exec('ROLLBACK'); throw e; }
-  if (was && Number(was.flipped) !== flipped) tell('testicle', testServed(T.row.get(script, suite, name, Number(was.flipped))), 'updated');
-  const out = testServed(T.row.get(script, suite, name, flipped));
-  tell('testicle', out, was && Number(was.flipped) === flipped ? 'updated' : 'added');
+  if (was && !same) tell('testicle', testServed(T.row.get(Number(was.id))), 'updated');
+  const out = testServed(T.row.get(id));
+  tell('testicle', out, same ? 'updated' : 'added');
   return out;
 }
 // A press of 🏃‍♂️, or an agent's testicle.run: to the head of the queue, never twice.
@@ -1071,8 +1078,8 @@ function apply(changed, P) {
     const r = Q.suiteRow.get(p[0], p[1]);
     if (!r || !r.deleted) return;
     T.ofSuite.all(p[0], p[1]).forEach(function (t) {
-      T.retire.run(t.script, t.suite, t.test, Number(t.flipped));
-      tell('testicle', testServed(T.row.get(t.script, t.suite, t.test, Number(t.flipped))), 'updated');
+      T.retire.run(t.id);
+      tell('testicle', testServed(T.row.get(t.id)), 'updated');
     });
   });
   // Whatever wrote it, a file change, a script.get or a testicle.set, a flag written wakes the runner (wsl's gap).

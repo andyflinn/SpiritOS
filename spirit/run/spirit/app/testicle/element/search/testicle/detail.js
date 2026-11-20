@@ -9,7 +9,7 @@
 // The box: "testicle.search answers the current rows by default; given a valid test title, {script, suite, test, text}, it
 // answers every row matching that script, suite and title, current or not, newest first. A test's history in its detail
 // comes from that, no new verb." The title line is the test's title in full, on top in a row form with its run button;
-// below it every row, the newest flip first, each drawn by ./row.js with the date it flipped, its title and file names left
+// below it every row, the newest flip first, each drawn by ./row.js with the date it last ran, its title and file names left
 // out. It asks again whenever testicle publishes a row of this test. Between the title and the rows (goal/G47.4): the
 // title's rename form (testicle.title), the full script path and the full suite path.
 (function () {
@@ -89,7 +89,7 @@
       var D = S.data.testicle.data;
       var b = S.data.getPath(D.branch('testicle'));
       return Object.keys(b || {}).filter(function (k) { return k.indexOf(prefix) === 0; }).map(function (k) { return b[k]; })
-        .sort(function (a, c) { return Number(c.flipped) - Number(a.flipped); });
+        .sort(function (a, c) { return Number(c.id) - Number(a.id); });
     }
     function ask() {
       return Promise.resolve(S.testicle['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
