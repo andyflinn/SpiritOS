@@ -2772,9 +2772,11 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
       if (!(r.body && r.body.started === true)) return false;
       const started = await until(function () { return Promise.resolve(alive(pidOf('killed'))); }, 60000);
       if (!started) return false;
+      // The process this run started, held by its id: the stopped run is queued again and its next run writes a new one.
+      const pid = pidOf('killed');
       // A press of another suite stops the running one.
       await call(LK.N.base, 'testicle.run', { script: LEFT, suite: ownOfLeak(LEFT) });
-      return (await until(function () { return Promise.resolve(!alive(pidOf('killed'))); }, 30000)) || false;
+      return (await until(function () { return Promise.resolve(!alive(pid)); }, 30000)) || false;
     } finally { await letGoLK(); }
   }, test.limit.long);
 }
