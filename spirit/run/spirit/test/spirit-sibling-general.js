@@ -2184,6 +2184,22 @@ function oneFile(P) {
   if (mr.page) test.run('it is page code: node never loads it', 0.4, function () { return moduleRules(full).page || false; }, test.limit.quick);
   else if (mr.spirit) test.run('it sets the global spirit before its first require', 0.4, function () { return !moduleRules(full).early; }, test.limit.quick);
   else test.run('it requires spirit.js first', 0.4, function () { return !moduleRules(full).early; }, test.limit.quick);
+  // AN APP'S SERVER PORTION IS ITS server/server.js (goal/G48.5, the box: "an app's server-only files stand in
+  // spirit/app/<name>/server/; its server portion MUST be spirit/app/<name>/server/server.js", "spirit/app/<name>/<name>.js stays
+  // what the node starts and loads ./server/server.js on the node", "a general test goes red for one that does not"). A script of an
+  // app that serves, spirit.require-ing the app server module, is that file, and the app's <name>.js names it.
+  {
+    const appOf = /^spirit\/app\/([^/]+)\//.exec(rel);
+    const code = function (f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { return ''; } };
+    const serves = function (src) { return /require\(\s*['"](?:spirit\/appServer\.js|spirit\/server\/app\.js)['"]\s*\)/.test(src); };
+    if (appOf && !/(^|\/)test\//.test(rel) && /\.js$/.test(rel) && serves(code(full))) {
+      test.run('an app\'s server portion is spirit/app/<name>/server/server.js, and the app\'s <name>.js loads it there', 0.4, function () {
+        const name = appOf[1];
+        const loader = code(path.join(RUN, 'spirit', 'app', name, name + '.js'));
+        return (rel === 'spirit/app/' + name + '/server/server.js' && /server\/server\.js/.test(loader)) || false;
+      }, test.limit.quick);
+    }
+  }
   // NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "the same rule MUST apply to both the
   // window object for isBrowser and what is it on node? the process object?", "no developer will want to use a system that
   // pollutes global name-spaces.", "go on this"). The page's side is spirit-sibling-browser.js's. In a node every file has

@@ -31,6 +31,22 @@ function cases(p) {
   return [up, title].filter(function (x, i, all) { return x !== p && all.indexOf(x) === i; });
 }
 
+// NEVER SERVED, THE SERVER FOLDERS (goal/G48.5, the box: "no file under spirit/server/ or any spirit/app/<name>/server/ is
+// served"; "UNSERVABLE_FOLDERS in spirit/fileSystem.js names spirit/server/ and every spirit/app/<name>/server/"). Asked by path;
+// the files need not stand yet.
+const SERVER_FOLDER_FILES = ['spirit/server/node.js', 'spirit/server/relay.js', 'spirit/server/app.js', 'spirit/server/serveCommon.js'];
+const APP_SERVER_FILES = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'icons', 'testicle'].map(function (n) { return 'spirit/app/' + n + '/server/server.js'; })
+  .concat(['spirit/app/desk/server/deskLoop.js', 'spirit/app/testicle/server/testAll.js', 'spirit/app/zzAnyApp/server/anyHelper.js']);
+test.run('fileServable refuses every file under spirit/server/: node.js, relay.js, app.js and serveCommon.js', 0.8, function () {
+  return SERVER_FOLDER_FILES.every(function (p) { return ask('fileServable', p) === false && cases(p).every(function (c) { return ask('fileServable', c) === false; }); }) || false;
+}, test.limit.quick);
+test.run('fileServable refuses every file under an app\'s server/ folder: its server.js and its helpers, of any app', 0.8, function () {
+  return APP_SERVER_FILES.every(function (p) { return ask('fileServable', p) === false && cases(p).every(function (c) { return ask('fileServable', c) === false; }); }) || false;
+}, test.limit.quick);
+test.run('fileServable still serves an app\'s own <name>.js, the loader, and spirit/server.js stays refused', 0.4, function () {
+  return (ask('fileServable', 'spirit/app/desk/desk.js') === true && ask('fileServable', 'spirit/server.js') === false) || false;
+}, test.limit.quick);
+
 // fileServable: what it refuses, it refuses in every case.
 // Each path written out, as it stands and in its other cases, so that each check has a plain title of its own.
 test.run('fileServable refuses spirit/state/identity.json, the node\'s private key, as written', 0.8, function () { return (ask('fileServable', 'spirit/state/identity.json') === false) ? true : false; }, test.limit.quick);

@@ -37,8 +37,14 @@ function stop(node) {
 
 // ── job.create starts this node's processes, and no other program (goal/G41.30, RH1) ──
 const J = {};
+// job.create's args as the verb takes them since goal/G48.4: a list in a JSON string. Every helper below sends them so.
+function asSent(verb, args) { const a = Object.assign({}, args || {}); if (verb === 'job.create' && Array.isArray(a.args)) a.args = JSON.stringify(a.args); return a; }
+// ITS ARGS AS JSON IN A STRING (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json"): a list handed here is sent as the
+// verb takes it, so a start is refused or let in by job.js's own rules, never by the type of its args.
 const call = async function (args) {
-  const r = await fetch(J.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.create', args: args }) });
+  const a = Object.assign({}, args);
+  if (Array.isArray(a.args)) a.args = JSON.stringify(a.args);
+  const r = await fetch(J.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.create', args: a }) });
   const text = await r.text();
   let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
   return { status: r.status, code: body && body.code, text: text };
@@ -171,6 +177,28 @@ test.run('a spirit/appServer.js planted inside an app folder of this node, given
   return refused('fakeInside');
 }, test.limit.slow);
 test.run('a spirit/appServer.js planted inside an app folder of this node, given before a node run app, never ran', 0.8, function () { return neverRan('fakeInside'); }, test.limit.quick);
+// RH1 CARRIED OVER (goal/G48.5, the box: "the node starts a server process only as its own spirit/server.js, then --app, then
+// the script; any other server.js as the first argument is refused", "the start check carries over exactly ... (RH1)").
+test.run('this node\'s own spirit/server.js, then --app, then a node run app, starts', 0.8, async function () {
+  const app = ownRunApp();
+  const own = path.join(J.run, 'spirit', 'server.js');
+  const r = await call({ command: process.execPath, args: [own, '--app', app] });
+  await sleep(WAIT_MS);
+  return (r.status === 201 && fs.existsSync(mark('runAgain'))) || false;
+}, test.limit.slow);
+test.run('a spirit/server.js outside this node\'s tree, then --app, then a node run app, is refused with a code', 0.8, async function () {
+  const fake = path.join(J.marks, 'elsewhere2', 'spirit', 'server.js');
+  fs.mkdirSync(path.dirname(fake), { recursive: true }); fs.writeFileSync(fake, script(mark('fakeServerOut')));
+  RC.fakeServerOut = await refusedCase('a spirit/server.js outside this node\'s tree', mark('fakeServerOut'), { command: process.execPath, args: [fake, '--app', ownRunApp()] });
+  return refused('fakeServerOut');
+}, test.limit.slow);
+test.run('a spirit/server.js outside this node\'s tree, then --app, then a node run app, never ran', 0.8, function () { return neverRan('fakeServerOut'); }, test.limit.quick);
+test.run('a spirit/server.js planted inside an app folder of this node, then --app, then a node run app, is refused with a code', 0.8, async function () {
+  const fake = plant('spirit/app/zzRun/spirit/server.js', mark('fakeServerIn'));
+  RC.fakeServerIn = await refusedCase('a spirit/server.js planted inside an app folder', mark('fakeServerIn'), { command: process.execPath, args: [fake, '--app', ownRunApp()] });
+  return refused('fakeServerIn');
+}, test.limit.slow);
+test.run('a spirit/server.js planted inside an app folder of this node, then --app, then a node run app, never ran', 0.8, function () { return neverRan('fakeServerIn'); }, test.limit.quick);
 
 // GOAL/G41.33. THE BOX: "Console output goes to null by default, at the source, for every process. Only DEBUG turns it
 // on. A crash is no exception: the exit code is enough to tell us to fix it, and we debug it by hand." Andy: "an
@@ -178,7 +206,7 @@ test.run('a spirit/appServer.js planted inside an app folder of this node, given
 // keeps what the node and the process's own published lines say. Andy, Q8, of the node and the relay themselves: "NOT the
 // servers.", so only what they start is judged. scratchNode leaves DEBUG on, so each part sets it.
 const door = async function (verb, args) {
-  const r = await fetch(J.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+  const r = await fetch(J.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: asSent(verb, args) }) });
   const text = await r.text();
   let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
   return { status: r.status, body: body, text: text };
@@ -378,7 +406,7 @@ function plantApp(run, name, ms, nodeRun) {
 }
 const RT = {};
 const rask = function (call, args) {
-  return fetch(RT.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+  return fetch(RT.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: asSent(call, args) }) })
     .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
 };
 
@@ -1047,7 +1075,7 @@ function mountPart() {
   }
   async function call(base, verb, args) {
     try {
-      const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+      const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: asSent(verb, args) }) });
       const text = await r.text();
       return { status: r.status, text: text, body: parsed(text) };
     } catch (e) { return { status: 0, text: '', body: null }; }
@@ -1089,7 +1117,7 @@ function mountPart() {
   const state = function () { return path.join(s.run, 'spirit', 'state', NAME); };
   const nodeJson = function () { return readJson(path.join(state(), 'node.json')); };
   const started = function () { return path.join(state(), 'data', 'started.txt'); };
-  const startIt = function (script, arg) { return call(N.base, 'job.create', { command: 'node', args: [script].concat(arg ? [arg] : []), type: 'the red' }); };
+  const startIt = function (script, arg) { return call(N.base, 'job.create', { command: 'node', args: [script].concat(arg ? [arg] : []), type: 'red' }); };
   const refused = function (r) { return r.status >= 400 && !!r.body && r.body.ok === false; };
   const noNode = function () { return !s || !N.up; };
   test.after(async function () {
@@ -1197,7 +1225,7 @@ function mountPart() {
   }, test.limit.quick);
   test.run('a script outside spirit/app is refused by name', 0.8, async function () {
     if (noNode()) return false;
-    const otherPlace = await call(N.base, 'job.create', { command: 'node', args: ['shell/planted.js'], type: 'the red' });
+    const otherPlace = await call(N.base, 'job.create', { command: 'node', args: ['shell/planted.js'], type: 'red' });
     return (otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process') || false;
   }, test.limit.quick);
 
