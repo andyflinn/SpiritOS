@@ -343,7 +343,7 @@ test.run('when starred, a refusal among the monitor\'s relay events arrives whol
 test.run('when starred, a relay\'s status arrives whole, once', 0.2, arrivesOnce(12), test.limit.quick);
 test.run('with no star, a bundle stays home', 0.8, staysHome(0), test.limit.quick);
 test.run('with no star, a branch stays home', 0.8, staysHome(1), test.limit.quick);
-test.run('with no star, a grant stays home', 0.8, staysHome(2), test.limit.quick);
+test.run('with no faceable mark, a grant stays home: WHAT THE FUCK!!!!!', 0.8, staysHome(2), test.limit.quick);
 test.run('with no star, a deleted job stays home', 0.8, staysHome(3), test.limit.quick);
 test.run('with no star, a running job of a process stays home', 0.8, staysHome(4), test.limit.quick);
 test.run('with no star, a running job of no module stays home', 0.8, staysHome(5), test.limit.quick);
