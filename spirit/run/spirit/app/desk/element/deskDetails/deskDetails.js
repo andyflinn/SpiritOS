@@ -92,6 +92,9 @@ function ddArming() {
     if (F && addTitle && !addTitle.getAttribute('data-held')) { F.attach(addTitle, 'spirit.type.string.label'); addTitle.setAttribute('data-held', 'label'); }
     var myName = document.getElementById('dd-name');
     if (F && myName && !myName.getAttribute('data-held')) { F.attach(myName, 'spirit.type.string.label'); myName.setAttribute('data-held', 'label'); }
+    // The box's text, held to the type box.write takes (spirit/type/string/box.js).
+    var boxText = document.getElementById('dd-box-input');
+    if (F && boxText && !boxText.getAttribute('data-held')) { F.attach(boxText, 'spirit.type.string.box'); boxText.setAttribute('data-held', 'box'); }
     var body = document.getElementById('dd-body');
     if (!A || !body || typeof body.querySelectorAll !== 'function') return;
     Array.prototype.forEach.call(body.querySelectorAll('[data-arming]'), function (b) {
