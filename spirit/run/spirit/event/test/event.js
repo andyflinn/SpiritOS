@@ -165,3 +165,70 @@ test.run('when one of two streams closes, the other keeps its heartbeat and goes
   b.req.destroy();
   return held.timers === 1 && bHeard ? true : false;
 }, test.limit.quick);
+
+// A PAGE'S CONNECT REACHES EVERY APP SERVER (goal/G47.5, part 2; Andy: "the node forwards a loopback connect to the as server as
+// a normal request, so that spirit/server/app.js knows a loopback client connected", "the connect to all app servers doesn't
+// need a loopback mark, it will reach the app server with the local node's ID", "47.5 WILL NOT HAVE ANY APP-SPECIFIC SHIT IN
+// IT.", "Go on 47.5 fix, part two"). On a scratch node of lab's: a planted app server whose bootstrap writes down every
+// subscriber that is its own node; a page opens the node's event stream, and that subscriber is written down.
+const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const fs = require('fs');
+const SELFSUB = 'zzselfsub';
+const N = {};
+test.after(async function () {
+  try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
+  await sleep(500);
+  try { if (N.s) LABH.freeTree(N.s); } catch (e) { /* scratch */ }
+});
+function selfSubTree() {
+  const root = LABH.scratchTree().root;
+  const run = path.join(root, 'spirit', 'run');
+  const dir = path.join(run, 'spirit', 'app', SELFSUB);
+  fs.mkdirSync(path.join(dir, 'server'), { recursive: true });
+  fs.writeFileSync(path.join(dir, SELFSUB + '.json'), JSON.stringify({ identity: { icon: '🧪', label: SELFSUB, intrinsic: false }, mount: { [SELFSUB + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }));
+  fs.writeFileSync(path.join(dir, SELFSUB + '.js'), "'use strict';\nrequire('../../spirit.js');\nspirit.require('spirit/app/" + SELFSUB + "/server/server.js');\n");
+  fs.writeFileSync(path.join(dir, 'server', 'server.js'), [
+    "'use strict';",
+    "require('../../../spirit.js');",
+    "const fs = require('fs');",
+    "const path = require('path');",
+    "const SEEN = path.join(__dirname, '..', '..', '..', 'state', '" + SELFSUB + "', 'seen.json');",
+    "spirit.require('spirit/server/app.js').serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {",
+    "  publisher: { family: '" + SELFSUB + "', waitMs: 5000, bootstrap: function (key) {",
+    "    if (spirit.node && key && key === spirit.node.key) { try { fs.appendFileSync(SEEN, 'self\\n'); } catch (e) { /* judged by its absence */ } }",
+    "    return [];",
+    "  } },",
+    "});",
+  ].join('\n') + '\n');
+  fs.writeFileSync(path.join(dir, 'api.js'), 'module.exports = { verbs: { ping: {} } };\n');
+  const state = path.join(run, 'spirit', 'state', SELFSUB);
+  fs.mkdirSync(state, { recursive: true });
+  fs.writeFileSync(path.join(state, 'node.json'), JSON.stringify({ active: true }));
+  return { root: root, run: run, seen: path.join(state, 'seen.json') };
+}
+const nodePost = function (call, args) {
+  return fetch(N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
+    .then(function (r) { return r.status; }, function () { return 0; });
+};
+const selfSubs = function () { try { return fs.readFileSync(N.s.seen, 'utf8').split('\n').filter(Boolean).length; } catch (e) { return 0; } };
+test.run('a page\'s connect to the node\'s event stream reaches each app server as a subscribe under the node\'s own key', 0.2, async function () {
+  N.s = selfSubTree();
+  const port = await LABH.freePort();
+  N.child = LABH.startNodeOn(N.s.run, port);
+  N.base = 'http://127.0.0.1:' + port;
+  const up = await LABH.until(function () { return nodePost(SELFSUB + '.ping', {}).then(function (s) { return s === 200; }); }, 60000);
+  if (!up) return false;
+  const before = selfSubs();
+  const page = await new Promise(function (resolve) {
+    const req = http.request({ port: port, host: '127.0.0.1', method: 'POST', path: '/api/spirit', headers: { 'content-type': 'application/json' } }, function (res) {
+      res.on('data', function () {}); res.on('error', function () {}); resolve(req);
+    });
+    req.on('error', function () { resolve(null); });
+    req.end(JSON.stringify({ call: 'event.subscribe', args: {} }));
+  });
+  if (!page) return false;
+  page.on('error', function () {});
+  const reached = await until(function () { return selfSubs() > before; }, 8000);
+  page.destroy();
+  return reached || false;
+}, test.limit.slow);

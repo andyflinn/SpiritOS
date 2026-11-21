@@ -213,6 +213,21 @@ const kept = function () { return (globalThis.spirit && ((globalThis.spirit.data
 const itemOf = function (id) { const K = kept(); return K ? K.item(id) : null; };
 const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 
+// A SUBSCRIBE UNDER THIS NODE'S OWN KEY IS ITS PAGES' (goal/G47.5, part 2; Andy: "the node forwards a loopback connect to the
+// as server as a normal request, so that spirit/server/app.js knows a loopback client connected and then, if in client mode
+// stream the cache as normal events to loopback", "it will reach the app server with the local node's ID"): this node
+// subscribes, and the rows of the push it is answered with are published to its own pages (the stand-in's event.publish),
+// and none goes out by peerPost (the stand-in's deliveries).
+async function selfSubscribe() {
+  const publishedAt = fake.event.published.length;
+  const postsAt = posts.length;
+  const status = (await post('subscribe', { family: NAME }, SELF)).status;
+  await tick(800);
+  const ids = function (list) { const out = []; list.forEach(function (e) { (Array.isArray(e) ? e : [e]).forEach(function (x) { const r = x && (x.row || x); if (r && r.item && r.item.id) out.push(r.item.id); }); }); return out; };
+  return { selfStatus: status, toPages: ids(fake.event.published.slice(publishedAt)), byPost: ids(posts.slice(postsAt)) };
+}
+const allOf = function (list) { return Array.isArray(list) && ['head', 'a1', 'a2'].every(function (id) { return list.indexOf(id) !== -1; }); };
+
 // ── a child: one process of a restart, or of a cache switch ────────────────────────────────────────────────────────
 async function child(mode) {
   const out = {};
@@ -309,6 +324,15 @@ async function child(mode) {
     let file = null;
     try { file = JSON.parse(fs.readFileSync(cacheFile(NAME), 'utf8')); } catch (e) { file = null; }
     out.file = file ? { key: file.key, run: file.run, n: file.n, ids: Array.isArray(file.rows) ? file.rows.map(function (r) { return r && r.item ? r.item.id : ''; }) : [] } : null;
+    Object.assign(out, await selfSubscribe());
+  }
+  if (mode === 'selfServer') {
+    // The same in server mode: its push is its bootstrap.
+    globalThis.spirit.node = Object.assign({}, globalThis.spirit.node || {}, { key: SELF, label: 'this node' });
+    const A = require(FILE);
+    A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, { publisher: { family: NAME, bootstrap: function () { return [row(GOAL), row(item(1)), row(item(2))]; }, waitMs: 5000 } });
+    await tick(300);
+    Object.assign(out, await selfSubscribe());
   }
   if (mode === 'publisherOnly' || mode === 'streamOnly') {
     // A server of one side alone (goal/G47.5): a publisher with no stream, as the desk is, or a stream with no publisher, as
@@ -1093,13 +1117,25 @@ function ownPart() {
   }, test.limit.slow);
   // goal/G47.5, the cache in client mode (see the child's clientCache): the same file a following server keeps, deskClient's,
   // in spirit/state/<server>/cache/<sender>.json, with the sibling's run, its place and every row it sent.
+  const SELFSUB = {};
   test.run('a desk-shaped server in client mode keeps the sibling\'s rows as spirit/state/<server>/cache/<sibling>.json', 0.2, function () {
     clearCache(FAMILY);
-    const r = runChild('clientCache', FAMILY);
+    const r = SELFSUB.client = runChild('clientCache', FAMILY);
     clearCache(FAMILY);
     const f = r.file || {};
     return (r.switched === 200 && r.pushed === 200 && r.streamed === 200 && f.key === PUBLISHER && f.run === 'r1' && f.n === 3
       && Array.isArray(f.ids) && ['head', 'a1', 'a2'].every(function (id) { return f.ids.indexOf(id) !== -1; })) || false;
+  }, test.limit.slow);
+  // goal/G47.5, part 2 (see selfSubscribe): this node's own subscribe is its pages', in both modes.
+  test.run('in client mode a subscribe under this node\'s own key publishes the cache to its pages, none by peerPost', 0.2, function () {
+    const r = SELFSUB.client || {};
+    return (r.selfStatus === 200 && allOf(r.toPages) && Array.isArray(r.byPost) && r.byPost.length === 0) || false;
+  }, test.limit.quick);
+  test.run('in server mode a subscribe under this node\'s own key publishes its bootstrap to its pages, none by peerPost', 0.2, function () {
+    clearCache('zzSelfServer');
+    const r = runChild('selfServer', 'zzSelfServer');
+    clearCache('zzSelfServer');
+    return (r.selfStatus === 200 && allOf(r.toPages) && Array.isArray(r.byPost) && r.byPost.length === 0) || false;
   }, test.limit.slow);
 
   // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────

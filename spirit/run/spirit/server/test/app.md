@@ -206,7 +206,15 @@ that a spirit/server/app.js in client mode automatically caches the servers's st
 produces the EXACT same cache file as your own desk in client-mode"*. A child process: a server with a publisher only, as
 the desk is, named for a family with a folder on this node, switched by its owner to the sibling, which sends it a push and
 a row. It keeps them as `spirit/state/<server>/cache/<sibling>.json`, the file a following server keeps, with the sibling's
-key, its run, its place and every row it sent. A reloaded page restored from that file waits for Andy's word on its scope.
+key, its run, its place and every row it sent.
+
+A subscribe under this node's own key is its pages' (part 2; Andy: *"the node forwards a loopback connect to the as
+server as a normal request ... and then, if in client mode stream the cache as normal events to loopback"*, *"it will reach
+the app server with the local node's ID"*). The rows of the push it is answered with are published to this node's own pages
+(the stand-in's event.publish), and none goes out by peerPost:
+
+- in client mode, after the above, the push is the cache;
+- in server mode, a server with a publisher only whose bootstrap holds three rows: the push is its bootstrap.
 
 ## Loopback beside owner (goal/G47.5)
 
