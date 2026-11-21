@@ -14,5 +14,11 @@ if (require.main === module) {
   const words = process.argv.slice(2).join(' ');
   // Its parts through spirit.require, as every file of the tree loads another (the general rules).
   if (!words) spirit.require('spirit/console/loop.js').start();
-  else spirit.require('spirit/console/command.js').run(words).then(function (r) { if (r.out) console.log(r.out); process.exit(r.ok ? 0 : 1); });
+  // A WAIT ENDS WITH ITS OWN CODE ON A TIMEOUT, AND MOVES ITS POINTER ONLY ONCE IT PRINTED (goal/G48.6, the box): exit and
+  // printed are the command's to hand back.
+  else spirit.require('spirit/console/command.js').run(words).then(function (r) {
+    if (r.out) console.log(r.out);
+    if (typeof r.printed === 'function') r.printed();
+    process.exit(Number.isInteger(r.exit) ? r.exit : (r.ok ? 0 : 1));
+  });
 }

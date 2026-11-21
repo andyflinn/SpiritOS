@@ -8,8 +8,9 @@
 // through the node's verbs (Andy: "the only way it can access files inside of run:// is through the node api's"): whether
 // a path is there, it asks the node's fs stat.
 //
-//   run(line) -> Promise<{ ok, out, path }>   out what to print (a refusal as JSON), path the path after the line ('' at
-//                                             the root)
+//   run(line) -> Promise<{ ok, out, path, exit?, printed? }>   out what to print (a refusal as JSON), path the path after
+//                                             the line ('' at the root); exit the code to end with when it is not 0 or 1
+//                                             (a wait timed out), printed() to call once out is printed (a wait's pointer)
 //   state()   -> { path, history }            as the state file holds it now
 //
 /// ITS COMMANDS: path (goal/G48.2, the box, ### behavior), and api (goal/G48.3, below run's helpers).
@@ -30,16 +31,24 @@ const STATE = path.join(RUN, 'spirit', 'state', 'console', 'node.json');
 const HISTORY_MAX = 256;
 const NAME = /^[A-Za-z0-9_-]+$/;
 
+// THE WAIT'S STATE BESIDE THE PATH AND THE HISTORY (goal/G48.6, the box: "the console's state keeps path, history, waits,
+// the timeout and the log's read-pointer"): waits the configured wait-rows as stored, timeout in seconds, since the time
+// (at) of the last log row read, '' before the first wait.
+const WAIT_TIMEOUT_DEFAULT = 600;
 function state() {
   let s = null;
   try { s = JSON.parse(fs.readFileSync(STATE, 'utf8')); } catch (e) { s = null; }
   const p = s && typeof s.path === 'string' ? s.path : '';
   const h = s && Array.isArray(s.history) ? s.history.filter(function (l) { return typeof l === 'string'; }) : [];
-  return { path: p, history: h.slice(-HISTORY_MAX) };
+  const w = s && Array.isArray(s.waits) ? s.waits.filter(function (l) { return typeof l === 'string' && l; }) : [];
+  const t = s && Number.isInteger(s.timeout) && s.timeout > 0 ? s.timeout : WAIT_TIMEOUT_DEFAULT;
+  const since = s && typeof s.since === 'string' ? s.since : '';
+  return { path: p, history: h.slice(-HISTORY_MAX), waits: w, timeout: t, since: since };
 }
 function save(s) {
   fs.mkdirSync(path.dirname(STATE), { recursive: true });
-  fs.writeFileSync(STATE, JSON.stringify({ path: s.path, history: s.history.slice(-HISTORY_MAX) }, null, 2));
+  fs.writeFileSync(STATE, JSON.stringify({ path: s.path, history: s.history.slice(-HISTORY_MAX), waits: s.waits || [],
+    timeout: s.timeout || WAIT_TIMEOUT_DEFAULT, since: s.since || '' }, null, 2));
 }
 function shown(p) { return p ? 'spirit.' + p : 'spirit'; }
 
@@ -177,6 +186,131 @@ function verbCommand(s, verbs, words, line) {
   });
 }
 
+// ── THE WAIT (goal/G48.6, the box v10) ──────────────────────────────────────────────────────────────────────────────
+// Andy: "an array of wait events will be maintained in spirit/state/console/node.json, with the following special console
+// commands: wait, wait add <event-description>, wait remove <event-description-string>"; "console MUST ALSO NOT BE APP
+// SPECIFIC IN ANY WAY". It reads node.db's log through its one reader, arrivals of spirit/trafficLog.js (delivered inbound
+// rows only, so an agent's own calls never wake it), opens each row's envelope with envelopeOf of spirit/arrivals.js and a
+// listener's bundle with unpack of spirit/streamBundle.js (goal/G48.7), and calls no verb of any branch.
+//   wait                       blocks until a wait-row matches or the timeout passes: a match prints one JSON line per row
+//                              with its wait-row and ends 0, a timeout says nothing came and ends WAIT_TIMED_OUT, no
+//                              wait-row is refused; one wait at a time on a node
+//   wait add api=<branch>.<verb> [<field>=<value> ...]    a wait-row, stored as typed
+//   wait remove <the stored string>                       takes it out
+//   wait list                  the configured wait-rows
+//   wait timeout <seconds>     the timeout, kept in state
+const WAIT_TIMED_OUT = 3;
+const WAIT_POLL_MS = 500;
+const WAIT_READ_MAX = 500;
+const WAIT_LOCK = path.join(RUN, 'spirit', 'state', 'console', 'wait.pid');
+
+// A wait-row as words: { branch, verb, filters: [[field, value]] }, or null when it is no api=<branch>.<verb> first.
+function waitRowOf(text) {
+  const words = wordsOf(text);
+  if (!words || !words.length) return null;
+  const m = /^api=([A-Za-z]\w*)\.(\S+)$/.exec(words[0]);
+  if (!m) return null;
+  const filters = [];
+  for (let i = 1; i < words.length; i++) {
+    const eq = words[i].indexOf('=');
+    if (eq < 1) return null;
+    filters.push([words[i].slice(0, eq), words[i].slice(eq + 1)]);
+  }
+  return { branch: m[1], verb: m[2], filters: filters };
+}
+// A field of an object by its name, a dotted name reaching inside.
+function fieldOf(o, name) { return String(name).split('.').reduce(function (v, k) { return v !== null && typeof v === 'object' ? v[k] : undefined; }, o); }
+function matches(o, filters) {
+  return filters.every(function (f) { const v = fieldOf(o, f[0]); return v !== undefined && v !== null && String(typeof v === 'object' ? JSON.stringify(v) : v) === f[1]; });
+}
+// What of one log row a wait-row matches: the call's arguments, or for a listener's bundle each entry's row.
+function matchesOf(row, rows) {
+  const env = spirit.require('spirit/arrivals.js').envelopeOf(String(row.payload || ''));
+  if (!env || !env.body || typeof env.body !== 'object') return [];
+  const out = [];
+  rows.forEach(function (text) {
+    const w = waitRowOf(text);
+    const call = w && env.body[w.branch] && typeof env.body[w.branch] === 'object' ? env.body[w.branch][w.verb] : undefined;
+    if (call === undefined) return;
+    const args = call && typeof call === 'object' ? call : {};
+    const base = { wait: text, at: row.at, peer: row.peer || '', app: env.app, api: w.branch + '.' + w.verb };
+    if (w.verb === 'listener' && typeof args.json === 'string') {
+      (spirit.require('spirit/streamBundle.js').unpack(args.json) || []).forEach(function (e) {
+        if (matches(e.row || {}, w.filters)) out.push(Object.assign({ entry: e }, base));
+      });
+    } else if (matches(args, w.filters)) out.push(Object.assign({ args: args }, base));
+  });
+  return out;
+}
+function liveLock() {
+  let pid = 0;
+  try { pid = Number(fs.readFileSync(WAIT_LOCK, 'utf8')); } catch (e) { pid = 0; }
+  if (!(pid > 0) || pid === process.pid) return false;
+  try { process.kill(pid, 0); return true; } catch (e) { return false; }
+}
+function waitCommand(s, words, line) {
+  const sub = words[0] || '';
+  if (sub === 'list' && words.length === 1) { logged(s, line); return Promise.resolve({ ok: true, out: JSON.stringify(s.waits, null, 2), path: s.path }); }
+  if (sub === 'timeout') {
+    const n = Number(words[1]);
+    if (words.length !== 2 || !Number.isInteger(n) || n <= 0) return Promise.resolve(refused(s, 'bad-argument', 'wait timeout <seconds>, a whole number above 0'));
+    s.timeout = n; logged(s, line);
+    return Promise.resolve({ ok: true, out: JSON.stringify({ timeout: n }, null, 2), path: s.path });
+  }
+  if (sub === 'add' || sub === 'remove') {
+    const text = words.slice(1).join(' ');
+    if (sub === 'add') {
+      if (!waitRowOf(text)) return Promise.resolve(refused(s, 'bad-argument', 'wait add api=<branch>.<verb> [<field>=<value> ...]'));
+      if (s.waits.indexOf(text) !== -1) return Promise.resolve(refused(s, 'already-there', 'already a wait-row: ' + text));
+      s.waits.push(text);
+    } else {
+      const at = s.waits.indexOf(text);
+      if (at === -1) return Promise.resolve(refused(s, 'no-such-wait', 'no such wait-row: ' + text));
+      s.waits.splice(at, 1);
+    }
+    logged(s, line);
+    return Promise.resolve({ ok: true, out: JSON.stringify(s.waits, null, 2), path: s.path });
+  }
+  if (sub) return Promise.resolve(refused(s, 'no-such-command', 'no such command: wait ' + words.join(' ')));
+  if (!s.waits.length) return Promise.resolve(refused(s, 'no-waits', 'no wait-row is configured: wait add api=<branch>.<verb> first'));
+  if (liveLock()) return Promise.resolve(refused(s, 'already-waiting', 'a wait already runs on this node'));
+  fs.mkdirSync(path.dirname(WAIT_LOCK), { recursive: true });
+  fs.writeFileSync(WAIT_LOCK, String(process.pid));
+  const unlock = function () { try { if (Number(fs.readFileSync(WAIT_LOCK, 'utf8')) === process.pid) fs.unlinkSync(WAIT_LOCK); } catch (e) { /* gone */ } };
+  process.once('exit', unlock);
+  const log = spirit.require('spirit/trafficLog.js').createTrafficLog({ rootDir: RUN });
+  // THE FIRST WAIT STARTS AT THE NEWEST ROW (the box): with no pointer, now.
+  if (!s.since) { s.since = new Date().toISOString(); save(s); }
+  const deadline = Date.now() + s.timeout * 1000;
+  const notes = [];
+  // Rows shed under the pointer (the box: "when the pointer is older than the oldest row left, the wait says rows were shed").
+  const oldest = (log.arrivals({ limit: 1 }) || [])[0];
+  if (oldest && Date.parse(oldest.at) > Date.parse(s.since)) notes.push({ shed: true, since: s.since, oldest: oldest.at });
+  return new Promise(function (resolve) {
+    function look() {
+      let rows = [];
+      try { rows = log.arrivals({ since: s.since, limit: WAIT_READ_MAX }) || []; } catch (e) { rows = []; }
+      let found = [];
+      rows.forEach(function (row) { found = found.concat(matchesOf(row, s.waits)); });
+      // The pointer moves to the last row read, matched or not, and is written once what matched is printed.
+      if (rows.length) {
+        const out = notes.concat(found).map(function (o) { return JSON.stringify(o); }).join('\n');
+        s.since = rows[rows.length - 1].at;
+        if (found.length) { unlock(); resolve({ ok: true, out: out, path: s.path, printed: function () { logged(s, line); } }); return; }
+        save(s);
+        if (rows.length >= WAIT_READ_MAX) { setImmediate(look); return; }
+      }
+      if (Date.now() >= deadline) {
+        unlock();
+        resolve({ ok: false, exit: WAIT_TIMED_OUT, out: notes.concat([{ timeout: s.timeout, nothing: true }]).map(function (o) { return JSON.stringify(o); }).join('\n'), path: s.path });
+        return;
+      }
+      setTimeout(look, WAIT_POLL_MS);
+    }
+    look();
+  });
+}
+
 function run(line) {
   const words = wordsOf(line);
   const s = state();
@@ -184,6 +318,7 @@ function run(line) {
   if (!words.length) return Promise.resolve({ ok: true, out: '', path: s.path });
   if (words[0] === 'path' && words.length <= 2) return pathCommand(s, words[1] || '');
   if (words[0] === 'api' && words.length <= 2) return apiCommand(s, words[1] || '', line);
+  if (words[0] === 'wait') return waitCommand(s, words.slice(1), line);
   // A verb of the branch at the path, typed with its arguments.
   return verbsAt(s.path).then(function (verbs) {
     if (verbs && Object.prototype.hasOwnProperty.call(verbs, words[0])) return verbCommand(s, verbs, words, line);
