@@ -1,6 +1,6 @@
 # Packets: windows
 
-20 read-only testicle asks of this node at `f1fd9378a`, 2026-11-21T02:02:12.764Z, timed by its own traffic log.
+20 read-only testicle asks of this node at `90a7785c1`, 2026-11-21T15:02:47.566Z, timed by its own traffic log.
 
 | | median | worst |
 |---|---|---|
