@@ -142,10 +142,12 @@ test.run('a line with no to is refused, as the caller\'s error', 0.2, async func
   const noTo = await X.call('chat.line.write', { to: '', text: 'zz to nobody', re: { writer: '', seq: 0 } });
   return noTo.status >= 400 && noTo.status < 500 ? true : false;
 }, test.limit.quick);
-test.run('a line too large to travel is refused line-too-large', 0.2, async function () {
+// Since goal/G48.4 a line's text is a spirit.type.string.paragraph, at most 2048 bytes: a line too large is refused at the door,
+// by its type, before the server's own line-too-large check could see it.
+test.run('a line too large to travel is refused at the door, by its type, with a code', 0.2, async function () {
   if (!X.K) return false;
   const big = await X.call('chat.line.write', { to: X.K, text: 'x'.repeat(limits.PAYLOAD_MAX), re: { writer: '', seq: 0 } });
-  return big.status >= 400 && /line-too-large/.test(big.text) ? true : false;
+  return (big.status >= 400 && big.status < 500 && !!big.body && typeof big.body.code === 'string' && big.body.code !== 'handler-failed') ? true : false;
 }, test.limit.quick);
 test.run('neither refused line was kept, and the chat holds its two lines', 0.2, async function () {
   if (!X.K) return false;
