@@ -34,7 +34,6 @@ module.exports = function rules(N) {
     if (row.table === 'box') return '';
     if (row.table === 'chat') return String(r.at || '') + '|' + String(r.by || '');
     if (row.table === 'checks') return String(r.number || '');
-    if (row.table === 'files') return String(r.by || '') + '|' + String(r.path || '');
     return null;
   }
   function identity(row) {
@@ -83,7 +82,7 @@ module.exports = function rules(N) {
     return kept;
   }
   // THE CACHE ANSWERS A READ AS THE DESK WOULD (goal/G41.11's kept reads; box v15: "The client queries its own cache
-  // through that api.js"): item.get from an item's facts, item.box, item.checks, item.chat and item.files from the parts
+  // through that api.js"): item.get from an item's facts, item.box, item.checks and item.chat from the parts
   // kept, each filled to room as the desk fills its answer; null when the cache does not hold it all, so the desk is
   // asked. D is the client's data set as the desk's translator (spirit.data.desk.data) keeps it.
   function bytes(x) { return Buffer.byteLength(JSON.stringify(x), 'utf8'); }
@@ -105,18 +104,6 @@ module.exports = function rules(N) {
       }
       // Lines the stream brought before any read are the newest only (chatMore kept): older ones are the desk's.
       return { chat: lines, chatMore: lines.length < whole.chat.length || whole.chatMore === true };
-    }
-    // goal/G33.7 (the approved list: "deskClient's kept file list (filled to one answer)"): as many as fit one answer,
-    // in the desk's order, and filesMore when some were left out; the push only ever adds to what is kept.
-    if (verb === 'item.files' && Array.isArray(whole.files) && !whole.filesMore) {
-      var under = args && typeof args.under === 'string' ? args.under : '';
-      var all = whole.files.filter(function (f) { return !under || String(f.path).indexOf(under) === 0; });
-      var files = [];
-      for (var j = 0; j < all.length; j++) {
-        if (bytes({ files: files.concat([all[j]]), filesMore: true }) > room) break;
-        files.push(all[j]);
-      }
-      return { files: files, filesMore: files.length < all.length };
     }
     return null;
   }

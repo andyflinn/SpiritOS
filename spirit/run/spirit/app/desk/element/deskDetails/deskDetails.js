@@ -13,8 +13,7 @@
 // `buttons`, and a press goes to the server as a press, the screen waiting
 // for the server's publish. The id, title and status ride in the shell's title
 // bar; under it the button row, then a workBench: the left strip of panels (box,
-// red Qs and checks, blocks, files and grants), the chat in the
-// centre, the right side blank.
+// red Qs with grants and checks), the chat in the centre, the right side blank.
 
 // THE INTERFACE IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"; app-child-browser.js): the desk family's api.js, which brings its data.js.
@@ -28,8 +27,6 @@ var ddFacts = null;          // the item's facts, as the server last said them
 var ddBox = '';
 var ddVersion = 0;
 var ddChecks = [];
-var ddFiles = [];            // item.files, its own answer (goal/G32.2): by path, as many as fit
-var ddFilesMore = false;
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
 // GRANTS SENT, NOT YET PUSHED BACK (goal/G33.8, box v11; Andy: "i had to grant appServer.js twice"): a confirmed grant
@@ -87,9 +84,7 @@ function ddArming() {
     var F = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.required.spirit.element.fieldInput;
     var say = document.getElementById('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'spirit.type.string.paragraph'); say.setAttribute('data-held', 'paragraph'); }
-    // The blocking item's title and your name for the item, each a label (goal/G48.4, box v22).
-    var addTitle = document.getElementById('dd-add-title');
-    if (F && addTitle && !addTitle.getAttribute('data-held')) { F.attach(addTitle, 'spirit.type.string.label'); addTitle.setAttribute('data-held', 'label'); }
+    // Your name for the item, a label (goal/G48.4, box v22).
     var myName = document.getElementById('dd-name');
     if (F && myName && !myName.getAttribute('data-held')) { F.attach(myName, 'spirit.type.string.label'); myName.setAttribute('data-held', 'label'); }
     // The box's text, held to the type box.write takes (spirit/type/string/box.js).
@@ -165,14 +160,6 @@ function ddFrame() {
       // The left pane's content: its rows on top, the panel taking the rest (each panel scrolls in itself, ddPanelHtml).
       '<div id="dd-left" class="fill" style="min-height:0;overflow:hidden">' +
         '<div id="dd-panel" class="fill" style="min-height:0"></div>' +
-    // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "\"Title\" [Title String, subject to label rules]
-    // [add-button]. When the user presses the [add-button], The desk will add a blocking item with the entered title
-    // and a blank text box. The blocked-by section will be updated immediately." At the foot of the left pane, under
-    // every panel; it lives in the frame, so what he has typed survives every repaint, as the chat input does.
-    '<div class="start-job-form card" id="dd-add-row"><label class="field-label grow">Title' +
-      '<input type="text" id="dd-add-title" data-field="label" placeholder="an item this one waits on"></label>' +
-      '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
-      '<button type="button" id="dd-add">Add blocking item</button></div>' +
       '</div>' +
       // THE CENTRE IS THE CHAT (goal/G41.22; Andy: "newest lines at the bottom, pinned to the bottom, and older lines above"),
       // its input at the bottom. No search over it (goal/G43.22; Andy: "take out the chat-search do, it's not actually usable.").
@@ -214,7 +201,6 @@ function ddMakeBench(n) {
       if (name === ddPanelSel) return;
       ddPanelSel = name;
       ddPaint();
-      if (name === 'blocks') ddLoadTargets();
     },
   });
   ddBench.center.appendChild(centre);
@@ -240,8 +226,7 @@ function ddButtonsHtml() {
   var f = ddFacts || {};
   var early = ddEarlyClose(f);
   var html = (f.buttons || []).filter(function (b) { return DD_LABELS[b] && !(early && b === 'close'); }).map(function (b) {
-    // DONE (n) (goal/G4.20 point 3). Andy: "when the done button appears it also shows number of claims [Done (2)]".
-    var label = b === 'done' && Number(f.claims) > 0 ? 'Done (' + Number(f.claims) + ')' : DD_LABELS[b];
+    var label = DD_LABELS[b];
     // START AND END DESIGN ASK ARE-YOU-SURE (goal/G41.11). Andy: "the start-design and end-design buttons in an item
     // must ask: are-you-sure". Armed like Waive (ddArming); the second press is ddSecondPress's.
     // AND CLOSE (goal/G43.30): every Close arms first.
@@ -261,21 +246,11 @@ function ddButtonsHtml() {
   if (f.goal === '' && (f.buttons || []).indexOf('go-all') !== -1) {
     html += '<button type="button" id="dd-go-all" data-arming="Go all: sure?">Go all</button>';
   }
-  // WAIVE (goal/G2.22). Armed like Go all: the first click arms, the second lifts the phase rules on
-  // this item, so one agent can carry it from red to verify.
-  if ((f.buttons || []).indexOf('waive') !== -1) {
-    html += '<button type="button" id="dd-waive" data-arming="Waive: sure?">Waive</button>';
-  }
   // DELETE (goal/G9.7). Andy: "the button bar of items will offer an arm-able [delete] while in design mode." The
-  // server offers it only then (buttons), so the bar draws it from the facts and arms like Waive: the first click arms,
+  // server offers it only then (buttons), so the bar draws it from the facts and arms like Go all: the first click arms,
   // the second deletes. His decision that it closes rather than erases is the server's (goal/G9.7, goal/G4.24).
   if ((f.buttons || []).indexOf('delete') !== -1) {
     html += '<button type="button" id="dd-delete" data-arming="Delete: sure?">Delete</button>';
-  }
-  // CODE ✓ (goal/G9.5). Andy: "the item Detail dialog has a check/toggle button, [Code✓], in it's button bar, where the
-  // user can set the Code-state of an item". Items only: a goal has no code state, and the server refuses a sub-goal.
-  if (f.goal !== '') {
-    html += '<button type="button" id="dd-code">Code' + (f.code ? ' ✓' : '') + '</button>';
   }
   // MAKE CURRENT (goal/G2.19). Andy: "on any open goal i want a button \"make current goal\"". The server offers it on
   // an open goal that is not current; it presses at once, since switching goals undoes nothing.
@@ -286,36 +261,30 @@ function ddButtonsHtml() {
     html += '<button type="button" id="dd-abandon" data-arming="Sure? Abandon the goal"' +
       ' style="margin-left:auto;background:#b00020;color:#fff">Abandon</button>';
   }
-  if (early) {
-    // goal/G6.6: a goal's Close asks "are you sure? N open" while any of its items is open. With nothing open it arms
-    // too (goal/G43.30: every Close is an armingButton), as a non-goal item's "Close: sure?" does (desk/G3.9).
-    var goalOpen = f.goal === '' && (f.blocked || []).length;
-    html += '<button type="button" id="dd-close" data-arming="' + (goalOpen ? 'are you sure? ' + goalOpen + ' open' : 'Close: sure?') + '"' +
-      ' style="margin-left:auto">Close</button>';
-  }
+  // goal/G43.30: every Close is an armingButton (desk/G3.9). A goal's asks with the count of its items still open
+  // (goal/G5.6: "if it has items still open it can ask me: are you sure?"), from the items the page holds.
+  var goalOpen = f.goal === '' ? ddOpenItems(f.id) : 0;
+  if (early) html += '<button type="button" id="dd-close" data-arming="' + (goalOpen ? 'are you sure? ' + goalOpen + ' open' : 'Close: sure?') + '" style="margin-left:auto">Close</button>';
   return html;
 }
 
 // THE C CHECKS ARE "HOW YOU CHECK IT": listed under the red Qs in their panel (ddQsHtml), each pressed to tick it
 // ("it inspires diligence").
 // THE STRIP AND ITS PANELS (goal/G30.8). Andy, 2026-10-20: "when i click on the box icon the box appears in the upper
-// panel", "click on red Q's icon, it's the red Q's in the upper half", "click on the files icon, it'll be the file list and
-// grants", "one for the blocks", and "the icons on the left will blink if grants, or red Q's need my attention, i won't
-// have to scroll around, and dialog elements can lazy-load". The box shows on open; the blocks ask block.targets when
-// their icon is pressed. A blinking icon (dd-blink) is read from the checks: an open red Q, an open grant.
+// panel", "click on red Q's icon, it's the red Q's in the upper half", and "the icons on the left will blink if grants, or
+// red Q's need my attention, i won't have to scroll around, and dialog elements can lazy-load". The box shows on open.
+// A blinking icon (dd-blink) is read from the checks: an open red Q, an open grant.
 var ddPanelSel = 'box';
 var DD_PANELS = [
   { key: 'box', icon: '📃', title: 'the box' },
-  { key: 'qs', icon: '❌', title: 'red Qs and checks' },
-  { key: 'blocks', icon: '🪠', title: 'blocks' },
-  { key: 'files', icon: '📂', title: 'files and grants' },
+  { key: 'qs', icon: '❌', title: 'red Qs, grants and checks' },
 ];
 function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
 // The workBench draws the strip and marks the shown tool (goal/G41.22); a waiting icon on it blinks.
 function ddBlinkIcons() {
   var body = document.getElementById('dd-body');
   if (!body || typeof body.querySelectorAll !== 'function') return;
-  var blink = { qs: ddWaits('Q'), files: ddWaits('G') };
+  var blink = { qs: ddWaits('Q') || ddWaits('G') };
   Array.prototype.forEach.call(body.querySelectorAll('[data-side="left"][data-tool]'), function (b) {
     var on = !!blink[b.getAttribute('data-tool')];
     if (b.classList) b.classList.toggle('dd-blink', on);
@@ -326,7 +295,7 @@ function ddQsHtml() {
   var qs = ddChecks.filter(function (c) { return c.kind === 'Q' && c.state === 'open'; }).map(function (c) {
     return '<div><span data-question="' + ddEsc(c.number) + '" style="color:#d00;cursor:pointer" title="answer it below">' + ddEsc(c.number) + ': ' + ddEsc(c.words) + '</span> ' +
       // WHO ASKED (goal/G43.3; Andy, the box: "red Q's should indicate who posted them.").
-      (c.placedBy ? '<span class="job-manifest-note">(' + ddEsc(ddName(String(c.placedBy))) + ')</span> ' : '') +
+      (c.placedBy ? '<span class="job-manifest-note">(' + ddEsc(String(c.placedBy)) + ')</span> ' : '') +
       // THE REMOVE ASKS ARE-YOU-SURE (goal/G41.11). Andy: "the remove button for red Q's must ask: are-you-sure?".
       '<button type="button" data-qclear="' + ddEsc(c.number) + '" data-arming="Remove: sure?" title="remove this red Q">remove</button></div>';
   }).join('');
@@ -336,8 +305,8 @@ function ddQsHtml() {
   }).join('');
   return (qs || '<div class="job-manifest-note">No red Q is open.</div>') + cs;
 }
-// The grants: the open ones as his armed buttons, FIRST, above the files they cover (goal/G33.8, box v10, Andy: "the red
-// grant buttons are still at the bottom of the file list"), and the given ones in green under the files. open says which.
+// The grants: the open ones as his armed buttons, FIRST (goal/G33.8, box v10), and the given ones in green under them.
+// open says which.
 function ddGrantsHtml(open) {
   // GRANT-ALL (goal/G32.2). Andy, 2026-10-22: "gimme a Grant-All, too". Armed like every grant; one write grants them all.
   var openCount = ddChecks.filter(function (c) { return c.kind === 'G' && c.state === 'open' && !ddPending[c.number]; }).length;
@@ -361,21 +330,17 @@ function ddGrantsHtml(open) {
 // space, especially the lists"): what stands on top stays put, the list under it takes the rest and scrolls in itself.
 function ddScrolls(html) { return '<div class="fill" style="min-height:0;overflow:auto">' + html + '</div>'; }
 function ddPanelHtml() {
-  if (ddPanelSel === 'qs') return ddScrolls(ddQsHtml());
-  if (ddPanelSel === 'blocks') return ddScrolls(ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>');
-  // Andy: "the file panel must have the red gran button row pinned to the top and the file list only using the
-  // remaining vertical space".
-  if (ddPanelSel === 'files') return '<div style="flex:none">' + ddGrantsHtml(true) + '</div>' +
-    ddScrolls((ddFilesHtml() || '<div class="job-manifest-note">No files touched yet.</div>') + ddGrantsHtml(false));
+  // The open grants pinned on top (goal/G33.8, box v10), the red Qs, the given grants and the checks under them.
+  if (ddPanelSel === 'qs') return '<div style="flex:none">' + ddGrantsHtml(true) + '</div>' + ddScrolls(ddQsHtml() + ddGrantsHtml(false));
   return ddBoxHtml();
 }
 
 // THE ONE BOX. An item with no text yet says so; an agent writes it.
 // NO FOLD ANY MORE (goal/G30.8; Andy, 2026-10-20: "the box no longer needs to be foldable, it is now space-limited and
 // contained"): the box fills its panel and scrolls inside it.
-// HIS TAKE OF THE BOX (goal/G9.3): on while he is in the textarea, with the text as it stood when he went in, so a
-// blur that changed nothing releases instead of writing. Focus and blur arrive more than once (the element, the body),
-// so the flag is what keeps one take and one release.
+// HIS TIME IN THE BOX (goal/G9.3): on while he is in the textarea, with the text as it stood when he went in, so a
+// blur that changed nothing writes nothing. Focus and blur arrive more than once (the element, the body), so the flag
+// is what keeps one write.
 var ddBoxFocused = false;
 // THE ITEM THE BOX WAS FOCUSED ON (goal/G19.5): the blur writes there, whatever item is open by then. Andy: "yes." to
 // "the dialog box write only to the item it was opened for".
@@ -429,26 +394,16 @@ function ddBoxMount() {
   v.view.cm.refresh();
 }
 function ddBoxHtml() {
-  // A TAKEN BOX IS RED (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
-  // is red. cap also." Red until the taker writes it; the taker's name is on it.
-  var taker = ddFacts && ddFacts.boxTaken ? ddName(String(ddFacts.boxTaken)) : '';
-  var taken = taker ? ' data-taken="' + ddEsc(taker) + '" title="' + ddEsc(taker) + ' is changing this box"' : '';
   // ALWAYS AN INPUT (goal/G9.15). Andy, 2026-10-09: "a goal or item box is always visible and ready to edit by user or
   // agents." An empty box is the same textarea, so the first text of a goal or item he just made can be his; only
   // while the box has not yet come back from the server is there nothing to edit, or his typing could overwrite a
   // text he has not seen.
-  if (!ddBoxLoaded) return '<div class="job-manifest-note"' + taken + '>Reading the box.</div>';
-  // THE BOX CAP, SEEN (goal/G2.2 note 1). Andy: "orange at 50%, red at 75%" — the server says half and full; the
-  // border is the only automatic part, the split into items is negotiated ("never automated").
-  var cap = taker || (ddFacts && ddFacts.full) ? 'border:2px solid red;padding:4px;' : ddFacts && ddFacts.half ? 'border:2px solid orange;padding:4px;' : '';
-  // HIS INPUT AREA (goal/G9.3). Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the
-  // user. When the user activates that input area, the area is \"taken\" by the user, and not modifiable for agents.
-  // When the user clicks outside of that text box, and deactivates the input, also by leaving the details dialog, the
-  // box input is released from the take. When a details dialog is opened, the text box is never taken."
-  // So the box is a textarea holding the whole text, as tall as its panel; the take happens on focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
+  if (!ddBoxLoaded) return '<div class="job-manifest-note">Reading the box.</div>';
+  // HIS INPUT AREA (goal/G9.3): a textarea holding the whole text, as tall as its panel. It is never repainted while he
+  // has it (ddPaint), so his typing cannot be wiped.
   // THE FULL HEIGHT OF ITS PANE (goal/G41.22; Andy: "the box must use the full vertical space").
-  if (ddBoxView && ddBoxView.id === ddId) return '<div' + taken + ' id="dd-box-host" class="fill" style="' + cap + 'min-height:0;box-sizing:border-box"></div>';
-  return '<div' + taken + ' id="dd-box-host" class="fill" style="' + cap + 'min-height:0;box-sizing:border-box">' +
+  if (ddBoxView && ddBoxView.id === ddId) return '<div id="dd-box-host" class="fill" style="min-height:0;box-sizing:border-box"></div>';
+  return '<div id="dd-box-host" class="fill" style="min-height:0;box-sizing:border-box">' +
     '<textarea id="dd-box-input" style="flex:1 1 auto;min-height:0;width:100%;box-sizing:border-box;white-space:pre-wrap;resize:none;overflow-y:auto">' + ddEsc(ddBox) + '</textarea></div>';
 }
 
@@ -466,62 +421,6 @@ function ddQuote(number) {
   var had = String(say.value || '');
   say.value = (had && !/\n$/.test(had) ? had + '\n' : had) + c.number + ': ' + c.words + '\n\n';
   if (typeof say.focus === 'function') say.focus();
-}
-
-// Each id a way there (Andy: "the blocked and blocks lists link to the respective items").
-// THE BLOCK BUBBLE (goal/G27.5, R7). Andy, 2026-10-17: "the UI should offer only blocking relation ships per item for add
-// or delete, the blocked-by section would be implicit, a drop-down for Adding blockages that only offers valid items",
-// and of the delete: "i agree" to: one on each block the item states, none on the goal fallback. Foldable. The
-// drop-down holds what the desk's block.targets answered: only what block would take.
-var ddBlockTargets = [];
-var ddBlocksFolded = false;
-function ddLoadTargets() {
-  var id = ddId;
-  if (!id) return Promise.resolve();
-  return ddAsk('block.targets', { id: id }).then(function (r) {
-    if (ddId !== id) return;
-    ddBlockTargets = Array.isArray(r && r.items) ? r.items : [];
-    ddPaint();
-  }, function () { ddBlockTargets = []; });
-}
-function ddLinksHtml() {
-  var f = ddFacts || {};
-  if (!f.id || f.goal === '') return '';
-  var line = function (id) { return '<a href="#" data-open="' + ddEsc(id) + '" style="color:#cfe2ff">' + ddEsc(id) + '</a>'; };
-  var by = (f.blocked || []).map(line).join(', ');
-  var states = (f.blocking || []).filter(function (x) { return x !== f.goal; });
-  var blocking = states.length
-    ? states.map(function (x) { return line(x) + ' <button type="button" data-unblock="' + ddEsc(x) + '" title="unblock">✕</button>'; }).join(', ')
-    // goal/G33.8 (box v12): never a link to its own goal; that it blocks its goal goes without saying.
-    : '';
-  var toggle = '<button type="button" data-fold="blocks" title="' + (ddBlocksFolded ? 'Unfold' : 'Fold') + '">' + (ddBlocksFolded ? '▸' : '▾') + '</button> ';
-  if (ddBlocksFolded) return '<div class="stat-tile wide">' + toggle + '<span class="label">Blocks</span></div>';
-  var add = '<div class="start-job-form"><label class="field-label grow">Also blocks<select id="dd-block-add">' +
-    (ddBlockTargets.length ? ddBlockTargets.map(function (p) { return '<option value="' + ddEsc(p.key) + '">' + ddEsc(p.key) + ' ' + ddEsc(p.label) + '</option>'; }).join('') : '<option value="">nothing it could block</option>') +
-    '</select></label><button type="button" id="dd-block-go"' + (ddBlockTargets.length ? '' : ' disabled') + '>Add block</button></div>';
-  return '<div class="stat-tile wide">' + toggle + '<span class="label">Blocks</span>' +
-    (by ? '<div><span class="label">Blocked by</span> ' + by + '</div>' : '') +
-    (blocking ? '<div><span class="label">Blocking</span> ' + blocking + '</div>' : '') + add + '</div>';
-}
-
-// THE FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "that file list should be visible in desk ui per item". One line per
-// path with the agent that wrote it. No core mark (Andy, 2026-11-17: "toss that shit from desk").
-function ddFilesHtml() {
-  // ONE ROW A PATH (goal/G43.3; Andy, the box: "file list should not show duplicates"): a list row answered or a row the
-  // stream brought, each writer's, is shown once, with all who added it.
-  var seen = {};
-  var files = [];
-  ddFiles.forEach(function (e) {
-    var by = (e && e.by ? [e.by] : []).concat((e && e.also) || []);
-    if (seen[e.path]) { by.forEach(function (w) { if (seen[e.path].writers.indexOf(w) === -1) seen[e.path].writers.push(w); }); return; }
-    seen[e.path] = Object.assign({}, e, { writers: by });
-    files.push(seen[e.path]);
-  });
-  if (!files.length) return '';
-  return '<div class="stat-tile wide"><div class="label">Files touched</div>' + files.map(function (e) {
-    return '<div data-file="' + ddEsc(e.path) + '">' +
-      ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.writers.map(ddName).join(', ')) + ')</span></div>';
-  }).join('') + (ddFilesMore ? '<div class="job-manifest-note">' + ddEsc(String((ddFacts && ddFacts.fileCount) || '')) + ' files in all.</div>' : '') + '</div>';
 }
 
 // CHAT LINES DRAWN READABLY (desk/G1.10): line breaks kept, short times
@@ -553,16 +452,8 @@ function ddBubble(l) {
   var look = his
     ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
     : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
-  // goal/G21.1: the writer's name, looked up by the desk from the line's key; its label where none is set.
-  return '<div' + look + '><b>' + ddEsc(his ? 'you' : (l.name || l.by)) + '</b> <span class="job-manifest-note">' + ddTime(l.at) + '</span> ' +
+  return '<div' + look + '><b>' + ddEsc(his ? 'you' : l.by) + '</b> <span class="job-manifest-note">' + ddTime(l.at) + '</span> ' +
     ddLineHtml(l.text) + '</div>';
-}
-// AN AGENT BY ITS NAME (goal/G21.1). Andy: "The page shows the agent's name everywhere it shows the agent ... the node's
-// label is shown only when no name is set. Keys are never shown on the page." The item's facts carry names, label to
-// name, looked up by key at the desk; the label where none is set.
-function ddName(label) {
-  var names = ddFacts && ddFacts.names ? ddFacts.names : {};
-  return names[label] || label;
 }
 function ddChatHtml() {
   if (!ddChat.length) return '<div class="job-manifest-note">Nothing said here yet.</div>';
@@ -636,11 +527,8 @@ function ddPaint() {
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
   ddBlinkIcons();
-  // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
+  // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed.
   if (!(ddPanelSel === 'box' && ddBoxFocused)) { ddSet('dd-panel', ddPanelHtml()); if (ddPanelSel === 'box') ddBoxMount(); }
-  // The add-blocking form stands in the frame, so what he types survives; it shows with the blocks panel only.
-  var addRow = document.getElementById('dd-add-row');
-  if (addRow && addRow.style) addRow.style.display = ddPanelSel === 'blocks' ? '' : 'none';
   ddChatSync();
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
@@ -657,13 +545,12 @@ function ddClear(id) { var el = document.getElementById(id); if (el) el.value = 
 // What the server published about this item, painted as it comes. A dropped publish (too large) reads the item again
 // (desk/G3.10); a jump in change numbers does not (below).
 var ddLastChange = 0;
-// Which row a publish is: a side row by its table, item and own key (a check's number, a line's time and writer, a
-// file's holder and path), a List row by its item.
+// Which row a publish is: a side row by its table, item and own key (a check's number, a line's time and writer), a
+// List row by its item.
 function ddRowKeyOf(obj) {
   if (!obj.table) return 'item|' + String((obj.item && obj.item.id) || '');
   var r = obj.row || {};
-  var own = obj.removed ? String(obj.at || '') : obj.table === 'checks' ? String(r.number || '') : obj.table === 'chat' ? String(r.at || '') + '|' + String(r.by || '')
-    : obj.table === 'files' ? String(r.by || '') + '|' + String(r.path || '') : obj.table === 'claims' ? String(r.by || '') : '';
+  var own = obj.removed ? String(obj.at || '') : obj.table === 'checks' ? String(r.number || '') : obj.table === 'chat' ? String(r.at || '') + '|' + String(r.by || '') : '';
   return obj.table + '|' + String(obj.id || '') + '|' + own;
 }
 function ddTake(obj) {
@@ -677,8 +564,8 @@ function ddTake(obj) {
   if (change && ddRowChange[rowKey] && change < ddRowChange[rowKey]) return;
   if (change) ddRowChange[rowKey] = change;
   if (change > ddLastChange) ddLastChange = change;
-  // A JUMP IN CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record it writes, published or not (a take,
-  // an agent's state, another goal's rows), so the numbers a page hears jump all the time. A real gap in the stream is a
+  // A JUMP IN CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record it writes, published or not (another
+  // goal's rows), so the numbers a page hears jump all the time. A real gap in the stream is a
   // reconnect, and the page forgets what it kept then (desk.js deskForgetKept).
   // ONE ROW AT A TIME (goal/G33.4): a side row of an item, {table, id, row}, or its List row, {item: <facts>}.
   if (obj.table) { if (obj.id === ddId && ddTakeRow(obj)) ddPaint(); return; }
@@ -686,8 +573,7 @@ function ddTake(obj) {
   ddFacts = obj.item;
   ddPaint();
 }
-// A side row of the open item: its box, a chat line, a check, a changed file list. Answers whether anything shown
-// changed.
+// A side row of the open item: its box, a chat line, a check. Answers whether anything shown changed.
 function ddTakeRow(obj) {
   // A CHANGED BOX: its text and version, shown at once (the box has no fold).
   if (obj.table === 'box') {
@@ -713,11 +599,8 @@ function ddTakeRow(obj) {
     if (gone || (obj.row && obj.row.state !== 'open')) delete ddPending[number];
     return true;
   }
-  // One write's file rows ask the list once.
-  if (obj.table === 'files') { if (ddFilesAt !== obj.change) { ddFilesAt = obj.change; ddLoadFiles(ddId); } return false; }
   return false;
 }
-var ddFilesAt = -1;
 
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21, and Andy, of a dropdown: "Sometimes the dropdown does NOT
 // appear at ALL!"): spirit.require, never a script tag of its own. It loads a part once and answers once it ran.
@@ -725,11 +608,6 @@ function ddNeed(p) {
   var req = typeof window !== 'undefined' && window.spirit && window.spirit.require;
   if (typeof req !== 'function') return Promise.reject(new Error('no spirit.require on this page'));
   return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
-}
-
-// The files panel's list, asked on its own (goal/G32.2), and again when a write changed it.
-function ddLoadFiles(id) {
-  return ddAsk('item.files', { id: id }).then(function (f) { if (ddId !== id) return; ddFiles = f.files || []; ddFilesMore = !!f.filesMore; ddPaint(); }, function () { /* the panel says no files */ });
 }
 
 var ddSending = false;
@@ -742,9 +620,6 @@ function ddSay() {
     if (!ddNote) ddClear('dd-say');
   });
 }
-// ADD BLOCKING ITEM (goal/G9.10): the desk names the id (goal/G9.9), the new item blocks the one on screen, and the
-// dialog reads itself again so Blocked by shows it at once. The title stays in the box if the desk refused it, so a
-// title the label rules turn down is not lost.
 // ── INPUTS FOLLOW THE FIELD RULES (rule/12, goal/G10.10) ─────────────
 //
 //   rule/12: "every input in the shell, system or app level, whose value a field rule governs is marked with that rule
@@ -752,7 +627,7 @@ function ddSay() {
 //   window.spirit.fieldRules in the browser): bytes left shown beside it, its action refused while the rule says no."
 // The title and the rename are labels. What is left, or over, shows beside each as it is typed; a value the rule
 // refuses is not sent, and the reason is said. The node checks again: this spares the wire, it never replaces that.
-var DD_FIELD_ACTION = { 'dd-add-title': 'dd-add', 'dd-name': 'dd-name-save' };
+var DD_FIELD_ACTION = { 'dd-name': 'dd-name-save' };
 function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spirit && window.spirit.fieldRules) || null; }
 function ddFieldWhy(id) {
   var rule = ddFieldRule();
@@ -776,32 +651,17 @@ function ddFieldCheck(id) {
   var action = document.getElementById(DD_FIELD_ACTION[id]);
   if (action) action.disabled = !!why;
 }
-function ddAdd() {
-  var title = ddValue('dd-add-title');
-  var f = ddFacts || {};
-  if (!title || ddSending) return;
-  var why = ddFieldWhy('dd-add-title');
-  if (why) { ddNote = 'Not sent: the title: ' + why; ddPaint(); return; }
-  ddSending = true;
-  ddWrite('item.add', { goal: f.goal === '' ? ddId : String(f.goal), title: title, blocks: ddId }).then(function (taken) {
-    ddSending = false;
-    if (!taken) return;
-    ddClear('dd-add-title');
-    ddLoad();
-  });
-}
-// HIS FOCUS TAKES THE BOX, HIS BLUR LETS IT GO (goal/G9.3): unchanged, box.release; changed, box.write, which frees
-// the take itself. The version is the one the dialog read, so a box that moved under him is refused box-moved rather
-// than overwritten.
+// HIS BLUR WRITES THE BOX (goal/G9.3): changed, box.write; unchanged, nothing. The version is the one the dialog read,
+// so a box that moved under him is refused box-moved rather than overwritten.
 function ddBoxFocus() {
   if (ddBoxFocused) return;
   ddBoxFocused = true;
   ddBoxFocusId = ddId;
   ddBoxAtFocus = ddBoxText();
   var id = ddBoxFocusId;
-  // THE NEWEST TEXT COMES WITH HIS TAKE (goal/G43.3): no agent writes from here on, so what he read now cannot move under
-  // him, and a write that landed before his take is not refused box-moved at the end of his typing.
-  ddWrite('box.take', { id: id }).then(function () {
+  // THE NEWEST TEXT AS HE GOES IN (goal/G43.3): a write that landed before he went in is not refused box-moved at the
+  // end of his typing.
+  Promise.resolve().then(function () {
     return ddAsk('item.box', { id: id }).then(function (b) {
       if (ddId !== id || !ddBoxFocused) return;
       ddVersion = Number(b.version) || ddVersion;
@@ -812,7 +672,7 @@ function ddBoxFocus() {
       else { var el = document.getElementById('dd-box-input'); if (el) el.value = ddBox; }
       ddPaint();
     });
-  }).catch(function () { /* the take's own note says what went wrong */ });
+  }).catch(function () { /* the box stays as it was read */ });
 }
 function ddBoxBlur() {
   if (!ddBoxFocused) return;
@@ -820,7 +680,7 @@ function ddBoxBlur() {
   var text = ddBoxText();
   var id = ddBoxFocusId || ddId;
   if (text !== ddBoxAtFocus) ddWrite('box.write', { id: id, text: text, version: ddVersion }).then(function () { ddLoad(); });
-  else ddWrite('box.release', { id: id }).then(function () { ddPaint(); });
+  else ddPaint();
 }
 function ddRename() {
   var title = ddValue('dd-name');
@@ -840,6 +700,12 @@ function ddRename() {
 // Asked of the cache's manager (goal/G41.28): spirit.data.desk.data answers an item's parts; no branch is named here.
 function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && ((s.data || {}).desk || {}).data && typeof s.data.desk.data.part === 'function' ? ((s.data || {}).desk || {}).data : null; }
 function ddForget(id) { var K = ddKept(); if (K && id) K.forget(id); }
+// How many items of a goal are still open (neither done nor closed), as the page holds their facts.
+function ddOpenItems(goalId) {
+  var K = ddKept();
+  var rows = K && typeof K.items === 'function' ? K.items() || {} : {};
+  return Object.keys(rows).filter(function (id) { var r = rows[id]; return r && r.goal === goalId && r.status !== 'done' && r.status !== 'closed'; }).length;
+}
 function ddLoad() {
   var id = ddId;
   return ddAsk('item.get', { id: id }).then(function (got) {
@@ -850,20 +716,18 @@ function ddLoad() {
     ddPaint();
     var K = ddKept();
     var whole = K ? K.part(id) : null;
-    if (whole && typeof whole.box === 'string' && Array.isArray(whole.checks) && Array.isArray(whole.chat) && Array.isArray(whole.files)) {
+    if (whole && typeof whole.box === 'string' && Array.isArray(whole.checks) && Array.isArray(whole.chat)) {
       ddBox = whole.box; ddVersion = Number(whole.version) || ddVersion; ddBoxLoaded = true;
-      ddChecks = whole.checks; ddChat = whole.chat; ddChatMore = !!whole.chatMore; ddFiles = whole.files; ddFilesMore = !!whole.filesMore;
+      ddChecks = whole.checks; ddChat = whole.chat; ddChatMore = !!whole.chatMore;
       ddPaint();
       return null;
     }
-    // block.targets is the blocks panel's, asked when 🪠 is pressed (goal/G30.8).
     return Promise.all([
       ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddBoxLoaded = true; ddPaint(); }),
       ddAsk('item.checks', { id: id }).then(function (k) { if (ddId !== id) return; ddChecks = k.checks || []; ddPaint(); }),
-      ddLoadFiles(id),
       ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
     ]).then(function () {
-      if (K && ddId === id) K.keepPart(id, { box: ddBox, version: ddVersion, checks: ddChecks, chat: ddChat, chatMore: ddChatMore, files: ddFiles, filesMore: ddFilesMore });
+      if (K && ddId === id) K.keepPart(id, { box: ddBox, version: ddVersion, checks: ddChecks, chat: ddChat, chatMore: ddChatMore });
     });
   }).then(null, function (e) {
     ddNote = (e && e.refused ? 'Refused: ' : 'The desk server did not answer: ') + e.message;
@@ -881,27 +745,7 @@ var ddApp = {
     container.innerHTML = '<div id="dd-body" class="fill" style="min-height:0;overflow:auto"></div>';
     document.getElementById('dd-body').addEventListener('click', function (event) {
       var t = event.target;
-      // THE BLOCK BUBBLE (goal/G27.5): a delete on a stated block, the add, its fold.
-      var unblockEl = t && t.closest ? t.closest('[data-unblock]') : null;
-      var unblockOf = unblockEl && unblockEl.getAttribute ? unblockEl.getAttribute('data-unblock') : null;
-      if (unblockOf) { ddWrite('unblock', { id: ddId, blocks: unblockOf }).then(ddLoadTargets); return; }
-      if (t && t.id === 'dd-block-go') {
-        var pick = document.getElementById('dd-block-add');
-        var to = pick ? String(pick.value || '') : '';
-        if (to) ddWrite('block', { id: ddId, blocks: to }).then(ddLoadTargets);
-        return;
-      }
       // THE STRIP IS THE workBench's (goal/G41.22): an icon shows its panel through the bench's changed (ddMakeBench).
-      if (t && t.getAttribute && t.getAttribute('data-fold') === 'blocks') { ddBlocksFolded = !ddBlocksFolded; ddPaint(); return; }
-      // Leaving for another item: Desk opens it once this one is closed.
-      var link = t && t.closest && t.closest('[data-open],[data-open-item]');
-      var to = link && link.getAttribute ? (link.getAttribute('data-open') || link.getAttribute('data-open-item')) : '';
-      if (to) {
-        if (event.preventDefault) event.preventDefault();
-        ddApi.closeDialog({ open: to });
-        return;
-      }
-
       var question = t && t.closest ? t.closest('[data-question]') : null;
       if (question) { ddQuote(question.getAttribute('data-question')); return; }
       var check = t && t.getAttribute && t.getAttribute('data-check');
@@ -912,7 +756,6 @@ var ddApp = {
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
-      if (id === 'dd-code') { ddPress('code'); return; }
       // THE RENAME OPENS HOLDING THE TITLE (goal/G41.11). Andy: "the rename input field on goal/item detail panel MUST
       // contain the current title when it's first displayed." Set once, here; a repaint keeps what he types (ddPaint).
       if (id === 'dd-rename') {
@@ -923,7 +766,6 @@ var ddApp = {
         return;
       }
       if (id === 'dd-name-save') { ddRename(); return; }
-      if (id === 'dd-add') { ddAdd(); return; }
       if (id === 'dd-say-send') ddSay();
     });
     // EVERY MARKED INPUT, CHECKED AS TYPED (rule/12): one listener on the body, which is repainted.
@@ -967,8 +809,6 @@ var ddApp = {
     ddBoxViewAsked = '';
     ddVersion = 0;
     ddChecks = [];
-    ddFiles = [];
-    ddFilesMore = false;
     ddChat = [];
     ddChatMore = false;
     ddPending = {};
@@ -979,10 +819,7 @@ var ddApp = {
 
     ddFrame();
     ddPaint();
-    return ddLoad().then(function () {
-      // Opening it is seeing it: his seen clears an item's alert mark (goal/G2.1 note 6).
-      if (ddFacts && ddFacts.alert) ddPress('seen');
-    });
+    return ddLoad();
   },
 };
 window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/deskDetails/deskDetails.js', { create: function (container, opts) {

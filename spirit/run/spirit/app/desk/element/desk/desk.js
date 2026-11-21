@@ -7,8 +7,7 @@
 //   organized, too" — "my input will be queued, any agent can adress
 //   issues in the table, respons to me under that heading".
 //
-// The face of the desk server (spirit/run/spirit/app/desk): the List tab, then one bubble per agent the
-// goal row names. Every read and every press is a desk.<verb> ask on the flat
+// The face of the desk server (spirit/run/spirit/app/desk): the List tab. Every read and every press is a desk.<verb> ask on the flat
 // apiDoor (deskAsk); what changes arrives as the desk server's publish, kept by the desk family's cache manager in
 // spirit.data.desk.data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
 // id (goal/G<n> or goal/G<n>.<m>) and opens the item's dialog (spirit/app/desk/element/deskDetails).
@@ -168,13 +167,6 @@ var deskError = '';
 // in its own folder. The record lives in the desk server (spirit/run/spirit/app/desk, its state in
 // spirit/state/desk/data/desk.db), reached by its verbs (desk.<verb>) on the flat apiDoor. The page reads only what
 // it shows: the List's search, and each item's own facts and chat in its dialog.
-// Each id a link to its item, as the dialog's are (Andy: "the blocked and
-// blocks lists link to the respective items").
-function deskLinks(ids) {
-  return (ids || []).map(function (id) {
-    return '<a href="#" data-action="open" data-open="' + deskEsc(id) + '">' + deskEsc(id) + '</a>';
-  }).join(', ');
-}
 
 function deskAsk(verb, args) {
   return Promise.resolve(deskVia.verb('desk.' + verb, args || {})).then(function (r) {
@@ -201,8 +193,7 @@ function deskEsc(s) { return deskVia.escapeHtml(String(s == null ? '' : s)); }
 //
 // What waits on him is the row's ICON.ERROR (facts.asks). An item the desk server marks alert (brought back, or a line
 // from the agent holding it: goal/G2.1 note 6, "the attention-grabbing error icon") carries a red ! beside its title
-// and id (goal/G33.8, box v13; Andy: "it's enough to put a red ! next to the item"); the row keeps its colour. His
-// press seen, as the item's dialog opens, clears it.
+// and id (goal/G33.8, box v13; Andy: "it's enough to put a red ! next to the item"); the row keeps its colour.
 var DESK_ALERT = '<span data-alert-mark="1" style="color:#d00;font-weight:bold" title="needs your eye: brought back, or a line from the agent holding it">!</span>';
 // The main tab the page opens on, and falls back to: the List.
 var deskTab = 'list';
@@ -214,152 +205,7 @@ function deskTabButton(attrs, on, label) {
     deskEsc(label) + '</button>';
 }
 
-// THE AGENT BUBBLES, BESIDE THE TABS (goal/G3.12). Andy, 2026-10-03: "Info [Agent1-status] [Agent2-status]... Where
-// the Agent - bubbles are highlighted with a red-blinking border when busy." One bubble per agent the goal row knows,
-// the working one marked data-working (the blink is declared on that mark, goal/G2.4); a click opens the agent's
-// profile pane (below). They follow the goal row's publish, nothing is pulled.
-function deskBubblesHtml() {
-  var g = deskGoalRow();
-  var live = g && Array.isArray(g.live) ? g.live.slice() : [];
-  // EVERY AGENT THE DESK KNOWS (goal/G4.29; Andy: "can't reach it because ollama is gone"): the live ones and every
-  // one in agents; an away one keeps its bubble and its pane, marked data-away, never working.
-  var known = live.concat(Object.keys((g && g.agents) || {}).filter(function (a) { return live.indexOf(a) === -1; })).sort();
-  if (!known.length) return '';
-  var working = deskWorkingAgents();
-  // NOT INCLUDED IS ABSENT (goal/G21.1). Andy: "Off: the agent still reads everything, every write of it is refused, and
-  // its bubble shows absent." The server names them in excluded and keeps them out of live.
-  var excluded = g && Array.isArray(g.excluded) ? g.excluded : [];
-  // EACH BUBBLE IS A TAB (goal/G4.23). Andy: "the red-bordered agent bubbles become tab-headers again, with their own
-  // pane for scope-configuration." data-tab="agent:<name>" opens that agent's pane (its profile, goal/G10.8); the bubble keeps its state.
-  // ITS NAME ON IT (goal/G21.1): the label stays the bubble's handle in the markup, the name is what he reads.
-  return '<span class="job-manifest-note" style="margin-left:12px">Info</span>' + known.map(function (n) {
-    var absent = excluded.indexOf(n) !== -1;
-    var away = live.indexOf(n) === -1;
-    var busy = !away && working.indexOf(n) !== -1;
-    var on = deskTab === 'agent:' + n;
-    return '<span data-bubble="' + deskEsc(n) + '" data-tab="agent:' + deskEsc(n) + '"' +
-      (absent ? ' data-absent="1" title="absent: not included at the desk; open its profile"'
-        : away ? ' data-away="1" title="away: not heard from in 10 minutes; open its profile"' : busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening: open its profile"') +
-      ' style="display:inline-block;cursor:pointer;padding:2px 10px;margin-left:6px;border-radius:12px;font-weight:' + (on ? 'bold' : 'normal') +
-      ';border:2px ' + (absent ? 'dotted #888;opacity:0.4' : away ? 'dashed #888;opacity:0.6' : 'solid ' + (busy ? '#d00' : '#555')) + '">' + deskEsc(deskNameOf(n)) + '</span>';
-  }).join('');
-}
-
-// AN AGENT BY ITS NAME (goal/G21.1). Andy: "The page shows the agent's name everywhere it shows the agent ... The name
-// is looked up by the agent's key; the node's label is shown only when no name is set. Keys are never shown on the
-// page." The desk looks the name up by key and hands it beside the label (a row's names, a chat line's name); the page
-// shows it, and the label where none is set.
-function deskNameOf(label, row) {
-  var g = deskGoalRow();
-  var own = row && row.names ? row.names[label] : '';
-  return own || (g && g.names && g.names[label]) || label;
-}
-
-// ── AN AGENT'S PANE: ITS PROFILE (goal/G4.23) ────────────────────────
-//
-//   Andy, 2026-10-12: "all agents in desk have "/" file scope": no per-agent scope is set here. The pane is the
-//   agent's profile: name and nick, and the toggles included and cap.
-var deskAgentName = '';
-var deskAgentProfile = null;
-var deskAgentNote = '';
-function deskAgentKey() {
-  var g = deskGoalRow();
-  return (g && g.agents && g.agents[deskAgentName]) || '';
-}
-function deskAgentDraw() {
-  var el = document.getElementById('desk-agent');
-  if (!el) return;
-  var label = document.getElementById('desk-agent-label');
-  if (label) label.textContent = deskNameOf(deskAgentName) + ': every agent may commit anywhere in the repo';
-  el.innerHTML = (deskAgentKey() ? '' : '<div class="job-start-error">No key known for ' + deskEsc(deskAgentName) + '.</div>') +
-    (deskAgentNote ? '<div class="job-start-error">' + deskEsc(deskAgentNote) + '</div>' : '');
-}
-function deskAgentOpen(name) {
-  deskAgentName = name;
-  deskAgentNote = '';
-  deskAgentProfile = null;
-  deskAgentDraw();
-  var slot = document.getElementById('desk-agent-picker');
-  if (slot) {
-    slot.innerHTML = '';
-    // TWO ROWS (goal/G21.1). Andy, in the item's box: "Row one: name and nick (text inputs). Row two: the toggles
-    // included and cap; more toggles may follow. Written by Andy alone; every agent may read every pane."
-    // Each row one line with room between its parts (Andy: "misses horizontal spacing between items").
-    slot.style.display = 'block';
-    var row = function (n) {
-      var r = document.createElement('div');
-      r.setAttribute('data-profile-row', String(n));
-      r.style.display = 'flex';
-      r.style.alignItems = 'center';
-      r.style.flexWrap = 'wrap';
-      r.style.gap = '12px';
-      slot.appendChild(r);
-      return r;
-    };
-    var one = row(1);
-    var two = row(2);
-    // NAME AND NICK, KEPT BY THE DESK FOR ANDY (Andy: "so two more fields for repo-root-agents: / name <agent-name> /
-    // nick: <wc | wsl | ubi>", and "the profiles are for me, in desk"). profile.set is owner-only on the server; the
-    // nick addresses a line of his to that agent alone (goal/G21.1: the nick and any punctuation or a space).
-    var field = function (where, which, type, width) {
-      var label = document.createElement('label');
-      label.className = 'job-manifest-note';
-      label.textContent = which + ' ';
-      var input = document.createElement('input');
-      input.setAttribute('type', type);
-      input.setAttribute('data-profile', which);
-      if (width) input.style.width = width;
-      label.appendChild(input);
-      where.appendChild(label);
-      return input;
-    };
-    deskAgentProfile = { name: field(one, 'name', 'text', '12em'), nick: field(one, 'nick', 'text', '5em') };
-    // Each held by its type as it is typed (goal/G48.4, box v22): the name a label, the nick one word.
-    var FIp = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
-    if (FIp) { FIp.attach(deskAgentProfile.name, 'spirit.type.string.label'); FIp.attach(deskAgentProfile.nick, 'spirit.type.string.word'); }
-    var save = document.createElement('button');
-    save.setAttribute('type', 'button');
-    save.setAttribute('data-profile-save', '1');
-    save.textContent = 'save';
-    save.addEventListener('click', deskAgentProfileSave);
-    one.appendChild(save);
-    // A TOGGLE IS WRITTEN AS IT IS TURNED: included (off, the desk refuses every write of it) and cap (on, his bare
-    // "cap" is offered to it).
-    deskAgentProfile.included = field(two, 'included', 'checkbox', '');
-    deskAgentProfile.cap = field(two, 'cap', 'checkbox', '');
-    deskAgentProfile.included.addEventListener('change', deskAgentProfileSave);
-    deskAgentProfile.cap.addEventListener('change', deskAgentProfileSave);
-    // DESK OWNER (goal/G47.5; Andy: "the checkmark in the agent-bubble that can only be set via loopback"): ticked, the
-    // desk takes that agent's calls as his; the desk refuses the change from anywhere but his node's loopback.
-    deskAgentProfile.owner = field(two, 'desk owner', 'checkbox', '');
-    deskAgentProfile.owner.addEventListener('change', deskAgentProfileSave);
-  }
-  return deskAgentProfileLoad();
-}
-function deskAgentProfileLoad() {
-  var key = deskAgentKey();
-  if (!key || !deskAgentProfile) return Promise.resolve();
-  return deskAsk('profile.get', { agent: key }).then(function (r) {
-    deskAgentProfile.name.value = (r && r.name) || '';
-    deskAgentProfile.nick.value = (r && r.nick) || '';
-    deskAgentProfile.included.checked = !(r && r.included === false);
-    deskAgentProfile.cap.checked = !(r && r.cap === false);
-    deskAgentProfile.owner.checked = !!(r && r.owner === true);
-  }, function (e) { deskAgentNote = 'Profile not read: ' + ((e && e.message) || e); deskAgentDraw(); });
-}
-function deskAgentProfileSave() {
-  var key = deskAgentKey();
-  if (!key || !deskAgentProfile) return;
-  deskAsk('profile.set', { agent: key, name: deskAgentProfile.name.value, nick: deskAgentProfile.nick.value,
-    included: deskAgentProfile.included.checked === true, cap: deskAgentProfile.cap.checked === true,
-    owner: deskAgentProfile.owner.checked === true }).then(function () {
-    deskAgentNote = '';
-    deskAgentDraw();
-    return deskAgentProfileLoad();
-  }, function (e) { deskAgentNote = 'Profile not saved: ' + ((e && e.message) || e); deskAgentDraw(); });
-}
-
-// Drawn whole, as markup: List, the design button, then the bubbles. No Rules tab (goal/G47.4, box v36). No Team or
+// Drawn whole, as markup: List, then the design button. No Rules tab (goal/G47.4, box v36). No Team or
 // Apps tab (goal/G43.22; Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
@@ -374,8 +220,7 @@ function deskDrawTabs() {
     // shell's armed red.
     '<button type="button" id="desk-end-design" class="desk-design-end"' + (design ? '' : ' hidden') + '>End design mode</button>' +
     // Its twin, in the same spot while design mode is off.
-    '<button type="button" id="desk-start-design" class="desk-design-start"' + (!design ? '' : ' hidden') + '>Start design mode</button>' +
-    deskBubblesHtml();
+    '<button type="button" id="desk-start-design" class="desk-design-start"' + (!design ? '' : ' hidden') + '>Start design mode</button>';
   // NEITHER BY ACCIDENT (desk/G1.12): each an armingButton, made again after each draw.
   deskArming(document.getElementById('desk-end-design'), 'End design mode: sure?', deskEndDesign);
   deskArming(document.getElementById('desk-start-design'), 'Start design mode: sure?', deskStartDesign);
@@ -396,11 +241,6 @@ function deskDrawTabs() {
 // Andy, all come in the label.
 function deskGoalRow() {
   return deskHeld().filter(function (r) { return r && r.goal === ''; })[0] || null;
-}
-// The agents the server holds as working (goal/G2.3): the goal row's working, live agents only.
-function deskWorkingAgents() {
-  var g = deskGoalRow();
-  return g && Array.isArray(g.working) ? g.working : [];
 }
 function deskWaitingOnAndy() {
   var g = deskGoalRow();
@@ -459,8 +299,7 @@ var deskRowChange = {};
 function deskRowKeyOf(obj) {
   if (!obj.table) { var it = obj.item; if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } } return 'item|' + String((it && it.id) || ''); }
   var r = obj.row || {};
-  var own = obj.removed ? String(obj.at || '') : obj.table === 'checks' ? String(r.number || '') : obj.table === 'chat' ? String(r.at || '') + '|' + String(r.by || '')
-    : obj.table === 'files' ? String(r.by || '') + '|' + String(r.path || '') : obj.table === 'claims' ? String(r.by || '') : '';
+  var own = obj.removed ? String(obj.at || '') : obj.table === 'checks' ? String(r.number || '') : obj.table === 'chat' ? String(r.at || '') + '|' + String(r.by || '') : '';
   return obj.table + '|' + String(obj.id || '') + '|' + own;
 }
 function deskOnPublished(obj) {
@@ -601,13 +440,7 @@ function deskInRow(row, what) {
 // order of steps, the rest after them in the item's own order. No Verify any more: the desk has no verifier.
 var DESK_STEP_ORDER = ['go', 'done', 'close'];
 function deskNextPress(row) {
-  var goal = row.goal === '';
-  var offered = (row.buttons || []).filter(function (what) {
-    if (!deskInRow(row, what)) return false;
-    // A goal's Done and Close wait in the List until its items are done or closed (blocked: those still open).
-    if (goal && (what === 'done' || what === 'close') && (row.blocked || []).length) return false;
-    return true;
-  });
+  var offered = (row.buttons || []).filter(function (what) { return deskInRow(row, what); });
   var stepped = DESK_STEP_ORDER.filter(function (w) { return offered.indexOf(w) !== -1; });
   return stepped.length ? stepped[0] : (offered[0] || '');
 }
@@ -627,7 +460,7 @@ function deskRowPresses(row) {
 }
 // THE CELLS OF A ROW, each its own part, so the row's own element paints and repaints them one by one (goal/G27.9;
 // the List is the probability search, goal/G40.12, and a row is its row element, deskListElement).
-var DESK_LIST_FIELDS = ['mark', 'type', 'todo', 'with', 'yours', 'blocks', 'waits', 'status'];
+var DESK_LIST_FIELDS = ['mark', 'type', 'todo', 'yours', 'status'];
 // THE GOAL ROW STANDS OUT (goal/G33.8, box v12; Andy: "it's really hard to tell the goal from it's items in the list"):
 // its icon cell holds the goal sign, and its to-do cell is bold (the row tag is the element's, goal/G40.12).
 function deskRowCellParts(row) {
@@ -645,21 +478,13 @@ function deskRowCells(row, presses) {
     '<td>' + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
     '<td>' + (goal ? deskGlyph('📁', 'a goal') : deskGlyph(Number(row.asks) > 0 ? '❌' : '💻')) + '</td>' +
     '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span>' + (row.alert ? ' ' + DESK_ALERT : '') + '</td>' +
-    '<td>' + deskEsc(row.with ? deskNameOf(row.with, row) : '') + '</td>' +
     '<td>' + presses + '</td>' +
-    // NO LINK TO ITS OWN GOAL (goal/G33.8, box v12): his Done meant for goal/G33.8 went to goal/G33, opened from such a
-    // link; an item's row names what else it blocks, never the goal it belongs to.
-    '<td>' + deskLinks((row.blocking || []).filter(function (b) { return goal || b !== row.goal; })) + '</td>' +
-    '<td>' + deskLinks(row.blocked) + '</td>' +
     '<td style="width:16em">' + deskStatusCell(row) + '</td>');
 }
 // THE STATUS BOX (goal/G18.5): the server's status word, green when it says passed, red when rejected or red.
 function deskStatusCell(row) {
   var word = String(row.status || '');
-  // A FILE THE AGENT'S CHECKOUT CHANGED (goal/G33.11), by its statusTone: red a test file, white a production file.
-  var tone = String(row.statusTone || '');
-  var colour = tone === 'test' ? '#c00' : tone === 'code' ? '#fff'
-    : /passed/i.test(word) ? '#1a7f37' : /rejected|\bred\b|failed/i.test(word) ? '#c00' : '';
+  var colour = /passed/i.test(word) ? '#1a7f37' : /rejected|\bred\b|failed/i.test(word) ? '#c00' : '';
   return colour ? '<span style="color:' + colour + '">' + deskEsc(word) + '</span>' : deskEsc(word);
 }
 // The toggles say how they stand; the server does the filtering.
@@ -762,8 +587,7 @@ function deskMountList() {
       },
       columns: [
         { field: 'mark', label: '' }, { field: 'type', label: '' }, { field: 'todo', label: 'to-do' },
-        { field: 'with', label: 'with' }, { field: 'yours', label: 'yours' }, { field: 'blocks', label: 'blocks' },
-        { field: 'waits', label: 'waits on' }, { field: 'status', label: 'status', width: '16em' },
+        { field: 'yours', label: 'yours' }, { field: 'status', label: 'status', width: '16em' },
       ],
       filters: [
         // The branch holds every goal the desk sent (goal/G41.12), so Current Goal Only is decided here: the current goal
@@ -854,12 +678,8 @@ function deskLoadSearch(done) {
 // ONE ROW'S DIALOG, from the List.
 function deskOpenRow(id) {
   // THE DIALOG ASKS THE DESK SERVER ITSELF (desk/G2.7): Desk hands it the id.
-  // It presses seen and writes its own chat, and nudges nobody (goal/G3.8).
-  deskVia.callDialog('spirit/app/desk/element/deskDetails', { id: id })
-    .then(function (result) {
-      // A line in its Blocked by / Blocking lists was clicked: go there.
-      if (result && result.open) deskOpenRow(result.open);
-    });
+  // It writes its own chat, and nudges nobody (goal/G3.8).
+  deskVia.callDialog('spirit/app/desk/element/deskDetails', { id: id });
 }
 
 // ── READING WHAT IS SHOWN, AND NO MORE (desk/G1.4, O9) ─────────────
@@ -952,13 +772,10 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
       // PINNED BELOW THE TITLE BAR (desk/G1.12; goal/G2.1 note 4). Andy: "they should leave the app or dialog visible,
       // and stay sticky below those title bars". The shell's app header does the sticking (goal/G6.1): this block is
       // moved into it right after this markup lands (deskHeader).
-      // THE BLINK, DECLARED ONCE (goal/G2.4): a working agent's bubble border blinks; the mark is data-working.
       // ONE BOX, KEEPING WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: every box it puts into its container declares
-      // overflow not visible, and it keeps the size it is given): the blink, the bars and the panes in one fill box, which is
+      // overflow not visible, and it keeps the size it is given): the bars and the panes in one fill box, which is
       // also what a panel covers while it is open.
       '<div class="fill" style="overflow:hidden">' +
-      '<style>@keyframes desk-blink { 50% { border-color: transparent; } } ' +
-        '#desk-tabs [data-bubble][data-working="1"] { animation: desk-blink 1s step-start infinite; }</style>' +
       // FLAT AND JOINED TO THE TITLE BAR (goal/G9.6). Andy: "the header area should not contain rounded corners. and
       // its container should have no margins and no padding." No goal bubble either: the List's goal row opens the
       // goal (his answer to G9.6 Q1).
@@ -986,11 +803,6 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
           // face over items.search, its toggles the element's filters in the row above the box, each row a row element
           // (deskMountList). The error line above it.
           '<div id="desk-top" class="fill"><div id="desk-list-error"></div><div id="desk-list" class="fill"></div></div></div>' +
-        // AN AGENT'S PROFILE (goal/G4.23), opened from its bubble.
-        '<div data-pane="agent" hidden>' +
-          '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
-          '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
-        '</div>' +
       '</div>' +
       '</div>';
     // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11).
@@ -1002,14 +814,13 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
     // goal/G41.23: every icon that stands alone in the page, through the icon element (deskGlyph).
     deskWatchIcons(container);
     function show(tab) {
-      var pane = tab.indexOf('agent:') === 0 ? 'agent' : tab;
+      var pane = tab;
       // A TAB THE PAGE DOES NOT HAVE FALLS BACK TO THE LIST, its main tab.
       var panes = container.querySelectorAll('[data-pane]');
       if (!Array.prototype.some.call(panes, function (p) { return p.getAttribute('data-pane') === pane; })) { tab = 'list'; pane = 'list'; }
       Array.prototype.forEach.call(panes, function (p) {
         p.hidden = p.getAttribute('data-pane') !== pane;
       });
-      if (pane === 'agent') deskAgentOpen(tab.slice('agent:'.length));
       // HIGHLIGHTED, NOT DISABLED. Andy: "on the desk app, the current tab
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
@@ -1039,8 +850,6 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
         deskPress(press.getAttribute('data-id'), press.getAttribute('data-press'));
         return;
       }
-      var link = t && t.closest && t.closest('[data-open]');
-      if (link) { if (e.preventDefault) e.preventDefault(); deskOpenRow(link.getAttribute('data-open')); return; }
       var row = t && t.closest && t.closest('[data-row]');
       if (row) deskOpenRow(row.getAttribute('data-row'));
     });

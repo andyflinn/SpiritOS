@@ -1,7 +1,0 @@
-{
-  "description": "Take a phase of an item (red, build, verify); one holder each, one task at a time.",
-  "request": {
-    "id": "spirit.type.string.deskId",
-    "phase": "spirit.type.string.phase"
-  }
-}

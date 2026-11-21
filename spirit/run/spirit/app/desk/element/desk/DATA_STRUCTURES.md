@@ -22,25 +22,15 @@ An id is two numbers, goal and item (0 for the goal itself), shown as
 | `items (goal, item)` | the item's own fields as JSON; a goal's row (item 0) also its goal's (design, members, special) | `items.search`, `item.get`, and the writes (`goal.add`, `item.add`, `item.rename`, `item.delete`, `press`, …) |
 | `chat (goal, item, seq)` | one chat line, with `at` and `creator` | `item.chat`, `chat.search`, `chat.add` |
 | `box (goal, item, version)` | the item's newest box, its version still counting (older versions are deleted by the write, goal/G47.1, Q16) | `item.box`, `box.write` |
-| `checks (goal, item, number)` | one Q, G, C or T check | `item.checks`, `item.checks.search`, `check.add`, `check.set` |
-| `files (goal, item, holder, path)` | one file an agent listed, with its grant status | `item.files`, `item.files.search`, `item.files.add`, `item.files.remove` |
-| `claims (goal, item, claimer)` | one agent's claim | `item.claims.search`, `claim` |
-| `agents (agent)` | by key: its label, its last write, its word, Andy's profile of it | `agents.search`, `profile.get`, `profile.set` |
+| `checks (goal, item, number)` | one Q, G, C or T check | `check.add`, `check.set` |
 | `desk_state (k)` | the desk's own few values: the change number, the current goal, the grants | — |
 
 Every row carries its creator. Every write takes the next change number,
 stamped on each row it changed and on each row it publishes.
 
-## What Andy has seen
-
-An item's `seenAt`, in its row, and its `alert` mark (brought back, or a
-line from the agent holding it). The item's dialog presses `seen` as it
-opens an item marked alert, which clears it; `seen.get {id}` and `seen.set {id, at}` read
-and move `seenAt`.
-
 ## What the page holds
 
 Only what it shows: the List is `items.search`'s answer and the publishes
-seated in the desk's branch of `spirit.data`; an item's box, checks, files
+seated in the desk's branch of `spirit.data`; an item's box, checks
 and chat are its dialog's (`spirit/app/desk/element/deskDetails`). The List's toggles are
 Current Goal Only (on when Desk opens), Goals Only and Include Closed.

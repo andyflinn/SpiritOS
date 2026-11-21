@@ -38,19 +38,6 @@ const STATE = at !== -1 ? argv[at + 1] : '';
 // THE MANIFEST'S VALUES, as the node hands them (job.js: one JSON object, name -> value, as the first argument).
 let values = {};
 try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
-// THE CHECKOUT THIS DESK SITS IN (goal/G43.28, box line 5): the first folder up from this file with a .git, the one a
-// claim pulls (pullOwnRepo, goal/G41.22). A desk run from a folder that is no checkout (a suite's scratch copy) pulls
-// nothing. The goal is not shared into git any more: Andy, goal/G43.28, removed that share altogether,
-// from desk and from the repo, and every agent gets them down the stream.
-const GOAL_REPO = (function () {
-  for (let d = __dirname; ; d = path.dirname(d)) {
-    if (fs.existsSync(path.join(d, '.git'))) return d;
-    if (path.dirname(d) === d) return '';
-  }
-}());
-// THE ONE MINUTE OF A BOX HOLD (goal/G21.1). Andy, in the item's box: "the hold ends when the write lands or after one
-// minute." The manifest value boxHoldMs is the clock a suite injects (deskBindingNick.js); left out, one minute.
-const BOX_HOLD_MS = Number(values.boxHoldMs) > 0 ? Number(values.boxHoldMs) : 60000;
 if (!STATE) {
   console.error('desk: no --state; the node that starts this names its state folder');
   process.exit(2);
@@ -112,12 +99,12 @@ function clearOf(text) {
   const m = /^\s*q\s*(\d*)\s*:\s*clear\s*$/i.exec(String(text));
   return m ? { number: m[1] ? 'Q' + Number(m[1]) : '' } : null;
 }
-// Who placed a Q, by key: the record's key, else (a record from before keys) the key its label wrote with.
-function placerOf(s, c) { return c.placedKey || (c.placedBy && s.agentKey[c.placedBy]) || ''; }
+// Who placed a Q, by key: the record's key, '' for a record from before keys.
+function placerOf(s, c) { return c.placedKey || ''; }
 // AN AGENT STAYS WITH ITS OPEN RED Q (goal/G41.2). Andy: "when i repond to a red Q, the agent must enter remain with the
 // red Q and me, until it is resolved, so that you won't go of making red Q decisions without me", and on resolving it:
 // "if you feel a Q answered usefully, then fucking remove the Q with an appropriate remark". The writer's own open Q on
-// the item, or null: while there is one, nothing of the writer's lands on the item (phase.may) and its phase is not done.
+// the item, or null.
 function ownOpenQ(s, it, w) {
   return (it.checks || []).filter(function (c) {
     return c.kind === 'Q' && c.state === 'open' && (w.key ? placerOf(s, c) === w.key : c.placedBy === w.by);
@@ -251,69 +238,6 @@ function tableSearch(spec) {
     },
   };
 }
-// ONE ROW OF A LIST TABLE, ADDED OR REMOVED (goal/G40.3): {id, path}, one path a write. has(it, w, p) says whether the
-// row is there; an add refuses one already there and a remove one not there, naming it. A path never climbs (..).
-function listRowVerb(verb, has, adding) {
-  return {
-    request: { id: '', path: '' }, reply: { change: 0 },
-    accepts: function (x) {
-      return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 2 && typeof x.id === 'string' && typeof x.path === 'string' && x.path !== '';
-    },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const p = String(a.path);
-      const it = itemFor(walkState(), a);
-      if (p.replace(/\\/g, '/').split('/').indexOf('..') !== -1) throw refusedWhy('bad-request', 'a listed path may not contain a .. segment: ' + p);
-      const there = has(it, w, p);
-      if (adding && there) throw refusedWhy('bad-request', p + ' is on the list of ' + it.id + ' already');
-      if (!adding && !there) throw refusedWhy('bad-request', p + ' is not on the list of ' + it.id);
-      // The grant is kept in the walk, beside the list it describes, so the record decides the same everywhere.
-      const body = { id: it.id, path: p, by: w.by, key: w.key };
-      return { change: write(verb, body).change };
-    },
-  };
-}
-// A LIST OF PATHS IN ONE WRITE, FOR THE DESK ONLY (goal/G41.11). Andy: "agreed to publishing lists, FOR DESK ONLY, this
-// is NOT a general rule". item.files.add {id, paths: '[...]'} beside the one row's {id, path}: the caller's list in its
-// order, cut at one answer's room by a sized probability bucket (every path at probability 0, so the order stands);
-// what fits lands on the caller's list in one write, each path checked as the one row's is, and the answer says how
-// many landed (added) and whether the rest was cut (more), so the caller sends the rest again. Not a pattern for other
-/// verbs: his ruling names the desk alone. The list comes as JSON, one string (goal/G48.4, Q6, Andy: lists are
-// "spirit.type.string.json"); what is written on the stream stays the list it holds.
-function pathsOf(json) {
-  let v = null;
-  try { v = JSON.parse(json); } catch (e) { return null; }
-  return Array.isArray(v) && v.length > 0 && v.every(function (p) { return typeof p === 'string' && p !== ''; }) ? v : null;
-}
-function filesAddVerb(one) {
-  return {
-    request: { id: '', path: '' }, reply: { change: 0, added: 0, more: false },
-    accepts: function (x) {
-      if (!x || typeof x !== 'object' || Array.isArray(x) || typeof x.id !== 'string') return false;
-      if (!Object.prototype.hasOwnProperty.call(x, 'paths')) return one.accepts(x);
-      return Object.keys(x).length === 2 && typeof x.paths === 'string' && !!pathsOf(x.paths);
-    },
-    handler: function (a, caller) {
-      if (a.paths === undefined) return { change: one.handler(a, caller).change, added: 1, more: false };
-      const w = writerOf(caller);
-      const it = itemFor(walkState(), a);
-      const asked = pathsOf(a.paths).map(String).filter(function (p, i, all) { return all.indexOf(p) === i; });
-      const bucket = createProbabilityBucket(asked.length);
-      asked.forEach(function (p) { bucket.seatFor(0, p); });
-      const cut = bucket.serialize(null, ANSWER_ROOM);
-      const paths = cut.items;
-      if (!paths.length) throw tooLarge(Buffer.byteLength(JSON.stringify(asked.slice(0, 1)), 'utf8'), ANSWER_ROOM);
-      const mine = (it.files && Array.isArray(it.files[w.by])) ? it.files[w.by] : [];
-      const climbs = paths.filter(function (p) { return p.replace(/\\/g, '/').split('/').indexOf('..') !== -1; });
-      if (climbs.length) throw refusedWhy('bad-request', 'a listed path may not contain a .. segment: ' + climbs.join(', '));
-      const there = paths.filter(function (p) { return mine.indexOf(p) !== -1; });
-      if (there.length) throw refusedWhy('bad-request', there.join(', ') + (there.length === 1 ? ' is' : ' are') + ' on the list of ' + it.id + ' already');
-      const body = { id: it.id, paths: paths, by: w.by, key: w.key };
-      return { change: write('item.files.add', body).change, added: paths.length, more: !!cut.truncated };
-    },
-  };
-}
-// The item a table's search is about: by id, refused when there is none.
 function itemFor(st, a) {
   const it = st.items[String((a && a.id) || '')];
   if (!it) throw refused('no-such-item');
@@ -329,7 +253,7 @@ function itemFor(st, a) {
 //   it.", and "The desk keeps state only: the keyed tables are the store, and the log of writes goes."
 //
 // DECIDED BY ANDY, not this file's to undo: there is no log of writes (`records` went with goal/G33.4), an agent's word
-// is one current value per agent, and an id is two numbers, goal and item (0 for the goal itself), rendered goal/G<n>
+// was one current value per agent, and an id is two numbers, goal and item (0 for the goal itself), rendered goal/G<n>
 // or goal/G<n>.<m>. No sub-goals: an item never becomes a goal.
 //
 // HOW (this build's plainest reading): the tables are read once at start into the state every rule below reads (S);
@@ -341,9 +265,6 @@ function itemFor(st, a) {
 //                                          the writer's id"; seq keeps two lines of one millisecond apart)
 //   box      (goal, item, version)         one row per version
 //   checks   (goal, item, number)          one Q, G, C or T check
-//   files    (goal, item, holder, path)    one file an agent listed, with its grant status
-//   claims   (goal, item, claimer)         one agent's claim
-//   agents   (agent)                       by key: its label, its last write, its word, his profile of it
 //   desk_state (k)                         the desk's own few values: the change number, the current goal, the grants
 // THE CHANGE NUMBER stays: one per write, stamped on every row the write changed and on every row the write publishes,
 // so a client that hears a number skip knows it missed a row.
@@ -366,51 +287,30 @@ db.exec(
   'CREATE INDEX IF NOT EXISTS chat_at ON chat (goal, item, at, creator);' +
   'CREATE TABLE IF NOT EXISTS box (goal INTEGER NOT NULL, item INTEGER NOT NULL, version INTEGER NOT NULL, creator TEXT NOT NULL, at TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY (goal, item, version));' +
   'CREATE TABLE IF NOT EXISTS checks (goal INTEGER NOT NULL, item INTEGER NOT NULL, number TEXT NOT NULL, pos INTEGER NOT NULL, creator TEXT NOT NULL, data TEXT NOT NULL, change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item, number));' +
-  'CREATE TABLE IF NOT EXISTS files (goal INTEGER NOT NULL, item INTEGER NOT NULL, holder TEXT NOT NULL, path TEXT NOT NULL, pos INTEGER NOT NULL, creator TEXT NOT NULL, core INTEGER NOT NULL, grant_status TEXT NOT NULL, change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item, holder, path));' +
-  'CREATE TABLE IF NOT EXISTS claims (goal INTEGER NOT NULL, item INTEGER NOT NULL, claimer TEXT NOT NULL, creator TEXT NOT NULL, at TEXT NOT NULL, change INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (goal, item, claimer));' +
-  "CREATE TABLE IF NOT EXISTS agents (agent TEXT PRIMARY KEY, label TEXT NOT NULL DEFAULT '', key TEXT NOT NULL DEFAULT '', at TEXT NOT NULL DEFAULT '', word TEXT NOT NULL DEFAULT ''," +
-  " profile TEXT NOT NULL DEFAULT '');" +
   'CREATE TABLE IF NOT EXISTS desk_state (k TEXT PRIMARY KEY, v TEXT NOT NULL);'
 );
-// An agent counts as live for ten minutes after its last write (Andy: "fine.").
-const LIVE_MS = 10 * 60 * 1000;
 
 // Whether an id is a goal's or one of its items, by the id alone: an item's id is goal/G<n>.<m>.
 function inGoalOf(goal, id) { const g = numbersOf(goal); const x = numbersOf(id); return !!g && !!x && g[0] === x[0]; }
 
 // ── S: THE STATE AS THE TABLES HOLD IT ────────────────────────────────
-// agentWord: each agent's last word about itself, listening or working (goal/G2.3), one current value (goal/G33.4).
-// agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
 function newState() {
-  return { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null),
-    agentKey: Object.create(null), profiles: Object.create(null), current: '', addGrant: 0, addGrantGoal: '', goalGrant: 0 };
+  return { change: 0, goals: Object.create(null), items: Object.create(null), current: '', addGrant: 0, addGrantGoal: '', goalGrant: 0 };
 }
 let S = null;
-function walkState() {
-  // A BOX HOLD RUNS OUT (goal/G21.1): a hold his nick request or a cap take started is over after its minute, written
-  // or not, so the box is anybody's again.
-  const now = Date.now();
-  Object.keys(S.items).forEach(function (id) {
-    const it = S.items[id];
-    if (it.boxHoldUntil && now >= it.boxHoldUntil) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; }
-  });
-  return S;
-}
+function walkState() { return S; }
 
 // THE FIELDS OF AN ITEM THAT ARE ROWS OF THEIR OWN, never in its items row.
-const SIDE_FIELDS = ['chat', 'checks', 'files', 'claims', 'box', 'boxBy', 'boxKey', 'boxAt', 'boxHistory'];
-const NULL_PROTO = ['claims', 'takers', 'checkHigh', 'files'];
+const SIDE_FIELDS = ['chat', 'checks', 'box', 'boxBy', 'boxKey', 'boxAt', 'boxHistory'];
+const NULL_PROTO = ['checkHigh'];
 function goalData(g) { const o = Object.assign({}, g); delete o.id; return o; }
 // Who made it: the key it was written with, else the label (the desk's own rows: desk).
 function madeBy(r) { return String((r && (r.key || r.by)) || 'desk'); }
-// NO CORE GRANT (Andy, 2026-11-17: "the whold fucking process makes me give meaningess fucking grants for "core" files,
-// may as well toss that shit from desk"): a file added to an item opens no grant and voids none. A G check is one an agent
-// places by hand (check.add); the core grants already in the record stay as they are.
-// A chat line's JSON, kept per line while the fields a line can change after it is written (its take, its answer, its
-// Q mark) stay as they were: an item's whole chat is compared at each write, and its lines are rarely changed.
+// A chat line's JSON, kept per line while its Q mark, the one field a line can change after it is written, stays as it
+// was: an item's whole chat is compared at each write, and its lines are rarely changed.
 const LINE_JSON = new WeakMap();
 function lineJson(l) {
-  const sig = String(l.taken) + '|' + String(l.takenKey) + '|' + String(l.answered) + '|' + String(l.q) + '|' + String(l.took);
+  const sig = String(l.q);
   const kept = LINE_JSON.get(l);
   if (kept && kept.sig === sig) return kept.json;
   const json = JSON.stringify(l);
@@ -429,23 +329,12 @@ function rowsOf(s, it) {
   if (gs) data.goalState = goalData(gs);
   out.push({ key: 'items', table: 'items', cols: [String(it.made || it.creatorKey || it.creator || 'desk'), gs && gs.special ? 1 : 0, String(it.at || ''), JSON.stringify(data)] });
   it.chat.forEach(function (l, i) {
-    out.push({ key: 'chat|' + i, table: 'chat', id: i, cols: [i, String(l.at || ''), String(l.key || l.by || 'desk'), lineJson(l)], out: function () { return shownLine(s, l); },
-      to: Array.isArray(l.to) ? l.to.slice() : null });
+    out.push({ key: 'chat|' + i, table: 'chat', id: i, cols: [i, String(l.at || ''), String(l.key || l.by || 'desk'), lineJson(l)], out: function () { return shownLine(l); } });
   });
   if (it.version > 0) out.push({ key: 'box', table: 'box', cols: [it.version, String(it.boxKey || it.boxBy || 'desk'), String(it.boxAt || ''), String(it.box)],
     out: function () { return { version: it.version, text: String(it.box), by: String(it.boxBy || ''), at: String(it.boxAt || '') }; } });
   it.checks.forEach(function (c, i) {
     out.push({ key: 'checks|' + c.number, table: 'checks', id: c.number, cols: [c.number, i, String(c.made || c.placedKey || c.placedBy || c.by || 'desk'), JSON.stringify(c)], out: function () { return c; } });
-  });
-  Object.keys(it.files || {}).forEach(function (holder) {
-    (Array.isArray(it.files[holder]) ? it.files[holder] : []).forEach(function (p, i) {
-      out.push({ key: 'files|' + holder + '|' + p, table: 'files', id: [holder, String(p)], cols: [holder, String(p), i, String(s.agentKey[holder] || holder)],
-        out: function () { const o = { path: String(p), by: holder }; if (isLate(it, holder, p)) o.late = true; return o; } });
-    });
-  });
-  Object.keys(it.claims || {}).forEach(function (label) {
-    const at = String((it.claimAt && it.claimAt[label]) || it.at || '');
-    out.push({ key: 'claims|' + label, table: 'claims', id: label, cols: [label, String(s.agentKey[label] || label), at], out: function () { return { by: label, at: at }; } });
   });
   return out;
 }
@@ -461,21 +350,12 @@ const UPSERT = {
   olderBoxes: db.prepare('DELETE FROM box WHERE goal = ? AND item = ? AND version < ?'),
   checks: db.prepare('INSERT INTO checks (goal, item, number, pos, creator, data, change) VALUES (?, ?, ?, ?, ?, ?, ?)' +
     ' ON CONFLICT(goal, item, number) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, data = excluded.data, change = excluded.change'),
-  // NO CORE IN THE DESK (Andy, 2026-11-17: "may as well toss that shit from desk and make desk a little more simple", and
-  // of the two columns left: "b) and don't bother filling that field with anything"). core and grant_status stay in the
-  // table, which is never altered, and nothing reads them; NOT NULL makes a literal the least a new row can carry.
-  files: db.prepare('INSERT INTO files (goal, item, holder, path, pos, creator, core, grant_status, change) VALUES (?, ?, ?, ?, ?, ?, 0, \'\', ?)' +
-    ' ON CONFLICT(goal, item, holder, path) DO UPDATE SET pos = excluded.pos, creator = excluded.creator, change = excluded.change'),
-  claims: db.prepare('INSERT INTO claims (goal, item, claimer, creator, at, change) VALUES (?, ?, ?, ?, ?, ?)' +
-    ' ON CONFLICT(goal, item, claimer) DO UPDATE SET creator = excluded.creator, at = excluded.at, change = excluded.change'),
 };
 const DELETE = {
   items: db.prepare('DELETE FROM items WHERE goal = ? AND item = ?'),
   chat: db.prepare('DELETE FROM chat WHERE goal = ? AND item = ? AND seq = ?'),
   box: db.prepare('DELETE FROM box WHERE goal = ? AND item = ?'),
   checks: db.prepare('DELETE FROM checks WHERE goal = ? AND item = ? AND number = ?'),
-  files: db.prepare('DELETE FROM files WHERE goal = ? AND item = ? AND holder = ? AND path = ?'),
-  claims: db.prepare('DELETE FROM claims WHERE goal = ? AND item = ? AND claimer = ?'),
 };
 // The rows last written, per item: key -> the row's cols as JSON. A write compares against it, so it writes and pushes
 // exactly what changed.
@@ -489,8 +369,6 @@ function writeRow(k, x, r) {
   else if (x.table === 'chat') UPSERT.chat.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n, r.n);
   else if (x.table === 'box') { UPSERT.box.run(k[0], k[1], c[0], c[1], c[2], c[3]); UPSERT.olderBoxes.run(k[0], k[1], c[0]); }
   else if (x.table === 'checks') UPSERT.checks.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n);
-  else if (x.table === 'files') UPSERT.files.run(k[0], k[1], c[0], c[1], c[2], c[3], r.n);
-  else if (x.table === 'claims') UPSERT.claims.run(k[0], k[1], c[0], c[1], c[2], r.n);
 }
 function deleteRow(k, key) {
   const parts = key.split('|');
@@ -499,8 +377,6 @@ function deleteRow(k, key) {
   else if (table === 'chat') DELETE.chat.run(k[0], k[1], Number(parts[1]));
   else if (table === 'box') { /* a box goes only with its item */ }
   else if (table === 'checks') DELETE.checks.run(k[0], k[1], parts.slice(1).join('|'));
-  else if (table === 'files') DELETE.files.run(k[0], k[1], parts[1], parts.slice(2).join('|'));
-  else if (table === 'claims') DELETE.claims.run(k[0], k[1], parts.slice(1).join('|'));
 }
 // One item written through: every row of it that changed is written, every row it no longer has deleted. Answers what
 // changed, as { table, key, x (the row), removed } in row order. written: the item the write named, whose items row is
@@ -528,23 +404,9 @@ function persistItem(s, it, r, written, body) {
 }
 // ITS GOAL GONE (shedding): every row of every item of it.
 function dropGoalRows(n) {
-  ['items', 'chat', 'box', 'checks', 'files', 'claims'].forEach(function (t) { db.prepare('DELETE FROM ' + t + ' WHERE goal = ?').run(n); });
+  ['items', 'chat', 'box', 'checks'].forEach(function (t) { db.prepare('DELETE FROM ' + t + ' WHERE goal = ?').run(n); });
 }
 
-// THE AGENTS, BY KEY (goal/G33.4: "What is about an agent (its profile, signed off) is keyed by the agent"): one row
-// each, its label, its last write, its one current word, and his profile of it. A label written before keys is its own
-// agent.
-const putAgent = db.prepare('INSERT INTO agents (agent, label, key, at, word) VALUES (?, ?, ?, ?, ?) ON CONFLICT(agent) DO UPDATE SET label = excluded.label, key = excluded.key, at = excluded.at, word = excluded.word');
-const putProfile = db.prepare('INSERT INTO agents (agent, profile) VALUES (?, ?) ON CONFLICT(agent) DO UPDATE SET profile = excluded.profile');
-function persistAgent(s, label) {
-  if (!label || label === 'andy' || label === 'desk') return;
-  const key = String(s.agentKey[label] || '');
-  putAgent.run(key || label, label, key, String(s.agentsAt[label] || ''), String(s.agentWord[label] || ''));
-}
-function persistProfile(s, key) {
-  const p = s.profiles[key];
-  putProfile.run(key, p ? JSON.stringify(p) : '');
-}
 const putDeskState = db.prepare('INSERT INTO desk_state (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v');
 const DESK_STATE_KEYS = ['change', 'current', 'addGrant', 'addGrantGoal', 'goalGrant'];
 function persistDeskState(s) { DESK_STATE_KEYS.forEach(function (k) { putDeskState.run(k, JSON.stringify(s[k] === undefined ? null : s[k])); }); }
@@ -564,7 +426,7 @@ function loadState() {
     delete d.goalState;
     const it = Object.assign(blank(id, '', ''), d);
     NULL_PROTO.forEach(function (f) { it[f] = Object.assign(Object.create(null), d[f] || {}); });
-    it.files = Object.create(null); it.claims = Object.create(null); it.chat = []; it.checks = []; it.box = ''; it.version = 0;
+    it.chat = []; it.checks = []; it.box = ''; it.version = 0;
     s.items[id] = it;
     if (row.item === 0) s.goals[id] = Object.assign({ design: false, abandoned: false, members: [] }, gs || {}, { id: id });
   }
@@ -577,25 +439,9 @@ function loadState() {
     const it = at(row.goal, row.item);
     if (it) { try { it.checks.push(JSON.parse(row.data)); } catch (e) { /* a broken check is left out */ } }
   }
-  for (const row of db.prepare('SELECT goal, item, holder, path FROM files ORDER BY goal, item, holder, pos').iterate()) {
-    const it = at(row.goal, row.item);
-    if (it) (it.files[row.holder] = it.files[row.holder] || []).push(row.path);
-  }
-  for (const row of db.prepare('SELECT goal, item, claimer, at FROM claims').iterate()) {
-    const it = at(row.goal, row.item);
-    if (it) { it.claims[row.claimer] = true; (it.claimAt = it.claimAt || {})[row.claimer] = row.at; }
-  }
   for (const row of db.prepare('SELECT b.goal, b.item, b.version, b.creator, b.at, b.text FROM box b WHERE b.version = (SELECT MAX(version) FROM box WHERE goal = b.goal AND item = b.item)').iterate()) {
     const it = at(row.goal, row.item);
     if (it) { it.box = row.text; it.version = row.version; it.boxKey = row.creator; it.boxAt = row.at; it.boxBy = String(it.boxBy || ''); }
-  }
-  for (const row of db.prepare('SELECT agent, label, key, at, word, profile FROM agents').iterate()) {
-    if (row.label) {
-      if (row.key) s.agentKey[row.label] = row.key;
-      if (row.at) s.agentsAt[row.label] = row.at;
-      if (row.word) s.agentWord[row.label] = row.word;
-    }
-    if (row.profile) { try { s.profiles[row.agent] = JSON.parse(row.profile); } catch (e) { /* no profile */ } }
   }
   ROWS.clear();
   Object.keys(s.items).forEach(function (id) {
@@ -615,7 +461,7 @@ function startState() {
 //
 //   Andy, in the item's box: "The desk database sheds by itself past a boundary size, one constant set in a single place,
 //   16 MB. It sheds in whole goal chunks: first the goal untouched the longest, with all its items and every row of
-//   theirs (file, chat, box, checks, claims), since nothing could reach them any more; then the next. The current goal
+//   theirs (chat, box, checks), since nothing could reach them any more; then the next. The current goal
 //   is never shed. Special goals are exempt. Shedding is goal by goal, nothing finer."
 //
 // THE ONE CONSTANT: SHED_BYTES, 16 MB; the manifest value shedBytes is the knob a suite turns (deskTables.js), as
@@ -654,182 +500,6 @@ function shed() {
   if (gone.length) console.log('desk: shed ' + gone.join(', ') + ' past ' + SHED_BYTES + ' bytes (goal/G33.4)');
   return gone;
 }
-// ── NAMES AND KEYS (goal/G21.1) ──────────────────────────────────────
-//
-//   Andy, in the item's box: "The page shows the agent's name everywhere it shows the agent ... The name is looked up
-//   by the agent's key; the node's label is shown only when no name is set. Keys are never shown on the page.", and
-//   "every decision about who goes by key: take, nick address, block, the one box write."
-// The profile is his, by key (profile.set); a profile never set reads included and cap on, owner off.
-function profileOf(s, key) {
-  const p = key ? s.profiles[String(key)] : null;
-  return { name: p ? p.name : '', nick: p ? p.nick : '', included: !p || p.included !== false, cap: !p || p.cap !== false, owner: !!p && p.owner === true };
-}
-// A DESK OWNER BY HIS MARK (goal/G47.5; Andy: "desk has a unique way of gating access, and it sees me as an agent, with
-// bubble and all. all it it would need is: the bubble contains a checkmark for desk-owner on loopback", "NO NEW VERB, just
-// the checkmark in the agent-bubble that can only be set via loopback"; Q7: owner on profile.set, "yes"): his other node,
-// reaching this desk as a peer (in client mode it passes his calls on), is him here once its profile carries owner. Taken
-// once, as each call comes in: the caller is the owner's from then on, by andy, his presses his. deskOwner marks it so;
-// it carries no loopback, so it never sets the mark itself (profile.set).
-function asDeskOwner(caller) {
-  if (!caller || typeof caller !== 'object' || caller.owner === true || typeof caller.key !== 'string' || !caller.key) return caller;
-  if (!profileOf(walkState(), caller.key).owner) return caller;
-  return { owner: true, deskOwner: true, key: caller.key, label: caller.label };
-}
-function withDeskOwners(verbs) {
-  Object.keys(verbs).forEach(function (name) {
-    const v = verbs[name];
-    if (!v || typeof v.handler !== 'function') return;
-    const handler = v.handler;
-    v.handler = function (a, caller) { return arguments.length < 2 ? handler(a) : handler(a, asDeskOwner(caller)); };
-  });
-  return verbs;
-}
-function nameOfKey(s, key) { return profileOf(s, key).name; }
-// The label an agent writes with, by its key ('' for a key never heard from).
-function labelOfKey(s, key) {
-  return Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === String(key); }).pop() || '';
-}
-// Every label given, mapped to its name where its key has one: the page shows the name and falls back to the label.
-function namesFor(s, labels) {
-  const out = {};
-  labels.forEach(function (l) {
-    if (!l || out[l]) return;
-    const name = nameOfKey(s, s.agentKey[l]);
-    if (name) out[l] = name;
-  });
-  return out;
-}
-// NOT INCLUDED (goal/G21.1). Andy: "Off: the agent still reads everything, every write of it is refused, and its bubble
-// shows absent. It is the desk's own signoff and overrules the agent's own connect (deskAgent cannot bring an
-// excluded agent back)." So the refusal is here, by key, at every write, whatever the agent's node does.
-function excludedKey(s, key) { return !!key && !profileOf(s, key).included; }
-function mayWrite(s, w) {
-  if (w.by === 'andy' || w.by === 'desk' || !excludedKey(s, w.key)) return;
-  throw refusedWhy('not-included', w.by + ' is not included at the desk: Andy turned it off in its pane, so it reads but writes nothing');
-}
-// WHO HOLDS IT, BY KEY: a take or hold recorded with a key is that key's; one recorded before keys, its label's.
-function holdsBox(it, w) { return it.boxTakenKey ? it.boxTakenKey === w.key : it.boxTakenBy === w.by; }
-// TAKES ARE PER LINE (goal/G21.6). Andy's decision, in the item's box: line.take takes the newest of his lines under the
-// item that is addressed to the taking agent or to nobody and not yet taken, and taking it lets the agent answer it once,
-// even when he has written to someone else below it. So each of his lines carries its own take (taken, takenKey) and
-// whether its taker has answered it (answered); several agents hold open takes on different lines of one item at once.
-// A take is OPEN from the take until its agent's next post under the item. There is no take of the item as a whole.
-function tookLine(l, w) { return !!l.taken && (l.takenKey ? l.takenKey === w.key : l.taken === w.by); }
-function openTakes(it) { return it.chat.filter(function (l) { return l.by === 'andy' && l.taken && !l.answered; }); }
-function holdsTake(it, w) { return openTakes(it).some(function (l) { return tookLine(l, w); }); }
-// THE LINE A TAKE LANDS ON (goal/G21.6): the newest of his lines not taken and addressed to the agent or to nobody. A
-// line carrying a to list is addressed to exactly those keys (his nick line, his cap to the agents with cap on), even
-// an empty one; only a line with no to list is addressed to nobody (goal/G21.1). The handler and the replay both call
-// this, so a replayed take lands where it landed.
-function takeableLine(it, key) {
-  for (let i = it.chat.length - 1; i >= 0; i--) {
-    const l = it.chat[i];
-    if (l.by !== 'andy' || l.taken) continue;
-    if (Array.isArray(l.to) && l.to.indexOf(key) === -1) continue;
-    return l;
-  }
-  return null;
-}
-// goal/G21.4: the item it is with, and the phase it holds, by key where the record carried one.
-function holdsWith(it, w) { return !!it.with && (it.withKey ? it.withKey === w.key : it.with === w.by); }
-function holdsPhase(it, w) { return !!it.phaseWith && (it.phaseWithKey ? it.phaseWithKey === w.key : it.phaseWith === w.by); }
-
-// ONE TASK AT A TIME (goal/G21.4). Andy, in the item's box: "An agent holds one task, one item and one phase, at a time;
-// taking a second is refused by the desk until the first is released, claimed or done. Seen: an agent holding two reds
-// blocked another agent from working." What the agent holds: every item it is with (item.take) or whose phase it holds
-// (phase.take) that is still on his List (listed: not done, not closed, its goal neither closed nor abandoned) and that
-// it has not claimed. So what frees it: item.release, phase.done, its own claim (claim-done, or the claim of a build),
-// his done or close, and his exclusion of it.
-// Decided by Andy, not by this file: do not let an agent hold a second task again.
-function heldBy(s, w) {
-  return Object.keys(s.items).filter(function (id) {
-    const m = s.items[id];
-    if (!m || m.goal || m.done || m.closed || m.leftOut || !listed(s, m) || m.claims[w.by]) return false;
-    return holdsWith(m, w) || holdsPhase(m, w);
-  });
-}
-// A goal's row is no task (this build's reading: the box speaks of items and phases): taking it is never refused here
-// and never counts as held, so an agent with an item still takes its goal's row to post in the goal's chat.
-function oneTask(s, w, id) {
-  if (s.items[String(id)] && s.items[String(id)].goal) return;
-  const other = heldBy(s, w).filter(function (x) { return x !== String(id); })[0];
-  if (!other) return;
-  const m = s.items[other];
-  const what = holdsPhase(m, w) ? 'the ' + (m.phase || 'phase') + ' phase of ' + other : other;
-  throw refusedWhy('one-task', w.by + ' holds ' + what + ': one task at a time; release it (item.release), claim it or finish its phase first');
-}
-// HIS EXCLUSION RELEASES WHAT THE AGENT HOLDS (goal/G21.4). Andy, in the item's box: "Excluding an agent releases what
-// it holds: its task and phase are free for another agent to take." In the walk, at his profile.set, so a replay agrees:
-// the item it is with, the phase it holds, the take of his line it has not answered yet, its box hold and its share of
-// an offered cap.
-function releaseKey(s, key) {
-  const mine = function (label, labelKey) { return !!label && (labelKey ? labelKey === key : s.agentKey[label] === key); };
-  Object.keys(s.items).forEach(function (id) {
-    const m = s.items[id];
-    if (mine(m.phaseWith, m.phaseWithKey)) { m.phaseWith = ''; m.phaseWithKey = ''; if (m.code && !m.done && !m.closed) m.status = 'running'; }
-    if (mine(m.with, m.withKey)) { m.with = ''; m.withKey = ''; }
-    // goal/G21.6: its open takes alone go back to untaken; another agent's take on the same item stands.
-    openTakes(m).forEach(function (l) { if (mine(l.taken, l.takenKey)) { l.taken = ''; l.takenKey = ''; } });
-    if (mine(m.boxTakenBy, m.boxTakenKey)) { m.boxTakenBy = ''; m.boxTakenKey = ''; m.boxHoldUntil = 0; }
-    if (Array.isArray(m.capOffer)) m.capOffer = m.capOffer.filter(function (k) { return k !== key; });
-  });
-}
-// A chat line as it is answered: its writer's key and name beside its label; whom it was addressed to stays inside.
-function shownLine(s, l) {
-  const o = Object.assign({}, l, { key: String(l.key || ''), name: nameOfKey(s, l.key) });
-  delete o.to;
-  // goal/G21.4: the taker's key stays inside too; taken shows the taker's label as before.
-  delete o.takenKey;
-  // goal/G21.6: whether its take is answered is the desk's own bookkeeping, as the taker's key is.
-  delete o.answered;
-  // goal/G41.22: so are a nick's bound take and an agent's take of it.
-  delete o.bound;
-  delete o.took;
-  return o;
-}
-
-// THE BINDING NICK (goal/G21.1). Andy, in the item's box: "A line of Andy's starting with a nick followed by any
-// punctuation or a space is addressed to that agent alone: only it is notified, only it may take it.", "A nick request
-// about the box hands the box to that agent for one write", and of cap: "On: a \"cap\" from Andy with no nick offers the
-// box to every agent with cap on" / "Off: that agent gets a cap only when addressed by its nick."
-// Decided at the write and kept in the record (to, nick, hold, cap), so a replay never decides again from profiles that
-// changed since. A NICK REQUEST ABOUT THE BOX is his nick-addressed line holding the word box or cap: the plainest
-// mechanical reading of "about the box" (this build's choice; the box names no wording). His "<nick>:" of goal/G4.23 is
-// one case of the rule. Returns null for a line addressed to nobody.
-// HIS "ALL" (goal/G33.2, box v5-6, approved by Andy): "all" as the address at the start of his line wakes every agent:
-// it is addressed to every agent the desk knows and that is included, with no take, and "entitles them to a response":
-// each may answer it under the item (chat.add below).
-// HIS ANSWER TO A RED Q GOES TO ITS PLACER (goal/G41.2). Andy, in the item's box: "the desk allows each agent one red Q
-// at the time, per item. when the user's chat time starts with Q<number> the desk must direct that line to the agent who
-// posted the Q". A line starting Q<n>: on an item holding that Q is addressed to the key that placed it.
-// AN ADDRESS ONLY WITH PUNCTUATION AFTER IT (goal/G41.11). Andy: "an address is an agents nick, or all followed by any
-// punctuation ... so that a wake up is no accident". So "all" and a nick count only when punctuation (or a symbol)
-// follows at once: "wsl, look" and "all: ..." are addressed, "wsl is here" and "all agents seem busy" are not. The
-// space that goal/G21.1 allowed after a nick went with this ruling; do not bring it back.
-function addressOf(s, text, it) {
-  const t = String(text);
-  const q = /^\s*(Q\d+)\s*:/i.exec(t);
-  const asked = q && it ? (it.checks || []).filter(function (c) { return c.kind === 'Q' && String(c.number).toUpperCase() === q[1].toUpperCase(); })[0] : null;
-  const placer = asked ? placerOf(s, asked) : '';
-  if (placer) return { to: [placer], q: asked.number };
-  if (/^\s*all(?=[\p{P}\p{S}])/iu.test(t)) {
-    const known = Object.keys(s.agentKey).map(function (l) { return s.agentKey[l]; }).concat(Object.keys(s.profiles));
-    return { to: known.filter(function (k, i) { return k && known.indexOf(k) === i && profileOf(s, k).included; }), all: true };
-  }
-  const m = /^\s*([a-z0-9]{1,8})(?=[\p{P}\p{S}])/iu.exec(t);
-  if (m) {
-    const nick = m[1].toLowerCase();
-    const key = Object.keys(s.profiles).filter(function (k) { return s.profiles[k].nick === nick; })[0];
-    if (key) return { to: [key], nick: nick, hold: /\b(?:box|cap)\b/i.test(t) };
-  }
-  if (/^\s*cap\s*[.!]*\s*$/i.test(t)) {
-    const known = Object.keys(s.agentKey).map(function (l) { return s.agentKey[l]; }).concat(Object.keys(s.profiles));
-    const to = known.filter(function (k, i) { return k && known.indexOf(k) === i && profileOf(s, k).cap && profileOf(s, k).included; });
-    return { to: to, cap: true };
-  }
-  return null;
-}
-
 // AN AGENT ADDS ITEMS ONLY UNDER HIS WORDS (goal/G29.21). Andy, 2026-10-18, decided, in the item's box: Desk lets an
 // agent add items only while his newest Desk line holds "add item" (one item) or "add items" (several) in sequence, and
 // the grant ends with his next line. Proposing items stays free. What his line grants: -1 several, 1 one, 0 none; and
@@ -845,74 +515,19 @@ function goalGrantOf(text) { return /\badd\s+goal\b/i.test(String(text)) ? 1 : 0
 function newItemsOf(s, sess) {
   return (Array.isArray(sess.items) ? sess.items : []).filter(function (x) { const id = String((x && x.id) || ''); return id && !s.items[id]; }).length;
 }
+// A chat line as it is answered: what a line written before goal/G48.8 kept of takes and addresses stays inside.
+function shownLine(l) {
+  const o = Object.assign({}, l, { key: String(l.key || '') });
+  ['to', 'taken', 'takenKey', 'answered', 'bound', 'took', 'all', 'name'].forEach(function (k) { delete o[k]; });
+  return o;
+}
 function blank(id, title, goalId) {
-  return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
-    went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
-    alert: false, boxTakenBy: '', takers: Object.create(null), checkHigh: Object.create(null),
-    // goal/G21.1: the key beside the box's label, the end of a box hold, and a cap offered to keys. The take of his
-    // lines lives on each line since goal/G21.6 (openTakes).
-    boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
-    // goal/G21.4: the keys beside with and phaseWith, so "one task per agent" and its release go by key.
-    withKey: '', phaseWithKey: '',
-    box: '', version: 0, checks: [], chat: [], at: '',
-    // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
-    // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
-    // another's: { '<agent>': ['<path>', ...] }.
-    files: Object.create(null) };
+  return { id: id, title: title, goal: !goalId, goalId: goalId || '', status: '', went: false, go: false, done: false,
+    closed: false, designComplete: false, alert: false, checkHigh: Object.create(null), box: '', version: 0, checks: [], chat: [], at: '' };
 }
 
 // One record applied to the state. A record that no longer fits (an item gone
 // from its session) changes nothing; the refusals happen before it is written.
-// ── THE BLOCKS OF A GOAL (goal/G27.5) ─────────────────────────────────
-//
-//   Andy, 2026-10-14 to 17, in the item's box: block(A, B) and unblock(A, B); a circular block refused "error:
-//   circular blocking was asked"; the blockageCompiler "is a grammatical gate": it refuses a block that would be
-//   circular or is already implied, rewrites nothing stated, and only repairs what a delete or close leaves; a block
-//   onto a running item is refused "error: too late! this is already happening"; an item blocking nothing else blocks
-//   the goal. Decided by Andy, not by this file.
-//
-// Whether `from` reaches `to` through blocks, `from` itself excluded unless a path comes back to it.
-function blockReaches(s, from, to) {
-  const seen = Object.create(null);
-  const stack = ((s.items[from] || {}).blocks || []).slice();
-  while (stack.length) {
-    const id = stack.pop();
-    if (id === to) return true;
-    if (seen[id]) continue;
-    seen[id] = true;
-    const x = s.items[id];
-    if (x && !x.goal && !x.leftOut) (x.blocks || []).forEach(function (n) { stack.push(n); });
-  }
-  return false;
-}
-// Running: its Go is on record and it is neither done nor closed (R10).
-function runningItem(it) { return !!(it && it.go === true && !it.done && !it.closed); }
-// Why A may not block B, or '' when it may: the gate (R3, R5, R10).
-function blockWhy(s, from, to) {
-  const a = s.items[from];
-  const b = s.items[to];
-  if (!a || a.goal || !b || b.goal) return 'block links two items, not a goal';
-  if (a.goalId !== b.goalId) return 'block links two items of one goal; ' + from + ' and ' + to + ' are in different goals';
-  if (from === to) return 'an item does not block itself';
-  if (a.closed || a.leftOut || b.closed || b.leftOut) return 'block links open items';
-  if (runningItem(b)) return 'error: too late! this is already happening';
-  if (blockReaches(s, to, from)) return 'error: circular blocking was asked';
-  if (blockReaches(s, from, to)) return from + ' already blocks ' + to + ', directly or through others: the block is implied';
-  return '';
-}
-// THE REPAIR (R5): when B goes, every item that blocked B blocks what B blocked, instead; one left blocking nothing
-// blocks the goal (R4). Nothing else is rewritten.
-function repairBlocks(s, gone) {
-  const onward = (gone.blocks || []).filter(function (x) { return x !== gone.goalId && x !== gone.id; });
-  Object.keys(s.items).forEach(function (id) {
-    const x = s.items[id];
-    if (!x || x.goal || x.id === gone.id || (x.blocks || []).indexOf(gone.id) === -1) return;
-    let next = x.blocks.filter(function (n) { return n !== gone.id; });
-    onward.forEach(function (n) { if (next.indexOf(n) === -1 && n !== x.id) next.push(n); });
-    const real = next.filter(function (n) { return n !== x.goalId; });
-    x.blocks = real.length ? real : [x.goalId];
-  });
-}
 function apply(s, r, b, item, goalOf) {
   const it = b.id ? item(String(b.id)) : null;
   if (it) it.at = r.at;
@@ -929,17 +544,6 @@ function apply(s, r, b, item, goalOf) {
       goalItem.title = String(sess.goal.title || goalItem.title);
       goalItem.at = r.at;
       const ids = [];
-      // A SPLIT ADDS ONLY THE EXPLICIT RELATION (goal/G9.4). Andy, 2026-10-07: "when splitting an item, only the new
-      // explicit blocking relationship is automatically added, the implicit blocking will not need to be specified, it
-      // clutters the list display with confusing \"blocks\" and \"waits on\" columns, and is not needed for a dependency
-      // graph.", and "the new split-items always block the item from which they were split, items blocked by the current
-      // item are still blocked by the newly split item, because if theyre blocked by me, they are implicitly blocked by
-      // the newly created/split item." So in a session that names a split, an item NEW in that session blocks the parent
-      // and nothing else, whatever the session sent for it; the parent keeps its own blocks, and what the parent blocks
-      // hears of the new ones through the parent alone. Decided by Andy, not by this code: do not widen it back.
-      const splits = (Array.isArray(sess.split) ? sess.split : []).map(String);
-      const existed = {};
-      Object.keys(s.items).forEach(function (k) { existed[k] = true; });
       (sess.items || []).forEach(function (x) {
         const id = String(x.id || '');
         if (!id) return;
@@ -948,29 +552,16 @@ function apply(s, r, b, item, goalOf) {
         const one = s.items[id];
         one.title = String(x.title || one.title);
         one.goalId = gid;
-        one.blocks = (Array.isArray(x.blocks) ? x.blocks : [x.blocks || gid]).map(String);
-        if (splits.length && !existed[id]) {
-          // Which parent: the split one this item named, else the only split there is. With several splits named and
-          // none of them this item's, the session's own blocks stand, because nothing says which parent it came from.
-          const named = one.blocks.filter(function (bk) { return splits.indexOf(bk) !== -1; });
-          const parent = named.length ? named[0] : (splits.length === 1 ? splits[0] : '');
-          if (parent) one.blocks = [parent];
-        }
         one.at = r.at;
         one.leftOut = false;
-        // AN ITEM MARKED CODE (goal/G5.7) walks the phases. Andy: "an item marked code is the only one i see this for
-        // right now."
-        if (x.code === true) one.code = true;
         ids.push(id);
       });
       // LEFT OUT IS CLOSED, NEVER DELETED (goal/G4.24). Andy: "1. sounds dumb that the \"archive\" is not
       // searchable.", "if deleted is just a flag in the database, we can just ignore it from now on". An item a new
       // session leaves out stays a member, after the session's own, closed, with its box, checks and chat, so
       // [Include Closed] finds it; the records replay to the same, so items left out before this come back too.
-      // It blocks nothing any more (blockers skips it), as it blocked nothing while it was deleted.
       // NO SUB-GOALS (goal/G33.4, replacing goal/G6.8's split mark). Andy, in the item's box: "No sub-goals and no goal
-      // tree: an item never becomes a goal, so two numbers always suffice; the sub-goal mechanism is removed." A split
-      // adds its blocking relation (above) and marks nothing.
+      // tree: an item never becomes a goal, so two numbers always suffice; the sub-goal mechanism is removed."
       const kept = g.members.filter(function (id) { return ids.indexOf(id) === -1 && s.items[id]; });
       kept.forEach(function (id) { s.items[id].closed = true; s.items[id].leftOut = true; });
       g.members = ids.concat(kept);
@@ -987,11 +578,6 @@ function apply(s, r, b, item, goalOf) {
       it.box = String(b.text);
       it.version += 1;
       it.boxBy = String(r.by || ''); it.boxKey = madeBy(r); it.boxAt = String(r.at || '');
-      // THE TAKER'S WRITE FREES THE BOX (goal/G4.20 point 9), by key since goal/G21.1: that is the one write of a hold.
-      if (it.boxTakenBy && holdsBox(it, { by: r.by, key: String(r.key || '') })) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; }
-      // A written box ends a cap still offered (goal/G21.1): the cap was for this text. goal/G41.11: unless the write
-      // left it red, when the desk offers the cap anew (box.write's capOffer).
-      it.capOffer = Array.isArray(b.capOffer) ? b.capOffer.map(String) : null;
       return;
     case 'check.add': {
       const kind = String(b.kind);
@@ -1019,50 +605,9 @@ function apply(s, r, b, item, goalOf) {
       // EVERY LINE CARRIES ITS WRITER'S KEY (goal/G21.1); the label stays for showing where no name is set.
       const line = { by: r.by, at: r.at, text: String(b.text), taken: '', key: String(r.key || '') };
       it.chat.push(line);
-      // A LINE FROM THE PHASE HOLDER MARKS THE ITEM (goal/G33.2). Andy: "make an item go red in the list when the phase
-      // holder posts a report or questions ..., so that my attention is caught", and "red until i open it": alert is
-      // the mark his List draws red and his opening the item (press seen) clears.
-      if (it.phaseWith && r.by === it.phaseWith && r.by !== 'andy') it.alert = true;
       // HIS NEWEST LINE GRANTS ITEM ADDS, OR ENDS THE GRANT (goal/G29.21).
       // The item grant holds only for the goal his line is in: under the goal itself or one of its items.
       if (r.by === 'andy') { s.addGrant = addGrantOf(b.text); s.addGrantGoal = it.goal ? it.id : it.goalId; s.goalGrant = goalGrantOf(b.text); }
-      if (r.by === 'andy' && Array.isArray(b.to)) {
-        // THE BINDING NICK (goal/G21.1): addressed at the write (addressOf), replayed from the record.
-        line.to = b.to.map(String);
-        // goal/G33.2 (box v5-6): his "all" line, each addressee entitled to answer it.
-        if (b.all === true) line.all = true;
-        if (b.nick && line.to[0]) {
-          const key = line.to[0];
-          const known = labelOfKey(s, key);
-          // An agent never heard from has no label yet: the take stands under its key, shown by its nick.
-          const label = known || String(b.nick);
-          // goal/G21.6: an open take of this line by its addressee; other agents' takes under the item stand.
-          line.taken = label; line.takenKey = key; line.bound = true;
-          if (known) it.takers[known] = true;
-          // HIS NICK REQUEST ABOUT THE BOX: the box is that agent's for one write, red at once, for one minute.
-          if (b.hold === true) { it.boxTakenBy = label; it.boxTakenKey = key; it.boxHoldUntil = Date.parse(r.at) + BOX_HOLD_MS; it.capOffer = null; }
-        } else if (b.cap === true) {
-          it.capOffer = line.to.slice();
-        }
-      } else if (r.by === 'desk' && Array.isArray(b.to)) {
-        // THE DESK'S AUTO-CAP LINE (goal/G41.11): addressed as his cap line is, its to the keys the cap is offered to,
-        // so each of them is woken and only they hear it.
-        line.to = b.to.map(String);
-        if (b.cap === true) it.capOffer = line.to.slice();
-      } else if (r.by === 'andy') {
-        // HIS "<nick>:" LINE AS IT WAS READ BEFORE goal/G21.1 (goal/G4.23), for the records written then, which carry no
-        // address: the agent with that nick takes it under the label it writes with.
-        const m = /^\s*([a-z0-9]{1,8})\s*:/i.exec(String(b.text));
-        const key = m && Object.keys(s.profiles).filter(function (k) { return s.profiles[k].nick === m[1].toLowerCase(); })[0];
-        const label = key && Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === key; })[0];
-        if (label) { line.taken = label; it.takers[label] = true; }
-      }
-      // THE TAKER'S ANSWER CLOSES ITS TAKE (goal/G2.2 note 2, goal/G21.4): it answers once. By key (goal/G21.1). Since
-      // goal/G21.6 a take is per line: an agent's post closes its own open takes under the item, never another agent's.
-      if (r.by !== 'andy') {
-        const writer = { by: r.by, key: String(r.key || '') };
-        openTakes(it).forEach(function (l) { if (tookLine(l, writer)) l.answered = true; });
-      }
       return;
     }
     case 'item.rename': it.title = String(b.title); return;
@@ -1075,57 +620,12 @@ function apply(s, r, b, item, goalOf) {
       it.toneWord = it.status;
       return;
     }
-    case 'item.take': it.with = r.by; it.withKey = String(r.key || ''); it.takers[r.by] = true; return;
-    // LETTING AN ITEM GO (goal/G21.4): the caller's with, and its phase if it holds one there; the handler refused a
-    // caller holding neither. A phase let go goes back to nobody's, as at phase.done, without moving on.
-    case 'item.release': {
-      const w = { by: r.by, key: String(r.key || '') };
-      if (holdsPhase(it, w)) { it.phaseWith = ''; it.phaseWithKey = ''; it.status = 'running'; }
-      if (holdsWith(it, w)) { it.with = ''; it.withKey = ''; }
-      return;
-    }
-    // THE PHASES (goal/G5.7): the handler checked who may; the replay records it.
-    // THE PHASE HOLDER IS ITS OWN (goal/G6.9): only phase.take holds a phase; a plain item.take sets "with" and nothing
-    // the phase rules read. Andy, to G6 Q5: "add item to fix it." THE STATUS SAYS THE PHASE while it is held: Andy,
-    // "when an agent is with an item, update its status with the phase that is running at the time. the desk should
-    // do it, since it arbitrase phase-taking."
-    case 'phase.take':
-      it.with = r.by; it.phaseWith = r.by; it.status = String(b.phase); it.takers[r.by] = true; it.verified = false;
-      it.withKey = String(r.key || ''); it.phaseWithKey = String(r.key || '');
-      // The key beside the label (goal/G5.9): a label he may rename, a key that stays.
-      if (b.phase === 'red') { it.red = r.by; it.redKey = String(r.key || ''); it.phase = 'red'; }
-      else if (b.phase === 'build') { it.builder = r.by; it.builderKey = String(r.key || ''); }
-      else if (b.phase === 'verify') { it.verifier = r.by; it.verifierKey = String(r.key || ''); }
-      return;
-    case 'phase.done':
-      it.with = ''; it.phaseWith = ''; it.withKey = ''; it.phaseWithKey = '';
-      // Nobody holds the next phase yet: the status goes back to what his Go made it.
-      it.status = 'running';
-      if (b.phase === 'red') it.phase = 'build';
-      else if (b.phase === 'build') it.phase = 'verify';
-      // A pass waits for his Done, the item still in code (goal/G29.10): red may be taken again (mayTake).
-      else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; } else it.phase = 'build'; }
-      // THE DESK WRITES THE STATUS WORD ITSELF (goal/G8.12). Andy, 2026-10-09: "the desk should update status in every
-      // change it manages....", and "yes" to its being the word on the List rows. A FAILED VERIFY IS A STATUS, NOT A
-      // CHAT LINE (goal/G33.11; Andy: "no auto-chat-lines from ..., only status updates.").
-      if (b.phase === 'verify' && b.pass !== true) it.status = 'verify failed';
-      return;
     // THE GOAL IS EMPTY (goal/G8.12): written once per emptying, by the press that empties it. No run starts from it.
     case 'goal.emptied': {
       const g = s.goals[String(b.id)];
       if (g) g.emptied = true;
       return;
     }
-    // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
-    // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
-    // goal/G21.1: a take of an offered cap (hold) is a hold under the one-write rule, its minute from the take.
-    case 'box.take':
-      it.boxTakenBy = r.by; it.boxTakenKey = String(r.key || ''); it.takers[r.by] = true;
-      it.boxHoldUntil = b.hold === true ? Date.parse(r.at) + BOX_HOLD_MS : 0;
-      if (b.hold === true) it.capOffer = null;
-      return;
-    // goal/G9.3: the holder lets the box go without writing it; the refusals are at the verb, so a replay only clears.
-    case 'box.release': if (holdsBox(it, { by: r.by, key: String(r.key || '') })) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; } return;
     // THE DESK OWNS THE IDS (goal/G9.9). Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.", and
     // on who uses the verbs: "why should the agents need to, they can use the same api's the user needs to create
     // them." The id is minted at the write and kept in the record as `minted`, so a walk of the records never mints
@@ -1152,133 +652,32 @@ function apply(s, r, b, item, goalOf) {
       const one = s.items[id];
       one.title = String(b.title || one.title);
       one.goalId = gid;
-      // A plain add blocks its goal, as a session's item with no blocks does; with `blocks` named (goal/G9.10) it
-      // blocks that item alone.
-      one.blocks = [String(b.blocks || gid)];
       one.at = r.at;
       // WHO CREATED IT (goal/G27.10, R2): its creator posts under it at any time; the first add names it.
       if (!one.creator) { one.creator = r.by; one.creatorKey = String(r.key || ''); }
       if (g.members.indexOf(id) === -1) g.members.push(id);
-      // goal/G29.21: code from the record (the handler decided it); an agent's add spends one of an "add item" grant.
-      if (b.code === true) one.code = true;
+      // goal/G29.21: an agent's add spends one of an "add item" grant.
       if (r.by !== 'andy' && r.by !== 'desk' && s.addGrant > 0) s.addGrant -= 1;
       return;
     }
     // HIS DELETE CLOSES IT AS A LEFT-OUT ONE IS CLOSED (goal/G9.7). Andy, 2026-10-07: "the button bar of items will
     // offer an arm-able [delete] while in design mode.", and on whether it erases: "close is enough. that essentially
     // leaves them as \"musings\" on the record." So the item keeps its box, checks and chat, Include Closed finds it,
-    // and it blocks nothing (blockers skips a left-out one), exactly as goal/G4.24 decided for a session's leavings.
+    // exactly as goal/G4.24 decided for a session's leavings.
     case 'item.delete': {
       if (!it || it.goal) return;
       it.closed = true;
       it.leftOut = true;
-      repairBlocks(s, it);
-      return;
-    }
-    // BLOCK AND UNBLOCK (goal/G27.5, R1 and R2): A blocks B, between items of one goal. The gate (blockWhy) refused what
-    // is wrong before the record was written, so the walk only links: the goal fallback goes once the item blocks
-    // something else (R4: it is then implied), and comes back when it blocks nothing.
-    case 'block': {
-      if (!it || it.goal) return;
-      const to = String(b.blocks);
-      it.blocks = it.blocks.filter(function (x) { return x !== it.goalId; });
-      if (it.blocks.indexOf(to) === -1) it.blocks.push(to);
-      return;
-    }
-    case 'unblock': {
-      if (!it || it.goal) return;
-      const to = String(b.blocks);
-      it.blocks = it.blocks.filter(function (x) { return x !== to; });
-      if (!it.blocks.length) it.blocks = [it.goalId];
-      return;
-    }
-    // FILES TOUCHED, ONE ROW A WRITE (goal/G40.3; goal/G8.8 for the list itself). Andy, 2026-10-24: "items are added
-    // one-by one, and desk streams those items to its clients", and "same set of verbs for all sub-item-tables add,
-    // remove, search." An add puts one path on the writer's own list and a remove takes one away, each one row on the
-    // stream; a list (paths) is cut at one answer by the verb, so none can outgrow a request.
-    case 'item.files.add': {
-      if (!it) return;
-      if (!it.files) it.files = Object.create(null);
-      const mine = (it.files[r.by] = it.files[r.by] || []);
-      // A LIST IN ONE WRITE (goal/G41.11, for the desk only): paths, already cut at one payload by the verb; or one path.
-      const adds = (Array.isArray(b.paths) ? b.paths : [b.path]).map(String);
-      adds.forEach(function (p) {
-        if (mine.indexOf(p) === -1) mine.push(p);
-        // A FILE ADDED AFTER HIS GO IS MARKED LATE (goal/G41.11): allowed, and the item says so, as holder|path.
-        if (it.go === true) { if (!Array.isArray(it.lateFiles)) it.lateFiles = []; if (it.lateFiles.indexOf(r.by + '|' + p) === -1) it.lateFiles.push(r.by + '|' + p); }
-      });
-      return;
-    }
-    case 'item.files.remove': {
-      if (!it || !it.files || !Array.isArray(it.files[r.by])) return;
-      it.files[r.by] = it.files[r.by].filter(function (p) { return p !== String(b.path); });
-      if (!it.files[r.by].length) delete it.files[r.by];
-      if (Array.isArray(it.lateFiles)) it.lateFiles = it.lateFiles.filter(function (k) { return k !== r.by + '|' + String(b.path); });
       return;
     }
     case 'press': press(s, it, String(b.what), r, goalOf, b); return;
-    // A CLAIM CARRIES ITS COMMIT (goal/G19.13). Andy, 2026-10-12: "these push things, when you report a claim on code,
-    // it should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet...
-    // ?", and to one verb carrying both: "better. that closes the door on half-ass claims." A build claim IS the
-    // claim-done, applied by the same press() so the two can never drift, and the item keeps the commit it was claimed
-    // at; a red claim changes nothing but the commit kept ("they should be red. at the time"). The refusals are at the
-    // verb, so a replay only records.
-    // A UTC time, milliseconds since 1970 (goal/G48.4, Q5); anything else on the stream is no time seen.
-    case 'seen.set': if (it) it.seenAt = typeof b.at === 'number' && isFinite(b.at) ? b.at : 0; return;
-    case 'claim':
-      if (!it) return;
-      if (String(b.phase) === 'build') { press(s, it, 'claim-done', r, goalOf, b); it.claimCommit = String(b.commit || ''); }
-      // A red claim keeps its commit.
-      else if (String(b.phase) === 'red') it.redCommit = String(b.commit || '');
-      // A CLAIM ENDS ITS PHASE (goal/G43.3; Andy, the box: "a red-claim or a code-done should automatically trigger a
-      // phase-wake for all agents, since there could be only 1."): the next phase is open, nobody holding it, and the row
-      // saying so is what wakes every deskClient.
-      if (it.code && it.phase === String(b.phase)) {
-        it.with = ''; it.phaseWith = ''; it.withKey = ''; it.phaseWithKey = '';
-        it.phase = String(b.phase) === 'red' ? 'build' : 'verify';
-      }
-      return;
-    // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
-    // stops when the agent goes back to listening. the listening script can toggle those two?"
-    case 'agent.state': s.agentWord[r.by] = String(b.word); return;
-    // SIGNOFF (goal/G8.5). Andy, 2026-10-06: "the signoff verb is \"signoff\"", so a leaving agent is not waited out for
-    // ten minutes; and, 2026-10-09, of an agent that is gone: "consider it gone. it would have taken up the task
-    // otherwise, wouldn't it?" So it is gone at once and every phase it holds is freed for the other to take. The write
-    // that carried it counted as liveness above; this takes that back. Its next write makes it live again.
-    case 'signoff':
-      delete s.agentsAt[r.by];
-      delete s.agentWord[r.by];
-      Object.keys(s.items).forEach(function (id) { const m = s.items[id]; if (m.phaseWith === r.by) { m.phaseWith = ''; m.phaseWithKey = ''; if (m.with === r.by) { m.with = ''; m.withKey = ''; } } });
-      return;
-    // AN AGENT'S SCOPE (goal/G4.23), by its key, as he set it last; the handler refused anything malformed.
-    // AN AGENT'S PROFILE (goal/G4.23), his, as he set it last: its name and its nick.
-    // (Agent scopes went with goal/G10.8, every agent being /: an old scope.set record falls to the default and changes
-    // nothing.)
-    // goal/G21.1 adds included and cap, on unless his record says off (records before it carry neither).
-    case 'profile.set':
-      s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick), included: b.included !== false, cap: b.cap !== false, owner: b.owner === true };
-      // goal/G21.4: his exclusion releases everything the agent holds (releaseKey).
-      if (b.included === false) releaseKey(s, String(b.agent));
-      return;
-    // TAKING HIS LINE (goal/G2.2 note 2). Andy: "an item can 'take' my message and be the only one to answer after
-    // that, i then can solicit an answer from others." Since goal/G21.6 the taker's name goes on the newest of his
-    // lines that is not taken and is addressed to it or to nobody (takeableLine, the handler's own rule, by the
-    // record's key), and that line is the taker's to answer once. The handler refused a take with no such line, so
-    // what reaches here lands; a record written before goal/G21.6 took his latest line, which is that same line.
-    case 'line.take': {
-      const l = takeableLine(it, String(r.key || ''));
-      if (l) { l.taken = r.by; l.takenKey = String(r.key || ''); it.takers[r.by] = true; return; }
-      // A TAKE OF A LINE ITS NICK BOUND TO IT (goal/G41.22): the agent has it now.
-      openTakes(it).forEach(function (o) { if (tookLine(o, { by: r.by, key: String(r.key || '') })) o.took = true; });
-      return;
-    }
     default: return;
   }
 }
 
 // A CHECK NUMBER IS NEVER LENT TWICE (goal/G19.5). Andy, 2026-10-12, to "Should check numbers never repeat": "yes."
-// Numbers were count + 1, and item.files.add removes a grant that is no longer owed, so a grant raised again took the
-// number of the one removed and a press meant for one could land on the other. Each item remembers the highest number
+// Numbers were count + 1, so a check raised again after one was removed took the number of the one removed and a press
+// meant for one could land on the other. Each item remembers the highest number
 // it ever gave, kind by kind, in the walk (so a replay gives the same numbers), and the next is one above it.
 function nextCheckNumber(it, kind) {
   let high = it.checkHigh[kind] || 0;
@@ -1303,40 +702,16 @@ function press(s, it, what, r, goalOf, b) {
   // give me re-open and and on any open goal i want a button \"make current goal\"". It moves the goal and nothing
   // else: no item's state, neither goal's design mode, nothing closed or opened.
   else if (what === 'make-current' && it.goal) s.current = it.id;
-  // HIS CODE TOGGLE (goal/G9.5). Andy, 2026-10-07: "the item Detail dialog has a check/toggle button, [Code✓], in it's
-  // button bar, where the user can set the Code-state of an item". Never on a goal; the handler refuses it, and this
-  // holds it too.
-  // CODE MARKED AFTER HIS GO (goal/G8.10). His Go starts the red phase only on an item that is already a coding item,
-  // so an item marked as code afterwards sat with no phase at all: nobody could take it, no Done was offered, and no
-  // Close either (Close is offered before a Go alone), which held its goal's Done as well. Andy, 2026-10-09, "go" to
-  // this line: marking the item starts its red, exactly as his Go would have.
-  else if (what === 'code' && !it.goal) {
-    it.code = !it.code;
-    if (it.code && it.go && !it.phase) it.phase = 'red';
-  }
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
-  else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; if (it.code && !it.phase) it.phase = 'red'; }
-  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; if (m.code && !m.phase) m.phase = 'red'; });
-  // HIS WAIVE (goal/G5.7). Andy: "absolutely. with only one agent this must be waved." One agent may take every phase.
-  else if (what === 'waive') it.waived = true;
-  // A CLAIM CONSUMES THE GO (goal/G2.13). Andy: "When Done is offered, Go will be considered pressed/consumed",
-  // and "ok, too." to a Reopen without a Go: an item claimed before his Go counts as gone, as his Go would make it.
-  // SINCE goal/G3.9 NO SUCH CLAIM IS TAKEN: the press refuses a claim-done on an item without his Go (Andy,
-  // 2026-10-03: "yes, the desk may refuse a claim-done, on an item without 'go' on record", "the actual contract
-  // is consumed between 'go' and 'done'"). The line below replays the records taken before that day as they were.
-  else if (what === 'claim-done') {
-    it.claims[r.by] = true;
-    // When, for its claims row (goal/G33.4).
-    (it.claimAt = it.claimAt || {})[r.by] = String(r.at || '');
-    if (!it.goal && !it.went) { it.went = true; it.status = 'running'; }
-  }
-  else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
+  else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; }
+  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; });
+  else if (what === 'done') it.done = true;
   // REOPEN TAKES BACK DONE AS WELL AS CLOSE (goal/G4.20 point 2). Andy: "agreed: \"Reopen takes back Done as well
-  // as Close\"". His Go stays on record; the claims go, so Done is not offered again until an agent claims anew.
+  // as Close\"". His Go stays on record.
   else if (what === 'reopen') {
-    it.done = false; it.closed = false; it.alone = false; it.claims = Object.create(null);
+    it.done = false; it.closed = false;
     // REOPEN IS DESIGN AGAIN (goal/G40.3; Andy: "oh, re-open should put an item back to design mode."): it waits for his
     // End design and a fresh Go.
     if (!it.goal) {
@@ -1349,23 +724,10 @@ function press(s, it, what, r, goalOf, b) {
     // A REOPENED GOAL IS IN DESIGN AGAIN (goal/G40.12, box v7, first set 7).
     if (it.goal && g) { g.emptied = false; g.design = true; }
   }
-  else if (what === 'close') { it.closed = true; if (!it.goal) repairBlocks(s, it); }
+  else if (what === 'close') it.closed = true;
   // A BROUGHT-BACK ITEM DRAWS HIS EYE (goal/G2.1 note 6). Andy: "the row should immediately pop back into
   // visibility, with the attention-grabbing error icon, to draw my attention." The alert stands until his seen.
   else if (what === 'bring-back') { it.closed = false; it.alert = true; }
-  else if (what === 'seen') it.alert = false;
-}
-
-// What blocks an item: every open item of its goal that names it in `blocks`.
-// Desk's meaning: "an item names what it blocks".
-function blockers(s, it) {
-  const g = s.goals[it.goal ? it.id : it.goalId];
-  if (!g) return [];
-  // A CLOSED ITEM BLOCKS NOTHING (goal/G9.17): closed leaves the blockers as done does.
-  return g.members.filter(function (id) {
-    const o = s.items[id];
-    return o && o.id !== it.id && !o.done && !o.closed && !o.leftOut && o.blocks.indexOf(it.id) !== -1;
-  });
 }
 
 // THE GOAL THAT HAS JUST EMPTIED (goal/G8.12): every item of it done, closed or left out, and no goal.emptied on the
@@ -1386,9 +748,9 @@ function emptiedByPress(a) {
 }
 
 // The buttons, decided here once for the List and the dialog alike.
-//   Go!    after design ends (Andy's "end design mode."), not yet gone, nothing open blocks it
-//   Done   on an item once one agent has claimed ("1 agents consent will offer done buttons");
-//          on a goal once every item is done or closed (goal/G2.10)
+//   Go!    after design ends (Andy's "end design mode."), not yet gone
+//   Done   on an item once it has had his Go (goal/G48.8: no phases and no claims, he presses it when he judges it
+//          finished); on a goal once it has items (goal/G33.6)
 //   Close and Reopen once done
 //   Close also on an item before his Go (goal/G3.9; Andy, 2026-10-03: "A close - with arm-button is available ...
 //          before an item has received a 'go' or a 'done', so the user can get it off the desk, since close is
@@ -1403,9 +765,6 @@ function buttons(s, it) {
   if (it.done) return ['close', 'reopen'];
   const out = [];
   // A GOAL NEVER OFFERS GO! (desk/G3.7): its items are gone, not the goal itself.
-  // AND NO ITEM OFFERS GO BESIDE DONE (goal/G2.13). Andy: "when Done is offered, Go may no longer be displayed."
-  // A claimed item offers Done, so it offers no Go; the press below refuses a Go that is not offered.
-  const claimed = !it.goal && Object.keys(it.claims).length > 0;
   // DONE WAITS ON EVERY GRANT (goal/G8.5). Andy, 2026-10-09: "'Done' needs all grants approved." On every item and
   // goal: while any G check is open, no Done is offered, and his red mark on the row says why.
   const grantsOpen = it.checks.some(function (c) { return c.kind === 'G' && c.state === 'open'; });
@@ -1414,24 +773,16 @@ function buttons(s, it) {
   if (!it.goal && it.design && g && !g.design) out.push('end-design');
   // DESIGN AT ANY TIME (goal/G40.12, box v7, first set 1: "You can turn design on for an item at any time.").
   if (!it.goal && !it.design) out.push('start-design');
-  if (!it.goal && !claimed && g && !g.design && !it.design && !it.went && !blockers(s, it).length) out.push('go');
+  if (!it.goal && g && !g.design && !it.design && !it.went) out.push('go');
   // A GOAL OFFERS DONE AT ANY TIME, AND NEVER ON A CLAIM (goal/G33.6, replacing goal/G2.10's "only when all items are
   // done"). Andy: "just in the list, a goal offers no done or closed while items are not done or closed, the goal
   // offers those only in the detail panel anytime". So the facts offer it; the List holds it back while the goal's
   // blocked (its items still open) is not empty, and the detail panel shows it. The desk keeps no arming.
   if (it.goal) {
     if (!grantsOpen && g && g.members.length > 0) out.push('done');
-  // A CODE ITEM OFFERS DONE ON ITS VERIFIER'S PASS (goal/G5.7) OR A CLAIM; A PLAIN ITEM ON A CLAIM (goal/G33.3, as
-  // above: Done is offered as soon as an agent claims done).
-  } else if (!grantsOpen && ((it.code && it.verified === true) || Object.keys(it.claims).length > 0)) out.push('done');
-  // WAIVE (goal/G2.22). Andy, 2026-10-06: "there is no Waive in the G2.18 dialog", the server having had the press
-  // since goal/G5.7 and the face never a button. On when it shows, asked which of two readings he meant: "only when
-  // it's blocked on me" — so only while the build is his to unblock: its red written, nobody holding the build, not
-  // yet waived. A build somebody holds is not blocked on him, and nor is a red still being written. Never a goal: a
-  // goal has no phases. Counted in the waiting number like any button ("count it."), which is why it is this narrow.
-  if (!it.goal && it.code && it.go === true && it.waived !== true && it.phase === 'build' && !it.phaseWith) out.push('waive');
+  } else if (!grantsOpen && it.go === true) out.push('done');
   if (it.goal && g && goable(s, g).length) out.push('go-all');
-  if (!it.goal && !it.went && !claimed) out.push('close');
+  if (!it.goal && !it.went) out.push('close');
   // A GOAL OFFERS CLOSE ALWAYS (goal/G5.6), open items or not. Andy, to "a goal gets a Close like an item's (off the
   // List, still searchable, Reopen brings it back)": "yes. if it has items still open it can ask me: are you sure?"
   // The asking is the face's; the press is taken either way, and the items keep their state.
@@ -1442,11 +793,10 @@ function buttons(s, it) {
   // A special goal is never the current goal (goal/G27.2, D6).
   if (it.goal && g && !g.abandoned && !g.special && s.current !== it.id) out.push('make-current');
   // DELETE, IN DESIGN MODE OR OUT OF IT (goal/G24.9; it was design mode only under goal/G9.7). Andy, 2026-10-14: "i have
-  // no delete option for this item". So any item that is not a goal offers it whatever the goal's design mode, with two
-  // exceptions: none while an agent holds a phase on it (red, build or verify), and none on an item claimed done and
-  // not yet closed (his "no." to Q1). A closed or done item returned above and offers none. G9.7's ruling stands: delete
+  // no delete option for this item". So any item that is not a goal offers it whatever the goal's design mode.
+  // A closed or done item returned above and offers none. G9.7's ruling stands: delete
   // closes and leaves out, it erases nothing. The dialog draws it from here, and item.delete refuses what is not here.
-  if (!it.goal && g && !it.phaseWith && !claimed) out.push('delete');
+  if (!it.goal && g) out.push('delete');
   return out;
 }
 // The items of a goal that offer Go!, decided by the same rule as their own button.
@@ -1466,201 +816,24 @@ function listed(s, it) {
 // WHAT WAITS ON HIM (goal/G4.20 points 10-11): open grants, open questions, and open checks of his while Done is
 // offered. Andy: "if those two things would match at all times, id know exactly where i need to navigate to."
 // The List's ICON.ERROR is drawn from this alone.
-// AN OFFERED DONE WAITS ON HIM ONCE EVERY TAKER HAS CLAIMED IT (goal/G4.26). Andy: "only if all agents involved in
-// that item consider it done.", involved being those that "took it", and "i see the go." (an offered Go counts
-// nothing). The takers are those that wrote item.take, line.take (his "<nick>:" take included) or box.take; an item
-// nobody took counts from its first claim.
 function asksOf(s, it) {
   const doneOffered = buttons(s, it).indexOf('done') !== -1;
   const open = it.checks.filter(function (c) {
     return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q' || (c.kind === 'C' && doneOffered));
   }).length;
-  const allClaimed = !it.goal && doneOffered && (it.code ? it.verified === true : Object.keys(it.claims).length > 0 &&
-    Object.keys(it.takers).every(function (t) { return it.claims[t]; }));
-  return open + (allClaimed ? 1 : 0);
-}
-
-// WHO MAY TAKE A PHASE (goal/G5.7), '' when the agent may, else the refusal. Andy: the red's writer may not build ("ok:"
-// to wsl-claude's line), the builder writes no red and does not verify, "the red writer may be the verifier", a failed
-// verify goes back to the same builder, after an all-green build "it's the verifier that extends the red", and his
-// waive lifts all of it ("with only one agent this must be waved").
-function mayTake(s, it, phase, who) {
-  if (!it || it.goal || !it.code || it.go !== true || it.done || it.closed) return 'not-offered';
-  // NO PHASE WHILE DESIGN IS ON (goal/G6.8). Andy: "no phases can be taken in an item while design mode is on."; an
-  // earlier Go does not lift it.
-  // goal/G33.4: the item's own design mode as well as its goal's.
-  const gd = s.goals[it.goalId];
-  if ((gd && gd.design) || it.design) return 'not-offered';
-  if (it.phaseWith) return 'taken';
-  const w = it.waived === true;
-  if (phase === 'red') {
-    if (it.phase === 'red') return w || who !== it.builder ? '' : 'not-offered';
-    // PHASES STAY RE-TAKABLE UNTIL HIS DONE (goal/G27.19). Andy, 2026-10-17: "the desk should allow any restart of
-    // phases as long as 'done' is not pressed", "Just because 'Done' is offered doesn't mean it's fucking done....". A
-    // verify pass leaves the phase empty; while the item is not done (checked above) red opens a fresh cycle under the
-    // same item, its Go standing, never to the builder unless waived, as the verifier's extension of the red below.
-    // THE ITEM STAYS IN CODE FROM HIS GO TO HIS DONE (goal/G29.10, point 3, which replaced the hold of goal/G27.20):
-    // "The agent's own claim that it is done (a verify pass) leaves it in code", and his lines reach it without a hold.
-    // So red is taken again with no line of his; work.open offers it to nobody (no JOB while it is being worked on).
-    if (!it.phase) return w || who !== it.builder ? '' : 'not-offered';
-    if (it.phase === 'verify' && it.verifier && who === it.verifier) return w || who !== it.builder ? '' : 'not-offered';
-    return 'not-offered';
-  }
-  if (phase === 'build') {
-    if (it.phase !== 'build') return 'not-offered';
-    if (!w && who === it.red) return 'not-offered';
-    if (!w && it.builder && who !== it.builder) return 'not-offered';
-    return '';
-  }
-  if (phase === 'verify') return it.phase === 'verify' && (w || who !== it.builder) ? '' : 'not-offered';
-  return 'bad-request';
+  return open;
 }
 
 // AN OPEN RED QUESTION (goal/G6.8). Andy: "i want mechanical tracking of design-greens. Yes i want opens to light up my
 // list with ERROR icons." An item is design-green when none is open; his End design and a Go wait for green.
 function openQ(it) { return !!it && it.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open'; }); }
-// FILES KNOWN IN DESIGN (goal/G41.11): a code item with an empty file list is not green, so his End design and his Go
-// wait for it as they wait for an open red question. Why an item is not green, or '' when it is.
+// Why an item is not green, or '' when it is.
 function redWhy(it) {
   if (openQ(it)) return 'carries an open red question; answer or close it first';
-  if (it && it.code === true && !filesOf(it).length) return 'is a code item with an empty file list; list its files first (item.files.add)';
   return '';
 }
 function notGreen(s, ids) {
   return ids.filter(function (id) { const m = s.items[id]; return m && !m.closed && !m.done && !!redWhy(m); });
-}
-
-// LIMBO (goal/G5.4). Andy (andy/NOFACE.md): "when 'go' was pressed/consumed on an item, and no agent is working on
-// that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item
-// sits in 'limbo'. this limbo-state is actionable for agents.", and "limbo, when detected must be taken by an
-// agent." Working on it: an agent that took it, live, whose last word is working. At once, with no grace time:
-// Andy, to how long nobody must be working first: "it counts al limbo immediately."
-function limboOf(s, it) {
-  if (!it || it.goal || it.go !== true || it.done || it.closed) return false;
-  if (buttons(s, it).indexOf('done') !== -1) return false;
-  if (it.checks.some(function (c) { return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q'); })) return false;
-  // A HELD PHASE IS NOT LIMBO (goal/G9.14). Andy, 2026-10-09, to "Open an item to have limbo read the phase holder
-  // instead?": "yes". An agent that arms its listener says listening, so a taker's word cannot say it is working: the
-  // phase holder decides, and a holder gone silent leaves its item out of limbo too.
-  if (it.phaseWith) return false;
-  // A CLAIMED ITEM IS NOT LIMBO (goal/G18.5). Somebody finished it and it waits for his Done; the taker's word flipping
-  // between working and listening while it waits brought the limbo line again on every flip.
-  if (Object.keys(it.claims).length) return false;
-  // On a code item the phase holder is the whole answer: a phase nobody holds is limbo however its earlier takers are
-  // marked, which is what makes a finished red visible to the agent that must build it.
-  if (it.code) return true;
-  const now = Date.now();
-  return !Object.keys(it.takers).some(function (t) {
-    return s.agentWord[t] === 'working' && s.agentsAt[t] && now - Date.parse(s.agentsAt[t]) < LIVE_MS;
-  });
-}
-
-// THE AGENTS HERE NOW: every agent whose last write is inside LIVE_MS, sorted. The goal's facts say it, and the
-// waive of goal/G2.22 is decided by it.
-// THE AGENTS ARE WHO HOLD A GRANT TO DESK (goal/G43.3; Andy: "if the ID has grants to desk, desk should list it as one of
-// it's agents, it keeps all agent rows in its db, to preserve label and nick, but without grant, no matter how small,
-// there's no point showing an agent bubble."). The node's grant table is read over loopback, as its owner, when the stream
-// comes up (no grant and no new verb: "on the local node all loopback requester are "owner""), and followed on its
-// permanent job 'bundles', through spirit.data and the auth family's cache manager (goal/G43.5; Andy: "the rule covers
-// everything"). Until the first answer every agent shows. An agent's row in the agents table stays either way, so a key
-// granted again comes back with its label and nick.
-let grantsRead = false;
-function isDeskPath(p) { return p === 'desk' || String(p).indexOf('desk.') === 0; }
-// key -> { label }, the keys holding a grant under desk, or null until the first answer.
-function grantsHeld() {
-  if (!grantsRead || !((spirit.data || {}).auth || {}).data) return null;
-  const rows = spirit.data.auth.data.grants.rows() || {};
-  const held = Object.create(null);
-  Object.keys(rows).forEach(function (id) {
-    const r = rows[id];
-    if (!r || !r.key || !isDeskPath(r.path)) return;
-    const g = held[r.key] || (held[r.key] = { label: '' });
-    if (r.label || r.name) g.label = String(r.label || r.name);
-  });
-  return held;
-}
-function publishGoalRow() {
-  if (S.current && S.items[S.current]) publishOne(rowPublish(S, S.current, 'grants', S.change));
-}
-function readGrants() {
-  return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.search({ text: 'desk' }); })).then(function (r) {
-    const items = r && r.status === 200 && r.body && r.body.items;
-    if (!Array.isArray(items)) return;
-    // The table as it stands now, whole: a grant revoked while the stream was down goes with this.
-    grantsRead = false;
-    const A = ((spirit.data || {}).auth || {}).data;
-    const before = A.grants.rows() || {};
-    Object.keys(before).forEach(function (id) { spirit.data.delPath(A.grants.branch + '/' + id); });
-    spirit.data.seatRows(A.grants.branch, items.map(function (i) {
-      let row = {};
-      try { row = JSON.parse(i.label); } catch (e) { row = {}; }
-      return { key: A.grantKey(row.key, row.path), label: i.label };
-    }));
-    grantsRead = true;
-    publishGoalRow();
-  }, function () { /* the next time the stream comes up asks again */ });
-}
-function grantChanged() { if (grantsRead) publishGoalRow(); }
-// The agents to show, label -> key: the labels the desk has heard for a key with a grant, and for one it has not heard yet,
-// the grant's own label, else its name. A key is never shown (Andy, goal/G21.1).
-function grantedAgents(s) {
-  const out = {};
-  const heard = {};
-  const held = grantsHeld();
-  Object.keys(s.agentKey).forEach(function (l) { heard[s.agentKey[l]] = l; if (!held || held[s.agentKey[l]]) out[l] = s.agentKey[l]; });
-  if (held) Object.keys(held).forEach(function (k) {
-    if (heard[k]) return;
-    const p = s.profiles[k];
-    const label = held[k].label || (p && p.name) || '';
-    if (label) out[label] = k;
-  });
-  return out;
-}
-function waiveIfAlone(id, by) {
-  const st = walkState();
-  const m = st.items[String(id)];
-  const live = liveAgents(st);
-  if (m && !m.done && !m.closed && m.waived !== true && live.length === 1 && live[0] === by) {
-    write('press', { id: id, what: 'waive', by: 'desk', key: '' });
-    write('chat.add', { id: id, text: 'waived: ' + by + ' is the only agent here, so it may take the next phase of this item itself.', by: 'desk', key: '' });
-  }
-}
-function liveAgents(s) {
-  const now = Date.now();
-  return Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
-}
-
-// THE BOX MEASURED AS ITS ONE ANSWER (goal/G2.2 note 1: "orange at 50%, red at 75%"): its bytes, and whether it is red,
-// the one test the facts' full and the auto-cap of goal/G41.11 both read.
-function boxSize(box, version) { return Buffer.byteLength(JSON.stringify({ box: String(box), version: version }), 'utf8'); }
-function boxFull(box, version) { return boxSize(box, version) >= limits.ANSWER_MAX * 0.75; }
-function isLate(it, by, p) { return Array.isArray(it.lateFiles) && it.lateFiles.indexOf(by + '|' + String(p)) !== -1; }
-// ONE ROW A PATH (goal/G43.3; Andy, the box: "file list should not show duplicates"): a path several agents added, under
-// the first of them, the others in also. filesOf stays per writer: what a writer may remove is its own.
-function fileRows(it) {
-  const at = Object.create(null);
-  const out = [];
-  filesOf(it).forEach(function (e) {
-    if (!at[e.path]) { at[e.path] = e; out.push(e); return; }
-    at[e.path].also = (at[e.path].also || []).concat(e.by);
-    if (e.late) at[e.path].late = true;
-  });
-  return out;
-}
-// THE ITEM'S FILE LIST, FLATTENED (goal/G8.8): every writer's paths as one list of { path, by }, sorted by path so the
-// Details draws it the same way twice. No core mark (Andy, 2026-11-17: "toss that shit from desk").
-function filesOf(it) {
-  const held = it.files || {};
-  const out = [];
-  Object.keys(held).forEach(function (by) {
-    (Array.isArray(held[by]) ? held[by] : []).forEach(function (p) {
-      const e = { path: String(p), by: by };
-      // goal/G41.11: added after his Go; a file listed before it carries no mark.
-      if (isLate(it, by, p)) e.late = true;
-      out.push(e);
-    });
-  });
-  return out.sort(function (a, b) { return a.path < b.path ? -1 : a.path > b.path ? 1 : (a.by < b.by ? -1 : 1); });
 }
 
 function facts(s, it) {
@@ -1668,50 +841,18 @@ function facts(s, it) {
     // goal/G33.11: the kind of file the status names, 'test' or 'code', '' when the status is not a file report.
     statusTone: !it.closed && !it.done && it.statusTone && it.toneWord === it.status ? it.statusTone : '',
     // goal/G33.4 (box v46): the box's version, so a client answers item.get from the facts the push brought.
-    with: it.with, version: Number(it.version) || 0, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
-    // THE CODE TOGGLE, OFFERED OR NOT (goal/G27.3): the dialog draws its Code toggle from this, on an item, never a goal.
-    codeOffered: !it.goal,
-    // His Go on record (goal/G3.9): true once he pressed go or go-all on it; an agent's claim never sets it.
-    go: it.go === true,
-    // THE STAR IS GONE (goal/G4.20 point 8). Andy: "ha ha, the red star has no function anymore. take it out."
-    alone: it.alone, alert: it.alert === true,
-    // DONE (n) (goal/G4.20 point 3): how many agents claimed done.
-    claims: Object.keys(it.claims).length,
-    // WHO HOLDS THE BOX (goal/G4.20 point 9), '' when nobody.
-    boxTaken: it.boxTakenBy || '',
-    // goal/G5.4: in limbo.
-    limbo: limboOf(s, it),
+    version: Number(it.version) || 0, buttons: buttons(s, it),
+    // His Go on record (goal/G3.9): true once he pressed go or go-all on it.
+    go: it.go === true, alert: it.alert === true,
     // goal/G33.4: design mode on item level, as a goal's row has carried it (a goal's is set below).
     design: it.design === true,
-    // THE FILES TOUCHED (goal/G8.8) are item.files' own answer since goal/G32.2: a 142-file list in the facts made
-    // every write to the item too large to come back. The facts say only how many.
-    fileCount: fileRows(it).length,
-    // DESIGN-GREEN (goal/G6.8): no open red question on it; goal/G41.11: and a code item has a file listed (redWhy).
+    // DESIGN-GREEN (goal/G6.8): no open red question on it (redWhy).
     green: !redWhy(it),
-    // goal/G5.7: the phase it is in, and who did each.
-    code: it.code === true, phase: it.phase || '', red: it.red || '', builder: it.builder || '', verifier: it.verifier || '',
     // goal/G27.10: who created it, '' for an item from a session or before the creator was recorded.
-    creator: it.creator || '',
-    // goal/G19.13: the commits it was claimed at, the build's and the red's, '' while none was claimed with one.
-    claimCommit: it.claimCommit || '', redCommit: it.redCommit || '',
-    // goal/G2.22: whether the phase rules are lifted on it, so the dialog knows to stop offering Waive.
-    waived: it.waived === true };
-  // ITS AGENTS BY NAME (goal/G21.1): every label these facts show, mapped to its name where its key has one.
-  // goal/G21.6: every agent with an open take of one of his lines.
-  f.names = namesFor(s, [it.with, it.boxTakenBy, it.red, it.builder, it.verifier, it.phaseWith]
-    .concat(openTakes(it).map(function (l) { return l.taken; }), Object.keys(it.takers), Object.keys(it.files || {}), it.goal ? Object.keys(s.agentKey) : []));
-  // goal/G33.4: the holder's key beside its label, so a desk client knows its own item by key (Andy may relabel); only
-  // on a held item, so an unheld row grows by nothing.
-  if (it.with && it.withKey) f.withKey = String(it.withKey);
+    creator: it.creator || '' };
   f.asks = asksOf(s, it);
-  // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
-  // red at 75%". The box measured as its one answer against limits.ANSWER_MAX: half from 50%, full from 75%;
-  // nothing is refused below the answer limit, and the split is negotiated, never automated.
-  f.half = boxSize(it.box, it.version) >= limits.ANSWER_MAX * 0.5;
-  f.full = boxFull(it.box, it.version);
   if (it.goal) {
     const g = s.goals[it.id];
-    const now = Date.now();
     f.design = g.design;
     // goal/G33.4: a special goal's row is marked special.
     if (g.special) f.special = true;
@@ -1719,28 +860,6 @@ function facts(s, it) {
       // goal/G24.9: delete is on offer on running items now, and offering it is not Andy being waited on.
       return o && listed(s, o) && (buttons(s, o).filter(function (b) { return b !== 'delete'; }).length > 0 || asksOf(s, o) > 0);
     }).length;
-    // AN AGENT NOT INCLUDED IS ABSENT (goal/G21.1), whatever it last wrote: out of live, named in excluded.
-    f.excluded = Object.keys(s.agentKey).filter(function (l) { return excludedKey(s, s.agentKey[l]); }).sort();
-    const shown = grantedAgents(s);
-    f.live = liveAgents(s).filter(function (l) { return f.excluded.indexOf(l) === -1 && !!shown[l]; });
-    // WHO IS WORKING (goal/G2.3): the live agents whose last word is working. A stale working clears with
-    // liveness, since an ear killed by its limit or a node restart says nothing (Andy: "while an agent is
-    // working, i should leave it alone.").
-    f.working = f.live.filter(function (a) { return s.agentWord[a] === 'working'; });
-    // ITS AGENTS, label -> key: EVERY AGENT THE DESK SHOWS, live or not (goal/G4.29; Andy: "can't reach it because ollama
-    // is gone", then "yes" to the pane opening for every agent the desk knows), so an agent with no listener keeps its
-    // bubble and its profile pane (spirit/app/desk/element/desk/desk.js deskBubblesHtml, deskAgentKey); live still says who is here now.
-    f.agents = {};
-    Object.keys(shown).sort().forEach(function (a) { f.agents[a] = shown[a]; });
-  }
-  // A ROW ALWAYS FITS ONE ANSWER (goal/G33.4, box v46: "Bound the facts themselves ... so a row always fits"). Measured
-  // as it travels in item.get, JSON inside the answer's JSON; past FACTS_ROOM the lists that can grow give way.
-  const travel = function () { return Buffer.byteLength(JSON.stringify({ item: JSON.stringify(f), version: 0, change: 0 }), 'utf8'); };
-  // A goal's agents (goal/G4.29: every agent the desk knows) give way too, the one heard from longest ago first, and
-  // agentsMore says agents.search has them all (the approved list: "a goal row's lists of every agent ever seen").
-  if (f.agents) {
-    const byAge = Object.keys(f.agents).sort(function (x, y) { const ax = String(s.agentsAt[x] || ''); const ay = String(s.agentsAt[y] || ''); return ax < ay ? -1 : ax > ay ? 1 : 0; });
-    while (travel() > FACTS_ROOM && byAge.length) { delete f.agents[byAge.shift()]; f.agentsMore = true; }
   }
   return f;
 }
@@ -1750,11 +869,11 @@ const FACTS_ROOM = ANSWER_ROOM - 512;
 // WHAT THE LIST'S ROW HOLDS (goal/G43.3; Andy, the box: "the search needs only those fields of a row that it actually
 // displays."): what its cells, its presses and its filters read (spirit/app/desk/element/desk/desk.js). A word is still matched against the
 // whole row and the chat here, on the server (goal/G41.28); a page merges this into the row it keeps.
-const LIST_FIELDS = ['id', 'goal', 'title', 'status', 'statusTone', 'buttons', 'asks', 'alert', 'with', 'names', 'blocking', 'blocked'];
-// A GOAL'S ROW DRAWS MORE: the page reads its agent bubbles, who is working, the waiting count and the design state from it
-// (spirit/app/desk/element/desk/desk.js deskBubblesHtml, deskWorkingAgents, deskWaitingOnAndy, deskDesignOn), and at open this is all it has.
-// These stay even when empty, so a goal's design going off or its last agent leaving clears what the page holds.
-const GOAL_FIELDS = ['live', 'agents', 'working', 'waiting', 'design', 'excluded'];
+const LIST_FIELDS = ['id', 'goal', 'title', 'status', 'statusTone', 'buttons', 'asks', 'alert'];
+// A GOAL'S ROW DRAWS MORE: the page reads the waiting count and the design state from it (spirit/app/desk/element/desk/desk.js
+// deskWaitingOnAndy, deskDesignOn), and at open this is all it has. These stay even when empty, so a goal's design going
+// off clears what the page holds.
+const GOAL_FIELDS = ['waiting', 'design'];
 function listRow(row) {
   const out = {};
   if (row.goal === '') GOAL_FIELDS.forEach(function (k) { if (row[k] !== undefined) out[k] = row[k]; });
@@ -1826,10 +945,7 @@ function whyNotOffered(st, it, what, offered) {
   if (what === 'go' || what === 'go-all') {
     if (g && g.design) return 'the goal ' + g.id + ' is in design mode; End design comes first';
     if (it.design) return it.id + ' is in design mode; End design on it comes first';
-    const held = blockers(st, it);
-    if (held.length) return it.id + ' is blocked by ' + held.join(', ');
     if (it.went) return 'Go is already on record for ' + it.id;
-    if (!it.goal && Object.keys(it.claims).length) return it.id + ' is claimed, so it offers Done, not Go';
   }
   if (what === 'make-current' && it.closed) return it.id + ' is closed; Reopen comes first';
   return what + ' is not among the buttons of ' + it.id + ' now (' + (offered.length ? offered.join(', ') : 'none') + ')';
@@ -1845,7 +961,7 @@ function whyNotOffered(st, it, what, offered) {
 //   the same for every other row of the goal whose facts this write changed, one publish each
 //   { change, table, goal, item, id, row }                            each side row it changed: chat (the line as
 //                                                                     item.chat gives it), box (the newest version),
-//                                                                     checks (one check), files (one file), claims
+//                                                                     checks (one check)
 //   { change, table, goal, item, id, removed: true, at }              a side row it removed
 // A goal that becomes current is pushed whole (pushGoalWhole).
 // One object onto the desk's stream, as it is: THE ONE PUBLISH (box v43, Andy: "the desk server publishes its changes
@@ -1893,8 +1009,6 @@ function sidePublish(s, id, ch, change) {
   const o = { change: change, table: ch.table, goal: k[0], item: k[1], id: id };
   if (inSpecialGoal(s, k)) o.special = true;
   if (ch.removed) { o.removed = true; o.at = ch.key.split('|').slice(1).join('|'); } else o.row = ch.x.out();
-  // HIS LINE ADDRESSED TO AGENTS (goal/G21.1) names them, so the stream carries it to them alone (appServer.publish).
-  if (ch.x && Array.isArray(ch.x.to)) o.to = ch.x.to.slice();
   return o;
 }
 // A GOAL BECOMING CURRENT IS PUSHED (goal/G33.4). Andy, in the item's box: "when a goal becomes current, the desk pushes
@@ -1911,21 +1025,12 @@ function pushGoalWhole(gid) {
   [gid].concat(g.members).filter(function (id) { return !!s.items[id]; })
     .forEach(function (id) { publishOne(rowPublish(s, id, 'goal.whole', s.change)); });
 }
-// THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal), and, for a write about an agent,
-// every item where somebody holds something (signoff and his exclusion let go of what that agent held).
+// THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal).
 function goalIds(s, gid) { const g = s.goals[gid]; return g ? [gid].concat(g.members) : []; }
-function heldSomewhere(s) {
-  return Object.keys(s.items).filter(function (id) {
-    const m = s.items[id];
-    return m.with || m.phaseWith || m.boxTakenBy || (Array.isArray(m.capOffer) && m.capOffer.length) || openTakes(m).length;
-  });
-}
 function write(verb, a, check) {
   const s = walkState();
   const it = a.id !== undefined ? s.items[String(a.id)] : null;
   if (a.id !== undefined && verb !== 'session.set' && !it) throw refused('no-such-item');
-  // goal/G21.1: an agent he has not included writes nothing, whichever verb carries it.
-  mayWrite(s, { by: String(a.by || ''), key: String(a.key || '') });
   if (check) check(s, it);
   const body = Object.assign({}, a);
   delete body.by;
@@ -1936,18 +1041,14 @@ function write(verb, a, check) {
   // The row the write names: its item, the session's goal, or what goal.add and item.add minted (set by their check).
   const writtenId = it ? it.id : sessGoal || String(body.minted || '');
   const gidW = it ? (it.goal ? it.id : it.goalId) : sessGoal || (verb === 'item.add' ? String(body.goal || '') : verb === 'goal.add' ? String(body.minted || '') : '');
-  // The goals whose List rows may change: the written one's, and the current goal's for a word about an agent (the goal
-  // row's working list).
-  const shownGoals = [gidW].concat(['agent.state', 'signoff', 'profile.set'].indexOf(verb) !== -1 ? [s.current] : []).filter(function (g, i, all) { return g && all.indexOf(g) === i; });
+  // The goals whose List rows may change: the written one's.
+  const shownGoals = [gidW].filter(function (g) { return !!g; });
   const seen = function (id) { const x = s.items[id]; return x ? JSON.stringify([facts(s, x), listed(s, x)]) : ''; };
   const before = Object.create(null);
   shownGoals.forEach(function (g) { goalIds(s, g).forEach(function (id) { before[id] = seen(id); }); });
-  const holders = verb === 'signoff' || (verb === 'profile.set' && body.included === false) ? heldSomewhere(s) : [];
   const currentBefore = s.current;
   s.change += 1;
   const r = { n: s.change, at: new Date().toISOString(), verb: verb, by: by, key: key };
-  // Writers other than him and the desk itself are agents, and a write is their liveness.
-  if (by !== 'andy' && by !== 'desk') { s.agentsAt[by] = r.at; if (key) s.agentKey[by] = key; }
   const item = function (id) { return s.items[id] || null; };
   const goalOf = function (id) { const x = item(id); return x ? (x.goal ? s.goals[x.id] : s.goals[x.goalId]) : null; };
   apply(s, r, body, item, goalOf);
@@ -1961,8 +1062,8 @@ function write(verb, a, check) {
       if (bytes > ANSWER_ROOM) throw tooLarge(bytes, ANSWER_ROOM);
     });
   } catch (e) { S = loadState(); throw e; }
-  // WRITTEN THROUGH, in one transaction: every row of the goal's items that changed, the agent's row, the desk's own.
-  const dirty = goalIds(s, gidW).concat(holders).filter(function (id, i, all) { return all.indexOf(id) === i; });
+  // WRITTEN THROUGH, in one transaction: every row of the goal's items that changed, and the desk's own.
+  const dirty = goalIds(s, gidW);
   const side = [];
   db.exec('BEGIN');
   try {
@@ -1971,8 +1072,6 @@ function write(verb, a, check) {
       if (!x) return;
       persistItem(s, x, r, id === writtenId, body).forEach(function (ch) { if (ch.table !== 'items') side.push(sidePublish(s, id, ch, r.n)); });
     });
-    if (by !== 'andy' && by !== 'desk') persistAgent(s, by);
-    if (verb === 'profile.set') persistProfile(s, String(body.agent));
     persistDeskState(s);
     db.exec('COMMIT');
   } catch (e) {
@@ -1980,8 +1079,6 @@ function write(verb, a, check) {
     S = loadState();
     throw e;
   }
-  // NO LIMBO LINE (goal/G29.10, point 1: "The limbo posts go."). Limbo stays a mark in the item's facts; the desk
-  // posts nothing under the item when it enters it.
   // THE CHANGE ITSELF TRAVELS (desk/G2.7, "no pulling"), one row at a time (goal/G33.4): the written item's facts and
   // whether it is still on the List, always; then every other row whose facts changed (desk/G3.10: a press changes more
   // than its own row), each its own publish; then each side row it changed.
@@ -1992,11 +1089,7 @@ function write(verb, a, check) {
   if (verb === 'press') out.what = String(body.what || '');
   // WHO WROTE IT (goal/G33.9, box v4): every row a write publishes names its writer, label and key, so a client tells a
   // change its own agent made from one made by Andy, another agent or the desk.
-  // A FILE'S STATUS GOES TO HIS PAGE ALONE (goal/G41.2). Andy: "the file changes causing status updates, should not
-  // stream via peerPost. because they're changing not persistent state.... file changes are only there so the user can
-  // \"watch-water-boil\"", and "since you can target agents, can you target the UI alone as well?". A row addressed to
-  // no subscriber reaches none of them (appServer.publish), and his page still hears it on its own node.
-  const byWriter = function (o) { o.by = String(r.by || ''); o.byKey = String(r.key || ''); if (verb === 'item.status') o.to = []; return o; };
+  const byWriter = function (o) { o.by = String(r.by || ''); o.byKey = String(r.key || ''); return o; };
   publishOne(byWriter(out));
   shownGoals.forEach(function (g) {
     goalIds(s, g).forEach(function (id) {
@@ -2011,46 +1104,6 @@ function write(verb, a, check) {
   return s;
 }
 
-// A CLAIM PULLS THE DESK'S OWN CHECKOUT (goal/G41.22, box v22; Andy: "when the desk gets a claim red/build done. it pulls
-// it's repo automatically"; agreed: "it never pulls a checkout with edits of its own, or while a test run is going on in
-// it: then it pulls nothing and says so under the item."). The checkout is GOAL_REPO, the one this desk sits in;
-// a desk in no checkout (every suite's scratch copy) pulls nothing. The desk knows of no test run, so only edits hold
-// a pull back. Answers once the pull, or the word that it did not, is done; it never throws.
-const PULL_WAIT_MS = 30000;
-const PULL_TRIES = 5;
-function pullOwnRepo(id) {
-  if (!GOAL_REPO) return Promise.resolve();
-  const say = function (text) { try { write('chat.add', { id: id, text: text, by: 'desk', key: '' }); } catch (e) { /* the item went */ } };
-  const git = function (args) {
-    return new Promise(function (resolve, reject) {
-      require('child_process').execFile('git', ['-C', GOAL_REPO].concat(args), { timeout: PULL_WAIT_MS, windowsHide: true }, function (err, out, errOut) {
-        if (err) reject(new Error(String(errOut || err.message).trim().split('\n')[0])); else resolve(String(out));
-      });
-    });
-  };
-  return git(['status', '--porcelain', '--untracked-files=no']).then(function (out) {
-    const edits = out.split('\n').filter(Boolean);
-    if (edits.length) { say('not pulled: the desk\'s checkout has edits of its own (' + edits.slice(0, 3).map(function (l) { return l.slice(3); }).join(', ') + (edits.length > 3 ? ', …' : '') + ')'); return; }
-    // Its own branch from origin by name, fetched and then moved on only: a pull left to choose answered "Cannot
-    // fast-forward to multiple branches".
-    // Another git in the same checkout can hold its lock: a locked ref is tried again, a second apart, before the desk
-    // says it did not pull.
-    const once = function () {
-      return git(['rev-parse', '--abbrev-ref', 'HEAD']).then(function (branch) {
-        const b = branch.trim();
-        // Into its remote ref, never FETCH_HEAD, which the share's own fetch rewrites under it.
-        return git(['fetch', '-q', 'origin', '+refs/heads/' + b + ':refs/remotes/origin/' + b]).then(function () { return git(['merge', '--ff-only', '-q', 'refs/remotes/origin/' + b]); });
-      });
-    };
-    const tries = function (left) {
-      return once().then(null, function (e) {
-        if (left <= 0) throw e;
-        return new Promise(function (r) { setTimeout(r, 1000); }).then(function () { return tries(left - 1); });
-      });
-    };
-    return tries(PULL_TRIES).then(function () {}, function (e) { say('not pulled: ' + e.message); });
-  }, function (e) { say('not pulled: ' + e.message); });
-}
 // HIS VOICE IS NOT WRITTEN HERE (goal/G2.1 note 8): no voice file of what he typed; the brain reads his Desk lines
 // through this server's api. No app writes into the vault.
 
@@ -2064,11 +1117,11 @@ function newGoal(w) {
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
-const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code'];
+const PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'make-current'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
-// agents keep claim-done, design-complete and bring-back.
-const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code'];
+// agents keep design-complete and bring-back.
+const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'make-current'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
 // THE NEXT ID THE DESK HANDS OUT (goal/G9.9), minted inside the write, from the state the write walked.
@@ -2113,7 +1166,7 @@ function writerOf(caller) {
 startState();
 shed();
 
-appServer.serve(withDeskOwners({
+appServer.serve({
   // NO log.add, log.search, pending.get OR changes (goal/G33.4; Andy: "log.add, log.search and pending.get: delete
   // them.", and of changes: "isn't that what this item does? implement the push/broadcast concept?"): the desk streams
   // each changed row to its subscribers (appServer.publish), and nothing is read back by a cursor.
@@ -2146,29 +1199,9 @@ appServer.serve(withDeskOwners({
       return { box: it.box, version: it.version };
     },
   },
-  // THE FILES TOUCHED, ITS OWN ANSWER (goal/G32.2), as item.chat is: { path, by } (goal/G8.8), by path; as many as fit
-  // one answer, and filesMore says there were more. Nothing pages. under, when given, keeps the paths that start with
-  // it, so a caller asking for one folder is not crowded out by a long list.
-  'item.files': {
-    request: { id: '', under: '' }, reply: { files: [{ path: '', by: '' }], filesMore: false },
-    // under is optional: {id} alone answers the whole list, as the Details ask it.
-    accepts: function (x) {
-      return !!x && typeof x === 'object' && !Array.isArray(x) && typeof x.id === 'string' &&
-        Object.keys(x).every(function (k) { return k === 'id' || (k === 'under' && typeof x.under === 'string'); });
-    },
-    handler: function (a) {
-      const it = walkState().items[String(a.id)];
-      if (!it) throw refused('no-such-item');
-      const under = typeof a.under === 'string' ? a.under : '';
-      const order = fileRows(it).filter(function (e) { return !under || e.path.indexOf(under) === 0; });
-      const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ filesMore: true }), 'utf8');
-      const found = walked(order.map(function (e, i) { return i; }), function (i) { return { key: String(i), label: JSON.stringify(order[i]) }; }, room);
-      const files = found.items.map(function (p) { return JSON.parse(p.label); });
-      return { files: files, filesMore: files.length < order.length };
-    },
-  },
   // goal/G33.7 (the approved list: "item.checks (more flag)"): the panel's checks in their order, as many as fill one
-  // answer, and checksMore when some were left out.
+  // answer, and checksMore when some were left out. Kept by Andy's word on goal/G48.8 Q8 ("whatever you want"): the one read
+  // the details dialog loads an item's red Qs and grants with.
   'item.checks': {
     request: { id: '' }, reply: { checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }], checksMore: false },
     handler: function (a) {
@@ -2181,46 +1214,16 @@ appServer.serve(withDeskOwners({
       return { checks: checks, checksMore: checks.length < shown.length };
     },
   },
-  // ── EACH TABLE'S SEARCH (goal/G33.7), from tableSearch: an item's checks, files and claims, and the agents (no
-  // box versions: only the newest box is kept, goal/G47.1, Q16). Each answers {items: [{key, label}], more}, ranked by text, newest first among equals.
-  'item.checks.search': tableSearch({
-    request: { id: '' },
-    rows: function (a, st) {
-      const it = itemFor(st, a);
-      return (it.checks || []).slice().reverse().map(function (c) { return { key: String(c.number), label: c }; });
-    },
-  }),
-  'item.files.search': tableSearch({
-    request: { id: '' },
-    rows: function (a, st) { const it = itemFor(st, a); return fileRows(it).map(function (e) { return { key: e.path, label: e }; }); },
-  }),
-  'item.claims.search': tableSearch({
-    request: { id: '' },
-    rows: function (a, st) {
-      const it = itemFor(st, a);
-      return Object.keys(it.claims || {}).map(function (label) { const at = String((it.claimAt && it.claimAt[label]) || ''); return { key: label, label: { by: label, at: at } }; })
-        .sort(function (x, y) { return x.label.at < y.label.at ? 1 : x.label.at > y.label.at ? -1 : 0; });
-    },
-  }),
-  'agents.search': tableSearch({
-    rows: function (a, st) {
-      return Object.keys(st.agentKey).map(function (label) {
-        const key = st.agentKey[label];
-        const name = nameOfKey(st, key) || '';
-        return { key: label, at: String(st.agentsAt[label] || ''), label: { label: label, key: key, name: name, at: String(st.agentsAt[label] || ''), word: String(st.agentWord[label] || '') } };
-      }).sort(function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : 0; });
-    },
-  }),
   // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
   // stuff?" Its newest lines, through the same bucket, in a whole answer of its own; oldest first.
   'item.chat': {
-    // goal/G21.1: each line carries its writer's key and name beside its label (by).
-    request: { id: '' }, reply: { chat: [{ by: '', at: '', text: '', taken: '', key: '', name: '' }], chatMore: false },
+    // goal/G21.1: each line carries its writer's key beside its label (by).
+    request: { id: '' }, reply: { chat: [{ by: '', at: '', text: '', key: '' }], chatMore: false },
     handler: function (a) {
       const st = walkState();
       let it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      it = { chat: it.chat.map(function (l) { return shownLine(st, l); }) };
+      it = { chat: it.chat.map(shownLine) };
       // goal/G29.21: newest first through walked() in CHAT_ROOM; a line too big for the room on its own is never
       // offered: it would close the answer with nothing in it (claude-windows's review).
       const newest = [];
@@ -2270,10 +1273,10 @@ appServer.serve(withDeskOwners({
         }
       });
       if (across) lines.sort(function (x, y) { return x.l.at < y.l.at ? 1 : x.l.at > y.l.at ? -1 : 0; });
-      // goal/G21.1: the writer's key and name ride with its label; with a scope, the item it was said in too.
+      // goal/G21.1: the writer's key rides with its label; with a scope, the item it was said in too.
       return lines.map(function (x) {
         const l = x.l;
-        const label = { by: l.by, key: String(l.key || ''), name: nameOfKey(st, l.key), at: l.at, text: l.text };
+        const label = { by: l.by, key: String(l.key || ''), at: l.at, text: l.text };
         if (scope) label.item = x.item;
         return { key: across ? x.item + '#' + x.i : String(x.i), label: label, probability: lineProbability(text, l) };
       });
@@ -2311,13 +1314,7 @@ appServer.serve(withDeskOwners({
   // the new item blocks, the goal itself or an item of that goal, and the goal when it is left out (goal/G9.9's case).
   // The title obeys the label rules, as every label does (spirit/fieldRules.js).
   'item.add': {
-    request: { goal: '', title: '', blocks: '' }, reply: { id: '', change: 0 },
-    accepts: function (x) {
-      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
-      const known = ['goal', 'title', 'blocks'];
-      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) &&
-        typeof x.goal === 'string' && typeof x.title === 'string' && (x.blocks === undefined || typeof x.blocks === 'string');
-    },
+    request: { goal: '', title: '' }, reply: { id: '', change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
       const gid = String(a.goal || '');
@@ -2325,65 +1322,13 @@ appServer.serve(withDeskOwners({
       if (!title) throw refusedWhy('bad-request', 'an item needs a title');
       if (fieldWhy('title', title)) throw refusedWhy('bad-request', fieldWhy('title', title));
       const args = { goal: gid, title: title, by: w.by, key: w.key };
-      if (a.blocks !== undefined && String(a.blocks)) args.blocks = String(a.blocks);
       const r = write('item.add', args, function (st) {
         if (!st.goals[gid] || !st.items[gid]) throw refused('no-such-item');
         // AN AGENT ADDS UNDER HIS WORDS (goal/G29.21), decided by Andy: see addGrantOf.
         if (w.by !== 'andy' && !(st.addGrant && st.addGrantGoal === gid)) throw refusedWhy('not-granted', 'an agent adds an item only while Andy\'s newest line, written in this goal, says "add item" (one) or "add items" (several); propose it to him instead');
-        // A NEW ITEM IS CODE (goal/G29.21). Carried in the record, so the items added before this replay as they were.
-        args.code = true;
-        if (args.blocks) {
-          const b = st.items[args.blocks];
-          // Its own goal, or one of that goal's items: an item never blocks across goals.
-          if (!b || (args.blocks !== gid && b.goalId !== gid)) throw refused('no-such-item');
-        }
         args.minted = nextItemId(st, gid);
       });
       return { id: args.minted, change: r.change };
-    },
-  },
-  // BLOCK, UNBLOCK AND THEIR TARGETS (goal/G27.5). The gate refuses, saying why, before anything is written.
-  'block': {
-    request: { id: '', blocks: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const from = String(a.id || '');
-      const to = String(a.blocks || '');
-      const r = write('block', { id: from, blocks: to, by: w.by, key: w.key }, function (st) {
-        mayWrite(st, w);
-        const why = blockWhy(st, from, to);
-        if (why) throw refusedWhy('bad-request', why);
-      });
-      return { change: r.change };
-    },
-  },
-  'unblock': {
-    request: { id: '', blocks: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const from = String(a.id || '');
-      const to = String(a.blocks || '');
-      const r = write('unblock', { id: from, blocks: to, by: w.by, key: w.key }, function (st, it) {
-        mayWrite(st, w);
-        if (!it || it.goal) throw refused('no-such-item');
-        if (it.blocks.indexOf(to) === -1) throw refusedWhy('bad-request', from + ' does not block ' + to);
-        if (to === it.goalId) throw refusedWhy('bad-request', 'blocking the goal is the fallback of an item blocking nothing else, and is not unblocked');
-      });
-      return { change: r.change };
-    },
-  },
-  // What an item may block: the add drop-down's list (R7, R10), the gate's own rule, through the bucket.
-  'block.targets': {
-    request: { id: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      const st = walkState();
-      const from = String(a.id || '');
-      const it = st.items[from];
-      if (!it || it.goal) throw refused('no-such-item');
-      const g = st.goals[it.goalId];
-      // goal/G29.21: in goal order through the probability bucket (walked).
-      const open = ((g && g.members) || []).filter(function (id) { return st.items[id] && !blockWhy(st, from, id); });
-      return walked(open, function (id) { return { key: id, label: String(st.items[id].title || '') }; });
     },
   },
   // Andy: "the FIRST text wins, all subsequent actions are alterations and
@@ -2407,35 +1352,10 @@ appServer.serve(withDeskOwners({
       // AN OPEN POINT IS A RED QUESTION, NEVER BOX TEXT (goal/G6.8). Andy: "in design mode as well, OPEN is help in
       // red-questions". A line starting with OPEN in capitals is refused, his own too.
       if (/^OPEN(?:\b|:)/m.test(String(a.text))) throw refusedWhy('bad-request', 'a line starting OPEN is not box text: an open point is a Q check');
-      // RED OFFERS THE CAP (goal/G41.11). Andy: "red should trigger an auto-cap". A write that leaves the box red (the
-      // facts' full, the dialog's red border) has the desk offer the cap itself, as his "cap" line does (addressOf):
-      // to every included agent with cap on, decided at the write and kept in it (capOffer). Below red, nothing.
-      const st0 = walkState();
-      // AN AGENT'S UPDATE FAILS WHILE THE BOX IS HIS, AND THE CHAT SAYS SO (goal/G43.3; Andy, the box: "desk cannot refuse
-      // the box to the user. agent updates will fail it the user takes the box, and desk will note so in the chat.").
-      const under = st0.items[String(a.id)];
-      if (under && w.by !== 'andy' && under.boxTakenBy === 'andy') {
-        write('chat.add', { id: under.id, text: 'the box is taken by Andy, so the update of ' + w.by + ' failed', by: 'desk', key: '' });
-        throw refused('taken');
-      }
-      const capOffer = boxFull(String(a.text), (Number(a.version) || 0) + 1) ? addressOf(st0, 'cap', null).to : null;
-      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }, capOffer ? { capOffer: capOffer } : {}), function (st, it) {
-        // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9). ONE RULE FOR EVERYBODY SINCE goal/G9.3:
-        // Andy, 2026-10-07, asked whether his own take refuses an agent until he leaves the box: "yes. so it shoule be
-        // among agents as well, the box is taken, and released after edit. it also helps agents stay out of each others
-        // way." So his write is refused over another's take as an agent's is; he was the exception until then.
-        // By key since goal/G21.1: a hold his nick request started is that agent's one write, his own included.
-        // goal/G43.3 replaces G9.3 and G21.1 for him: an agent's take never refuses him.
-        if (w.by !== 'andy' && it.boxTakenBy && !holdsBox(it, w)) throw refused('taken');
+      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
         if (a.version !== it.version) throw refused('box-moved');
       });
-      const written = { change: s.change, version: s.items[a.id].version };
-      // AND WAKES THEM AS HIS LINE DOES (goal/G41.11): a desk line under the item, its record's to the very keys the cap
-      // is offered to (the shape of his addressed lines), so each of their deskClients wakes its agent.
-      if (capOffer && capOffer.length) {
-        write('chat.add', { id: a.id, text: 'the box is red: the cap is offered to the agents with cap on (box.take, then one write)', to: capOffer, cap: true, by: 'desk', key: '' });
-      }
-      return written;
+      return { change: s.change, version: s.items[a.id].version };
     },
   },
   'check.add': {
@@ -2487,78 +1407,20 @@ appServer.serve(withDeskOwners({
       // A line that could not come back whole in one answer is refused here; the sender slices it.
       const st0 = walkState();
       const it0 = st0.items[String(a.id)];
-      mayWrite(st0, w);
-      // ONLY THE TAKER ANSWERS while a take stands (goal/G2.2 note 2); his own lines, and the desk's, are never refused.
-      // By key since goal/G21.1, so an agent bound by his nick before the desk ever heard from it answers too.
-      // Since goal/G21.6 a take is per line: mine is an open take of one of his lines under the item by this agent.
-      // goal/G33.2 (box v6): his newest line under the item is an "all" line addressed to this agent: it may answer.
-      const newestHis = it0 ? it0.chat.slice().reverse().filter(function (l) { return l.by === 'andy'; })[0] : null;
-      const mine = !!(it0 && (holdsTake(it0, w) || (newestHis && newestHis.all === true && Array.isArray(newestHis.to) && newestHis.to.indexOf(w.key) !== -1)));
-      // AN AGENT ANSWERS ONLY WHAT IT HAS TAKEN (goal/G18.8). Andy, 2026-10-12: "no agent should answer without taking.
-      // too much chatter otherwise."; and, to its own work notes going under an item it holds: "yes."
-      // THE CHAT FLOW (goal/G21.4). Andy, in the item's box: "Each of Andy's lines is taken by one agent and answered by
-      // that agent alone; no other agent chimes in once it is taken.", "An agent's answer is never takeable", and "An
-      // agent may post its own work notes (taking, built, claimed) on an item it holds; they are valued work logs and are
-      // not answers, so the chat flow does not stop them." The desk cannot read a line for what it means, so it goes by
-      // who writes, in this order:
-      //   - the taker of a line of his answers it (once: the answer closes the take; goal/G21.6, any line it took, not
-      //     only his latest, several agents each answering their own);
-      //   - the agent the item is with now (item.take, phase.take) posts its work notes, a take of another's standing or
-      //     not: the box exempts work notes from the flow;
-      //   - an agent that took a phase of the item earlier (red, build, verify), or created it, posts its work notes and
-      //     reports at any time (goal/G27.10, R2, Andy's Go 2026-10-17: "An agent that holds the item or a phase on it,
-      //     held a phase on it earlier, or created it, posts its work notes and reports under it at any time.");
-      //   - anybody else takes his line first.
-      // Decided by Andy, not by this file: do not let a second agent answer a taken line.
-      if (it0 && w.by !== 'andy' && w.by !== 'desk' && !mine) {
-        const holder = holdsWith(it0, w) || holdsPhase(it0, w);
-        const takerOf = function (l) { return nameOfKey(st0, l.takenKey) || l.taken; };
-        const earlier = [[it0.red, it0.redKey], [it0.builder, it0.builderKey], [it0.verifier, it0.verifierKey], [it0.creator, it0.creatorKey]].some(function (p) {
-          return !!p[0] && (p[1] ? p[1] === w.key : p[0] === w.by);
-        });
-        // goal/G21.6: another agent's open take of a line of his, whichever line.
-        const other = openTakes(it0)[0];
-        if (!holder && !earlier && other) {
-          throw refusedWhy('taken', 'Andy\'s line under ' + a.id + ' is taken by ' + takerOf(other) + ', and only it answers; ' + w.by + ' may post here when it takes a line of his addressed to it or to nobody (line.take), or holds the item (item.take)');
-        }
-        if (!holder && !earlier) {
-          throw refusedWhy('bad-request', 'take first: ' + w.by + ' holds neither the take of Andy\'s latest line under ' + a.id + ' (line.take) nor the item (item.take)');
-        }
-      }
-      // Measured as it is stored and answered: with its taken field (goal/G2.2), else the largest line that passes
-      // here would not come back whole (oversize.js caught the ten bytes).
-      // goal/G21.1: and with the key and name it is answered with.
-      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), taken: '', key: w.key, name: nameOfKey(st0, w.key) });
+      // Measured as it is stored and answered, with the key it is answered with (goal/G21.1), else the largest line
+      // that passes here would not come back whole (oversize.js caught the ten bytes).
+      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), key: w.key });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
       // HIS CLEAR OF RED QS (goal/G21.2, clearOf): which open Qs it names, refused with a why when it names none.
       const clear = caller.owner === true && it0 ? clearOf(a.text) : null;
       const cleared = clear ? it0.checks.filter(function (c) { return c.kind === 'Q' && c.state === 'open' && (!clear.number || c.number === clear.number); }) : [];
       if (clear && !cleared.length) throw refusedWhy('bad-request', clear.number ? clear.number + ' is not an open red Q on ' + a.id : 'there is no open red Q on ' + a.id + ' to clear');
-      // HIS LINE, ADDRESSED AT THE WRITE (goal/G21.1, addressOf): to whom, and whether it hands over the box or offers a cap.
-      // A clear is addressed to nobody: its line is his action, for everyone; each Q's clear goes to its placer below.
-      const address = caller.owner === true && it0 && !clear ? addressOf(st0, a.text, it0) : null;
-      const after = write('chat.add', Object.assign({}, a, address || {}, { by: w.by, key: w.key }));
-      // A MESSAGE TO A BUSY AGENT IS ANSWERED (goal/G2.5). Andy: "the app sends an-auto reply after sending the
-      // message the agents in-queue, saying 'message delivered, agents busy'", "after every message". His line
-      // under an item an agent holds (item.take) while that agent's last word is working (goal/G2.3) gets the
-      // desk's own line right after it, by desk — a line like any other, so it is streamed and a search
-      // counts it ("if desk keeps count of those interactions, we can track them later").
-      if (caller.owner === true) {
-        const it = after.items[String(a.id)];
-        const taker = it && it.with;
-        if (taker && after.agentWord[taker] === 'working') {
-          write('chat.add', { id: a.id, text: 'message delivered, ' + taker + ' busy', by: 'desk', key: '' });
-        }
-      }
+      const after = write('chat.add', Object.assign({}, a, { by: w.by, key: w.key }));
       // Andy, in the item's box: "Andy clears them himself", and "When Andy clears a Q, the agent that placed it is
       // notified; a clear is a form of reply, so the agent updates its position on that question." So each Q goes to
-      // cleared (it holds nothing any more and leaves the panel) by a record of his addressed to its placer's key: that
-      // agent alone is handed it on the stream (the row's to), as with his nick-addressed line. A Q the desk
-      // placed has no placer to tell. Decided by Andy, not by this file: an agent's own "Q:clear" clears nothing.
-      cleared.forEach(function (c) {
-        const placer = placerOf(st0, c);
-        write('check.set', { id: a.id, check: c.number, state: 'cleared', to: placer ? [placer] : [], by: w.by, key: w.key });
-      });
+      // cleared (it holds nothing any more and leaves the panel) by a record of his. Decided by Andy, not by this file:
+      // an agent's own "Q:clear" clears nothing.
+      cleared.forEach(function (c) { write('check.set', { id: a.id, check: c.number, state: 'cleared', by: w.by, key: w.key }); });
       // A QUESTION MARK IN CHAT RAISES NOTHING (goal/G21.2), ending goal/G2.21's conversion of an agent's line that
       // ended in one. Andy, in the item's box: "A question mark in a chat line never makes a red Q; only a deliberate Q
       // check does." Decided by Andy: do not bring the conversion back. Open checks it raised before stay as they are.
@@ -2567,8 +1429,7 @@ appServer.serve(withDeskOwners({
   },
   // "rename (you)": Andy's alone.
   'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); return { change: write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
-  // HIS DELETE (goal/G9.7, widened by goal/G24.9): his alone, never a goal, never while a phase is held or a claim is
-  // open, in design mode or out of it. It is offered in the item's buttons, so the refusal and the button cannot drift
+  // HIS DELETE (goal/G9.7, widened by goal/G24.9): his alone, never a goal, in design mode or out of it. It is offered in the item's buttons, so the refusal and the button cannot drift
   // apart.
   // A VERB AND NOT A PRESS, BY HIS WORD. Asked which, Andy answered "press." on 2026-10-09 and then, on the same
   // question: "make it a verb, plus the arm able delete button." The later word is the one in force. Do not turn it
@@ -2583,122 +1444,6 @@ appServer.serve(withDeskOwners({
       }).change };
     },
   },
-  // ── THE JOB QUEUE (goal/G5.7) ────────────────────────────────────
-  // Andy: "shouldn't a coding item track on deskServer who took the red, when the red is done, the agent doing the red
-  // is removed from the with field, then the item becomes takeable for coding, by somebody who didn't do the red, when
-  // the coding is done, the verifying can be taken by someone who didn't do the coding.", "each claude can first check
-  // for available jobs." One holder per phase (first wins, as box.take); finishing clears with and opens the next.
-  'phase.take': {
-    request: { id: '', phase: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      // ALONE, IT TAKES THE NEXT PHASE ITSELF (goal/G43.3; Andy, the box: "or the same agent that did the red phase, if
-      // that's the only one available"), decided when it asks: a claim opens the phase with no holder, and who is here
-      // is of this moment. Only where the rule would refuse it, so a first take of a red waives nothing.
-      const st0 = walkState();
-      const it0 = st0.items[String(a.id)];
-      if (it0 && mayTake(st0, it0, String(a.phase), w.by) === 'not-offered') waiveIfAlone(a.id, w.by);
-      return { change: write('phase.take', { id: a.id, phase: String(a.phase), by: w.by, key: w.key }, function (st, it) {
-        const why = mayTake(st, it, String(a.phase), w.by);
-        if (why) throw refused(why);
-        // ONE TASK AT A TIME (goal/G21.4, heldBy): no phase here while another item or phase is held.
-        oneTask(st, w, a.id);
-      }).change };
-    },
-  },
-  // pass and why only for verify; a failed verify goes back to build, to the same builder, its why a line by desk.
-  'phase.done': {
-    request: { id: '', phase: '', pass: false, why: '' }, reply: { change: 0 },
-    // pass and why may be left out (red and build send neither).
-    accepts: function (x) {
-      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
-      const known = ['id', 'phase', 'pass', 'why'];
-      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) && typeof x.id === 'string' && typeof x.phase === 'string' &&
-        (x.pass === undefined || typeof x.pass === 'boolean') && (x.why === undefined || typeof x.why === 'string');
-    },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const body = { id: a.id, phase: String(a.phase), pass: a.pass === true, by: w.by, key: w.key };
-      const change = write('phase.done', body, function (st, it) {
-        if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
-        const q = ownOpenQ(st, it, w);
-        if (q) throw refusedWhy('not-offered', q.number + ' of ' + w.by + ' is open on ' + it.id + ': a red Q is resolved with Andy before the phase is done');
-        // A RED FINISHES ONLY ONCE ITS RED CLAIM IS ON RECORD (goal/G33.11).
-        if (a.phase === 'red' && !it.redCommit) throw refusedWhy('not-offered', 'the red of ' + it.id + ' finishes once a red claim is on record: claim {id, phase: red, commit}');
-      }).change;
-      // ONE AGENT ALONE NEEDS NO WAIVE (goal/G2.22). Andy, 2026-10-06: "add to 2.22 that the desk can waive the rule
-      // if only one agent is present.", and asked why the desk cannot simply do it: "contradiction or not. autowaive
-      // when only one agent is present. the other case already happened in a previous goal, and it worked." So at
-      // EVERY handover, not the red's alone: the rules hand each phase to somebody else (mayTake), so alone the item
-      // would stall at whichever one it reached. DECIDED HERE, AT THE WRITE, AND RECORDED AS A PRESS: who is live is
-      // of this moment only, and a walk of the records must not re-decide it later, when everyone reads as stale.
-      waiveIfAlone(a.id, w.by);
-      return { change: change };
-    },
-  },
-  // MAY THE CALLER COMMIT ON THIS ITEM (goal/G5.9), for the commit check. Andy, to Q7: "it should trigger a red GRANT
-  // request for me." The caller by its key at the door, never a name it sends; not allowed only when the item is marked
-  // code, is in build, the caller wrote its red, and he has not waived it. A refusal says why.
-  'phase.may': {
-    request: { id: '' }, reply: { allowed: true, why: '' },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const st = walkState();
-      const it = st.items[String(a.id)];
-      if (!it) throw refused('no-such-item');
-      const q = ownOpenQ(st, it, w);
-      if (q) return { allowed: false, why: 'red Q: ' + q.number + ' of ' + w.by + ' is open on ' + it.id + '; it is resolved with Andy before anything lands' };
-      // NO COMMIT IN DESIGN (goal/G40.12, box v7, first set 2: "No commit lands while the current goal, or the item the
-      // agent is on, is in design mode, granted or not.").
-      const gd = st.goals[it.goal ? it.id : it.goalId];
-      const cur = st.goals[st.current];
-      if (it.design || (gd && gd.design)) return { allowed: false, why: 'design: ' + it.id + ' or its goal is in design, so no commit lands' };
-      if (cur && cur.design) return { allowed: false, why: 'design: the current goal ' + st.current + ' is in design, so no commit lands' };
-      if (!it.code || it.phase !== 'build' || it.waived === true) return { allowed: true, why: '' };
-      const wrote = it.redKey ? it.redKey === w.key : it.red === w.by;
-      return wrote ? { allowed: false, why: 'red writer: ' + w.by + ' wrote the red of ' + it.id + ', which is in build' } : { allowed: true, why: '' };
-    },
-  },
-  // THE JOBS OPEN TO THE CALLER: every open phase of an item marked code it may take now, as { id, phase }.
-  'work.open': {
-    request: {}, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const s = walkState();
-      const jobs = [];
-      // THE CURRENT GOAL'S WORK ALONE (goal/G33.8, box v14): a job left in an old goal (found live: goal/G29.17's build)
-      // was offered to every listening agent, who skipped it by hand. The work is scoped to the current goal.
-      Object.keys(s.goals).filter(function (gid) { return gid === s.current; }).forEach(function (gid) {
-        const g = s.goals[gid];
-        if (g.abandoned || (s.items[gid] && s.items[gid].closed)) return;
-        g.members.forEach(function (id) {
-          // goal/G29.10: a verified item waiting for his Done is still being worked on, so its red is no job.
-          const m = s.items[id];
-          ['red', 'build', 'verify'].forEach(function (p) { if ((p !== 'red' || (m && m.phase)) && !mayTake(s, m, p, w.by)) jobs.push({ id: id, phase: p }); });
-        });
-      });
-      return walked(jobs, function (j) { return { key: j.id + ':' + j.phase, label: JSON.stringify(j) }; });
-    },
-  },
-  // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
-  // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
-  // row with its working list, so the agent bubbles paint from the publish (goal/G2.4).
-  'agent.state': {
-    request: { word: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      if (a.word !== 'listening' && a.word !== 'working') throw refusedWhy('bad-request', 'an agent word is listening or working');
-      return { change: write('agent.state', { word: a.word, by: w.by, key: w.key }).change };
-    },
-  },
-  // THE AGENT IS GOING (goal/G8.5): gone at once, its phases freed. A desk verb, not a node verb.
-  'signoff': {
-    request: {}, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      return { change: write('signoff', { by: w.by, key: w.key }).change };
-    },
-  },
   // tone (goal/G33.11), optional: 'test' or 'code' when the word is a file the agent's checkout changed (its deskClient).
   'item.status': {
     request: { id: '', word: '', tone: '' }, reply: { change: 0 },
@@ -2708,168 +1453,6 @@ appServer.serve(withDeskOwners({
         typeof x.id === 'string' && typeof x.word === 'string' && (x.tone === undefined || x.tone === '' || x.tone === 'test' || x.tone === 'code');
     },
     handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
-  // ONE TASK AT A TIME (goal/G21.4, heldBy): a second item is refused while one is held; the item it holds, taken
-  // again, is no second.
-  'item.take': {
-    request: { id: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key }), function (st) { oneTask(st, w, a.id); }).change };
-    },
-  },
-  // LETTING AN ITEM GO (goal/G21.4). Andy, in the item's box: "taking a second is refused by the desk until the first is
-  // released, claimed or done." The caller's with on the item, and its phase there if it holds one, go back to nobody.
-  // A caller holding neither is refused with a why.
-  'item.release': {
-    request: { id: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      return { change: write('item.release', { id: a.id, by: w.by, key: w.key }, function (st, it) {
-        if (!holdsWith(it, w) && !holdsPhase(it, w)) throw refusedWhy('not-offered', w.by + ' holds neither ' + a.id + ' nor a phase of it, so there is nothing to release');
-      }).change };
-    },
-  },
-  // NO AGENT SCOPES (goal/G10.8). Andy, 2026-10-12: "all agents in desk have "/" file scope". What fences an agent is
-  // the desk itself: Go and its item.
-  // AGENT PROFILES (goal/G4.23). Andy: "so two more fields for repo-root-agents: name <agent-name> nick: <wc | wsl |
-  // ubi>", "build them now.", "the profiles are for me, in desk. a dataset that deskServer stores for me and let's you
-  // see." profile.set is his alone; profile.get answers any agent's ('' the caller). A name passes the label rule
-  // (fieldRules); a nick is 1-8 of a-z0-9, one agent's alone. Desk verbs, not node verbs.
-  // THE PANE'S TWO TOGGLES (goal/G21.1). Andy, in the item's box: "Row two: the toggles included and cap ... Written by
-  // Andy alone; every agent may read every pane." So profile.set takes included and cap, each optional (left out, it
-  // keeps what the profile held, on for a profile never set), and profile.get answers them. A name or nick left empty
-  // is no name or no nick (the label shows; nothing is addressed), so he can set a toggle before he names the agent.
-  // THE DESK OWNER MARK (goal/G47.5; Andy: "the checkmark in the agent-bubble that can only be set via loopback"; Q7):
-  // owner, optional and kept when left out as included and cap are; changed only by the owner on his node's loopback.
-  'profile.set': {
-    request: { agent: '', name: '', nick: '', included: true, cap: true, owner: false }, reply: { change: 0 },
-    accepts: function (x) {
-      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
-      const known = ['agent', 'name', 'nick', 'included', 'cap', 'owner'];
-      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) &&
-        typeof x.agent === 'string' && typeof x.name === 'string' && typeof x.nick === 'string' &&
-        (x.included === undefined || typeof x.included === 'boolean') && (x.cap === undefined || typeof x.cap === 'boolean') &&
-        (x.owner === undefined || typeof x.owner === 'boolean');
-    },
-    handler: function (a, caller) {
-      ownerOnly(caller);
-      const w = writerOf(caller);
-      if (!a.agent) throw refusedWhy('bad-request', 'a profile names its agent by key');
-      if (a.name !== '' && fieldWhy('name', a.name)) throw refusedWhy('bad-request', fieldWhy('name', a.name));
-      if (a.nick !== '' && !/^[a-z0-9]{1,8}$/.test(a.nick)) throw refusedWhy('bad-request', 'a nick is 1 to 8 of a-z and 0-9');
-      const st = walkState();
-      const held = st.profiles;
-      if (a.nick !== '' && Object.keys(held).some(function (k) { return k !== a.agent && held[k].nick === a.nick; })) throw refused('taken');
-      const was = profileOf(st, a.agent);
-      const included = typeof a.included === 'boolean' ? a.included : was.included;
-      const cap = typeof a.cap === 'boolean' ? a.cap : was.cap;
-      const owner = typeof a.owner === 'boolean' ? a.owner : was.owner;
-      if (owner !== was.owner && caller.loopback !== true) throw refusedWhy('not-owner', 'the desk owner mark is set by the owner on his own node\'s loopback alone');
-      return { change: write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, included: included, cap: cap, owner: owner, by: w.by, key: w.key }).change };
-    },
-  },
-  'profile.get': {
-    request: { agent: '' }, reply: { name: '', nick: '', included: true, cap: true, owner: false },
-    handler: function (a, caller) {
-      return profileOf(walkState(), a.agent || writerOf(caller).key);
-    },
-  },
-  // TAKING THE BOX (goal/G4.20 point 9): an agent takes the box before a change it will write (cap, split, an
-  // update), and the box is drawn red until its write. First wins; another agent's take is refused taken.
-  // SINCE goal/G9.3 HE TAKES IT TOO, and a take is freed by box.release as well as by the taker's write.
-  // A desk verb, not a node verb.
-  'box.take': {
-    request: { id: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      // HE TAKES IT TOO (goal/G9.3). Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the
-      // user. When the user activates that input area, the area is \"taken\" by the user, and not modifiable for
-      // agents."
-      const st = walkState();
-      const it = st.items[String(a.id)];
-      if (!it) throw refused('no-such-item');
-      mayWrite(st, w);
-      // A HOLD IS ONE AGENT'S (goal/G21.1), among agents. HE IS NEVER REFUSED (goal/G43.3; Andy, the box: "desk cannot
-      // refuse the box to the user."): his take replaces an agent's, which replaces "Andy included" of G21.1.
-      if (w.by !== 'andy' && it.boxTakenBy && !holdsBox(it, w)) {
-        if (it.boxHoldUntil) throw refusedWhy('taken', 'the box of ' + a.id + ' is held for ' + (nameOfKey(st, it.boxTakenKey) || it.boxTakenBy) + ' for one write, or until its minute is over');
-        throw refused('taken');
-      }
-      // Its holder taking it again changes nothing: the hold and its minute stand.
-      if (it.boxTakenBy && holdsBox(it, w) && it.boxHoldUntil) return { change: st.change };
-      // HIS CAP OFFERED (goal/G21.1): "the first to take it holds it under the one-write rule"; an agent with cap off
-      // "gets a cap only when addressed by its nick". He is no agent: his own take is a plain take.
-      const body = { id: a.id, by: w.by, key: w.key };
-      if (it.capOffer && !it.boxTakenBy && w.by !== 'andy') {
-        if (it.capOffer.indexOf(w.key) === -1) throw refusedWhy('taken', 'the cap on ' + a.id + ' is offered to the agents with cap on; ' + w.by + ' has cap off (or was not included) and gets a cap only by its nick');
-        body.hold = true;
-      }
-      return { change: write('box.take', body).change };
-    },
-  },
-  // THE FILES AN AGENT TOUCHED (goal/G8.8). Andy, 2026-10-09: "ideally written by the claiming agent. the coding agent
-  // and the testing agent should be adding files they test/touch in a list that can be fetched per item.", "the list
-  // should be owned by the item. so updates to it are available to all participants.", and "all files that need a
-  // grant should get one 'grant' button together." So: each writer keeps its own list on the item; the list is
-  // item.files' own answer (item.get carries only fileCount). No core grant (Andy, 2026-11-17). A desk verb, and his ruling of
-  // 2026-10-09 is that a desk verb needs no grant of his "until i rule this app 'intrinsic'".
-  // ONE ROW A WRITE (goal/G40.3; the verbs Andy approved: "yes to the named verbs"): item.files.add and .remove take one
-  // path of the writer's own list. Each refuses a path already there or not there, naming it.
-  // goal/G41.11: or a list of paths in one write (filesAddVerb).
-  'item.files.add': filesAddVerb(listRowVerb('item.files.add', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, true)),
-  'item.files.remove': listRowVerb('item.files.remove', function (it, w, p) { return !!(it.files && Array.isArray(it.files[w.by]) && it.files[w.by].indexOf(p) !== -1); }, false),
-  // LETTING IT GO WITHOUT A WRITE (goal/G9.3). Andy, 2026-10-07: "When the user clicks outside of that text box, and
-  // deactivates the input, also by leaving the details dialog, the box input is released from the take." Only the
-  // holder releases: another caller is refused taken, so nobody takes a box out of somebody's hands.
-  'box.release': {
-    request: { id: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const st = walkState();
-      const it = st.items[String(a.id)];
-      if (!it) throw refused('no-such-item');
-      mayWrite(st, w);
-      if (!it.boxTakenBy) return { change: st.change };
-      if (!holdsBox(it, w)) throw refused('taken');
-      return { change: write('box.release', { id: a.id, by: w.by, key: w.key }).change };
-    },
-  },
-  // TAKING HIS LINE (goal/G2.2 note 2, goal/G21.6): an agent takes the newest line of Andy's under an item that is not
-  // taken and is addressed to it or to nobody, and is the only one to answer that line, once. First wins; with no such
-  // line the take is refused taken; an item with no line of his refuses no-row.
-  'line.take': {
-    request: { id: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      if (w.by === 'andy') throw refusedWhy('bad-request', 'a line is taken by an agent, not by Andy');
-      const st = walkState();
-      const it = st.items[String(a.id)];
-      if (!it) throw refused('no-such-item');
-      mayWrite(st, w);
-      // AN OPEN TAKE STANDS (goal/G21.1, goal/G21.6): a line its nick bound to it, or one it took and has not answered
-      // yet; its next post answers that take. A bound line taken for the first time is written .
-      if (holdsTake(it, w)) {
-        if (!openTakes(it).some(function (l) { return tookLine(l, w) && !l.took; })) return { change: st.change };
-        return { change: write('line.take', { id: a.id, by: w.by, key: w.key }).change };
-      }
-      let his = null;
-      for (let i = it.chat.length - 1; i >= 0; i--) { if (it.chat[i].by === 'andy') { his = it.chat[i]; break; } }
-      // AN AGENT'S LINE IS NEVER TAKEN (goal/G21.4). Andy, in the item's box: "An agent's answer is never takeable: no
-      // agent answers another agent. A second answer comes only when Andy asks for it by naming the agent." Decided by
-      // Andy, not by this file.
-      if (!his) throw refusedWhy('no-row', it.chat.length ? 'there is no line of Andy\'s under ' + a.id + ': only his lines are taken, an agent\'s line never is' : 'there is no line of Andy\'s under ' + a.id + ' to take');
-      // THE NEWEST LINE OF HIS THAT IS THE AGENT'S TO TAKE (goal/G21.6, takeableLine). Andy's decision, in the item's
-      // box: not only his latest line; one addressed to another agent stays never takeable (goal/G21.1), and one taken
-      // already is its taker's, answered or not. With none left, the refusal says so and what his latest line is.
-      if (!takeableLine(it, w.key)) {
-        const none = 'no line of Andy\'s under ' + a.id + ' is left for ' + w.by + ' to take: every one is taken or addressed to another agent. ';
-        if (Array.isArray(his.to) && his.to.indexOf(w.key) === -1) throw refusedWhy('taken', none + 'Andy\'s latest line under ' + a.id + ' is addressed to another agent');
-        if (!his.answered) throw refusedWhy('taken', none + 'Andy\'s latest line under ' + a.id + ' is taken by ' + (nameOfKey(st, his.takenKey) || his.taken) + ', and it is theirs to answer');
-        throw refusedWhy('taken', none + 'Andy\'s latest line under ' + a.id + ' was taken and answered by ' + (nameOfKey(st, his.takenKey) || his.taken) + ': what follows it is an agent\'s answer, and an agent\'s answer is never taken; a second answer comes only when Andy names the agent');
-      }
-      return { change: write('line.take', { id: a.id, by: w.by, key: w.key }).change };
-    },
-  },
   // Presses are records, not lines (Andy: "a press shouldn't post a line, it
   // is not textual information"). Go!, Close and Reopen only when offered;
   // done also by Andy alone ("completions ... can be forced by the user"),
@@ -2891,68 +1474,7 @@ appServer.serve(withDeskOwners({
       return { change: landed.change };
     },
   },
-  // A CLAIM WITH ITS COMMIT (goal/G19.13). Andy, 2026-10-12: "these push things, when you report a claim on code, it
-  // should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet... ?";
-  // to claim {id, commit} as one verb: "better. that closes the door on half-ass claims."; and "and why are the reds not
-  // claimed as complete that way, so the verifier can check them, they should be red. at the time", "yes" to the red
-  // phase ending with its own commit.
-  //   phase build  the press claim-done, through the same checks (pressCheck), and the record carries the commit.
-  //   phase red    the red is claimed at that commit. No Done follows from it. Only on a code item with his Go.
-  //   commit       7 to 40 hex characters; '' only for a plain item's build claim, which has no code to carry.
-  // An agent verb, told to the agents by family/claim.json. press claim-done stays for his pages and the callers that
-  // have no commit. Every refusal says why.
-  'claim': {
-    request: { id: '', phase: '', commit: '' }, reply: { change: 0 },
-    accepts: function (a) {
-      if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
-      if (Object.keys(a).sort().join(',') !== 'commit,id,phase') return false;
-      return typeof a.id === 'string' && typeof a.phase === 'string' && typeof a.commit === 'string';
-    },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const id = String(a.id);
-      const phase = String(a.phase);
-      const commit = String(a.commit);
-      if (phase !== 'build' && phase !== 'red') throw refusedWhy('bad-request', 'a claim\'s phase is build or red, not ' + JSON.stringify(phase));
-      if (commit !== '' && !/^[0-9a-f]{7,40}$/.test(commit)) throw refusedWhy('bad-request', 'a commit is 7 to 40 hex characters (lower case), not ' + JSON.stringify(commit));
-      const st0 = walkState();
-      const it0 = st0.items[id];
-      if (!it0) throw refusedWhy('no-such-item', 'there is no item ' + id + ' on the desk');
-      if (commit === '' && (phase === 'red' || it0.code)) throw refusedWhy('bad-request', 'a ' + (phase === 'red' ? 'red' : 'code item\'s') + ' claim carries the commit it was made at; only a plain item\'s build claim may leave it empty');
-      if (phase === 'red') {
-        if (!it0.code) throw refusedWhy('not-offered', id + ' is not a code item: it has no red phase to claim');
-        if (!it0.go) throw refusedWhy('not-offered', 'no Go is on record for ' + id + ', so its red is not claimable yet');
-      }
-      const body = { id: id, phase: phase, commit: commit, by: w.by, key: w.key };
-      // THE SAME CHECKS AS THE PRESS (goal/G19.13): a build claim is refused exactly where press claim-done is.
-      const landed = write('claim', body, phase === 'build' ? pressCheck({ id: id, what: 'claim-done' }) : null);
-      if (phase === 'build') emptiedByPress({ id: id });
-      // A BUILD CLAIM PULLS THE CHECKOUT BEFORE IT ANSWERS (goal/G41.22), so what is checked is what was claimed.
-      if (phase === 'build') return pullOwnRepo(id).then(function () { return { change: landed.change }; });
-      pullOwnRepo(id);
-      return { change: landed.change };
-    },
-  },
-  // No state.get or state.set (goal/G33.7, the approved verb list: nothing calls them).
-  // SEEN, ONE ROW PER ITEM (goal/G33.7, the approved list: "one row per item, not one growing document"): the arrival
-  // time of the newest thing he has looked at under the item, kept in the item's row: a UTC time, milliseconds since 1970
-  // (goal/G48.4, Q5, Andy: "times are fucking numbers ... spirit.type.number.UTC"), 0 for none.
-  'seen.get': {
-    request: { id: '' }, reply: { at: 0 },
-    handler: function (a) { const at = itemFor(walkState(), a).seenAt; return { at: typeof at === 'number' ? at : 0 }; },
-  },
-  'seen.set': {
-    request: { id: '', at: 0 }, reply: { change: 0 },
-    handler: function (a, caller) {
-      const w = writerOf(caller);
-      const it = itemFor(walkState(), a);
-      // A UTC time, whole milliseconds (spirit.type.number.UTC); one no newer than the one kept changes nothing.
-      if (typeof a.at !== 'number' || !isFinite(a.at) || Math.floor(a.at) !== a.at) throw refusedWhy('bad-request', 'at is a UTC time, milliseconds since 1970');
-      if (a.at <= (typeof it.seenAt === 'number' ? it.seenAt : 0)) return { change: walkState().change };
-      return { change: write('seen.set', { id: it.id, at: a.at, by: w.by, key: w.key }).change };
-    },
-  },
-}),
+},
 
 // ── THE DESK'S OWN REFUSALS (goal/G16.11) ───────────────────────────
 //
@@ -2966,21 +1488,13 @@ appServer.serve(withDeskOwners({
 // app as listener? how can that be if it is the appServer.js that does the publishing???"): each subscriber names its
 // own, and appServer keeps it (clientListeners.json).
 { publisher: { bootstrap: function () { return deskBootstrap(); }, waitMs: CLIENT_WAIT_MS }, codes: {
-  // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
-  // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
-  'taken': { status: 409, text: 'taken by another agent' },
   // An alteration written against a box version that has moved on (desk/G2.1).
   'box-moved': { status: 409, text: 'the box has changed since that version' },
   'not-offered': { status: 409, text: 'that press is not offered for this item now' },
   'no-such-item': { status: 404, text: 'no such item' },
-  // goal/G21.1: an agent Andy turned off in its pane (included) reads, and every write of it is refused.
-  'not-included': { status: 403, text: 'that agent is not included at the desk' },
-  // goal/G21.4: an agent already holding an item or a phase takes no second until the first is released, claimed or done.
-  'one-task': { status: 409, text: 'that agent already holds another task' },
 } });
 
-// THE PRESS'S CHECKS, ONE COPY (goal/G19.13): what the press handler refuses, as a write() check, so the claim verb's
-// build phase refuses exactly what press claim-done refuses and the two cannot drift apart.
+// THE PRESS'S CHECKS (goal/G19.13): what the press handler refuses, as a write() check.
 function pressCheck(a) {
   return function (st, it) {
     const offered = buttons(st, it);
@@ -2988,7 +1502,6 @@ function pressCheck(a) {
     // Every refusal below names what blocked it (goal/G9.17, change 3), the code staying not-offered.
     if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw notOffered(whyNotOffered(st, it, a.what, offered));
     if (a.what === 'bring-back' && !it.closed) throw notOffered(it.id + ' is not closed, so there is nothing to bring back');
-    if (a.what === 'code' && it.goal) throw notOffered(it.id + ' is a goal, and a goal is never a code item');
     // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
     // on an item with one, a go-all while any item of the goal has one: refused.
     const gOf = st.goals[it.goal ? it.id : it.goalId];
@@ -2996,21 +1509,12 @@ function pressCheck(a) {
     // goal/G33.4: an item's own End design waits for its own green alone.
     const red = a.what === 'end-design' && !it.goal ? notGreen(st, [it.id])
       : (a.what === 'end-design' || a.what === 'go-all') ? notGreen(st, members.concat(it.goal ? [it.id] : [])) : [];
-    // goal/G41.11: each one named with its own why (redWhy): an open red question, or a code item's empty file list.
+    // Each one named with its own why (redWhy).
     if (red.length) throw notOffered(red.map(function (id) { return id + ' ' + redWhy(st.items[id]); }).join('; '));
     if (a.what === 'go' && redWhy(it)) throw notOffered(it.id + ' ' + redWhy(it));
-    // NO CLAIM BEFORE HIS GO (goal/G3.9). Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item
-    // without 'go' on record", "the actual contract is consumed between 'go' and 'done'". It replaces
-    // goal/G2.13's "a claim consumes the Go" for that case. A goal takes the press as before (goal/G2.10).
-    if (a.what === 'claim-done' && !it.goal && !it.go) throw notOffered('no Go is on record for ' + it.id + ', so nothing is claimable');
   };
 }
 
 // THE CURRENT GOAL, WHOLE, ONCE THE DESK SERVES (goal/G33.4). Andy, in the item's box: "a client that was away gets the
 // current goal pushed whole again"; after this desk's own start every client is one that was away from it.
 if (S.current) setImmediate(function () { pushGoalWhole(S.current); });
-// The node's grants: read each time the stream comes up, a restart of the node included, and followed from then on.
-Promise.resolve(spirit.require('spirit/auth/api.js')).then(function () {
-  spirit.data.auth.data.grants.watch(grantChanged);
-  spirit.data.followStream({ onConnection: function (up) { if (up) readGrants(); } });
-}).catch(function (e) { console.error('desk: the grants cannot be followed: ' + ((e && e.message) || e)); });

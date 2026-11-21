@@ -1,6 +1,0 @@
-{
-  "description": "Take Andy's newest untaken line under an item before answering it. One agent answers a line, once; first wins.",
-  "request": {
-    "id": "spirit.type.string.deskId"
-  }
-}

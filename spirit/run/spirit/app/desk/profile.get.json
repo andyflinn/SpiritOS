@@ -1,6 +1,0 @@
-{
-  "description": "Read an agent's profile by key (empty: your own).",
-  "request": {
-    "agent": "spirit.type.string.IDNewSelect"
-  }
-}

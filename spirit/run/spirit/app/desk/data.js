@@ -14,12 +14,12 @@
 // every reader, the page, deskDetails and deskClient, asks spirit.data.desk.data (below), never a branch by its name.
 //   desk        id -> the item's facts, as items.search labels them and the List draws them (the trunk)
 //   deskItem    id -> the parts of an item read so far, each on its own: { box, version }, { chat, chatMore },
-//               { checks }, { files, filesMore } (a branch). goal/G33.4 (box v46): a part comes when it is needed, by
+//               { checks } (a branch). goal/G33.4 (box v46): a part comes when it is needed, by
 //               its own read (took), and the side rows the desk pushes keep it current from then on.
 //   deskState/current  the goal the stream last pushed whole;  deskState/change  the newest change number heard
 // The rows come as jobs of module spirit/app/desk: in the page as the desk's publishes, in a server that follows the
 // desk's stream (deskClient) through appServer's listener (spirit/server/app.js), which hands each row in exactly so.
-// One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim); the
+// One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check); the
 // stream's bundles are appServer's, which hands their rows in one by one (goal/G41.12).
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.
 (function family() {
@@ -90,7 +90,6 @@
         return;
       }
       if (o.table === 'checks') {
-        if (!Array.isArray(whole.checks)) return;
         // The panel holds the open and the decided ones, never the answered or cleared (desk.js shownChecks).
         var number = o.removed ? String(o.at || '') : String((o.row && o.row.number) || '');
         var checks = (whole.checks || []).filter(function (c) { return c.number !== number; });
@@ -103,24 +102,6 @@
         }
         keep(id, { checks: checks });
         return;
-      }
-      if (o.table === 'files') {
-        if (!Array.isArray(whole.files)) return;
-        // A file row is one agent's path: removed names it as holder|path.
-        var gone = o.removed ? String(o.at || '') : '';
-        var files = (whole.files || []).filter(function (f) {
-          return gone ? f.by + '|' + f.path !== gone : !(o.row && f.by === o.row.by && f.path === o.row.path);
-        });
-        // A FILE ADDED AFTER GO KEEPS ITS MARK (goal/G41.11): the desk marks it late: true (desk.js isLate), and the entry
-        // rebuilt here carries it, as item.files answers it.
-        if (!o.removed && o.row) {
-          var entry = { path: String(o.row.path), by: String(o.row.by) };
-          if (o.row.late === true) entry.late = true;
-          files.push(entry);
-        }
-        // By path (desk.js item.files). No core mark (Andy, 2026-11-17: "toss that shit from desk").
-        files.sort(function (a, b) { return a.path < b.path ? -1 : a.path > b.path ? 1 : 0; });
-        keep(id, { files: files, filesMore: false });
       }
     }
     function published(o) {
@@ -146,9 +127,9 @@
       rowOf(o, it);
     }
 
-    // A PART READ WHEN NEEDED (goal/G33.4, box v46): the answer of item.box, item.chat (its newest lines), item.checks or
-    // item.files (all of them) for an item of the current goal, kept from now on beside its facts. A read of anything
-    // narrower (an older page of chat, files under a folder) is not a part and is not kept.
+    // A PART READ WHEN NEEDED (goal/G33.4, box v46): the answer of item.box, item.chat (its newest lines) or item.checks
+    // for an item of the current goal, kept from now on beside its facts. A read of anything narrower (an older page of
+    // chat) is not a part and is not kept.
     // A part is kept only for an item of the goal the stream pushed: what the push does not keep current
     // is never kept, so a client the stream does not reach asks the desk every time and is never stale.
     function took(verb, args, answer) {
@@ -162,7 +143,6 @@
       if (verb === 'item.box' && typeof answer.box === 'string') keep(id, { box: answer.box, version: Number(answer.version) || 0 });
       else if (verb === 'item.chat' && Array.isArray(answer.chat)) keep(id, { chat: answer.chat, chatMore: answer.chatMore === true });
       else if (verb === 'item.checks' && Array.isArray(answer.checks)) keep(id, { checks: answer.checks });
-      else if (verb === 'item.files' && Array.isArray(answer.files) && !(args && args.under)) keep(id, { files: answer.files, filesMore: answer.filesMore === true });
     }
 
     D.addTranslator({
