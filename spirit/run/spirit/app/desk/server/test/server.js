@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
@@ -36,7 +36,7 @@ function folderGone(dir) {
 // goal/G41.24, Andy: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself."
 function deskFiles(dir) { const out = []; (function walk(d) { fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) { const f = path.join(d, e.name); if (e.isDirectory()) { if (e.name !== 'test' && e.name !== 'node_modules') walk(f); } else if (/\.(js|json)$/.test(e.name)) out.push(f); }); }(dir)); return out; }
 test.run('the desk server has no bundled() of its own', 0.2, function () {
-  const deskJs = code(path.join(DESK, 'desk/server/server.js'));
+  const deskJs = code(path.join(DESK, 'server', 'server.js'));
   return (!!deskJs && !/function\s+bundled\s*\(/.test(deskJs)) || false;
 }, test.limit.quick);
 test.run('nothing in the desk folder names DEPENDENCIES or hands serve() a dependencies list', 0.2, function () {
@@ -65,11 +65,11 @@ test.run('the old shell\'s stackFrameCheckDetail folder is gone', 0.2, function 
 
 // Andy: "removal of plugin support.", and "G0 goes, from ui and server"
 test.run('desk.js mounts no plugin and asks none for a refusal', 0.2, function () {
-  const desk = code(path.join(DESK, 'desk/server/server.js'));
+  const desk = code(path.join(DESK, 'server', 'server.js'));
   return (!!desk && !/plugins|PLUGIN/.test(desk)) || false;
 }, test.limit.quick);
 test.run('desk.js knows no team chat goal, goal/G0', 0.2, function () {
-  const desk = code(path.join(DESK, 'desk/server/server.js'));
+  const desk = code(path.join(DESK, 'server', 'server.js'));
   return (!!desk && !/goal\/G0['"]/.test(desk)) || false;
 }, test.limit.quick);
 

@@ -1031,7 +1031,7 @@ function mountPart() {
       "  const STATE = process.argv[process.argv.indexOf('--state') + 1];",
       "  fs.mkdirSync(STATE, { recursive: true });",
       "  fs.writeFileSync(path.join(STATE, 'started.txt'), String(process.pid));",
-      "  require('../../appServer.js').serve({ ping: { request: {}, reply: {}, handler: function () { return { pid: process.pid, state: STATE }; } } }, {});",
+      "  require('../../server/app.js').serve({ ping: { request: {}, reply: {}, handler: function () { return { pid: process.pid, state: STATE }; } } }, {});",
       '}',
     ].join('\n') + '\n');
     fs.writeFileSync(path.join(dir, 'helper.js'), "require('fs').writeFileSync(process.argv[2], 'ran');\n");
@@ -1069,7 +1069,7 @@ function mountPart() {
     fs.writeFileSync(path.join(follow, 'follower.js'), [
       "require('../../spirit.js');",
       "const path = require('path');",
-      "require('../../appServer.js').serve({}, { stream: { translator: path.join(__dirname, 'followerRows.js'), cache: true, module: 'a.test' } });",
+      "require('../../server/app.js').serve({}, { stream: { translator: path.join(__dirname, 'followerRows.js'), cache: true, module: 'a.test' } });",
     ].join('\n') + '\n');
     return { root: root, run: run };
   }

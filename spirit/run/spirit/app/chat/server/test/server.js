@@ -11,12 +11,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
-const FILE = path.join(__dirname, '..', 'chat/server/server.js');
+const FILE = path.join(__dirname, '..', 'server.js');
 
 // A file's code, comments blanked; '' when it is not there.
 function code(f) {

@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const Module = require('module');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
@@ -31,10 +31,10 @@ test.after(function () {
   OPEN_DBS.forEach(function (d) { try { d.close(); } catch (e) { /* closed */ } });
   try { require('fs').rmSync(tempFolder.path('spirit/app/deskClient/test/deskClient'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
 });
-const FILE = path.join(__dirname, '..', 'deskClient.js');
+const FILE = path.join(__dirname, '..', 'server.js');
 // The family paths, as the one function names them (goal/G41.12).
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
-const API = path.join(__dirname, '..', 'api.js');
+const API = path.join(__dirname, '..', '..', 'api.js');
 
 const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -122,7 +122,7 @@ globalThis.spirit = {
     if (/spirit\/contact\/api\.js$/.test(p)) return Promise.resolve({ get: function () { return Promise.resolve({ person: { blocked: true } }); } });
     // goal/G43.32, decided 3: on the node spirit.require is a path-translating wrapper, a script's module at once;
     // appServer is the stand-in above.
-    if (/(^|\/)appServer\.js$/.test(p)) return appServerStub;
+    if (/(^|[\\/])server[\\/]app\.js$/.test(p)) return appServerStub;
     if (!/\/api\.js$/.test(p)) return require(path.join(RUN, p));
     return Promise.resolve({});
   },
@@ -138,7 +138,8 @@ globalThis.spirit.event = { subscribe: function (h) { eventSubscribers.push(h); 
 const realLoad = Module._load;
 Module._load = function (request, parent, isMain) {
   if (/(^|\/)spirit\.js$/.test(request) && parent && parent.filename === FILE) return globalThis.spirit;
-  if (/(^|\/)appServer\.js$/.test(request)) return appServerStub;
+  // The app server module, at its path since goal/G48.5: spirit/server/app.js.
+  if (/(^|[\\/])server[\\/]app\.js$/.test(request)) return appServerStub;
   // The node's own chokidar component (spirit/job/chokidar/), as deskClient.js requires it.
   // goal/G43.32: spirit.require hands node the run-root path made whole, so on Windows its separators are backslashes.
   if (request === 'chokidar' || /(^|[\\/])chokidar[\\/]index\.js$/.test(request)) return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
@@ -686,7 +687,7 @@ test.run('nothing the agent already read comes back in the next wake', 0.2, func
 // itself is spirit/test/job.js, its vendoredLibraries part. The watcher run in a child process on a scratch folder inside
 // spirit/run.
 const REPO = path.resolve(RUN, '..', '..');
-const CHOKIDAR_USER = 'spirit/run/spirit/app/deskClient/deskClient.js';
+const CHOKIDAR_USER = 'spirit/run/spirit/app/deskClient/server/server.js';
 function codeOf(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
 // 3. the two users require it by path: deskClient.js here, job.js in spirit/test/job.js
 test.run('it requires chokidar by a path that is spirit/job/chokidar/index.js', 0.2, function () {

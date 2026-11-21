@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
@@ -20,10 +20,10 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/tes
 // Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
 const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 
-const DIR = path.join(__dirname, '..');
+const DIR = path.join(__dirname, '..', '..');
 const SERVER = path.join(DIR, 'agent.js');
 // The server's own code: agent.js only loads it in a node (goal/G43.13).
-const CODE = path.join(DIR, 'agent/server/server.js');
+const CODE = path.join(DIR, 'server', 'server.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

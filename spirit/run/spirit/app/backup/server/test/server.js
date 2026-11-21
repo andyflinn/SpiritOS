@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
