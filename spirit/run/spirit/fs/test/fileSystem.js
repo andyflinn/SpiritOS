@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/fileSystem.js
-// The tests of spirit/fileSystem.js, and of no other module (spec: ./fileSystem.md). This file holds its two gates,
+// spirit/run/spirit/fs/test/fileSystem.js
+// The tests of spirit/fs/fileSystem.js, and of no other module (spec: ./fileSystem.md). This file holds its two gates,
 // fileServable (can a path be read) and fileWritable (can it be written), against a path spelled in another case
 // (goal/G41.30; Andy, 2026-11-02: "Path gates are case-sensitive, so on Windows and macOS GET /Relay-State/identity.json
 // serves the private keys"). On those disks a name in any case opens the same file, so a gate that refuses
@@ -11,9 +11,22 @@
 // fileSystem-vendoredFolders.js, are sections of it, run after its own checks.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const FS = require(path.join(RUN, 'spirit', 'fileSystem.js'));
+// THE FILE MOVED (goal/G49.1; Andy: "spirit/fileSystem.js moves to spirit/fs/fileSystem.js", "THEN FUCKING MOVE IT!"): read at
+// its new place, and every check below red, never a crash, while it does not stand there.
+let FS = {};
+try { FS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')); } catch (e) { FS = {}; }
+test.run('spirit/fs/fileSystem.js stands, and spirit/fileSystem.js is gone', 0.8, function () {
+  return (fs.existsSync(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')) && !fs.existsSync(path.join(RUN, 'spirit', 'fs', 'fileSystem.js'))) || false;
+}, test.limit.quick);
+test.run('fileServable refuses spirit/fs/fileSystem.js at its new place, in any case', 0.8, function () {
+  const p = 'spirit/fs/fileSystem.js';
+  return (typeof FS.fileServable === 'function' && FS.fileServable(p) === false && FS.fileServable(p.toUpperCase()) === false) || false;
+}, test.limit.quick);
+test.run('fileServable still serves the fs family\'s api.js and data.js beside it, which pages load', 0.8, function () {
+  return (typeof FS.fileServable === 'function' && FS.fileServable('spirit/fs/api.js') === true && FS.fileServable('spirit/fs/data.js') === true) || false;
+}, test.limit.quick);
 
 function ask(fn, p) { try { return FS[fn](p); } catch (e) { return null; } }
 
