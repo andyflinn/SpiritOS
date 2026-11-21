@@ -4,7 +4,7 @@
 // The tests of spirit/app/desk/desk.js, and of no other module (spec: ./desk.md; goal/G41.11). The desk runs as it
 // runs on a node: a process on its own pipe and a state folder of its own, seeded with a goal before it starts. A
 // pretend node stands where Andy's node is: it keeps what the desk publishes for his pages and what it sends each
-// subscribed deskClient, and answers a family's interface the way a node's door does.
+// subscribed desk in client mode, and answers a family's interface the way a node's door does.
 
 const fs = require('fs');
 const path = require('path');
@@ -95,7 +95,7 @@ function plantOldRules(stateDir) {
 function familyOf(body) {
   if (!body || !body.api || typeof body.api.family !== 'string' || !/^[A-Za-z]\w*$/.test(body.api.family)) return null;
   const f = body.api.family;
-  // A node family's, an app's (spirit/app/<name>/api.js, where deskClient is since goal/G43.27), or a server's.
+  // A node family's, an app's (spirit/app/<name>/api.js, goal/G43.27), or a server's.
   const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, 'spirit', 'app', f, 'api.js'), path.join(RUN, require(path.join(RUN, 'spirit', 'spirit.js')).familyPath(f))];
   for (const file of tried) if (fs.existsSync(file)) return { family: f, interface: fs.readFileSync(file, 'utf8') };
   return { ok: false, code: 'no-interface' };
@@ -103,7 +103,7 @@ function familyOf(body) {
 function entriesOf(got) { return Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : []; }
 // ANDY'S NODE AS THE DESK SEES IT, on its one door (POST /api/spirit {verb, ...}): his pages' publishes
 // (event.publish, the row as app) into pages; the event stream peerPost reads its answers on (event.subscribe); a
-// family's interface (api {family}); each post to a deskClient's listener (peer.post) into posts as {to, json},
+// family's interface (api {family}); each post to a subscriber's desk listener (peer.post) into posts as {to, json},
 // every row of it into sent as {to, row}.
 // A job (job.create {command, args}) is started for real, as a node starts it, and kept in jobs with its exit.
 function pretendNode() {
@@ -127,7 +127,8 @@ function pretendNode() {
       let ask = null; try { ask = packet.decode(b.text); } catch (e) { ask = null; }
       const body = (ask && ask.body) || {};
       let answer = familyOf(body);
-      const sl = body.deskClient && body.deskClient.listener;
+      // A subscriber is another node's desk in client mode (goal/G47.5): deskClient went with goal/G48.8.
+      const sl = body.desk && body.desk.listener;
       if (!answer && sl) {
         let got = null; try { got = JSON.parse(sl.json); } catch (e) { got = null; }
         posts.push({ to: String(b.to), json: sl.json, got: got });
@@ -220,7 +221,7 @@ test.run('a desk server starts for this suite', 0.2, async function () {
   for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await W.client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) return false;
   W.up = true;
-  await call('subscribe', { family: 'deskClient' }, CW);
+  await call('subscribe', { family: 'desk' }, CW);
   return true;
 }, test.limit.slow);
 
@@ -238,6 +239,39 @@ test.run('chat.search keeps the lines since a UTC time, and before one', 0.2, as
   const since = said(await call('chat.search', { id: 'goal/G100.1', text: '', by: '', since: mid, before: 0, scope: '' }, CW));
   const before = said(await call('chat.search', { id: 'goal/G100.1', text: '', by: '', since: 0, before: mid, scope: '' }, CW));
   return (since.indexOf('zzNewerLine') !== -1 && since.indexOf('zzOlderLine') === -1 && before.indexOf('zzOlderLine') !== -1 && before.indexOf('zzNewerLine') === -1) || false;
+}, test.limit.quick);
+
+// A LINE'S FIRST WORD IS ITS to (goal/G48.8; Andy: "all desk needs to do is scan for a line starting with a \"word:\" ... and
+// throw it into a \"to\" field, that your wait can check. the field will contain \"all\", \"cw\", \"wsl\" or \"ubi\"", "desk
+// doesn't need to know and we can avoid unnecessary wakes", and of cw's "the first word of every chat line, lowercased, goes
+// into its to, checked against nothing": "agreed, no punctuation."). His lines here are his own forms of today.
+// The chat row a line was published with, as his pages heard it, and as the subscriber cw was sent it.
+const chatRowOf = async function (text) {
+  for (let i = 0; i < 40; i++) {
+    const page = W.node.pages.filter(function (o) { return o && o.table === 'chat' && o.row && o.row.text === text; })[0];
+    const sent = W.node.sent.filter(function (x) { return x.to === CW.key && x.row && x.row.table === 'chat' && x.row.row && x.row.row.text === text; })[0];
+    if (page && sent) return { page: page, sent: sent.row };
+    await sleep(100);
+  }
+  return { page: null, sent: null };
+};
+const toIs = async function (text, word) {
+  if (!W.up) return false;
+  await call('chat.add', { id: 'goal/G100.3', text: text }, ANDY);
+  const r = await chatRowOf(text);
+  return (!!r.page && !!r.sent && r.page.to === word && r.sent.to === word) || false;
+};
+test.run('a line "wsl, look here" is published with to wsl, to his pages and to a subscriber', 0.4, function () {
+  return toIs('wsl, look here', 'wsl');
+}, test.limit.quick);
+test.run('a line "all: your thoughts?" is published with to all', 0.4, function () {
+  return toIs('all: your thoughts?', 'all');
+}, test.limit.quick);
+test.run('a line "cw (a) leaves it clean", its word followed by a space, is published with to cw', 0.4, function () {
+  return toIs('cw (a) leaves it clean', 'cw');
+}, test.limit.quick);
+test.run('a line "The plainest rule" is published with to the, its first word lowercased, checked against nothing', 0.4, function () {
+  return toIs('The plainest rule', 'the');
 }, test.limit.quick);
 
 // RULES GO OUT OF DESK (goal/G47.4, box v36; Andy: "Next we kill rules from desk. nobody observes them", "are we ready to
@@ -347,7 +381,7 @@ const FRESH = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestFRESH'.padEnd(43, 'A')
 test.run('a subscribe with no since brings the current goal\'s facts whole, the goal and each of its six items', 0.2, async function () {
   if (!W.up) return false;
   const f0 = W.node.sent.length;
-  const plain = await call('subscribe', { family: 'deskClient' }, FRESH);
+  const plain = await call('subscribe', { family: 'desk' }, FRESH);
   W.plainEnded = await waitEnd(FRESH.key, f0);
   W.plainRows = rowsTo(FRESH.key, f0);
   const plainIds = wholeOf(W.plainRows).map(function (r) { return String(r.item.id); });
@@ -361,7 +395,7 @@ test.run('a subscribe with no since brings no chat line, check or box, since it 
 test.run('a subscribe with since 0 is the same as one with no since', 0.2, async function () {
   if (!W.up) return false;
   const zero = W.node.sent.length;
-  await call('subscribe', { family: 'deskClient', since: 0 }, FRESH);
+  await call('subscribe', { family: 'desk', since: 0 }, FRESH);
   await waitEnd(FRESH.key, zero);
   return (sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length) || false;
 }, test.limit.quick);

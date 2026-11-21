@@ -15,6 +15,13 @@ nick and ALL, the auto-cap and the box hold, the phase wake, the agent bubbles a
 and the desk-owner mark went with them, and the seeded items carry no blocks.
 
 - His Go on an item with no file listed is taken; there is no code press.
+- **A line's first word is its `to`** (Andy: *"all desk needs to do is scan for a line starting with a \"word:\" ... and
+  throw it into a \"to\" field, that your wait can check"*, *"desk doesn't need to know"*; of cw's *"the first word of
+  every chat line, lowercased, goes into its to, checked against nothing"*: *"agreed, no punctuation."*): his lines
+  "wsl, look here", "all: your thoughts?", "cw (a) leaves it clean" and "The plainest rule" are published, to his pages
+  and to a subscriber, with `to` wsl, all, cw and the.
+- A subscriber is another node's desk in client mode (`subscribe {family: desk}`, its deliveries to `desk.listener`),
+  since deskClient went.
 
 ## Requirements (goal/G47.1, Q16): no old versions are kept
 
