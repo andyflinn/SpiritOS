@@ -75,11 +75,13 @@ function dayOf(at) { return at.toLocaleDateString('en-US', { weekday: 'long', ye
 // outstanding issues in the test database.", "The leading module responsible for that count is <full-module-name>.", "The
 // leading test suite contributing to the error count is <full-suite-name>."): from issues { count, module, suite }, each
 // leader { name, count } or null; none when publishData read no test state; the two leaders left out when nothing is red.
+// EACH LEADER WITH ITS OWN COUNT (Andy: "fix my bullets to also reflect the errors contributed by the leading script and
+// suite."): "..., with <n> of them."
 function issuesOf(issues) {
   if (!issues) return [];
   const out = ['- The product tree, right now, has ' + n(issues.count) + ' outstanding issues in the test database.'];
-  if (issues.module) out.push('- The leading module responsible for that count is ' + issues.module.name + '.');
-  if (issues.suite) out.push('- The leading test suite contributing to the error count is ' + issues.suite.name + '.');
+  if (issues.module) out.push('- The leading module responsible for that count is ' + issues.module.name + ', with ' + n(issues.module.count) + ' of them.');
+  if (issues.suite) out.push('- The leading test suite contributing to the error count is ' + issues.suite.name + ', with ' + n(issues.suite.count) + ' of them.');
   return out;
 }
 function write(out, platform, facts) {
