@@ -48,6 +48,9 @@ every other sub-folder `spirit/app/<name>/`:
   json description file for each verb it serves."* An app with a server has an `api.js`. With one, it loads and declares
   verbs and `data.js` is there. Each verb's `<verb>.json` is judged by `spirit-sibling-general.js` on every branch, apps
   and system alike, both ways and with its arguments (goal/G47.4).
+- Rule 8 (goal/G48.8; Andy: *"wsl, let the verb list be checked by a general test like app-child-general"*): what the
+  console offers at `spirit.app.<name>`, asked of `spirit/console/command.js`'s `verbsAt`, is the app's `api.js` verbs,
+  and beside them `remote` and `DEBUG`, the auto-verbs every app server serves, when the app has a server, and only then.
 
 ## What its test must try to break
 
@@ -57,6 +60,7 @@ every other sub-folder `spirit/app/<name>/`:
 - A face whose main element is `<name>.js` or `browser<Name>.js` instead of `element.js`.
 - An element left in an intrinsic app's folder, or outside a non-intrinsic app's `element/`.
 - A verb served with no description file, or an app with a server and no `api.js`.
+- The console offering `remote` or `DEBUG` on an app with no server, or leaving out a verb of its `api.js`.
 
 What a placed element does on a page is judged by `spirit-sibling-browser.js`; what an `api.js` serves, by
 `spirit-sibling-general.js (branchRules)`.

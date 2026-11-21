@@ -190,13 +190,15 @@ test.run('"api item.get" at spirit.app.desk answers item.get.json\'s description
   const o = json(p.out);
   return (describes(p.out, 'item.get', fileOf('app/desk', 'item.get')) && /\bid=/.test(o.usage)) || false;
 }, test.limit.slow);
-// THE AUTO-VERBS BESIDE THEM (goal/G48.8, wsl: "the console lists only api.js verbs, so the auto-verb remote cannot be called
-// from it"; Andy: "cw, fix the console. push it"): every app server's remote and DEBUG, which no api.js lists.
-test.run('"api" at spirit.app.desk lists the desk branch\'s verbs and the auto-verbs remote and DEBUG, sorted', 0.4, async function () {
+// WHAT IT LISTS IS WHAT THE CONSOLE OFFERS (goal/G48.8; Andy: "wsl, let the verb list be checked by a general test like
+// app-child-general"): which verbs those are, an app's api.js verbs and its server's auto-verbs, is judged for every app by
+// spirit/test/app-child-general.js (rule 8); here "api" prints that same list, sorted.
+test.run('"api" at spirit.app.desk prints the verbs the console offers there, sorted', 0.4, async function () {
   if (!up() || at() !== 'app.desk') return false;
   const p = await go('api');
-  const listed = verbsOf('app/desk');
-  const want = listed ? listed.concat(['remote', 'DEBUG']).sort() : null;
+  let offered = null;
+  try { offered = await require(path.join(RUN, 'spirit', 'console', 'command.js')).verbsAt('app.desk'); } catch (e) { offered = null; }
+  const want = offered && typeof offered === 'object' ? Object.keys(offered).sort() : null;
   return (!!want && JSON.stringify(json(p.out)) === JSON.stringify(want)) || false;
 }, test.limit.slow);
 test.run('"api" at spirit.app.agent.test, a folder with no api.js, answers a JSON error', 0.4, async function () {

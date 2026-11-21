@@ -236,6 +236,26 @@ function appRules(all) {
       return each(served, function (f) { return (isFile(f.dir + '/server/server.js') && /server\/server\.js/.test(code(f.dir + '/' + f.n + '.js'))) ? true : false; });
     }, test.limit.quick);
   }
+  // Rule 8 (goal/G48.8; Andy: "wsl, let the verb list be checked by a general test like app-child-general"): what the console
+  // offers at spirit.app.<name> is the app's api.js verbs, and beside them the auto-verbs every app server serves, remote and
+  // DEBUG (spirit/server/app.js), when the app has a server, and only then. Asked of the console's own verbsAt.
+  if (withApi.length) {
+    test.run('the console offers at spirit.app.<name> its api.js verbs, and remote and DEBUG when it has a server', 0.4, async function () {
+      let console0 = null;
+      try { console0 = require(path.join(RUN, 'spirit', 'console', 'command.js')); } catch (e) { console0 = null; }
+      if (!console0 || typeof console0.verbsAt !== 'function') return false;
+      const sorted = function (l) { return JSON.stringify(l.slice().sort()); };
+      for (const f of withApi) {
+        const own = apiVerbs(f);
+        let offered = null;
+        try { offered = await console0.verbsAt('app.' + f.n); } catch (e) { offered = null; }
+        if (!own || !offered || typeof offered !== 'object') return false;
+        const want = f.server ? own.concat(['remote', 'DEBUG']) : own;
+        if (sorted(Object.keys(offered)) !== sorted(want)) return false;
+      }
+      return true;
+    }, test.limit.slow);
+  }
 }
 
 // The sub-folders.

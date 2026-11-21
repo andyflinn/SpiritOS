@@ -61,8 +61,9 @@ by the node's packet encoder, as a peer's call lands. The branch is a made-up zz
 
 wsl's three, and Andy: *"cw, fix the console. push it"*; then cw's own fix of the wait's state (200159f0):
 
-- `api` at spirit.app.desk lists the desk branch's api.js verbs and every app server's auto-verbs, remote and DEBUG,
-  sorted;
+- `api` at spirit.app.desk prints the verbs the console offers there (its verbsAt), sorted; which verbs those are, for
+  every app, is spirit/test/app-child-general.js's rule 8 (Andy: *"let the verb list be checked by a general test like
+  app-child-general"*);
 - a double quote typed `\"` inside a quoted value arrives as one: `setDescription description="a \"quoted\" word"`;
 - at spirit.app, `active key=icons active=true` answers ok, through the function the branch's api.js names for it;
 - a wait-row added while a wait runs, with a row arriving meanwhile, is still in `wait list` once that wait has ended.
