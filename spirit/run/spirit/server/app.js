@@ -629,7 +629,10 @@ function withStreamListener(verbs, stream, followed, name) {
 // Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
 // subscriber, never named. publish(row) puts the row on the node's job stream for its pages, as it always has, and hands
 // the same row to every subscriber through its family's listener over peerPost (spirit.require with a key: no packet
-// built here); a row naming keys in to goes to those subscribers alone. In order per subscriber.
+// built here). In order per subscriber.
+// EVERY ROW TO EVERY SUBSCRIBER (goal/G48.8; Andy: "the MOTHERFUCKING server/app.js HAS BEEN MOTHERFUCKING POLLUTED WITH
+// MOTHERFUCKING APP-SPECIFIC FUCKING GARBAGE", "GET RID OF THAT FUCKING SHIT IN THE APPSERVER!"): this file reads no field
+// of a published row: whom a row is for is the row's own data, read by whoever receives it.
 // ROWS THAT BACK UP GO TOGETHER (box v15: "the server its publishings when they back up"; "A bundle is a JSON array of
 // rows in one peerPost, as many as a sized probability bucket fits in one answer"): while one bundle is in flight, the
 // rows behind it wait, and the next bundle takes as many of them as fit.
@@ -672,7 +675,6 @@ let published = 0;
 const log = [];                  // { run, n, row }, oldest first, bounded by publisher.logMax
 // A server family's interface: the one family path function (spirit.js, goal/G41.12), handed out by this file too.
 function familyPath(name) { return spirit.familyPath(name); }
-function forKey(row, key) { return !(row && Array.isArray(row.to)) || row.to.map(String).indexOf(key) !== -1; }
 function deliver(key, q, bundle) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), with the publisher's own wait.
   return spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (branch) {
@@ -701,7 +703,7 @@ function sendTo(key, entry) {
   pumpTo(key);
 }
 // THE ONE PUBLISH (goal/G33.4, box v43: "the desk server publishes its changes to the browser with the same function
-// that it publishes its changes to the deskClients"). Numbered, logged, and handed to every subscriber it is for.
+// that it publishes its changes to the deskClients"). Numbered, logged, and handed to every subscriber.
 function publish(row) {
   const out = spirit.event.publish(row);
   if (!publisher) return out;
@@ -709,11 +711,11 @@ function publish(row) {
   const entry = { run: RUN_ID, n: published, row: row };
   log.push(entry);
   if (log.length > publisher.logMax) log.splice(0, log.length - publisher.logMax);
-  subscribers.forEach(function (q, key) { if (forKey(row, key)) sendTo(key, entry); });
+  subscribers.forEach(function (q, key) { sendTo(key, entry); });
   return out;
 }
 // A SUBSCRIBE CARRIES THE POSITION (box v15): the run and the number of the last row the subscriber took. Of this run
-// and within the log, it is handed what came after, oldest first, its own rows only, and nothing replaces its cache.
+// and within the log, it is handed what came after, oldest first, and nothing replaces its cache.
 // Anything else (no position, another run, a number older than the log) is a full push: the bootstrap, then its end.
 function subscribe(key, family, run, since) {
   const k = String(key || '');
@@ -721,7 +723,7 @@ function subscribe(key, family, run, since) {
   const n = Number(since);
   const inLog = run === RUN_ID && Number.isInteger(n) && n >= 0 && n <= published && (n === published || (log.length > 0 && n >= log[0].n - 1));
   if (inLog) {
-    log.forEach(function (e) { if (e.n > n && forKey(e.row, k)) sendTo(k, e); });
+    log.forEach(function (e) { if (e.n > n) sendTo(k, e); });
     return true;
   }
   let rows = [];
