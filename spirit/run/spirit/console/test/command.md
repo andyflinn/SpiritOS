@@ -56,3 +56,15 @@ by the node's packet encoder, as a peer's call lands. The branch is a made-up zz
 - `api=zzwait.listener by=andy` wakes on a listener bundle holding an entry by andy, and not on one whose entries are all by bob;
 - a second wait while one runs is refused and ends 1, not as an unknown command, and the first ends by its timeout;
 - `wait remove api=zzwait.ping x=1` takes it out of `wait list`, and the other stays.
+
+## The console fixed (goal/G48.8)
+
+wsl's three, and Andy: *"cw, fix the console. push it"*; then cw's own fix of the wait's state (200159f0):
+
+- `api` at spirit.app.desk lists the desk branch's api.js verbs and every app server's auto-verbs, remote and DEBUG,
+  sorted;
+- a double quote typed `\"` inside a quoted value arrives as one: `setDescription description="a \"quoted\" word"`;
+- at spirit.app, `active key=icons active=true` answers ok, through the function the branch's api.js names for it;
+- a wait-row added while a wait runs, with a row arriving meanwhile, is still in `wait list` once that wait has ended.
+
+All four were red on command.js before the fixes (0cb8dbfb~1).

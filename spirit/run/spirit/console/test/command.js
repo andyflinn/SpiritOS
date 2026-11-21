@@ -190,10 +190,13 @@ test.run('"api item.get" at spirit.app.desk answers item.get.json\'s description
   const o = json(p.out);
   return (describes(p.out, 'item.get', fileOf('app/desk', 'item.get')) && /\bid=/.test(o.usage)) || false;
 }, test.limit.slow);
-test.run('"api" at spirit.app.desk lists the desk branch\'s verbs, sorted', 0.4, async function () {
+// THE AUTO-VERBS BESIDE THEM (goal/G48.8, wsl: "the console lists only api.js verbs, so the auto-verb remote cannot be called
+// from it"; Andy: "cw, fix the console. push it"): every app server's remote and DEBUG, which no api.js lists.
+test.run('"api" at spirit.app.desk lists the desk branch\'s verbs and the auto-verbs remote and DEBUG, sorted', 0.4, async function () {
   if (!up() || at() !== 'app.desk') return false;
   const p = await go('api');
-  const want = verbsOf('app/desk');
+  const listed = verbsOf('app/desk');
+  const want = listed ? listed.concat(['remote', 'DEBUG']).sort() : null;
   return (!!want && JSON.stringify(json(p.out)) === JSON.stringify(want)) || false;
 }, test.limit.slow);
 test.run('"api" at spirit.app.agent.test, a folder with no api.js, answers a JSON error', 0.4, async function () {
@@ -233,6 +236,14 @@ test.run('a value with a space, put in double quotes, arrives whole: setDescript
   const p = await run(['setDescription', 'description="said in four words"']);
   const card = await call('node.card');
   return (!!answered(p) && card.status === 200 && card.body.description === 'said in four words') || false;
+}, test.limit.slow);
+// A DOUBLE QUOTE IN A VALUE (goal/G48.8, wsl: "a quoted value cannot hold a double quote, there is no escape"; Andy: "cw, fix
+// the console. push it"): typed \" inside the quotes, it arrives as a double quote.
+test.run('a double quote typed \\" inside a quoted value arrives as one: setDescription description="a \\"quoted\\" word"', 0.4, async function () {
+  if (!up() || at() !== 'node') return false;
+  const p = await run(['setDescription', 'description="a \\"quoted\\" word"']);
+  const card = await call('node.card');
+  return (!!answered(p) && card.status === 200 && card.body.description === 'a "quoted" word') || false;
 }, test.limit.slow);
 test.run('an object argument is read as JSON: debug debug={"on":...} sets the node\'s debug flag', 0.4, async function () {
   if (!up() || at() !== 'node') return false;
@@ -377,9 +388,37 @@ test.run('one wait at a time: a second wait while one runs is refused and ends 1
   // The first a real wait, ended by its timeout; the second refused as a second wait, not as an unknown command.
   return (timedOut(one) && second.ended && second.code === 1 && second.out.indexOf('no-such-command') === -1) || false;
 }, test.limit.slow);
+// A WAIT WRITES ITS POINTER ALONE (goal/G48.8, cw's fix, 200159f0: "it read the whole state once at its start and wrote it
+// back when it moved"): a wait-row added while a wait runs is still there once that wait has ended.
+test.run('a wait-row added while a wait runs is still in wait list once that wait has ended', 0.4, async function () {
+  if (!up()) return false;
+  const first = run(['wait']);
+  await H.sleep(1000);
+  await go('wait add api=zzwait.later z=1');
+  // A row that matches nothing arrives meanwhile, so the wait reads the log and moves its pointer while it runs.
+  arrive({ zzwait: { ping: { x: 3 } } });
+  const one = await first;
+  const p = await go('wait list');
+  const kept = p.ended && p.out.indexOf('api=zzwait.later z=1') !== -1;
+  await go('wait remove api=zzwait.later z=1');
+  return (timedOut(one) && kept) || false;
+}, test.limit.slow);
 test.run('wait remove takes the stored string out of wait list', 0.4, async function () {
   if (!up()) return false;
   await go('wait remove ' + PING);
   const p = await go('wait list');
   return (p.ended && p.out.indexOf(PING) === -1 && p.out.indexOf(LISTEN) !== -1) || false;
+}, test.limit.slow);
+
+// THE VERB'S FUNCTION (goal/G48.8, wsl: "at spirit.app, active key=desk active=true is refused, branch[verb] is not a
+// function"; Andy: "cw, fix the console. push it"): a branch whose api.js names a function for a verb (spirit.app: active is
+// activeApp) answers it from the console.
+test.run('at spirit.app, "active key=icons active=true" answers ok, through the function its api.js names', 0.4, async function () {
+  if (!up()) return false;
+  await go('path <<');
+  await go('path app');
+  const p = await go('active key=icons active=true');
+  await go('path <<');
+  const o = json(p.out);
+  return (p.ended && p.code === 0 && !!o && o.ok === true) || false;
 }, test.limit.slow);
