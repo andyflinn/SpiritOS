@@ -15,10 +15,10 @@ On a scratch node of lab's. A caller in a child process of that node requires sp
 - the caller holds the whole tree in spirit.data.fs, marked complete, without calling followStream itself;
 - spirit/app/desk (api.js, data.js, desk.json, desk.js) is a row with api true and app true;
 - spirit/fs (api.js, data.js, no manifest) is a row with api true and app false;
+- spirit/app/job (job.json, no job.js) is a row with app true: a folder is an app by its manifest alone (Q1, Andy:
+  *"yes. testicle already checks validity of an app.json"*);
 - a file, spirit/app/desk/desk.js, is a row with api false and app false;
 - a folder planted while the caller follows, gaining api.js and data.js, turns api true in its dataset, and turns api
   false again when its data.js goes;
 - job.js keeps no tree of its own (no fsTree in its code);
 - spirit.js names neither followStream, spirit/fs/data.js nor spirit/fs.js.
-
-Not asserted yet: an app folder with a manifest and no `<name>.js` (file, job, monitor), Q1 of goal/G49.1.

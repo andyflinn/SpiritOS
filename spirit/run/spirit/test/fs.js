@@ -29,7 +29,7 @@ test.after(async function () {
 
 // A caller in a child process of the scratch node: it requires spirit/fs.js and nothing else, and prints, every half second,
 // the rows asked about (null while there is none) and whether the tree is whole.
-const ASKED = ['spirit/app/desk', 'spirit/fs', 'spirit/app/desk/desk.js', 'spirit/zzfsflag'];
+const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', 'spirit/app/desk/desk.js', 'spirit/zzfsflag'];
 function caller() {
   const script = [
     "require('./spirit/spirit.js');",
@@ -84,6 +84,12 @@ test.run('spirit/app/desk, holding desk.json and desk.js, is a row with app true
 test.run('spirit/fs, holding api.js and data.js and no manifest, is a row with api true and app false', 0.4, function () {
   const r = row('spirit/fs');
   return (!!r && r.api === true && r.app === false) || false;
+}, test.limit.quick);
+// Q1 (Andy: "yes. testicle already checks validity of an app.json"): a folder is app:true by its <name>.json alone; job has
+// job.json and no job.js.
+test.run('spirit/app/job, holding job.json and no job.js, is a row with app true', 0.4, function () {
+  const r = row('spirit/app/job');
+  return (!!r && r.app === true) || false;
 }, test.limit.quick);
 test.run('a file, spirit/app/desk/desk.js, is a row with api false and app false', 0.4, function () {
   const r = row('spirit/app/desk/desk.js');

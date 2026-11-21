@@ -93,9 +93,11 @@ test.run('ready is true once the whole tree has come, never before', 0.2, functi
   if (!w) return false;
   return (W.ready0 === false && w.X.ready() === true) || false;
 }, test.limit.quick);
+// goal/G49.1: every row also carries the api and app flags, both false on a file (Andy's box: "Files are always app:false",
+// "api:false for all files and folders without data.js or api.js").
 test.run('a folder is kept as a folder, a file as a file with its size and modified time', 0.2, function () {
   if (!w) return false;
-  return (w.X.file('media').kind === 'folder' && same(w.X.file('media/a.txt'), { kind: 'file', size: 3, modified: 100, core: true })) || false;
+  return (w.X.file('media').kind === 'folder' && same(w.X.file('media/a.txt'), { kind: 'file', size: 3, modified: 100, core: true, api: false, app: false })) || false;
 }, test.limit.quick);
 // goal/G30.21: core, the node's word that the file is core, painted yellow by its row
 test.run('core is true only where the node says true', 0.2, function () {
