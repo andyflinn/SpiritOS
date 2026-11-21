@@ -226,6 +226,16 @@ function appRules(all) {
     // Each verb's <verb>.json: judged on every branch, both ways and with its arguments, by spirit-sibling-general.js
     // (goal/G47.4, "api.js and <verb>.json files match precisely"), which replaced this one-way check of the apps.
   }
+  // Rule 7 (goal/G48.5, the box: "an app's server-only files stand in spirit/app/<name>/server/; its server portion MUST be
+  // spirit/app/<name>/server/server.js, in place of node<Name>.js. spirit/app/<name>/<name>.js stays what the node starts and
+  // loads ./server/server.js on the node"; Andy, of where its test stands: "app-child-general!!!!!!!!!!!!!!!!"). An app with a
+  // server, node.mount true.
+  const served = have.filter(function (f) { return f.server; });
+  if (served.length) {
+    test.run('the app with a server has it at spirit/app/<name>/server/server.js, its <name>.js loading it there', 0.4, function () {
+      return each(served, function (f) { return (isFile(f.dir + '/server/server.js') && /server\/server\.js/.test(code(f.dir + '/' + f.n + '.js'))) ? true : false; });
+    }, test.limit.quick);
+  }
 }
 
 // The sub-folders.
