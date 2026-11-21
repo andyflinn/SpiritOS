@@ -1,6 +1,6 @@
 # ubuntu
 
-**Measured 2026-11-19, against `d481e2e9`.**
+**Measured 2026-11-21, against `f1fd9378a`.**
 
 | | |
 |---|---|
