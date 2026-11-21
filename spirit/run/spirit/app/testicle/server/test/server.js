@@ -21,7 +21,7 @@ const os = require('os');
 const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const REPO = path.resolve(RUN, '..', '..');
@@ -2471,7 +2471,7 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
     L.s = { root: root, run: run };
-    const server = path.join(run, 'spirit', 'app', 'testicle', 'testicle.js');
+    const server = path.join(run, 'spirit', 'app', 'testicle', 'server', 'server.js');
     const serverSrc = fs.readFileSync(server, 'utf8');
     if (serverSrc.indexOf(LIMIT_LINE) === -1) return false;
     fs.writeFileSync(server, serverSrc.replace(LIMIT_LINE, 'const JOB_LIMIT_MS = ' + SHORT_LIMIT_MS + ';'));
