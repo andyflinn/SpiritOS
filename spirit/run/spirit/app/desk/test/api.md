@@ -15,13 +15,10 @@ the handlers (Andy, 2026-10-22: "request validation worth a damn?").
 - An argument is required wherever the handler needs it, optional only where the handler lets it be left out; the rule
   is the tightest every value the handler takes still passes:
   - `''` is a real value for `box.write` text, `chat.search`'s filters (all sent), `check.add` words and test,
-    `claim` commit, `press` id (start-design with nothing open), `profile.get` agent, `item.files` under.
-  - Optional: `item.add` blocks, `item.files` under, `item.status` tone, `phase.done` pass and why, `profile.set`
-    included and cap.
-  - `box.write` version is a number; `items.search`'s three flags are booleans; `rules.search` types and statuses lists.
-  - `item.add` title and `profile.set` name pass the label rule; `rule.add` text the paragraph rule.
-  - One row a write (goal/G40.3): every `.add`/`.remove` of files takes its `path` as one path, never a
-    list; `item.files.add` may instead take `paths`, a list in JSON, for the desk only (goal/G41.11).
+    `press` id (start-design with nothing open).
+  - Optional: `item.status` tone. `unsubscribe` takes nothing and refuses anything given.
+  - `box.write` version is a number; `items.search`'s three flags are booleans.
+  - `item.add` takes a goal and a title, its title passing the label rule, and no blocks.
 - An argument a verb does not take is refused (no-such-argument).
 
 ## What its test must try to break
@@ -29,7 +26,6 @@ the handlers (Andy, 2026-10-22: "request validation worth a damn?").
 - A rule spirit.js does not know (the call would be refused before it left, for every caller).
 - A verb listed that the server does not serve.
 - A `''` the handler takes refused by a rule too tight (`id` where `text` is meant).
-- A list sneaked into a one-row-a-write verb.
 
 ## Found while reading, not asserted
 
@@ -43,3 +39,16 @@ Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to 
 
 - None of the seven rule verbs is declared (rule.add, rule.draft, rule.get, rule.version, rules.search, item.rules.add,
   item.rules.remove); the rules.search and rule.add checks go.
+
+## The desk cut (goal/G48.8)
+
+Andy: *"get rid of the fucking bubbles"*; all signoff logic goes; the profiles: *"no, they go"*; *"get rid of all item.files
+logic"*; *"get rid of all item.checks verbs and their logic"*; *"get rid of \"seen\" verbs"*; *"get rid of all phase logic"*;
+*"get rid of block unblock"*; *"get rid of claim"*; and of the gates, *"get rid of all the fake regulation in desk"*. Q7:
+check.add and check.set *"fine, keep those"*.
+
+- None of the 27 cut verbs is declared: agent.state, agents.search, signoff, profile.get, profile.set, box.take,
+  box.release, item.take, item.release, line.take, item.files, item.files.add, item.files.remove, item.files.search,
+  item.checks, item.checks.search, seen.get, seen.set, phase.take, phase.may, phase.done, claim, work.open,
+  item.claims.search, block, block.targets, unblock. Their argument checks go.
+- check.add and check.set are still declared, for the red Qs.

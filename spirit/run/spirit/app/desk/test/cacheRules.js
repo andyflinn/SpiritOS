@@ -54,13 +54,10 @@ test.run('an item\'s box is one row: a new box takes the old out', 0.2, function
   const out = C.keep([side('box', 1, 1, { box: 'v1' }), side('box', 1, 2, { box: 'other item' })], side('box', 1, 1, { box: 'v2' }));
   return (out.length === 2 && out[1].row.box === 'v2' && out[0].row.box === 'other item') || false;
 }, test.limit.quick);
-test.run('a check is kept by its number, a file by its author and path', 0.2, function () {
+test.run('a check is kept by its number', 0.2, function () {
   if (!C.keep) return false;
-  let out = C.keep([side('checks', 1, 1, { number: 1, ok: false }), side('checks', 1, 1, { number: 2 })], side('checks', 1, 1, { number: 1, ok: true }));
-  const checks = out.length === 2 && out[1].row.ok === true;
-  out = C.keep([side('files', 1, 1, { by: 'wsl', path: 'a.js' }), side('files', 1, 1, { by: 'cw', path: 'a.js' })], side('files', 1, 1, { by: 'wsl', path: 'a.js', n: 2 }));
-  const files = out.length === 2 && out[0].row.by === 'cw' && out[1].row.n === 2;
-  return (checks && files) || false;
+  const out = C.keep([side('checks', 1, 1, { number: 1, ok: false }), side('checks', 1, 1, { number: 2 })], side('checks', 1, 1, { number: 1, ok: true }));
+  return (out.length === 2 && out[1].row.ok === true) || false;
 }, test.limit.quick);
 test.run('a row of a part keep does not know takes nothing out', 0.2, function () {
   if (!C.keep) return false;
@@ -131,11 +128,10 @@ test.run('answer gives null when the cache does not hold the item, so the desk i
   const noParts = C.answer('item.box', { id: ID }, held(null), 10000);
   return (none === null && noVersion === null && noParts === null) || false;
 }, test.limit.quick);
-test.run('item.box answers the box and its version, and item.checks answers the checks', 0.2, function () {
+test.run('item.box answers the box and its version', 0.2, function () {
   if (!C.answer) return false;
   const box = C.answer('item.box', { id: ID }, held({ box: 'the box', version: 3, checks: [{ number: 1 }] }), 10000);
-  const checks = C.answer('item.checks', { id: ID }, held({ box: 'the box', version: 3, checks: [{ number: 1 }] }), 10000);
-  return (!!box && box.box === 'the box' && box.version === 3 && !!checks && checks.checks.length === 1) || false;
+  return (!!box && box.box === 'the box' && box.version === 3) || false;
 }, test.limit.quick);
 test.run('item.chat answers the newest lines that fit its room, oldest first, chatMore when some were left out', 0.2, function () {
   if (!C.answer) return false;
@@ -150,20 +146,6 @@ test.run('with all lines fitting, chatMore is false, unless the stream brought o
   const all = C.answer('item.chat', { id: ID }, held({ chat: lines }), 10000);
   const streamed = C.answer('item.chat', { id: ID }, held({ chat: lines, chatMore: true }), 10000);
   return (!!all && all.chatMore === false && !!streamed && streamed.chatMore === true) || false;
-}, test.limit.quick);
-// goal/G33.7: "deskClient's kept file list (filled to one answer)".
-test.run('item.files answers as many as fit one answer, under the path asked, filesMore when some were left out', 0.2, function () {
-  if (!C.answer) return false;
-  const files = ['spirit/a.js', 'spirit/b.js', 'other/c.js'].map(function (p) { return { by: 'wsl', path: p }; });
-  const under = C.answer('item.files', { id: ID, under: 'spirit/' }, held({ files: files }), 10000);
-  const room = Buffer.byteLength(JSON.stringify({ files: files.slice(0, 1), filesMore: true }), 'utf8');
-  const cut = C.answer('item.files', { id: ID }, held({ files: files }), room);
-  return (!!under && under.files.length === 2 && under.filesMore === false && !!cut && cut.files.length === 1 && cut.filesMore === true) || false;
-}, test.limit.quick);
-test.run('a file list kept only in part is not answered: the desk is asked', 0.2, function () {
-  if (!C.answer) return false;
-  const a = C.answer('item.files', { id: ID }, held({ files: [{ by: 'wsl', path: 'a' }], filesMore: true }), 10000);
-  return a === null || false;
 }, test.limit.quick);
 test.run('a verb the cache does not keep is not answered', 0.2, function () {
   if (!C.answer) return false;

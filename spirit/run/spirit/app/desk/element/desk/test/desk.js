@@ -296,7 +296,7 @@ async function twoPress(w, find, armedSays, wantPress) {
 
 // goal/G41.9: it loads armingButton and keeps no arming of its own
 test.run('it requires spirit/element/armingButton.js through spirit.require', 0.2, async function () {
-  const w0 = deskWorld({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] }, []);
+  const w0 = deskWorld({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], design: false }, []);
   await w0.mount();
   return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || false;
 }, test.limit.quick);
@@ -307,8 +307,8 @@ test.run('nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no a
 }, test.limit.quick);
 
 // goal/G41.9: each are-you-sure, pressed twice
-const goal = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['go-all'], design: true, blocked: ['goal/G9.1'] };
-const item = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['done'], claims: 1 };
+const goal = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['go-all'], design: true };
+const item = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['done'] };
 test.run('End design mode is an arming button: the first press says "End design mode: sure?", the second sends end-design', 0.2, async function () {
   const w = W.w = deskWorld(goal, [item]);
   await w.mount();
@@ -351,14 +351,14 @@ test.run('Start design mode is an arming button: the first press says "Start des
 // goal/G43.30: every Close in the List is an armingButton, a goal's with nothing open and a done item's
 const armedNotClose = function (t) { return !!t && t !== 'Close'; };
 test.run('a goal\'s Close, with nothing under it open, is an arming button: the first press arms it, the second sends close', 0.2, async function () {
-  const wc = deskWorld({ id: 'goal/G8', title: 'Done goal', goal: '', status: 'open', buttons: ['close'], design: false, blocked: [] }, []);
+  const wc = deskWorld({ id: 'goal/G8', title: 'Done goal', goal: '', status: 'open', buttons: ['close'], design: false }, []);
   await wc.mount();
   const p = await twoPress(wc, function () { return wc.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8', what: 'close' });
   return p.good || false;
 }, test.limit.quick);
 test.run('a done item\'s Close, in its row, is an arming button: the first press arms it, the second sends close', 0.2, async function () {
-  const wi = deskWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] },
-    [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'], claims: 1 }]);
+  const wi = deskWorld({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: [], design: false },
+    [{ id: 'goal/G8.1', title: 'A done item', goal: 'goal/G8', status: 'done', buttons: ['close'] }]);
   await wi.mount();
   const p = await twoPress(wi, function () { return wi.document.querySelector('[data-key="goal/G8.1"] [data-press="close"]') || wi.document.querySelector('[data-press="close"]'); }, armedNotClose, { id: 'goal/G8.1', what: 'close' });
   return p.good || false;
@@ -473,8 +473,8 @@ test.run('a goal and two items are put on the scratch desk', 0.2, async function
   await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
   const g = await call('desk.goal.add', { title: 'Opening goal' });
   await call('desk.press', { id: g.id, what: 'make-current' });
-  F2.one = await call('desk.item.add', { goal: g.id, title: 'First opened item', blocks: '' });
-  F2.two = await call('desk.item.add', { goal: g.id, title: 'Second opened item', blocks: '' });
+  F2.one = await call('desk.item.add', { goal: g.id, title: 'First opened item' });
+  F2.two = await call('desk.item.add', { goal: g.id, title: 'Second opened item' });
   F2.ready = !!g.id && !!F2.one.id && !!F2.two.id;
   return F2.ready || false;
 }, test.limit.long);
@@ -527,7 +527,7 @@ test.run('a goal and its item, pressed done, are put on the scratch desk', 0.2, 
   await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
   const g = await call('desk.goal.add', { title: 'Closing goal' });
   await call('desk.press', { id: g.id, what: 'make-current' });
-  const it = F3.it = await call('desk.item.add', { goal: g.id, title: 'An item to close', blocks: '' });
+  const it = F3.it = await call('desk.item.add', { goal: g.id, title: 'An item to close' });
   await call('desk.press', { id: it.id, what: 'done' });
   const before = await state3();
   F3.ready = !!g.id && !!it.id && before.status === 'done';

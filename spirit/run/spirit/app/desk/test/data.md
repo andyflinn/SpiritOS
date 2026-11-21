@@ -37,18 +37,14 @@ parts read so far, `current()` the goal last pushed whole, `change()` the newest
   and knows nothing of bundling (goal/G41.24, Andy: *"i think the translator has no business knowing anything about
   \"bundling\""*, and his decision: *"the three bundle checks go, and the other three assert my G41.12 words."*).
 - **took** keeps a part only for an item that has a row, of the current goal, once a goal was
-  pushed: `item.box` `{box, version}` (version a number), `item.chat` `{chat, chatMore}` (one answer, never in parts),
-  `item.checks` `{checks}`, `item.files` `{files, filesMore}` (not files `under` a folder). Anything else keeps
-  nothing and throws nothing.
-- **A box or a chat line the stream brings is kept**, read or not (goal/G41.12: the cache keeps everything the server
-  sends). A check or a file alone waits for a read.
+  pushed: `item.box` `{box, version}` (version a number), `item.chat` `{chat, chatMore}` (one answer, never in parts).
+  Anything else keeps nothing and throws nothing. `item.checks` and `item.files` went (goal/G48.8).
+- **A box, a chat line or a check the stream brings is kept**, read or not (goal/G41.12: the cache keeps everything
+  the server sends; with item.checks gone, goal/G48.8, nothing reads the checks first).
 - **Side rows** keep current a part already read:
   - `box` replaces the box and version;
   - `chat` adds a line, or replaces the same line (by, at, text); a removed or row-less one changes nothing;
-  - `checks` adds or replaces by number; answered and cleared go; removed goes by `at`;
-  - `files` one agent's path each: the same holder and path replaces, removed goes by `holder|path`; the entry is
-    rebuilt as `{path, by}` plus `late: true` only when the row carries it (goal/G41.11), nothing else, no core and
-    no grant (Andy, 2026-11-17: *"may as well toss that shit from desk"*); by path; `filesMore` false.
+  - `checks` adds or replaces by number; answered and cleared go; removed goes by `at`.
 
 ## What its test must try to break
 

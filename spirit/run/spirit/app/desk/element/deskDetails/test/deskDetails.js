@@ -208,7 +208,6 @@ function ddWorld(facts, checks, o) {
       if (name === 'desk.item.checks') return Promise.resolve({ status: 200, body: { checks: checks || [] } });
       if (name === 'desk.item.box') return Promise.resolve({ status: 200, body: { box: 'the box', version: 1 } });
       if (name === 'desk.item.chat') return Promise.resolve({ status: 200, body: { chat: [] } });
-      if (name === 'desk.item.files') return Promise.resolve({ status: 200, body: { files: [] } });
       return Promise.resolve({ status: 200, body: { ok: true } });
     } };
   const win = { document: document, setTimeout: setTimeout, clearTimeout: clearTimeout, setInterval: function () { return 0; }, clearInterval: function () {},
@@ -297,8 +296,8 @@ async function twoPressAny(g, find, want) {
   return { good: good };
 }
 
-const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'waive', 'delete', 'close'], claims: 1, blocked: ['goal/G9.1'] };
-const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'], blocked: [] };
+const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'waive', 'delete', 'close'] };
+const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'] };
 const press = function (what) { return { name: 'desk.press', args: { id: 'goal/G9', what: what } }; };
 // A dialog opened on a subject; a press of a button in it.
 async function opened(subject, checks, o) { const g = ddWorld(subject, checks || [], o); await g.open(); return g; }
@@ -306,14 +305,14 @@ async function goalPress(id, armedSays, want) { const w = await opened(GOAL); re
 
 // ── THE PANELS NAME THEIR ICONS AS GLYPHS ───────────────────────────────────────────────────────────────────────────
 // goal/G47.4, box v36: "The rules list on each goal and item goes": no rules panel among them.
-test.run('the details list four panels: the box, the red Qs, the blocks and the files', 0.2, function () {
+test.run('the details list two panels: the box and the red Qs', 0.2, function () {
   S.raw = fs.readFileSync(FILE, 'utf8');
   S.code = S.raw.replace(/\/\/[^\n]*/g, '');
   S.plain = S.code;
   const at = /var DD_PANELS = (\[[\s\S]*?\n\]);/.exec(S.code);
   try { S.panels = at ? (new Function('return ' + at[1]))() : null; } catch (e) { S.panels = null; }
   const keys = Array.isArray(S.panels) ? S.panels.map(function (p) { return p.key; }) : null;
-  return (!!keys && JSON.stringify(keys) === JSON.stringify(['box', 'qs', 'blocks', 'files'])) || false;
+  return (!!keys && JSON.stringify(keys) === JSON.stringify(['box', 'qs'])) || false;
 }, test.limit.quick);
 test.run('every panel names its icon as the glyph itself', 0.2, function () {
   const keyed = (S.panels || []).filter(function (p) { return !p.icon || KEY.test(p.icon); });
@@ -347,7 +346,7 @@ test.run('Done is a plain press, with no warning mark and no arming, that sends 
   const before = w.writes().length;
   w.document.click(b); await settle();
   const sent = w.writes().slice(before);
-  return (label === 'Done (1)' && !armed && sent.length === 1 && JSON.stringify(sent[0]) === JSON.stringify(press('done'))) || false;
+  return (label === 'Done' && !armed && sent.length === 1 && JSON.stringify(sent[0]) === JSON.stringify(press('done'))) || false;
 }, test.limit.quick);
 test.run('no Verify button, no run and nothing of a verifier loaded, even where the facts offer verify', 0.2, async function () {
   const w = await opened(Object.assign({}, GOAL, { buttons: GOAL.buttons.concat(['verify']) }));
@@ -376,7 +375,7 @@ test.run('Close on a goal with an item open asks "are you sure? 1 open" on the f
   return goalPress('dd-close', 'are you sure? 1 open', press('close'));
 }, test.limit.quick);
 
-// goal/G41.9: an item's early Close, and the grants.
+// goal/G41.9: an item's early Close.
 test.run('Close on an open item is an arming button that says "Close: sure?" on the first press and sends desk.press close on the second', 0.2, async function () {
   const w = await opened(ITEM);
   return pressed(await twoPress(w, byId(w, 'dd-close'), 'Close: sure?', { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }));
@@ -388,18 +387,8 @@ test.run('Close on a done item is an arming button, armed on the first press wit
   return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G9.1', what: 'close' } }));
 }, test.limit.quick);
 test.run('Close on a goal with nothing open only arms on the first press, and closes on the second', 0.2, async function () {
-  const w = await opened({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'], blocked: [] });
+  const w = await opened({ id: 'goal/G8', title: 'A goal', goal: '', status: 'open', buttons: ['close'] });
   return pressed(await twoPressArmed(w, byId(w, 'dd-close'), { name: 'desk.press', args: { id: 'goal/G8', what: 'close' } }));
-}, test.limit.quick);
-const CHECKS = [{ number: 'G1', kind: 'G', state: 'open', words: 'core grant' }, { number: 'G2', kind: 'G', state: 'open', words: 'another' }];
-const grants = async function () { const g = await opened(ITEM, CHECKS); g.document.click(panelIcon(g, 'files')); await settle(); return g; };
-test.run('Grant G1 is an arming button that says "Grant G1: sure?" on the first press and sends desk.check.set on the second', 0.2, async function () {
-  const w = await grants();
-  return pressed(await twoPress(w, function () { return w.document.querySelector('[data-grant="G1"]'); }, 'Grant G1: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'G1', state: 'granted' } }));
-}, test.limit.quick);
-test.run('Grant all is an arming button that says "Grant all 2: sure?" on the first press and sends desk.check.set on the second', 0.2, async function () {
-  const w = await grants();
-  return pressed(await twoPress(w, function () { return w.document.querySelector('[data-grant="all"]'); }, 'Grant all 2: sure?', { name: 'desk.check.set', args: { id: 'goal/G9.1', check: 'all', state: 'granted' } }));
 }, test.limit.quick);
 
 // ── goal/G41.11: THE LAST ONE-PRESS BUTTONS, AND THE RENAME ───────────────────────────────────────────────────────────
@@ -413,11 +402,11 @@ test.run('a red Q\'s remove is an arming button, armed on the first press, that 
 }, test.limit.quick);
 // goal/G41.11: the details panel's Start and End design ask are-you-sure.
 test.run('End design is an arming button, armed on the first press, that sends desk.press on the second', 0.2, async function () {
-  const w = await opened({ id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'], blocked: [] });
+  const w = await opened({ id: 'goal/G9.2', title: 'In design', goal: 'goal/G9', status: 'open', buttons: ['end-design'] });
   return pressed(await twoPressAny(w, byId(w, 'dd-end-design'), { name: 'desk.press', args: { id: 'goal/G9.2', what: 'end-design' } }));
 }, test.limit.quick);
 test.run('Start design is an arming button, armed on the first press, that sends desk.press on the second', 0.2, async function () {
-  const w = await opened({ id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'], blocked: [] });
+  const w = await opened({ id: 'goal/G9.3', title: 'Out of design', goal: 'goal/G9', status: 'open', buttons: ['start-design'] });
   return pressed(await twoPressAny(w, byId(w, 'dd-start-design'), { name: 'desk.press', args: { id: 'goal/G9.3', what: 'start-design' } }));
 }, test.limit.quick);
 
@@ -605,7 +594,7 @@ test.run('the two lines already shown are the same elements as before: not drawn
 test.run('a change that is no chat line (a check) repaints the panel and leaves every chat line as it was', 0.2, async function () {
   const before = S.before, afterLine = S.afterLine;
   if (!before || !afterLine) return false;
-  if (S.heard) { S.heard({ change: 51, table: 'checks', id: CHATTY.id, row: { number: 'G1', kind: 'G', state: 'open', words: 'core grant' } }); await settle(); }
+  if (S.heard) { S.heard({ change: 51, table: 'checks', id: CHATTY.id, row: { number: 'Q1', kind: 'Q', state: 'open', words: 'Shall it?' } }); await settle(); }
   const afterOther = shownNow();
   return (afterOther.length === 3 && afterOther[0] === before[0] && afterOther[1] === before[1] && afterOther[2] === afterLine[2]) || false;
 }, test.limit.quick);
@@ -676,14 +665,9 @@ test.run('there is no find field beside the box, which is a CodeMirror editor wi
   const v = S.box;
   return (!!v && v.codeMirror === true && v.find === false) || false;
 }, test.limit.quick);
-test.run('going into the box takes it, as the textarea did', 0.2, async function () {
+test.run('leaving the box changed writes his text, on the version it read', 0.2, async function () {
   if (!S.m) return false;
-  const t = S.take = await pageAnswer('window.boxTake()');
-  return (!!t && t.took === 1) || false;
-}, test.limit.quick);
-test.run('leaving the box changed writes his text, on the version it read', 0.2, function () {
-  if (!S.m) return false;
-  const t = S.take;
+  const t = await pageAnswer('window.boxTake()');
   return (!!t && !!t.wrote && t.wrote.text === 'his new text' && t.wrote.version === 37) || false;
 }, test.limit.quick);
 // EVERY LEFT PANEL USES ALL THE HEIGHT (Andy, on G41.22: "the box must use the full vertical space", "all left
@@ -696,18 +680,8 @@ async function fullHeight(key) {
   return full || false;
 }
 test.run('the box panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, function () { return fullHeight('box'); }, test.limit.slow);
-test.run('the qs panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, function () { return fullHeight('qs'); }, test.limit.slow);
-test.run('the files panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, function () { return fullHeight('files'); }, test.limit.slow);
-// THE GRANT ROW PINNED ON TOP (Andy: "the file panel must have the red gran button row pinned to the top and the
-// file list only using the remaining vertical space"): never in the list that scrolls, and it stays put.
-test.run('in the files panel, the grant buttons stay pinned above the file list as it scrolls', 0.2, function () {
-  if (!S.m) return false;
-  const p = S.panel;
-  const pinned = (!!p && p.grantInList === false && p.grantBefore === p.grantAfter && !!p.scroller && p.grantBefore < p.scroller.top) || false;
-  // The last check on the opened page closes it.
-  stopOpened();
-  return pinned;
-}, test.limit.quick);
+// The last check on the opened page closes it.
+test.run('the qs panel fills the pane\'s height when first opened, and its list scrolls inside it down to the bottom', 0.2, async function () { const full = await fullHeight('qs'); stopOpened(); return full; }, test.limit.slow);
 
 // ── goal/G43.30: ON THE REAL PAGE, A DELETE OR A CLOSE PRESSED ONCE DOES NOTHING ─────────────────────────────────
 // The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk on, a goal and two items: one pressed done, whose detail
@@ -747,9 +721,9 @@ test.run('there is an item done, and an item in design mode offering Delete', 0.
   await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
   const g = await call('desk.goal.add', { title: 'Pressing goal' });
   await call('desk.press', { id: g.id, what: 'make-current' });
-  const done = S.done = await call('desk.item.add', { goal: g.id, title: 'A done item to close', blocks: '' });
+  const done = S.done = await call('desk.item.add', { goal: g.id, title: 'A done item to close' });
   await call('desk.press', { id: done.id, what: 'done' });
-  const design = S.design = await call('desk.item.add', { goal: g.id, title: 'A design item to delete', blocks: '' });
+  const design = S.design = await call('desk.item.add', { goal: g.id, title: 'A design item to delete' });
   await call('desk.press', { id: design.id, what: 'start-design' });
   const before = S.beforePress = { done: await state(done.id), design: await state(design.id) };
   await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()");

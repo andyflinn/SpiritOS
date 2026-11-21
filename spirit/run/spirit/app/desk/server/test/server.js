@@ -105,13 +105,6 @@ test.run('its api serves no search of an item\'s box versions', 0.2, function ()
   const verbs = W.verbs || [];
   return (verbs.length > 5 && verbs.indexOf('item.box.search') === -1 && verbs.indexOf('item.box') !== -1) || false;
 }, test.limit.quick);
-// The files an item lists answer {path, by} alone: no core, no grant (Andy, 2026-11-17).
-test.run('its api says item.files answers each file as path and by, with no core and no grant', 0.2, function () {
-  const verbs = W.verbs || [];
-  const api = W.api || {};
-  const files = JSON.stringify((api['item.files'] || {}).reply || {});
-  return (verbs.indexOf('item.files') !== -1 && files.indexOf('"path"') !== -1 && !/"core"|"grant"/.test(files)) || false;
-}, test.limit.quick);
 test.run('a fresh desk holds no goal/G0', 0.2, async function () {
   const verbs = W.verbs || [];
   if (!(verbs.length > 5) || !W.ask) return false;

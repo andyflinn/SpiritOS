@@ -49,7 +49,7 @@ const whole = function (f) { return { verb: 'goal.whole', item: f }; };
 // The one file holds what the desk knows of its rows at the receiving end: the translator, and the cache rules (keep,
 // shed, answer), which it requires from family/cacheRules.js in node and exports (goal/G41.24, goal/G41.28). That no other file or doc names another way is spirit/test/spirit-branches.js's, for the whole repo.
 // What the tests below make, each in order, read by the tests after it.
-let inNode, CACHE, DESK_API, w, wb, wt, threw, wn, ws, chat, checks, wf, files, b, x, wm;
+let inNode, CACHE, DESK_API, w, wb, wt, threw, wn, ws, chat, checks, wm;
 
 // goal/G41.24: where it lives
 test.run('spirit/app/desk/data.js is there', 0.2, function () {
@@ -160,22 +160,11 @@ test.run('item.chat is kept as chat and chatMore, beside what was kept', 0.2, fu
   wt.X.took('item.chat', { id: 'goal/G9.1' }, { chat: [{ by: 'a', at: '1', text: 't' }], chatMore: true });
   return (wt.part('goal/G9.1').chat.length === 1 && wt.part('goal/G9.1').chatMore === true && wt.part('goal/G9.1').box === 'B') ? true : false;
 }, test.limit.quick);
-test.run('item.checks and item.files are kept too', 0.2, function () {
-  if (!wt) return false;
-  wt.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [{ number: '1', state: 'open' }] });
-  wt.X.took('item.files', { id: 'goal/G9.1' }, { files: [{ path: 'b.js', by: 'cw' }], filesMore: true });
-  return (wt.part('goal/G9.1').checks.length === 1 && wt.part('goal/G9.1').files.length === 1 && wt.part('goal/G9.1').filesMore === true) ? true : false;
-}, test.limit.quick);
 test.run('an item of another goal, or one with no row, keeps nothing', 0.2, function () {
   if (!wt) return false;
   wt.X.took('item.box', { id: 'goal/G5.1' }, { box: 'no' });
   wt.X.took('item.box', { id: 'goal/G4.4' }, { box: 'no' });
   return (!wt.part('goal/G5.1') && !wt.part('goal/G4.4')) ? true : false;
-}, test.limit.quick);
-test.run('files under a folder are no part and are not kept', 0.2, function () {
-  if (!wt) return false;
-  wt.X.took('item.files', { id: 'goal/G9.1', under: 'spirit/' }, { files: [] });
-  return wt.part('goal/G9.1').files.length === 1 ? true : false;
 }, test.limit.quick);
 test.run('with no id, no answer, a box that is not a string, or another verb, nothing is kept and nothing is thrown', 0.2, function () {
   if (!wt) return false;
@@ -204,12 +193,11 @@ test.run('a chat line the stream brings is kept too, though the item was never r
   ws.job({ table: 'chat', id: 'goal/G9.2', row: { by: 'a', at: '1', text: 'unread line' } });
   return (!!ws.part('goal/G9.2') && Array.isArray(ws.part('goal/G9.2').chat) && ws.part('goal/G9.2').chat.some(function (l) { return l && l.text === 'unread line'; })) ? true : false;
 }, test.limit.quick);
-test.run('the box and the chat line the stream brings are kept beside the checks read', 0.2, function () {
+test.run('the box and the chat line the stream brings are kept beside the chat read', 0.2, function () {
   if (!ws) return false;
-  ws.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [] });
+  ws.X.took('item.chat', { id: 'goal/G9.1' }, { chat: [] });
   ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'x', version: 2 } });
   ws.job({ table: 'chat', id: 'goal/G9.1', row: { by: 'a', at: '1', text: 't' } });
-  ws.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'cw' } });
   return (ws.part('goal/G9.1').box === 'x' && ws.part('goal/G9.1').version === 2 && Array.isArray(ws.part('goal/G9.1').chat) && ws.part('goal/G9.1').chat.some(function (l) { return l && l.text === 't'; })) ? true : false;
 }, test.limit.quick);
 test.run('a box row replaces the box read, with its version', 0.2, function () {
@@ -234,7 +222,8 @@ test.run('a new chat line joins, the same line by its by, at and text replaces, 
 // side rows: the checks panel holds the open and the decided
 test.run('a new check joins, a decided one replaces in place, an answered one goes', 0.2, function () {
   if (!ws) return false;
-  ws.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [{ number: '1', state: 'open' }, { number: '2', state: 'open' }] });
+  ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '1', state: 'open' } });
+  ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '2', state: 'open' } });
   ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '3', state: 'open' } });
   ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '1', state: 'decided' } });
   ws.job({ table: 'checks', id: 'goal/G9.1', row: { number: '2', state: 'answered' } });
@@ -247,46 +236,6 @@ test.run('a cleared check goes, and so does a removed one, by its number at', 0.
   ws.job({ table: 'checks', id: 'goal/G9.1', removed: true, at: '1' });
   checks = ws.part('goal/G9.1').checks;
   return (checks.length === 0) ? true : false;
-}, test.limit.quick);
-
-// side rows: files, one agent's path each, by path, and the late mark (goal/G41.11); no core mark and no grant (Andy,
-// 2026-11-17: "may as well toss that shit from desk")
-test.run('a file added late keeps its late mark set to true', 0.2, function () {
-  wf = world();
-  wf.job(whole(it('goal/G9.1', 'goal/G9')));
-  wf.X.took('item.files', { id: 'goal/G9.1' }, { files: [], filesMore: false });
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'cw', late: true } });
-  return (JSON.stringify(wf.part('goal/G9.1').files) === JSON.stringify([{ path: 'x.js', by: 'cw', late: true }])) ? true : false;
-}, test.limit.quick);
-test.run('a file row without late true gets no late key, and carries nothing else: no core, no grant, nothing extra', 0.2, function () {
-  if (!wf) return false;
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'b.js', by: 'cw', core: true, grant: 'g1', late: 'yes', extra: 1 } });
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'a.js', by: 'wsl' } });
-  files = wf.part('goal/G9.1').files;
-  b = files.filter(function (f) { return f.path === 'b.js'; })[0];
-  return (b && !('late' in b) && !('core' in b) && !('grant' in b) && !('extra' in b)) ? true : false;
-}, test.limit.quick);
-test.run('the files are listed by path, with filesMore false', 0.2, function () {
-  if (!wf) return false;
-  return (JSON.stringify(files.map(function (f) { return f.path; })) === '["a.js","b.js","x.js"]' && wf.part('goal/G9.1').filesMore === false) ? true : false;
-}, test.limit.quick);
-test.run('the same agent\'s path again replaces its entry', 0.2, function () {
-  if (!wf) return false;
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'cw' } });
-  files = wf.part('goal/G9.1').files;
-  x = files.filter(function (f) { return f.path === 'x.js'; });
-  return (x.length === 1 && !('late' in x[0])) ? true : false;
-}, test.limit.quick);
-test.run('another agent\'s same path is its own entry', 0.2, function () {
-  if (!wf) return false;
-  wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'wsl' } });
-  return (wf.part('goal/G9.1').files.filter(function (f) { return f.path === 'x.js'; }).length === 2) ? true : false;
-}, test.limit.quick);
-test.run('a removed file goes by its holder and path, and the other agent\'s stays', 0.2, function () {
-  if (!wf) return false;
-  wf.job({ table: 'files', id: 'goal/G9.1', removed: true, at: 'cw|x.js' });
-  files = wf.part('goal/G9.1').files;
-  return (files.length === 3 && !files.some(function (f) { return f.by === 'cw' && f.path === 'x.js'; })) ? true : false;
 }, test.limit.quick);
 
 // only the desk's jobs are read

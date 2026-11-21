@@ -1,14 +1,14 @@
 # spirit/app/desk/element/deskDetails/deskDetails.js
 
-An item's details page in the Desk app: the box, the red Qs, the blocks and the files, each a
+An item's details page in the Desk app: the box and the red Qs, each a
 panel behind an icon on its left strip. This test covers what goal/G41.1 (box v19-v20), G41.9, G41.11, G41.22,
 G43.3 and G43.22 require of it, and the verifier's removal.
 
 ## Requirements (goal/G41.1)
 
 - **Icons are glyphs** (Andy: the icon set is the only source of icons on the face): each panel of `DD_PANELS` names
-  its icon as the glyph itself. Its panels are four, in this order: the box, the red Qs, the blocks, the files (no
-  rules panel since goal/G47.4). The strip is the workBench's (goal/G41.22), handed each glyph as it is; that is checked
+  its icon as the glyph itself. Its panels are two, in this order: the box, the red Qs (no
+  rules panel since goal/G47.4; no blocks or files panel since goal/G48.8). The strip is the workBench's (goal/G41.22), handed each glyph as it is; that is checked
   on what it is handed (below).
 - It reads no icon table (`iconIndex`, `ICON`).
 
@@ -29,12 +29,11 @@ the arming deskDetails.js hand-rolled.
   - Go all → `Go all: sure?`, then `press go-all`; Waive → `Waive: sure?`, then `press waive`;
   - Delete → `Delete: sure?`, then `item.delete`; Abandon → `Sure? Abandon the goal`, then `press abandon`;
   - an early Close → `are you sure? N open` on a goal with N items open, `Close: sure?` on an open item, then `press close`;
-  - Grant G<n> → `Grant G<n>: sure?`, Grant all N → `Grant all N: sure?`, then `check.set` granted.
 
 ## What its test must try to break (goal/G41.9)
 
 - A button armed by the dialog itself rather than by armingButton; a first press that already writes; an armed
-  wording lost; a grant or close sent on one press.
+  wording lost; a close sent on one press.
 
 ## Requirements (no verifier in desk)
 
@@ -42,8 +41,7 @@ The box: *"Delete ..., and get rid of ... junk in desk"*, *"desk's face loses th
 ... element and the List column it fills), and the verifier parts of deskDetails"*, *"agents still claim done, only the
 user gets to actually press done. No verifier involvement with desk anywhere."*
 
-- **Done is a plain press**: no warning mark, no arming; its first press sends `press done` (labelled `Done (n)` with
-  claims).
+- **Done is a plain press**: no warning mark, no arming; its first press sends `press done`, labelled `Done` (no claim count since goal/G48.8).
 - **No Verify button and no run**: no `dd-verify`, even where the facts' buttons offer `verify`; no `dd-run`; nothing of
   a verifier loaded (no cache manager of one, no run status).
 - **No suites panel**: no suites icon on the strip, and the dialog asks for no suites.
@@ -109,14 +107,9 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - The chat is scrolled to its end, and the newest line is its last, shown whole above the chat's bottom.
 - At open a left panel shows.
 - **Every left panel uses all the height** (Andy: *"the box must use the full vertical space"*, *"all left side panels
-  must fucking use all available vertical space, especially the lists"*): the box, the red Qs (60) and the files (150,
-  with three open grants), each shown in turn, the first time its icon is pressed (Andy:
+  must fucking use all available vertical space, especially the lists"*): the box and the red Qs (60), each shown in turn, the first time its icon is pressed (Andy:
   *"i want to see the panel content THE FIRST  TIME i pop in a panel, NOT the second time."*). The pane itself never
-  scrolls; the panel's own list, or the box's text, scrolls in itself, its bottom at the pane's bottom. The blocks are a
-  few links, not a list, and are not asked.
-- **The files panel's grant row is pinned on top** (Andy: *"the file panel must have the red gran button row pinned to
-  the top and the file list only using the remaining vertical space"*): the grant buttons are not in the list that
-  scrolls, stand above it, and stay where they are when the list is scrolled to its end.
+  scrolls; the panel's own list, or the box's text, scrolls in itself, its bottom at the pane's bottom.
 
 ## What its test must try to break (goal/G41.22)
 
@@ -126,12 +119,11 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - The chat or its input outside the centre, or out of order; a chat search drawn after all; an input that resizes sideways.
 - The newest line on top; a new line put in on top; a chat not scrolled to its newest line; a line drawn again.
 - In the browser: a chat stopped short of its end, the newest line cut off; a left pane empty at open; a box a third of
-  its pane; a list as tall as nothing, cut off unseen, or the pane scrolling instead of the list; grant buttons that
-  scroll away with the files.
+  its pane; a list as tall as nothing, cut off unseen, or the pane scrolling instead of the list.
 
 ## goal/G43.3: the box panel, who asked
 
-- *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers. There is no search field beside it (goal/G43.22; Andy: *"take out your search of the items text, the codeMirror search works better for editing purposes."*). No server is asked. Going into the box takes it, and leaving it changed writes his text on the version it read, as the textarea did.
+- *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers. There is no search field beside it (goal/G43.22; Andy: *"take out your search of the items text, the codeMirror search works better for editing purposes."*). No server is asked. Leaving it changed writes his text on the version it read, as the textarea did.
 - *"above the box i want to see the the last-stored version number of the box."* The version the desk answered stands above the box.
 - *"red Q's should indicate who posted them."* The Qs panel shows the question and who placed it.
 

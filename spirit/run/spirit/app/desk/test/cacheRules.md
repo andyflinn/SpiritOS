@@ -8,7 +8,7 @@ is a plain map.
 
 - `rules(N)` answers `{ keep, shed, answer }`.
 - `keep(rows, row)` places the row last and takes out the row of the same thing it makes old: an item's facts, one side
-  row (a chat line by its time and author, the box by its item, a check by its number, a file by its author and path).
+  row (a chat line by its time and author, the box by its item, a check by its number). Files and their rows went (goal/G48.8).
   A part it does not know takes nothing out. No rule rows come any more (goal/G47.4, box v36).
 - `shed(rows, limit, bytes)`, Andy's order (Q2: *"FIRST YOU shed the longest untouched goal, lock, stock and barrel /
   when there is only one goal, then you shed the longest untouched item, LOCK, stock and barrel, / when there is only
@@ -16,11 +16,11 @@ is a plain map.
   ago, whole; with one goal the item touched longest ago, whole, the goal's own row staying; with one item the oldest
   chat line. It measures by the `bytes` it is handed.
 - `answer(verb, args, D, room)` answers as the desk would (goal/G41.11; box v15: *"The client queries its own cache
-  through that api.js"*): `item.get` from the facts with their version and the desk's change; `item.box`,
-  `item.checks`; `item.chat` the newest lines that fit the room, oldest first, `chatMore` when some were left out or the
-  stream brought only the newest; `item.files` as many as fit one answer, under the path asked, `filesMore` when some
-  were left out (goal/G33.7). Null when the cache does not hold it all, for a list kept only in part, or a verb it does
-  not keep, so the desk is asked.
+  through that api.js"*): `item.get` from the facts with their version and the desk's change; `item.box`;
+  `item.chat` the newest lines that fit the room, oldest first, `chatMore` when some were left out or the stream brought
+  only the newest. Null when the cache does not hold it all, or a verb it does not keep, so the desk is asked.
+  `item.checks` and `item.files` went (goal/G48.8; Andy: *"get rid of all item.checks verbs"*, *"get rid of all
+  item.files logic"*).
 
 ## What its test must try to break
 

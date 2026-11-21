@@ -23,8 +23,6 @@ const call = function (verb, args) { return spirit.check(verb, W.verbs[verb], ar
 const passes = function (verb, args) { return call(verb, args) === null; };
 const refusedAs = function (verb, args) { const r = call(verb, args); return r ? r.code : ''; };
 const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
-// One row a write (goal/G40.3): one path passes, a list is refused.
-const oneRow = function (v) { return passes(v, { id: 'goal/G1.1', path: 'spirit/run/a.js' }) && refusedAs(v, { id: 'goal/G1.1', path: ['a', 'b'] }) === 'bad-request'; };
 
 test.run('the desk\'s api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }
@@ -83,13 +81,13 @@ test.run('an id left out or empty is refused', 0.2, function () {
   if (!W.api) return false;
   return (refusedAs('item.get', {}) === 'bad-request' && refusedAs('item.get', { id: '' }) === 'bad-request') ? true : false;
 }, test.limit.quick);
-test.run('signoff, work.open and unsubscribe take nothing', 0.2, function () {
+test.run('unsubscribe takes nothing', 0.2, function () {
   if (!W.api) return false;
-  return (passes('signoff', {}) && passes('work.open', {}) && passes('unsubscribe', {})) ? true : false;
+  return passes('unsubscribe', {}) || false;
 }, test.limit.quick);
-test.run('signoff, work.open and unsubscribe refuse anything given', 0.2, function () {
+test.run('unsubscribe refuses anything given', 0.2, function () {
   if (!W.api) return false;
-  return (refusedAs('signoff', { why: 'x' }) === 'no-such-argument') ? true : false;
+  return (refusedAs('unsubscribe', { why: 'x' }) === 'no-such-argument') ? true : false;
 }, test.limit.quick);
 
 // where '' is a real value it passes
@@ -114,27 +112,14 @@ test.run('check.add takes empty words and an empty test', 0.2, function () {
   if (!W.api) return false;
   return (passes('check.add', { id: 'goal/G1.1', kind: 'C', words: '', test: '' })) ? true : false;
 }, test.limit.quick);
-test.run('claim takes an empty commit, as a plain item\'s build claim does', 0.2, function () {
-  if (!W.api) return false;
-  return (passes('claim', { id: 'goal/G1.1', phase: 'build', commit: '' })) ? true : false;
-}, test.limit.quick);
 test.run('press takes an empty id, as start-design with nothing open does, but never an empty what', 0.2, function () {
   if (!W.api) return false;
   return (passes('press', { id: '', what: 'start-design' }) && refusedAs('press', { id: 'goal/G1', what: '' }) === 'bad-request') ? true : false;
 }, test.limit.quick);
-test.run('profile.get takes an empty agent, meaning the caller', 0.2, function () {
-  if (!W.api) return false;
-  return (passes('profile.get', { agent: '' })) ? true : false;
-}, test.limit.quick);
-test.run('item.files takes under as optional, and an empty under keeps every path', 0.2, function () {
-  if (!W.api) return false;
-  return (passes('item.files', { id: 'goal/G1.1', under: '' }) && passes('item.files', { id: 'goal/G1.1' })) ? true : false;
-}, test.limit.quick);
 
-// optional where the handler lets it be left out, and only there
-test.run('item.add takes blocks left out or empty', 0.2, function () {
+test.run('item.add takes a goal and a title, and no blocks', 0.2, function () {
   if (!W.api) return false;
-  return (passes('item.add', { goal: 'goal/G1', title: 'a title' }) && passes('item.add', { goal: 'goal/G1', title: 'a title', blocks: '' })) ? true : false;
+  return (passes('item.add', { goal: 'goal/G1', title: 'a title' }) && refusedAs('item.add', { goal: 'goal/G1', title: 'a title', blocks: '' }) === 'no-such-argument') ? true : false;
 }, test.limit.quick);
 test.run('the title of item.add passes the label rule: a title too long is refused', 0.2, function () {
   if (!W.api) return false;
@@ -144,32 +129,9 @@ test.run('item.status takes tone as optional, which the deskClient\'s file repor
   if (!W.api) return false;
   return (passes('item.status', { id: 'goal/G1.1', word: 'working' }) && passes('item.status', { id: 'goal/G1.1', word: 'w', tone: 'test' })) ? true : false;
 }, test.limit.quick);
-test.run('phase.done takes pass and why only for a verify', 0.2, function () {
-  if (!W.api) return false;
-  return (passes('phase.done', { id: 'goal/G1.1', phase: 'red' }) && passes('phase.done', { id: 'goal/G1.1', phase: 'verify', pass: true, why: '' })) ? true : false;
-}, test.limit.quick);
-test.run('the pass of phase.done, when sent, is true or false', 0.2, function () {
-  if (!W.api) return false;
-  return (refusedAs('phase.done', { id: 'goal/G1.1', phase: 'verify', pass: 'yes' }) === 'bad-request') ? true : false;
-}, test.limit.quick);
-test.run('profile.set takes an empty name and nick as no name and no nick, with included and cap optional', 0.2, function () {
-  if (!W.api) return false;
-  // An agent is named by its key, a well-formed one (spirit.type.string.IDNew, goal/G48.4).
-  const K = 'MCowBQYDK2VwAyEA' + 'deskApiAgent'.padEnd(43, 'A') + '=';
-  return (passes('profile.set', { agent: K, name: '', nick: '' }) && passes('profile.set', { agent: K, name: 'n', nick: 'x', included: true, cap: false })) ? true : false;
-}, test.limit.quick);
 test.run('items.search needs all three of its flags sent, each true or false', 0.2, function () {
   if (!W.api) return false;
   return (refusedAs('items.search', { text: '', currentGoalOnly: 'true', goalsOnly: false, includeClosed: false }) === 'bad-request' && passes('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false })) ? true : false;
-}, test.limit.quick);
-// one row a write (goal/G40.3)
-test.run('item.files.add takes one path, never a list', 0.2, function () {
-  if (!W.api) return false;
-  return (oneRow('item.files.add')) ? true : false;
-}, test.limit.quick);
-test.run('item.files.remove takes one path, never a list', 0.2, function () {
-  if (!W.api) return false;
-  return (oneRow('item.files.remove')) ? true : false;
 }, test.limit.quick);
 // RULES GO OUT OF DESK (goal/G47.4, box v36: "The seven rule verbs go: rule.add, rule.draft, rule.get, rule.version,
 // rules.search, item.rules.add, item.rules.remove."; Andy: "go!").
@@ -189,4 +151,21 @@ test.run('chat.add takes a pasted block: two lines, a runner emoji with its join
   const runner = '\u{1F3C3}‍♂️';
   const block = 'red: ' + runner + ' a test\nand its next line';
   return (passes('chat.add', { id: 'goal/G1.1', text: block }) && passes('chat.add', { id: 'goal/G1.1', text: 'a'.repeat(2048) })) || false;
+}, test.limit.quick);
+
+// THE DESK CUT (goal/G48.8; Andy: "get rid of the fucking bubbles", "all signoff logic goes", the profiles: "no, they go",
+// "get rid of all item.files logic", "get rid of all item.checks verbs and their logic", "get rid of \"seen\" verbs",
+// "get rid of all phase logic", "get rid of block unblock", "get rid of claim", and of the gates, "get rid of all the fake
+// regulation in desk"; Q7: check.add and check.set "fine, keep those").
+const CUT = ['agent.state', 'agents.search', 'signoff', 'profile.get', 'profile.set', 'box.take', 'box.release', 'item.take',
+  'item.release', 'line.take', 'item.files', 'item.files.add', 'item.files.remove', 'item.files.search', 'item.checks',
+  'item.checks.search', 'seen.get', 'seen.set', 'phase.take', 'phase.may', 'phase.done', 'claim', 'work.open',
+  'item.claims.search', 'block', 'block.targets', 'unblock'];
+test.run('none of the 27 verbs the desk cut is declared', 0.4, function () {
+  if (!W.api) return false;
+  return !CUT.some(function (v) { return v in W.verbs; }) || false;
+}, test.limit.quick);
+test.run('check.add and check.set are still declared, for the red Qs', 0.4, function () {
+  if (!W.api) return false;
+  return ('check.add' in W.verbs && 'check.set' in W.verbs) || false;
 }, test.limit.quick);
