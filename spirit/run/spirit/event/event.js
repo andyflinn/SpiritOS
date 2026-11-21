@@ -24,7 +24,8 @@
 require('../spirit.js');
 const limits = spirit.require('spirit/limits.js');
 
-// o: { jobs, relayEvents, arrivals, renames, readJsonBody, bodyRefused, pageStreams }
+// o: { jobs, relayEvents, arrivals, renames, readJsonBody, bodyRefused, pageStreams, pageConnected? }
+//   pageConnected()   called at each page's connect (goal/G47.5, part 2), after it is subscribed
 function createEvents(o) {
   // ONE SUBSCRIPTION, IN THE NODE: fn(kind, data) for every event from every source. packets: 'take' (a page: the
   // backlog handed, each marked taken), 'witness' (a process: each new one seen, none taken) or 'none' (the face's
@@ -90,6 +91,10 @@ function createEvents(o) {
     // owner's waiting lines.
     const asServer = req.headers['x-spirit-reader'] === 'server';
     const off = subscribe(write, { packets: asServer ? 'witness' : 'take' });
+    // A PAGE'S CONNECT IS PASSED ON TO THE APP SERVERS (goal/G47.5, part 2; Andy: "the node forwards a loopback connect to the
+    // as server as a normal request, so that spirit/server/app.js knows a loopback client connected"): a page, never a
+    // process, once its snapshot is written and it is subscribed, so what a server publishes in answer reaches it.
+    if (!asServer && typeof o.pageConnected === 'function') { try { o.pageConnected(); } catch (e) { /* the page has its snapshot */ } }
 
     o.pageStreams.add(res);
     // A QUIET NODE IS NEVER TAKEN FOR DEAD (goal/G47.1, box v148: "the node beats each second when it has nothing else to send,

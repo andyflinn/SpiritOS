@@ -741,6 +741,29 @@ function subscribe(key, family, run, since) {
   sendTo(k, { run: RUN_ID, n: at, full: true, end: true });
   return true;
 }
+// A LOOPBACK CLIENT RECONNECTS AS A PEER DOES, WITH A SUBSCRIBE (goal/G47.5, part 2; Andy: "server/app.js knows when a peer
+// reconnects. it not knowing when a loopback client reconnects is the gap. generically, for all server apps", "the node
+// forwards a loopback connect to the as server as a normal request", "it will reach the app server with the local node's
+// ID, that's how the app server knows it's loopback", "47.5 WILL NOT HAVE ANY APP-SPECIFIC SHIT IN IT", "Go on 47.5 fix,
+// part two"): at a page's connect the node subscribes under its own key, naming this server itself as the family
+// (spirit/event/event.js, pageConnected). A subscribe of the node's own key under any other family is a subscriber like
+// any other (a server of this node following this one), and the owner's calls carry owner, so neither is taken for it.
+// It is answered by publishing to this node's own pages, never by peerPost and never kept as a subscriber: the cache in
+// client mode, as kept (the sibling listener's rows, or a following server's from its chosen sibling), the bootstrap in
+// server mode; each row as it would be published, so a page files it as it always has.
+function isLoopbackSubscribe(caller, a) {
+  return !!caller && caller.owner !== true && String(caller.key || '') === selfKey() && !!selfKey() && String(a.family) === listenersName;
+}
+function pushToPages() {
+  let rows = [];
+  if (clientMode()) {
+    const st = remote.hasListener ? senders.get(remote.current) : null;
+    rows = remote.hasListener ? (st ? st.rows.map(function (r) { return r.row; }) : []) : sibling.rows.slice();
+  } else {
+    try { rows = (publisher && publisher.bootstrap && publisher.bootstrap(selfKey())) || []; } catch (e) { rows = []; }
+  }
+  rows.forEach(function (row) { if (isPlain(row)) { try { spirit.event.publish(row); } catch (e) { /* no page listens */ } } });
+}
 function withPublisher(verbs, opts) {
   if (!opts || typeof opts !== 'object') return verbs;
   publisher = {
@@ -760,6 +783,7 @@ function withPublisher(verbs, opts) {
     handler: function (a, caller) {
       if (!caller || !caller.key) throw refusedNoKey();
       if (!/^[A-Za-z]\w*$/.test(String(a.family || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its listener\'s' } });
+      if (isLoopbackSubscribe(caller, a)) { pushToPages(); return { subscribed: true }; }
       subscribe(caller.key, String(a.family), a.run, a.since);
       if (listeners[String(caller.key)] !== String(a.family)) { listeners[String(caller.key)] = String(a.family); saveListeners(); }
       return { subscribed: true };

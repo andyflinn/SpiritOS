@@ -263,9 +263,15 @@ const pageStreams = new Set();
 // THE NODE'S ONE DISPATCHER OF EVENTS (goal/G40.6; Andy: "two verbs on events - publish - subscribe"): the jobs, the
 // relay events, the packets and the contact renames feed it; the pages, the processes and the face subscribe. Mounted
 // below as the events family; /api/events, a door outside any api, is gone.
+// A PAGE'S CONNECT, PASSED ON (goal/G47.5, part 2; Andy: "the node forwards a loopback connect to the as server as a normal
+// request", "it will reach the app server with the local node's ID, that's how the app server knows it's loopback"): every
+// running server is asked subscribe under this node's own key, naming itself as the family, the existing verb a peer
+// reconnects with (spirit/server/app.js, pushToPages). Set once the app client is (below); none is waited for.
+let pageConnectedTo = null;
 const events = spirit.require('spirit/event/event.js').createEvents({
   jobs: jobs, relayEvents: relayEvents, arrivals: arrivals, renames: hub.contactRenames, pageStreams: pageStreams,
   readJsonBody: function (req) { return readJsonBody(req); }, bodyRefused: bodyRefused,
+  pageConnected: function () { if (pageConnectedTo) pageConnectedTo(); },
 });
 
 // A FILE, AS THE BROWSER'S GET IS SERVED IT. One function, so the face asking its home node for a file (faceHome,
@@ -1244,6 +1250,14 @@ catch (e) {
     // No app named like a node family: they sit side by side in one flat table (goal/G30.4).
     reserved: function () { return loopbackVerbs.namespaces().map(function (n) { return n.namespace; }); },
   });
+  pageConnectedTo = function () {
+    let key = '';
+    try { key = String(spirit.require('spirit/relayAuth.js').loadIdentity(ROOT_DIR).publicKey || ''); } catch (e) { key = ''; }
+    if (!key) return;
+    appClient.servers().forEach(function (name) {
+      Promise.resolve(appClient.ask({ [name]: { subscribe: { family: name } } }, { key: key })).catch(function () { /* a server down is asked at the next connect */ });
+    });
+  };
   // THE ONE DOOR TO THE FLAT TABLE (goal/G30.4): this node's families and its apps' side by side. apiDoor (a
   // peer, gated by its grants) and /api/spirit (the owner, ungated) both ask it; a node family runs in-process
   // through the same handler the loopback door calls (Andy: "1 handler, grant-system covers all").

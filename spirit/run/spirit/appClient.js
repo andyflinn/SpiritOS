@@ -224,6 +224,9 @@ function createAppClient(opts) {
   return {
     ask: ask,
     apps: function () { return Object.keys(table); },
+    // The running server processes, the one-shot apps left out (goal/G47.5, part 2: a page's connect is passed on to each
+    // of these, and a knock on a one-shot app would start it).
+    servers: function () { return Object.keys(table).filter(function (n) { return !table[n].oneShot && !table[n].off; }); },
     // A server process the node started (jobs.startNodeServers), known from
     // now on by the pipe the node named for it (desk/G1.6, appPair D15).
     register: function (name, pipe) {
