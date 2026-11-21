@@ -121,8 +121,8 @@ rules of 2026-10-02 (goal/G3), first among them:
 
 They head the desk's rules for agents (`spirit/run/spirit/app/desk/AGENTS.md`),
 which every agent reads at the start of a sitting; `spirit/test/agentsAppGone.js`
-asserts the app's absence, and `deskClient.js` enforces rule 1 at each agent's
-node (goal/G3.9). Authorization to write code comes only through Desk (rule 4):
+asserts the app's absence, and each agent keeps rule 1 by blocking every other
+agent's key on its own node (`DESK.md`, *First, once*). Authorization to write code comes only through Desk (rule 4):
 a Go on an item of the current goal. No git hook checks it at the commit (goal/G43.27, Andy: "all, just get rid of
 the fucking git hooks.").
 
@@ -223,25 +223,27 @@ and *"we codify your behavior in AGENTS.md and CLAUDE.md for the repo AND
 AGENTS.md for desk"*. The loop, as the lead runs it:
 
 1. **No turn ends without a listener armed.** After every post, the agent
-   starts a one-shot listener in the background that exits on the next thing
-   meant for it: a line or press from Andy in Desk, the other agent's line.
-   The listener is `node spirit/run/spirit/app/desk/deskAgentEar.js <port>`, the
-   port being the agent's own node's (an agent with no node of its own yet, or not yet
-   on Desk, starts with [`DESK.md`](DESK.md), *First, once*) (Andy: *"just put that listener script in
-   the repo"*; its place and form since goal/G3.6). It asks that node's
-   deskClient server (`spirit/run/spirit/app/deskClient/`), which follows
-   the stream the desk pushes to it over peerPost and keeps the current goal
-   from it alone (goal/G33.4; Desk's `changes` verb is gone), so it works from
-   wherever the agent is. The ear prints what arrived and the exact command to
-   re-arm with (`--read <key>`, goal/G41.11): a wake is dropped only once read.
+   starts its console's wait in the background, `node spirit/console.js wait` in
+   its own clone's `spirit/run`, which ends on the next row of Andy's desk that
+   matches its wait-rows. The agent's node runs a desk of its own, a client of
+   Andy's (goal/G47.5): his desk's rows reach the agent's node as deliveries to
+   that desk's listener, the node's log keeps them, and the wait reads them there
+   from its own place, so nothing that came between two waits is lost
+   (goal/G48.6). Reads and writes go through the same console, at `app.desk`
+   (an agent with no node of its own yet, or not yet on Desk, starts with
+   [`DESK.md`](DESK.md), *First, once*). deskClient and the ear are gone
+   (Andy, 2026-11-21: *"desk client killed"*, *"kill the ear"*); the console is
+   the agent's manual and interface for its own node (*"console can be your
+   manual and interface for your personal node"*).
 2. **When it fires, the agent reads it, answers in Desk under the item it
    is about, and re-arms** before the turn ends.
 3. **A listener the tooling stops is re-armed at once.** Where the tooling
    will not let it be re-armed, the agent says so in its window
    (`listener stopped`), since a deaf agent that looks idle is the one state
    he cannot see.
-4. **A line he sent to the other agent is not answered** (the peer key on
-   the line says who it is for).
+4. **A line he sent to the other agent is not answered**: every line of his
+   wakes the agent, and the agent reads whom it is for from its first word,
+   its nick or `all` (goal/G48.8; the desk no longer addresses lines).
 
 **And it follows the project.** Andy: *"you both must decide how to update
 your listeners to follow the project."* Agreed by both agents over the wire,

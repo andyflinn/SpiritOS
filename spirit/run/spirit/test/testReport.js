@@ -164,7 +164,7 @@ function reportToTesticle(rec, verb) {
 }
 
 // THE REPORTER'S OWN TIMERS, kept as this file loads: a suite may replace the global setTimeout to speed its own waits
-// (spirit/app/desk/test/deskLoop.js does), and a test's time limit must not shrink with it.
+// (a suite once did), and a test's time limit must not shrink with it.
 const ownTimeout = setTimeout;
 const ownImmediate = setImmediate;
 const queue = [];

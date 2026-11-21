@@ -16,7 +16,7 @@ You hold the **in-studio** position (`AGENT.md`, Split of labour): you work **in
 
 ## Listening to Desk, always
 
-**No turn ends without a Desk listener armed.** Andy, 2026-10-01: *"ideally agents just listen do desk in a loop. this loop ends only when i close vscode."* Arm a one-shot listener in the background after every post (`node spirit/run/spirit/app/desk/deskAgentEar.js <the port of your own node>`); when it fires, answer in Desk and re-arm. A listener stopped by its time limit is re-armed, or the window says `listener stopped`. The loop is spelled out in `AGENT.md` (*Since Desk, idle means listening to Desk, in a loop*), and step by step in [`DESK.md`](DESK.md).
+**No turn ends without a Desk listener armed.** Andy, 2026-10-01: *"ideally agents just listen do desk in a loop. this loop ends only when i close vscode."* Arm your console's wait in the background after every post (`node spirit/console.js wait`, in your own clone's `spirit/run`; your desk is a client of Andy's, and its wait-rows are your console's state, set once as [`DESK.md`](DESK.md) says); when it fires, answer in Desk through the console and re-arm. Your console is your manual and interface for your own node (Andy, 2026-11-21). A listener stopped by its time limit is re-armed, or the window says `listener stopped`. The loop is spelled out in `AGENT.md` (*Since Desk, idle means listening to Desk, in a loop*), and step by step in [`DESK.md`](DESK.md).
 
 ## Delivering an implementation sitting
 

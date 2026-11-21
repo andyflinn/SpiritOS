@@ -13,8 +13,9 @@
 //   node platform/wsl/autoPull.js <Andy's repo> <the port of your own node> <Desk item>
 //
 // Asks of Andy's node go through the spirit object of his checkout (its spirit/state/environment.json names his node):
-// testicle.busy, and app.active of testicle, nothing else. What it says goes to Desk through deskAgentEar.js of this
-// checkout, on the agent's own node, under the item given.
+// testicle.busy, and app.active of testicle, nothing else. What it says goes to Desk as desk.chat.add on the agent's own
+// node, over its loopback, under the item given: that node's desk, in client mode, sends it on to Andy's (deskAgentEar.js
+// went with deskClient, goal/G48.8).
 //
 // once({repo, ask, say}): one look. ask(verb, args) answers the node's body; say(text) posts to Desk.
 
@@ -85,10 +86,9 @@ if (require.main === module) {
     return spirit.outcome(spirit.require(spirit.familyPath(family)).then(function (c) { return c[name](args); }))
       .then(function (r) { return r && r.body; });
   };
-  const ear = path.join(__dirname, '..', '..', 'spirit', 'run', 'spirit', 'app', 'desk', 'deskAgentEar.js');
   const say = function (text) {
-    execFileSync(process.execPath, [ear, String(port), 'chat.add', JSON.stringify({ id: item, text: text })], { stdio: 'ignore' });
-    return Promise.resolve(true);
+    return fetch('http://127.0.0.1:' + Number(port) + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'desk.chat.add', args: { id: item, text: text } }) })
+      .then(function (r) { return r.ok; }, function () { return false; });
   };
   const tick = function () {
     once({ repo: repo, ask: ask, say: say })
