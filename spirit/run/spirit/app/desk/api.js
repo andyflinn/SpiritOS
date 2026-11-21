@@ -25,8 +25,8 @@ module.exports = {
     'check.set': { id: 'spirit.type.string.deskId', check: 'spirit.type.string.word', state: 'spirit.type.string.checkState' },
     // The handler trims and refuses an empty title; it applies no label rule to a goal's.
     'goal.add': { title: 'spirit.type.string.description' },
-    // The title passes the label rule (fieldWhy).
-    'item.add': { goal: 'spirit.type.string.deskId', title: 'spirit.type.string.label' },
+    // The title passes the label rule (fieldWhy); blocks (goal/G49) may be left out or '' (the goal).
+    'item.add': { goal: 'spirit.type.string.deskId', title: 'spirit.type.string.label', blocks: 'spirit.type.string.deskIdSelect?' },
     'item.box': { id: 'spirit.type.string.deskId' },
     'item.chat': { id: 'spirit.type.string.deskId' },
     // Kept (goal/G48.8 Q8): the details dialog's one read of an item's checks.

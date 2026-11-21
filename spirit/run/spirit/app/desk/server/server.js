@@ -664,6 +664,8 @@ function apply(s, r, b, item, goalOf) {
       const one = s.items[id];
       one.title = String(b.title || one.title);
       one.goalId = gid;
+      // goal/G49: the item it blocks, its goal when none was named.
+      one.blocks = [String(b.blocks || gid)];
       one.at = r.at;
       // WHO CREATED IT (goal/G27.10, R2): its creator posts under it at any time; the first add names it.
       if (!one.creator) { one.creator = r.by; one.creatorKey = String(r.key || ''); }
@@ -862,6 +864,9 @@ function facts(s, it) {
     green: !redWhy(it),
     // goal/G27.10: who created it, '' for an item from a session or before the creator was recorded.
     creator: it.creator || '' };
+  // goal/G49: what an item blocks, the goal or an item of it, as item.add named it; none on a goal, or on an item added
+  // before goal/G49.
+  if (!it.goal && Array.isArray(it.blocks) && it.blocks.length) f.blocks = it.blocks.slice();
   f.asks = asksOf(s, it);
   if (it.goal) {
     const g = s.goals[it.id];
@@ -1328,8 +1333,17 @@ appServer.serve({
   // blocking item with the entered title and a blank text box." So item.add takes one more argument, optional: the id
   // the new item blocks, the goal itself or an item of that goal, and the goal when it is left out (goal/G9.9's case).
   // The title obeys the label rules, as every label does (spirit/fieldRules.js).
+  // WHAT IT BLOCKS (goal/G49; Andy: "put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input]
+  // [Add-button], which will add an item with <Title> blocking the goal/item it was created from."): blocks, left out or
+  // '', is its goal; else an item of that goal, kept on the new item as its blocks. Nothing else of the G48.8 cut's
+  // blocks comes back: no block, unblock or block.targets.
   'item.add': {
-    request: { goal: '', title: '' }, reply: { id: '', change: 0 },
+    request: { goal: '', title: '', blocks: '' }, reply: { id: '', change: 0 },
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      return Object.keys(x).every(function (k) { return k === 'goal' || k === 'title' || k === 'blocks'; }) &&
+        typeof x.goal === 'string' && typeof x.title === 'string' && (x.blocks === undefined || typeof x.blocks === 'string');
+    },
     handler: function (a, caller) {
       const w = writerOf(caller);
       const gid = String(a.goal || '');
@@ -1337,8 +1351,11 @@ appServer.serve({
       if (!title) throw refusedWhy('bad-request', 'an item needs a title');
       if (fieldWhy('title', title)) throw refusedWhy('bad-request', fieldWhy('title', title));
       const args = { goal: gid, title: title, by: w.by, key: w.key };
+      if (a.blocks !== undefined && String(a.blocks) && String(a.blocks) !== gid) args.blocks = String(a.blocks);
       const r = write('item.add', args, function (st) {
         if (!st.goals[gid] || !st.items[gid]) throw refused('no-such-item');
+        // An item of its own goal: an item never blocks across goals.
+        if (args.blocks && !(st.items[args.blocks] && st.items[args.blocks].goalId === gid)) throw refusedWhy('no-such-item', args.blocks + ' is no item of ' + gid);
         // AN AGENT ADDS UNDER HIS WORDS (goal/G29.21), decided by Andy: see addGrantOf.
         if (w.by !== 'andy' && !(st.addGrant && st.addGrantGoal === gid)) throw refusedWhy('not-granted', 'an agent adds an item only while Andy\'s newest line, written in this goal, says "add item" (one) or "add items" (several); propose it to him instead');
         args.minted = nextItemId(st, gid);

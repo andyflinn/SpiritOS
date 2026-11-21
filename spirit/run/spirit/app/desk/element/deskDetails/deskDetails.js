@@ -159,6 +159,9 @@ function ddFrame() {
       // The left pane's content, a box of its own that scrolls (goal/G41.11: a long list is never cut off unseen).
       // The left pane's content: its rows on top, the panel taking the rest (each panel scrolls in itself, ddPanelHtml).
       '<div id="dd-left" class="fill" style="min-height:0;overflow:hidden">' +
+        // THE PLUNGER'S ROWFORM (goal/G49) stands in the frame, so a title being typed survives every repaint; it shows with
+        // the plunger's panel only (ddPaint).
+        '<div id="dd-add-row" style="flex:none;display:none"></div>' +
         '<div id="dd-panel" class="fill" style="min-height:0"></div>' +
       '</div>' +
       // THE CENTRE IS THE CHAT (goal/G41.22; Andy: "newest lines at the bottom, pinned to the bottom, and older lines above"),
@@ -174,6 +177,40 @@ function ddFrame() {
       '</div>' +
     '</div>';
   ddBenchParts.then(function () { ddMakeBench(n); }, function () { /* no workBench: the holder shows it all, as written */ });
+  ddAddParts.then(function () { ddMakeAdd(n); }, function () { /* no rowForm: no add */ });
+}
+// THE PLUNGER (goal/G49; Andy: "put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input] [Add-button],
+// which will add an item with <Title> blocking the goal/item it was created from."): the shell's rowForm, its span holding
+// the words and the title input (a label, fieldInput), its Add busy until the desk answers (busyButton). On a goal the new
+// item is the goal's; on an item it is of the same goal and blocks that item (item.add blocks).
+var ddAddParts = typeof spirit !== 'undefined' && spirit.require
+  ? Promise.all([spirit.require('spirit/element/rowForm.js'), spirit.require('spirit/element/fieldInput.js')])
+  : Promise.resolve(null);
+function ddMakeAdd(n) {
+  var R = window.spirit && window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.element.rowForm;
+  var F = window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element.fieldInput;
+  var row = document.getElementById('dd-add-row');
+  if (n !== ddFrameN || !R || typeof R.create !== 'function' || !row || row.firstChild) return;
+  var form = R.create(row, { icon: '➕', button: 'Add', press: function () { return ddAdd(); } });
+  var words = document.createElement('span');
+  words.textContent = 'Add blocking item';
+  form.span.appendChild(words);
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.id = 'dd-add-title';
+  input.placeholder = 'title';
+  if (F && typeof F.attach === 'function') F.attach(input, 'spirit.type.string.label');
+  form.span.appendChild(input);
+}
+function ddAdd() {
+  var title = ddValue('dd-add-title');
+  var f = ddFacts || {};
+  if (!title) return Promise.resolve(false);
+  var args = f.goal === '' ? { goal: ddId, title: title } : { goal: String(f.goal), title: title, blocks: ddId };
+  return ddWrite('item.add', args).then(function (taken) {
+    if (taken) { ddClear('dd-add-title'); ddLoad(); }
+    return taken;
+  });
 }
 // The left pane shows today's panel of the tool shown; the strip's tool is the panel's key (DD_PANELS).
 function ddShowLeft(name) {
@@ -278,6 +315,8 @@ var ddPanelSel = 'box';
 var DD_PANELS = [
   { key: 'box', icon: '📃', title: 'the box' },
   { key: 'qs', icon: '❌', title: 'red Qs, grants and checks' },
+  // goal/G49: the plunger, its rowForm in the frame (ddMakeAdd).
+  { key: 'blocks', icon: '🪠', title: 'add a blocking item' },
 ];
 function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
 // The workBench draws the strip and marks the shown tool (goal/G41.22); a waiting icon on it blinks.
@@ -332,6 +371,8 @@ function ddScrolls(html) { return '<div class="fill" style="min-height:0;overflo
 function ddPanelHtml() {
   // The open grants pinned on top (goal/G33.8, box v10), the red Qs, the given grants and the checks under them.
   if (ddPanelSel === 'qs') return '<div style="flex:none">' + ddGrantsHtml(true) + '</div>' + ddScrolls(ddQsHtml() + ddGrantsHtml(false));
+  // The plunger's panel is its rowForm alone, above it in the frame.
+  if (ddPanelSel === 'blocks') return '';
   return ddBoxHtml();
 }
 
@@ -529,6 +570,9 @@ function ddPaint() {
   ddBlinkIcons();
   // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed.
   if (!(ddPanelSel === 'box' && ddBoxFocused)) { ddSet('dd-panel', ddPanelHtml()); if (ddPanelSel === 'box') ddBoxMount(); }
+  // The plunger's rowForm stands in the frame; it shows with its panel only.
+  var addRow = document.getElementById('dd-add-row');
+  if (addRow && addRow.style) addRow.style.display = ddPanelSel === 'blocks' ? '' : 'none';
   ddChatSync();
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
