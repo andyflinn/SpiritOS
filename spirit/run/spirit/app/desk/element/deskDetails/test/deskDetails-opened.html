@@ -105,6 +105,31 @@ window.boxTake = function () {
   });
 };
 
+// THE PLUNGER (goal/G49; Andy: "put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input] [Add-button],
+// which will add an item with <Title> blocking the goal/item it was created from."): the rowForm holding those words, what
+// it holds, and the call its Add sends once a title is typed.
+window.plunger = function () {
+  var forms = Array.prototype.filter.call(document.querySelectorAll('.shell-row-form'), function (f) { return f.textContent.indexOf('Add blocking item') !== -1; });
+  var out = { forms: forms.length };
+  var f = forms[0];
+  if (!f) return Promise.resolve(JSON.stringify(out));
+  var button = f.querySelector('button');
+  var input = f.querySelector('input[type="text"], input:not([type])');
+  out.icon = f.textContent.indexOf('➕') !== -1 || !!f.querySelector('[data-icon="➕"], [title="➕"]');
+  out.input = !!input;
+  out.button = button ? button.textContent.trim() : '';
+  if (!input || !button) return Promise.resolve(JSON.stringify(out));
+  window.asked.length = 0;
+  input.value = 'zz the plunger\'s item';
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  button.click();
+  return wait(500).then(function () {
+    var add = window.asked.filter(function (a) { return a.name === 'desk.item.add'; })[0];
+    out.add = add ? add.args : null;
+    return JSON.stringify(out);
+  });
+};
+
 // One left panel shown, and what fills and what scrolls in it, measured: the box that scrolls most inside the pane, and
 // whether the pane itself scrolls. A grant row is measured before and after its list is scrolled to its end.
 window.panel = function (key) {

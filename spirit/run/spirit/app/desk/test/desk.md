@@ -15,6 +15,9 @@ nick and ALL, the auto-cap and the box hold, the phase wake, the agent bubbles a
 and the desk-owner mark went with them, and the seeded items carry no blocks.
 
 - His Go on an item with no file listed is taken; there is no code press.
+- **The plunger** (goal/G49; Andy: *"put the plunger back ... which will add an item with <Title> blocking the
+  goal/item it was created from."*): `item.add` with `blocks` makes an item of that title whose facts name the item it
+  blocks.
 - **A line's first word is its `to`** (Andy: *"all desk needs to do is scan for a line starting with a \"word:\" ... and
   throw it into a \"to\" field, that your wait can check"*, *"desk doesn't need to know"*; of cw's *"the first word of
   every chat line, lowercased, goes into its to, checked against nothing"*: *"agreed, no punctuation."*): his lines

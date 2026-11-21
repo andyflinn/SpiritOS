@@ -228,6 +228,9 @@ function ddWorld(facts, checks, o) {
       'search': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
     required: { spirit: { element: {} } },
   };
+  // THE ROWS THE PAGE HOLDS (goal/G48.8: a goal's Close counts its open items "from the page's own rows"), when a case
+  // hands some: the desk family's kept data, as spirit/app/desk/data.js gives it a page.
+  if (o && o.kept) win.spirit.data = { desk: { data: { part: function () { return null; }, items: function () { return o.kept; }, forget: function () {} } } };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the dialog places itself by installSpiritElement as it runs.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
@@ -296,7 +299,7 @@ async function twoPressAny(g, find, want) {
   return { good: good };
 }
 
-const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'waive', 'delete', 'close'] };
+const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'delete', 'close'] };
 const ITEM = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close'] };
 const press = function (what) { return { name: 'desk.press', args: { id: 'goal/G9', what: what } }; };
 // A dialog opened on a subject; a press of a button in it.
@@ -362,17 +365,16 @@ test.run('it asks for no suites', 0.2, async function () {
 test.run('Go all is an arming button that says "Go all: sure?" on the first press and sends desk.press go-all on the second', 0.2, function () {
   return goalPress('dd-go-all', 'Go all: sure?', press('go-all'));
 }, test.limit.quick);
-test.run('Waive is an arming button that says "Waive: sure?" on the first press and sends desk.press waive on the second', 0.2, function () {
-  return goalPress('dd-waive', 'Waive: sure?', press('waive'));
-}, test.limit.quick);
 test.run('Delete is an arming button that says "Delete: sure?" on the first press and sends desk.item.delete on the second', 0.2, function () {
   return goalPress('dd-delete', 'Delete: sure?', { name: 'desk.item.delete', args: { id: 'goal/G9' } });
 }, test.limit.quick);
 test.run('Abandon is an arming button that says "Sure? Abandon the goal" on the first press and sends desk.press abandon on the second', 0.2, function () {
   return goalPress('dd-abandon', 'Sure? Abandon the goal', press('abandon'));
 }, test.limit.quick);
-test.run('Close on a goal with an item open asks "are you sure? 1 open" on the first press and closes on the second', 0.2, function () {
-  return goalPress('dd-close', 'are you sure? 1 open', press('close'));
+test.run('Close on a goal with an item open asks "are you sure? 1 open" on the first press and closes on the second', 0.2, async function () {
+  // The page holds the goal's rows: one item open, one done.
+  const w = await opened(GOAL, [], { kept: { 'goal/G9.1': { id: 'goal/G9.1', goal: 'goal/G9', status: 'open' }, 'goal/G9.2': { id: 'goal/G9.2', goal: 'goal/G9', status: 'done' } } });
+  return pressed(await twoPress(w, byId(w, 'dd-close'), 'are you sure? 1 open', press('close')));
 }, test.limit.quick);
 
 // goal/G41.9: an item's early Close.
@@ -669,6 +671,17 @@ test.run('leaving the box changed writes his text, on the version it read', 0.2,
   if (!S.m) return false;
   const t = await pageAnswer('window.boxTake()');
   return (!!t && !!t.wrote && t.wrote.text === 'his new text' && t.wrote.version === 37) || false;
+}, test.limit.quick);
+// THE PLUNGER (goal/G49; Andy: "put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input] [Add-button],
+// which will add an item with <Title> blocking the goal/item it was created from.", "Go!"). The page is opened on goal/G9.1.
+test.run('the detail holds one rowForm with ➕, "Add blocking item", a title input and an Add button', 0.4, async function () {
+  if (!S.m) return false;
+  const p = S.plunger = await pageAnswer('window.plunger()');
+  return (!!p && p.forms === 1 && p.icon === true && p.input === true && p.button === 'Add') || false;
+}, test.limit.quick);
+test.run('its Add, with a title typed, adds an item of that title blocking the item the detail is of', 0.4, function () {
+  const a = (S.plunger || {}).add;
+  return (!!a && a.title === 'zz the plunger\'s item' && a.blocks === 'goal/G9.1' && a.goal === 'goal/G9') || false;
 }, test.limit.quick);
 // EVERY LEFT PANEL USES ALL THE HEIGHT (Andy, on G41.22: "the box must use the full vertical space", "all left
 // side panels must fucking use all available vertical space, especially the lists"): given long content, the

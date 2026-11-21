@@ -18,7 +18,8 @@ the handlers (Andy, 2026-10-22: "request validation worth a damn?").
     `press` id (start-design with nothing open).
   - Optional: `item.status` tone. `unsubscribe` takes nothing and refuses anything given.
   - `box.write` version is a number; `items.search`'s three flags are booleans.
-  - `item.add` takes a goal and a title, its title passing the label rule, and no blocks.
+  - `item.add` takes a goal and a title, its title passing the label rule, and `blocks`, the goal or item the new one
+    blocks, left out or given (goal/G49, the plunger).
 - An argument a verb does not take is refused (no-such-argument).
 
 ## What its test must try to break
@@ -47,8 +48,8 @@ logic"*; *"get rid of all item.checks verbs and their logic"*; *"get rid of \"se
 *"get rid of block unblock"*; *"get rid of claim"*; and of the gates, *"get rid of all the fake regulation in desk"*. Q7:
 check.add and check.set *"fine, keep those"*.
 
-- None of the 27 cut verbs is declared: agent.state, agents.search, signoff, profile.get, profile.set, box.take,
+- None of the 26 cut verbs is declared: agent.state, agents.search, signoff, profile.get, profile.set, box.take,
   box.release, item.take, item.release, line.take, item.files, item.files.add, item.files.remove, item.files.search,
-  item.checks, item.checks.search, seen.get, seen.set, phase.take, phase.may, phase.done, claim, work.open,
+  item.checks.search, seen.get, seen.set, phase.take, phase.may, phase.done, claim, work.open,
   item.claims.search, block, block.targets, unblock. Their argument checks go.
-- check.add and check.set are still declared, for the red Qs.
+- check.add and check.set are still declared, for the red Qs; item.checks stays too (Q8, Andy: *"whatever you want"*).

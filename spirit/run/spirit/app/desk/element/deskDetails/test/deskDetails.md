@@ -26,7 +26,7 @@ the arming deskDetails.js hand-rolled.
   `ddDisarm`, `armedClose`, `armedAll`).
 - **Each two-press button is an armingButton handed the app's api**, saying today's armed wording; its first press
   writes nothing, its second writes as before:
-  - Go all → `Go all: sure?`, then `press go-all`; Waive → `Waive: sure?`, then `press waive`;
+  - Go all → `Go all: sure?`, then `press go-all`;
   - Delete → `Delete: sure?`, then `item.delete`; Abandon → `Sure? Abandon the goal`, then `press abandon`;
   - an early Close → `are you sure? N open` on a goal with N items open, `Close: sure?` on an open item, then `press close`;
 
@@ -158,3 +158,13 @@ The plugin leftovers once in `shell/shared` (goal/G43.23, item 10): `shell/` is 
 Andy: *"Next we kill rules from desk. nobody observes them"*, *"are we ready to strip rules out of desk now?"*, *"go!"*.
 
 - The details panel has no rules icon, so no rule list can be opened; the add-rule dropdown and rule-row checks go.
+
+## The plunger (goal/G49)
+
+Andy: *"put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input] [Add-button], which will add an item
+with <Title> blocking the goal/item it was created from."*, *"Go!"*. On the page opened on goal/G9.1:
+
+- the detail holds one rowForm with ➕, the words "Add blocking item", a title input and a button saying Add;
+- its Add, with a title typed, sends `desk.item.add {goal: goal/G9, title, blocks: goal/G9.1}`.
+
+A goal's Close counts its open items from the rows the page holds (goal/G48.8); the case hands it one open and one done.

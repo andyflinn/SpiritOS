@@ -117,9 +117,12 @@ test.run('press takes an empty id, as start-design with nothing open does, but n
   return (passes('press', { id: '', what: 'start-design' }) && refusedAs('press', { id: 'goal/G1', what: '' }) === 'bad-request') ? true : false;
 }, test.limit.quick);
 
-test.run('item.add takes a goal and a title, and no blocks', 0.2, function () {
+// THE PLUNGER (goal/G49; Andy: "put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input]
+// [Add-button], which will add an item with <Title> blocking the goal/item it was created from."): item.add names what the new
+// item blocks, and may leave it out.
+test.run('item.add takes a goal and a title, and blocks, the goal or item the new one blocks, left out or given', 0.2, function () {
   if (!W.api) return false;
-  return (passes('item.add', { goal: 'goal/G1', title: 'a title' }) && refusedAs('item.add', { goal: 'goal/G1', title: 'a title', blocks: '' }) === 'no-such-argument') ? true : false;
+  return (passes('item.add', { goal: 'goal/G1', title: 'a title' }) && passes('item.add', { goal: 'goal/G1', title: 'a title', blocks: 'goal/G1.2' })) ? true : false;
 }, test.limit.quick);
 test.run('the title of item.add passes the label rule: a title too long is refused', 0.2, function () {
   if (!W.api) return false;
@@ -158,10 +161,11 @@ test.run('chat.add takes a pasted block: two lines, a runner emoji with its join
 // "get rid of all phase logic", "get rid of block unblock", "get rid of claim", and of the gates, "get rid of all the fake
 // regulation in desk"; Q7: check.add and check.set "fine, keep those").
 const CUT = ['agent.state', 'agents.search', 'signoff', 'profile.get', 'profile.set', 'box.take', 'box.release', 'item.take',
-  'item.release', 'line.take', 'item.files', 'item.files.add', 'item.files.remove', 'item.files.search', 'item.checks',
+  'item.release', 'line.take', 'item.files', 'item.files.add', 'item.files.remove', 'item.files.search',
   'item.checks.search', 'seen.get', 'seen.set', 'phase.take', 'phase.may', 'phase.done', 'claim', 'work.open',
   'item.claims.search', 'block', 'block.targets', 'unblock'];
-test.run('none of the 27 verbs the desk cut is declared', 0.4, function () {
+// item.checks stays (Q8 of goal/G48.8, Andy: "whatever you want"): the details dialog's one read of an item's red Qs.
+test.run('none of the 26 verbs the desk cut is declared', 0.4, function () {
   if (!W.api) return false;
   return !CUT.some(function (v) { return v in W.verbs; }) || false;
 }, test.limit.quick);

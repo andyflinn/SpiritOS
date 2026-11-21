@@ -274,6 +274,17 @@ test.run('a line "The plainest rule" is published with to the, its first word lo
   return toIs('The plainest rule', 'the');
 }, test.limit.quick);
 
+// THE PLUNGER (goal/G49; Andy: "put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input] [Add-button],
+// which will add an item with <Title> blocking the goal/item it was created from."): the item item.add makes, given blocks,
+// names in its facts the item it blocks.
+test.run('item.add with blocks makes an item of that title whose facts name the item it blocks', 0.4, async function () {
+  if (!W.up) return false;
+  const made = await call('item.add', { goal: GOAL.id, title: 'zz blocking item', blocks: ITEMS[5] }, ANDY);
+  if (!made || typeof made.id !== 'string' || !made.id) return false;
+  const f = await facts(made.id);
+  return (f.title === 'zz blocking item' && JSON.stringify(f).indexOf('"' + ITEMS[5] + '"') !== -1) || false;
+}, test.limit.quick);
+
 // RULES GO OUT OF DESK (goal/G47.4, box v36; Andy: "Next we kill rules from desk. nobody observes them", "are we ready to
 // strip rules out of desk now?", "go!"): "The rules list on each goal and item goes", "The part that works out which rules
 // apply in which phase goes", "The three rule tables in the desk database (the rules, their drafts, their chat) are no
