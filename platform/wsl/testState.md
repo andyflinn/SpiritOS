@@ -1,1554 +1,1811 @@
 # Test state: wsl
 
-- `spirit/app/testicle/testicle.js`: 10 reds, the worst `spirit/app/testicle/server/test/server.js` a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again (severity 0.8)
-- `spirit/faceHome.js`: 9 reds, the worst `spirit/test/faceHome.js` with no star, the face draws none of the apps of the home desktop (severity 0.8)
-- `spirit/app/app/element.js`: 117 reds, the worst `spirit/app/app/test/element.js` a launched app's title bar is the same rowForm as the title bar of all panels (severity 0.7)
-- `spirit/spirit.js`: 2 reds, the worst `spirit/test/spirit.js` a scratch node is up, on its own copy of the tree (severity 0.7)
-- `spirit/element/search.js`: 8 reds, the worst `spirit/element/test/search.js` a press on a tile is the tile part's: its node hears it, and the shared search picks nothing itself (severity 0.4)
-- `spirit/element/search/contact.js`: 4 reds, the worst `spirit/element/test/search-child-browser.js` a planted long value in a row wraps or clips, and nothing shows past the row's edge (severity 0.4)
-- `spirit/test/headLessChrome.js`: 4 reds, the worst `spirit/test/test/headLessChrome.js` a test that ends leaves no Chrome of its own running (severity 0.4)
-- `spirit/app/introSpector/element.js`: 1 reds, the worst `spirit/test/spirit-sibling-browser.js` its searches are each made with a spirit.data branch, no rows of their own (severity 0.4)
-- `spirit/element/introSpector.js`: 1 reds, the worst `spirit/test/spirit-sibling-browser.js` its searches are each made with a spirit.data branch, no rows of their own (severity 0.4)
-- `spirit/element/search/job.js`: 1 reds, the worst `spirit/element/test/search-child-browser.js` when the list is scrolled, its title and buttons stay at the top (severity 0.4)
+- `spirit/app/testicle/element.js`: 13 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/app/deskClient/api.js`: 7 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/node/data.js`: 6 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/owner/api.js`: 6 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/owner/data.js`: 6 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/peer/api.js`: 6 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/peer/data.js`: 6 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/relay/api.js`: 6 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/relay/data.js`: 6 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
+- `spirit/app/chat/element.js`: 5 reds, the worst `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4)
 
-**Written 2026-11-19 by publishData at `e219eee14`, from this node's testicle.db; no suite was re-run.**
+**Written 2026-11-21 by publishData at `7b4d53fba`, from this node's testicle.db; no suite was re-run.**
 
-26460 tests, 26262 green, 198 red.
+26839 tests, 26650 green, 189 red.
 
 | script | suite | tests | green | red | newest |
 |---|---|---|---|---|---|
-| spirit/DEBUG.js | spirit/test/DEBUG.js | 73 | 73 | 0 | 2026-11-16T04:26:09.327Z |
-| spirit/DEBUG.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:48.450Z |
-| spirit/DEBUG.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:52:51.268Z |
-| spirit/DEBUG.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-16T03:30:49.964Z |
-| spirit/DEBUG/garbageArguments.js | spirit/DEBUG/test/garbageArguments.js | 20 | 20 | 0 | 2026-11-16T03:33:28.712Z |
-| spirit/DEBUG/garbageArguments.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:48.839Z |
-| spirit/DEBUG/garbageArguments.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:52:53.637Z |
-| spirit/DEBUG/garbageArguments.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:50.013Z |
-| spirit/DEBUG/headLessBrowser.js | spirit/DEBUG/test/headLessBrowser.js | 15 | 15 | 0 | 2026-11-16T03:33:29.434Z |
-| spirit/DEBUG/headLessBrowser.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:49.220Z |
-| spirit/DEBUG/headLessBrowser.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:52:56.770Z |
-| spirit/DEBUG/headLessBrowser.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:50.101Z |
-| spirit/answerRelay.js | spirit/test/answerRelay.js | 20 | 20 | 0 | 2026-11-18T01:05:24.399Z |
-| spirit/answerRelay.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:49.670Z |
-| spirit/answerRelay.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:52:59.520Z |
-| spirit/answerRelay.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:50.175Z |
-| spirit/apiAuth.js | spirit/test/apiAuth.js | 100 | 100 | 0 | 2026-11-18T23:53:40.070Z |
-| spirit/apiAuth.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:50.267Z |
-| spirit/apiAuth.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:07:33.088Z |
-| spirit/apiAuth.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T09:07:34.695Z |
-| spirit/apiDoor.js | spirit/test/apiDoor.js | 11 | 11 | 0 | 2026-11-18T05:58:19.573Z |
-| spirit/apiDoor.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:50.679Z |
-| spirit/apiDoor.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:53:03.111Z |
-| spirit/apiDoor.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:51.918Z |
-| spirit/app.js | spirit/test/app-child-general.js | 25 | 25 | 0 | 2026-11-18T00:20:00.197Z |
-| spirit/app.js | spirit/test/app.js | 68 | 68 | 0 | 2026-11-18T05:58:25.002Z |
-| spirit/app.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:51.141Z |
-| spirit/app.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:53:05.600Z |
-| spirit/app.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:27.783Z |
-| spirit/app/agent/agent.js | spirit/app/agent/test/agent.js | 40 | 40 | 0 | 2026-11-16T03:34:02.424Z |
-| spirit/app/agent/agent.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:00.729Z |
-| spirit/app/agent/agent.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.143Z |
-| spirit/app/agent/agent.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:51.560Z |
-| spirit/app/agent/agent.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:07.371Z |
-| spirit/app/agent/agent.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:50.549Z |
-| spirit/app/agent/api.js | spirit/app/agent/test/api.js | 11 | 11 | 0 | 2026-11-16T13:40:56.049Z |
-| spirit/app/agent/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:28.390Z |
-| spirit/app/agent/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:01.229Z |
-| spirit/app/agent/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:51.998Z |
-| spirit/app/agent/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:20:12.738Z |
-| spirit/app/agent/api.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:53:09.084Z |
-| spirit/app/agent/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-16T13:40:32.971Z |
-| spirit/app/agent/data.js | spirit/app/agent/test/data.js | 21 | 21 | 0 | 2026-11-16T13:40:56.760Z |
-| spirit/app/agent/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:36:23.066Z |
-| spirit/app/agent/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:01.714Z |
-| spirit/app/agent/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:52.416Z |
-| spirit/app/agent/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:20:18.569Z |
-| spirit/app/agent/data.js | spirit/test/spirit-sibling-general.js | 66 | 66 | 0 | 2026-11-18T07:53:10.955Z |
-| spirit/app/agent/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:33.020Z |
-| spirit/app/agent/element.js | spirit/app/agent/test/element.js | 90 | 90 | 0 | 2026-11-18T00:28:25.578Z |
-| spirit/app/agent/element.js | spirit/test/app-child-browser.js | 5 | 5 | 0 | 2026-11-18T00:19:52.155Z |
-| spirit/app/agent/element.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:02.225Z |
-| spirit/app/agent/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:52.842Z |
-| spirit/app/agent/element.js | spirit/test/spirit-sibling-browser.js | 24 | 24 | 0 | 2026-11-18T00:20:19.207Z |
-| spirit/app/agent/element.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:12.904Z |
-| spirit/app/agent/element/chatPane.js | spirit/app/agent/element/test/chatPane.js | 17 | 17 | 0 | 2026-11-17T11:39:31.184Z |
-| spirit/app/agent/element/chatPane.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:29.398Z |
-| spirit/app/agent/element/chatPane.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:02.791Z |
-| spirit/app/agent/element/chatPane.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:53.381Z |
-| spirit/app/agent/element/chatPane.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-18T00:20:29.187Z |
-| spirit/app/agent/element/chatPane.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:15.685Z |
-| spirit/app/agent/element/table/job/elementRow.js | spirit/app/agent/element/table/job/test/elementRow.js | 18 | 18 | 0 | 2026-11-18T00:27:59.934Z |
-| spirit/app/agent/element/table/job/elementRow.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:29.991Z |
-| spirit/app/agent/element/table/job/elementRow.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:03.239Z |
-| spirit/app/agent/element/table/job/elementRow.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:53.781Z |
-| spirit/app/agent/element/table/job/elementRow.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:20:29.971Z |
-| spirit/app/agent/element/table/job/elementRow.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:17.167Z |
-| spirit/app/agent/element/table/job/elementTable.js | spirit/app/agent/element/table/job/test/elementTable.js | 11 | 11 | 0 | 2026-11-16T13:40:38.229Z |
-| spirit/app/agent/element/table/job/elementTable.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:30.358Z |
-| spirit/app/agent/element/table/job/elementTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:03.719Z |
-| spirit/app/agent/element/table/job/elementTable.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:53.905Z |
-| spirit/app/agent/element/table/job/elementTable.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:20:33.421Z |
-| spirit/app/agent/element/table/job/elementTable.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:18.948Z |
-| spirit/app/agent/element/table/model/elementRow.js | spirit/app/agent/element/table/model/test/elementRow.js | 18 | 18 | 0 | 2026-11-18T00:28:00.561Z |
-| spirit/app/agent/element/table/model/elementRow.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:30.707Z |
-| spirit/app/agent/element/table/model/elementRow.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:04.201Z |
-| spirit/app/agent/element/table/model/elementRow.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:54.254Z |
-| spirit/app/agent/element/table/model/elementRow.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-18T00:20:34.290Z |
-| spirit/app/agent/element/table/model/elementRow.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:20.759Z |
-| spirit/app/agent/element/table/model/elementTable.js | spirit/app/agent/element/table/model/test/elementTable.js | 24 | 24 | 0 | 2026-11-18T00:28:01.408Z |
-| spirit/app/agent/element/table/model/elementTable.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:31.068Z |
-| spirit/app/agent/element/table/model/elementTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:04.775Z |
-| spirit/app/agent/element/table/model/elementTable.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:54.667Z |
-| spirit/app/agent/element/table/model/elementTable.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:20:42.394Z |
-| spirit/app/agent/element/table/model/elementTable.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:53:22.599Z |
-| spirit/app/agent/element/table/persona/elementRow.js | spirit/app/agent/element/table/persona/test/elementRow.js | 18 | 18 | 0 | 2026-11-18T00:28:02.139Z |
-| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:31.400Z |
-| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:05.268Z |
-| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:55.109Z |
-| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:20:43.101Z |
-| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:25.687Z |
-| spirit/app/agent/element/table/persona/elementTable.js | spirit/app/agent/element/table/persona/test/elementTable.js | 11 | 11 | 0 | 2026-11-16T13:40:40.171Z |
-| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:31.732Z |
-| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:05.765Z |
-| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:55.528Z |
-| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:20:48.726Z |
-| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:27.318Z |
-| spirit/app/agent/element/table/provider/elementRow.js | spirit/app/agent/element/table/provider/test/elementRow.js | 18 | 18 | 0 | 2026-11-18T00:28:02.811Z |
-| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:32.078Z |
-| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:06.237Z |
-| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:55.917Z |
-| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:20:49.487Z |
-| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:29.005Z |
-| spirit/app/agent/element/table/provider/elementTable.js | spirit/app/agent/element/table/provider/test/elementTable.js | 11 | 11 | 0 | 2026-11-16T13:40:41.067Z |
-| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:32.443Z |
-| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:06.707Z |
-| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:56.344Z |
-| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:20:50.091Z |
-| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:30.611Z |
-| spirit/app/agent/element/table/row.js | spirit/app/agent/element/table/test/row.js | 61 | 61 | 0 | 2026-11-18T05:48:56.257Z |
-| spirit/app/agent/element/table/row.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:32.827Z |
-| spirit/app/agent/element/table/row.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:07.118Z |
-| spirit/app/agent/element/table/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:48:56.777Z |
-| spirit/app/agent/element/table/row.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:20:50.718Z |
-| spirit/app/agent/element/table/row.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:53:32.298Z |
-| spirit/app/agent/element/table/tableElement.js | spirit/app/agent/element/table/test/tableElement.js | 33 | 33 | 0 | 2026-11-18T00:28:05.410Z |
-| spirit/app/agent/element/table/tableElement.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:34.976Z |
-| spirit/app/agent/element/table/tableElement.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:07.575Z |
-| spirit/app/agent/element/table/tableElement.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:57.207Z |
-| spirit/app/agent/element/table/tableElement.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:20:51.190Z |
-| spirit/app/agent/element/table/tableElement.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:33.930Z |
-| spirit/app/agent/server/server.js | spirit/app/agent/server/test/server.js | 41 | 41 | 0 | 2026-11-18T10:20:50.314Z |
-| spirit/app/agent/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T10:15:58.401Z |
-| spirit/app/agent/server/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:57.593Z |
-| spirit/app/agent/server/server.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T10:16:04.275Z |
-| spirit/app/agent/server/server.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T10:16:11.414Z |
-| spirit/app/agent/provider/anthropic/anthropic.js | spirit/app/agent/provider/anthropic/test/anthropic.js | 15 | 15 | 0 | 2026-11-16T03:33:41.598Z |
-| spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:08.521Z |
-| spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:57.702Z |
-| spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:37.184Z |
-| spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:50.855Z |
-| spirit/app/agent/provider/openai/openai.js | spirit/app/agent/provider/openai/test/openai.js | 12 | 12 | 0 | 2026-11-16T03:33:42.161Z |
-| spirit/app/agent/provider/openai/openai.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:09.023Z |
-| spirit/app/agent/provider/openai/openai.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:58.111Z |
-| spirit/app/agent/provider/openai/openai.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:39.726Z |
-| spirit/app/agent/provider/openai/openai.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:50.939Z |
-| spirit/app/agent/table/job/server.js | spirit/app/agent/table/job/test/server.js | 40 | 40 | 0 | 2026-11-18T00:28:06.838Z |
-| spirit/app/agent/table/job/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:20:09.488Z |
-| spirit/app/agent/table/job/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:58.618Z |
-| spirit/app/agent/table/job/server.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:41.745Z |
-| spirit/app/agent/table/job/server.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:51.038Z |
-| spirit/app/agent/table/model/server.js | spirit/app/agent/table/model/test/server.js | 52 | 52 | 0 | 2026-11-18T00:28:08.415Z |
-| spirit/app/agent/table/model/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:28.198Z |
-| spirit/app/agent/table/model/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:59.223Z |
-| spirit/app/agent/table/model/server.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:43.679Z |
-| spirit/app/agent/table/model/server.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:51.103Z |
-| spirit/app/agent/table/persona/server.js | spirit/app/agent/table/persona/test/server.js | 39 | 39 | 0 | 2026-11-18T00:28:09.925Z |
-| spirit/app/agent/table/persona/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:28.596Z |
-| spirit/app/agent/table/persona/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:59.672Z |
-| spirit/app/agent/table/persona/server.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:46.427Z |
-| spirit/app/agent/table/persona/server.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:51.182Z |
-| spirit/app/agent/table/provider/server.js | spirit/app/agent/table/provider/test/server.js | 75 | 74 | 1 | 2026-11-18T00:28:15.384Z |
-| spirit/app/agent/table/provider/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:29.082Z |
-| spirit/app/agent/table/provider/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:00.122Z |
-| spirit/app/agent/table/provider/server.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:48.431Z |
-| spirit/app/agent/table/provider/server.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:51.306Z |
-| spirit/app/agent/table/rowTable.js | spirit/app/agent/table/test/rowTable.js | 62 | 62 | 0 | 2026-11-18T05:48:59.047Z |
-| spirit/app/agent/table/rowTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:29.651Z |
-| spirit/app/agent/table/rowTable.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:00.572Z |
-| spirit/app/agent/table/rowTable.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:50.157Z |
-| spirit/app/agent/table/rowTable.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:27.865Z |
-| spirit/app/api.js | spirit/app/test/api.js | 11 | 11 | 0 | 2026-11-16T13:55:28.647Z |
-| spirit/app/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T01:08:39.622Z |
-| spirit/app/api.js | spirit/test/app-child-general.js | 25 | 25 | 0 | 2026-11-18T00:36:30.170Z |
-| spirit/app/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:00.992Z |
-| spirit/app/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:20:53.805Z |
-| spirit/app/api.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-18T07:53:51.615Z |
-| spirit/app/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:33.113Z |
-| spirit/app/app/element.js | spirit/app/app/test/element.js | 122 | 5 | 117 | 2026-11-18T08:38:37.437Z |
-| spirit/app/app/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T06:59:44.440Z |
-| spirit/app/app/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T06:59:45.264Z |
-| spirit/app/app/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:01.368Z |
-| spirit/app/app/element.js | spirit/test/spirit-sibling-browser.js | 25 | 25 | 0 | 2026-11-18T06:59:50.668Z |
-| spirit/app/app/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:53:52.785Z |
-| spirit/app/backup/api.js | spirit/app/backup/test/api.js | 6 | 6 | 0 | 2026-11-16T13:42:20.960Z |
-| spirit/app/backup/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T01:22:33.036Z |
-| spirit/app/backup/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:31.005Z |
-| spirit/app/backup/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:01.767Z |
-| spirit/app/backup/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:20:54.836Z |
-| spirit/app/backup/api.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T07:53:54.502Z |
-| spirit/app/backup/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:33.189Z |
-| spirit/app/backup/backup.js | spirit/app/backup/server/test/server.js | 7 | 7 | 0 | 2026-11-18T00:29:40.816Z |
-| spirit/app/backup/backup.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:31.452Z |
-| spirit/app/backup/backup.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.201Z |
-| spirit/app/backup/backup.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:02.137Z |
-| spirit/app/backup/backup.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:53:56.246Z |
-| spirit/app/backup/backup.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:51.605Z |
-| spirit/app/backup/data.js | spirit/app/backup/test/data.js | 12 | 12 | 0 | 2026-11-16T13:42:21.505Z |
-| spirit/app/backup/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T05:44:58.140Z |
-| spirit/app/backup/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:31.898Z |
-| spirit/app/backup/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:02.503Z |
-| spirit/app/backup/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:20:55.994Z |
-| spirit/app/backup/data.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:53:58.013Z |
-| spirit/app/backup/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:33.288Z |
-| spirit/app/chat/api.js | spirit/app/chat/test/api.js | 18 | 17 | 1 | 2026-11-16T13:42:23.482Z |
-| spirit/app/chat/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T05:54:37.155Z |
-| spirit/app/chat/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:32.356Z |
-| spirit/app/chat/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:02.926Z |
-| spirit/app/chat/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:20:56.472Z |
-| spirit/app/chat/api.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T07:53:59.803Z |
-| spirit/app/chat/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:33.377Z |
-| spirit/app/chat/chat.js | spirit/app/chat/test/chat.js | 16 | 16 | 0 | 2026-11-16T03:35:40.939Z |
-| spirit/app/chat/chat.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:32.868Z |
-| spirit/app/chat/chat.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.266Z |
-| spirit/app/chat/chat.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:03.042Z |
-| spirit/app/chat/chat.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:01.574Z |
-| spirit/app/chat/chat.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:51.864Z |
-| spirit/app/chat/data.js | spirit/app/chat/test/data.js | 14 | 14 | 0 | 2026-11-16T13:42:23.959Z |
-| spirit/app/chat/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T06:02:49.177Z |
-| spirit/app/chat/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:33.232Z |
-| spirit/app/chat/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:03.434Z |
-| spirit/app/chat/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:20:58.468Z |
-| spirit/app/chat/data.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:54:03.364Z |
-| spirit/app/chat/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:33.476Z |
-| spirit/app/chat/element.js | spirit/app/chat/test/element.js | 14 | 14 | 0 | 2026-11-18T00:29:43.004Z |
-| spirit/app/chat/element.js | spirit/test/app-child-browser.js | 5 | 5 | 0 | 2026-11-18T00:19:52.215Z |
-| spirit/app/chat/element.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:33.591Z |
-| spirit/app/chat/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:03.895Z |
-| spirit/app/chat/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:20:59.305Z |
-| spirit/app/chat/element.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T07:54:05.183Z |
-| spirit/app/chat/server/server.js | spirit/app/chat/server/test/server.js | 22 | 22 | 0 | 2026-11-18T00:29:45.359Z |
-| spirit/app/chat/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:33.960Z |
-| spirit/app/chat/server/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:03.972Z |
-| spirit/app/chat/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:06.942Z |
-| spirit/app/chat/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:27.954Z |
-| spirit/app/contact/element.js | spirit/app/contact/test/element.js | 24 | 23 | 1 | 2026-11-18T05:49:07.788Z |
-| spirit/app/contact/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.258Z |
-| spirit/app/contact/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T00:36:34.300Z |
-| spirit/app/contact/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:04.443Z |
-| spirit/app/contact/element.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-18T00:20:59.759Z |
-| spirit/app/contact/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:08.121Z |
-| spirit/app/data.js | spirit/app/test/data.js | 21 | 21 | 0 | 2026-11-18T00:41:20.620Z |
-| spirit/app/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T06:09:31.288Z |
-| spirit/app/data.js | spirit/test/app-child-general.js | 25 | 25 | 0 | 2026-11-18T00:36:34.743Z |
-| spirit/app/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:04.802Z |
-| spirit/app/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:00.142Z |
-| spirit/app/data.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T07:54:09.683Z |
-| spirit/app/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:33.552Z |
-| spirit/app/desk/api.js | spirit/app/desk/test/api.js | 32 | 32 | 0 | 2026-11-18T09:36:04.044Z |
-| spirit/app/desk/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T09:34:15.180Z |
-| spirit/app/desk/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T09:34:16.188Z |
-| spirit/app/desk/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:05.208Z |
-| spirit/app/desk/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T09:34:19.143Z |
-| spirit/app/desk/api.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T09:34:22.823Z |
-| spirit/app/desk/api.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T09:34:28.771Z |
-| spirit/app/desk/cacheRules.js | spirit/app/desk/test/cacheRules.js | 23 | 23 | 0 | 2026-11-18T05:51:39.034Z |
-| spirit/app/desk/cacheRules.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T05:45:02.986Z |
-| spirit/app/desk/cacheRules.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:05.636Z |
-| spirit/app/desk/cacheRules.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:13.062Z |
-| spirit/app/desk/cacheRules.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:52.070Z |
-| spirit/app/desk/data.js | spirit/app/desk/test/data.js | 41 | 41 | 0 | 2026-11-18T07:56:03.251Z |
-| spirit/app/desk/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T07:52:20.935Z |
-| spirit/app/desk/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T07:52:21.920Z |
-| spirit/app/desk/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:05.760Z |
-| spirit/app/desk/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T07:52:23.885Z |
-| spirit/app/desk/data.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:14.722Z |
-| spirit/app/desk/data.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T07:56:01.152Z |
-| spirit/app/desk/desk.js | spirit/app/desk/test/desk.js | 92 | 92 | 0 | 2026-11-18T09:36:20.861Z |
-| spirit/app/desk/desk.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:36.544Z |
-| spirit/app/desk/desk.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.348Z |
-| spirit/app/desk/desk.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:06.162Z |
-| spirit/app/desk/desk.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:16.388Z |
-| spirit/app/desk/desk.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:52.464Z |
-| spirit/app/desk/deskAgentEar.js | spirit/app/desk/test/deskAgentEar.js | 16 | 16 | 0 | 2026-11-18T00:33:27.956Z |
-| spirit/app/desk/deskAgentEar.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:36.943Z |
-| spirit/app/desk/deskAgentEar.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:06.547Z |
-| spirit/app/desk/deskAgentEar.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:17.992Z |
-| spirit/app/desk/deskAgentEar.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-17T11:38:00.071Z |
-| spirit/app/desk/deskLoop.js | spirit/app/desk/test/deskLoop.js | 27 | 27 | 0 | 2026-11-16T03:39:34.365Z |
-| spirit/app/desk/deskLoop.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T00:36:37.316Z |
-| spirit/app/desk/deskLoop.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:06.950Z |
-| spirit/app/desk/deskLoop.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:19.738Z |
-| spirit/app/desk/deskLoop.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:52.628Z |
-| spirit/app/desk/element.js | spirit/test/app-child-browser.js | 5 | 5 | 0 | 2026-11-18T00:19:52.337Z |
-| spirit/app/desk/element.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:43.008Z |
-| spirit/app/desk/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:07.424Z |
-| spirit/app/desk/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:21:03.192Z |
-| spirit/app/desk/element.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:21.421Z |
-| spirit/app/desk/element/desk/desk.js | spirit/app/desk/element/desk/test/desk.js | 47 | 47 | 0 | 2026-11-18T09:36:03.118Z |
-| spirit/app/desk/element/desk/desk.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T09:34:15.255Z |
-| spirit/app/desk/element/desk/desk.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T09:34:16.825Z |
-| spirit/app/desk/element/desk/desk.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:07.614Z |
-| spirit/app/desk/element/desk/desk.js | spirit/test/spirit-sibling-browser.js | 19 | 19 | 0 | 2026-11-18T09:34:19.645Z |
-| spirit/app/desk/element/desk/desk.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T09:34:24.383Z |
-| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/app/desk/element/deskDetails/test/deskDetails.js | 70 | 70 | 0 | 2026-11-18T05:51:37.021Z |
-| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T05:45:01.002Z |
-| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T05:45:04.659Z |
-| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:08.092Z |
-| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T05:45:12.319Z |
-| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:54:24.898Z |
-| spirit/app/desk/server/server.js | spirit/app/desk/server/test/server.js | 15 | 15 | 0 | 2026-11-18T10:20:51.294Z |
-| spirit/app/desk/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T10:15:59.057Z |
-| spirit/app/desk/server/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:08.534Z |
-| spirit/app/desk/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T10:16:05.862Z |
-| spirit/app/desk/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T10:16:11.490Z |
-| spirit/app/deskClient/api.js | spirit/app/deskClient/test/api.js | 19 | 19 | 0 | 2026-11-18T07:56:18.692Z |
-| spirit/app/deskClient/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T07:59:00.825Z |
-| spirit/app/deskClient/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T07:52:22.331Z |
-| spirit/app/deskClient/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:08.943Z |
-| spirit/app/deskClient/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T07:52:27.160Z |
-| spirit/app/deskClient/api.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:28.417Z |
-| spirit/app/deskClient/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T07:56:01.222Z |
-| spirit/app/deskClient/data.js | spirit/app/deskClient/test/data.js | 5 | 5 | 0 | 2026-11-16T13:46:12.862Z |
-| spirit/app/deskClient/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T07:17:04.913Z |
-| spirit/app/deskClient/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:46.078Z |
-| spirit/app/deskClient/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:09.056Z |
-| spirit/app/deskClient/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:06.282Z |
-| spirit/app/deskClient/data.js | spirit/test/spirit-sibling-general.js | 66 | 66 | 0 | 2026-11-18T07:54:30.075Z |
-| spirit/app/deskClient/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.053Z |
-| spirit/app/deskClient/deskClient.js | spirit/app/deskClient/server/test/server.js | 60 | 60 | 0 | 2026-11-18T07:56:32.184Z |
-| spirit/app/deskClient/deskClient.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T07:52:22.736Z |
-| spirit/app/deskClient/deskClient.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.402Z |
-| spirit/app/deskClient/deskClient.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:09.541Z |
-| spirit/app/deskClient/deskClient.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:54:32.050Z |
-| spirit/app/deskClient/deskClient.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T07:56:01.334Z |
-| spirit/app/file/element.js | spirit/app/file/test/element.js | 74 | 74 | 0 | 2026-11-18T00:37:35.674Z |
-| spirit/app/file/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.383Z |
-| spirit/app/file/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:47.005Z |
-| spirit/app/file/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:10.007Z |
-| spirit/app/file/element.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-18T00:21:08.635Z |
-| spirit/app/file/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:33.770Z |
-| spirit/app/grants/element.js | spirit/app/grants/test/element.js | 86 | 86 | 0 | 2026-11-16T13:51:42.240Z |
-| spirit/app/grants/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.439Z |
-| spirit/app/grants/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:47.503Z |
-| spirit/app/grants/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:10.526Z |
-| spirit/app/grants/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:21:09.226Z |
-| spirit/app/grants/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:34.958Z |
-| spirit/app/icons/api.js | spirit/app/icons/test/api.js | 19 | 19 | 0 | 2026-11-17T11:42:56.924Z |
-| spirit/app/icons/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T07:25:46.949Z |
-| spirit/app/icons/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:47.991Z |
-| spirit/app/icons/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:10.926Z |
-| spirit/app/icons/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:09.519Z |
-| spirit/app/icons/api.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T07:54:36.715Z |
-| spirit/app/icons/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.279Z |
-| spirit/app/icons/data.js | spirit/app/icons/test/data.js | 22 | 22 | 0 | 2026-11-16T13:51:49.169Z |
-| spirit/app/icons/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T08:07:48.597Z |
-| spirit/app/icons/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:48.473Z |
-| spirit/app/icons/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:11.333Z |
-| spirit/app/icons/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:10.355Z |
-| spirit/app/icons/data.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:54:38.452Z |
-| spirit/app/icons/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.367Z |
-| spirit/app/icons/element.js | spirit/app/icons/test/element.js | 33 | 33 | 0 | 2026-11-18T00:37:42.540Z |
-| spirit/app/icons/element.js | spirit/test/app-child-browser.js | 3 | 3 | 0 | 2026-11-18T00:19:52.498Z |
-| spirit/app/icons/element.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:48.927Z |
-| spirit/app/icons/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:11.793Z |
-| spirit/app/icons/element.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-18T00:21:12.104Z |
-| spirit/app/icons/element.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-18T07:54:40.224Z |
-| spirit/app/icons/icons.js | spirit/app/icons/test/icons.js | 38 | 38 | 0 | 2026-11-17T11:43:13.551Z |
-| spirit/app/icons/icons.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:49.439Z |
-| spirit/app/icons/icons.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:12.200Z |
-| spirit/app/icons/icons.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:41.965Z |
-| spirit/app/icons/icons.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:53.259Z |
-| spirit/app/icons/server/server.js | spirit/app/icons/server/test/server.js | 42 | 42 | 0 | 2026-11-16T03:40:59.840Z |
-| spirit/app/icons/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:08:49.922Z |
-| spirit/app/icons/server/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:12.597Z |
-| spirit/app/icons/server/server.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T07:54:43.677Z |
-| spirit/app/icons/server/server.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:53.331Z |
-| spirit/app/info/element.js | spirit/app/info/test/element.js | 43 | 43 | 0 | 2026-11-16T13:52:01.882Z |
-| spirit/app/info/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.536Z |
-| spirit/app/info/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:50.397Z |
-| spirit/app/info/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:13.092Z |
-| spirit/app/info/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:21:15.071Z |
-| spirit/app/info/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:44.814Z |
-| spirit/app/introSpector/element.js | spirit/app/introSpector/test/element.js | 16 | 16 | 0 | 2026-11-16T03:41:07.476Z |
-| spirit/app/introSpector/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.589Z |
-| spirit/app/introSpector/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:50.849Z |
-| spirit/app/introSpector/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:13.598Z |
-| spirit/app/introSpector/element.js | spirit/test/spirit-sibling-browser.js | 21 | 20 | 1 | 2026-11-18T23:58:21.152Z |
-| spirit/app/introSpector/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:46.008Z |
-| spirit/app/job/element.js | spirit/app/job/test/element.js | 19 | 19 | 0 | 2026-11-16T03:41:09.920Z |
-| spirit/app/job/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.642Z |
-| spirit/app/job/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:51.231Z |
-| spirit/app/job/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:13.768Z |
-| spirit/app/job/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:21:19.255Z |
-| spirit/app/job/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:47.123Z |
-| spirit/app/join/element.js | spirit/app/join/test/element.js | 14 | 14 | 0 | 2026-11-16T03:41:10.525Z |
-| spirit/app/join/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.696Z |
-| spirit/app/join/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:51.653Z |
-| spirit/app/join/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:14.288Z |
-| spirit/app/join/element.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-18T00:21:21.437Z |
-| spirit/app/join/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:48.272Z |
-| spirit/app/media/element.js | spirit/app/media/test/element.js | 15 | 15 | 0 | 2026-11-17T11:43:16.407Z |
-| spirit/app/media/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.753Z |
-| spirit/app/media/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:52.098Z |
-| spirit/app/media/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:14.789Z |
-| spirit/app/media/element.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:21:22.006Z |
-| spirit/app/media/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:49.534Z |
-| spirit/app/monitor/element.js | spirit/app/monitor/test/element.js | 18 | 18 | 0 | 2026-11-18T00:37:50.526Z |
-| spirit/app/monitor/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.807Z |
-| spirit/app/monitor/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:08:52.469Z |
-| spirit/app/monitor/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:15.267Z |
-| spirit/app/monitor/element.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-18T00:21:22.513Z |
-| spirit/app/monitor/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:50.735Z |
-| spirit/app/publishData/agentReadme.js | spirit/app/publishData/test/agentReadme.js | 17 | 17 | 0 | 2026-11-18T00:37:51.294Z |
-| spirit/app/publishData/agentReadme.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:15:46.852Z |
-| spirit/app/publishData/agentReadme.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:15.671Z |
-| spirit/app/publishData/agentReadme.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:51.871Z |
-| spirit/app/publishData/agentReadme.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:53.390Z |
-| spirit/app/publishData/measure.js | spirit/app/publishData/test/measure.js | 12 | 12 | 0 | 2026-11-16T03:42:31.762Z |
-| spirit/app/publishData/measure.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:15:47.289Z |
-| spirit/app/publishData/measure.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:16.070Z |
-| spirit/app/publishData/measure.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:53.048Z |
-| spirit/app/publishData/measure.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:53.452Z |
-| spirit/app/publishData/publishData.js | spirit/app/publishData/test/publishData.js | 73 | 73 | 0 | 2026-11-18T16:34:54.172Z |
-| spirit/app/publishData/publishData.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T16:30:35.077Z |
-| spirit/app/publishData/publishData.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:16.209Z |
-| spirit/app/publishData/publishData.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T16:30:36.657Z |
-| spirit/app/publishData/publishData.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T16:30:38.085Z |
-| spirit/app/pullOrigin/pullOrigin.js | spirit/app/pullOrigin/test/pullOrigin.js | 12 | 12 | 0 | 2026-11-18T00:41:08.173Z |
-| spirit/app/pullOrigin/pullOrigin.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:15:48.227Z |
-| spirit/app/pullOrigin/pullOrigin.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:16.598Z |
-| spirit/app/pullOrigin/pullOrigin.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:55.426Z |
-| spirit/app/pullOrigin/pullOrigin.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:28.474Z |
-| spirit/app/pushOrigin/pushOrigin.js | spirit/app/pushOrigin/test/pushOrigin.js | 11 | 11 | 0 | 2026-11-18T00:41:12.276Z |
-| spirit/app/pushOrigin/pushOrigin.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:15:48.650Z |
-| spirit/app/pushOrigin/pushOrigin.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:16.726Z |
-| spirit/app/pushOrigin/pushOrigin.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:56.542Z |
-| spirit/app/pushOrigin/pushOrigin.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-17T11:38:00.367Z |
-| spirit/app/starter/element.js | spirit/app/starter/test/element.js | 13 | 13 | 0 | 2026-11-17T11:46:43.749Z |
-| spirit/app/starter/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:52.866Z |
-| spirit/app/starter/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:15:49.091Z |
-| spirit/app/starter/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:17.138Z |
-| spirit/app/starter/element.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-18T00:21:22.999Z |
-| spirit/app/starter/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-18T07:54:57.785Z |
-| spirit/app/testicle/api.js | spirit/app/testicle/test/api.js | 22 | 22 | 0 | 2026-11-18T23:53:33.303Z |
-| spirit/app/testicle/api.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T23:50:33.324Z |
-| spirit/app/testicle/api.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T23:50:33.646Z |
-| spirit/app/testicle/api.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-18T23:50:33.993Z |
-| spirit/app/testicle/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T23:53:03.278Z |
-| spirit/app/testicle/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T23:53:04.263Z |
-| spirit/app/testicle/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:17.599Z |
-| spirit/app/testicle/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T23:53:10.348Z |
-| spirit/app/testicle/api.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-18T23:53:17.846Z |
-| spirit/app/testicle/api.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T23:53:29.260Z |
-| spirit/app/testicle/data.js | spirit/app/testicle/test/data.js | 24 | 24 | 0 | 2026-11-16T14:00:13.235Z |
-| spirit/app/testicle/data.js | spirit/app/testicle/test/testicle-sibling-browser.js | 2 | 2 | 0 | 2026-11-16T13:31:37.545Z |
-| spirit/app/testicle/data.js | spirit/app/testicle/test/testicle-sibling-general.js | 2 | 2 | 0 | 2026-11-16T13:31:38.792Z |
-| spirit/app/testicle/data.js | spirit/app/testicle/test/testicle-sibling-node.js | 2 | 2 | 0 | 2026-11-16T13:31:40.338Z |
-| spirit/app/testicle/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T08:42:07.135Z |
-| spirit/app/testicle/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:50.120Z |
-| spirit/app/testicle/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:18.007Z |
-| spirit/app/testicle/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:26.164Z |
-| spirit/app/testicle/data.js | spirit/test/spirit-sibling-general.js | 66 | 66 | 0 | 2026-11-18T07:55:01.433Z |
-| spirit/app/testicle/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.504Z |
-| spirit/app/testicle/element.js | spirit/app/testicle/test/element.js | 106 | 103 | 3 | 2026-11-18T00:48:33.635Z |
-| spirit/app/testicle/element.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T00:16:45.531Z |
-| spirit/app/testicle/element.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T00:16:46.445Z |
-| spirit/app/testicle/element.js | spirit/test/app-child-browser.js | 5 | 5 | 0 | 2026-11-18T00:19:52.950Z |
-| spirit/app/testicle/element.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:50.594Z |
-| spirit/app/testicle/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:18.552Z |
-| spirit/app/testicle/element.js | spirit/test/spirit-sibling-browser.js | 24 | 24 | 0 | 2026-11-18T00:21:26.692Z |
-| spirit/app/testicle/element.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:03.091Z |
-| spirit/app/testicle/element/scriptDetail.js | spirit/app/testicle/element/test/scriptDetail.js | 13 | 13 | 0 | 2026-11-16T13:59:07.706Z |
-| spirit/app/testicle/element/scriptDetail.js | spirit/app/testicle/test/testicle-sibling-browser.js | 2 | 2 | 0 | 2026-11-16T13:31:37.768Z |
-| spirit/app/testicle/element/scriptDetail.js | spirit/app/testicle/test/testicle-sibling-general.js | 2 | 2 | 0 | 2026-11-16T13:31:38.934Z |
-| spirit/app/testicle/element/scriptDetail.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:45.430Z |
-| spirit/app/testicle/element/scriptDetail.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:51.156Z |
-| spirit/app/testicle/element/scriptDetail.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:18.980Z |
-| spirit/app/testicle/element/scriptDetail.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:21:27.531Z |
-| spirit/app/testicle/element/scriptDetail.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:04.821Z |
-| spirit/app/testicle/element/search/suite.js | spirit/app/testicle/element/search/test/suite.js | 15 | 15 | 0 | 2026-11-18T00:41:35.867Z |
-| spirit/app/testicle/element/search/suite.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T00:16:45.618Z |
-| spirit/app/testicle/element/search/suite.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T00:16:46.518Z |
-| spirit/app/testicle/element/search/suite.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:45.763Z |
-| spirit/app/testicle/element/search/suite.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:51.633Z |
-| spirit/app/testicle/element/search/suite.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:19.390Z |
-| spirit/app/testicle/element/search/suite.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:21:28.513Z |
-| spirit/app/testicle/element/search/suite.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:06.583Z |
-| spirit/app/testicle/element/search/suite/list.js | spirit/app/testicle/element/search/suite/test/list.js | 21 | 21 | 0 | 2026-11-18T00:41:29.167Z |
-| spirit/app/testicle/element/search/suite/list.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T00:16:45.708Z |
-| spirit/app/testicle/element/search/suite/list.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T00:16:46.592Z |
-| spirit/app/testicle/element/search/suite/list.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:46.169Z |
-| spirit/app/testicle/element/search/suite/list.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:52.115Z |
-| spirit/app/testicle/element/search/suite/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:19.848Z |
-| spirit/app/testicle/element/search/suite/list.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:21:29.032Z |
-| spirit/app/testicle/element/search/suite/list.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:08.376Z |
-| spirit/app/testicle/element/search/suite/row.js | spirit/app/testicle/element/search/suite/test/row.js | 16 | 16 | 0 | 2026-11-18T00:41:29.595Z |
-| spirit/app/testicle/element/search/suite/row.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T00:16:45.785Z |
-| spirit/app/testicle/element/search/suite/row.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T00:16:46.678Z |
-| spirit/app/testicle/element/search/suite/row.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:46.572Z |
-| spirit/app/testicle/element/search/suite/row.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:52.625Z |
-| spirit/app/testicle/element/search/suite/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:20.305Z |
-| spirit/app/testicle/element/search/suite/row.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:21:31.017Z |
-| spirit/app/testicle/element/search/suite/row.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:09.954Z |
-| spirit/app/testicle/element/search/testicle.js | spirit/app/testicle/element/search/test/testicle.js | 69 | 44 | 25 | 2026-11-18T00:44:14.770Z |
-| spirit/app/testicle/element/search/testicle.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T00:16:45.879Z |
-| spirit/app/testicle/element/search/testicle.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T00:16:46.773Z |
-| spirit/app/testicle/element/search/testicle.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:46.961Z |
-| spirit/app/testicle/element/search/testicle.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:53.064Z |
-| spirit/app/testicle/element/search/testicle.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:20.739Z |
-| spirit/app/testicle/element/search/testicle.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:21:31.548Z |
-| spirit/app/testicle/element/search/testicle.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:11.385Z |
-| spirit/app/testicle/element/search/testicle/detail.js | spirit/app/testicle/element/search/testicle/test/detail.js | 20 | 20 | 0 | 2026-11-18T00:44:25.279Z |
-| spirit/app/testicle/element/search/testicle/detail.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T00:16:45.952Z |
-| spirit/app/testicle/element/search/testicle/detail.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T00:16:46.858Z |
-| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:47.335Z |
-| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:53.536Z |
-| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:21.179Z |
-| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-18T00:21:33.292Z |
-| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:12.961Z |
-| spirit/app/testicle/element/search/testicle/list.js | spirit/app/testicle/element/search/testicle/test/list.js | 29 | 29 | 0 | 2026-11-18T00:44:41.074Z |
-| spirit/app/testicle/element/search/testicle/list.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T00:16:46.021Z |
-| spirit/app/testicle/element/search/testicle/list.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T00:16:46.931Z |
-| spirit/app/testicle/element/search/testicle/list.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:47.697Z |
-| spirit/app/testicle/element/search/testicle/list.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:54.023Z |
-| spirit/app/testicle/element/search/testicle/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:21.419Z |
-| spirit/app/testicle/element/search/testicle/list.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:21:33.780Z |
-| spirit/app/testicle/element/search/testicle/list.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:14.547Z |
-| spirit/app/testicle/element/search/testicle/row.js | spirit/app/testicle/element/search/testicle/test/row.js | 13 | 13 | 0 | 2026-11-18T00:44:41.574Z |
-| spirit/app/testicle/element/search/testicle/row.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T00:16:46.097Z |
-| spirit/app/testicle/element/search/testicle/row.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T00:16:47.001Z |
-| spirit/app/testicle/element/search/testicle/row.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:48.068Z |
-| spirit/app/testicle/element/search/testicle/row.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:54.508Z |
-| spirit/app/testicle/element/search/testicle/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:21.799Z |
-| spirit/app/testicle/element/search/testicle/row.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:21:34.370Z |
-| spirit/app/testicle/element/search/testicle/row.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:16.083Z |
-| spirit/app/testicle/element/settingsPanel.js | spirit/app/testicle/element/test/settingsPanel.js | 10 | 10 | 0 | 2026-11-16T13:59:11.482Z |
-| spirit/app/testicle/element/settingsPanel.js | spirit/app/testicle/test/testicle-sibling-browser.js | 2 | 2 | 0 | 2026-11-16T13:31:38.267Z |
-| spirit/app/testicle/element/settingsPanel.js | spirit/app/testicle/test/testicle-sibling-general.js | 2 | 2 | 0 | 2026-11-16T13:31:39.450Z |
-| spirit/app/testicle/element/settingsPanel.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:48.434Z |
-| spirit/app/testicle/element/settingsPanel.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T01:15:55.001Z |
-| spirit/app/testicle/element/settingsPanel.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:21.961Z |
-| spirit/app/testicle/element/settingsPanel.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-18T00:21:34.905Z |
-| spirit/app/testicle/element/settingsPanel.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T07:55:17.710Z |
-| spirit/app/testicle/element/statusBox.js | spirit/app/testicle/element/test/statusBox.js | 20 | 20 | 0 | 2026-11-18T22:52:41.874Z |
-| spirit/app/testicle/element/statusBox.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T22:52:42.197Z |
-| spirit/app/testicle/element/statusBox.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T22:52:42.490Z |
-| spirit/app/testicle/element/statusBox.js | spirit/test/app-child-browser.js | 3 | 3 | 0 | 2026-11-18T22:55:12.104Z |
-| spirit/app/testicle/element/statusBox.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T22:55:13.046Z |
-| spirit/app/testicle/element/statusBox.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:22.371Z |
-| spirit/app/testicle/element/statusBox.js | spirit/test/spirit-sibling-browser.js | 19 | 19 | 0 | 2026-11-18T22:55:21.273Z |
-| spirit/app/testicle/element/statusBox.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T23:53:19.393Z |
-| spirit/app/testicle/testAll.js | spirit/app/testicle/test/testAll.js | 7 | 7 | 0 | 2026-11-18T21:01:32.941Z |
-| spirit/app/testicle/testAll.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T20:55:20.747Z |
-| spirit/app/testicle/testAll.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-18T20:55:21.281Z |
-| spirit/app/testicle/testAll.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T20:57:48.499Z |
-| spirit/app/testicle/testAll.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:22.758Z |
-| spirit/app/testicle/testAll.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T20:58:10.593Z |
-| spirit/app/testicle/testAll.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T20:58:20.070Z |
-| spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T22:52:42.566Z |
-| spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-18T22:52:42.916Z |
-| spirit/app/testicle/testicle.js | spirit/app/testicle/server/test/server.js | 289 | 279 | 10 | 2026-11-19T00:34:19.884Z |
-| spirit/app/testicle/testicle.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T22:55:13.549Z |
-| spirit/app/testicle/testicle.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-18T23:54:29.471Z |
-| spirit/app/testicle/testicle.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:23.162Z |
-| spirit/app/testicle/testicle.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T23:53:20.967Z |
-| spirit/app/testicle/testicle.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T22:55:31.355Z |
-| spirit/app/testicle/words.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-18T20:55:20.386Z |
-| spirit/app/testicle/words.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-18T20:55:20.829Z |
-| spirit/app/testicle/words.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-18T20:55:21.367Z |
-| spirit/app/testicle/words.js | spirit/app/testicle/test/words.js | 7 | 7 | 0 | 2026-11-18T23:53:33.633Z |
-| spirit/app/testicle/words.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T23:58:14.252Z |
-| spirit/app/testicle/words.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-18T20:57:49.005Z |
-| spirit/app/testicle/words.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:23.674Z |
-| spirit/app/testicle/words.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T20:57:59.063Z |
-| spirit/app/testicle/words.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-18T20:58:12.169Z |
-| spirit/app/testicle/words.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T20:58:20.133Z |
-| spirit/app/text/element.js | spirit/app/text/test/element.js | 20 | 20 | 0 | 2026-11-18T01:00:32.474Z |
-| spirit/app/text/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-18T00:19:53.000Z |
-| spirit/app/text/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-18T01:22:33.859Z |
-| spirit/app/text/element.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:24.120Z |
-| spirit/app/text/element.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:21:38.161Z |
-| spirit/app/text/element.js | spirit/test/spirit-sibling-general.js | 47 | 47 | 0 | 2026-11-18T07:55:23.612Z |
-| spirit/appClient.js | spirit/test/appClient.js | 17 | 13 | 4 | 2026-11-16T04:26:32.847Z |
-| spirit/appClient.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:24.590Z |
-| spirit/appClient.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:55:24.679Z |
-| spirit/appClient.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:54.001Z |
-| spirit/server/app.js | spirit/server/test/app.js | 1 | 1 | 0 | 2026-11-18T12:58:46.894Z |
-| spirit/server/app.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:25.042Z |
-| spirit/server/app.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:57:36.607Z |
-| spirit/server/app.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-18T10:57:49.842Z |
-| spirit/arrivals.js | spirit/test/arrivals.js | 4 | 4 | 0 | 2026-11-18T01:09:36.043Z |
-| spirit/arrivals.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:25.467Z |
-| spirit/arrivals.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:55:30.046Z |
-| spirit/arrivals.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:28.776Z |
-| spirit/auth/api.js | spirit/auth/test/api.js | 13 | 13 | 0 | 2026-11-17T11:46:47.483Z |
-| spirit/auth/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:25.916Z |
-| spirit/auth/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:38.581Z |
-| spirit/auth/api.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-18T07:55:33.993Z |
-| spirit/auth/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.674Z |
-| spirit/auth/data.js | spirit/auth/test/data.js | 19 | 19 | 0 | 2026-11-18T01:00:33.156Z |
-| spirit/auth/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:26.301Z |
-| spirit/auth/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:39.050Z |
-| spirit/auth/data.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T07:55:37.547Z |
-| spirit/auth/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.748Z |
-| spirit/authTableInterface.js | spirit/test/authTableInterface.js | 12 | 12 | 0 | 2026-11-18T01:09:36.653Z |
-| spirit/authTableInterface.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:26.695Z |
-| spirit/authTableInterface.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:55:40.988Z |
-| spirit/authTableInterface.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:54.361Z |
-| spirit/boxes.js | spirit/test/boxes.js | 20 | 20 | 0 | 2026-11-18T01:09:37.343Z |
-| spirit/boxes.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:27.207Z |
-| spirit/boxes.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:55:46.457Z |
-| spirit/boxes.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:28.857Z |
-| spirit/buildStamp.js | spirit/test/buildStamp.js | 17 | 17 | 0 | 2026-11-18T01:09:38.133Z |
-| spirit/buildStamp.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:27.629Z |
-| spirit/buildStamp.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:55:47.437Z |
-| spirit/buildStamp.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:54.509Z |
-| spirit/client/apiTreeIndex.js | spirit/client/test/apiTreeIndex.js | 15 | 15 | 0 | 2026-11-18T01:00:33.737Z |
-| spirit/client/apiTreeIndex.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:28.089Z |
-| spirit/client/apiTreeIndex.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:39.528Z |
-| spirit/client/apiTreeIndex.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:55:48.382Z |
-| spirit/client/apiTreeIndex.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:28.954Z |
-| spirit/client/packet.js | spirit/client/test/packet.js | 27 | 27 | 0 | 2026-11-18T01:00:34.488Z |
-| spirit/client/packet.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:28.521Z |
-| spirit/client/packet.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:39.943Z |
-| spirit/client/packet.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:55:49.229Z |
-| spirit/client/packet.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:29.036Z |
-| spirit/config/api.js | spirit/config/test/api.js | 7 | 7 | 0 | 2026-11-17T11:46:47.927Z |
-| spirit/config/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:28.916Z |
-| spirit/config/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:40.383Z |
-| spirit/config/api.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T07:55:50.635Z |
-| spirit/config/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.804Z |
-| spirit/config/data.js | spirit/config/test/data.js | 5 | 5 | 0 | 2026-11-16T14:16:10.725Z |
-| spirit/config/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:29.318Z |
-| spirit/config/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:40.849Z |
-| spirit/config/data.js | spirit/test/spirit-sibling-general.js | 61 | 61 | 0 | 2026-11-18T07:55:51.855Z |
-| spirit/config/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:34.870Z |
-| spirit/contact/api.js | spirit/contact/test/api.js | 15 | 15 | 0 | 2026-11-18T05:55:23.382Z |
-| spirit/contact/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:29.445Z |
-| spirit/contact/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T05:45:13.438Z |
-| spirit/contact/api.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-18T07:55:53.286Z |
-| spirit/contact/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:52.431Z |
-| spirit/contact/data.js | spirit/contact/test/data.js | 14 | 14 | 0 | 2026-11-16T14:16:11.748Z |
-| spirit/contact/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:29.815Z |
-| spirit/contact/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:41.806Z |
-| spirit/contact/data.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T07:55:54.911Z |
-| spirit/contact/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.012Z |
-| spirit/contacts.js | spirit/test/contacts.js | 15 | 15 | 0 | 2026-11-18T05:58:27.546Z |
-| spirit/contacts.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:30.316Z |
-| spirit/contacts.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T07:55:55.996Z |
-| spirit/contacts.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:52.565Z |
-| spirit/coreFiles.js | spirit/test/coreFiles.js | 59 | 59 | 0 | 2026-11-18T01:09:41.845Z |
-| spirit/coreFiles.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:30.714Z |
-| spirit/coreFiles.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:16.826Z |
-| spirit/coreFiles.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:55.107Z |
-| spirit/data.js | spirit/test/data.js | 93 | 92 | 1 | 2026-11-18T08:42:51.218Z |
-| spirit/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:31.098Z |
-| spirit/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T08:33:26.606Z |
-| spirit/data.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:33:30.287Z |
-| spirit/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T08:33:33.187Z |
-| spirit/element/appHeader/appHeader.js | spirit/element/appHeader/test/appHeader.js | 6 | 6 | 0 | 2026-11-17T11:46:51.054Z |
-| spirit/element/appHeader/appHeader.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:31.222Z |
-| spirit/element/appHeader/appHeader.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:21:42.901Z |
-| spirit/element/appHeader/appHeader.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:21.644Z |
-| spirit/element/appInstaller.js | spirit/element/test/appInstaller.js | 15 | 15 | 0 | 2026-11-16T14:20:07.161Z |
-| spirit/element/appInstaller.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:31.632Z |
-| spirit/element/appInstaller.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:21:43.488Z |
-| spirit/element/appInstaller.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:23.556Z |
-| spirit/element/armingButton.js | spirit/element/test/armingButton.js | 36 | 36 | 0 | 2026-11-17T11:49:25.377Z |
-| spirit/element/armingButton.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:31.741Z |
-| spirit/element/armingButton.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:21:44.239Z |
-| spirit/element/armingButton.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:26.993Z |
-| spirit/element/bundleEditor.js | spirit/element/test/bundleEditor.js | 26 | 26 | 0 | 2026-11-17T11:49:26.147Z |
-| spirit/element/bundleEditor.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:31.919Z |
-| spirit/element/bundleEditor.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:21:44.822Z |
-| spirit/element/bundleEditor.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T08:04:31.641Z |
-| spirit/element/busyButton.js | spirit/element/test/busyButton.js | 24 | 24 | 0 | 2026-11-17T11:49:30.074Z |
-| spirit/element/busyButton.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:32.398Z |
-| spirit/element/busyButton.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:21:45.461Z |
-| spirit/element/busyButton.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:32.482Z |
-| spirit/element/changeMyDescription.js | spirit/element/test/changeMyDescription.js | 24 | 24 | 0 | 2026-11-17T11:49:30.822Z |
-| spirit/element/changeMyDescription.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:32.959Z |
-| spirit/element/changeMyDescription.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:21:46.058Z |
-| spirit/element/changeMyDescription.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:33.543Z |
-| spirit/element/changeMyLabel.js | spirit/element/test/changeMyLabel.js | 23 | 23 | 0 | 2026-11-17T11:49:31.575Z |
-| spirit/element/changeMyLabel.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:33.436Z |
-| spirit/element/changeMyLabel.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:21:46.502Z |
-| spirit/element/changeMyLabel.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:34.510Z |
-| spirit/element/codeMirror.js | spirit/element/test/codeMirror.js | 38 | 38 | 0 | 2026-11-17T11:49:36.553Z |
-| spirit/element/codeMirror.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:33.860Z |
-| spirit/element/codeMirror.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:21:46.977Z |
-| spirit/element/codeMirror.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:35.480Z |
-| spirit/element/contactLabel.js | spirit/element/test/contactLabel.js | 25 | 25 | 0 | 2026-11-17T11:49:37.248Z |
-| spirit/element/contactLabel.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:34.273Z |
-| spirit/element/contactLabel.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:21:47.445Z |
-| spirit/element/contactLabel.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:36.579Z |
-| spirit/element/faceForm.js | spirit/element/test/faceForm.js | 25 | 25 | 0 | 2026-11-18T05:57:42.929Z |
-| spirit/element/faceForm.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:34.707Z |
-| spirit/element/faceForm.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T05:45:16.957Z |
-| spirit/element/faceForm.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T08:04:37.804Z |
-| spirit/element/fieldInput.js | spirit/element/test/fieldInput.js | 18 | 18 | 0 | 2026-11-16T04:24:37.314Z |
-| spirit/element/fieldInput.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:35.119Z |
-| spirit/element/fieldInput.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:48.385Z |
-| spirit/element/fieldInput.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T08:04:38.896Z |
-| spirit/element/fstat.js | spirit/element/test/fstat.js | 14 | 14 | 0 | 2026-11-17T11:49:41.275Z |
-| spirit/element/fstat.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:35.523Z |
-| spirit/element/fstat.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:21:48.878Z |
-| spirit/element/fstat.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T08:04:40.001Z |
-| spirit/element/icon.js | spirit/element/test/icon.js | 20 | 20 | 0 | 2026-11-17T11:49:43.710Z |
-| spirit/element/icon.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:35.916Z |
-| spirit/element/icon.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:21:49.334Z |
-| spirit/element/icon.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:04:41.281Z |
-| spirit/element/installSpiritElement.js | spirit/element/test/installSpiritElement.js | 9 | 9 | 0 | 2026-11-16T04:24:40.525Z |
-| spirit/element/installSpiritElement.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:36.312Z |
-| spirit/element/installSpiritElement.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:52.287Z |
-| spirit/element/installSpiritElement.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:08:11.720Z |
-| spirit/element/installSpiritElement.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:55.233Z |
-| spirit/element/introSpector.js | spirit/element/test/introSpector.js | 19 | 19 | 0 | 2026-11-18T01:04:34.485Z |
-| spirit/element/introSpector.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:36.810Z |
-| spirit/element/introSpector.js | spirit/test/spirit-sibling-browser.js | 21 | 20 | 1 | 2026-11-18T23:58:21.845Z |
-| spirit/element/introSpector.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:08:15.600Z |
-| spirit/element/joinForm.js | spirit/element/test/joinForm.js | 22 | 22 | 0 | 2026-11-17T11:49:49.646Z |
-| spirit/element/joinForm.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:37.248Z |
-| spirit/element/joinForm.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:21:55.930Z |
-| spirit/element/joinForm.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T08:08:19.634Z |
-| spirit/element/joinList.js | spirit/element/test/joinList.js | 15 | 15 | 0 | 2026-11-18T00:21:55.876Z |
-| spirit/element/joinList.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:37.761Z |
-| spirit/element/joinList.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-18T00:21:56.400Z |
-| spirit/element/joinList.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:08:24.837Z |
-| spirit/element/joinSteps.js | spirit/element/test/joinSteps.js | 13 | 13 | 0 | 2026-11-16T04:24:47.779Z |
-| spirit/element/joinSteps.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:38.113Z |
-| spirit/element/joinSteps.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:21:56.947Z |
-| spirit/element/joinSteps.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T08:08:26.381Z |
-| spirit/element/monitor/job.js | spirit/element/monitor/test/job.js | 9 | 9 | 0 | 2026-11-18T01:00:50.476Z |
-| spirit/element/monitor/job.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:38.517Z |
-| spirit/element/monitor/job.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-18T00:21:57.454Z |
-| spirit/element/monitor/job.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:08:28.091Z |
-| spirit/element/monitor/job/connections.js | spirit/element/monitor/job/test/connections.js | 9 | 9 | 0 | 2026-11-18T01:00:36.901Z |
-| spirit/element/monitor/job/connections.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:38.943Z |
-| spirit/element/monitor/job/connections.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:21:57.951Z |
-| spirit/element/monitor/job/connections.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:08:29.921Z |
-| spirit/element/monitor/job/cpu.js | spirit/element/monitor/job/test/cpu.js | 9 | 9 | 0 | 2026-11-18T01:00:39.068Z |
-| spirit/element/monitor/job/cpu.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:39.093Z |
-| spirit/element/monitor/job/cpu.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:21:58.501Z |
-| spirit/element/monitor/job/cpu.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:08:31.670Z |
-| spirit/element/monitor/job/delay.js | spirit/element/monitor/job/test/delay.js | 9 | 9 | 0 | 2026-11-18T01:00:41.393Z |
-| spirit/element/monitor/job/delay.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:39.528Z |
-| spirit/element/monitor/job/delay.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:21:59.014Z |
-| spirit/element/monitor/job/delay.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:32.127Z |
-| spirit/element/monitor/job/memory.js | spirit/element/monitor/job/test/memory.js | 9 | 9 | 0 | 2026-11-18T01:00:43.591Z |
-| spirit/element/monitor/job/memory.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:39.990Z |
-| spirit/element/monitor/job/memory.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:21:59.513Z |
-| spirit/element/monitor/job/memory.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:37.034Z |
-| spirit/element/monitor/job/running.js | spirit/element/monitor/job/test/running.js | 9 | 9 | 0 | 2026-11-18T01:00:45.877Z |
-| spirit/element/monitor/job/running.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:40.471Z |
-| spirit/element/monitor/job/running.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:22:00.019Z |
-| spirit/element/monitor/job/running.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:38.308Z |
-| spirit/element/monitor/job/uptime.js | spirit/element/monitor/job/test/uptime.js | 9 | 9 | 0 | 2026-11-18T01:00:48.277Z |
-| spirit/element/monitor/job/uptime.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:40.936Z |
-| spirit/element/monitor/job/uptime.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:22:00.552Z |
-| spirit/element/monitor/job/uptime.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:39.268Z |
-| spirit/element/monitor/task.js | spirit/element/monitor/test/task.js | 12 | 12 | 0 | 2026-11-18T01:00:55.566Z |
-| spirit/element/monitor/task.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:41.396Z |
-| spirit/element/monitor/task.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:22:01.101Z |
-| spirit/element/monitor/task.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:40.212Z |
-| spirit/element/monitor/value.js | spirit/element/monitor/test/value.js | 11 | 11 | 0 | 2026-11-18T01:00:57.630Z |
-| spirit/element/monitor/value.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:41.813Z |
-| spirit/element/monitor/value.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T00:22:02.904Z |
-| spirit/element/monitor/value.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:41.216Z |
-| spirit/element/nodeInfo.js | spirit/element/test/nodeInfo.js | 88 | 88 | 0 | 2026-11-17T11:49:53.604Z |
-| spirit/element/nodeInfo.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:42.299Z |
-| spirit/element/nodeInfo.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:22:03.455Z |
-| spirit/element/nodeInfo.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:42.205Z |
-| spirit/element/panel.js | spirit/element/test/panel.js | 60 | 60 | 0 | 2026-11-18T08:39:02.766Z |
-| spirit/element/panel.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:42.894Z |
-| spirit/element/panel.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T08:33:26.936Z |
-| spirit/element/panel.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:33:31.249Z |
-| spirit/element/progressBar.js | spirit/element/test/progressBar.js | 7 | 7 | 0 | 2026-11-16T04:25:07.608Z |
-| spirit/element/progressBar.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:43.279Z |
-| spirit/element/progressBar.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:04.502Z |
-| spirit/element/progressBar.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T08:38:43.251Z |
-| spirit/element/rotateKey.js | spirit/element/test/rotateKey.js | 33 | 33 | 0 | 2026-11-17T11:49:54.531Z |
-| spirit/element/rotateKey.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:43.722Z |
-| spirit/element/rotateKey.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:05.031Z |
-| spirit/element/rotateKey.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:44.299Z |
-| spirit/element/row.js | spirit/element/test/row.js | 44 | 44 | 0 | 2026-11-18T01:04:49.568Z |
-| spirit/element/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:44.118Z |
-| spirit/element/row.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:22:05.520Z |
-| spirit/element/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:38:45.279Z |
-| spirit/element/rowForm.js | spirit/element/test/rowForm.js | 31 | 31 | 0 | 2026-11-17T11:49:57.138Z |
-| spirit/element/rowForm.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:44.548Z |
-| spirit/element/rowForm.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:06.154Z |
-| spirit/element/rowForm.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:29.904Z |
-| spirit/element/search.js | spirit/element/test/search-child-browser.js | 3 | 3 | 0 | 2026-11-18T20:57:41.936Z |
-| spirit/element/search.js | spirit/element/test/search-child-general.js | 17 | 17 | 0 | 2026-11-18T05:44:50.388Z |
-| spirit/element/search.js | spirit/element/test/search.js | 266 | 259 | 7 | 2026-11-18T05:58:15.441Z |
-| spirit/element/search.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:44.998Z |
-| spirit/element/search.js | spirit/test/spirit-sibling-browser.js | 19 | 18 | 1 | 2026-11-18T23:58:22.446Z |
-| spirit/element/search.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T08:42:34.643Z |
-| spirit/element/search/api.js | spirit/element/search/test/api.js | 23 | 22 | 1 | 2026-11-18T01:04:22.062Z |
-| spirit/element/search/api.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-18T23:58:09.959Z |
-| spirit/element/search/api.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:15.301Z |
-| spirit/element/search/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:45.479Z |
-| spirit/element/search/api.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:22:07.449Z |
-| spirit/element/search/api.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:35.633Z |
-| spirit/element/search/api/detail.js | spirit/element/search/api/test/detail.js | 13 | 13 | 0 | 2026-11-18T01:00:58.199Z |
-| spirit/element/search/api/detail.js | spirit/element/test/search-child-browser.js | 3 | 3 | 0 | 2026-11-18T22:55:07.540Z |
-| spirit/element/search/api/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:15.788Z |
-| spirit/element/search/api/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:45.903Z |
-| spirit/element/search/api/detail.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:08.137Z |
-| spirit/element/search/api/detail.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:36.638Z |
-| spirit/element/search/api/list.js | spirit/element/search/api/test/list.js | 12 | 11 | 1 | 2026-11-18T01:00:58.669Z |
-| spirit/element/search/api/list.js | spirit/element/test/search-child-browser.js | 3 | 3 | 0 | 2026-11-18T23:52:54.806Z |
-| spirit/element/search/api/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:16.394Z |
-| spirit/element/search/api/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:46.390Z |
-| spirit/element/search/api/list.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:22:08.714Z |
-| spirit/element/search/api/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:37.686Z |
-| spirit/element/search/api/row.js | spirit/element/search/api/test/row.js | 9 | 9 | 0 | 2026-11-18T01:00:59.025Z |
-| spirit/element/search/api/row.js | spirit/element/test/search-child-browser.js | 3 | 3 | 0 | 2026-11-18T23:58:06.808Z |
-| spirit/element/search/api/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:16.871Z |
-| spirit/element/search/api/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:46.843Z |
-| spirit/element/search/api/row.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:22:09.215Z |
-| spirit/element/search/api/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:38.472Z |
-| spirit/element/search/api/verb.js | spirit/element/search/api/test/verb.js | 16 | 16 | 0 | 2026-11-18T01:00:59.581Z |
-| spirit/element/search/api/verb.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:17.337Z |
-| spirit/element/search/api/verb.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:47.288Z |
-| spirit/element/search/api/verb.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:22:11.884Z |
-| spirit/element/search/api/verb.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:39.167Z |
-| spirit/element/search/app.js | spirit/element/search/test/app.js | 20 | 20 | 0 | 2026-11-18T01:04:25.550Z |
-| spirit/element/search/app.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-18T23:58:09.989Z |
-| spirit/element/search/app.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:17.828Z |
-| spirit/element/search/app.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:47.752Z |
-| spirit/element/search/app.js | spirit/test/spirit-sibling-browser.js | 25 | 25 | 0 | 2026-11-18T00:22:12.401Z |
-| spirit/element/search/app.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:39.907Z |
-| spirit/element/search/app/changeAppIcon.js | spirit/element/search/app/test/changeAppIcon.js | 13 | 13 | 0 | 2026-11-18T01:01:03.542Z |
-| spirit/element/search/app/changeAppIcon.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:18.270Z |
-| spirit/element/search/app/changeAppIcon.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:48.207Z |
-| spirit/element/search/app/changeAppIcon.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:22:12.951Z |
-| spirit/element/search/app/changeAppIcon.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:40.655Z |
-| spirit/element/search/app/changeAppLabel.js | spirit/element/search/app/test/changeAppLabel.js | 9 | 9 | 0 | 2026-11-17T11:47:10.259Z |
-| spirit/element/search/app/changeAppLabel.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:18.736Z |
-| spirit/element/search/app/changeAppLabel.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:48.334Z |
-| spirit/element/search/app/changeAppLabel.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:22:13.482Z |
-| spirit/element/search/app/changeAppLabel.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:41.419Z |
-| spirit/element/search/app/detail.js | spirit/element/search/app/test/detail.js | 13 | 13 | 0 | 2026-11-18T01:01:07.213Z |
-| spirit/element/search/app/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:19.199Z |
-| spirit/element/search/app/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:48.847Z |
-| spirit/element/search/app/detail.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:22:15.837Z |
-| spirit/element/search/app/detail.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:42.433Z |
-| spirit/element/search/app/list.js | spirit/element/search/app/test/list.js | 16 | 16 | 0 | 2026-11-18T01:01:10.307Z |
-| spirit/element/search/app/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:19.675Z |
-| spirit/element/search/app/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:49.333Z |
-| spirit/element/search/app/list.js | spirit/test/spirit-sibling-browser.js | 25 | 25 | 0 | 2026-11-18T00:22:16.351Z |
-| spirit/element/search/app/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T08:42:43.462Z |
-| spirit/element/search/app/row.js | spirit/element/search/app/test/row.js | 9 | 9 | 0 | 2026-11-18T01:01:12.218Z |
-| spirit/element/search/app/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:20.178Z |
-| spirit/element/search/app/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:49.741Z |
-| spirit/element/search/app/row.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:16.867Z |
-| spirit/element/search/app/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:02.890Z |
-| spirit/element/search/app/rowFormAppActive.js | spirit/element/search/app/test/rowFormAppActive.js | 14 | 14 | 0 | 2026-11-17T11:47:19.120Z |
-| spirit/element/search/app/rowFormAppActive.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:20.673Z |
-| spirit/element/search/app/rowFormAppActive.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:50.146Z |
-| spirit/element/search/app/rowFormAppActive.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:22:17.329Z |
-| spirit/element/search/app/rowFormAppActive.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:07.836Z |
-| spirit/element/search/app/rowFormSetShell.js | spirit/element/search/app/test/rowFormSetShell.js | 15 | 15 | 0 | 2026-11-17T11:47:23.016Z |
-| spirit/element/search/app/rowFormSetShell.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:21.104Z |
-| spirit/element/search/app/rowFormSetShell.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:50.679Z |
-| spirit/element/search/app/rowFormSetShell.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:17.904Z |
-| spirit/element/search/app/rowFormSetShell.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:08.886Z |
-| spirit/element/search/app/rowFormToggle.js | spirit/element/search/app/test/rowFormToggle.js | 15 | 15 | 0 | 2026-11-18T01:01:14.194Z |
-| spirit/element/search/app/rowFormToggle.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:21.557Z |
-| spirit/element/search/app/rowFormToggle.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:51.089Z |
-| spirit/element/search/app/rowFormToggle.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:18.435Z |
-| spirit/element/search/app/rowFormToggle.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:09.907Z |
-| spirit/element/search/app/serverDEBUG.js | spirit/element/search/app/test/serverDEBUG.js | 29 | 29 | 0 | 2026-11-18T01:01:24.657Z |
-| spirit/element/search/app/serverDEBUG.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:22.046Z |
-| spirit/element/search/app/serverDEBUG.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:51.283Z |
-| spirit/element/search/app/serverDEBUG.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-18T00:22:19.185Z |
-| spirit/element/search/app/serverDEBUG.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:10.763Z |
-| spirit/element/search/branch.js | spirit/element/search/test/branch.js | 14 | 14 | 0 | 2026-11-18T01:04:26.091Z |
-| spirit/element/search/branch.js | spirit/element/test/search-child-browser.js | 7 | 7 | 0 | 2026-11-18T23:58:09.643Z |
-| spirit/element/search/branch.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:22.533Z |
-| spirit/element/search/branch.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:51.647Z |
-| spirit/element/search/branch.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-18T00:22:20.002Z |
-| spirit/element/search/branch.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:11.719Z |
-| spirit/element/search/branch/list.js | spirit/element/search/branch/test/list.js | 24 | 24 | 0 | 2026-11-18T01:01:25.356Z |
-| spirit/element/search/branch/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:23.006Z |
-| spirit/element/search/branch/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:52.136Z |
-| spirit/element/search/branch/list.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:22:20.536Z |
-| spirit/element/search/branch/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:12.694Z |
-| spirit/element/search/branch/row.js | spirit/element/search/branch/test/row.js | 19 | 19 | 0 | 2026-11-18T01:01:25.961Z |
-| spirit/element/search/branch/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:23.464Z |
-| spirit/element/search/branch/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:52.362Z |
-| spirit/element/search/branch/row.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:21.258Z |
-| spirit/element/search/branch/row.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T09:12:13.763Z |
-| spirit/element/search/bundle.js | spirit/element/search/test/bundle.js | 16 | 16 | 0 | 2026-11-18T01:04:26.627Z |
-| spirit/element/search/bundle.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-18T23:58:10.027Z |
-| spirit/element/search/bundle.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:19:23.946Z |
-| spirit/element/search/bundle.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:52.779Z |
-| spirit/element/search/bundle.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-18T00:22:22.182Z |
-| spirit/element/search/bundle.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:14.682Z |
-| spirit/element/search/bundle/detail.js | spirit/element/search/bundle/test/detail.js | 1 | 1 | 0 | 2026-11-18T01:01:36.119Z |
-| spirit/element/search/bundle/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:05.783Z |
-| spirit/element/search/bundle/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:53.276Z |
-| spirit/element/search/bundle/detail.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:22:22.819Z |
-| spirit/element/search/bundle/detail.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T09:12:15.739Z |
-| spirit/element/search/bundle/list.js | spirit/element/search/bundle/test/list.js | 24 | 24 | 0 | 2026-11-18T01:01:36.875Z |
-| spirit/element/search/bundle/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:06.145Z |
-| spirit/element/search/bundle/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:53.740Z |
-| spirit/element/search/bundle/list.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:22:23.355Z |
-| spirit/element/search/bundle/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:12:16.787Z |
-| spirit/element/search/bundle/row.js | spirit/element/search/bundle/test/row.js | 21 | 21 | 0 | 2026-11-18T01:01:37.520Z |
-| spirit/element/search/bundle/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:06.479Z |
-| spirit/element/search/bundle/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:54.109Z |
-| spirit/element/search/bundle/row.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:25.229Z |
-| spirit/element/search/bundle/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:46.232Z |
-| spirit/element/search/contact.js | spirit/element/search/test/contact.js | 20 | 20 | 0 | 2026-11-18T01:04:27.318Z |
-| spirit/element/search/contact.js | spirit/element/test/search-child-browser.js | 10 | 6 | 4 | 2026-11-18T23:58:10.061Z |
-| spirit/element/search/contact.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:06.783Z |
-| spirit/element/search/contact.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:54.504Z |
-| spirit/element/search/contact.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:22:25.788Z |
-| spirit/element/search/contact.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:50.193Z |
-| spirit/element/search/contact/detail.js | spirit/element/search/contact/test/detail.js | 142 | 142 | 0 | 2026-11-18T05:56:26.984Z |
-| spirit/element/search/contact/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T05:44:50.948Z |
-| spirit/element/search/contact/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:54.942Z |
-| spirit/element/search/contact/detail.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T05:45:19.132Z |
-| spirit/element/search/contact/detail.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T09:39:51.181Z |
-| spirit/element/search/contact/list.js | spirit/element/search/contact/test/list.js | 39 | 39 | 0 | 2026-11-18T05:56:28.609Z |
-| spirit/element/search/contact/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T05:44:51.344Z |
-| spirit/element/search/contact/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:55.367Z |
-| spirit/element/search/contact/list.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T05:45:19.692Z |
-| spirit/element/search/contact/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:52.098Z |
-| spirit/element/search/contact/row.js | spirit/element/search/contact/test/row.js | 53 | 53 | 0 | 2026-11-18T05:56:50.548Z |
-| spirit/element/search/contact/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:07.803Z |
-| spirit/element/search/contact/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:55.874Z |
-| spirit/element/search/contact/row.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:27.995Z |
-| spirit/element/search/contact/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:52.865Z |
-| spirit/element/search/file.js | spirit/element/search/test/file.js | 7 | 7 | 0 | 2026-11-18T01:04:27.657Z |
-| spirit/element/search/file.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-18T23:58:10.092Z |
-| spirit/element/search/file.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:08.153Z |
-| spirit/element/search/file.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:56.287Z |
-| spirit/element/search/file.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-18T00:22:28.514Z |
-| spirit/element/search/file.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:53.658Z |
-| spirit/element/search/file/detail.js | spirit/element/search/file/test/detail.js | 8 | 8 | 0 | 2026-11-18T01:03:02.827Z |
-| spirit/element/search/file/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:08.484Z |
-| spirit/element/search/file/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:56.701Z |
-| spirit/element/search/file/detail.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:29.520Z |
-| spirit/element/search/file/detail.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:54.443Z |
-| spirit/element/search/file/list.js | spirit/element/search/file/test/list.js | 32 | 32 | 0 | 2026-11-18T01:03:03.763Z |
-| spirit/element/search/file/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:08.858Z |
-| spirit/element/search/file/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:56.850Z |
-| spirit/element/search/file/list.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-18T00:22:30.072Z |
-| spirit/element/search/file/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:55.172Z |
-| spirit/element/search/file/row.js | spirit/element/search/file/test/row.js | 42 | 40 | 2 | 2026-11-18T01:03:26.358Z |
-| spirit/element/search/file/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:09.203Z |
-| spirit/element/search/file/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:57.263Z |
-| spirit/element/search/file/row.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:30.617Z |
-| spirit/element/search/file/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:55.873Z |
-| spirit/element/search/grant.js | spirit/element/search/test/grant.js | 8 | 8 | 0 | 2026-11-18T05:57:39.720Z |
-| spirit/element/search/grant.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-18T23:58:10.122Z |
-| spirit/element/search/grant.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T05:44:51.728Z |
-| spirit/element/search/grant.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:57.707Z |
-| spirit/element/search/grant.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T05:45:20.188Z |
-| spirit/element/search/grant.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:39:56.680Z |
-| spirit/element/search/grant/detail.js | spirit/element/search/grant/test/detail.js | 20 | 20 | 0 | 2026-11-18T05:56:53.075Z |
-| spirit/element/search/grant/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T05:44:52.099Z |
-| spirit/element/search/grant/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:58.141Z |
-| spirit/element/search/grant/detail.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T05:45:20.693Z |
-| spirit/element/search/grant/detail.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T09:39:57.580Z |
-| spirit/element/search/grant/grantsPanel.js | spirit/element/search/grant/test/grantsPanel.js | 86 | 86 | 0 | 2026-11-18T06:22:32.438Z |
-| spirit/element/search/grant/grantsPanel.js | spirit/element/test/search-child-browser.js | 12 | 12 | 0 | 2026-11-18T06:22:57.940Z |
-| spirit/element/search/grant/grantsPanel.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T06:22:58.584Z |
-| spirit/element/search/grant/grantsPanel.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:58.605Z |
-| spirit/element/search/grant/grantsPanel.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T06:22:59.690Z |
-| spirit/element/search/grant/grantsPanel.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T09:39:58.497Z |
-| spirit/element/search/grant/list.js | spirit/element/search/grant/test/list.js | 21 | 21 | 0 | 2026-11-18T05:56:55.807Z |
-| spirit/element/search/grant/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T05:44:52.846Z |
-| spirit/element/search/grant/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:59.003Z |
-| spirit/element/search/grant/list.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-18T05:45:21.826Z |
-| spirit/element/search/grant/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:44:28.550Z |
-| spirit/element/search/grant/row.js | spirit/element/search/grant/test/row.js | 23 | 23 | 0 | 2026-11-18T05:56:56.486Z |
-| spirit/element/search/grant/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T05:44:53.218Z |
-| spirit/element/search/grant/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:59.123Z |
-| spirit/element/search/grant/row.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T05:45:22.232Z |
-| spirit/element/search/grant/row.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-18T09:44:33.346Z |
-| spirit/element/search/icon.js | spirit/element/search/test/icon.js | 12 | 12 | 0 | 2026-11-18T01:04:31.475Z |
-| spirit/element/search/icon.js | spirit/element/test/search-child-browser.js | 7 | 7 | 0 | 2026-11-18T23:58:09.814Z |
-| spirit/element/search/icon.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:11.325Z |
-| spirit/element/search/icon.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:49:59.590Z |
-| spirit/element/search/icon.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-18T00:22:37.818Z |
-| spirit/element/search/icon.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:44:34.570Z |
-| spirit/element/search/icon/list.js | spirit/element/search/icon/test/list.js | 29 | 29 | 0 | 2026-11-18T05:57:39.303Z |
-| spirit/element/search/icon/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:11.740Z |
-| spirit/element/search/icon/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:49:59.970Z |
-| spirit/element/search/icon/list.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-18T00:22:38.384Z |
-| spirit/element/search/icon/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:44:35.958Z |
-| spirit/element/search/icon/row.js | spirit/element/search/icon/test/row.js | 12 | 12 | 0 | 2026-11-18T01:04:15.110Z |
-| spirit/element/search/icon/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:12.086Z |
-| spirit/element/search/icon/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:50:00.389Z |
-| spirit/element/search/icon/row.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:22:39.244Z |
-| spirit/element/search/icon/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:44:37.468Z |
-| spirit/element/search/job.js | spirit/element/search/test/job.js | 9 | 9 | 0 | 2026-11-18T01:04:31.874Z |
-| spirit/element/search/job.js | spirit/element/test/search-child-browser.js | 10 | 9 | 1 | 2026-11-18T23:58:10.152Z |
-| spirit/element/search/job.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:12.417Z |
-| spirit/element/search/job.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:00.789Z |
-| spirit/element/search/job.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:22:39.834Z |
-| spirit/element/search/job.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:44:38.941Z |
-| spirit/element/search/job/detail.js | spirit/element/search/job/test/detail.js | 28 | 28 | 0 | 2026-11-18T01:04:17.987Z |
-| spirit/element/search/job/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:12.775Z |
-| spirit/element/search/job/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:50:01.224Z |
-| spirit/element/search/job/detail.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:40.664Z |
-| spirit/element/search/job/detail.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:44:40.417Z |
-| spirit/element/search/job/list.js | spirit/element/search/job/test/list.js | 25 | 25 | 0 | 2026-11-18T01:04:20.640Z |
-| spirit/element/search/job/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:13.105Z |
-| spirit/element/search/job/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:50:01.417Z |
-| spirit/element/search/job/list.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-18T00:22:41.211Z |
-| spirit/element/search/job/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:44:41.815Z |
-| spirit/element/search/job/row.js | spirit/element/search/job/test/row.js | 21 | 21 | 0 | 2026-11-18T01:04:21.357Z |
-| spirit/element/search/job/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-18T00:36:13.473Z |
-| spirit/element/search/job/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:50:01.607Z |
-| spirit/element/search/job/row.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-18T00:22:41.727Z |
-| spirit/element/search/job/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:48:09.891Z |
-| spirit/element/tabContainer.js | spirit/element/test/tabContainer.js | 48 | 48 | 0 | 2026-11-16T14:20:49.396Z |
-| spirit/element/tabContainer.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:01.968Z |
-| spirit/element/tabContainer.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:42.210Z |
-| spirit/element/tabContainer.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T09:48:11.658Z |
-| spirit/element/workBench.js | spirit/element/test/workBench.js | 54 | 54 | 0 | 2026-11-17T11:50:27.871Z |
-| spirit/element/workBench.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:02.361Z |
-| spirit/element/workBench.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-18T00:22:42.637Z |
-| spirit/element/workBench.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T09:48:13.781Z |
-| spirit/event/api.js | spirit/event/test/api.js | 11 | 11 | 0 | 2026-11-17T11:50:28.391Z |
-| spirit/event/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:02.830Z |
-| spirit/event/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:43.052Z |
-| spirit/event/api.js | spirit/test/spirit-sibling-general.js | 64 | 64 | 0 | 2026-11-18T09:48:16.707Z |
-| spirit/event/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.077Z |
-| spirit/event/data.js | spirit/event/test/data.js | 5 | 5 | 0 | 2026-11-16T14:20:50.192Z |
-| spirit/event/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:03.234Z |
-| spirit/event/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:43.451Z |
-| spirit/event/data.js | spirit/test/spirit-sibling-general.js | 62 | 62 | 0 | 2026-11-18T09:48:19.217Z |
-| spirit/event/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.133Z |
-| spirit/event/event.js | spirit/event/test/event.js | 9 | 9 | 0 | 2026-11-16T04:25:52.577Z |
-| spirit/event/event.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:03.697Z |
-| spirit/event/event.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T10:20:37.388Z |
-| spirit/event/event.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:55.410Z |
-| spirit/faceHome.js | spirit/test/faceHome.js | 186 | 177 | 9 | 2026-11-18T05:59:37.681Z |
-| spirit/faceHome.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:04.153Z |
-| spirit/faceHome.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:20:38.455Z |
-| spirit/faceHome.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:52.653Z |
-| spirit/faceRoute.js | spirit/test/faceRoute.js | 26 | 26 | 0 | 2026-11-16T04:28:14.569Z |
-| spirit/faceRoute.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:04.565Z |
-| spirit/faceRoute.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:20:39.405Z |
-| spirit/faceRoute.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:55.563Z |
-| spirit/fieldRules.js | spirit/test/fieldRules.js | 20 | 20 | 0 | 2026-11-18T01:11:28.273Z |
-| spirit/fieldRules.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:05.087Z |
-| spirit/fieldRules.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:43.875Z |
-| spirit/fieldRules.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:20:40.485Z |
-| spirit/fieldRules.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:29.317Z |
-| spirit/fileSystem.js | spirit/test/fileSystem.js | 60 | 60 | 0 | 2026-11-16T04:28:17.519Z |
-| spirit/fileSystem.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:05.488Z |
-| spirit/fileSystem.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:20:41.586Z |
-| spirit/fileSystem.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:55.681Z |
-| spirit/fs/api.js | spirit/fs/test/api.js | 10 | 10 | 0 | 2026-11-18T23:53:34.131Z |
-| spirit/fs/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:05.914Z |
-| spirit/fs/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:44.290Z |
-| spirit/fs/api.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-18T10:20:43.089Z |
-| spirit/fs/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.187Z |
-| spirit/fs/data.js | spirit/fs/test/data.js | 19 | 19 | 0 | 2026-11-16T14:20:51.095Z |
-| spirit/fs/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:06.467Z |
-| spirit/fs/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:44.759Z |
-| spirit/fs/data.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T10:20:44.693Z |
-| spirit/fs/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.232Z |
-| spirit/hub.js | spirit/test/hub.js | 18 | 18 | 0 | 2026-11-18T06:10:18.679Z |
-| spirit/hub.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:07.116Z |
-| spirit/hub.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:20:45.736Z |
-| spirit/hub.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:52.737Z |
-| spirit/introSpector.js | spirit/test/introSpector.js | 10 | 10 | 0 | 2026-11-18T01:11:31.179Z |
-| spirit/introSpector.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:07.553Z |
-| spirit/introSpector.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:20:46.837Z |
-| spirit/introSpector.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:29.480Z |
-| spirit/invites.js | spirit/test/invites.js | 17 | 17 | 0 | 2026-11-18T01:11:32.047Z |
-| spirit/invites.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:08.019Z |
-| spirit/invites.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:57:37.602Z |
-| spirit/invites.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:56.034Z |
-| spirit/job.js | spirit/test/job.js | 185 | 185 | 0 | 2026-11-18T23:55:43.990Z |
-| spirit/job.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:08.449Z |
-| spirit/job.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:57:38.535Z |
-| spirit/job.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:56.097Z |
-| spirit/job/api.js | spirit/job/test/api.js | 10 | 10 | 0 | 2026-11-17T11:50:28.871Z |
-| spirit/job/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:08.882Z |
-| spirit/job/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:45.231Z |
-| spirit/job/api.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-18T10:57:39.939Z |
-| spirit/job/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.399Z |
-| spirit/job/data.js | spirit/job/test/data.js | 18 | 18 | 0 | 2026-11-16T14:20:52.169Z |
-| spirit/job/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:09.003Z |
-| spirit/job/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:45.699Z |
-| spirit/job/data.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T10:57:41.347Z |
-| spirit/job/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.453Z |
-| spirit/joinStepsJob.js | spirit/test/joinStepsJob.js | 13 | 13 | 0 | 2026-11-18T01:16:40.769Z |
-| spirit/joinStepsJob.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:09.475Z |
-| spirit/joinStepsJob.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:57:42.263Z |
-| spirit/joinStepsJob.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:56.275Z |
-| spirit/lever.js | spirit/test/lever.js | 13 | 13 | 0 | 2026-11-18T01:16:41.288Z |
-| spirit/lever.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:09.866Z |
-| spirit/lever.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:46.163Z |
-| spirit/lever.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:57:43.138Z |
-| spirit/lever.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:29.551Z |
-| spirit/limits.js | spirit/test/limits.js | 15 | 15 | 0 | 2026-11-18T01:16:41.781Z |
-| spirit/limits.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:10.265Z |
-| spirit/limits.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:46.632Z |
-| spirit/limits.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:57:44.122Z |
-| spirit/limits.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:29.621Z |
-| spirit/listLimiter.js | spirit/test/listLimiter.js | 23 | 23 | 0 | 2026-11-18T01:16:42.407Z |
-| spirit/listLimiter.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:50:10.488Z |
-| spirit/listLimiter.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:47.064Z |
-| spirit/listLimiter.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:57:45.060Z |
-| spirit/listLimiter.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:29.750Z |
-| spirit/net/api.js | spirit/net/test/api.js | 9 | 9 | 0 | 2026-11-17T11:50:29.335Z |
-| spirit/net/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:10.873Z |
-| spirit/net/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:47.519Z |
-| spirit/net/api.js | spirit/test/spirit-sibling-general.js | 64 | 64 | 0 | 2026-11-18T10:57:46.384Z |
-| spirit/net/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.519Z |
-| spirit/net/data.js | spirit/net/test/data.js | 5 | 5 | 0 | 2026-11-16T14:20:52.933Z |
-| spirit/net/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:11.287Z |
-| spirit/net/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:47.999Z |
-| spirit/net/data.js | spirit/test/spirit-sibling-general.js | 62 | 62 | 0 | 2026-11-18T13:01:33.801Z |
-| spirit/net/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.588Z |
-| spirit/netFence.js | spirit/test/netFence.js | 17 | 17 | 0 | 2026-11-16T04:30:15.156Z |
-| spirit/netFence.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:11.703Z |
-| spirit/netFence.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T13:01:34.717Z |
-| spirit/netFence.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:56.588Z |
-| spirit/node/api.js | spirit/node/test/api.js | 12 | 12 | 0 | 2026-11-17T11:50:29.774Z |
-| spirit/node/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:12.113Z |
-| spirit/node/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:48.485Z |
-| spirit/node/api.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-18T13:01:36.157Z |
-| spirit/node/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.673Z |
-| spirit/node/data.js | spirit/node/test/data.js | 13 | 13 | 0 | 2026-11-16T14:20:54.038Z |
-| spirit/node/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:12.519Z |
-| spirit/node/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:48.924Z |
-| spirit/node/data.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T13:01:37.550Z |
-| spirit/node/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.762Z |
-| spirit/nodeCard.js | spirit/test/nodeCard.js | 20 | 20 | 0 | 2026-11-18T01:16:43.146Z |
-| spirit/nodeCard.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:12.998Z |
-| spirit/nodeCard.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T13:01:38.488Z |
-| spirit/nodeCard.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:29.852Z |
-| spirit/nodeSearches.js | spirit/test/nodeSearches.js | 19 | 19 | 0 | 2026-11-18T01:16:43.906Z |
-| spirit/nodeSearches.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:13.449Z |
-| spirit/nodeSearches.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T13:01:39.435Z |
-| spirit/nodeSearches.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:29.942Z |
-| spirit/nodeSettings.js | spirit/test/nodeSettings.js | 13 | 13 | 0 | 2026-11-18T01:16:44.375Z |
-| spirit/nodeSettings.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:13.856Z |
-| spirit/nodeSettings.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T13:01:40.454Z |
-| spirit/nodeSettings.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:56.973Z |
-| spirit/nodeShell.js | spirit/test/nodeShell.js | 22 | 22 | 0 | 2026-11-16T04:30:20.198Z |
-| spirit/nodeShell.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:14.287Z |
-| spirit/nodeShell.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T13:01:41.419Z |
-| spirit/nodeShell.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:57.059Z |
-| spirit/nodeStore.js | spirit/test/nodeStore.js | 73 | 73 | 0 | 2026-11-18T06:10:31.373Z |
-| spirit/nodeStore.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:14.713Z |
-| spirit/nodeStore.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T13:01:42.379Z |
-| spirit/nodeStore.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:52.822Z |
-| spirit/owner/api.js | spirit/owner/test/api.js | 9 | 9 | 0 | 2026-11-17T11:50:30.223Z |
-| spirit/owner/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:15.140Z |
-| spirit/owner/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:49.373Z |
-| spirit/owner/api.js | spirit/test/spirit-sibling-general.js | 64 | 64 | 0 | 2026-11-18T16:38:48.485Z |
-| spirit/owner/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.929Z |
-| spirit/owner/data.js | spirit/owner/test/data.js | 5 | 5 | 0 | 2026-11-16T14:20:54.942Z |
-| spirit/owner/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:15.540Z |
-| spirit/owner/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:49.810Z |
-| spirit/owner/data.js | spirit/test/spirit-sibling-general.js | 62 | 62 | 0 | 2026-11-18T16:38:49.794Z |
-| spirit/owner/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:35.978Z |
-| spirit/ownerBadge.js | spirit/test/ownerBadge.js | 26 | 26 | 0 | 2026-11-18T01:16:58.510Z |
-| spirit/ownerBadge.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:16.002Z |
-| spirit/ownerBadge.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:50.247Z |
-| spirit/ownerBadge.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T16:38:50.634Z |
-| spirit/ownerBadge.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:30.099Z |
-| spirit/ownerPost.js | spirit/test/ownerPost.js | 17 | 17 | 0 | 2026-11-16T04:30:23.937Z |
-| spirit/ownerPost.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:16.415Z |
-| spirit/ownerPost.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T16:38:51.523Z |
-| spirit/ownerPost.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:57.376Z |
-| spirit/peer/api.js | spirit/peer/test/api.js | 10 | 10 | 0 | 2026-11-17T11:50:30.744Z |
-| spirit/peer/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:16.575Z |
-| spirit/peer/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:50.691Z |
-| spirit/peer/api.js | spirit/test/spirit-sibling-general.js | 64 | 64 | 0 | 2026-11-18T16:38:52.936Z |
-| spirit/peer/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:36.079Z |
-| spirit/peer/data.js | spirit/peer/test/data.js | 5 | 5 | 0 | 2026-11-16T14:20:55.778Z |
-| spirit/peer/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:16.985Z |
-| spirit/peer/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:51.153Z |
-| spirit/peer/data.js | spirit/test/spirit-sibling-general.js | 62 | 62 | 0 | 2026-11-18T16:38:54.162Z |
-| spirit/peer/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:36.166Z |
-| spirit/peerFile.js | spirit/test/peerFile.js | 16 | 16 | 0 | 2026-11-18T01:16:59.132Z |
-| spirit/peerFile.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:17.126Z |
-| spirit/peerFile.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:51.547Z |
-| spirit/peerFile.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T16:38:55.001Z |
-| spirit/peerFile.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:30.202Z |
-| spirit/peerPost.js | spirit/test/peerPost.js | 7 | 7 | 0 | 2026-11-18T01:16:59.982Z |
-| spirit/peerPost.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:17.718Z |
-| spirit/peerPost.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T16:38:55.899Z |
-| spirit/peerPost.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:57.693Z |
-| spirit/peerRank.js | spirit/test/peerRank.js | 13 | 13 | 0 | 2026-11-18T01:17:00.522Z |
-| spirit/peerRank.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:18.157Z |
-| spirit/peerRank.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T16:38:56.757Z |
-| spirit/peerRank.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:30.316Z |
-| spirit/postQueue.js | spirit/test/postQueue.js | 33 | 33 | 0 | 2026-11-16T04:30:26.815Z |
-| spirit/postQueue.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:18.575Z |
-| spirit/postQueue.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T20:58:13.201Z |
-| spirit/postQueue.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:57.817Z |
-| spirit/presence.js | spirit/test/presence.js | 20 | 20 | 0 | 2026-11-16T04:30:27.488Z |
-| spirit/presence.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:18.982Z |
-| spirit/presence.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T20:58:14.196Z |
-| spirit/presence.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:57.874Z |
-| spirit/presenceNode.js | spirit/test/presenceNode.js | 35 | 35 | 0 | 2026-11-18T01:17:01.911Z |
-| spirit/presenceNode.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:19.689Z |
-| spirit/presenceNode.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T20:58:15.198Z |
-| spirit/presenceNode.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:36.297Z |
-| spirit/puppetMode.js | spirit/test/puppetMode.js | 24 | 24 | 0 | 2026-11-18T01:17:02.706Z |
-| spirit/puppetMode.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:19.798Z |
-| spirit/puppetMode.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T20:58:16.165Z |
-| spirit/puppetMode.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:58.346Z |
-| spirit/puppetStream.js | spirit/test/puppetStream.js | 15 | 15 | 0 | 2026-11-16T04:30:33.616Z |
-| spirit/puppetStream.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:19.908Z |
-| spirit/puppetStream.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T20:58:17.176Z |
-| spirit/puppetStream.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:58.421Z |
-| spirit/relay.js | spirit/test/relay.js | 1 | 1 | 0 | 2026-11-18T01:17:30.037Z |
-| spirit/relay.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:20.616Z |
-| spirit/relay.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:53:22.011Z |
-| spirit/relay.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:36.425Z |
-| spirit/relay/api.js | spirit/relay/test/api.js | 26 | 26 | 0 | 2026-11-16T14:20:56.630Z |
-| spirit/relay/api.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:21.053Z |
-| spirit/relay/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:51.962Z |
-| spirit/relay/api.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-18T23:53:23.530Z |
-| spirit/relay/api.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:36.516Z |
-| spirit/relay/data.js | spirit/relay/test/data.js | 11 | 11 | 0 | 2026-11-16T14:20:57.162Z |
-| spirit/relay/data.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:21.475Z |
-| spirit/relay/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:52.429Z |
-| spirit/relay/data.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-18T23:53:25.058Z |
-| spirit/relay/data.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T13:40:36.560Z |
-| spirit/relayAuth.js | spirit/test/relayAuth.js | 8 | 8 | 0 | 2026-11-18T01:17:30.623Z |
-| spirit/relayAuth.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:21.866Z |
-| spirit/relayAuth.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:53:26.023Z |
-| spirit/relayAuth.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:58.816Z |
-| spirit/relayConfig.js | spirit/test/relayConfig.js | 18 | 18 | 0 | 2026-11-16T04:31:13.136Z |
-| spirit/relayConfig.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:22.382Z |
-| spirit/relayConfig.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:28.126Z |
-| spirit/relayConfig.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:58.902Z |
-| spirit/relayDump.js | spirit/test/relayDump.js | 14 | 14 | 0 | 2026-11-18T01:17:31.472Z |
-| spirit/relayDump.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:22.547Z |
-| spirit/relayDump.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:29.243Z |
-| spirit/relayDump.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:59.043Z |
-| spirit/relayKeys.js | spirit/test/relayKeys.js | 7 | 7 | 0 | 2026-11-18T06:10:32.137Z |
-| spirit/relayKeys.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:22.923Z |
-| spirit/relayKeys.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:30.245Z |
-| spirit/relayKeys.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:52.908Z |
-| spirit/relayLimits.js | spirit/test/relayLimits.js | 24 | 24 | 0 | 2026-11-16T04:31:15.567Z |
-| spirit/relayLimits.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:23.322Z |
-| spirit/relayLimits.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:31.173Z |
-| spirit/relayLimits.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:59.230Z |
-| spirit/relayRequest.js | spirit/test/relayRequest.js | 25 | 25 | 0 | 2026-11-18T01:17:33.845Z |
-| spirit/relayRequest.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:23.766Z |
-| spirit/relayRequest.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:32.156Z |
-| spirit/relayRequest.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:59.336Z |
-| spirit/server/relay.js | spirit/server/test/relay.js | 221 | 221 | 0 | 2026-11-18T22:56:06.894Z |
-| spirit/server/relay.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:41.838Z |
-| spirit/server/relay.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T22:55:27.979Z |
-| spirit/server/relay.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:59.555Z |
-| spirit/relayStatus.js | spirit/test/relayStatus.js | 12 | 12 | 0 | 2026-11-16T04:31:53.258Z |
-| spirit/relayStatus.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:23.906Z |
-| spirit/relayStatus.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:33.072Z |
-| spirit/relayStatus.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:59.619Z |
-| spirit/relayStore.js | spirit/test/relayStore.js | 73 | 73 | 0 | 2026-11-18T01:17:36.511Z |
-| spirit/relayStore.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:24.300Z |
-| spirit/relayStore.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:33.991Z |
-| spirit/relayStore.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:59.725Z |
-| spirit/relayUrl.js | spirit/test/relayUrl.js | 7 | 7 | 0 | 2026-11-17T11:55:53.357Z |
-| spirit/relayUrl.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:24.710Z |
-| spirit/relayUrl.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:34.916Z |
-| spirit/relayUrl.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-17T11:38:00.459Z |
-| spirit/router.js | spirit/test/router.js | 20 | 20 | 0 | 2026-11-16T04:31:54.488Z |
-| spirit/router.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:25.122Z |
-| spirit/router.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T23:58:36.061Z |
-| spirit/router.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:30:59.916Z |
-| spirit/seal.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:25.538Z |
-| spirit/seal.js | spirit/test/seal.js | 16 | 16 | 0 | 2026-11-16T04:31:55.170Z |
-| spirit/seal.js | spirit/test/spirit-sibling-general.js | 38 | 38 | 0 | 2026-11-18T23:58:36.874Z |
-| spirit/seal.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:00.014Z |
-| spirit/search/object.js | spirit/search/test/object.js | 24 | 24 | 0 | 2026-11-18T01:05:21.811Z |
-| spirit/search/object.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:50:25.956Z |
-| spirit/search/object.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:52.863Z |
-| spirit/search/object.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:30.388Z |
-| spirit/search/string.js | spirit/search/test/string.js | 23 | 23 | 0 | 2026-11-18T01:05:22.464Z |
-| spirit/search/string.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:50:26.363Z |
-| spirit/search/string.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:53.295Z |
-| spirit/search/string.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:30.480Z |
-| spirit/seenPeers.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:26.781Z |
-| spirit/seenPeers.js | spirit/test/seenPeers.js | 29 | 29 | 0 | 2026-11-18T01:17:53.435Z |
-| spirit/seenPeers.js | spirit/test/spirit-sibling-general.js | 21 | 21 | 0 | 2026-11-16T03:30:44.804Z |
-| spirit/seenPeers.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:00.103Z |
-| spirit/sendMail.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:27.187Z |
-| spirit/sendMail.js | spirit/test/sendMail.js | 12 | 12 | 0 | 2026-11-18T01:17:53.917Z |
-| spirit/sendMail.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:00.206Z |
-| spirit/sendMail/mailgun.js | spirit/sendMail/test/mailgun.js | 13 | 13 | 0 | 2026-11-16T04:26:00.891Z |
-| spirit/sendMail/mailgun.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:27.592Z |
-| spirit/sendMail/mailgun.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:00.325Z |
-| spirit/server/serveCommon.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:28.002Z |
-| spirit/server/serveCommon.js | spirit/server/test/serveCommon.js | 37 | 37 | 0 | 2026-11-18T01:17:54.898Z |
-| spirit/server/serveCommon.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:00.393Z |
-| spirit/server.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:41.967Z |
-| spirit/server.js | spirit/test/server.js | 72 | 72 | 0 | 2026-11-18T22:57:26.778Z |
-| spirit/server.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T22:55:29.021Z |
-| spirit/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T05:48:53.274Z |
-| spirit/shell/boot.js | spirit/shell/test/boot.js | 23 | 23 | 0 | 2026-11-18T01:05:23.077Z |
-| spirit/shell/boot.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:28.393Z |
-| spirit/shell/boot.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:53.781Z |
-| spirit/shell/boot.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-18T22:55:29.912Z |
-| spirit/shell/seal.js | spirit/shell/test/seal.js | 7 | 7 | 0 | 2026-11-16T04:26:02.106Z |
-| spirit/shell/seal.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:28.770Z |
-| spirit/shell/seal.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T00:22:54.239Z |
-| spirit/shell/seal.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:00.816Z |
-| spirit/spirit.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:29.194Z |
-| spirit/spirit.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T10:16:00.558Z |
-| spirit/spirit.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-18T10:16:09.881Z |
-| spirit/spirit.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T10:16:11.806Z |
-| spirit/spirit.js | spirit/test/spirit.js | 121 | 119 | 2 | 2026-11-18T13:03:34.432Z |
-| spirit/spiritErrors.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:29.595Z |
-| spirit/spiritErrors.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T06:06:23.388Z |
-| spirit/spiritErrors.js | spirit/test/spiritErrors.js | 19 | 19 | 0 | 2026-11-18T06:12:37.136Z |
-| spirit/sseClient.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:29.710Z |
-| spirit/sseClient.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:01.038Z |
-| spirit/sseClient.js | spirit/test/sseClient.js | 15 | 15 | 0 | 2026-11-16T04:34:17.872Z |
-| spirit/streamSink.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:30.076Z |
-| spirit/streamSink.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:01.127Z |
-| spirit/streamSink.js | spirit/test/streamSink.js | 14 | 14 | 0 | 2026-11-16T04:34:18.388Z |
-| spirit/tempFolder.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-18T23:50:30.456Z |
-| spirit/tempFolder.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:30.599Z |
-| spirit/tempFolder.js | spirit/test/tempFolder.js | 12 | 12 | 0 | 2026-11-18T01:19:57.620Z |
-| spirit/test/app-child-browser.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:42.134Z |
-| spirit/test/headLessChrome.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:42.393Z |
-| spirit/test/headLessChrome.js | spirit/test/test/headLessChrome.js | 22 | 18 | 4 | 2026-11-18T16:36:06.890Z |
-| spirit/test/spirit-sibling-browser.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:42.636Z |
-| spirit/test/spirit-sibling-general.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:42.990Z |
-| spirit/test/spirit-sibling-general.js | spirit/test/test/spirit-sibling-general.js | 19 | 19 | 0 | 2026-11-18T00:27:59.333Z |
-| spirit/test/testModule.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:43.027Z |
-| spirit/test/testModule.js | spirit/test/test/testModule.js | 25 | 25 | 0 | 2026-11-18T01:19:58.425Z |
-| spirit/test/testReport.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:48:43.174Z |
-| spirit/test/testReport.js | spirit/test/test/testReport.js | 31 | 31 | 0 | 2026-11-18T01:20:03.993Z |
-| spirit/trafficLog.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:30.807Z |
-| spirit/trafficLog.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T00:26:30.708Z |
-| spirit/trafficLog.js | spirit/test/trafficLog.js | 41 | 41 | 0 | 2026-11-18T01:23:31.525Z |
-| spirit/verbTable.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:31.168Z |
-| spirit/verbTable.js | spirit/test/spirit-sibling-node.js | 1 | 1 | 0 | 2026-11-16T03:31:01.288Z |
-| spirit/verbTable.js | spirit/test/verbTable.js | 18 | 18 | 0 | 2026-11-16T04:35:18.527Z |
-| spirit/word.js | spirit/test/scriptClassify.js | 2 | 2 | 0 | 2026-11-18T23:50:31.683Z |
-| spirit/word.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-18T06:02:57.782Z |
-| spirit/word.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-18T06:06:23.501Z |
-| spirit/word.js | spirit/test/word.js | 73 | 72 | 1 | 2026-11-18T06:12:47.865Z |
+| spirit/DEBUG.js | spirit/test/DEBUG.js | 76 | 76 | 0 | 2026-11-21T01:56:41.919Z |
+| spirit/DEBUG.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:03.481Z |
+| spirit/DEBUG.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:02:02.283Z |
+| spirit/DEBUG.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-20T21:05:06.568Z |
+| spirit/DEBUG/garbageArguments.js | spirit/DEBUG/test/garbageArguments.js | 23 | 23 | 0 | 2026-11-20T21:07:18.905Z |
+| spirit/DEBUG/garbageArguments.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:03.904Z |
+| spirit/DEBUG/garbageArguments.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:02:03.615Z |
+| spirit/DEBUG/garbageArguments.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:06.741Z |
+| spirit/DEBUG/headLessBrowser.js | spirit/DEBUG/test/headLessBrowser.js | 18 | 18 | 0 | 2026-11-20T21:07:19.955Z |
+| spirit/DEBUG/headLessBrowser.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:04.307Z |
+| spirit/DEBUG/headLessBrowser.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:02:05.231Z |
+| spirit/DEBUG/headLessBrowser.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:06.904Z |
+| spirit/answerRelay.js | spirit/test/answerRelay.js | 21 | 21 | 0 | 2026-11-20T22:07:02.438Z |
+| spirit/answerRelay.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:04.754Z |
+| spirit/answerRelay.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:02:06.775Z |
+| spirit/answerRelay.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:07.038Z |
+| spirit/apiAuth.js | spirit/test/apiAuth.js | 100 | 100 | 0 | 2026-11-20T22:07:15.484Z |
+| spirit/apiAuth.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:05.339Z |
+| spirit/apiAuth.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:02:08.411Z |
+| spirit/apiAuth.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:07.148Z |
+| spirit/apiDoor.js | spirit/test/apiDoor.js | 12 | 12 | 0 | 2026-11-20T22:07:16.732Z |
+| spirit/apiDoor.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:05.471Z |
+| spirit/apiDoor.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:02:09.870Z |
+| spirit/apiDoor.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:07.266Z |
+| spirit/app.js | spirit/test/app-child-general.js | 25 | 25 | 0 | 2026-11-21T00:32:31.336Z |
+| spirit/app.js | spirit/test/app.js | 69 | 68 | 1 | 2026-11-20T23:53:18.228Z |
+| spirit/app.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:05.966Z |
+| spirit/app.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:02:11.386Z |
+| spirit/app.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:07.389Z |
+| spirit/app/agent/agent.js | spirit/app/agent/test/agent.js | 43 | 43 | 0 | 2026-11-21T00:46:58.732Z |
+| spirit/app/agent/agent.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:32.206Z |
+| spirit/app/agent/agent.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-21T02:00:40.987Z |
+| spirit/app/agent/agent.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:54.378Z |
+| spirit/app/agent/agent.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-21T01:08:53.355Z |
+| spirit/app/agent/agent.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-21T00:34:04.380Z |
+| spirit/app/agent/api.js | spirit/app/agent/test/api.js | 14 | 14 | 0 | 2026-11-21T00:47:00.033Z |
+| spirit/app/agent/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T23:48:30.623Z |
+| spirit/app/agent/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:33.015Z |
+| spirit/app/agent/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:06.831Z |
+| spirit/app/agent/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T23:52:55.285Z |
+| spirit/app/agent/api.js | spirit/test/spirit-sibling-general.js | 70 | 70 | 0 | 2026-11-21T01:08:59.814Z |
+| spirit/app/agent/api.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-20T23:52:59.558Z |
+| spirit/app/agent/data.js | spirit/app/agent/test/data.js | 24 | 24 | 0 | 2026-11-21T00:47:01.436Z |
+| spirit/app/agent/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T21:13:57.021Z |
+| spirit/app/agent/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:33.917Z |
+| spirit/app/agent/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:07.221Z |
+| spirit/app/agent/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:55:47.912Z |
+| spirit/app/agent/data.js | spirit/test/spirit-sibling-general.js | 68 | 68 | 0 | 2026-11-21T01:09:02.994Z |
+| spirit/app/agent/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:07.705Z |
+| spirit/app/agent/element.js | spirit/app/agent/test/element.js | 91 | 91 | 0 | 2026-11-20T21:08:12.482Z |
+| spirit/app/agent/element.js | spirit/test/app-child-browser.js | 5 | 5 | 0 | 2026-11-20T20:55:14.669Z |
+| spirit/app/agent/element.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:34.803Z |
+| spirit/app/agent/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:07.373Z |
+| spirit/app/agent/element.js | spirit/test/spirit-sibling-browser.js | 25 | 25 | 0 | 2026-11-20T20:55:50.069Z |
+| spirit/app/agent/element.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-21T01:09:05.704Z |
+| spirit/app/agent/element/chatPane.js | spirit/app/agent/element/test/chatPane.js | 20 | 20 | 0 | 2026-11-20T21:07:35.395Z |
+| spirit/app/agent/element/chatPane.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:51.397Z |
+| spirit/app/agent/element/chatPane.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:35.714Z |
+| spirit/app/agent/element/chatPane.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:07.816Z |
+| spirit/app/agent/element/chatPane.js | spirit/test/spirit-sibling-browser.js | 19 | 19 | 0 | 2026-11-20T20:56:01.799Z |
+| spirit/app/agent/element/chatPane.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-21T00:06:07.510Z |
+| spirit/app/agent/element/table/job/elementRow.js | spirit/app/agent/element/table/job/test/elementRow.js | 19 | 19 | 0 | 2026-11-20T21:07:21.051Z |
+| spirit/app/agent/element/table/job/elementRow.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:51.583Z |
+| spirit/app/agent/element/table/job/elementRow.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:36.779Z |
+| spirit/app/agent/element/table/job/elementRow.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:08.237Z |
+| spirit/app/agent/element/table/job/elementRow.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:56:04.053Z |
+| spirit/app/agent/element/table/job/elementRow.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:09.260Z |
+| spirit/app/agent/element/table/job/elementTable.js | spirit/app/agent/element/table/job/test/elementTable.js | 14 | 14 | 0 | 2026-11-20T21:07:21.767Z |
+| spirit/app/agent/element/table/job/elementTable.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:51.947Z |
+| spirit/app/agent/element/table/job/elementTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:37.682Z |
+| spirit/app/agent/element/table/job/elementTable.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:08.663Z |
+| spirit/app/agent/element/table/job/elementTable.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:56:09.132Z |
+| spirit/app/agent/element/table/job/elementTable.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:10.969Z |
+| spirit/app/agent/element/table/model/elementRow.js | spirit/app/agent/element/table/model/test/elementRow.js | 19 | 19 | 0 | 2026-11-20T21:07:22.841Z |
+| spirit/app/agent/element/table/model/elementRow.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:52.331Z |
+| spirit/app/agent/element/table/model/elementRow.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:38.534Z |
+| spirit/app/agent/element/table/model/elementRow.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:09.080Z |
+| spirit/app/agent/element/table/model/elementRow.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-20T20:56:11.447Z |
+| spirit/app/agent/element/table/model/elementRow.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:12.580Z |
+| spirit/app/agent/element/table/model/elementTable.js | spirit/app/agent/element/table/model/test/elementTable.js | 25 | 25 | 0 | 2026-11-20T21:07:24.305Z |
+| spirit/app/agent/element/table/model/elementTable.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:52.692Z |
+| spirit/app/agent/element/table/model/elementTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:39.404Z |
+| spirit/app/agent/element/table/model/elementTable.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:09.502Z |
+| spirit/app/agent/element/table/model/elementTable.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:56:20.863Z |
+| spirit/app/agent/element/table/model/elementTable.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-21T00:06:14.304Z |
+| spirit/app/agent/element/table/persona/elementRow.js | spirit/app/agent/element/table/persona/test/elementRow.js | 19 | 19 | 0 | 2026-11-20T21:07:25.235Z |
+| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:54.537Z |
+| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:32:40.300Z |
+| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:09.922Z |
+| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:56:23.120Z |
+| spirit/app/agent/element/table/persona/elementRow.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:16.043Z |
+| spirit/app/agent/element/table/persona/elementTable.js | spirit/app/agent/element/table/persona/test/elementTable.js | 14 | 14 | 0 | 2026-11-20T21:07:26.198Z |
+| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:54.747Z |
+| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:16.942Z |
+| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:10.391Z |
+| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:56:30.407Z |
+| spirit/app/agent/element/table/persona/elementTable.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:17.500Z |
+| spirit/app/agent/element/table/provider/elementRow.js | spirit/app/agent/element/table/provider/test/elementRow.js | 19 | 19 | 0 | 2026-11-20T21:07:27.374Z |
+| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:55.126Z |
+| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:17.984Z |
+| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:10.814Z |
+| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:56:32.684Z |
+| spirit/app/agent/element/table/provider/elementRow.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:19.030Z |
+| spirit/app/agent/element/table/provider/elementTable.js | spirit/app/agent/element/table/provider/test/elementTable.js | 14 | 14 | 0 | 2026-11-20T21:07:28.304Z |
+| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:55.503Z |
+| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:19.006Z |
+| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:11.251Z |
+| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:56:34.786Z |
+| spirit/app/agent/element/table/provider/elementTable.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:20.622Z |
+| spirit/app/agent/element/table/row.js | spirit/app/agent/element/table/test/row.js | 62 | 62 | 0 | 2026-11-20T21:07:31.105Z |
+| spirit/app/agent/element/table/row.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:55.892Z |
+| spirit/app/agent/element/table/row.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:19.930Z |
+| spirit/app/agent/element/table/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:11.660Z |
+| spirit/app/agent/element/table/row.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T20:56:36.905Z |
+| spirit/app/agent/element/table/row.js | spirit/test/spirit-sibling-general.js | 44 | 44 | 0 | 2026-11-21T00:06:22.056Z |
+| spirit/app/agent/element/table/tableElement.js | spirit/app/agent/element/table/test/tableElement.js | 34 | 34 | 0 | 2026-11-20T21:07:32.557Z |
+| spirit/app/agent/element/table/tableElement.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:57.971Z |
+| spirit/app/agent/element/table/tableElement.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:20.878Z |
+| spirit/app/agent/element/table/tableElement.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:12.089Z |
+| spirit/app/agent/element/table/tableElement.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T20:56:37.678Z |
+| spirit/app/agent/element/table/tableElement.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:23.490Z |
+| spirit/app/agent/provider/anthropic/anthropic.js | spirit/app/agent/provider/anthropic/test/anthropic.js | 18 | 18 | 0 | 2026-11-20T21:07:36.353Z |
+| spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:21.781Z |
+| spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:12.964Z |
+| spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:24.907Z |
+| spirit/app/agent/provider/anthropic/anthropic.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:07.927Z |
+| spirit/app/agent/provider/openai/openai.js | spirit/app/agent/provider/openai/test/openai.js | 15 | 15 | 0 | 2026-11-20T21:07:37.185Z |
+| spirit/app/agent/provider/openai/openai.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:22.656Z |
+| spirit/app/agent/provider/openai/openai.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:13.415Z |
+| spirit/app/agent/provider/openai/openai.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:26.374Z |
+| spirit/app/agent/provider/openai/openai.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:08.033Z |
+| spirit/app/agent/server/server.js | spirit/app/agent/server/test/server.js | 42 | 42 | 0 | 2026-11-21T00:46:30.642Z |
+| spirit/app/agent/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:23.733Z |
+| spirit/app/agent/server/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:54.823Z |
+| spirit/app/agent/server/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:28.053Z |
+| spirit/app/agent/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:04.470Z |
+| spirit/app/agent/table/job/server.js | spirit/app/agent/table/job/test/server.js | 41 | 41 | 0 | 2026-11-21T00:46:33.065Z |
+| spirit/app/agent/table/job/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:24.597Z |
+| spirit/app/agent/table/job/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:13.908Z |
+| spirit/app/agent/table/job/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:29.421Z |
+| spirit/app/agent/table/job/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:08.167Z |
+| spirit/app/agent/table/model/server.js | spirit/app/agent/table/model/test/server.js | 53 | 53 | 0 | 2026-11-21T00:46:36.409Z |
+| spirit/app/agent/table/model/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:48:25.463Z |
+| spirit/app/agent/table/model/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:14.124Z |
+| spirit/app/agent/table/model/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:31.095Z |
+| spirit/app/agent/table/model/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:08.275Z |
+| spirit/app/agent/table/persona/server.js | spirit/app/agent/table/persona/test/server.js | 40 | 40 | 0 | 2026-11-21T00:46:38.892Z |
+| spirit/app/agent/table/persona/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:23.580Z |
+| spirit/app/agent/table/persona/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:14.390Z |
+| spirit/app/agent/table/persona/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:32.597Z |
+| spirit/app/agent/table/persona/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:08.367Z |
+| spirit/app/agent/table/provider/server.js | spirit/app/agent/table/provider/test/server.js | 76 | 76 | 0 | 2026-11-21T00:46:44.783Z |
+| spirit/app/agent/table/provider/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:24.553Z |
+| spirit/app/agent/table/provider/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:14.909Z |
+| spirit/app/agent/table/provider/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:34.161Z |
+| spirit/app/agent/table/provider/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:08.480Z |
+| spirit/app/agent/table/rowTable.js | spirit/app/agent/table/test/rowTable.js | 63 | 63 | 0 | 2026-11-21T00:46:48.389Z |
+| spirit/app/agent/table/rowTable.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:25.567Z |
+| spirit/app/agent/table/rowTable.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:15.119Z |
+| spirit/app/agent/table/rowTable.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:06:35.708Z |
+| spirit/app/agent/table/rowTable.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:08.628Z |
+| spirit/app/api.js | spirit/app/test/api.js | 14 | 14 | 0 | 2026-11-20T21:26:13.875Z |
+| spirit/app/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T21:24:49.279Z |
+| spirit/app/api.js | spirit/test/app-child-general.js | 25 | 25 | 0 | 2026-11-21T01:08:26.488Z |
+| spirit/app/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:15.571Z |
+| spirit/app/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:56:40.957Z |
+| spirit/app/api.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-21T00:06:38.237Z |
+| spirit/app/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:08.758Z |
+| spirit/app/app/element.js | spirit/app/app/test/element.js | 123 | 123 | 0 | 2026-11-20T21:09:32.177Z |
+| spirit/app/app/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T22:08:42.604Z |
+| spirit/app/app/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-21T01:08:27.379Z |
+| spirit/app/app/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:16.014Z |
+| spirit/app/app/element.js | spirit/test/spirit-sibling-browser.js | 26 | 26 | 0 | 2026-11-20T20:56:42.367Z |
+| spirit/app/app/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:06:39.925Z |
+| spirit/app/backup/api.js | spirit/app/backup/test/api.js | 9 | 9 | 0 | 2026-11-20T21:09:32.733Z |
+| spirit/app/backup/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T22:13:49.611Z |
+| spirit/app/backup/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:28.213Z |
+| spirit/app/backup/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:16.461Z |
+| spirit/app/backup/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:56:42.774Z |
+| spirit/app/backup/api.js | spirit/test/spirit-sibling-general.js | 71 | 71 | 0 | 2026-11-21T01:09:08.748Z |
+| spirit/app/backup/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:08.856Z |
+| spirit/app/backup/backup.js | spirit/app/backup/test/backup.js | 6 | 6 | 0 | 2026-11-21T00:47:05.133Z |
+| spirit/app/backup/backup.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:29.056Z |
+| spirit/app/backup/backup.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-21T02:00:41.159Z |
+| spirit/app/backup/backup.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:55.244Z |
+| spirit/app/backup/backup.js | spirit/test/spirit-sibling-general.js | 70 | 70 | 0 | 2026-11-21T01:09:15.658Z |
+| spirit/app/backup/backup.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:04.552Z |
+| spirit/app/backup/data.js | spirit/app/backup/test/data.js | 15 | 15 | 0 | 2026-11-20T21:09:35.030Z |
+| spirit/app/backup/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T22:21:35.372Z |
+| spirit/app/backup/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:29.924Z |
+| spirit/app/backup/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:17.282Z |
+| spirit/app/backup/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:56:43.149Z |
+| spirit/app/backup/data.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-21T01:09:22.477Z |
+| spirit/app/backup/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:09.088Z |
+| spirit/app/backup/server/server.js | spirit/app/backup/server/test/server.js | 8 | 8 | 0 | 2026-11-21T00:47:02.730Z |
+| spirit/app/backup/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:31.122Z |
+| spirit/app/backup/server/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:55.655Z |
+| spirit/app/backup/server/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:08:08.808Z |
+| spirit/app/backup/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:04.633Z |
+| spirit/app/chat/api.js | spirit/app/chat/test/api.js | 21 | 21 | 0 | 2026-11-21T00:47:10.821Z |
+| spirit/app/chat/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-21T00:32:14.869Z |
+| spirit/app/chat/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:31.999Z |
+| spirit/app/chat/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:56.102Z |
+| spirit/app/chat/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:52.390Z |
+| spirit/app/chat/api.js | spirit/test/spirit-sibling-general.js | 71 | 71 | 0 | 2026-11-21T01:09:34.545Z |
+| spirit/app/chat/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:04.723Z |
+| spirit/app/chat/chat.js | spirit/app/chat/test/chat.js | 19 | 18 | 1 | 2026-11-21T00:47:13.712Z |
+| spirit/app/chat/chat.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:08:32.782Z |
+| spirit/app/chat/chat.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-21T02:00:41.216Z |
+| spirit/app/chat/chat.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:56.522Z |
+| spirit/app/chat/chat.js | spirit/test/spirit-sibling-general.js | 70 | 70 | 0 | 2026-11-21T01:09:37.393Z |
+| spirit/app/chat/chat.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:04.792Z |
+| spirit/app/chat/data.js | spirit/app/chat/test/data.js | 17 | 17 | 0 | 2026-11-20T21:09:41.473Z |
+| spirit/app/chat/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T23:52:37.962Z |
+| spirit/app/chat/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:36:31.322Z |
+| spirit/app/chat/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:18.579Z |
+| spirit/app/chat/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:56:46.377Z |
+| spirit/app/chat/data.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-21T01:09:39.981Z |
+| spirit/app/chat/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:09.409Z |
+| spirit/app/chat/element.js | spirit/app/chat/test/element.js | 15 | 15 | 0 | 2026-11-21T00:47:16.244Z |
+| spirit/app/chat/element.js | spirit/test/app-child-browser.js | 5 | 5 | 0 | 2026-11-21T00:32:23.053Z |
+| spirit/app/chat/element.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:36:32.400Z |
+| spirit/app/chat/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:58:12.983Z |
+| spirit/app/chat/element.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-21T00:33:53.319Z |
+| spirit/app/chat/element.js | spirit/test/spirit-sibling-general.js | 71 | 66 | 5 | 2026-11-21T02:03:02.324Z |
+| spirit/app/chat/server/server.js | spirit/app/chat/server/test/server.js | 24 | 24 | 0 | 2026-11-21T01:14:24.325Z |
+| spirit/app/chat/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:36:33.705Z |
+| spirit/app/chat/server/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:56.684Z |
+| spirit/app/chat/server/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:12:11.427Z |
+| spirit/app/chat/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:04.867Z |
+| spirit/app/contact/element.js | spirit/app/contact/test/element.js | 25 | 25 | 0 | 2026-11-21T00:47:24.746Z |
+| spirit/app/contact/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:14.892Z |
+| spirit/app/contact/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-21T01:36:34.656Z |
+| spirit/app/contact/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:19.723Z |
+| spirit/app/contact/element.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:56:49.900Z |
+| spirit/app/contact/element.js | spirit/test/spirit-sibling-general.js | 47 | 47 | 0 | 2026-11-21T00:12:13.310Z |
+| spirit/app/data.js | spirit/app/test/data.js | 24 | 24 | 0 | 2026-11-20T21:26:22.920Z |
+| spirit/app/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T23:56:55.650Z |
+| spirit/app/data.js | spirit/test/app-child-general.js | 25 | 25 | 0 | 2026-11-21T01:36:35.760Z |
+| spirit/app/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:20.191Z |
+| spirit/app/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:56:50.293Z |
+| spirit/app/data.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-21T00:12:15.713Z |
+| spirit/app/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:09.619Z |
+| spirit/app/desk/api.js | spirit/app/desk/test/api.js | 35 | 35 | 0 | 2026-11-21T00:47:28.899Z |
+| spirit/app/desk/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-21T00:48:09.151Z |
+| spirit/app/desk/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:36:36.745Z |
+| spirit/app/desk/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:20.647Z |
+| spirit/app/desk/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T23:52:55.740Z |
+| spirit/app/desk/api.js | spirit/test/spirit-sibling-general.js | 71 | 66 | 5 | 2026-11-21T02:04:02.910Z |
+| spirit/app/desk/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:00.184Z |
+| spirit/app/desk/cacheRules.js | spirit/app/desk/test/cacheRules.js | 24 | 24 | 0 | 2026-11-20T21:12:55.026Z |
+| spirit/app/desk/cacheRules.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:36:37.745Z |
+| spirit/app/desk/cacheRules.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:21.064Z |
+| spirit/app/desk/cacheRules.js | spirit/test/spirit-sibling-general.js | 70 | 65 | 5 | 2026-11-21T02:05:03.569Z |
+| spirit/app/desk/cacheRules.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:09.836Z |
+| spirit/app/desk/data.js | spirit/app/desk/test/data.js | 42 | 42 | 0 | 2026-11-21T00:47:31.099Z |
+| spirit/app/desk/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-21T01:08:16.363Z |
+| spirit/app/desk/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:36:38.800Z |
+| spirit/app/desk/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:21.509Z |
+| spirit/app/desk/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T23:52:56.198Z |
+| spirit/app/desk/data.js | spirit/test/spirit-sibling-general.js | 70 | 65 | 5 | 2026-11-21T02:06:04.021Z |
+| spirit/app/desk/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:00.331Z |
+| spirit/app/desk/desk.js | spirit/app/desk/test/desk.js | 95 | 95 | 0 | 2026-11-21T00:47:50.774Z |
+| spirit/app/desk/desk.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T01:36:39.764Z |
+| spirit/app/desk/desk.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-21T02:00:41.284Z |
+| spirit/app/desk/desk.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:57.118Z |
+| spirit/app/desk/desk.js | spirit/test/spirit-sibling-general.js | 70 | 65 | 5 | 2026-11-21T02:07:04.529Z |
+| spirit/app/desk/desk.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:04.952Z |
+| spirit/app/desk/deskAgentEar.js | spirit/app/desk/test/deskAgentEar.js | 17 | 17 | 0 | 2026-11-20T21:13:14.345Z |
+| spirit/app/desk/deskAgentEar.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:44.387Z |
+| spirit/app/desk/deskAgentEar.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:22.343Z |
+| spirit/app/desk/deskAgentEar.js | spirit/test/spirit-sibling-general.js | 70 | 65 | 5 | 2026-11-21T02:08:05.003Z |
+| spirit/app/desk/deskAgentEar.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:10.203Z |
+| spirit/app/desk/deskLoop.js | spirit/app/desk/test/deskLoop.js | 30 | 30 | 0 | 2026-11-20T21:13:16.070Z |
+| spirit/app/desk/deskLoop.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:45.346Z |
+| spirit/app/desk/deskLoop.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:22.746Z |
+| spirit/app/desk/deskLoop.js | spirit/test/spirit-sibling-general.js | 70 | 65 | 5 | 2026-11-21T02:09:05.254Z |
+| spirit/app/desk/deskLoop.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:10.322Z |
+| spirit/app/desk/element.js | spirit/app/desk/test/element.js | 11 | 11 | 0 | 2026-11-20T21:13:17.067Z |
+| spirit/app/desk/element.js | spirit/test/app-child-browser.js | 5 | 5 | 0 | 2026-11-20T20:55:15.216Z |
+| spirit/app/desk/element.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:46.454Z |
+| spirit/app/desk/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:22.933Z |
+| spirit/app/desk/element.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:56:54.981Z |
+| spirit/app/desk/element.js | spirit/test/spirit-sibling-general.js | 70 | 65 | 5 | 2026-11-21T02:10:05.875Z |
+| spirit/app/desk/element/desk/desk.js | spirit/app/desk/element/desk/test/desk.js | 48 | 48 | 0 | 2026-11-20T21:11:29.322Z |
+| spirit/app/desk/element/desk/desk.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:00.209Z |
+| spirit/app/desk/element/desk/desk.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:47.394Z |
+| spirit/app/desk/element/desk/desk.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:23.372Z |
+| spirit/app/desk/element/desk/desk.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:56:57.051Z |
+| spirit/app/desk/element/desk/desk.js | spirit/test/spirit-sibling-general.js | 44 | 44 | 0 | 2026-11-21T00:19:14.996Z |
+| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/app/desk/element/deskDetails/test/deskDetails.js | 71 | 71 | 0 | 2026-11-20T21:12:24.256Z |
+| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:02.951Z |
+| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:48.283Z |
+| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:23.795Z |
+| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:56:57.955Z |
+| spirit/app/desk/element/deskDetails/deskDetails.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:19:16.656Z |
+| spirit/app/desk/server/server.js | spirit/app/desk/server/test/server.js | 16 | 16 | 0 | 2026-11-21T00:47:26.352Z |
+| spirit/app/desk/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:49.490Z |
+| spirit/app/desk/server/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:57.303Z |
+| spirit/app/desk/server/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:19:18.736Z |
+| spirit/app/desk/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.027Z |
+| spirit/app/deskClient/api.js | spirit/app/deskClient/test/api.js | 20 | 18 | 2 | 2026-11-21T01:14:27.651Z |
+| spirit/app/deskClient/api.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-21T01:36:25.355Z |
+| spirit/app/deskClient/api.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:50.437Z |
+| spirit/app/deskClient/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:24.668Z |
+| spirit/app/deskClient/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T23:52:56.649Z |
+| spirit/app/deskClient/api.js | spirit/test/spirit-sibling-general.js | 70 | 65 | 5 | 2026-11-21T02:11:06.211Z |
+| spirit/app/deskClient/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:00.601Z |
+| spirit/app/deskClient/data.js | spirit/app/deskClient/test/data.js | 8 | 8 | 0 | 2026-11-21T01:14:27.708Z |
+| spirit/app/deskClient/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-21T02:01:39.582Z |
+| spirit/app/deskClient/data.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:51.401Z |
+| spirit/app/deskClient/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:25.155Z |
+| spirit/app/deskClient/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:57:00.911Z |
+| spirit/app/deskClient/data.js | spirit/test/spirit-sibling-general.js | 68 | 63 | 5 | 2026-11-21T02:12:06.978Z |
+| spirit/app/deskClient/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:10.658Z |
+| spirit/app/deskClient/deskClient.js | spirit/app/deskClient/test/deskClient.js | 6 | 6 | 0 | 2026-11-21T01:14:30.790Z |
+| spirit/app/deskClient/deskClient.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:52.338Z |
+| spirit/app/deskClient/deskClient.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-21T02:00:41.357Z |
+| spirit/app/deskClient/deskClient.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:57.751Z |
+| spirit/app/deskClient/deskClient.js | spirit/test/spirit-sibling-general.js | 69 | 64 | 5 | 2026-11-21T02:13:07.308Z |
+| spirit/app/deskClient/deskClient.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.104Z |
+| spirit/app/deskClient/server/server.js | spirit/app/deskClient/server/test/server.js | 61 | 61 | 0 | 2026-11-21T00:48:06.834Z |
+| spirit/app/deskClient/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T02:01:53.570Z |
+| spirit/app/deskClient/server/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:58.179Z |
+| spirit/app/deskClient/server/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:22:17.231Z |
+| spirit/app/deskClient/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.188Z |
+| spirit/app/file/element.js | spirit/app/file/test/element.js | 75 | 75 | 0 | 2026-11-21T01:14:46.987Z |
+| spirit/app/file/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:15.293Z |
+| spirit/app/file/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T22:21:48.500Z |
+| spirit/app/file/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:26.051Z |
+| spirit/app/file/element.js | spirit/test/spirit-sibling-browser.js | 24 | 24 | 0 | 2026-11-20T20:57:03.967Z |
+| spirit/app/file/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:22:19.350Z |
+| spirit/app/grants/element.js | spirit/app/grants/test/element.js | 89 | 89 | 0 | 2026-11-20T21:18:13.777Z |
+| spirit/app/grants/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:15.424Z |
+| spirit/app/grants/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:34:51.141Z |
+| spirit/app/grants/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:26.541Z |
+| spirit/app/grants/element.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:57:05.224Z |
+| spirit/app/grants/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:22:21.252Z |
+| spirit/app/icons/api.js | spirit/app/icons/test/api.js | 22 | 22 | 0 | 2026-11-21T01:15:04.282Z |
+| spirit/app/icons/api.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T23:34:52.236Z |
+| spirit/app/icons/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:58.637Z |
+| spirit/app/icons/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:55.278Z |
+| spirit/app/icons/api.js | spirit/test/spirit-sibling-general.js | 71 | 71 | 0 | 2026-11-21T00:22:24.222Z |
+| spirit/app/icons/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.284Z |
+| spirit/app/icons/data.js | spirit/app/icons/test/data.js | 25 | 25 | 0 | 2026-11-20T21:18:23.743Z |
+| spirit/app/icons/data.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T23:34:53.236Z |
+| spirit/app/icons/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:26.886Z |
+| spirit/app/icons/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:57:07.161Z |
+| spirit/app/icons/data.js | spirit/test/spirit-sibling-general.js | 69 | 69 | 0 | 2026-11-21T00:22:26.689Z |
+| spirit/app/icons/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:11.306Z |
+| spirit/app/icons/element.js | spirit/app/icons/test/element.js | 34 | 34 | 0 | 2026-11-21T01:15:12.673Z |
+| spirit/app/icons/element.js | spirit/test/app-child-browser.js | 3 | 3 | 0 | 2026-11-21T00:32:23.103Z |
+| spirit/app/icons/element.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T23:34:54.281Z |
+| spirit/app/icons/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:58:15.567Z |
+| spirit/app/icons/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-21T00:33:56.077Z |
+| spirit/app/icons/element.js | spirit/test/spirit-sibling-general.js | 72 | 72 | 0 | 2026-11-21T00:22:29.403Z |
+| spirit/app/icons/icons.js | spirit/app/icons/test/icons.js | 41 | 39 | 2 | 2026-11-21T01:15:22.105Z |
+| spirit/app/icons/icons.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T23:34:55.329Z |
+| spirit/app/icons/icons.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:58.811Z |
+| spirit/app/icons/icons.js | spirit/test/spirit-sibling-general.js | 70 | 70 | 0 | 2026-11-21T01:47:58.528Z |
+| spirit/app/icons/icons.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.368Z |
+| spirit/app/icons/server/server.js | spirit/app/icons/server/test/server.js | 45 | 45 | 0 | 2026-11-21T01:14:57.073Z |
+| spirit/app/icons/server/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:31:59.225Z |
+| spirit/app/icons/server/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:23:23.365Z |
+| spirit/app/icons/server/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.448Z |
+| spirit/app/info/element.js | spirit/app/info/test/element.js | 46 | 46 | 0 | 2026-11-20T21:19:01.551Z |
+| spirit/app/info/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:15.565Z |
+| spirit/app/info/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:34:57.513Z |
+| spirit/app/info/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:28.696Z |
+| spirit/app/info/element.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:57:14.633Z |
+| spirit/app/info/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:25.176Z |
+| spirit/app/introSpector/element.js | spirit/app/introSpector/test/element.js | 19 | 19 | 0 | 2026-11-20T21:19:05.514Z |
+| spirit/app/introSpector/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:15.668Z |
+| spirit/app/introSpector/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:34:58.478Z |
+| spirit/app/introSpector/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:29.180Z |
+| spirit/app/introSpector/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-20T20:57:17.084Z |
+| spirit/app/introSpector/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:26.926Z |
+| spirit/app/job/element.js | spirit/app/job/test/element.js | 22 | 22 | 0 | 2026-11-20T21:19:09.468Z |
+| spirit/app/job/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:15.770Z |
+| spirit/app/job/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:34:59.493Z |
+| spirit/app/job/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:29.600Z |
+| spirit/app/job/element.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:57:22.390Z |
+| spirit/app/job/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:28.931Z |
+| spirit/app/join/element.js | spirit/app/join/test/element.js | 17 | 17 | 0 | 2026-11-20T21:19:11.063Z |
+| spirit/app/join/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:15.923Z |
+| spirit/app/join/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:52:42.166Z |
+| spirit/app/join/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:30.123Z |
+| spirit/app/join/element.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-20T20:57:26.140Z |
+| spirit/app/join/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:30.787Z |
+| spirit/app/media/element.js | spirit/app/media/test/element.js | 18 | 18 | 0 | 2026-11-20T21:19:15.201Z |
+| spirit/app/media/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:16.021Z |
+| spirit/app/media/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:52:43.575Z |
+| spirit/app/media/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:30.603Z |
+| spirit/app/media/element.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:57:28.185Z |
+| spirit/app/media/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:32.552Z |
+| spirit/app/monitor/element.js | spirit/app/monitor/test/element.js | 19 | 19 | 0 | 2026-11-20T21:19:24.574Z |
+| spirit/app/monitor/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:16.150Z |
+| spirit/app/monitor/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:52:45.496Z |
+| spirit/app/monitor/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:31.114Z |
+| spirit/app/monitor/element.js | spirit/test/spirit-sibling-browser.js | 19 | 19 | 0 | 2026-11-20T20:57:30.228Z |
+| spirit/app/monitor/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:34.356Z |
+| spirit/app/publishData/agentReadme.js | spirit/app/publishData/test/agentReadme.js | 18 | 18 | 0 | 2026-11-21T01:15:24.278Z |
+| spirit/app/publishData/agentReadme.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:52:46.860Z |
+| spirit/app/publishData/agentReadme.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T01:08:09.237Z |
+| spirit/app/publishData/agentReadme.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T01:48:00.323Z |
+| spirit/app/publishData/agentReadme.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-21T01:09:52.778Z |
+| spirit/app/publishData/measure.js | spirit/app/publishData/test/measure.js | 15 | 15 | 0 | 2026-11-21T01:16:41.144Z |
+| spirit/app/publishData/measure.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:52:48.250Z |
+| spirit/app/publishData/measure.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:31.950Z |
+| spirit/app/publishData/measure.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:37.903Z |
+| spirit/app/publishData/measure.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:01.057Z |
+| spirit/app/publishData/publishData.js | spirit/app/publishData/test/publishData.js | 77 | 76 | 1 | 2026-11-21T01:14:21.829Z |
+| spirit/app/publishData/publishData.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:52:49.604Z |
+| spirit/app/publishData/publishData.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T01:08:09.711Z |
+| spirit/app/publishData/publishData.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T01:48:02.243Z |
+| spirit/app/publishData/publishData.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T01:09:53.006Z |
+| spirit/app/pullOrigin/pullOrigin.js | spirit/app/pullOrigin/test/pullOrigin.js | 13 | 13 | 0 | 2026-11-20T21:26:06.431Z |
+| spirit/app/pullOrigin/pullOrigin.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:56:59.131Z |
+| spirit/app/pullOrigin/pullOrigin.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:32.595Z |
+| spirit/app/pullOrigin/pullOrigin.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:41.646Z |
+| spirit/app/pullOrigin/pullOrigin.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:12.382Z |
+| spirit/app/pushOrigin/pushOrigin.js | spirit/app/pushOrigin/test/pushOrigin.js | 12 | 12 | 0 | 2026-11-20T21:26:11.706Z |
+| spirit/app/pushOrigin/pushOrigin.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:57:00.536Z |
+| spirit/app/pushOrigin/pushOrigin.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:33.030Z |
+| spirit/app/pushOrigin/pushOrigin.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:43.474Z |
+| spirit/app/pushOrigin/pushOrigin.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:12.537Z |
+| spirit/app/starter/element.js | spirit/app/starter/test/element.js | 16 | 16 | 0 | 2026-11-20T21:26:12.806Z |
+| spirit/app/starter/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:16.252Z |
+| spirit/app/starter/element.js | spirit/test/app-child-general.js | 21 | 21 | 0 | 2026-11-20T23:57:01.955Z |
+| spirit/app/starter/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:33.456Z |
+| spirit/app/starter/element.js | spirit/test/spirit-sibling-browser.js | 17 | 17 | 0 | 2026-11-20T20:57:31.227Z |
+| spirit/app/starter/element.js | spirit/test/spirit-sibling-general.js | 46 | 46 | 0 | 2026-11-21T00:23:45.291Z |
+| spirit/app/testicle/api.js | spirit/app/testicle/test/api.js | 22 | 22 | 0 | 2026-11-21T01:34:17.294Z |
+| spirit/app/testicle/api.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T23:52:52.298Z |
+| spirit/app/testicle/api.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T23:52:52.788Z |
+| spirit/app/testicle/api.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-20T23:52:53.709Z |
+| spirit/app/testicle/api.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T23:57:03.404Z |
+| spirit/app/testicle/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:33.891Z |
+| spirit/app/testicle/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T23:52:57.025Z |
+| spirit/app/testicle/api.js | spirit/test/spirit-sibling-general.js | 70 | 65 | 5 | 2026-11-21T02:14:07.847Z |
+| spirit/app/testicle/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:01.189Z |
+| spirit/app/testicle/data.js | spirit/app/testicle/test/data.js | 27 | 27 | 0 | 2026-11-21T01:34:19.270Z |
+| spirit/app/testicle/data.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T21:12:25.625Z |
+| spirit/app/testicle/data.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T21:12:26.174Z |
+| spirit/app/testicle/data.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-20T21:12:26.903Z |
+| spirit/app/testicle/data.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T21:12:29.386Z |
+| spirit/app/testicle/data.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T21:12:31.139Z |
+| spirit/app/testicle/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:34.309Z |
+| spirit/app/testicle/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:12:36.304Z |
+| spirit/app/testicle/data.js | spirit/test/spirit-sibling-general.js | 68 | 63 | 5 | 2026-11-21T02:15:08.077Z |
+| spirit/app/testicle/data.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-20T21:12:48.149Z |
+| spirit/app/testicle/element.js | spirit/app/testicle/test/element.js | 105 | 97 | 8 | 2026-11-21T00:45:52.640Z |
+| spirit/app/testicle/element.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:40.234Z |
+| spirit/app/testicle/element.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:43.377Z |
+| spirit/app/testicle/element.js | spirit/test/app-child-browser.js | 5 | 5 | 0 | 2026-11-20T20:55:16.415Z |
+| spirit/app/testicle/element.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T23:57:04.878Z |
+| spirit/app/testicle/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:34.843Z |
+| spirit/app/testicle/element.js | spirit/test/spirit-sibling-browser.js | 25 | 25 | 0 | 2026-11-20T20:57:38.197Z |
+| spirit/app/testicle/element.js | spirit/test/spirit-sibling-general.js | 69 | 64 | 5 | 2026-11-21T02:16:08.653Z |
+| spirit/app/testicle/element/scriptDetail.js | spirit/app/testicle/element/test/scriptDetail.js | 16 | 16 | 0 | 2026-11-20T21:27:55.940Z |
+| spirit/app/testicle/element/scriptDetail.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:40.602Z |
+| spirit/app/testicle/element/scriptDetail.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:43.534Z |
+| spirit/app/testicle/element/scriptDetail.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:07.722Z |
+| spirit/app/testicle/element/scriptDetail.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T23:57:06.454Z |
+| spirit/app/testicle/element/scriptDetail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:35.010Z |
+| spirit/app/testicle/element/scriptDetail.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:57:40.674Z |
+| spirit/app/testicle/element/scriptDetail.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:25.689Z |
+| spirit/app/testicle/element/search/suite.js | spirit/app/testicle/element/search/test/suite.js | 16 | 16 | 0 | 2026-11-20T21:26:43.289Z |
+| spirit/app/testicle/element/search/suite.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:40.728Z |
+| spirit/app/testicle/element/search/suite.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:43.686Z |
+| spirit/app/testicle/element/search/suite.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:08.065Z |
+| spirit/app/testicle/element/search/suite.js | spirit/test/app-child-general.js | 20 | 20 | 0 | 2026-11-20T23:57:08.060Z |
+| spirit/app/testicle/element/search/suite.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:35.430Z |
+| spirit/app/testicle/element/search/suite.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:57:43.099Z |
+| spirit/app/testicle/element/search/suite.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:27.394Z |
+| spirit/app/testicle/element/search/suite/list.js | spirit/app/testicle/element/search/suite/test/list.js | 22 | 22 | 0 | 2026-11-20T21:26:33.014Z |
+| spirit/app/testicle/element/search/suite/list.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:40.924Z |
+| spirit/app/testicle/element/search/suite/list.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:43.850Z |
+| spirit/app/testicle/element/search/suite/list.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:08.453Z |
+| spirit/app/testicle/element/search/suite/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:35.915Z |
+| spirit/app/testicle/element/search/suite/list.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:57:45.088Z |
+| spirit/app/testicle/element/search/suite/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:29.234Z |
+| spirit/app/testicle/element/search/suite/row.js | spirit/app/testicle/element/search/suite/test/row.js | 17 | 17 | 0 | 2026-11-20T21:26:34.280Z |
+| spirit/app/testicle/element/search/suite/row.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:41.159Z |
+| spirit/app/testicle/element/search/suite/row.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:44.088Z |
+| spirit/app/testicle/element/search/suite/row.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:08.809Z |
+| spirit/app/testicle/element/search/suite/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:36.351Z |
+| spirit/app/testicle/element/search/suite/row.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:57:49.092Z |
+| spirit/app/testicle/element/search/suite/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:31.033Z |
+| spirit/app/testicle/element/search/testicle.js | spirit/app/testicle/element/search/test/testicle.js | 69 | 26 | 43 | 2026-11-21T01:17:08.839Z |
+| spirit/app/testicle/element/search/testicle.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:41.383Z |
+| spirit/app/testicle/element/search/testicle.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:44.268Z |
+| spirit/app/testicle/element/search/testicle.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:09.339Z |
+| spirit/app/testicle/element/search/testicle.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:36.758Z |
+| spirit/app/testicle/element/search/testicle.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:57:51.202Z |
+| spirit/app/testicle/element/search/testicle.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:32.974Z |
+| spirit/app/testicle/element/search/testicle/detail.js | spirit/app/testicle/element/search/testicle/test/detail.js | 31 | 31 | 0 | 2026-11-20T21:27:22.037Z |
+| spirit/app/testicle/element/search/testicle/detail.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:41.585Z |
+| spirit/app/testicle/element/search/testicle/detail.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:44.501Z |
+| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:09.578Z |
+| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:37.225Z |
+| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-20T20:57:55.050Z |
+| spirit/app/testicle/element/search/testicle/detail.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-21T00:26:34.686Z |
+| spirit/app/testicle/element/search/testicle/list.js | spirit/app/testicle/element/search/testicle/test/list.js | 30 | 30 | 0 | 2026-11-20T21:27:40.843Z |
+| spirit/app/testicle/element/search/testicle/list.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:41.786Z |
+| spirit/app/testicle/element/search/testicle/list.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:44.640Z |
+| spirit/app/testicle/element/search/testicle/list.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:09.946Z |
+| spirit/app/testicle/element/search/testicle/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:37.791Z |
+| spirit/app/testicle/element/search/testicle/list.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:57:57.183Z |
+| spirit/app/testicle/element/search/testicle/list.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:36.387Z |
+| spirit/app/testicle/element/search/testicle/row.js | spirit/app/testicle/element/search/testicle/test/row.js | 14 | 14 | 0 | 2026-11-20T21:27:41.918Z |
+| spirit/app/testicle/element/search/testicle/row.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:42.051Z |
+| spirit/app/testicle/element/search/testicle/row.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:44.813Z |
+| spirit/app/testicle/element/search/testicle/row.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:10.339Z |
+| spirit/app/testicle/element/search/testicle/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:38.196Z |
+| spirit/app/testicle/element/search/testicle/row.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:57:59.415Z |
+| spirit/app/testicle/element/search/testicle/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:38.180Z |
+| spirit/app/testicle/element/settingsPanel.js | spirit/app/testicle/element/test/settingsPanel.js | 13 | 13 | 0 | 2026-11-20T21:28:02.879Z |
+| spirit/app/testicle/element/settingsPanel.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T20:51:42.229Z |
+| spirit/app/testicle/element/settingsPanel.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:44.972Z |
+| spirit/app/testicle/element/settingsPanel.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:10.700Z |
+| spirit/app/testicle/element/settingsPanel.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:38.650Z |
+| spirit/app/testicle/element/settingsPanel.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-20T20:58:01.518Z |
+| spirit/app/testicle/element/settingsPanel.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:39.806Z |
+| spirit/app/testicle/element/statusBox.js | spirit/app/testicle/element/test/statusBox.js | 44 | 44 | 0 | 2026-11-20T21:31:40.510Z |
+| spirit/app/testicle/element/statusBox.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T21:12:25.723Z |
+| spirit/app/testicle/element/statusBox.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T21:12:26.246Z |
+| spirit/app/testicle/element/statusBox.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T21:12:29.738Z |
+| spirit/app/testicle/element/statusBox.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T21:12:31.911Z |
+| spirit/app/testicle/element/statusBox.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:39.083Z |
+| spirit/app/testicle/element/statusBox.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-20T21:12:36.842Z |
+| spirit/app/testicle/element/statusBox.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:26:41.450Z |
+| spirit/app/testicle/server/server.js | spirit/app/testicle/server/test/server.js | 311 | 311 | 0 | 2026-11-21T01:34:15.652Z |
+| spirit/app/testicle/server/server.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-21T00:45:56.114Z |
+| spirit/app/testicle/server/server.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-21T00:45:56.588Z |
+| spirit/app/testicle/server/server.js | spirit/test/app-child-general.js | 23 | 23 | 0 | 2026-11-21T00:45:54.143Z |
+| spirit/app/testicle/server/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:46:01.630Z |
+| spirit/app/testicle/server/server.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:45:59.295Z |
+| spirit/app/testicle/server/server.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-21T00:45:55.496Z |
+| spirit/app/testicle/testAll.js | spirit/app/testicle/test/testAll.js | 8 | 8 | 0 | 2026-11-20T21:43:53.084Z |
+| spirit/app/testicle/testAll.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T20:51:45.280Z |
+| spirit/app/testicle/testAll.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-20T20:51:46.883Z |
+| spirit/app/testicle/testAll.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:39.252Z |
+| spirit/app/testicle/testAll.js | spirit/test/spirit-sibling-general.js | 69 | 64 | 5 | 2026-11-21T02:17:09.243Z |
+| spirit/app/testicle/testAll.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:13.022Z |
+| spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-21T00:33:46.999Z |
+| spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-21T00:33:47.759Z |
+| spirit/app/testicle/testicle.js | spirit/app/testicle/test/testicle.js | 6 | 6 | 0 | 2026-11-21T01:34:35.992Z |
+| spirit/app/testicle/testicle.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T21:43:37.278Z |
+| spirit/app/testicle/testicle.js | spirit/test/job.js | 1 | 1 | 0 | 2026-11-21T02:00:41.421Z |
+| spirit/app/testicle/testicle.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:00.071Z |
+| spirit/app/testicle/testicle.js | spirit/test/spirit-sibling-general.js | 69 | 64 | 5 | 2026-11-21T02:18:09.461Z |
+| spirit/app/testicle/testicle.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.627Z |
+| spirit/app/testicle/words.js | spirit/app/testicle/test/testicle-sibling-browser.js | 3 | 3 | 0 | 2026-11-20T21:12:25.842Z |
+| spirit/app/testicle/words.js | spirit/app/testicle/test/testicle-sibling-general.js | 3 | 3 | 0 | 2026-11-20T21:12:26.419Z |
+| spirit/app/testicle/words.js | spirit/app/testicle/test/testicle-sibling-node.js | 3 | 3 | 0 | 2026-11-20T21:12:27.111Z |
+| spirit/app/testicle/words.js | spirit/app/testicle/test/words.js | 7 | 7 | 0 | 2026-11-20T21:59:08.064Z |
+| spirit/app/testicle/words.js | spirit/test/app-child-general.js | 22 | 22 | 0 | 2026-11-20T21:12:33.452Z |
+| spirit/app/testicle/words.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:40.105Z |
+| spirit/app/testicle/words.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:12:37.026Z |
+| spirit/app/testicle/words.js | spirit/test/spirit-sibling-general.js | 69 | 64 | 5 | 2026-11-21T02:19:10.766Z |
+| spirit/app/testicle/words.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:12:48.366Z |
+| spirit/app/text/element.js | spirit/app/text/test/element.js | 21 | 21 | 0 | 2026-11-20T21:59:11.785Z |
+| spirit/app/text/element.js | spirit/test/app-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:55:16.524Z |
+| spirit/app/text/element.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:40.580Z |
+| spirit/app/text/element.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:58:06.795Z |
+| spirit/app/text/element.js | spirit/test/spirit-sibling-general.js | 47 | 47 | 0 | 2026-11-21T00:29:28.947Z |
+| spirit/appClient.js | spirit/test/appClient.js | 20 | 20 | 0 | 2026-11-21T01:56:48.376Z |
+| spirit/appClient.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:41.066Z |
+| spirit/appClient.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:29:30.935Z |
+| spirit/appClient.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:13.380Z |
+| spirit/arrivals.js | spirit/test/arrivals.js | 5 | 5 | 0 | 2026-11-20T22:09:58.612Z |
+| spirit/arrivals.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:41.216Z |
+| spirit/arrivals.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:29:32.703Z |
+| spirit/arrivals.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:13.643Z |
+| spirit/auth/api.js | spirit/auth/test/api.js | 16 | 16 | 0 | 2026-11-20T21:59:13.218Z |
+| spirit/auth/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:41.668Z |
+| spirit/auth/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:07.156Z |
+| spirit/auth/api.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-21T00:29:35.449Z |
+| spirit/auth/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:13.742Z |
+| spirit/auth/data.js | spirit/auth/test/data.js | 20 | 20 | 0 | 2026-11-20T21:59:14.657Z |
+| spirit/auth/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:42.088Z |
+| spirit/auth/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:07.538Z |
+| spirit/auth/data.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-21T00:29:38.044Z |
+| spirit/auth/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:13.845Z |
+| spirit/authTableInterface.js | spirit/test/authTableInterface.js | 13 | 13 | 0 | 2026-11-20T22:10:00.122Z |
+| spirit/authTableInterface.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:42.515Z |
+| spirit/authTableInterface.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:29:39.741Z |
+| spirit/authTableInterface.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:13.961Z |
+| spirit/boxes.js | spirit/test/boxes.js | 21 | 21 | 0 | 2026-11-20T22:10:02.784Z |
+| spirit/boxes.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:42.948Z |
+| spirit/boxes.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:29:41.464Z |
+| spirit/boxes.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:14.085Z |
+| spirit/buildStamp.js | spirit/test/buildStamp.js | 18 | 18 | 0 | 2026-11-20T22:10:04.640Z |
+| spirit/buildStamp.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:43.147Z |
+| spirit/buildStamp.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:29:43.175Z |
+| spirit/buildStamp.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:14.502Z |
+| spirit/client/apiTreeIndex.js | spirit/client/test/apiTreeIndex.js | 16 | 16 | 0 | 2026-11-20T21:59:16.001Z |
+| spirit/client/apiTreeIndex.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:43.574Z |
+| spirit/client/apiTreeIndex.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:07.930Z |
+| spirit/client/apiTreeIndex.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:29:44.846Z |
+| spirit/client/apiTreeIndex.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:14.624Z |
+| spirit/client/packet.js | spirit/client/test/packet.js | 28 | 28 | 0 | 2026-11-20T21:59:17.519Z |
+| spirit/client/packet.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:43.999Z |
+| spirit/client/packet.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:08.321Z |
+| spirit/client/packet.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:29:46.653Z |
+| spirit/client/packet.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:14.736Z |
+| spirit/config/api.js | spirit/config/test/api.js | 10 | 10 | 0 | 2026-11-20T21:59:18.220Z |
+| spirit/config/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:44.444Z |
+| spirit/config/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:08.665Z |
+| spirit/config/api.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-21T00:30:27.843Z |
+| spirit/config/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:14.832Z |
+| spirit/config/data.js | spirit/config/test/data.js | 8 | 8 | 0 | 2026-11-20T21:59:19.119Z |
+| spirit/config/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:44.865Z |
+| spirit/config/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:09.033Z |
+| spirit/config/data.js | spirit/test/spirit-sibling-general.js | 63 | 63 | 0 | 2026-11-21T00:31:31.955Z |
+| spirit/config/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:14.923Z |
+| spirit/console.js | spirit/test/console.js | 9 | 9 | 0 | 2026-11-20T22:10:08.488Z |
+| spirit/console.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:55.547Z |
+| spirit/console.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:31:36.297Z |
+| spirit/console.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:15.038Z |
+| spirit/console/command.js | spirit/console/test/command.js | 33 | 33 | 0 | 2026-11-20T23:58:38.900Z |
+| spirit/console/command.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:00.229Z |
+| spirit/console/command.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:31:39.804Z |
+| spirit/console/command.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.730Z |
+| spirit/console/loop.js | spirit/console/test/loop.js | 17 | 17 | 0 | 2026-11-21T01:34:50.064Z |
+| spirit/console/loop.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T01:08:10.149Z |
+| spirit/console/loop.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:31:53.020Z |
+| spirit/console/loop.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:15.342Z |
+| spirit/contact/api.js | spirit/contact/test/api.js | 16 | 16 | 0 | 2026-11-20T21:59:47.311Z |
+| spirit/contact/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T01:08:10.596Z |
+| spirit/contact/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:09.412Z |
+| spirit/contact/api.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-21T00:31:55.547Z |
+| spirit/contact/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:15.572Z |
+| spirit/contact/data.js | spirit/contact/test/data.js | 17 | 17 | 0 | 2026-11-20T21:59:48.618Z |
+| spirit/contact/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:56.362Z |
+| spirit/contact/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:09.756Z |
+| spirit/contact/data.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-21T00:31:58.395Z |
+| spirit/contact/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:15.766Z |
+| spirit/contacts.js | spirit/test/contacts.js | 16 | 16 | 0 | 2026-11-20T22:10:13.121Z |
+| spirit/contacts.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:56.815Z |
+| spirit/contacts.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:32:00.436Z |
+| spirit/contacts.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:15.915Z |
+| spirit/coreFiles.js | spirit/test/coreFiles.js | 60 | 60 | 0 | 2026-11-21T01:56:51.776Z |
+| spirit/coreFiles.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:57.203Z |
+| spirit/coreFiles.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:32:02.301Z |
+| spirit/coreFiles.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:16.048Z |
+| spirit/data.js | spirit/test/data.js | 92 | 92 | 0 | 2026-11-21T01:56:57.786Z |
+| spirit/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:57.630Z |
+| spirit/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:10.277Z |
+| spirit/data.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:17:02.878Z |
+| spirit/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:16.186Z |
+| spirit/element/appHeader/appHeader.js | spirit/element/appHeader/test/appHeader.js | 9 | 9 | 0 | 2026-11-20T21:59:51.856Z |
+| spirit/element/appHeader/appHeader.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:58.047Z |
+| spirit/element/appHeader/appHeader.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:58:12.329Z |
+| spirit/element/appHeader/appHeader.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:17:06.748Z |
+| spirit/element/appInstaller.js | spirit/element/test/appInstaller.js | 18 | 18 | 0 | 2026-11-20T22:04:35.855Z |
+| spirit/element/appInstaller.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:58.194Z |
+| spirit/element/appInstaller.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:58:13.109Z |
+| spirit/element/appInstaller.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:17:09.707Z |
+| spirit/element/armingButton.js | spirit/element/test/armingButton.js | 39 | 39 | 0 | 2026-11-20T22:04:38.093Z |
+| spirit/element/armingButton.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:58.333Z |
+| spirit/element/armingButton.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T20:58:15.200Z |
+| spirit/element/armingButton.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:17:12.538Z |
+| spirit/element/bundleEditor.js | spirit/element/test/bundleEditor.js | 29 | 29 | 0 | 2026-11-20T22:04:40.196Z |
+| spirit/element/bundleEditor.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:58.787Z |
+| spirit/element/bundleEditor.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:58:16.396Z |
+| spirit/element/bundleEditor.js | spirit/test/spirit-sibling-general.js | 44 | 44 | 0 | 2026-11-21T01:17:15.466Z |
+| spirit/element/busyButton.js | spirit/element/test/busyButton.js | 27 | 27 | 0 | 2026-11-20T22:04:45.043Z |
+| spirit/element/busyButton.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:59.168Z |
+| spirit/element/busyButton.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T20:58:17.864Z |
+| spirit/element/busyButton.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:17:18.401Z |
+| spirit/element/changeMyDescription.js | spirit/element/test/changeMyDescription.js | 25 | 25 | 0 | 2026-11-20T22:04:46.526Z |
+| spirit/element/changeMyDescription.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:59.598Z |
+| spirit/element/changeMyDescription.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:58:20.015Z |
+| spirit/element/changeMyDescription.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-21T01:17:21.228Z |
+| spirit/element/changeMyLabel.js | spirit/element/test/changeMyLabel.js | 24 | 24 | 0 | 2026-11-20T22:04:48.141Z |
+| spirit/element/changeMyLabel.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:46:59.764Z |
+| spirit/element/changeMyLabel.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:58:21.046Z |
+| spirit/element/changeMyLabel.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-21T01:17:23.759Z |
+| spirit/element/codeMirror.js | spirit/element/test/codeMirror.js | 42 | 42 | 0 | 2026-11-21T01:35:07.251Z |
+| spirit/element/codeMirror.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:46:10.553Z |
+| spirit/element/codeMirror.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-21T00:46:14.019Z |
+| spirit/element/codeMirror.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:46:12.555Z |
+| spirit/element/contactLabel.js | spirit/element/test/contactLabel.js | 28 | 28 | 0 | 2026-11-20T22:04:55.162Z |
+| spirit/element/contactLabel.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:00.938Z |
+| spirit/element/contactLabel.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:58:23.051Z |
+| spirit/element/contactLabel.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-21T01:17:26.533Z |
+| spirit/element/faceForm.js | spirit/element/test/faceForm.js | 26 | 26 | 0 | 2026-11-20T22:04:59.558Z |
+| spirit/element/faceForm.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:01.350Z |
+| spirit/element/faceForm.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:58:23.847Z |
+| spirit/element/faceForm.js | spirit/test/spirit-sibling-general.js | 44 | 44 | 0 | 2026-11-21T01:17:29.536Z |
+| spirit/element/fieldInput.js | spirit/element/test/fieldInput.js | 21 | 21 | 0 | 2026-11-20T22:05:00.926Z |
+| spirit/element/fieldInput.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:01.801Z |
+| spirit/element/fieldInput.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:24.213Z |
+| spirit/element/fieldInput.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:17:32.425Z |
+| spirit/element/fstat.js | spirit/element/test/fstat.js | 17 | 17 | 0 | 2026-11-21T01:35:08.422Z |
+| spirit/element/fstat.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:02.229Z |
+| spirit/element/fstat.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:58:24.850Z |
+| spirit/element/fstat.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:17:35.347Z |
+| spirit/element/icon.js | spirit/element/test/icon.js | 23 | 23 | 0 | 2026-11-20T22:05:05.574Z |
+| spirit/element/icon.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:02.710Z |
+| spirit/element/icon.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:58:25.509Z |
+| spirit/element/icon.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:17:39.428Z |
+| spirit/element/installSpiritElement.js | spirit/element/test/installSpiritElement.js | 12 | 12 | 0 | 2026-11-20T22:05:06.395Z |
+| spirit/element/installSpiritElement.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:03.148Z |
+| spirit/element/installSpiritElement.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:29.123Z |
+| spirit/element/installSpiritElement.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:17:41.983Z |
+| spirit/element/installSpiritElement.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:16.334Z |
+| spirit/element/introSpector.js | spirit/element/test/introSpector.js | 20 | 20 | 0 | 2026-11-20T22:05:09.494Z |
+| spirit/element/introSpector.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:03.678Z |
+| spirit/element/introSpector.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-20T20:58:31.160Z |
+| spirit/element/introSpector.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:17:47.403Z |
+| spirit/element/joinForm.js | spirit/element/test/joinForm.js | 25 | 25 | 0 | 2026-11-20T22:05:13.675Z |
+| spirit/element/joinForm.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:04.147Z |
+| spirit/element/joinForm.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:58:36.482Z |
+| spirit/element/joinForm.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-21T01:17:52.281Z |
+| spirit/element/joinList.js | spirit/element/test/joinList.js | 12 | 12 | 0 | 2026-11-20T20:58:36.386Z |
+| spirit/element/joinList.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:04.619Z |
+| spirit/element/joinList.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-20T20:58:37.565Z |
+| spirit/element/joinList.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:17:56.023Z |
+| spirit/element/joinSteps.js | spirit/element/test/joinSteps.js | 16 | 16 | 0 | 2026-11-20T22:05:14.818Z |
+| spirit/element/joinSteps.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:05.003Z |
+| spirit/element/joinSteps.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:58:39.032Z |
+| spirit/element/joinSteps.js | spirit/test/spirit-sibling-general.js | 40 | 40 | 0 | 2026-11-21T01:17:58.949Z |
+| spirit/element/monitor/job.js | spirit/element/monitor/test/job.js | 10 | 10 | 0 | 2026-11-20T22:00:12.254Z |
+| spirit/element/monitor/job.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:05.443Z |
+| spirit/element/monitor/job.js | spirit/test/spirit-sibling-browser.js | 19 | 19 | 0 | 2026-11-20T20:58:41.095Z |
+| spirit/element/monitor/job.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:02.018Z |
+| spirit/element/monitor/job/connections.js | spirit/element/monitor/job/test/connections.js | 10 | 10 | 0 | 2026-11-20T21:59:54.951Z |
+| spirit/element/monitor/job/connections.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:05.825Z |
+| spirit/element/monitor/job/connections.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:58:43.109Z |
+| spirit/element/monitor/job/connections.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:05.091Z |
+| spirit/element/monitor/job/cpu.js | spirit/element/monitor/job/test/cpu.js | 10 | 10 | 0 | 2026-11-20T21:59:57.789Z |
+| spirit/element/monitor/job/cpu.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:06.253Z |
+| spirit/element/monitor/job/cpu.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:58:45.179Z |
+| spirit/element/monitor/job/cpu.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:08.393Z |
+| spirit/element/monitor/job/delay.js | spirit/element/monitor/job/test/delay.js | 10 | 10 | 0 | 2026-11-20T22:00:00.894Z |
+| spirit/element/monitor/job/delay.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:06.719Z |
+| spirit/element/monitor/job/delay.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:58:47.248Z |
+| spirit/element/monitor/job/delay.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:11.710Z |
+| spirit/element/monitor/job/memory.js | spirit/element/monitor/job/test/memory.js | 10 | 10 | 0 | 2026-11-20T22:00:03.764Z |
+| spirit/element/monitor/job/memory.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:07.144Z |
+| spirit/element/monitor/job/memory.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:58:49.328Z |
+| spirit/element/monitor/job/memory.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:15.195Z |
+| spirit/element/monitor/job/running.js | spirit/element/monitor/job/test/running.js | 10 | 10 | 0 | 2026-11-20T22:00:06.836Z |
+| spirit/element/monitor/job/running.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:07.587Z |
+| spirit/element/monitor/job/running.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:58:51.393Z |
+| spirit/element/monitor/job/running.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:18.571Z |
+| spirit/element/monitor/job/uptime.js | spirit/element/monitor/job/test/uptime.js | 10 | 10 | 0 | 2026-11-20T22:00:09.691Z |
+| spirit/element/monitor/job/uptime.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:08.006Z |
+| spirit/element/monitor/job/uptime.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:58:53.476Z |
+| spirit/element/monitor/job/uptime.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:21.825Z |
+| spirit/element/monitor/task.js | spirit/element/monitor/test/task.js | 13 | 13 | 0 | 2026-11-20T22:00:17.994Z |
+| spirit/element/monitor/task.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:08.480Z |
+| spirit/element/monitor/task.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T20:58:55.528Z |
+| spirit/element/monitor/task.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:24.778Z |
+| spirit/element/monitor/value.js | spirit/element/monitor/test/value.js | 12 | 12 | 0 | 2026-11-20T22:00:20.484Z |
+| spirit/element/monitor/value.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:08.906Z |
+| spirit/element/monitor/value.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T20:58:58.799Z |
+| spirit/element/monitor/value.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:28.093Z |
+| spirit/element/nodeInfo.js | spirit/element/test/nodeInfo.js | 91 | 89 | 2 | 2026-11-20T22:05:19.233Z |
+| spirit/element/nodeInfo.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:09.080Z |
+| spirit/element/nodeInfo.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:59:00.860Z |
+| spirit/element/nodeInfo.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:31.152Z |
+| spirit/element/panel.js | spirit/element/test/panel.js | 61 | 61 | 0 | 2026-11-21T01:35:23.198Z |
+| spirit/element/panel.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:09.515Z |
+| spirit/element/panel.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:59:01.637Z |
+| spirit/element/panel.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:34.715Z |
+| spirit/element/progressBar.js | spirit/element/test/progressBar.js | 10 | 10 | 0 | 2026-11-20T22:05:35.244Z |
+| spirit/element/progressBar.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:09.924Z |
+| spirit/element/progressBar.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T20:59:03.494Z |
+| spirit/element/progressBar.js | spirit/test/spirit-sibling-general.js | 40 | 40 | 0 | 2026-11-21T01:18:38.233Z |
+| spirit/element/rotateKey.js | spirit/element/test/rotateKey.js | 36 | 36 | 0 | 2026-11-20T22:05:37.503Z |
+| spirit/element/rotateKey.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:10.298Z |
+| spirit/element/rotateKey.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:59:05.626Z |
+| spirit/element/rotateKey.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:41.326Z |
+| spirit/element/row.js | spirit/element/test/row.js | 45 | 45 | 0 | 2026-11-20T22:05:40.074Z |
+| spirit/element/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:10.714Z |
+| spirit/element/row.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:59:06.321Z |
+| spirit/element/row.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:45.086Z |
+| spirit/element/rowForm.js | spirit/element/test/rowForm.js | 35 | 35 | 0 | 2026-11-20T22:05:43.352Z |
+| spirit/element/rowForm.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:11.404Z |
+| spirit/element/rowForm.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T20:59:08.396Z |
+| spirit/element/rowForm.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:47.945Z |
+| spirit/element/search.js | spirit/element/test/search-child-browser.js | 3 | 3 | 0 | 2026-11-20T20:54:23.587Z |
+| spirit/element/search.js | spirit/element/test/search-child-general.js | 17 | 17 | 0 | 2026-11-20T20:54:35.083Z |
+| spirit/element/search.js | spirit/element/test/search.js | 265 | 265 | 0 | 2026-11-20T22:06:12.385Z |
+| spirit/element/search.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:11.861Z |
+| spirit/element/search.js | spirit/test/spirit-sibling-browser.js | 19 | 19 | 0 | 2026-11-20T20:59:10.760Z |
+| spirit/element/search.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:50.734Z |
+| spirit/element/search/api.js | spirit/element/search/test/api.js | 24 | 24 | 0 | 2026-11-20T22:04:20.241Z |
+| spirit/element/search/api.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-20T20:54:27.233Z |
+| spirit/element/search/api.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:35.774Z |
+| spirit/element/search/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:12.359Z |
+| spirit/element/search/api.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:59:12.829Z |
+| spirit/element/search/api.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:53.624Z |
+| spirit/element/search/api/detail.js | spirit/element/search/api/test/detail.js | 14 | 14 | 0 | 2026-11-20T22:00:21.545Z |
+| spirit/element/search/api/detail.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:27.808Z |
+| spirit/element/search/api/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:36.448Z |
+| spirit/element/search/api/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:12.772Z |
+| spirit/element/search/api/detail.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:59:15.078Z |
+| spirit/element/search/api/detail.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:56.393Z |
+| spirit/element/search/api/list.js | spirit/element/search/api/test/list.js | 13 | 13 | 0 | 2026-11-20T22:00:22.606Z |
+| spirit/element/search/api/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:27.910Z |
+| spirit/element/search/api/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:37.326Z |
+| spirit/element/search/api/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:13.244Z |
+| spirit/element/search/api/list.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:59:17.106Z |
+| spirit/element/search/api/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:18:58.955Z |
+| spirit/element/search/api/row.js | spirit/element/search/api/test/row.js | 10 | 10 | 0 | 2026-11-20T22:00:23.367Z |
+| spirit/element/search/api/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:28.017Z |
+| spirit/element/search/api/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:38.290Z |
+| spirit/element/search/api/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:13.675Z |
+| spirit/element/search/api/row.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:59:19.138Z |
+| spirit/element/search/api/row.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:01.567Z |
+| spirit/element/search/api/verb.js | spirit/element/search/api/test/verb.js | 17 | 16 | 1 | 2026-11-20T22:00:24.649Z |
+| spirit/element/search/api/verb.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:28.160Z |
+| spirit/element/search/api/verb.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:39.111Z |
+| spirit/element/search/api/verb.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:14.140Z |
+| spirit/element/search/api/verb.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:59:21.699Z |
+| spirit/element/search/api/verb.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:04.182Z |
+| spirit/element/search/app.js | spirit/element/search/test/app.js | 21 | 21 | 0 | 2026-11-20T22:04:24.360Z |
+| spirit/element/search/app.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-20T20:54:27.432Z |
+| spirit/element/search/app.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:40.236Z |
+| spirit/element/search/app.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:14.673Z |
+| spirit/element/search/app.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:59:23.745Z |
+| spirit/element/search/app.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:07.014Z |
+| spirit/element/search/app/changeAppIcon.js | spirit/element/search/app/test/changeAppIcon.js | 14 | 14 | 0 | 2026-11-20T22:00:29.444Z |
+| spirit/element/search/app/changeAppIcon.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:28.295Z |
+| spirit/element/search/app/changeAppIcon.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:41.218Z |
+| spirit/element/search/app/changeAppIcon.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:15.155Z |
+| spirit/element/search/app/changeAppIcon.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:59:25.827Z |
+| spirit/element/search/app/changeAppIcon.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:09.788Z |
+| spirit/element/search/app/changeAppLabel.js | spirit/element/search/app/test/changeAppLabel.js | 12 | 12 | 0 | 2026-11-20T22:00:32.369Z |
+| spirit/element/search/app/changeAppLabel.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:28.412Z |
+| spirit/element/search/app/changeAppLabel.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:42.232Z |
+| spirit/element/search/app/changeAppLabel.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:15.610Z |
+| spirit/element/search/app/changeAppLabel.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:59:27.909Z |
+| spirit/element/search/app/changeAppLabel.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:19:12.638Z |
+| spirit/element/search/app/detail.js | spirit/element/search/app/test/detail.js | 14 | 14 | 0 | 2026-11-20T22:00:36.562Z |
+| spirit/element/search/app/detail.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:28.608Z |
+| spirit/element/search/app/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:43.223Z |
+| spirit/element/search/app/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:16.198Z |
+| spirit/element/search/app/detail.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T20:59:30.671Z |
+| spirit/element/search/app/detail.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:15.761Z |
+| spirit/element/search/app/list.js | spirit/element/search/app/test/list.js | 17 | 17 | 0 | 2026-11-20T22:00:40.398Z |
+| spirit/element/search/app/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:28.707Z |
+| spirit/element/search/app/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T20:54:43.947Z |
+| spirit/element/search/app/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:16.702Z |
+| spirit/element/search/app/list.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:59:32.743Z |
+| spirit/element/search/app/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:18.627Z |
+| spirit/element/search/app/row.js | spirit/element/search/app/test/row.js | 10 | 10 | 0 | 2026-11-20T22:00:42.894Z |
+| spirit/element/search/app/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.011Z |
+| spirit/element/search/app/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:35.078Z |
+| spirit/element/search/app/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:17.142Z |
+| spirit/element/search/app/row.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:59:34.846Z |
+| spirit/element/search/app/row.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:22.043Z |
+| spirit/element/search/app/rowFormAppActive.js | spirit/element/search/app/test/rowFormAppActive.js | 17 | 17 | 0 | 2026-11-20T22:00:47.495Z |
+| spirit/element/search/app/rowFormAppActive.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.106Z |
+| spirit/element/search/app/rowFormAppActive.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:35.723Z |
+| spirit/element/search/app/rowFormAppActive.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:17.600Z |
+| spirit/element/search/app/rowFormAppActive.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:59:36.930Z |
+| spirit/element/search/app/rowFormAppActive.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:25.290Z |
+| spirit/element/search/app/rowFormSetShell.js | spirit/element/search/app/test/rowFormSetShell.js | 18 | 18 | 0 | 2026-11-20T22:00:52.073Z |
+| spirit/element/search/app/rowFormSetShell.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.248Z |
+| spirit/element/search/app/rowFormSetShell.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:36.319Z |
+| spirit/element/search/app/rowFormSetShell.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:18.095Z |
+| spirit/element/search/app/rowFormSetShell.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:59:39.060Z |
+| spirit/element/search/app/rowFormSetShell.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:28.239Z |
+| spirit/element/search/app/rowFormToggle.js | spirit/element/search/app/test/rowFormToggle.js | 16 | 16 | 0 | 2026-11-20T22:00:54.909Z |
+| spirit/element/search/app/rowFormToggle.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.335Z |
+| spirit/element/search/app/rowFormToggle.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:36.933Z |
+| spirit/element/search/app/rowFormToggle.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:18.518Z |
+| spirit/element/search/app/rowFormToggle.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:59:41.096Z |
+| spirit/element/search/app/rowFormToggle.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:32.192Z |
+| spirit/element/search/app/serverDEBUG.js | spirit/element/search/app/test/serverDEBUG.js | 30 | 30 | 0 | 2026-11-21T01:35:01.865Z |
+| spirit/element/search/app/serverDEBUG.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.446Z |
+| spirit/element/search/app/serverDEBUG.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:37.560Z |
+| spirit/element/search/app/serverDEBUG.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:18.772Z |
+| spirit/element/search/app/serverDEBUG.js | spirit/test/spirit-sibling-browser.js | 18 | 18 | 0 | 2026-11-20T20:59:41.987Z |
+| spirit/element/search/app/serverDEBUG.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:35.881Z |
+| spirit/element/search/app/tile.js | spirit/element/search/app/test/tile.js | 8 | 8 | 0 | 2026-11-20T22:01:08.537Z |
+| spirit/element/search/app/tile.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.550Z |
+| spirit/element/search/app/tile.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:38.162Z |
+| spirit/element/search/app/tile.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:19.187Z |
+| spirit/element/search/app/tile.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-20T20:59:44.063Z |
+| spirit/element/search/app/tile.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:38.751Z |
+| spirit/element/search/branch.js | spirit/element/search/test/branch.js | 15 | 15 | 0 | 2026-11-20T22:04:25.561Z |
+| spirit/element/search/branch.js | spirit/element/test/search-child-browser.js | 7 | 7 | 0 | 2026-11-20T20:54:26.893Z |
+| spirit/element/search/branch.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:38.795Z |
+| spirit/element/search/branch.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:19.598Z |
+| spirit/element/search/branch.js | spirit/test/spirit-sibling-browser.js | 19 | 19 | 0 | 2026-11-20T20:59:46.449Z |
+| spirit/element/search/branch.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:42.219Z |
+| spirit/element/search/branch/list.js | spirit/element/search/branch/test/list.js | 25 | 25 | 0 | 2026-11-20T22:01:10.269Z |
+| spirit/element/search/branch/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.645Z |
+| spirit/element/search/branch/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:39.336Z |
+| spirit/element/search/branch/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:20.083Z |
+| spirit/element/search/branch/list.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T20:59:48.743Z |
+| spirit/element/search/branch/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:45.674Z |
+| spirit/element/search/branch/row.js | spirit/element/search/branch/test/row.js | 20 | 20 | 0 | 2026-11-20T22:01:11.461Z |
+| spirit/element/search/branch/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.763Z |
+| spirit/element/search/branch/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:39.891Z |
+| spirit/element/search/branch/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:20.475Z |
+| spirit/element/search/branch/row.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T20:59:50.890Z |
+| spirit/element/search/branch/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:19:48.893Z |
+| spirit/element/search/bundle.js | spirit/element/search/test/bundle.js | 17 | 17 | 0 | 2026-11-20T22:04:26.563Z |
+| spirit/element/search/bundle.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-20T20:54:27.560Z |
+| spirit/element/search/bundle.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:40.446Z |
+| spirit/element/search/bundle.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:20.593Z |
+| spirit/element/search/bundle.js | spirit/test/spirit-sibling-browser.js | 19 | 19 | 0 | 2026-11-20T20:59:53.228Z |
+| spirit/element/search/bundle.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:51.931Z |
+| spirit/element/search/bundle/detail.js | spirit/element/search/bundle/test/detail.js | 28 | 28 | 0 | 2026-11-20T22:01:13.196Z |
+| spirit/element/search/bundle/detail.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:29.897Z |
+| spirit/element/search/bundle/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:41.085Z |
+| spirit/element/search/bundle/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:20.823Z |
+| spirit/element/search/bundle/detail.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T20:59:55.428Z |
+| spirit/element/search/bundle/detail.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:19:55.418Z |
+| spirit/element/search/bundle/list.js | spirit/element/search/bundle/test/list.js | 25 | 25 | 0 | 2026-11-20T22:01:14.779Z |
+| spirit/element/search/bundle/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.039Z |
+| spirit/element/search/bundle/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:41.666Z |
+| spirit/element/search/bundle/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:21.284Z |
+| spirit/element/search/bundle/list.js | spirit/test/spirit-sibling-browser.js | 20 | 20 | 0 | 2026-11-20T20:59:57.519Z |
+| spirit/element/search/bundle/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:19:58.987Z |
+| spirit/element/search/bundle/row.js | spirit/element/search/bundle/test/row.js | 22 | 22 | 0 | 2026-11-20T22:01:15.988Z |
+| spirit/element/search/bundle/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.156Z |
+| spirit/element/search/bundle/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:42.258Z |
+| spirit/element/search/bundle/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:21.713Z |
+| spirit/element/search/bundle/row.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T21:00:00.926Z |
+| spirit/element/search/bundle/row.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:02.616Z |
+| spirit/element/search/contact.js | spirit/element/search/test/contact.js | 21 | 21 | 0 | 2026-11-20T22:04:27.867Z |
+| spirit/element/search/contact.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-20T20:54:27.606Z |
+| spirit/element/search/contact.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:42.841Z |
+| spirit/element/search/contact.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:22.146Z |
+| spirit/element/search/contact.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T21:00:03.030Z |
+| spirit/element/search/contact.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:05.885Z |
+| spirit/element/search/contact/detail.js | spirit/element/search/contact/test/detail.js | 143 | 143 | 0 | 2026-11-20T22:02:20.048Z |
+| spirit/element/search/contact/detail.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.272Z |
+| spirit/element/search/contact/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:43.422Z |
+| spirit/element/search/contact/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:22.646Z |
+| spirit/element/search/contact/detail.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T21:00:05.441Z |
+| spirit/element/search/contact/detail.js | spirit/test/spirit-sibling-general.js | 43 | 43 | 0 | 2026-11-21T01:20:09.475Z |
+| spirit/element/search/contact/list.js | spirit/element/search/contact/test/list.js | 40 | 40 | 0 | 2026-11-20T22:02:22.239Z |
+| spirit/element/search/contact/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.386Z |
+| spirit/element/search/contact/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:13:43.998Z |
+| spirit/element/search/contact/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:23.088Z |
+| spirit/element/search/contact/list.js | spirit/test/spirit-sibling-browser.js | 22 | 22 | 0 | 2026-11-20T21:00:07.505Z |
+| spirit/element/search/contact/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:12.492Z |
+| spirit/element/search/contact/row.js | spirit/element/search/contact/test/row.js | 54 | 54 | 0 | 2026-11-20T22:02:42.852Z |
+| spirit/element/search/contact/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.485Z |
+| spirit/element/search/contact/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:29.348Z |
+| spirit/element/search/contact/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:23.503Z |
+| spirit/element/search/contact/row.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T21:00:10.347Z |
+| spirit/element/search/contact/row.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:15.689Z |
+| spirit/element/search/file.js | spirit/element/search/test/file.js | 8 | 8 | 0 | 2026-11-20T22:04:28.649Z |
+| spirit/element/search/file.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-20T20:54:27.643Z |
+| spirit/element/search/file.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:30.582Z |
+| spirit/element/search/file.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:24.005Z |
+| spirit/element/search/file.js | spirit/test/spirit-sibling-browser.js | 24 | 24 | 0 | 2026-11-20T21:00:12.341Z |
+| spirit/element/search/file.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:18.861Z |
+| spirit/element/search/file/detail.js | spirit/element/search/file/test/detail.js | 9 | 9 | 0 | 2026-11-20T22:02:45.494Z |
+| spirit/element/search/file/detail.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.583Z |
+| spirit/element/search/file/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:31.839Z |
+| spirit/element/search/file/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:24.151Z |
+| spirit/element/search/file/detail.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T21:00:15.264Z |
+| spirit/element/search/file/detail.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:22.054Z |
+| spirit/element/search/file/list.js | spirit/element/search/file/test/list.js | 33 | 33 | 0 | 2026-11-20T22:02:47.291Z |
+| spirit/element/search/file/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.684Z |
+| spirit/element/search/file/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:33.138Z |
+| spirit/element/search/file/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:24.627Z |
+| spirit/element/search/file/list.js | spirit/test/spirit-sibling-browser.js | 24 | 24 | 0 | 2026-11-20T21:00:17.307Z |
+| spirit/element/search/file/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:24.826Z |
+| spirit/element/search/file/row.js | spirit/element/search/file/test/row.js | 43 | 43 | 0 | 2026-11-20T22:03:10.157Z |
+| spirit/element/search/file/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.792Z |
+| spirit/element/search/file/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:33.777Z |
+| spirit/element/search/file/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:25.097Z |
+| spirit/element/search/file/row.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T21:00:18.124Z |
+| spirit/element/search/file/row.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:27.558Z |
+| spirit/element/search/file/tile.js | spirit/element/search/file/test/tile.js | 8 | 8 | 0 | 2026-11-20T22:03:12.561Z |
+| spirit/element/search/file/tile.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.890Z |
+| spirit/element/search/file/tile.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:34.421Z |
+| spirit/element/search/file/tile.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:25.524Z |
+| spirit/element/search/file/tile.js | spirit/test/spirit-sibling-browser.js | 13 | 13 | 0 | 2026-11-20T21:00:19.822Z |
+| spirit/element/search/file/tile.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:30.930Z |
+| spirit/element/search/grant.js | spirit/element/search/test/grant.js | 9 | 9 | 0 | 2026-11-20T22:04:29.488Z |
+| spirit/element/search/grant.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-20T20:54:27.685Z |
+| spirit/element/search/grant.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:35.093Z |
+| spirit/element/search/grant.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:26.015Z |
+| spirit/element/search/grant.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T21:00:21.908Z |
+| spirit/element/search/grant.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:33.428Z |
+| spirit/element/search/grant/detail.js | spirit/element/search/grant/test/detail.js | 21 | 21 | 0 | 2026-11-20T22:03:15.686Z |
+| spirit/element/search/grant/detail.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:30.997Z |
+| spirit/element/search/grant/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:35.748Z |
+| spirit/element/search/grant/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:26.430Z |
+| spirit/element/search/grant/detail.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T21:00:24.147Z |
+| spirit/element/search/grant/detail.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:20:36.466Z |
+| spirit/element/search/grant/grantsPanel.js | spirit/element/search/grant/test/grantsPanel.js | 87 | 87 | 0 | 2026-11-20T22:03:20.056Z |
+| spirit/element/search/grant/grantsPanel.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:31.123Z |
+| spirit/element/search/grant/grantsPanel.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:36.435Z |
+| spirit/element/search/grant/grantsPanel.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:26.971Z |
+| spirit/element/search/grant/grantsPanel.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T21:00:25.939Z |
+| spirit/element/search/grant/grantsPanel.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:20:39.086Z |
+| spirit/element/search/grant/list.js | spirit/element/search/grant/test/list.js | 22 | 22 | 0 | 2026-11-20T22:03:21.379Z |
+| spirit/element/search/grant/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:31.657Z |
+| spirit/element/search/grant/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:37.129Z |
+| spirit/element/search/grant/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:27.459Z |
+| spirit/element/search/grant/list.js | spirit/test/spirit-sibling-browser.js | 15 | 15 | 0 | 2026-11-20T21:00:28.010Z |
+| spirit/element/search/grant/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:42.024Z |
+| spirit/element/search/grant/row.js | spirit/element/search/grant/test/row.js | 24 | 24 | 0 | 2026-11-20T22:03:22.615Z |
+| spirit/element/search/grant/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:31.770Z |
+| spirit/element/search/grant/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T21:24:37.750Z |
+| spirit/element/search/grant/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:27.906Z |
+| spirit/element/search/grant/row.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T21:00:32.959Z |
+| spirit/element/search/grant/row.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T01:20:44.996Z |
+| spirit/element/search/icon.js | spirit/element/search/test/icon.js | 13 | 13 | 0 | 2026-11-20T22:04:33.551Z |
+| spirit/element/search/icon.js | spirit/element/test/search-child-browser.js | 7 | 7 | 0 | 2026-11-20T20:54:27.124Z |
+| spirit/element/search/icon.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T22:08:27.958Z |
+| spirit/element/search/icon.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:28.382Z |
+| spirit/element/search/icon.js | spirit/test/spirit-sibling-browser.js | 21 | 21 | 0 | 2026-11-20T21:00:36.291Z |
+| spirit/element/search/icon.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:48.334Z |
+| spirit/element/search/icon/list.js | spirit/element/search/icon/test/list.js | 30 | 30 | 0 | 2026-11-20T22:04:03.748Z |
+| spirit/element/search/icon/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:31.877Z |
+| spirit/element/search/icon/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T22:08:29.183Z |
+| spirit/element/search/icon/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:28.856Z |
+| spirit/element/search/icon/list.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T21:00:38.221Z |
+| spirit/element/search/icon/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:51.106Z |
+| spirit/element/search/icon/row.js | spirit/element/search/icon/test/row.js | 13 | 13 | 0 | 2026-11-20T22:04:04.757Z |
+| spirit/element/search/icon/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:32.057Z |
+| spirit/element/search/icon/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T22:08:30.440Z |
+| spirit/element/search/icon/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:29.278Z |
+| spirit/element/search/icon/row.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T21:00:40.623Z |
+| spirit/element/search/icon/row.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:53.749Z |
+| spirit/element/search/job.js | spirit/element/search/test/job.js | 10 | 10 | 0 | 2026-11-20T22:04:34.539Z |
+| spirit/element/search/job.js | spirit/element/test/search-child-browser.js | 10 | 10 | 0 | 2026-11-20T20:54:27.726Z |
+| spirit/element/search/job.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T22:08:31.434Z |
+| spirit/element/search/job.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:29.690Z |
+| spirit/element/search/job.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T21:00:42.650Z |
+| spirit/element/search/job.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:20:56.854Z |
+| spirit/element/search/job/detail.js | spirit/element/search/job/test/detail.js | 29 | 28 | 1 | 2026-11-20T22:04:13.224Z |
+| spirit/element/search/job/detail.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:32.227Z |
+| spirit/element/search/job/detail.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T22:08:32.426Z |
+| spirit/element/search/job/detail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:30.169Z |
+| spirit/element/search/job/detail.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T21:00:45.081Z |
+| spirit/element/search/job/detail.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:00.113Z |
+| spirit/element/search/job/list.js | spirit/element/search/job/test/list.js | 26 | 26 | 0 | 2026-11-20T22:04:17.145Z |
+| spirit/element/search/job/list.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:32.364Z |
+| spirit/element/search/job/list.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T22:08:33.416Z |
+| spirit/element/search/job/list.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:30.689Z |
+| spirit/element/search/job/list.js | spirit/test/spirit-sibling-browser.js | 23 | 23 | 0 | 2026-11-20T21:00:47.137Z |
+| spirit/element/search/job/list.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:03.426Z |
+| spirit/element/search/job/row.js | spirit/element/search/job/test/row.js | 22 | 22 | 0 | 2026-11-20T22:04:18.351Z |
+| spirit/element/search/job/row.js | spirit/element/test/search-child-browser.js | 2 | 2 | 0 | 2026-11-20T20:54:32.463Z |
+| spirit/element/search/job/row.js | spirit/element/test/search-child-general.js | 16 | 16 | 0 | 2026-11-20T22:08:34.344Z |
+| spirit/element/search/job/row.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:30.866Z |
+| spirit/element/search/job/row.js | spirit/test/spirit-sibling-browser.js | 14 | 14 | 0 | 2026-11-20T21:00:49.211Z |
+| spirit/element/search/job/row.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:06.275Z |
+| spirit/element/tabContainer.js | spirit/element/test/tabContainer.js | 52 | 52 | 0 | 2026-11-20T22:06:15.157Z |
+| spirit/element/tabContainer.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:31.284Z |
+| spirit/element/tabContainer.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T21:00:51.258Z |
+| spirit/element/tabContainer.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:09.026Z |
+| spirit/element/workBench.js | spirit/element/test/workBench.js | 57 | 57 | 0 | 2026-11-20T22:06:18.096Z |
+| spirit/element/workBench.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:31.712Z |
+| spirit/element/workBench.js | spirit/test/spirit-sibling-browser.js | 16 | 16 | 0 | 2026-11-20T21:00:52.166Z |
+| spirit/element/workBench.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:11.776Z |
+| spirit/event/api.js | spirit/event/test/api.js | 14 | 14 | 0 | 2026-11-20T22:06:19.091Z |
+| spirit/event/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:32.160Z |
+| spirit/event/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:52.565Z |
+| spirit/event/api.js | spirit/test/spirit-sibling-general.js | 66 | 66 | 0 | 2026-11-21T01:54:04.856Z |
+| spirit/event/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:16.504Z |
+| spirit/event/data.js | spirit/event/test/data.js | 8 | 8 | 0 | 2026-11-20T22:06:19.833Z |
+| spirit/event/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:32.600Z |
+| spirit/event/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:52.953Z |
+| spirit/event/data.js | spirit/test/spirit-sibling-general.js | 64 | 64 | 0 | 2026-11-21T01:54:17.772Z |
+| spirit/event/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:16.647Z |
+| spirit/event/event.js | spirit/event/test/event.js | 12 | 12 | 0 | 2026-11-20T22:06:24.942Z |
+| spirit/event/event.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:33.149Z |
+| spirit/event/event.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-21T01:54:20.244Z |
+| spirit/event/event.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:16.793Z |
+| spirit/faceHome.js | spirit/test/faceHome.js | 110 | 110 | 0 | 2026-11-21T01:58:19.194Z |
+| spirit/faceHome.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:33.671Z |
+| spirit/faceHome.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:29.006Z |
+| spirit/faceHome.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:16.909Z |
+| spirit/faceRoute.js | spirit/test/faceRoute.js | 29 | 29 | 0 | 2026-11-20T22:11:43.748Z |
+| spirit/faceRoute.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:34.105Z |
+| spirit/faceRoute.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:32.659Z |
+| spirit/faceRoute.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:17.175Z |
+| spirit/fieldRules.js | spirit/test/fieldRules.js | 21 | 21 | 0 | 2026-11-20T22:11:45.900Z |
+| spirit/fieldRules.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:34.508Z |
+| spirit/fieldRules.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:53.501Z |
+| spirit/fieldRules.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:36.265Z |
+| spirit/fieldRules.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:17.286Z |
+| spirit/fileSystem.js | spirit/test/fileSystem.js | 66 | 66 | 0 | 2026-11-20T23:53:22.210Z |
+| spirit/fileSystem.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:34.927Z |
+| spirit/fileSystem.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:21:39.379Z |
+| spirit/fileSystem.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:01.573Z |
+| spirit/fs/api.js | spirit/fs/test/api.js | 10 | 10 | 0 | 2026-11-20T22:06:25.827Z |
+| spirit/fs/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:35.366Z |
+| spirit/fs/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:53.856Z |
+| spirit/fs/api.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-21T01:54:22.713Z |
+| spirit/fs/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:17.499Z |
+| spirit/fs/data.js | spirit/fs/test/data.js | 22 | 22 | 0 | 2026-11-20T22:06:27.586Z |
+| spirit/fs/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:35.810Z |
+| spirit/fs/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:54.170Z |
+| spirit/fs/data.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-21T01:54:25.083Z |
+| spirit/fs/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:17.691Z |
+| spirit/hub.js | spirit/test/hub.js | 19 | 19 | 0 | 2026-11-21T01:58:22.334Z |
+| spirit/hub.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:36.514Z |
+| spirit/hub.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:22:07.177Z |
+| spirit/hub.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:17.787Z |
+| spirit/introSpector.js | spirit/test/introSpector.js | 11 | 11 | 0 | 2026-11-21T01:58:24.752Z |
+| spirit/introSpector.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:36.994Z |
+| spirit/introSpector.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:22:10.255Z |
+| spirit/introSpector.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:17.888Z |
+| spirit/invites.js | spirit/test/invites.js | 18 | 18 | 0 | 2026-11-20T22:11:59.226Z |
+| spirit/invites.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:37.187Z |
+| spirit/invites.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:22:13.615Z |
+| spirit/invites.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:17.998Z |
+| spirit/job.js | spirit/test/job.js | 190 | 190 | 0 | 2026-11-21T02:01:34.946Z |
+| spirit/job.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:37.648Z |
+| spirit/job.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:22:17.090Z |
+| spirit/job.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:01.744Z |
+| spirit/job/api.js | spirit/job/test/api.js | 13 | 13 | 0 | 2026-11-20T22:06:28.383Z |
+| spirit/job/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:38.131Z |
+| spirit/job/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:54.491Z |
+| spirit/job/api.js | spirit/test/spirit-sibling-general.js | 67 | 67 | 0 | 2026-11-21T02:19:24.190Z |
+| spirit/job/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:18.214Z |
+| spirit/job/data.js | spirit/job/test/data.js | 21 | 21 | 0 | 2026-11-20T22:06:29.792Z |
+| spirit/job/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:38.599Z |
+| spirit/job/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:54.961Z |
+| spirit/job/data.js | spirit/test/spirit-sibling-general.js | 65 | 65 | 0 | 2026-11-21T02:19:26.507Z |
+| spirit/job/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:18.336Z |
+| spirit/joinStepsJob.js | spirit/test/joinStepsJob.js | 14 | 14 | 0 | 2026-11-20T22:14:57.231Z |
+| spirit/joinStepsJob.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:39.141Z |
+| spirit/joinStepsJob.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:24:07.882Z |
+| spirit/joinStepsJob.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:18.493Z |
+| spirit/limits.js | spirit/test/limits.js | 16 | 16 | 0 | 2026-11-20T22:14:58.361Z |
+| spirit/limits.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:39.592Z |
+| spirit/limits.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:55.442Z |
+| spirit/limits.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:24:10.735Z |
+| spirit/limits.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:18.649Z |
+| spirit/listLimiter.js | spirit/test/listLimiter.js | 24 | 24 | 0 | 2026-11-20T22:15:00.050Z |
+| spirit/listLimiter.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:40.013Z |
+| spirit/listLimiter.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:55.924Z |
+| spirit/listLimiter.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:24:13.739Z |
+| spirit/listLimiter.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:19.065Z |
+| spirit/net/api.js | spirit/net/test/api.js | 12 | 12 | 0 | 2026-11-20T22:06:31.030Z |
+| spirit/net/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:40.440Z |
+| spirit/net/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:56.381Z |
+| spirit/net/api.js | spirit/test/spirit-sibling-general.js | 66 | 66 | 0 | 2026-11-21T02:19:29.240Z |
+| spirit/net/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:19.159Z |
+| spirit/net/data.js | spirit/net/test/data.js | 8 | 8 | 0 | 2026-11-20T22:06:31.747Z |
+| spirit/net/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:40.861Z |
+| spirit/net/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:56.830Z |
+| spirit/net/data.js | spirit/test/spirit-sibling-general.js | 64 | 64 | 0 | 2026-11-21T02:19:31.645Z |
+| spirit/net/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:19.318Z |
+| spirit/netFence.js | spirit/test/netFence.js | 20 | 20 | 0 | 2026-11-20T22:15:01.278Z |
+| spirit/netFence.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:41.278Z |
+| spirit/netFence.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:26:07.685Z |
+| spirit/netFence.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:19.467Z |
+| spirit/node/api.js | spirit/node/test/api.js | 15 | 15 | 0 | 2026-11-20T22:06:32.735Z |
+| spirit/node/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:41.724Z |
+| spirit/node/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:57.283Z |
+| spirit/node/api.js | spirit/test/spirit-sibling-general.js | 66 | 66 | 0 | 2026-11-21T02:19:34.156Z |
+| spirit/node/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:19.571Z |
+| spirit/node/data.js | spirit/node/test/data.js | 16 | 16 | 0 | 2026-11-20T22:06:33.646Z |
+| spirit/node/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:42.144Z |
+| spirit/node/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:57.696Z |
+| spirit/node/data.js | spirit/test/spirit-sibling-general.js | 64 | 58 | 6 | 2026-11-21T01:28:05.947Z |
+| spirit/node/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:19.700Z |
+| spirit/nodeCard.js | spirit/test/nodeCard.js | 21 | 21 | 0 | 2026-11-20T22:15:02.628Z |
+| spirit/nodeCard.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:42.582Z |
+| spirit/nodeCard.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:28:08.616Z |
+| spirit/nodeCard.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:19.830Z |
+| spirit/nodeSearches.js | spirit/test/nodeSearches.js | 20 | 20 | 0 | 2026-11-20T22:15:03.951Z |
+| spirit/nodeSearches.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:42.791Z |
+| spirit/nodeSearches.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:28:11.431Z |
+| spirit/nodeSearches.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:19.935Z |
+| spirit/nodeSettings.js | spirit/test/nodeSettings.js | 14 | 14 | 0 | 2026-11-20T22:15:05.157Z |
+| spirit/nodeSettings.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:43.189Z |
+| spirit/nodeSettings.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:28:14.089Z |
+| spirit/nodeSettings.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.051Z |
+| spirit/nodeShell.js | spirit/test/nodeShell.js | 25 | 25 | 0 | 2026-11-20T22:15:08.239Z |
+| spirit/nodeShell.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:43.590Z |
+| spirit/nodeShell.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:28:17.559Z |
+| spirit/nodeShell.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.169Z |
+| spirit/nodeStore.js | spirit/test/nodeStore.js | 74 | 74 | 0 | 2026-11-20T22:15:24.033Z |
+| spirit/nodeStore.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:43.987Z |
+| spirit/nodeStore.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:28:20.278Z |
+| spirit/nodeStore.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.306Z |
+| spirit/owner/api.js | spirit/owner/test/api.js | 12 | 12 | 0 | 2026-11-20T22:06:34.679Z |
+| spirit/owner/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:44.440Z |
+| spirit/owner/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:58.099Z |
+| spirit/owner/api.js | spirit/test/spirit-sibling-general.js | 65 | 59 | 6 | 2026-11-21T01:29:05.785Z |
+| spirit/owner/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.426Z |
+| spirit/owner/data.js | spirit/owner/test/data.js | 8 | 8 | 0 | 2026-11-20T22:06:35.436Z |
+| spirit/owner/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:44.860Z |
+| spirit/owner/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:58.653Z |
+| spirit/owner/data.js | spirit/test/spirit-sibling-general.js | 63 | 57 | 6 | 2026-11-21T01:30:06.107Z |
+| spirit/owner/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.536Z |
+| spirit/ownerBadge.js | spirit/test/ownerBadge.js | 27 | 27 | 0 | 2026-11-20T22:15:27.495Z |
+| spirit/ownerBadge.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:45.437Z |
+| spirit/ownerBadge.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:59.077Z |
+| spirit/ownerBadge.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:30:08.144Z |
+| spirit/ownerBadge.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.664Z |
+| spirit/ownerPost.js | spirit/test/ownerPost.js | 20 | 20 | 0 | 2026-11-20T22:15:28.896Z |
+| spirit/ownerPost.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:45.854Z |
+| spirit/ownerPost.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:30:10.534Z |
+| spirit/ownerPost.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.779Z |
+| spirit/peer/api.js | spirit/peer/test/api.js | 13 | 13 | 0 | 2026-11-20T22:06:36.607Z |
+| spirit/peer/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:46.044Z |
+| spirit/peer/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:59.470Z |
+| spirit/peer/api.js | spirit/test/spirit-sibling-general.js | 65 | 59 | 6 | 2026-11-21T01:31:06.414Z |
+| spirit/peer/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.888Z |
+| spirit/peer/data.js | spirit/peer/test/data.js | 8 | 8 | 0 | 2026-11-20T22:06:37.399Z |
+| spirit/peer/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:46.448Z |
+| spirit/peer/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:00:59.901Z |
+| spirit/peer/data.js | spirit/test/spirit-sibling-general.js | 63 | 57 | 6 | 2026-11-21T01:32:08.473Z |
+| spirit/peer/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:20.986Z |
+| spirit/peerFile.js | spirit/test/peerFile.js | 17 | 17 | 0 | 2026-11-20T22:15:30.162Z |
+| spirit/peerFile.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:46.853Z |
+| spirit/peerFile.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:00.346Z |
+| spirit/peerFile.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:10.628Z |
+| spirit/peerFile.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:21.100Z |
+| spirit/peerPost.js | spirit/test/peerPost.js | 8 | 8 | 0 | 2026-11-21T01:58:26.010Z |
+| spirit/peerPost.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:47.456Z |
+| spirit/peerPost.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:12.970Z |
+| spirit/peerPost.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:01.886Z |
+| spirit/peerRank.js | spirit/test/peerRank.js | 14 | 14 | 0 | 2026-11-20T22:15:32.615Z |
+| spirit/peerRank.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:47.910Z |
+| spirit/peerRank.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:15.294Z |
+| spirit/peerRank.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:21.322Z |
+| spirit/postQueue.js | spirit/test/postQueue.js | 36 | 36 | 0 | 2026-11-20T22:15:35.020Z |
+| spirit/postQueue.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:48.064Z |
+| spirit/postQueue.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:17.473Z |
+| spirit/postQueue.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:21.441Z |
+| spirit/presence.js | spirit/test/presence.js | 23 | 23 | 0 | 2026-11-20T22:15:36.690Z |
+| spirit/presence.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:48.535Z |
+| spirit/presence.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:19.583Z |
+| spirit/presence.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:21.571Z |
+| spirit/presenceNode.js | spirit/test/presenceNode.js | 36 | 36 | 0 | 2026-11-20T22:15:40.268Z |
+| spirit/presenceNode.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:49.006Z |
+| spirit/presenceNode.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:22.015Z |
+| spirit/presenceNode.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:21.689Z |
+| spirit/puppetMode.js | spirit/test/puppetMode.js | 25 | 25 | 0 | 2026-11-20T22:15:42.242Z |
+| spirit/puppetMode.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:49.403Z |
+| spirit/puppetMode.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:24.190Z |
+| spirit/puppetMode.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:21.798Z |
+| spirit/puppetStream.js | spirit/test/puppetStream.js | 18 | 18 | 0 | 2026-11-20T22:15:44.148Z |
+| spirit/puppetStream.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:49.769Z |
+| spirit/puppetStream.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:26.655Z |
+| spirit/puppetStream.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:21.916Z |
+| spirit/relay.js | spirit/test/relay.js | 2 | 2 | 0 | 2026-11-20T22:16:38.101Z |
+| spirit/relay.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:50.159Z |
+| spirit/relay.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:32:28.740Z |
+| spirit/relay.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:22.056Z |
+| spirit/relay/api.js | spirit/relay/test/api.js | 29 | 29 | 0 | 2026-11-20T22:06:39.267Z |
+| spirit/relay/api.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:50.324Z |
+| spirit/relay/api.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:01.016Z |
+| spirit/relay/api.js | spirit/test/spirit-sibling-general.js | 66 | 60 | 6 | 2026-11-21T01:33:08.749Z |
+| spirit/relay/api.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:22.166Z |
+| spirit/relay/data.js | spirit/relay/test/data.js | 14 | 14 | 0 | 2026-11-20T22:06:40.415Z |
+| spirit/relay/data.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:50.478Z |
+| spirit/relay/data.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:01.391Z |
+| spirit/relay/data.js | spirit/test/spirit-sibling-general.js | 64 | 58 | 6 | 2026-11-21T01:34:18.679Z |
+| spirit/relay/data.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:22.271Z |
+| spirit/relayAuth.js | spirit/test/relayAuth.js | 9 | 9 | 0 | 2026-11-20T22:16:39.654Z |
+| spirit/relayAuth.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:50.625Z |
+| spirit/relayAuth.js | spirit/test/spirit-sibling-general.js | 41 | 41 | 0 | 2026-11-21T01:34:20.774Z |
+| spirit/relayAuth.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:22.394Z |
+| spirit/relayConfig.js | spirit/test/relayConfig.js | 21 | 21 | 0 | 2026-11-20T22:16:41.542Z |
+| spirit/relayConfig.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:51.056Z |
+| spirit/relayConfig.js | spirit/test/spirit-sibling-general.js | 8 | 8 | 0 | 2026-11-21T01:34:21.277Z |
+| spirit/relayConfig.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:22.518Z |
+| spirit/relayDump.js | spirit/test/relayDump.js | 15 | 15 | 0 | 2026-11-20T22:16:44.193Z |
+| spirit/relayDump.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:51.530Z |
+| spirit/relayDump.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:22.656Z |
+| spirit/relayKeys.js | spirit/test/relayKeys.js | 8 | 8 | 0 | 2026-11-20T22:16:46.277Z |
+| spirit/relayKeys.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:51.940Z |
+| spirit/relayKeys.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:22.783Z |
+| spirit/relayLimits.js | spirit/test/relayLimits.js | 27 | 27 | 0 | 2026-11-20T22:16:48.917Z |
+| spirit/relayLimits.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:52.386Z |
+| spirit/relayLimits.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:22.924Z |
+| spirit/relayRequest.js | spirit/test/relayRequest.js | 26 | 26 | 0 | 2026-11-21T01:58:28.342Z |
+| spirit/relayRequest.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:52.848Z |
+| spirit/relayRequest.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:02.031Z |
+| spirit/relayStatus.js | spirit/test/relayStatus.js | 15 | 15 | 0 | 2026-11-20T22:17:31.227Z |
+| spirit/relayStatus.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:53.287Z |
+| spirit/relayStatus.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:23.314Z |
+| spirit/relayStore.js | spirit/test/relayStore.js | 74 | 74 | 0 | 2026-11-20T22:17:39.614Z |
+| spirit/relayStore.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:53.728Z |
+| spirit/relayStore.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:23.454Z |
+| spirit/relayUrl.js | spirit/test/relayUrl.js | 10 | 10 | 0 | 2026-11-20T22:17:40.694Z |
+| spirit/relayUrl.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:54.142Z |
+| spirit/relayUrl.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:23.577Z |
+| spirit/router.js | spirit/test/router.js | 24 | 24 | 0 | 2026-11-20T22:17:42.740Z |
+| spirit/router.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:54.292Z |
+| spirit/router.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:23.694Z |
+| spirit/seal.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:54.445Z |
+| spirit/seal.js | spirit/test/seal.js | 19 | 19 | 0 | 2026-11-20T22:17:44.605Z |
+| spirit/seal.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:23.816Z |
+| spirit/search/object.js | spirit/search/test/object.js | 25 | 25 | 0 | 2026-11-20T22:06:42.085Z |
+| spirit/search/object.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:54.895Z |
+| spirit/search/object.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:01.715Z |
+| spirit/search/object.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:23.957Z |
+| spirit/search/string.js | spirit/search/test/string.js | 24 | 24 | 0 | 2026-11-20T22:06:43.481Z |
+| spirit/search/string.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:55.315Z |
+| spirit/search/string.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:02.089Z |
+| spirit/search/string.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:24.074Z |
+| spirit/seenPeers.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:55.488Z |
+| spirit/seenPeers.js | spirit/test/seenPeers.js | 30 | 30 | 0 | 2026-11-20T22:18:33.633Z |
+| spirit/seenPeers.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:24.191Z |
+| spirit/sendMail.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:55.925Z |
+| spirit/sendMail.js | spirit/test/sendMail.js | 13 | 13 | 0 | 2026-11-20T22:18:35.860Z |
+| spirit/sendMail.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:24.321Z |
+| spirit/sendMail/mailgun.js | spirit/sendMail/test/mailgun.js | 16 | 16 | 0 | 2026-11-20T22:06:44.574Z |
+| spirit/sendMail/mailgun.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:56.325Z |
+| spirit/sendMail/mailgun.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:24.434Z |
+| spirit/server.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:45:56.430Z |
+| spirit/server.js | spirit/test/server.js | 10 | 10 | 0 | 2026-11-21T01:59:44.437Z |
+| spirit/server.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:02.196Z |
+| spirit/server/app.js | spirit/server/test/app.js | 2 | 2 | 0 | 2026-11-21T01:36:19.821Z |
+| spirit/server/app.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:56.883Z |
+| spirit/server/app.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:02.384Z |
+| spirit/server/node.js | spirit/server/test/node.js | 74 | 74 | 0 | 2026-11-21T01:55:53.363Z |
+| spirit/server/node.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:57.991Z |
+| spirit/server/node.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:02.595Z |
+| spirit/server/relay.js | spirit/server/test/relay.js | 223 | 223 | 0 | 2026-11-21T01:56:27.668Z |
+| spirit/server/relay.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:45:56.520Z |
+| spirit/server/relay.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:02.773Z |
+| spirit/server/serveCommon.js | spirit/server/test/serveCommon.js | 38 | 38 | 0 | 2026-11-21T01:56:30.026Z |
+| spirit/server/serveCommon.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:58.462Z |
+| spirit/server/serveCommon.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:02.938Z |
+| spirit/shell/boot.js | spirit/shell/test/boot.js | 24 | 24 | 0 | 2026-11-21T01:56:31.521Z |
+| spirit/shell/boot.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:58.868Z |
+| spirit/shell/boot.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:02.509Z |
+| spirit/shell/seal.js | spirit/shell/test/seal.js | 10 | 10 | 0 | 2026-11-20T22:06:46.936Z |
+| spirit/shell/seal.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:59.294Z |
+| spirit/shell/seal.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:03.000Z |
+| spirit/shell/seal.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:24.771Z |
+| spirit/spirit.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:47:59.731Z |
+| spirit/spirit.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:03.647Z |
+| spirit/spirit.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:24.880Z |
+| spirit/spirit.js | spirit/test/spirit.js | 122 | 122 | 0 | 2026-11-21T01:59:20.149Z |
+| spirit/spiritErrors.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:00.155Z |
+| spirit/spiritErrors.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:24.996Z |
+| spirit/spiritErrors.js | spirit/test/spiritErrors.js | 20 | 20 | 0 | 2026-11-20T22:21:01.367Z |
+| spirit/sseClient.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:00.581Z |
+| spirit/sseClient.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:25.113Z |
+| spirit/sseClient.js | spirit/test/sseClient.js | 18 | 18 | 0 | 2026-11-20T22:21:03.182Z |
+| spirit/streamSink.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:01.059Z |
+| spirit/streamSink.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:25.234Z |
+| spirit/streamSink.js | spirit/test/streamSink.js | 17 | 17 | 0 | 2026-11-20T22:21:04.187Z |
+| spirit/tempFolder.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:01.467Z |
+| spirit/tempFolder.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:25.353Z |
+| spirit/tempFolder.js | spirit/test/tempFolder.js | 13 | 13 | 0 | 2026-11-20T22:21:05.518Z |
+| spirit/test/app-child-browser.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:45:56.614Z |
+| spirit/test/headLessChrome.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:45:56.882Z |
+| spirit/test/headLessChrome.js | spirit/test/test/headLessChrome.js | 22 | 22 | 0 | 2026-11-20T22:21:29.646Z |
+| spirit/test/spirit-sibling-browser.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:45:56.926Z |
+| spirit/test/spirit-sibling-general.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:45:57.163Z |
+| spirit/test/spirit-sibling-general.js | spirit/test/test/spirit-sibling-general.js | 19 | 19 | 0 | 2026-11-20T21:07:03.938Z |
+| spirit/test/testModule.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:45:57.220Z |
+| spirit/test/testModule.js | spirit/test/test/testModule.js | 26 | 26 | 0 | 2026-11-21T01:59:21.779Z |
+| spirit/test/testReport.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:45:57.262Z |
+| spirit/test/testReport.js | spirit/test/test/testReport.js | 36 | 36 | 0 | 2026-11-21T01:59:29.294Z |
+| spirit/trafficLog.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:01.916Z |
+| spirit/trafficLog.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:25.472Z |
+| spirit/trafficLog.js | spirit/test/trafficLog.js | 42 | 42 | 0 | 2026-11-20T22:38:44.001Z |
+| spirit/type/boolean.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:02.419Z |
+| spirit/type/boolean.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:04.061Z |
+| spirit/type/boolean.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:25.594Z |
+| spirit/type/boolean.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:05.080Z |
+| spirit/type/boolean.js | spirit/type/test/boolean.js | 6 | 6 | 0 | 2026-11-20T22:39:28.781Z |
+| spirit/type/number/UTC.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:02.845Z |
+| spirit/type/number/UTC.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:04.396Z |
+| spirit/type/number/UTC.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:25.724Z |
+| spirit/type/number/UTC.js | spirit/type/number/test/UTC.js | 7 | 7 | 0 | 2026-11-20T22:38:57.625Z |
+| spirit/type/number/UTC.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:05.368Z |
+| spirit/type/number/float.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:03.228Z |
+| spirit/type/number/float.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:04.857Z |
+| spirit/type/number/float.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:25.841Z |
+| spirit/type/number/float.js | spirit/type/number/test/float.js | 6 | 6 | 0 | 2026-11-20T22:38:58.263Z |
+| spirit/type/number/float.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:05.585Z |
+| spirit/type/number/integer.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:03.664Z |
+| spirit/type/number/integer.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:05.333Z |
+| spirit/type/number/integer.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:25.982Z |
+| spirit/type/number/integer.js | spirit/type/number/test/integer.js | 6 | 6 | 0 | 2026-11-20T22:38:58.909Z |
+| spirit/type/number/integer.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:05.788Z |
+| spirit/type/number/probability.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:04.108Z |
+| spirit/type/number/probability.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:05.824Z |
+| spirit/type/number/probability.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:26.092Z |
+| spirit/type/number/probability.js | spirit/type/number/test/probability.js | 6 | 6 | 0 | 2026-11-20T22:38:59.516Z |
+| spirit/type/number/probability.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:05.979Z |
+| spirit/type/object/payload.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:04.568Z |
+| spirit/type/object/payload.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:06.318Z |
+| spirit/type/object/payload.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:26.193Z |
+| spirit/type/object/payload.js | spirit/type/object/test/payload.js | 6 | 6 | 0 | 2026-11-20T22:39:00.201Z |
+| spirit/type/object/payload.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:06.159Z |
+| spirit/type/string/ID.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:05.004Z |
+| spirit/type/string/ID.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:06.788Z |
+| spirit/type/string/ID.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:26.297Z |
+| spirit/type/string/ID.js | spirit/type/string/test/ID.js | 11 | 11 | 0 | 2026-11-20T22:39:02.278Z |
+| spirit/type/string/ID.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:06.288Z |
+| spirit/type/string/IDNew.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:05.473Z |
+| spirit/type/string/IDNew.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:07.192Z |
+| spirit/type/string/IDNew.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:26.413Z |
+| spirit/type/string/IDNew.js | spirit/type/string/test/IDNew.js | 6 | 6 | 0 | 2026-11-20T22:39:03.039Z |
+| spirit/type/string/IDNew.js | spirit/type/test/boolean-sibling-general.js | 9 | 9 | 0 | 2026-11-20T21:07:06.536Z |
+| spirit/type/string/IDNewSelect.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:05.944Z |
+| spirit/type/string/IDNewSelect.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:07.641Z |
+| spirit/type/string/IDNewSelect.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:26.525Z |
+| spirit/type/string/IDNewSelect.js | spirit/type/string/test/IDNewSelect.js | 6 | 6 | 0 | 2026-11-20T22:39:03.678Z |
+| spirit/type/string/IDNewSelect.js | spirit/type/test/boolean-sibling-general.js | 12 | 12 | 0 | 2026-11-20T21:07:06.923Z |
+| spirit/type/string/URL.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:06.384Z |
+| spirit/type/string/URL.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:08.094Z |
+| spirit/type/string/URL.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:26.649Z |
+| spirit/type/string/URL.js | spirit/type/string/test/URL.js | 8 | 8 | 0 | 2026-11-20T22:39:04.430Z |
+| spirit/type/string/URL.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:07.085Z |
+| spirit/type/string/agentWord.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:06.820Z |
+| spirit/type/string/agentWord.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:08.571Z |
+| spirit/type/string/agentWord.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:26.760Z |
+| spirit/type/string/agentWord.js | spirit/type/string/test/agentWord.js | 8 | 8 | 0 | 2026-11-20T22:39:05.129Z |
+| spirit/type/string/agentWord.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:07.235Z |
+| spirit/type/string/box.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:07.261Z |
+| spirit/type/string/box.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:09.054Z |
+| spirit/type/string/box.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:26.875Z |
+| spirit/type/string/box.js | spirit/type/string/test/box.js | 6 | 6 | 0 | 2026-11-20T22:39:05.712Z |
+| spirit/type/string/box.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:07.376Z |
+| spirit/type/string/chatScope.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:00.608Z |
+| spirit/type/string/chatScope.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:56.348Z |
+| spirit/type/string/chatScope.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.858Z |
+| spirit/type/string/chatScope.js | spirit/type/string/test/chatScope.js | 6 | 6 | 0 | 2026-11-21T01:59:31.574Z |
+| spirit/type/string/chatScope.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-21T00:34:07.069Z |
+| spirit/type/string/chatWho.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:01.056Z |
+| spirit/type/string/chatWho.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:56.746Z |
+| spirit/type/string/chatWho.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:05.964Z |
+| spirit/type/string/chatWho.js | spirit/type/string/test/chatWho.js | 6 | 6 | 0 | 2026-11-21T01:59:32.185Z |
+| spirit/type/string/chatWho.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-21T00:34:07.256Z |
+| spirit/type/string/checkKind.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:01.446Z |
+| spirit/type/string/checkKind.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:57.238Z |
+| spirit/type/string/checkKind.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:06.078Z |
+| spirit/type/string/checkKind.js | spirit/type/string/test/checkKind.js | 8 | 8 | 0 | 2026-11-21T01:59:32.927Z |
+| spirit/type/string/checkKind.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-21T00:34:07.472Z |
+| spirit/type/string/checkState.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:01.872Z |
+| spirit/type/string/checkState.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:57.706Z |
+| spirit/type/string/checkState.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:06.206Z |
+| spirit/type/string/checkState.js | spirit/type/string/test/checkState.js | 8 | 8 | 0 | 2026-11-21T01:59:33.603Z |
+| spirit/type/string/checkState.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-21T00:34:07.685Z |
+| spirit/type/string/commit.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:02.276Z |
+| spirit/type/string/commit.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:58.187Z |
+| spirit/type/string/commit.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:06.315Z |
+| spirit/type/string/commit.js | spirit/type/string/test/commit.js | 6 | 6 | 0 | 2026-11-21T01:59:34.324Z |
+| spirit/type/string/commit.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-21T00:34:07.882Z |
+| spirit/type/string/commitSelect.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:09.844Z |
+| spirit/type/string/commitSelect.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:11.913Z |
+| spirit/type/string/commitSelect.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:27.653Z |
+| spirit/type/string/commitSelect.js | spirit/type/string/test/commitSelect.js | 6 | 6 | 0 | 2026-11-21T01:59:35.153Z |
+| spirit/type/string/commitSelect.js | spirit/type/test/boolean-sibling-general.js | 12 | 12 | 0 | 2026-11-20T21:07:08.449Z |
+| spirit/type/string/description.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:10.268Z |
+| spirit/type/string/description.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:12.392Z |
+| spirit/type/string/description.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:27.804Z |
+| spirit/type/string/description.js | spirit/type/string/test/description.js | 6 | 6 | 0 | 2026-11-20T22:39:10.540Z |
+| spirit/type/string/description.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:08.571Z |
+| spirit/type/string/descriptionSelect.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:10.724Z |
+| spirit/type/string/descriptionSelect.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:12.845Z |
+| spirit/type/string/descriptionSelect.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:27.976Z |
+| spirit/type/string/descriptionSelect.js | spirit/type/string/test/descriptionSelect.js | 7 | 7 | 0 | 2026-11-20T22:39:11.138Z |
+| spirit/type/string/descriptionSelect.js | spirit/type/test/boolean-sibling-general.js | 12 | 12 | 0 | 2026-11-20T21:07:08.930Z |
+| spirit/type/string/deskId.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:02.674Z |
+| spirit/type/string/deskId.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:58.634Z |
+| spirit/type/string/deskId.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:06.408Z |
+| spirit/type/string/deskId.js | spirit/type/string/test/deskId.js | 6 | 6 | 0 | 2026-11-21T01:59:35.827Z |
+| spirit/type/string/deskId.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-21T00:34:08.091Z |
+| spirit/type/string/deskIdSelect.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:11.599Z |
+| spirit/type/string/deskIdSelect.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:13.765Z |
+| spirit/type/string/deskIdSelect.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:28.368Z |
+| spirit/type/string/deskIdSelect.js | spirit/type/string/test/deskIdSelect.js | 6 | 6 | 0 | 2026-11-21T01:59:36.490Z |
+| spirit/type/string/deskIdSelect.js | spirit/type/test/boolean-sibling-general.js | 12 | 12 | 0 | 2026-11-20T21:07:09.407Z |
+| spirit/type/string/deskPress.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T01:08:10.716Z |
+| spirit/type/string/deskPress.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T01:09:50.963Z |
+| spirit/type/string/deskPress.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T01:09:53.144Z |
+| spirit/type/string/deskPress.js | spirit/type/string/test/deskPress.js | 8 | 8 | 0 | 2026-11-21T01:59:37.209Z |
+| spirit/type/string/deskPress.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-21T01:09:53.887Z |
+| spirit/type/string/email.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:12.169Z |
+| spirit/type/string/email.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:14.701Z |
+| spirit/type/string/email.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:28.813Z |
+| spirit/type/string/email.js | spirit/type/string/test/email.js | 6 | 6 | 0 | 2026-11-20T22:39:13.888Z |
+| spirit/type/string/email.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:09.777Z |
+| spirit/type/string/file.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:12.596Z |
+| spirit/type/string/file.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:15.154Z |
+| spirit/type/string/file.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:28.991Z |
+| spirit/type/string/file.js | spirit/type/string/test/file.js | 5 | 5 | 0 | 2026-11-20T22:39:14.424Z |
+| spirit/type/string/file.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:09.945Z |
+| spirit/type/string/fileContent.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:13.014Z |
+| spirit/type/string/fileContent.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:15.635Z |
+| spirit/type/string/fileContent.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:29.135Z |
+| spirit/type/string/fileContent.js | spirit/type/string/test/fileContent.js | 6 | 6 | 0 | 2026-11-20T22:39:15.136Z |
+| spirit/type/string/fileContent.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:10.121Z |
+| spirit/type/string/fileSelect.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:13.507Z |
+| spirit/type/string/fileSelect.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:16.126Z |
+| spirit/type/string/fileSelect.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:29.263Z |
+| spirit/type/string/fileSelect.js | spirit/type/string/test/fileSelect.js | 7 | 7 | 0 | 2026-11-20T22:39:15.818Z |
+| spirit/type/string/fileSelect.js | spirit/type/test/boolean-sibling-general.js | 12 | 12 | 0 | 2026-11-20T21:07:10.511Z |
+| spirit/type/string/glyph.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:13.930Z |
+| spirit/type/string/glyph.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:16.610Z |
+| spirit/type/string/glyph.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:29.449Z |
+| spirit/type/string/glyph.js | spirit/type/string/test/glyph.js | 6 | 6 | 0 | 2026-11-20T22:39:16.469Z |
+| spirit/type/string/glyph.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:10.690Z |
+| spirit/type/string/httpMethod.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:14.629Z |
+| spirit/type/string/httpMethod.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:17.091Z |
+| spirit/type/string/httpMethod.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:29.612Z |
+| spirit/type/string/httpMethod.js | spirit/type/string/test/httpMethod.js | 8 | 8 | 0 | 2026-11-20T22:39:17.318Z |
+| spirit/type/string/httpMethod.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:10.863Z |
+| spirit/type/string/json.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:15.069Z |
+| spirit/type/string/json.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:17.550Z |
+| spirit/type/string/json.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:29.746Z |
+| spirit/type/string/json.js | spirit/type/string/test/json.js | 6 | 6 | 0 | 2026-11-20T22:39:17.947Z |
+| spirit/type/string/json.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:11.078Z |
+| spirit/type/string/label.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:15.501Z |
+| spirit/type/string/label.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:18.005Z |
+| spirit/type/string/label.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:29.856Z |
+| spirit/type/string/label.js | spirit/type/string/test/label.js | 6 | 6 | 0 | 2026-11-20T22:39:18.488Z |
+| spirit/type/string/label.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:11.258Z |
+| spirit/type/string/labelSelect.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:15.967Z |
+| spirit/type/string/labelSelect.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:18.467Z |
+| spirit/type/string/labelSelect.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:30.047Z |
+| spirit/type/string/labelSelect.js | spirit/type/string/test/labelSelect.js | 6 | 6 | 0 | 2026-11-20T22:39:19.178Z |
+| spirit/type/string/labelSelect.js | spirit/type/test/boolean-sibling-general.js | 12 | 12 | 0 | 2026-11-20T21:07:11.693Z |
+| spirit/type/string/paragraph.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:16.363Z |
+| spirit/type/string/paragraph.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:18.946Z |
+| spirit/type/string/paragraph.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:30.267Z |
+| spirit/type/string/paragraph.js | spirit/type/string/test/paragraph.js | 8 | 8 | 0 | 2026-11-20T22:39:19.878Z |
+| spirit/type/string/paragraph.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:11.968Z |
+| spirit/type/string/paragraphSelect.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:17.064Z |
+| spirit/type/string/paragraphSelect.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:19.407Z |
+| spirit/type/string/paragraphSelect.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:30.520Z |
+| spirit/type/string/paragraphSelect.js | spirit/type/string/test/paragraphSelect.js | 6 | 6 | 0 | 2026-11-20T22:39:20.402Z |
+| spirit/type/string/paragraphSelect.js | spirit/type/test/boolean-sibling-general.js | 12 | 12 | 0 | 2026-11-20T21:07:12.352Z |
+| spirit/type/string/path.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:17.314Z |
+| spirit/type/string/path.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:19.878Z |
+| spirit/type/string/path.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:30.694Z |
+| spirit/type/string/path.js | spirit/type/string/test/path.js | 6 | 6 | 0 | 2026-11-20T22:39:21.028Z |
+| spirit/type/string/path.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:12.543Z |
+| spirit/type/string/phase.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:13.609Z |
+| spirit/type/string/phase.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:59.087Z |
+| spirit/type/string/phase.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:06.508Z |
+| spirit/type/string/phase.js | spirit/type/string/test/phase.js | 8 | 8 | 0 | 2026-11-21T01:59:37.896Z |
+| spirit/type/string/phase.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-21T00:34:08.275Z |
+| spirit/type/string/providerOp.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:18.307Z |
+| spirit/type/string/providerOp.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:20.849Z |
+| spirit/type/string/providerOp.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:30.955Z |
+| spirit/type/string/providerOp.js | spirit/type/string/test/providerOp.js | 8 | 8 | 0 | 2026-11-20T22:39:22.551Z |
+| spirit/type/string/providerOp.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:12.908Z |
+| spirit/type/string/relay.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:18.713Z |
+| spirit/type/string/relay.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:21.332Z |
+| spirit/type/string/relay.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:31.119Z |
+| spirit/type/string/relay.js | spirit/type/string/test/relay.js | 6 | 6 | 0 | 2026-11-20T22:39:23.187Z |
+| spirit/type/string/relay.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:13.074Z |
+| spirit/type/string/secret.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:19.135Z |
+| spirit/type/string/secret.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:21.784Z |
+| spirit/type/string/secret.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:31.377Z |
+| spirit/type/string/secret.js | spirit/type/string/test/secret.js | 6 | 6 | 0 | 2026-11-20T22:39:23.934Z |
+| spirit/type/string/secret.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:13.392Z |
+| spirit/type/string/shellPlace.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:19.631Z |
+| spirit/type/string/shellPlace.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:22.208Z |
+| spirit/type/string/shellPlace.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:31.529Z |
+| spirit/type/string/shellPlace.js | spirit/type/string/test/shellPlace.js | 9 | 9 | 0 | 2026-11-20T22:39:24.589Z |
+| spirit/type/string/shellPlace.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:13.577Z |
+| spirit/type/string/statusTone.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:20.106Z |
+| spirit/type/string/statusTone.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:22.639Z |
+| spirit/type/string/statusTone.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:31.686Z |
+| spirit/type/string/statusTone.js | spirit/type/string/test/statusTone.js | 8 | 8 | 0 | 2026-11-20T22:39:25.671Z |
+| spirit/type/string/statusTone.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:13.731Z |
+| spirit/type/string/tableOp.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:20.531Z |
+| spirit/type/string/tableOp.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:23.111Z |
+| spirit/type/string/tableOp.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:05:31.801Z |
+| spirit/type/string/tableOp.js | spirit/type/string/test/tableOp.js | 8 | 8 | 0 | 2026-11-20T22:39:26.483Z |
+| spirit/type/string/tableOp.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:13.891Z |
+| spirit/type/string/testResult.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:20.963Z |
+| spirit/type/string/testResult.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:23.523Z |
+| spirit/type/string/testResult.js | spirit/test/spirit-sibling-node.js | 3 | 3 | 0 | 2026-11-20T21:17:37.912Z |
+| spirit/type/string/testResult.js | spirit/type/string/test/testResult.js | 8 | 8 | 0 | 2026-11-20T22:39:26.894Z |
+| spirit/type/string/testResult.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:14.059Z |
+| spirit/type/string/word.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:21.389Z |
+| spirit/type/string/word.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:23.978Z |
+| spirit/type/string/word.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:17:38.059Z |
+| spirit/type/string/word.js | spirit/type/string/test/word.js | 6 | 6 | 0 | 2026-11-20T22:39:27.525Z |
+| spirit/type/string/word.js | spirit/type/test/boolean-sibling-general.js | 5 | 5 | 0 | 2026-11-20T21:07:14.198Z |
+| spirit/type/string/wordSelect.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:21.821Z |
+| spirit/type/string/wordSelect.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-20T21:01:24.512Z |
+| spirit/type/string/wordSelect.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T21:17:38.187Z |
+| spirit/type/string/wordSelect.js | spirit/type/string/test/wordSelect.js | 6 | 6 | 0 | 2026-11-20T22:39:28.101Z |
+| spirit/type/string/wordSelect.js | spirit/type/test/boolean-sibling-general.js | 12 | 12 | 0 | 2026-11-20T21:07:14.611Z |
+| spirit/verbTable.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-20T23:48:22.247Z |
+| spirit/verbTable.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-20T23:53:03.096Z |
+| spirit/verbTable.js | spirit/test/verbTable.js | 21 | 21 | 0 | 2026-11-21T01:59:30.878Z |
+| spirit/word.js | spirit/test/scriptClassify.js | 1 | 1 | 0 | 2026-11-21T00:32:14.018Z |
+| spirit/word.js | spirit/test/spirit-sibling-browser.js | 7 | 7 | 0 | 2026-11-21T00:33:59.311Z |
+| spirit/word.js | spirit/test/spirit-sibling-general.js | 42 | 42 | 0 | 2026-11-21T00:33:46.429Z |
+| spirit/word.js | spirit/test/spirit-sibling-node.js | 2 | 2 | 0 | 2026-11-21T00:34:06.587Z |
+| spirit/word.js | spirit/test/word.js | 54 | 54 | 0 | 2026-11-21T00:46:28.025Z |
 
 ## Red
 
-- `spirit/app/agent/table/provider/server.js` `spirit/app/agent/table/provider/test/server.js` with the search empty, from the start, it lists this provider's two models and nothing else (severity 0.2, 2026-11-18T00:28:15.284Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` Change writes label to spirit/state/hearing/node.json (severity 0.2, 2026-11-18T08:38:34.591Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` Contacts' detail is drawn (severity 0.2, 2026-11-18T08:38:36.676Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` Contacts, whose shell.true is false, has no Home shell or Face shell row in its detail (severity 0.2, 2026-11-18T08:38:36.720Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` Starter, an app with no server, opens with no dropdown in its title bar (severity 0.2, 2026-11-18T08:38:37.437Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` Testicle, an app with a server, opens with the shared search dropdown in its title bar (severity 0.2, 2026-11-18T08:38:37.166Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a Chrome page opens (severity 0.2, 2026-11-18T08:38:36.359Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a change on the disk paints on the page, no reload (severity 0.2, 2026-11-18T08:38:33.924Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a changed icon reaches the bar, by the stream (severity 0.2, 2026-11-18T08:38:34.395Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a launched app's title bar is the same rowForm as the title bar of all panels (severity 0.7, 2026-11-18T08:38:34.984Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a pick in the pane opens the detail panel (severity 0.2, 2026-11-18T08:38:34.200Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a press back turns it on (severity 0.2, 2026-11-18T08:38:34.549Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a press sets value and row, and says change (severity 0.2, 2026-11-18T08:38:33.860Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a press shows that app's detail (severity 0.2, 2026-11-18T08:38:33.886Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a press turns the third form to 🔴, the words Activate Hearing face, and 🟢, and writes active false to node.json (severity 0.2, 2026-11-18T08:38:34.521Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a press writes active true to spirit/state/hearing/node.json (severity 0.2, 2026-11-18T08:38:34.080Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a remote row landing in spirit.data.testicle.remote is what the field then names (severity 0.2, 2026-11-18T08:38:37.320Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a scratch node comes up with Testicle switched on, and Chrome opens its face page (severity 0.2, 2026-11-18T08:38:37.111Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a scratch node comes up with an app of the test's own, and Chrome opens its face page for the selector (severity 0.7, 2026-11-18T08:38:33.709Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a search seated over it does not lose active (severity 0.2, 2026-11-18T08:38:34.164Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a switch the node refuses says why in the title bar (severity 0.2, 2026-11-18T08:38:37.393Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` a tile opens its app inside, through its main element, spirit/app/monitor/element.js (severity 0.7, 2026-11-18T08:38:34.964Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` after Set the node names zzshell at home (severity 0.2, 2026-11-18T08:38:36.978Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` an app made active appears as a tile without a search being asked (severity 0.2, 2026-11-18T08:38:34.916Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` an app made inactive leaves (severity 0.2, 2026-11-18T08:38:34.942Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` before any pick the dropdown's field names the server remote answers as current (severity 0.2, 2026-11-18T08:38:37.245Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` destroy empties its container (severity 0.2, 2026-11-18T08:38:33.968Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` each row ends in its one button, which says Activate (severity 0.2, 2026-11-18T08:38:34.063Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` every app, planted and the tree's, is made active (severity 0.2, 2026-11-18T08:38:35.065Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` it covers the whole container, and the list is out of sight (severity 0.2, 2026-11-18T08:38:34.226Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` it lands in spirit/state/hearing/node.json (severity 0.2, 2026-11-18T08:38:34.428Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` it loads through spirit.require and mounts as a pane (severity 0.2, 2026-11-18T08:38:33.742Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` its Home shell dropdown first shows the configured home shell, Shell (severity 0.2, 2026-11-18T08:38:36.840Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` its close icon brings the tiles back (severity 0.7, 2026-11-18T08:38:35.008Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` its last element is the x (severity 0.2, 2026-11-18T08:38:34.307Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` its row can be pressed (severity 0.2, 2026-11-18T08:38:33.840Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` its tile leaves the moment its json says shell.mount false (severity 0.2, 2026-11-18T08:38:36.166Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` its x brings the list back (severity 0.2, 2026-11-18T08:38:34.670Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` mounted as tiles from the start, it shows the same tiles (severity 0.2, 2026-11-18T08:38:34.891Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` no row says Allow or Don't allow as shell (severity 0.2, 2026-11-18T08:38:34.575Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` node.shell is told to name zzshell at home (severity 0.2, 2026-11-18T08:38:36.541Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the app app's own tiles, the app that says shell.mount true shows its tile (severity 0.2, 2026-11-18T08:38:35.914Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the app app's own tiles, zzmountfalse, whose shell.mount is false, shows no tile (severity 0.2, 2026-11-18T08:38:35.953Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the app app's own tiles, zznomount, which has no shell.mount, shows no tile (severity 0.2, 2026-11-18T08:38:36.026Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the app app's own tiles, zznoshell, which has no shell part, shows no tile (severity 0.2, 2026-11-18T08:38:35.990Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the app app's own tiles, zzonemount, whose shell.mount is 1, shows no tile (severity 0.2, 2026-11-18T08:38:36.080Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the app app's own tiles, zzrunonly, which is run only with shell.mount false, shows no tile (severity 0.2, 2026-11-18T08:38:36.131Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the app app's own tiles, zzshellnull, whose shell is null, shows no tile (severity 0.2, 2026-11-18T08:38:36.104Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the app app's own tiles, zzstringmount, whose shell.mount is the string true, shows no tile (severity 0.2, 2026-11-18T08:38:36.051Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles from the start, the app that says shell.mount true shows its tile (severity 0.2, 2026-11-18T08:38:35.257Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles from the start, zzmountfalse, whose shell.mount is false, shows no tile (severity 0.2, 2026-11-18T08:38:35.400Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles from the start, zznomount, which has no shell.mount, shows no tile (severity 0.2, 2026-11-18T08:38:35.458Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles from the start, zznoshell, which has no shell part, shows no tile (severity 0.2, 2026-11-18T08:38:35.429Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles from the start, zzonemount, whose shell.mount is 1, shows no tile (severity 0.2, 2026-11-18T08:38:35.509Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles from the start, zzrunonly, which is run only with shell.mount false, shows no tile (severity 0.2, 2026-11-18T08:38:35.560Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles from the start, zzshellnull, whose shell is null, shows no tile (severity 0.2, 2026-11-18T08:38:35.535Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles from the start, zzstringmount, whose shell.mount is the string true, shows no tile (severity 0.2, 2026-11-18T08:38:35.485Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles reached by the toggle, the app that says shell.mount true shows its tile (severity 0.2, 2026-11-18T08:38:35.601Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles reached by the toggle, zzmountfalse, whose shell.mount is false, shows no tile (severity 0.2, 2026-11-18T08:38:35.622Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles reached by the toggle, zznomount, which has no shell.mount, shows no tile (severity 0.2, 2026-11-18T08:38:35.670Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles reached by the toggle, zznoshell, which has no shell part, shows no tile (severity 0.2, 2026-11-18T08:38:35.644Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles reached by the toggle, zzonemount, whose shell.mount is 1, shows no tile (severity 0.2, 2026-11-18T08:38:35.763Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles reached by the toggle, zzrunonly, which is run only with shell.mount false, shows no tile (severity 0.2, 2026-11-18T08:38:35.851Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles reached by the toggle, zzshellnull, whose shell is null, shows no tile (severity 0.2, 2026-11-18T08:38:35.809Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` on the tiles reached by the toggle, zzstringmount, whose shell.mount is the string true, shows no tile (severity 0.2, 2026-11-18T08:38:35.706Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` picking a row of the dropdown sends remote with that row's id (severity 0.2, 2026-11-18T08:38:37.357Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` saying shell.mount true again brings its tile back (severity 0.2, 2026-11-18T08:38:36.239Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` spirit.app.appTiles is gone from the page (severity 0.2, 2026-11-18T08:38:34.017Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` testicle's published remote row reaches the page's spirit.data.testicle.remote, naming the same current (severity 0.2, 2026-11-18T08:38:37.283Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the Face shell dropdown, opened, lists Zz Shell, not Shell, and no app that is no shell (severity 0.2, 2026-11-18T08:38:36.906Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the Home shell dropdown, opened, lists Zz Shell, not Shell, and no app that is no shell (severity 0.2, 2026-11-18T08:38:36.873Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the app itself does not open (severity 0.2, 2026-11-18T08:38:34.654Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the button follows and says Deactivate (severity 0.2, 2026-11-18T08:38:34.131Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the changed icon is not written to hearing.json (severity 0.2, 2026-11-18T08:38:34.455Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the changed label is not written to hearing.json (severity 0.2, 2026-11-18T08:38:34.609Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the dropdown is filled by remote, asked of testicle's server with no argument (severity 0.2, 2026-11-18T08:38:37.202Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the face page opens (severity 0.2, 2026-11-18T08:38:36.393Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the face page reloads and the app selector loads (severity 0.7, 2026-11-18T08:38:35.048Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the face shell stays its own, still the app app (severity 0.2, 2026-11-18T08:38:37.012Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the first form shows the pencil, the word Icon and a Change button (severity 0.2, 2026-11-18T08:38:34.337Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the list shows its icon (severity 0.2, 2026-11-18T08:38:33.791Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the list shows starter's label (severity 0.2, 2026-11-18T08:38:33.768Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the open detail paints the change as well (severity 0.2, 2026-11-18T08:38:33.946Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the page loads the shell the node names, zzshell, and it draws (severity 0.2, 2026-11-18T08:38:36.580Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the page then loads nothing of the other shell, nor a desktop of boot.js's own (severity 0.2, 2026-11-18T08:38:36.621Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the pane is mounted with a toggle, and the toggle is pressed (severity 0.2, 2026-11-18T08:38:35.580Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the pane lists both test apps, neither of them active (severity 0.2, 2026-11-18T08:38:34.039Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the panel shows the title bar and three forms (severity 0.2, 2026-11-18T08:38:34.255Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the row shows icon and label and nothing else (severity 0.2, 2026-11-18T08:38:33.812Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the second form shows the pencil, the word Label, the box holding the label and a Change button (severity 0.2, 2026-11-18T08:38:34.480Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the selector shows the app's icon (severity 0.2, 2026-11-18T08:38:34.362Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the shell is an app that wraps the app search: the app search is on the page, with Contacts listed (severity 0.2, 2026-11-18T08:38:36.460Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the shell leaves itself out of the app list: Contacts is listed, the shell is not (severity 0.2, 2026-11-18T08:38:36.491Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the stream brings active to the row without a search being asked (severity 0.2, 2026-11-18T08:38:34.107Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the stream brings the new label to the row (severity 0.2, 2026-11-18T08:38:34.623Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the test's apps are planted (severity 0.2, 2026-11-18T08:38:35.030Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the title bar and the rows of the panel say the new label (severity 0.2, 2026-11-18T08:38:34.638Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the title bar shows the app's icon and label (severity 0.2, 2026-11-18T08:38:34.283Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` the toggle shows tiles, a tile for the active Hearing and none for Starter (severity 0.2, 2026-11-18T08:38:34.869Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` typed words that fit nothing rank it at nothing: the shared list cuts no row (severity 0.2, 2026-11-18T08:38:33.905Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` with Hearing active and mounting a face only, the third form shows 🟢, the words Deactivate Hearing face, and 🔴 (severity 0.2, 2026-11-18T08:38:34.499Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` with both mounts true the panel has no Allow row (severity 0.2, 2026-11-18T08:38:34.712Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` with its shell part gone, its tile does not come back (severity 0.2, 2026-11-18T08:38:36.200Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` with no shell chosen the page loads spirit/app/app/element.js (severity 0.2, 2026-11-18T08:38:36.427Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` with node.mount alone true, the row says Deactivate Hearing server (severity 0.2, 2026-11-18T08:38:34.737Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` with shell.mount and node.mount both true, the row says Deactivate Hearing face and server (severity 0.2, 2026-11-18T08:38:34.688Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` with shell.mount false the panel has no Allow row (severity 0.2, 2026-11-18T08:38:34.761Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzmounted is an active row (severity 0.2, 2026-11-18T08:38:35.083Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzmountfalse is an active row (severity 0.2, 2026-11-18T08:38:35.100Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zznomount is an active row (severity 0.2, 2026-11-18T08:38:35.140Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zznoshell is an active row (severity 0.2, 2026-11-18T08:38:35.120Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzonemount is an active row (severity 0.2, 2026-11-18T08:38:35.179Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzrunonly is a row that is run only, never active (severity 0.2, 2026-11-18T08:38:35.235Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzshell is chosen in Home shell, and Set is armed by the first press and pressed again (severity 0.2, 2026-11-18T08:38:36.940Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzshell's detail is drawn (severity 0.2, 2026-11-18T08:38:36.758Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzshell, whose shell.true is true, has a Home shell and a Face shell row in its detail (severity 0.2, 2026-11-18T08:38:36.801Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzshellnull is an active row (severity 0.2, 2026-11-18T08:38:35.207Z)
-- `spirit/app/app/element.js` `spirit/app/app/test/element.js` zzstringmount is an active row (severity 0.2, 2026-11-18T08:38:35.159Z)
-- `spirit/app/chat/api.js` `spirit/app/chat/test/api.js` it requires no code: it is an interface only (severity 0.2, 2026-11-16T13:42:21.900Z)
-- `spirit/app/contact/element.js` `spirit/app/contact/test/element.js` its icon is 🤩 (severity 0.2, 2026-11-18T05:48:59.613Z)
-- `spirit/app/introSpector/element.js` `spirit/test/spirit-sibling-browser.js` its searches are each made with a spirit.data branch, no rows of their own (severity 0.4, 2026-11-18T23:58:18.320Z)
-- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` it lists no other suite, and each suite only once (severity 0.2, 2026-11-18T00:44:50.303Z)
-- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` its folder holds its manifest, its face, its server, its api.js and data.js, and a json description of each verb, busy, preferences, script.get, script.classify, suite.search, suite.success, testicle.set, testicle.search, red, run, subscribe and unsubscribe, its element/ folder and its test/ folder, nothing else (severity 0.2, 2026-11-18T00:44:41.972Z)
-- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` the click made the script's rows, so script.get ran for it (severity 0.2, 2026-11-18T00:44:50.315Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a press on the header of the result sorts the failures and the successes apart, a second press the other way (severity 0.2, 2026-11-18T00:42:17.337Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a press on the script header sorts the rows by it, a second press the other way (severity 0.2, 2026-11-18T00:42:16.221Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a test set on the node shows in the list with no press (severity 0.2, 2026-11-18T00:42:49.368Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` green is pressed on the fresh page, and both filters are on (severity 0.2, 2026-11-18T00:43:26.059Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` hovering over a suite name shows its full name (severity 0.2, 2026-11-18T00:42:14.590Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` it lists each test once, by its current row alone (severity 0.2, 2026-11-18T00:42:11.501Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the cells of each planted row can be read (severity 0.2, 2026-11-18T00:42:11.525Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the fifth column is the suite's file name, no path (severity 0.2, 2026-11-18T00:42:14.542Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the first column is the result as an icon: ❌ for a failure, ✅ for a success (severity 0.2, 2026-11-18T00:42:14.464Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the fourth column is the script's file name, no path (severity 0.2, 2026-11-18T00:42:14.519Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the list draws the planted tests (severity 0.2, 2026-11-18T00:42:11.480Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the second column is the severity with two decimals, 0.00 and 1.00 too (severity 0.2, 2026-11-18T00:42:14.482Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the third column is the title, shown in full (severity 0.2, 2026-11-18T00:42:14.500Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` when opened with no words and no selector, more than 20 reds show, every one of the 57, and no success (severity 0.2, 2026-11-18T00:42:55.069Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` when opened, it shows more than 20 reds, every one of gamma's 30 (severity 0.2, 2026-11-18T00:41:56.190Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with both filters on, the page asks for the following answers while there are more, so 100 of the 171 tests show (severity 0.2, 2026-11-18T00:43:26.116Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with green off, every failure shows and no success (severity 0.2, 2026-11-18T00:43:41.326Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with no script chosen, every script's tests show (severity 0.2, 2026-11-18T00:42:24.806Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with red off and green on, 100 successes show and no failure (severity 0.2, 2026-11-18T00:43:56.973Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with red off and green on, only the successes show (severity 0.2, 2026-11-18T00:42:22.549Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with red off, a press on green leaves it on: both off is refused (severity 0.2, 2026-11-18T00:42:23.136Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the script unselected again, every script's tests show (severity 0.2, 2026-11-18T00:42:31.076Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the script unselected, alpha's own suite chosen and green alone, alpha's quiet pass shows (severity 0.2, 2026-11-18T00:43:58.518Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the suite unselected and no script chosen, every script's tests show again (severity 0.2, 2026-11-18T00:42:39.145Z)
-- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the words cleared, the reds show first again (severity 0.2, 2026-11-18T00:44:14.562Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a change to lib.js re-runs the own suite of user.js, which depends on it, and it ends green again (severity 0.8, 2026-11-19T00:33:56.979Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a require inside a function, made only when lazy.js's own suite runs, is recorded too: lazy.js pulls in lazyLib.js (severity 0.8, 2026-11-19T00:33:56.957Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a scratch copy in auto mode is made with four planted scripts and their own tests: one requiring another as it loads, one only inside a function (severity 0.2, 2026-11-19T00:29:16.863Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a scratch copy is made with three planted scripts whose general test crashes, hangs and answers false (severity 0.2, 2026-11-19T00:24:27.868Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite whose test answered false is red with no reason: its verdict was reached (severity 0.8, 2026-11-19T00:29:08.217Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite whose test never answered within its limit is red with the reason hung (severity 0.8, 2026-11-19T00:29:08.196Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` a suite whose test threw is red with the reason crashed (severity 0.8, 2026-11-19T00:29:08.175Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` testicle keeps a dependency table, and it records that user.js pulls in lib.js as it loads (severity 0.8, 2026-11-19T00:33:56.846Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the four are classified and their own suites run green (severity 0.2, 2026-11-19T00:33:56.818Z)
-- `spirit/app/testicle/testicle.js` `spirit/app/testicle/server/test/server.js` the run judges the three planted scripts' general suite: each suite row ends red (severity 0.2, 2026-11-19T00:29:08.073Z)
-- `spirit/appClient.js` `spirit/test/appClient.js` icons is switched on and no permanent process runs icons.js (severity 0.2, 2026-11-16T04:26:24.577Z)
-- `spirit/appClient.js` `spirit/test/appClient.js` no run of icons.js is left running after the six trees (severity 0.2, 2026-11-16T04:26:32.307Z)
-- `spirit/appClient.js` `spirit/test/appClient.js` the run that answered the tree has ended (severity 0.2, 2026-11-16T04:26:27.874Z)
-- `spirit/appClient.js` `spirit/test/appClient.js` there are never two runs of icons.js at once (severity 0.2, 2026-11-16T04:26:29.265Z)
-- `spirit/data.js` `spirit/test/data.js` no helper on spirit.app or on an app it holds is a word (severity 0.2, 2026-11-18T08:42:51.035Z)
-- `spirit/element/introSpector.js` `spirit/test/spirit-sibling-browser.js` its searches are each made with a spirit.data branch, no rows of their own (severity 0.4, 2026-11-18T23:58:21.760Z)
-- `spirit/element/search.js` `spirit/element/test/search.js` a press on a tile is the tile part's: its node hears it, and the shared search picks nothing itself (severity 0.4, 2026-11-18T05:58:05.219Z)
-- `spirit/element/search.js` `spirit/element/test/search.js` a search handed a tile part shows the list or tiles switch, with no toggle option asked (severity 0.4, 2026-11-18T05:58:01.035Z)
-- `spirit/element/search.js` `spirit/element/test/search.js` a search handed no tile part draws no tiles, even asked to open as tiles: it is a list (severity 0.4, 2026-11-18T05:58:01.656Z)
-- `spirit/element/search.js` `spirit/element/test/search.js` a search handed no tile part shows no switch, even with the toggle option (severity 0.4, 2026-11-18T05:58:01.347Z)
-- `spirit/element/search.js` `spirit/element/test/search.js` as tiles, each row is drawn by the tile part: one node of it per row, and no plain tile of the shared search (severity 0.4, 2026-11-18T05:58:05.196Z)
-- `spirit/element/search.js` `spirit/element/test/search.js` handed a tile part and asked to open as tiles, it opens as tiles: the mounter picks the face (severity 0.4, 2026-11-18T05:58:05.013Z)
-- `spirit/element/search.js` `spirit/element/test/search.js` the switch of a search handed a tile part follows the Search button (severity 0.4, 2026-11-18T05:58:01.057Z)
-- `spirit/element/search.js` `spirit/test/spirit-sibling-browser.js` its searches are each made with a spirit.data branch, no rows of their own (severity 0.4, 2026-11-18T23:58:22.383Z)
-- `spirit/element/search/api.js` `spirit/element/search/test/api.js` load lists another party's tree, clears the choice and hides the verb half (severity 0.2, 2026-11-18T01:04:21.942Z)
-- `spirit/element/search/api/list.js` `spirit/element/search/api/test/list.js` load lists another party's families (severity 0.2, 2026-11-18T01:00:58.609Z)
-- `spirit/element/search/contact.js` `spirit/element/test/search-child-browser.js` a planted long value in a row wraps or clips, and nothing shows past the row's edge (severity 0.4, 2026-11-18T23:58:08.600Z)
-- `spirit/element/search/contact.js` `spirit/element/test/search-child-browser.js` the list scrolls: its box keeps its size and its scrollHeight is greater than its clientHeight (severity 0.4, 2026-11-18T23:58:07.751Z)
-- `spirit/element/search/contact.js` `spirit/element/test/search-child-browser.js` the list's box has a stated size, from its pane and not from its rows (severity 0.4, 2026-11-18T23:58:07.128Z)
-- `spirit/element/search/contact.js` `spirit/element/test/search-child-browser.js` when the list is scrolled, its title and buttons stay at the top (severity 0.4, 2026-11-18T23:58:08.292Z)
-- `spirit/element/search/file/row.js` `spirit/element/search/file/test/row.js` its size is shown through formatBytes, and its time to the minute (severity 0.2, 2026-11-18T01:03:04.428Z)
-- `spirit/element/search/file/row.js` `spirit/element/search/file/test/row.js` when its path in data.files changes, the row repaints its size (severity 0.2, 2026-11-18T01:03:04.542Z)
-- `spirit/element/search/job.js` `spirit/element/test/search-child-browser.js` when the list is scrolled, its title and buttons stay at the top (severity 0.4, 2026-11-18T23:58:08.435Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` at home the desktop shows Text Editor and Media Viewer (severity 0.2, 2026-11-18T05:59:37.488Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` every app on the home desktop is on the starred face (severity 0.2, 2026-11-18T05:59:37.551Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` pressing that tile throws nothing in the page (severity 0.2, 2026-11-18T05:59:37.600Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` the browser holds the login (severity 0.2, 2026-11-18T05:59:37.461Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` the star is put on at home to check every app (severity 0.2, 2026-11-18T05:59:37.529Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` the star is taken off at home (severity 0.2, 2026-11-18T05:59:37.639Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` the tile of an app it shows is there to press (severity 0.2, 2026-11-18T05:59:37.572Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` with no star, the face draws none of the apps of the home desktop (severity 0.8, 2026-11-18T05:59:37.510Z)
-- `spirit/faceHome.js` `spirit/test/faceHome.js` with the star off again, the face draws none of the apps of the home desktop (severity 0.8, 2026-11-18T05:59:37.681Z)
-- `spirit/spirit.js` `spirit/test/spirit.js` a scratch node is up, on its own copy of the tree (severity 0.7, 2026-11-18T13:03:25.169Z)
-- `spirit/spirit.js` `spirit/test/spirit.js` the check sees the planted second relay/api.js, with both spirit/relay/ and spirit/app/relay/ there (severity 0.2, 2026-11-18T13:03:25.225Z)
-- `spirit/test/headLessChrome.js` `spirit/test/test/headLessChrome.js` a test that ends leaves no Chrome of its own running (severity 0.4, 2026-11-18T16:35:56.961Z)
-- `spirit/test/headLessChrome.js` `spirit/test/test/headLessChrome.js` a test that is killed leaves no Chrome of its own running (severity 0.4, 2026-11-18T16:35:57.285Z)
-- `spirit/test/headLessChrome.js` `spirit/test/test/headLessChrome.js` no lab node is left locked once its holders ended (severity 0.2, 2026-11-18T16:35:55.886Z)
-- `spirit/test/headLessChrome.js` `spirit/test/test/headLessChrome.js` one test per lab node at a time: with the six personal nodes held, a seventh ask waits, and is handed one when a holder ends (severity 0.4, 2026-11-18T16:35:28.704Z)
-- `spirit/word.js` `spirit/test/word.js` no folder or file below takes a word reserved above it (severity 0.2, 2026-11-18T06:12:40.213Z)
+- `spirit/app.js` `spirit/test/app.js` search takes one optional search string, q, and no filters (severity 0.2, 2026-11-20T23:53:07.906Z)
+- `spirit/app/chat/chat.js` `spirit/app/chat/test/chat.js` chat.js names chat/server/server.js, for the node (severity 0.2, 2026-11-21T00:47:08.226Z)
+- `spirit/app/chat/element.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:03:01.339Z)
+- `spirit/app/chat/element.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:03:01.291Z)
+- `spirit/app/chat/element.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:03:01.315Z)
+- `spirit/app/chat/element.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:03:01.266Z)
+- `spirit/app/chat/element.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:03:01.238Z)
+- `spirit/app/desk/api.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:04:01.938Z)
+- `spirit/app/desk/api.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:04:01.892Z)
+- `spirit/app/desk/api.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:04:01.917Z)
+- `spirit/app/desk/api.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:04:01.867Z)
+- `spirit/app/desk/api.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:04:01.835Z)
+- `spirit/app/desk/cacheRules.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:05:02.567Z)
+- `spirit/app/desk/cacheRules.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:05:02.518Z)
+- `spirit/app/desk/cacheRules.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:05:02.543Z)
+- `spirit/app/desk/cacheRules.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:05:02.493Z)
+- `spirit/app/desk/cacheRules.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:05:02.461Z)
+- `spirit/app/desk/data.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:06:03.100Z)
+- `spirit/app/desk/data.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:06:03.054Z)
+- `spirit/app/desk/data.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:06:03.079Z)
+- `spirit/app/desk/data.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:06:03.028Z)
+- `spirit/app/desk/data.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:06:03.000Z)
+- `spirit/app/desk/desk.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:07:03.688Z)
+- `spirit/app/desk/desk.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:07:03.644Z)
+- `spirit/app/desk/desk.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:07:03.667Z)
+- `spirit/app/desk/desk.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:07:03.621Z)
+- `spirit/app/desk/desk.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:07:03.593Z)
+- `spirit/app/desk/deskAgentEar.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:08:04.095Z)
+- `spirit/app/desk/deskAgentEar.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:08:04.055Z)
+- `spirit/app/desk/deskAgentEar.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:08:04.076Z)
+- `spirit/app/desk/deskAgentEar.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:08:04.033Z)
+- `spirit/app/desk/deskAgentEar.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:08:04.011Z)
+- `spirit/app/desk/deskLoop.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:09:04.339Z)
+- `spirit/app/desk/deskLoop.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:09:04.292Z)
+- `spirit/app/desk/deskLoop.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:09:04.316Z)
+- `spirit/app/desk/deskLoop.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:09:04.273Z)
+- `spirit/app/desk/deskLoop.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:09:04.249Z)
+- `spirit/app/desk/element.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:10:04.921Z)
+- `spirit/app/desk/element.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:10:04.877Z)
+- `spirit/app/desk/element.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:10:04.899Z)
+- `spirit/app/desk/element.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:10:04.851Z)
+- `spirit/app/desk/element.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:10:04.827Z)
+- `spirit/app/deskClient/api.js` `spirit/app/deskClient/test/api.js` deskClient serves with a stream, so appServer adds its listener (severity 0.2, 2026-11-21T01:14:21.926Z)
+- `spirit/app/deskClient/api.js` `spirit/app/deskClient/test/api.js` each verb is a handler of deskClient.js, or appServer's listener, since deskClient follows the desk's stream (severity 0.2, 2026-11-21T01:14:21.873Z)
+- `spirit/app/deskClient/api.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:11:05.256Z)
+- `spirit/app/deskClient/api.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:11:05.210Z)
+- `spirit/app/deskClient/api.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:11:05.235Z)
+- `spirit/app/deskClient/api.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:11:05.186Z)
+- `spirit/app/deskClient/api.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:11:05.163Z)
+- `spirit/app/deskClient/data.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:12:06.003Z)
+- `spirit/app/deskClient/data.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:12:05.957Z)
+- `spirit/app/deskClient/data.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:12:05.979Z)
+- `spirit/app/deskClient/data.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:12:05.933Z)
+- `spirit/app/deskClient/data.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:12:05.902Z)
+- `spirit/app/deskClient/deskClient.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:13:06.301Z)
+- `spirit/app/deskClient/deskClient.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:13:06.250Z)
+- `spirit/app/deskClient/deskClient.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:13:06.278Z)
+- `spirit/app/deskClient/deskClient.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:13:06.221Z)
+- `spirit/app/deskClient/deskClient.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:13:06.197Z)
+- `spirit/app/icons/icons.js` `spirit/app/icons/test/icons.js` icons.js, run in node, loads spirit/app/icons/server/server.js through spirit.require (severity 0.2, 2026-11-21T01:15:10.338Z)
+- `spirit/app/icons/icons.js` `spirit/app/icons/test/icons.js` spirit/app/icons/server/server.js is there (severity 0.2, 2026-11-21T01:15:10.165Z)
+- `spirit/app/publishData/publishData.js` `spirit/app/publishData/test/publishData.js` testState.json's test and red counts match testicle's current rows, and every red names its script, suite and test (severity 0.2, 2026-11-21T01:14:15.486Z)
+- `spirit/app/testicle/api.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:14:06.789Z)
+- `spirit/app/testicle/api.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:14:06.744Z)
+- `spirit/app/testicle/api.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:14:06.767Z)
+- `spirit/app/testicle/api.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:14:06.719Z)
+- `spirit/app/testicle/api.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:14:06.692Z)
+- `spirit/app/testicle/data.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:15:07.119Z)
+- `spirit/app/testicle/data.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:15:07.075Z)
+- `spirit/app/testicle/data.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:15:07.096Z)
+- `spirit/app/testicle/data.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:15:07.055Z)
+- `spirit/app/testicle/data.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:15:07.029Z)
+- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` a long message is ellipsed, never wrapped (severity 0.2, 2026-11-21T00:37:46.283Z)
+- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` a long message leaves the row's height as it was (severity 0.2, 2026-11-21T00:37:46.259Z)
+- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` after the icon, the message shows the last change, a new script's row (severity 0.2, 2026-11-21T00:37:30.851Z)
+- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` before any test of the suite reports, the suite running alone shows the walker (severity 0.2, 2026-11-21T00:36:34.994Z)
+- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` the page keeps every test row by its full key, script|suite|test|flipped (severity 0.2, 2026-11-20T21:32:00.116Z)
+- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` while it classifies, the status bar says "classifying N of M", N counting up (severity 0.2, 2026-11-21T00:41:46.764Z)
+- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` while it runs a suite, the status bar says "running <suite> for <script>" (severity 0.2, 2026-11-21T00:45:47.239Z)
+- `spirit/app/testicle/element.js` `spirit/app/testicle/test/element.js` while the suite runs, the permanent testicle search tab shows iota's tests by itself (severity 0.2, 2026-11-21T00:37:15.519Z)
+- `spirit/app/testicle/element.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:16:07.632Z)
+- `spirit/app/testicle/element.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:16:07.585Z)
+- `spirit/app/testicle/element.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:16:07.609Z)
+- `spirit/app/testicle/element.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:16:07.560Z)
+- `spirit/app/testicle/element.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:16:07.533Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a press on the header of the result sorts the failures and the successes apart, a second press the other way (severity 0.2, 2026-11-21T01:16:48.868Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a press on the script header sorts the rows by it, a second press the other way (severity 0.2, 2026-11-21T01:16:48.728Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a press on the severity header sorts the rows by it, a second press the other way (severity 0.2, 2026-11-21T01:16:48.524Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a press on the suite header sorts the rows by it, a second press the other way (severity 0.2, 2026-11-21T01:16:48.799Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a press on the title header sorts the rows by it, a second press the other way (severity 0.2, 2026-11-21T01:16:48.651Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a script chosen narrows the rows to that script's tests (severity 0.2, 2026-11-21T01:16:49.662Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a suite chosen narrows the rows to that suite's tests (severity 0.2, 2026-11-21T01:16:49.846Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a suite chosen with no script shows that suite's tests of every script (severity 0.2, 2026-11-21T01:16:50.315Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` a test set on the node shows in the list with no press (severity 0.2, 2026-11-21T01:16:50.463Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` both filters are on again (severity 0.2, 2026-11-21T01:16:49.309Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` destroy leaves its container empty (severity 0.2, 2026-11-21T01:16:50.538Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` each row has five columns (severity 0.2, 2026-11-21T01:16:47.468Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` every one of its five column headers is a sort trigger (severity 0.2, 2026-11-21T01:16:48.291Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` green is pressed, and both filters are on (severity 0.2, 2026-11-21T01:16:47.091Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` hovering over a script name shows its full name (severity 0.2, 2026-11-21T01:16:47.934Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` hovering over a suite name shows its full name (severity 0.2, 2026-11-21T01:16:48.033Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` it has the filters red and green, both on once green was pressed (severity 0.2, 2026-11-21T01:16:48.933Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` it has two selectors, the script selector first, the suite selector second, each a dropdown (severity 0.2, 2026-11-21T01:16:49.390Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` it lists each test once, by its current row alone (severity 0.2, 2026-11-21T01:16:47.235Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` tests of the planted scripts are set on the node (severity 0.2, 2026-11-21T01:16:45.971Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the cells of each planted row can be read (severity 0.2, 2026-11-21T01:16:47.311Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the fifth column is the suite's file name, no path (severity 0.2, 2026-11-21T01:16:47.860Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the first column is the result as an icon: ❌ for a failure, ✅ for a success (severity 0.2, 2026-11-21T01:16:47.553Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the fourth column is the script's file name, no path (severity 0.2, 2026-11-21T01:16:47.782Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the list draws the planted tests (severity 0.2, 2026-11-21T01:16:47.172Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the script selector lists production scripts only: no test, no other kind of file (severity 0.2, 2026-11-21T01:16:49.580Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the second column is the severity with two decimals, 0.00 and 1.00 too (severity 0.2, 2026-11-21T01:16:47.624Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` the third column is the title, shown in full (severity 0.2, 2026-11-21T01:16:47.693Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` typed words show the tests they find, the best match first (severity 0.2, 2026-11-21T01:16:47.387Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` when opened, it shows reds only, the most severe first (severity 0.2, 2026-11-21T01:16:47.001Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` when opened, it shows the reds, every one of gamma's 2, in its one answer (severity 0.2, 2026-11-21T01:16:46.934Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` when opened, red is on and green is off (severity 0.2, 2026-11-21T01:16:46.875Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with a script chosen, the suite selector lists that script's suites (severity 0.2, 2026-11-21T01:16:49.750Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with green off and red on, only the failures show (severity 0.2, 2026-11-21T01:16:49.155Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with no script chosen, a suite of two scripts is listed once (severity 0.2, 2026-11-21T01:16:50.230Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with no script chosen, every script's tests show (severity 0.2, 2026-11-21T01:16:49.486Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with no script chosen, the suite selector lists the suites of every script (severity 0.2, 2026-11-21T01:16:50.138Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with red off and green on, only the successes show (severity 0.2, 2026-11-21T01:16:49.004Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with red off, a press on green leaves it on: both off is refused (severity 0.2, 2026-11-21T01:16:49.076Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with red off, a press on red leaves it on: both off is refused (severity 0.2, 2026-11-21T01:16:49.239Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the script unselected again, every script's tests show (severity 0.2, 2026-11-21T01:16:50.066Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the suite unselected again, every suite of the script shows (severity 0.2, 2026-11-21T01:16:49.969Z)
+- `spirit/app/testicle/element/search/testicle.js` `spirit/app/testicle/element/search/test/testicle.js` with the suite unselected and no script chosen, every script's tests show again (severity 0.2, 2026-11-21T01:16:50.388Z)
+- `spirit/app/testicle/testAll.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:17:08.257Z)
+- `spirit/app/testicle/testAll.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:17:08.211Z)
+- `spirit/app/testicle/testAll.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:17:08.234Z)
+- `spirit/app/testicle/testAll.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:17:08.188Z)
+- `spirit/app/testicle/testAll.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:17:08.161Z)
+- `spirit/app/testicle/testicle.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:18:08.558Z)
+- `spirit/app/testicle/testicle.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:18:08.514Z)
+- `spirit/app/testicle/testicle.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:18:08.537Z)
+- `spirit/app/testicle/testicle.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:18:08.492Z)
+- `spirit/app/testicle/testicle.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:18:08.464Z)
+- `spirit/app/testicle/words.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T02:19:09.248Z)
+- `spirit/app/testicle/words.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T02:19:09.204Z)
+- `spirit/app/testicle/words.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T02:19:09.227Z)
+- `spirit/app/testicle/words.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T02:19:09.182Z)
+- `spirit/app/testicle/words.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T02:19:09.161Z)
+- `spirit/element/nodeInfo.js` `spirit/element/test/nodeInfo.js` the face form offers one relays with with a faceable mark (severity 0.2, 2026-11-20T22:05:14.936Z)
+- `spirit/element/nodeInfo.js` `spirit/element/test/nodeInfo.js` with A faceable, the face form shows (severity 0.2, 2026-11-20T22:05:14.891Z)
+- `spirit/element/search/api/verb.js` `spirit/element/search/api/test/verb.js` show, given the tree and a server, lists that server's verbs and never DEBUG (severity 0.2, 2026-11-20T22:00:21.017Z)
+- `spirit/element/search/job/detail.js` `spirit/element/search/job/test/detail.js` a click puts the event line into the Extract box, written out as JSON indented by two spaces (severity 0.2, 2026-11-20T22:04:09.210Z)
+- `spirit/node/data.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T01:28:04.451Z)
+- `spirit/node/data.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T01:28:04.265Z)
+- `spirit/node/data.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T01:28:04.391Z)
+- `spirit/node/data.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T01:28:04.203Z)
+- `spirit/node/data.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T01:28:04.131Z)
+- `spirit/node/data.js` `spirit/test/spirit-sibling-general.js` the shell downloads its data.js (severity 0.4, 2026-11-21T01:28:04.539Z)
+- `spirit/owner/api.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T01:29:04.568Z)
+- `spirit/owner/api.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T01:29:04.446Z)
+- `spirit/owner/api.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T01:29:04.504Z)
+- `spirit/owner/api.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T01:29:04.390Z)
+- `spirit/owner/api.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T01:29:04.306Z)
+- `spirit/owner/api.js` `spirit/test/spirit-sibling-general.js` the shell downloads its data.js (severity 0.4, 2026-11-21T01:29:04.625Z)
+- `spirit/owner/data.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T01:30:05.060Z)
+- `spirit/owner/data.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T01:30:04.965Z)
+- `spirit/owner/data.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T01:30:05.011Z)
+- `spirit/owner/data.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T01:30:04.900Z)
+- `spirit/owner/data.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T01:30:04.836Z)
+- `spirit/owner/data.js` `spirit/test/spirit-sibling-general.js` the shell downloads its data.js (severity 0.4, 2026-11-21T01:30:05.101Z)
+- `spirit/peer/api.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T01:31:05.251Z)
+- `spirit/peer/api.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T01:31:05.149Z)
+- `spirit/peer/api.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T01:31:05.201Z)
+- `spirit/peer/api.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T01:31:05.094Z)
+- `spirit/peer/api.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T01:31:05.039Z)
+- `spirit/peer/api.js` `spirit/test/spirit-sibling-general.js` the shell downloads its data.js (severity 0.4, 2026-11-21T01:31:05.292Z)
+- `spirit/peer/data.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T01:32:07.357Z)
+- `spirit/peer/data.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T01:32:07.283Z)
+- `spirit/peer/data.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T01:32:07.315Z)
+- `spirit/peer/data.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T01:32:07.252Z)
+- `spirit/peer/data.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T01:32:07.199Z)
+- `spirit/peer/data.js` `spirit/test/spirit-sibling-general.js` the shell downloads its data.js (severity 0.4, 2026-11-21T01:32:07.393Z)
+- `spirit/relay/api.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T01:33:07.545Z)
+- `spirit/relay/api.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T01:33:07.470Z)
+- `spirit/relay/api.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T01:33:07.502Z)
+- `spirit/relay/api.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T01:33:07.438Z)
+- `spirit/relay/api.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T01:33:07.398Z)
+- `spirit/relay/api.js` `spirit/test/spirit-sibling-general.js` the shell downloads its data.js (severity 0.4, 2026-11-21T01:33:07.597Z)
+- `spirit/relay/data.js` `spirit/test/spirit-sibling-general.js` every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code (severity 0.4, 2026-11-21T01:34:17.694Z)
+- `spirit/relay/data.js` `spirit/test/spirit-sibling-general.js` it serves exactly the verbs of its api.js (severity 0.4, 2026-11-21T01:34:17.607Z)
+- `spirit/relay/data.js` `spirit/test/spirit-sibling-general.js` its branch carries no FS set (severity 0.4, 2026-11-21T01:34:17.658Z)
+- `spirit/relay/data.js` `spirit/test/spirit-sibling-general.js` the interface the node serves is its api.js (severity 0.4, 2026-11-21T01:34:17.557Z)
+- `spirit/relay/data.js` `spirit/test/spirit-sibling-general.js` the node's api tree holds its branch (severity 0.4, 2026-11-21T01:34:17.503Z)
+- `spirit/relay/data.js` `spirit/test/spirit-sibling-general.js` the shell downloads its data.js (severity 0.4, 2026-11-21T01:34:17.733Z)
