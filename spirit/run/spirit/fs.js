@@ -6,8 +6,8 @@
 // ready(), watch(fn) / watch(path, fn), branch.
 //
 // WHO FEEDS IT: in the node's main process the file watcher (spirit/job.js) writes every change into spirit.data.fs and
-// says so with FedHere(); in any other process nothing does, so the first read asks spirit.data to follow the node's
-// stream, which hands the whole tree and then each change into the same fs/data.js translator a page uses.
+// says so with FedHere(); in any other process nothing does, so spirit.data follows the node's stream, which hands the
+// whole tree and then each change into the same fs/data.js translator a page uses.
 //
 // Node only. It changes no caller (box v17, "OUT OF SCOPE OF THIS ITEM: changing any future client of spirit/fs.js").
 require('./spirit.js');
@@ -25,6 +25,9 @@ function fill() {
   D.followStream();
 }
 function reads() { return D.fs.data; }
+// Required is asked: a process that only requires this file holds the dataset. The writer says FedHere in the same turn it
+// requires this file, so the stream is followed on the next turn only where no watcher writes.
+setImmediate(fill);
 
 module.exports = {
   file: function (p) { fill(); return reads().file(p); },
