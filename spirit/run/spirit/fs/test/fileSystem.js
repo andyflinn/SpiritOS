@@ -18,7 +18,9 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 let FS = {};
 try { FS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')); } catch (e) { FS = {}; }
 test.run('spirit/fs/fileSystem.js stands, and spirit/fileSystem.js is gone', 0.8, function () {
-  return (fs.existsSync(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')) && !fs.existsSync(path.join(RUN, 'spirit', 'fs', 'fileSystem.js'))) || false;
+  // The old place written in two pieces, so a sweep of the old path over the tree leaves this check alone.
+  const oldPlace = path.join(RUN, 'spirit', 'file' + 'System.js');
+  return (fs.existsSync(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')) && !fs.existsSync(oldPlace)) || false;
 }, test.limit.quick);
 test.run('fileServable refuses spirit/fs/fileSystem.js at its new place, in any case', 0.8, function () {
   const p = 'spirit/fs/fileSystem.js';
