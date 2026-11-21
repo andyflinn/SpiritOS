@@ -98,14 +98,25 @@ function pathCommand(s, arg) {
 /// added last: the line a person types, each argument a placeholder named by its rule in the branch's own verbs table, an
 // optional one in brackets.
 function apiFile(p) { return 'spirit/' + p.split('.').join('/') + '/api.js'; }
-function verbsAt(p) {
+// THE BRANCH'S api.js AT A PATH, or null: its verbs, and the functions it may name for them (spirit.js, def.functions).
+function apiAt(p) {
   if (!p) return Promise.resolve(null);
   const file = apiFile(p);
   return spirit.require(spirit.familyPath('fs')).then(function (f) { return f.stat({ path: file }); }).then(function () {
     spirit.require(file);
     const at = file.replace(/\.js$/, '').split('/').reduce(function (o, k) { return o && o[k]; }, spirit.required);
-    return at && at.verbs && typeof at.verbs === 'object' ? at.verbs : null;
+    return at && at.verbs && typeof at.verbs === 'object' ? at : null;
   }, function () { return null; });
+}
+// EVERY SERVER'S AUTO-VERBS (wsl, on goal/G48.8: "the console lists only api.js verbs, so the auto-verb remote cannot be
+// called from it"): remote and DEBUG, which spirit.js binds by hand on every branch and no api.js lists (spirit/server/app.js
+// serves them on every app server, goal/G47.5 and desk/G2.5), offered beside the api.js verbs of an app's branch.
+const AUTO_VERBS = { remote: { id: 'spirit.type.string.ID?' }, DEBUG: { on: 'spirit.type.boolean?' } };
+function verbsAt(p) {
+  return apiAt(p).then(function (at) {
+    if (!at) return null;
+    return /^app\.[A-Za-z0-9_-]+$/.test(p) ? Object.assign({}, AUTO_VERBS, at.verbs) : at.verbs;
+  });
 }
 function usageOf(verb, request) {
   return [verb].concat(Object.keys(request || {}).map(function (k) {
@@ -137,7 +148,12 @@ function wordsOf(line) {
   const out = [];
   let word = '';
   let open = false;
-  for (const c of text) {
+  // A DOUBLE QUOTE OR A BACKSLASH IN A VALUE (Andy: "cw, fix the console. push it"): typed \" and \\, each kept as itself
+  // and toggling nothing; held as a mark while the line is split and a value's outer quotes come off, then put back.
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charAt(i);
+    const next = text.charAt(i + 1);
+    if (c === '\\' && (next === '"' || next === '\\')) { word += next === '"' ? ESC_QUOTE : ESC_SLASH; i++; continue; }
     if (c === '"') open = !open;
     if (!open && /\s/.test(c)) { if (word) out.push(word); word = ''; continue; }
     word += c;
@@ -148,9 +164,11 @@ function wordsOf(line) {
     const eq = w.indexOf('=');
     const name = eq > 0 && w.charAt(0) !== '"' ? w.slice(0, eq + 1) : '';
     const value = w.slice(name.length);
-    return name + (/^"[^"]*"$/.test(value) ? value.slice(1, -1) : value);
+    return (name + (/^"[^"]*"$/.test(value) ? value.slice(1, -1) : value)).split(ESC_QUOTE).join('"').split(ESC_SLASH).join('\\');
   });
 }
+const ESC_QUOTE = '\u0000q';
+const ESC_SLASH = '\u0000s';
 // A VALUE AS ITS ARGUMENT'S RULE SAYS (the box: "a value is read as its argument's rule in the verb's own file says: a number
 // argument as a number, a yes/no argument as true or false, a list or object argument as JSON"); anything else as typed.
 // The rules are type paths since goal/G48.4 (each argument of its api.js names its type by its full path, spirit.type.<...>):
@@ -177,7 +195,12 @@ function verbCommand(s, verbs, words, line) {
     if (!Object.prototype.hasOwnProperty.call(rules, name)) return Promise.resolve(refused(s, 'no-such-argument', verb + ' has no argument ' + name));
     args[name] = valueOf(rules[name], words[i].slice(eq + 1));
   }
-  return Promise.resolve(spirit.require(apiFile(s.path))).then(function (branch) { return branch[verb](args); }).then(function (answer) {
+  // THE FUNCTION THAT IMPLEMENTS THE VERB (goal/G43.7; Andy: "spirit.app.searchApp() which IMPLEMENTS the verb search, but
+  // isn't the verb itself."): the name the branch's api.js gives it (functions), else the verb itself, as spirit.js binds it.
+  return apiAt(s.path).then(function (at) {
+    const named = at && at.functions && typeof at.functions[verb] === 'string' ? at.functions[verb] : verb;
+    return Promise.resolve(spirit.require(apiFile(s.path))).then(function (branch) { return branch[named](args); });
+  }).then(function (answer) {
     logged(s, line);
     return { ok: true, out: JSON.stringify(answer === undefined ? null : answer, null, 2), path: s.path };
   }, function (e) {
