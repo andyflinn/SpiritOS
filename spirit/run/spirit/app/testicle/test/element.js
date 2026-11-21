@@ -556,11 +556,12 @@ test.run('on a flip the replaced row reaches the page too, current false, beside
   const cur = kept.filter(function (x) { return x.row.current === true; });
   return (old.length === 1 && cur.length === 1 && old[0].row.verified === true && cur[0].row.verified === false) || false;
 }, test.limit.slow);
-test.run('the page keeps every test row by its full key, script|suite|test|flipped', 0.2, async function () {
+// goal/G48.4 (Andy: "FLIPPED IS KILLED NOW"): a row's key ends in its own number, id, in place of flipped (cw's 05f39a64).
+test.run('the page keeps every test row by its full key, script|suite|test|id', 0.2, async function () {
   if (!face()) return false;
   const all = (await pageTests()) || [];
   if (!all.length) return false;
-  const wrong = all.filter(function (e) { return !e.row || e.key !== e.row.script + '|' + e.row.suite + '|' + e.row.test + '|' + e.row.flipped; });
+  const wrong = all.filter(function (e) { return !e.row || e.row.id === undefined || e.key !== e.row.script + '|' + e.row.suite + '|' + e.row.test + '|' + e.row.id; });
   return wrong.length === 0 || false;
 }, test.limit.quick);
 test.run('the flipped test keeps both its rows, the replaced one and the current one, each under its own key', 0.2, function () {
