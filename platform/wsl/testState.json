@@ -1,12 +1,12 @@
 {
   "platform": "wsl",
-  "measuredAt": "2026-11-21T02:24:26.798Z",
-  "commit": "7b4d53fba",
+  "measuredAt": "2026-11-21T15:03:00.155Z",
+  "commit": "90a7785c1",
   "from": "testicle.db: the current result of each test this node's testicle keeps; no suite was run for this report",
   "note": "",
-  "tests": 26839,
-  "green": 26650,
-  "red": 189,
+  "tests": 27341,
+  "green": 27270,
+  "red": 71,
   "suites": [
     {
       "script": "spirit/DEBUG.js",
@@ -203,10 +203,10 @@
     {
       "script": "spirit/app.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 25,
-      "green": 25,
+      "tests": 26,
+      "green": 26,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:31.336Z"
+      "newestAt": "2026-11-21T14:56:35.519Z"
     },
     {
       "script": "spirit/app.js",
@@ -251,10 +251,10 @@
     {
       "script": "spirit/app/agent/agent.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:32.206Z"
+      "newestAt": "2026-11-21T14:56:37.103Z"
     },
     {
       "script": "spirit/app/agent/agent.js",
@@ -307,10 +307,10 @@
     {
       "script": "spirit/app/agent/api.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:33.015Z"
+      "newestAt": "2026-11-21T14:56:38.785Z"
     },
     {
       "script": "spirit/app/agent/api.js",
@@ -363,10 +363,10 @@
     {
       "script": "spirit/app/agent/data.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:33.917Z"
+      "newestAt": "2026-11-21T14:56:39.572Z"
     },
     {
       "script": "spirit/app/agent/data.js",
@@ -419,10 +419,10 @@
     {
       "script": "spirit/app/agent/element.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:34.803Z"
+      "newestAt": "2026-11-21T14:56:40.395Z"
     },
     {
       "script": "spirit/app/agent/element.js",
@@ -467,10 +467,10 @@
     {
       "script": "spirit/app/agent/element/chatPane.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:35.714Z"
+      "newestAt": "2026-11-21T14:56:41.235Z"
     },
     {
       "script": "spirit/app/agent/element/chatPane.js",
@@ -515,10 +515,10 @@
     {
       "script": "spirit/app/agent/element/table/job/elementRow.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:36.779Z"
+      "newestAt": "2026-11-21T14:56:42.033Z"
     },
     {
       "script": "spirit/app/agent/element/table/job/elementRow.js",
@@ -563,10 +563,10 @@
     {
       "script": "spirit/app/agent/element/table/job/elementTable.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:37.682Z"
+      "newestAt": "2026-11-21T14:56:42.852Z"
     },
     {
       "script": "spirit/app/agent/element/table/job/elementTable.js",
@@ -611,10 +611,10 @@
     {
       "script": "spirit/app/agent/element/table/model/elementRow.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:38.534Z"
+      "newestAt": "2026-11-21T14:56:43.613Z"
     },
     {
       "script": "spirit/app/agent/element/table/model/elementRow.js",
@@ -659,10 +659,10 @@
     {
       "script": "spirit/app/agent/element/table/model/elementTable.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:39.404Z"
+      "newestAt": "2026-11-21T14:56:44.434Z"
     },
     {
       "script": "spirit/app/agent/element/table/model/elementTable.js",
@@ -707,10 +707,10 @@
     {
       "script": "spirit/app/agent/element/table/persona/elementRow.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:40.300Z"
+      "newestAt": "2026-11-21T14:56:45.545Z"
     },
     {
       "script": "spirit/app/agent/element/table/persona/elementRow.js",
@@ -755,10 +755,10 @@
     {
       "script": "spirit/app/agent/element/table/persona/elementTable.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:48:16.942Z"
+      "newestAt": "2026-11-21T14:56:46.521Z"
     },
     {
       "script": "spirit/app/agent/element/table/persona/elementTable.js",
@@ -803,10 +803,10 @@
     {
       "script": "spirit/app/agent/element/table/provider/elementRow.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:48:17.984Z"
+      "newestAt": "2026-11-21T14:56:47.505Z"
     },
     {
       "script": "spirit/app/agent/element/table/provider/elementRow.js",
@@ -851,10 +851,10 @@
     {
       "script": "spirit/app/agent/element/table/provider/elementTable.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 24,
+      "green": 24,
       "red": 0,
-      "newestAt": "2026-11-21T00:48:19.006Z"
+      "newestAt": "2026-11-21T14:56:48.475Z"
     },
     {
       "script": "spirit/app/agent/element/table/provider/elementTable.js",
@@ -902,7 +902,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-21T00:48:19.930Z"
+      "newestAt": "2026-11-21T14:56:48.576Z"
     },
     {
       "script": "spirit/app/agent/element/table/row.js",
@@ -1062,7 +1062,7 @@
       "tests": 42,
       "green": 42,
       "red": 0,
-      "newestAt": "2026-11-21T00:46:30.642Z"
+      "newestAt": "2026-11-21T10:23:42.379Z"
     },
     {
       "script": "spirit/app/agent/server/server.js",
@@ -1804,9 +1804,9 @@
       "script": "spirit/app/chat/element.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 71,
-      "green": 66,
-      "red": 5,
-      "newestAt": "2026-11-21T02:03:02.324Z"
+      "green": 71,
+      "red": 0,
+      "newestAt": "2026-11-21T09:16:47.998Z"
     },
     {
       "script": "spirit/app/chat/server/server.js",
@@ -1955,10 +1955,10 @@
     {
       "script": "spirit/app/desk/api.js",
       "suite": "spirit/app/desk/test/api.js",
-      "tests": 35,
-      "green": 35,
-      "red": 0,
-      "newestAt": "2026-11-21T00:47:28.899Z"
+      "tests": 29,
+      "green": 28,
+      "red": 1,
+      "newestAt": "2026-11-21T12:44:28.106Z"
     },
     {
       "script": "spirit/app/desk/api.js",
@@ -1966,7 +1966,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-21T00:48:09.151Z"
+      "newestAt": "2026-11-21T12:44:51.651Z"
     },
     {
       "script": "spirit/app/desk/api.js",
@@ -1974,7 +1974,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-21T01:36:36.745Z"
+      "newestAt": "2026-11-21T12:45:03.112Z"
     },
     {
       "script": "spirit/app/desk/api.js",
@@ -1982,7 +1982,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:46:20.647Z"
+      "newestAt": "2026-11-21T12:43:23.365Z"
     },
     {
       "script": "spirit/app/desk/api.js",
@@ -1990,31 +1990,31 @@
       "tests": 7,
       "green": 7,
       "red": 0,
-      "newestAt": "2026-11-20T23:52:55.740Z"
+      "newestAt": "2026-11-21T12:44:53.438Z"
     },
     {
       "script": "spirit/app/desk/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 71,
-      "green": 66,
-      "red": 5,
-      "newestAt": "2026-11-21T02:04:02.910Z"
+      "green": 70,
+      "red": 1,
+      "newestAt": "2026-11-21T14:56:22.539Z"
     },
     {
       "script": "spirit/app/desk/api.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-20T23:53:00.184Z"
+      "newestAt": "2026-11-21T12:45:00.809Z"
     },
     {
       "script": "spirit/app/desk/cacheRules.js",
       "suite": "spirit/app/desk/test/cacheRules.js",
-      "tests": 24,
-      "green": 24,
+      "tests": 22,
+      "green": 22,
       "red": 0,
-      "newestAt": "2026-11-20T21:12:55.026Z"
+      "newestAt": "2026-11-21T12:45:13.048Z"
     },
     {
       "script": "spirit/app/desk/cacheRules.js",
@@ -2022,7 +2022,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-21T01:36:37.745Z"
+      "newestAt": "2026-11-21T12:45:03.988Z"
     },
     {
       "script": "spirit/app/desk/cacheRules.js",
@@ -2030,15 +2030,15 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:46:21.064Z"
+      "newestAt": "2026-11-21T12:43:23.817Z"
     },
     {
       "script": "spirit/app/desk/cacheRules.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 70,
-      "green": 65,
-      "red": 5,
-      "newestAt": "2026-11-21T02:05:03.569Z"
+      "green": 69,
+      "red": 1,
+      "newestAt": "2026-11-21T14:56:25.328Z"
     },
     {
       "script": "spirit/app/desk/cacheRules.js",
@@ -2046,15 +2046,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-20T21:05:09.836Z"
+      "newestAt": "2026-11-21T12:45:00.930Z"
     },
     {
       "script": "spirit/app/desk/data.js",
       "suite": "spirit/app/desk/test/data.js",
-      "tests": 42,
-      "green": 42,
+      "tests": 34,
+      "green": 34,
       "red": 0,
-      "newestAt": "2026-11-21T00:47:31.099Z"
+      "newestAt": "2026-11-21T12:44:26.097Z"
     },
     {
       "script": "spirit/app/desk/data.js",
@@ -2062,7 +2062,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-21T01:08:16.363Z"
+      "newestAt": "2026-11-21T12:45:55.156Z"
     },
     {
       "script": "spirit/app/desk/data.js",
@@ -2070,7 +2070,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-21T01:36:38.800Z"
+      "newestAt": "2026-11-21T12:45:04.817Z"
     },
     {
       "script": "spirit/app/desk/data.js",
@@ -2078,7 +2078,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:46:21.509Z"
+      "newestAt": "2026-11-21T12:43:24.266Z"
     },
     {
       "script": "spirit/app/desk/data.js",
@@ -2086,15 +2086,15 @@
       "tests": 7,
       "green": 7,
       "red": 0,
-      "newestAt": "2026-11-20T23:52:56.198Z"
+      "newestAt": "2026-11-21T12:44:56.014Z"
     },
     {
       "script": "spirit/app/desk/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 70,
-      "green": 65,
-      "red": 5,
-      "newestAt": "2026-11-21T02:06:04.021Z"
+      "green": 69,
+      "red": 1,
+      "newestAt": "2026-11-21T14:56:28.217Z"
     },
     {
       "script": "spirit/app/desk/data.js",
@@ -2102,15 +2102,15 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-20T23:53:00.331Z"
+      "newestAt": "2026-11-21T12:45:01.061Z"
     },
     {
       "script": "spirit/app/desk/desk.js",
       "suite": "spirit/app/desk/test/desk.js",
-      "tests": 95,
-      "green": 95,
-      "red": 0,
-      "newestAt": "2026-11-21T00:47:50.774Z"
+      "tests": 34,
+      "green": 30,
+      "red": 4,
+      "newestAt": "2026-11-21T13:16:09.475Z"
     },
     {
       "script": "spirit/app/desk/desk.js",
@@ -2140,9 +2140,9 @@
       "script": "spirit/app/desk/desk.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 70,
-      "green": 65,
-      "red": 5,
-      "newestAt": "2026-11-21T02:07:04.529Z"
+      "green": 70,
+      "red": 0,
+      "newestAt": "2026-11-21T09:17:07.937Z"
     },
     {
       "script": "spirit/app/desk/desk.js",
@@ -2151,86 +2151,6 @@
       "green": 2,
       "red": 0,
       "newestAt": "2026-11-21T00:34:04.952Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/app/desk/test/deskAgentEar.js",
-      "tests": 17,
-      "green": 17,
-      "red": 0,
-      "newestAt": "2026-11-20T21:13:14.345Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
-      "red": 0,
-      "newestAt": "2026-11-21T02:01:44.387Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/scriptClassify.js",
-      "tests": 1,
-      "green": 1,
-      "red": 0,
-      "newestAt": "2026-11-20T23:46:22.343Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 70,
-      "green": 65,
-      "red": 5,
-      "newestAt": "2026-11-21T02:08:05.003Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
-      "red": 0,
-      "newestAt": "2026-11-20T21:05:10.203Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/app/desk/test/deskLoop.js",
-      "tests": 30,
-      "green": 30,
-      "red": 0,
-      "newestAt": "2026-11-20T21:13:16.070Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
-      "red": 0,
-      "newestAt": "2026-11-21T02:01:45.346Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/scriptClassify.js",
-      "tests": 1,
-      "green": 1,
-      "red": 0,
-      "newestAt": "2026-11-20T23:46:22.746Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 70,
-      "green": 65,
-      "red": 5,
-      "newestAt": "2026-11-21T02:09:05.254Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
-      "red": 0,
-      "newestAt": "2026-11-20T21:05:10.322Z"
     },
     {
       "script": "spirit/app/desk/element.js",
@@ -2276,9 +2196,9 @@
       "script": "spirit/app/desk/element.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 70,
-      "green": 65,
-      "red": 5,
-      "newestAt": "2026-11-21T02:10:05.875Z"
+      "green": 70,
+      "red": 0,
+      "newestAt": "2026-11-21T09:17:15.670Z"
     },
     {
       "script": "spirit/app/desk/element/desk/desk.js",
@@ -2286,7 +2206,7 @@
       "tests": 48,
       "green": 48,
       "red": 0,
-      "newestAt": "2026-11-20T21:11:29.322Z"
+      "newestAt": "2026-11-21T12:48:53.747Z"
     },
     {
       "script": "spirit/app/desk/element/desk/desk.js",
@@ -2294,7 +2214,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-20T20:55:00.209Z"
+      "newestAt": "2026-11-21T12:44:52.054Z"
     },
     {
       "script": "spirit/app/desk/element/desk/desk.js",
@@ -2302,7 +2222,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-21T02:01:47.394Z"
+      "newestAt": "2026-11-21T12:45:05.699Z"
     },
     {
       "script": "spirit/app/desk/element/desk/desk.js",
@@ -2310,15 +2230,15 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:46:23.372Z"
+      "newestAt": "2026-11-21T12:43:24.728Z"
     },
     {
       "script": "spirit/app/desk/element/desk/desk.js",
       "suite": "spirit/test/spirit-sibling-browser.js",
-      "tests": 23,
-      "green": 23,
+      "tests": 20,
+      "green": 20,
       "red": 0,
-      "newestAt": "2026-11-20T20:56:57.051Z"
+      "newestAt": "2026-11-21T12:44:58.086Z"
     },
     {
       "script": "spirit/app/desk/element/desk/desk.js",
@@ -2326,15 +2246,15 @@
       "tests": 44,
       "green": 44,
       "red": 0,
-      "newestAt": "2026-11-21T00:19:14.996Z"
+      "newestAt": "2026-11-21T12:44:46.379Z"
     },
     {
       "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
       "suite": "spirit/app/desk/element/deskDetails/test/deskDetails.js",
-      "tests": 71,
-      "green": 71,
-      "red": 0,
-      "newestAt": "2026-11-20T21:12:24.256Z"
+      "tests": 66,
+      "green": 64,
+      "red": 2,
+      "newestAt": "2026-11-21T12:44:23.795Z"
     },
     {
       "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
@@ -2342,7 +2262,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-20T20:55:02.951Z"
+      "newestAt": "2026-11-21T12:44:52.163Z"
     },
     {
       "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
@@ -2350,7 +2270,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-21T02:01:48.283Z"
+      "newestAt": "2026-11-21T12:45:06.599Z"
     },
     {
       "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
@@ -2358,7 +2278,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:46:23.795Z"
+      "newestAt": "2026-11-21T12:43:25.187Z"
     },
     {
       "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
@@ -2366,7 +2286,7 @@
       "tests": 16,
       "green": 16,
       "red": 0,
-      "newestAt": "2026-11-20T20:56:57.955Z"
+      "newestAt": "2026-11-21T12:44:58.939Z"
     },
     {
       "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
@@ -2374,15 +2294,15 @@
       "tests": 42,
       "green": 42,
       "red": 0,
-      "newestAt": "2026-11-21T00:19:16.656Z"
+      "newestAt": "2026-11-21T12:45:50.342Z"
     },
     {
       "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/app/desk/server/test/server.js",
-      "tests": 16,
-      "green": 16,
+      "tests": 15,
+      "green": 15,
       "red": 0,
-      "newestAt": "2026-11-21T00:47:26.352Z"
+      "newestAt": "2026-11-21T13:19:14.522Z"
     },
     {
       "script": "spirit/app/desk/server/server.js",
@@ -2390,7 +2310,7 @@
       "tests": 23,
       "green": 23,
       "red": 0,
-      "newestAt": "2026-11-21T02:01:49.490Z"
+      "newestAt": "2026-11-21T13:19:07.919Z"
     },
     {
       "script": "spirit/app/desk/server/server.js",
@@ -2398,7 +2318,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-21T00:31:57.303Z"
+      "newestAt": "2026-11-21T13:19:03.491Z"
     },
     {
       "script": "spirit/app/desk/server/server.js",
@@ -2406,215 +2326,15 @@
       "tests": 42,
       "green": 42,
       "red": 0,
-      "newestAt": "2026-11-21T00:19:18.736Z"
+      "newestAt": "2026-11-21T13:19:10.154Z"
     },
     {
       "script": "spirit/app/desk/server/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-21T00:34:05.027Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/app/deskClient/test/api.js",
-      "tests": 20,
-      "green": 18,
-      "red": 2,
-      "newestAt": "2026-11-21T01:14:27.651Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/app-child-browser.js",
-      "tests": 2,
-      "green": 2,
-      "red": 0,
-      "newestAt": "2026-11-21T01:36:25.355Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
-      "red": 0,
-      "newestAt": "2026-11-21T02:01:50.437Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/scriptClassify.js",
-      "tests": 1,
-      "green": 1,
-      "red": 0,
-      "newestAt": "2026-11-20T23:46:24.668Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/spirit-sibling-browser.js",
-      "tests": 7,
-      "green": 7,
-      "red": 0,
-      "newestAt": "2026-11-20T23:52:56.649Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 70,
-      "green": 65,
-      "red": 5,
-      "newestAt": "2026-11-21T02:11:06.211Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
-      "red": 0,
-      "newestAt": "2026-11-20T23:53:00.601Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/app/deskClient/test/data.js",
-      "tests": 8,
-      "green": 8,
-      "red": 0,
-      "newestAt": "2026-11-21T01:14:27.708Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/app-child-browser.js",
-      "tests": 2,
-      "green": 2,
-      "red": 0,
-      "newestAt": "2026-11-21T02:01:39.582Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
-      "red": 0,
-      "newestAt": "2026-11-21T02:01:51.401Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/scriptClassify.js",
-      "tests": 1,
-      "green": 1,
-      "red": 0,
-      "newestAt": "2026-11-20T23:46:25.155Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/spirit-sibling-browser.js",
-      "tests": 7,
-      "green": 7,
-      "red": 0,
-      "newestAt": "2026-11-20T20:57:00.911Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 68,
-      "green": 63,
-      "red": 5,
-      "newestAt": "2026-11-21T02:12:06.978Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
-      "red": 0,
-      "newestAt": "2026-11-20T21:05:10.658Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/app/deskClient/test/deskClient.js",
-      "tests": 6,
-      "green": 6,
-      "red": 0,
-      "newestAt": "2026-11-21T01:14:30.790Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
-      "red": 0,
-      "newestAt": "2026-11-21T02:01:52.338Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/job.js",
-      "tests": 1,
-      "green": 1,
-      "red": 0,
-      "newestAt": "2026-11-21T02:00:41.357Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/scriptClassify.js",
-      "tests": 1,
-      "green": 1,
-      "red": 0,
-      "newestAt": "2026-11-21T00:31:57.751Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 69,
-      "green": 64,
-      "red": 5,
-      "newestAt": "2026-11-21T02:13:07.308Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
-      "red": 0,
-      "newestAt": "2026-11-21T00:34:05.104Z"
-    },
-    {
-      "script": "spirit/app/deskClient/server/server.js",
-      "suite": "spirit/app/deskClient/server/test/server.js",
-      "tests": 61,
-      "green": 61,
-      "red": 0,
-      "newestAt": "2026-11-21T00:48:06.834Z"
-    },
-    {
-      "script": "spirit/app/deskClient/server/server.js",
-      "suite": "spirit/test/app-child-general.js",
-      "tests": 23,
-      "green": 23,
-      "red": 0,
-      "newestAt": "2026-11-21T02:01:53.570Z"
-    },
-    {
-      "script": "spirit/app/deskClient/server/server.js",
-      "suite": "spirit/test/scriptClassify.js",
-      "tests": 1,
-      "green": 1,
-      "red": 0,
-      "newestAt": "2026-11-21T00:31:58.179Z"
-    },
-    {
-      "script": "spirit/app/deskClient/server/server.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 42,
-      "green": 42,
-      "red": 0,
-      "newestAt": "2026-11-21T00:22:17.231Z"
-    },
-    {
-      "script": "spirit/app/deskClient/server/server.js",
-      "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
-      "red": 0,
-      "newestAt": "2026-11-21T00:34:05.188Z"
+      "newestAt": "2026-11-21T13:19:06.451Z"
     },
     {
       "script": "spirit/app/file/element.js",
@@ -2638,7 +2358,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T22:21:48.500Z"
+      "newestAt": "2026-11-21T09:16:28.163Z"
     },
     {
       "script": "spirit/app/file/element.js",
@@ -2686,7 +2406,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:34:51.141Z"
+      "newestAt": "2026-11-21T09:16:28.966Z"
     },
     {
       "script": "spirit/app/grants/element.js",
@@ -2722,11 +2442,19 @@
     },
     {
       "script": "spirit/app/icons/api.js",
+      "suite": "spirit/test/app-child-browser.js",
+      "tests": 2,
+      "green": 2,
+      "red": 0,
+      "newestAt": "2026-11-21T09:16:23.830Z"
+    },
+    {
+      "script": "spirit/app/icons/api.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 22,
       "green": 22,
       "red": 0,
-      "newestAt": "2026-11-20T23:34:52.236Z"
+      "newestAt": "2026-11-21T09:16:29.781Z"
     },
     {
       "script": "spirit/app/icons/api.js",
@@ -2770,11 +2498,19 @@
     },
     {
       "script": "spirit/app/icons/data.js",
+      "suite": "spirit/test/app-child-browser.js",
+      "tests": 2,
+      "green": 2,
+      "red": 0,
+      "newestAt": "2026-11-21T09:49:40.916Z"
+    },
+    {
+      "script": "spirit/app/icons/data.js",
       "suite": "spirit/test/app-child-general.js",
       "tests": 22,
       "green": 22,
       "red": 0,
-      "newestAt": "2026-11-20T23:34:53.236Z"
+      "newestAt": "2026-11-21T09:16:30.714Z"
     },
     {
       "script": "spirit/app/icons/data.js",
@@ -2830,7 +2566,7 @@
       "tests": 22,
       "green": 22,
       "red": 0,
-      "newestAt": "2026-11-20T23:34:54.281Z"
+      "newestAt": "2026-11-21T09:16:31.639Z"
     },
     {
       "script": "spirit/app/icons/element.js",
@@ -2870,7 +2606,7 @@
       "tests": 22,
       "green": 22,
       "red": 0,
-      "newestAt": "2026-11-20T23:34:55.329Z"
+      "newestAt": "2026-11-21T09:16:32.564Z"
     },
     {
       "script": "spirit/app/icons/icons.js",
@@ -2903,6 +2639,14 @@
       "green": 45,
       "red": 0,
       "newestAt": "2026-11-21T01:14:57.073Z"
+    },
+    {
+      "script": "spirit/app/icons/server/server.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 22,
+      "green": 22,
+      "red": 0,
+      "newestAt": "2026-11-21T09:16:33.800Z"
     },
     {
       "script": "spirit/app/icons/server/server.js",
@@ -2950,7 +2694,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:34:57.513Z"
+      "newestAt": "2026-11-21T09:16:34.743Z"
     },
     {
       "script": "spirit/app/info/element.js",
@@ -2998,7 +2742,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:34:58.478Z"
+      "newestAt": "2026-11-21T09:16:35.642Z"
     },
     {
       "script": "spirit/app/introSpector/element.js",
@@ -3046,7 +2790,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:34:59.493Z"
+      "newestAt": "2026-11-21T09:16:36.513Z"
     },
     {
       "script": "spirit/app/job/element.js",
@@ -3094,7 +2838,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:52:42.166Z"
+      "newestAt": "2026-11-21T09:49:44.264Z"
     },
     {
       "script": "spirit/app/join/element.js",
@@ -3142,7 +2886,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:52:43.575Z"
+      "newestAt": "2026-11-21T09:49:45.232Z"
     },
     {
       "script": "spirit/app/media/element.js",
@@ -3190,7 +2934,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:52:45.496Z"
+      "newestAt": "2026-11-21T09:49:46.182Z"
     },
     {
       "script": "spirit/app/monitor/element.js",
@@ -3230,7 +2974,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:52:46.860Z"
+      "newestAt": "2026-11-21T09:49:47.091Z"
     },
     {
       "script": "spirit/app/publishData/agentReadme.js",
@@ -3270,7 +3014,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:52:48.250Z"
+      "newestAt": "2026-11-21T09:49:48.179Z"
     },
     {
       "script": "spirit/app/publishData/measure.js",
@@ -3310,7 +3054,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:52:49.604Z"
+      "newestAt": "2026-11-21T09:49:48.980Z"
     },
     {
       "script": "spirit/app/publishData/publishData.js",
@@ -3350,7 +3094,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:56:59.131Z"
+      "newestAt": "2026-11-21T09:49:49.905Z"
     },
     {
       "script": "spirit/app/pullOrigin/pullOrigin.js",
@@ -3390,7 +3134,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:57:00.536Z"
+      "newestAt": "2026-11-21T09:49:51.030Z"
     },
     {
       "script": "spirit/app/pushOrigin/pushOrigin.js",
@@ -3438,7 +3182,7 @@
       "tests": 21,
       "green": 21,
       "red": 0,
-      "newestAt": "2026-11-20T23:57:01.955Z"
+      "newestAt": "2026-11-21T09:49:52.056Z"
     },
     {
       "script": "spirit/app/starter/element.js",
@@ -3498,11 +3242,19 @@
     },
     {
       "script": "spirit/app/testicle/api.js",
-      "suite": "spirit/test/app-child-general.js",
-      "tests": 22,
-      "green": 22,
+      "suite": "spirit/test/app-child-browser.js",
+      "tests": 2,
+      "green": 2,
       "red": 0,
-      "newestAt": "2026-11-20T23:57:03.404Z"
+      "newestAt": "2026-11-21T09:52:35.149Z"
+    },
+    {
+      "script": "spirit/app/testicle/api.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T09:49:53.018Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
@@ -3524,9 +3276,9 @@
       "script": "spirit/app/testicle/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 70,
-      "green": 65,
-      "red": 5,
-      "newestAt": "2026-11-21T02:14:07.847Z"
+      "green": 70,
+      "red": 0,
+      "newestAt": "2026-11-21T09:50:19.453Z"
     },
     {
       "script": "spirit/app/testicle/api.js",
@@ -3579,10 +3331,10 @@
     {
       "script": "spirit/app/testicle/data.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 22,
-      "green": 22,
+      "tests": 23,
+      "green": 23,
       "red": 0,
-      "newestAt": "2026-11-20T21:12:31.139Z"
+      "newestAt": "2026-11-21T09:52:37.982Z"
     },
     {
       "script": "spirit/app/testicle/data.js",
@@ -3604,9 +3356,9 @@
       "script": "spirit/app/testicle/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 68,
-      "green": 63,
-      "red": 5,
-      "newestAt": "2026-11-21T02:15:08.077Z"
+      "green": 68,
+      "red": 0,
+      "newestAt": "2026-11-21T09:50:21.916Z"
     },
     {
       "script": "spirit/app/testicle/data.js",
@@ -3651,10 +3403,10 @@
     {
       "script": "spirit/app/testicle/element.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 22,
-      "green": 22,
+      "tests": 23,
+      "green": 23,
       "red": 0,
-      "newestAt": "2026-11-20T23:57:04.878Z"
+      "newestAt": "2026-11-21T09:52:38.931Z"
     },
     {
       "script": "spirit/app/testicle/element.js",
@@ -3676,9 +3428,9 @@
       "script": "spirit/app/testicle/element.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 69,
-      "green": 64,
-      "red": 5,
-      "newestAt": "2026-11-21T02:16:08.653Z"
+      "green": 69,
+      "red": 0,
+      "newestAt": "2026-11-21T09:50:24.493Z"
     },
     {
       "script": "spirit/app/testicle/element/scriptDetail.js",
@@ -3715,10 +3467,10 @@
     {
       "script": "spirit/app/testicle/element/scriptDetail.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 22,
-      "green": 22,
+      "tests": 23,
+      "green": 23,
       "red": 0,
-      "newestAt": "2026-11-20T23:57:06.454Z"
+      "newestAt": "2026-11-21T09:52:40.066Z"
     },
     {
       "script": "spirit/app/testicle/element/scriptDetail.js",
@@ -3779,10 +3531,10 @@
     {
       "script": "spirit/app/testicle/element/search/suite.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 20,
-      "green": 20,
+      "tests": 23,
+      "green": 23,
       "red": 0,
-      "newestAt": "2026-11-20T23:57:08.060Z"
+      "newestAt": "2026-11-21T09:52:41.107Z"
     },
     {
       "script": "spirit/app/testicle/element/search/suite.js",
@@ -3842,6 +3594,14 @@
     },
     {
       "script": "spirit/app/testicle/element/search/suite/list.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T09:52:42.494Z"
+    },
+    {
+      "script": "spirit/app/testicle/element/search/suite/list.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -3895,6 +3655,14 @@
       "green": 2,
       "red": 0,
       "newestAt": "2026-11-20T20:55:08.809Z"
+    },
+    {
+      "script": "spirit/app/testicle/element/search/suite/row.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T09:52:44.008Z"
     },
     {
       "script": "spirit/app/testicle/element/search/suite/row.js",
@@ -3954,6 +3722,14 @@
     },
     {
       "script": "spirit/app/testicle/element/search/testicle.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T09:52:45.251Z"
+    },
+    {
+      "script": "spirit/app/testicle/element/search/testicle.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -4007,6 +3783,14 @@
       "green": 2,
       "red": 0,
       "newestAt": "2026-11-20T20:55:09.578Z"
+    },
+    {
+      "script": "spirit/app/testicle/element/search/testicle/detail.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T09:52:46.569Z"
     },
     {
       "script": "spirit/app/testicle/element/search/testicle/detail.js",
@@ -4066,6 +3850,14 @@
     },
     {
       "script": "spirit/app/testicle/element/search/testicle/list.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T10:19:46.323Z"
+    },
+    {
+      "script": "spirit/app/testicle/element/search/testicle/list.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -4122,6 +3914,14 @@
     },
     {
       "script": "spirit/app/testicle/element/search/testicle/row.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T10:19:47.644Z"
+    },
+    {
+      "script": "spirit/app/testicle/element/search/testicle/row.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -4175,6 +3975,14 @@
       "green": 2,
       "red": 0,
       "newestAt": "2026-11-20T20:55:10.700Z"
+    },
+    {
+      "script": "spirit/app/testicle/element/settingsPanel.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T10:19:48.925Z"
     },
     {
       "script": "spirit/app/testicle/element/settingsPanel.js",
@@ -4235,10 +4043,10 @@
     {
       "script": "spirit/app/testicle/element/statusBox.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 22,
-      "green": 22,
+      "tests": 23,
+      "green": 23,
       "red": 0,
-      "newestAt": "2026-11-20T21:12:31.911Z"
+      "newestAt": "2026-11-21T10:19:49.987Z"
     },
     {
       "script": "spirit/app/testicle/element/statusBox.js",
@@ -4346,6 +4154,14 @@
     },
     {
       "script": "spirit/app/testicle/testAll.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T10:19:51.264Z"
+    },
+    {
+      "script": "spirit/app/testicle/testAll.js",
       "suite": "spirit/test/scriptClassify.js",
       "tests": 1,
       "green": 1,
@@ -4356,9 +4172,9 @@
       "script": "spirit/app/testicle/testAll.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 69,
-      "green": 64,
-      "red": 5,
-      "newestAt": "2026-11-21T02:17:09.243Z"
+      "green": 69,
+      "red": 0,
+      "newestAt": "2026-11-21T09:50:27.070Z"
     },
     {
       "script": "spirit/app/testicle/testAll.js",
@@ -4395,10 +4211,10 @@
     {
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/test/app-child-general.js",
-      "tests": 22,
-      "green": 22,
+      "tests": 23,
+      "green": 23,
       "red": 0,
-      "newestAt": "2026-11-20T21:43:37.278Z"
+      "newestAt": "2026-11-21T10:19:52.269Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
@@ -4420,9 +4236,9 @@
       "script": "spirit/app/testicle/testicle.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 69,
-      "green": 64,
-      "red": 5,
-      "newestAt": "2026-11-21T02:18:09.461Z"
+      "green": 69,
+      "red": 0,
+      "newestAt": "2026-11-21T09:52:59.566Z"
     },
     {
       "script": "spirit/app/testicle/testicle.js",
@@ -4466,11 +4282,19 @@
     },
     {
       "script": "spirit/app/testicle/words.js",
-      "suite": "spirit/test/app-child-general.js",
-      "tests": 22,
-      "green": 22,
+      "suite": "spirit/test/app-child-browser.js",
+      "tests": 2,
+      "green": 2,
       "red": 0,
-      "newestAt": "2026-11-20T21:12:33.452Z"
+      "newestAt": "2026-11-21T10:19:43.947Z"
+    },
+    {
+      "script": "spirit/app/testicle/words.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 23,
+      "green": 23,
+      "red": 0,
+      "newestAt": "2026-11-21T10:19:53.287Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
@@ -4492,9 +4316,9 @@
       "script": "spirit/app/testicle/words.js",
       "suite": "spirit/test/spirit-sibling-general.js",
       "tests": 69,
-      "green": 64,
-      "red": 5,
-      "newestAt": "2026-11-21T02:19:10.766Z"
+      "green": 69,
+      "red": 0,
+      "newestAt": "2026-11-21T09:53:10.298Z"
     },
     {
       "script": "spirit/app/testicle/words.js",
@@ -4519,6 +4343,14 @@
       "green": 2,
       "red": 0,
       "newestAt": "2026-11-20T20:55:16.524Z"
+    },
+    {
+      "script": "spirit/app/text/element.js",
+      "suite": "spirit/test/app-child-general.js",
+      "tests": 21,
+      "green": 21,
+      "red": 0,
+      "newestAt": "2026-11-21T10:19:54.495Z"
     },
     {
       "script": "spirit/app/text/element.js",
@@ -4550,7 +4382,7 @@
       "tests": 20,
       "green": 20,
       "red": 0,
-      "newestAt": "2026-11-21T01:56:48.376Z"
+      "newestAt": "2026-11-21T10:23:48.761Z"
     },
     {
       "script": "spirit/appClient.js",
@@ -4558,7 +4390,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:46:41.066Z"
+      "newestAt": "2026-11-21T10:21:44.554Z"
     },
     {
       "script": "spirit/appClient.js",
@@ -4566,15 +4398,15 @@
       "tests": 42,
       "green": 42,
       "red": 0,
-      "newestAt": "2026-11-21T00:29:30.935Z"
+      "newestAt": "2026-11-21T10:21:51.985Z"
     },
     {
       "script": "spirit/appClient.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-20T21:05:13.380Z"
+      "newestAt": "2026-11-21T10:21:59.817Z"
     },
     {
       "script": "spirit/arrivals.js",
@@ -4950,7 +4782,7 @@
       "tests": 9,
       "green": 9,
       "red": 0,
-      "newestAt": "2026-11-20T22:10:08.488Z"
+      "newestAt": "2026-11-21T11:07:10.446Z"
     },
     {
       "script": "spirit/console.js",
@@ -4958,7 +4790,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:46:55.547Z"
+      "newestAt": "2026-11-21T11:06:56.531Z"
     },
     {
       "script": "spirit/console.js",
@@ -4966,23 +4798,23 @@
       "tests": 42,
       "green": 42,
       "red": 0,
-      "newestAt": "2026-11-21T00:31:36.297Z"
+      "newestAt": "2026-11-21T11:07:02.688Z"
     },
     {
       "script": "spirit/console.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-20T21:05:15.038Z"
+      "newestAt": "2026-11-21T11:06:59.839Z"
     },
     {
       "script": "spirit/console/command.js",
       "suite": "spirit/console/test/command.js",
-      "tests": 33,
-      "green": 33,
+      "tests": 49,
+      "green": 49,
       "red": 0,
-      "newestAt": "2026-11-20T23:58:38.900Z"
+      "newestAt": "2026-11-21T14:02:09.349Z"
     },
     {
       "script": "spirit/console/command.js",
@@ -4990,7 +4822,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-21T00:32:00.229Z"
+      "newestAt": "2026-11-21T14:01:15.000Z"
     },
     {
       "script": "spirit/console/command.js",
@@ -4998,15 +4830,15 @@
       "tests": 42,
       "green": 42,
       "red": 0,
-      "newestAt": "2026-11-21T00:31:39.804Z"
+      "newestAt": "2026-11-21T14:01:20.084Z"
     },
     {
       "script": "spirit/console/command.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-21T00:34:05.730Z"
+      "newestAt": "2026-11-21T14:01:17.781Z"
     },
     {
       "script": "spirit/console/loop.js",
@@ -5014,7 +4846,7 @@
       "tests": 17,
       "green": 17,
       "red": 0,
-      "newestAt": "2026-11-21T01:34:50.064Z"
+      "newestAt": "2026-11-21T14:02:23.353Z"
     },
     {
       "script": "spirit/console/loop.js",
@@ -5190,7 +5022,7 @@
       "tests": 92,
       "green": 92,
       "red": 0,
-      "newestAt": "2026-11-21T01:56:57.786Z"
+      "newestAt": "2026-11-21T12:45:18.663Z"
     },
     {
       "script": "spirit/data.js",
@@ -8595,10 +8427,10 @@
     {
       "script": "spirit/event/event.js",
       "suite": "spirit/event/test/event.js",
-      "tests": 12,
-      "green": 12,
+      "tests": 13,
+      "green": 13,
       "red": 0,
-      "newestAt": "2026-11-20T22:06:24.942Z"
+      "newestAt": "2026-11-21T10:23:36.632Z"
     },
     {
       "script": "spirit/event/event.js",
@@ -8606,7 +8438,7 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:47:33.149Z"
+      "newestAt": "2026-11-21T10:21:44.993Z"
     },
     {
       "script": "spirit/event/event.js",
@@ -8614,7 +8446,7 @@
       "tests": 65,
       "green": 65,
       "red": 0,
-      "newestAt": "2026-11-21T01:54:20.244Z"
+      "newestAt": "2026-11-21T10:21:54.356Z"
     },
     {
       "script": "spirit/event/event.js",
@@ -8622,7 +8454,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-20T21:05:16.793Z"
+      "newestAt": "2026-11-21T10:21:59.919Z"
     },
     {
       "script": "spirit/faceHome.js",
@@ -8630,7 +8462,7 @@
       "tests": 110,
       "green": 110,
       "red": 0,
-      "newestAt": "2026-11-21T01:58:19.194Z"
+      "newestAt": "2026-11-21T12:47:19.210Z"
     },
     {
       "script": "spirit/faceHome.js",
@@ -9299,10 +9131,10 @@
     {
       "script": "spirit/node/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 66,
-      "green": 66,
+      "tests": 67,
+      "green": 67,
       "red": 0,
-      "newestAt": "2026-11-21T02:19:34.156Z"
+      "newestAt": "2026-11-21T09:53:12.734Z"
     },
     {
       "script": "spirit/node/api.js",
@@ -9339,10 +9171,10 @@
     {
       "script": "spirit/node/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 64,
-      "green": 58,
-      "red": 6,
-      "newestAt": "2026-11-21T01:28:05.947Z"
+      "tests": 65,
+      "green": 65,
+      "red": 0,
+      "newestAt": "2026-11-21T09:53:15.735Z"
     },
     {
       "script": "spirit/node/data.js",
@@ -9539,10 +9371,10 @@
     {
       "script": "spirit/owner/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 65,
-      "green": 59,
-      "red": 6,
-      "newestAt": "2026-11-21T01:29:05.785Z"
+      "tests": 66,
+      "green": 66,
+      "red": 0,
+      "newestAt": "2026-11-21T10:20:12.443Z"
     },
     {
       "script": "spirit/owner/api.js",
@@ -9579,10 +9411,10 @@
     {
       "script": "spirit/owner/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 63,
-      "green": 57,
-      "red": 6,
-      "newestAt": "2026-11-21T01:30:06.107Z"
+      "tests": 64,
+      "green": 64,
+      "red": 0,
+      "newestAt": "2026-11-21T10:20:14.990Z"
     },
     {
       "script": "spirit/owner/data.js",
@@ -9691,10 +9523,10 @@
     {
       "script": "spirit/peer/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 65,
-      "green": 59,
-      "red": 6,
-      "newestAt": "2026-11-21T01:31:06.414Z"
+      "tests": 66,
+      "green": 66,
+      "red": 0,
+      "newestAt": "2026-11-21T10:20:17.663Z"
     },
     {
       "script": "spirit/peer/api.js",
@@ -9731,10 +9563,10 @@
     {
       "script": "spirit/peer/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 63,
-      "green": 57,
-      "red": 6,
-      "newestAt": "2026-11-21T01:32:08.473Z"
+      "tests": 64,
+      "green": 64,
+      "red": 0,
+      "newestAt": "2026-11-21T10:20:20.247Z"
     },
     {
       "script": "spirit/peer/data.js",
@@ -10067,10 +9899,10 @@
     {
       "script": "spirit/relay/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 66,
-      "green": 60,
-      "red": 6,
-      "newestAt": "2026-11-21T01:33:08.749Z"
+      "tests": 67,
+      "green": 67,
+      "red": 0,
+      "newestAt": "2026-11-21T10:23:16.963Z"
     },
     {
       "script": "spirit/relay/api.js",
@@ -10107,10 +9939,10 @@
     {
       "script": "spirit/relay/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 64,
-      "green": 58,
-      "red": 6,
-      "newestAt": "2026-11-21T01:34:18.679Z"
+      "tests": 65,
+      "green": 65,
+      "red": 0,
+      "newestAt": "2026-11-21T10:23:19.462Z"
     },
     {
       "script": "spirit/relay/data.js",
@@ -10171,10 +10003,10 @@
     {
       "script": "spirit/relayConfig.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "tests": 8,
-      "green": 8,
+      "tests": 42,
+      "green": 42,
       "red": 0,
-      "newestAt": "2026-11-21T01:34:21.277Z"
+      "newestAt": "2026-11-21T10:23:21.719Z"
     },
     {
       "script": "spirit/relayConfig.js",
@@ -10202,6 +10034,14 @@
     },
     {
       "script": "spirit/relayDump.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:23:23.846Z"
+    },
+    {
+      "script": "spirit/relayDump.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10223,6 +10063,14 @@
       "green": 1,
       "red": 0,
       "newestAt": "2026-11-20T23:47:51.940Z"
+    },
+    {
+      "script": "spirit/relayKeys.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:25:12.974Z"
     },
     {
       "script": "spirit/relayKeys.js",
@@ -10250,6 +10098,14 @@
     },
     {
       "script": "spirit/relayLimits.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:25:15.239Z"
+    },
+    {
+      "script": "spirit/relayLimits.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10262,7 +10118,7 @@
       "tests": 26,
       "green": 26,
       "red": 0,
-      "newestAt": "2026-11-21T01:58:28.342Z"
+      "newestAt": "2026-11-21T10:23:39.969Z"
     },
     {
       "script": "spirit/relayRequest.js",
@@ -10271,6 +10127,14 @@
       "green": 1,
       "red": 0,
       "newestAt": "2026-11-20T23:47:52.848Z"
+    },
+    {
+      "script": "spirit/relayRequest.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:25:17.583Z"
     },
     {
       "script": "spirit/relayRequest.js",
@@ -10298,6 +10162,14 @@
     },
     {
       "script": "spirit/relayStatus.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:25:19.791Z"
+    },
+    {
+      "script": "spirit/relayStatus.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10319,6 +10191,14 @@
       "green": 1,
       "red": 0,
       "newestAt": "2026-11-20T23:47:53.728Z"
+    },
+    {
+      "script": "spirit/relayStore.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:46:03.263Z"
     },
     {
       "script": "spirit/relayStore.js",
@@ -10346,6 +10226,14 @@
     },
     {
       "script": "spirit/relayUrl.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:46:05.815Z"
+    },
+    {
+      "script": "spirit/relayUrl.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10370,6 +10258,14 @@
     },
     {
       "script": "spirit/router.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:46:08.188Z"
+    },
+    {
+      "script": "spirit/router.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10391,6 +10287,14 @@
       "green": 19,
       "red": 0,
       "newestAt": "2026-11-20T22:17:44.605Z"
+    },
+    {
+      "script": "spirit/seal.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:46:10.562Z"
     },
     {
       "script": "spirit/seal.js",
@@ -10426,6 +10330,14 @@
     },
     {
       "script": "spirit/search/object.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:49:07.014Z"
+    },
+    {
+      "script": "spirit/search/object.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10458,6 +10370,14 @@
     },
     {
       "script": "spirit/search/string.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:49:09.328Z"
+    },
+    {
+      "script": "spirit/search/string.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10479,6 +10399,14 @@
       "green": 30,
       "red": 0,
       "newestAt": "2026-11-20T22:18:33.633Z"
+    },
+    {
+      "script": "spirit/seenPeers.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:49:11.815Z"
     },
     {
       "script": "spirit/seenPeers.js",
@@ -10506,6 +10434,14 @@
     },
     {
       "script": "spirit/sendMail.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:49:14.502Z"
+    },
+    {
+      "script": "spirit/sendMail.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10527,6 +10463,14 @@
       "green": 1,
       "red": 0,
       "newestAt": "2026-11-20T23:47:56.325Z"
+    },
+    {
+      "script": "spirit/sendMail/mailgun.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:51:22.534Z"
     },
     {
       "script": "spirit/sendMail/mailgun.js",
@@ -10554,6 +10498,14 @@
     },
     {
       "script": "spirit/server.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 41,
+      "green": 41,
+      "red": 0,
+      "newestAt": "2026-11-21T10:51:24.866Z"
+    },
+    {
+      "script": "spirit/server.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10566,7 +10518,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-21T01:36:19.821Z"
+      "newestAt": "2026-11-21T11:43:48.896Z"
     },
     {
       "script": "spirit/server/app.js",
@@ -10574,15 +10526,23 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:47:56.883Z"
+      "newestAt": "2026-11-21T11:43:07.027Z"
+    },
+    {
+      "script": "spirit/server/app.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T11:43:13.509Z"
     },
     {
       "script": "spirit/server/app.js",
       "suite": "spirit/test/spirit-sibling-node.js",
-      "tests": 2,
-      "green": 2,
+      "tests": 3,
+      "green": 3,
       "red": 0,
-      "newestAt": "2026-11-20T23:53:02.384Z"
+      "newestAt": "2026-11-21T11:43:10.502Z"
     },
     {
       "script": "spirit/server/node.js",
@@ -10590,7 +10550,7 @@
       "tests": 74,
       "green": 74,
       "red": 0,
-      "newestAt": "2026-11-21T01:55:53.363Z"
+      "newestAt": "2026-11-21T10:26:44.363Z"
     },
     {
       "script": "spirit/server/node.js",
@@ -10598,7 +10558,15 @@
       "tests": 1,
       "green": 1,
       "red": 0,
-      "newestAt": "2026-11-20T23:47:57.991Z"
+      "newestAt": "2026-11-21T10:21:46.527Z"
+    },
+    {
+      "script": "spirit/server/node.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T10:21:58.232Z"
     },
     {
       "script": "spirit/server/node.js",
@@ -10606,7 +10574,7 @@
       "tests": 2,
       "green": 2,
       "red": 0,
-      "newestAt": "2026-11-20T23:53:02.595Z"
+      "newestAt": "2026-11-21T10:22:00.442Z"
     },
     {
       "script": "spirit/server/relay.js",
@@ -10623,6 +10591,14 @@
       "green": 1,
       "red": 0,
       "newestAt": "2026-11-20T23:45:56.520Z"
+    },
+    {
+      "script": "spirit/server/relay.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 41,
+      "green": 41,
+      "red": 0,
+      "newestAt": "2026-11-21T10:51:28.867Z"
     },
     {
       "script": "spirit/server/relay.js",
@@ -10647,6 +10623,14 @@
       "green": 1,
       "red": 0,
       "newestAt": "2026-11-20T23:47:58.462Z"
+    },
+    {
+      "script": "spirit/server/serveCommon.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T11:43:57.558Z"
     },
     {
       "script": "spirit/server/serveCommon.js",
@@ -10681,6 +10665,14 @@
       "newestAt": "2026-11-20T21:01:02.509Z"
     },
     {
+      "script": "spirit/shell/boot.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 41,
+      "green": 41,
+      "red": 0,
+      "newestAt": "2026-11-21T11:43:59.972Z"
+    },
+    {
       "script": "spirit/shell/seal.js",
       "suite": "spirit/shell/test/seal.js",
       "tests": 10,
@@ -10703,6 +10695,14 @@
       "green": 7,
       "red": 0,
       "newestAt": "2026-11-20T21:01:03.000Z"
+    },
+    {
+      "script": "spirit/shell/seal.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 42,
+      "green": 42,
+      "red": 0,
+      "newestAt": "2026-11-21T11:44:02.337Z"
     },
     {
       "script": "spirit/shell/seal.js",
@@ -10730,6 +10730,14 @@
     },
     {
       "script": "spirit/spirit.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 43,
+      "green": 42,
+      "red": 1,
+      "newestAt": "2026-11-21T14:56:30.165Z"
+    },
+    {
+      "script": "spirit/spirit.js",
       "suite": "spirit/test/spirit-sibling-node.js",
       "tests": 2,
       "green": 2,
@@ -10751,6 +10759,14 @@
       "green": 1,
       "red": 0,
       "newestAt": "2026-11-20T23:48:00.155Z"
+    },
+    {
+      "script": "spirit/spiritErrors.js",
+      "suite": "spirit/test/spirit-sibling-general.js",
+      "tests": 31,
+      "green": 31,
+      "red": 0,
+      "newestAt": "2026-11-21T14:56:30.224Z"
     },
     {
       "script": "spirit/spiritErrors.js",
@@ -10791,6 +10807,30 @@
       "green": 18,
       "red": 0,
       "newestAt": "2026-11-20T22:21:03.182Z"
+    },
+    {
+      "script": "spirit/streamBundle.js",
+      "suite": "spirit/test/scriptClassify.js",
+      "tests": 1,
+      "green": 1,
+      "red": 0,
+      "newestAt": "2026-11-21T10:48:52.338Z"
+    },
+    {
+      "script": "spirit/streamBundle.js",
+      "suite": "spirit/test/spirit-sibling-node.js",
+      "tests": 2,
+      "green": 2,
+      "red": 0,
+      "newestAt": "2026-11-21T10:49:18.133Z"
+    },
+    {
+      "script": "spirit/streamBundle.js",
+      "suite": "spirit/test/streamBundle.js",
+      "tests": 14,
+      "green": 14,
+      "red": 0,
+      "newestAt": "2026-11-21T10:51:35.742Z"
     },
     {
       "script": "spirit/streamSink.js",
@@ -12825,403 +12865,74 @@
       "at": "2026-11-21T00:47:08.226Z"
     },
     {
-      "script": "spirit/app/chat/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
+      "script": "spirit/app/desk/api.js",
+      "suite": "spirit/app/desk/test/api.js",
+      "title": "none of the 27 verbs the desk cut is declared",
       "severity": 0.4,
-      "at": "2026-11-21T02:03:01.339Z"
-    },
-    {
-      "script": "spirit/app/chat/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:03:01.291Z"
-    },
-    {
-      "script": "spirit/app/chat/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:03:01.315Z"
-    },
-    {
-      "script": "spirit/app/chat/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:03:01.266Z"
-    },
-    {
-      "script": "spirit/app/chat/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:03:01.238Z"
+      "at": "2026-11-21T12:44:24.496Z"
     },
     {
       "script": "spirit/app/desk/api.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
+      "title": "each verb of its api.js has its <verb>.json, each .json a verb, with the same arguments and rules",
       "severity": 0.4,
-      "at": "2026-11-21T02:04:01.938Z"
-    },
-    {
-      "script": "spirit/app/desk/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:04:01.892Z"
-    },
-    {
-      "script": "spirit/app/desk/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:04:01.917Z"
-    },
-    {
-      "script": "spirit/app/desk/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:04:01.867Z"
-    },
-    {
-      "script": "spirit/app/desk/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:04:01.835Z"
+      "at": "2026-11-21T14:56:13.726Z"
     },
     {
       "script": "spirit/app/desk/cacheRules.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
+      "title": "each verb of its api.js has its <verb>.json, each .json a verb, with the same arguments and rules",
       "severity": 0.4,
-      "at": "2026-11-21T02:05:02.567Z"
-    },
-    {
-      "script": "spirit/app/desk/cacheRules.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:05:02.518Z"
-    },
-    {
-      "script": "spirit/app/desk/cacheRules.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:05:02.543Z"
-    },
-    {
-      "script": "spirit/app/desk/cacheRules.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:05:02.493Z"
-    },
-    {
-      "script": "spirit/app/desk/cacheRules.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:05:02.461Z"
+      "at": "2026-11-21T14:56:23.755Z"
     },
     {
       "script": "spirit/app/desk/data.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
+      "title": "each verb of its api.js has its <verb>.json, each .json a verb, with the same arguments and rules",
       "severity": 0.4,
-      "at": "2026-11-21T02:06:03.100Z"
-    },
-    {
-      "script": "spirit/app/desk/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:06:03.054Z"
-    },
-    {
-      "script": "spirit/app/desk/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:06:03.079Z"
-    },
-    {
-      "script": "spirit/app/desk/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:06:03.028Z"
-    },
-    {
-      "script": "spirit/app/desk/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:06:03.000Z"
+      "at": "2026-11-21T14:56:26.392Z"
     },
     {
       "script": "spirit/app/desk/desk.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
+      "suite": "spirit/app/desk/test/desk.js",
+      "title": "a line \"The plainest rule\" is published with to the, its first word lowercased, checked against nothing",
       "severity": 0.4,
-      "at": "2026-11-21T02:07:03.688Z"
+      "at": "2026-11-21T13:16:02.822Z"
     },
     {
       "script": "spirit/app/desk/desk.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
+      "suite": "spirit/app/desk/test/desk.js",
+      "title": "a line \"all: your thoughts?\" is published with to all",
       "severity": 0.4,
-      "at": "2026-11-21T02:07:03.644Z"
+      "at": "2026-11-21T13:16:02.581Z"
     },
     {
       "script": "spirit/app/desk/desk.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
+      "suite": "spirit/app/desk/test/desk.js",
+      "title": "a line \"cw (a) leaves it clean\", its word followed by a space, is published with to cw",
       "severity": 0.4,
-      "at": "2026-11-21T02:07:03.667Z"
+      "at": "2026-11-21T13:16:02.700Z"
     },
     {
       "script": "spirit/app/desk/desk.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
+      "suite": "spirit/app/desk/test/desk.js",
+      "title": "a line \"wsl, look here\" is published with to wsl, to his pages and to a subscriber",
       "severity": 0.4,
-      "at": "2026-11-21T02:07:03.621Z"
+      "at": "2026-11-21T13:16:02.468Z"
     },
     {
-      "script": "spirit/app/desk/desk.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:07:03.593Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:08:04.095Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:08:04.055Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:08:04.076Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:08:04.033Z"
-    },
-    {
-      "script": "spirit/app/desk/deskAgentEar.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:08:04.011Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:09:04.339Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:09:04.292Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:09:04.316Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:09:04.273Z"
-    },
-    {
-      "script": "spirit/app/desk/deskLoop.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:09:04.249Z"
-    },
-    {
-      "script": "spirit/app/desk/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:10:04.921Z"
-    },
-    {
-      "script": "spirit/app/desk/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:10:04.877Z"
-    },
-    {
-      "script": "spirit/app/desk/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:10:04.899Z"
-    },
-    {
-      "script": "spirit/app/desk/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:10:04.851Z"
-    },
-    {
-      "script": "spirit/app/desk/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:10:04.827Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/app/deskClient/test/api.js",
-      "title": "deskClient serves with a stream, so appServer adds its listener",
+      "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
+      "suite": "spirit/app/desk/element/deskDetails/test/deskDetails.js",
+      "title": "Close on a goal with an item open asks \"are you sure? 1 open\" on the first press and closes on the second",
       "severity": 0.2,
-      "at": "2026-11-21T01:14:21.926Z"
+      "at": "2026-11-21T12:43:27.866Z"
     },
     {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/app/deskClient/test/api.js",
-      "title": "each verb is a handler of deskClient.js, or appServer's listener, since deskClient follows the desk's stream",
+      "script": "spirit/app/desk/element/deskDetails/deskDetails.js",
+      "suite": "spirit/app/desk/element/deskDetails/test/deskDetails.js",
+      "title": "Waive is an arming button that says \"Waive: sure?\" on the first press and sends desk.press waive on the second",
       "severity": 0.2,
-      "at": "2026-11-21T01:14:21.873Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:11:05.256Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:11:05.210Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:11:05.235Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:11:05.186Z"
-    },
-    {
-      "script": "spirit/app/deskClient/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:11:05.163Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:12:06.003Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:12:05.957Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:12:05.979Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:12:05.933Z"
-    },
-    {
-      "script": "spirit/app/deskClient/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:12:05.902Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:13:06.301Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:13:06.250Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:13:06.278Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:13:06.221Z"
-    },
-    {
-      "script": "spirit/app/deskClient/deskClient.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:13:06.197Z"
+      "at": "2026-11-21T12:43:27.705Z"
     },
     {
       "script": "spirit/app/icons/icons.js",
@@ -13243,76 +12954,6 @@
       "title": "testState.json's test and red counts match testicle's current rows, and every red names its script, suite and test",
       "severity": 0.2,
       "at": "2026-11-21T01:14:15.486Z"
-    },
-    {
-      "script": "spirit/app/testicle/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:14:06.789Z"
-    },
-    {
-      "script": "spirit/app/testicle/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:14:06.744Z"
-    },
-    {
-      "script": "spirit/app/testicle/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:14:06.767Z"
-    },
-    {
-      "script": "spirit/app/testicle/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:14:06.719Z"
-    },
-    {
-      "script": "spirit/app/testicle/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:14:06.692Z"
-    },
-    {
-      "script": "spirit/app/testicle/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:15:07.119Z"
-    },
-    {
-      "script": "spirit/app/testicle/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:15:07.075Z"
-    },
-    {
-      "script": "spirit/app/testicle/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:15:07.096Z"
-    },
-    {
-      "script": "spirit/app/testicle/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:15:07.055Z"
-    },
-    {
-      "script": "spirit/app/testicle/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:15:07.029Z"
     },
     {
       "script": "spirit/app/testicle/element.js",
@@ -13369,41 +13010,6 @@
       "title": "while the suite runs, the permanent testicle search tab shows iota's tests by itself",
       "severity": 0.2,
       "at": "2026-11-21T00:37:15.519Z"
-    },
-    {
-      "script": "spirit/app/testicle/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:16:07.632Z"
-    },
-    {
-      "script": "spirit/app/testicle/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:16:07.585Z"
-    },
-    {
-      "script": "spirit/app/testicle/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:16:07.609Z"
-    },
-    {
-      "script": "spirit/app/testicle/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:16:07.560Z"
-    },
-    {
-      "script": "spirit/app/testicle/element.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:16:07.533Z"
     },
     {
       "script": "spirit/app/testicle/element/search/testicle.js",
@@ -13707,111 +13313,6 @@
       "at": "2026-11-21T01:16:50.388Z"
     },
     {
-      "script": "spirit/app/testicle/testAll.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:17:08.257Z"
-    },
-    {
-      "script": "spirit/app/testicle/testAll.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:17:08.211Z"
-    },
-    {
-      "script": "spirit/app/testicle/testAll.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:17:08.234Z"
-    },
-    {
-      "script": "spirit/app/testicle/testAll.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:17:08.188Z"
-    },
-    {
-      "script": "spirit/app/testicle/testAll.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:17:08.161Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:18:08.558Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:18:08.514Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:18:08.537Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:18:08.492Z"
-    },
-    {
-      "script": "spirit/app/testicle/testicle.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:18:08.464Z"
-    },
-    {
-      "script": "spirit/app/testicle/words.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T02:19:09.248Z"
-    },
-    {
-      "script": "spirit/app/testicle/words.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:19:09.204Z"
-    },
-    {
-      "script": "spirit/app/testicle/words.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T02:19:09.227Z"
-    },
-    {
-      "script": "spirit/app/testicle/words.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T02:19:09.182Z"
-    },
-    {
-      "script": "spirit/app/testicle/words.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T02:19:09.161Z"
-    },
-    {
       "script": "spirit/element/nodeInfo.js",
       "suite": "spirit/element/test/nodeInfo.js",
       "title": "the face form offers one relays with with a faceable mark",
@@ -13840,298 +13341,11 @@
       "at": "2026-11-20T22:04:09.210Z"
     },
     {
-      "script": "spirit/node/data.js",
+      "script": "spirit/spirit.js",
       "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
+      "title": "each input field it makes is handed to fieldInput.attach with the spirit.type of its field",
       "severity": 0.4,
-      "at": "2026-11-21T01:28:04.451Z"
-    },
-    {
-      "script": "spirit/node/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:28:04.265Z"
-    },
-    {
-      "script": "spirit/node/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T01:28:04.391Z"
-    },
-    {
-      "script": "spirit/node/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:28:04.203Z"
-    },
-    {
-      "script": "spirit/node/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T01:28:04.131Z"
-    },
-    {
-      "script": "spirit/node/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the shell downloads its data.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:28:04.539Z"
-    },
-    {
-      "script": "spirit/owner/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T01:29:04.568Z"
-    },
-    {
-      "script": "spirit/owner/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:29:04.446Z"
-    },
-    {
-      "script": "spirit/owner/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T01:29:04.504Z"
-    },
-    {
-      "script": "spirit/owner/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:29:04.390Z"
-    },
-    {
-      "script": "spirit/owner/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T01:29:04.306Z"
-    },
-    {
-      "script": "spirit/owner/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the shell downloads its data.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:29:04.625Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T01:30:05.060Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:30:04.965Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T01:30:05.011Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:30:04.900Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T01:30:04.836Z"
-    },
-    {
-      "script": "spirit/owner/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the shell downloads its data.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:30:05.101Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T01:31:05.251Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:31:05.149Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T01:31:05.201Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:31:05.094Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T01:31:05.039Z"
-    },
-    {
-      "script": "spirit/peer/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the shell downloads its data.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:31:05.292Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T01:32:07.357Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:32:07.283Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T01:32:07.315Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:32:07.252Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T01:32:07.199Z"
-    },
-    {
-      "script": "spirit/peer/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the shell downloads its data.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:32:07.393Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T01:33:07.545Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:33:07.470Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T01:33:07.502Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:33:07.438Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T01:33:07.398Z"
-    },
-    {
-      "script": "spirit/relay/api.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the shell downloads its data.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:33:07.597Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code",
-      "severity": 0.4,
-      "at": "2026-11-21T01:34:17.694Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "it serves exactly the verbs of its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:34:17.607Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "its branch carries no FS set",
-      "severity": 0.4,
-      "at": "2026-11-21T01:34:17.658Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the interface the node serves is its api.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:34:17.557Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the node's api tree holds its branch",
-      "severity": 0.4,
-      "at": "2026-11-21T01:34:17.503Z"
-    },
-    {
-      "script": "spirit/relay/data.js",
-      "suite": "spirit/test/spirit-sibling-general.js",
-      "title": "the shell downloads its data.js",
-      "severity": 0.4,
-      "at": "2026-11-21T01:34:17.733Z"
+      "at": "2026-11-21T14:56:28.878Z"
     }
   ]
 }

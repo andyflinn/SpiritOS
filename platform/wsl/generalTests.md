@@ -5,10 +5,10 @@
 - `spirit/app/testicle/test/testicle-sibling-node.js`: 6 production files, 18 green, 0 red
 - `spirit/element/test/search-child-browser.js`: 45 production files, 157 green, 0 red
 - `spirit/element/test/search-child-general.js`: 45 production files, 721 green, 0 red
-- `spirit/test/app-child-browser.js`: 53 production files, 119 green, 0 red
-- `spirit/test/app-child-general.js`: 78 production files, 1754 green, 0 red
-- `spirit/test/spirit-sibling-browser.js`: 218 production files, 2875 green, 0 red
-- `spirit/test/spirit-sibling-general.js`: 241 production files, 11394 green, 127 red
-- `spirit/test/spirit-sibling-node.js`: 194 production files, 395 green, 0 red
+- `spirit/test/app-child-browser.js`: 55 production files, 123 green, 0 red
+- `spirit/test/app-child-general.js`: 82 production files, 1867 green, 0 red
+- `spirit/test/spirit-sibling-browser.js`: 216 production files, 2858 green, 0 red
+- `spirit/test/spirit-sibling-general.js`: 258 production files, 12123 green, 4 red
+- `spirit/test/spirit-sibling-node.js`: 189 production files, 391 green, 0 red
 - `spirit/test/test/spirit-sibling-general.js`: 1 production files, 19 green, 0 red
 - `spirit/type/test/boolean-sibling-general.js`: 45 production files, 285 green, 0 red
