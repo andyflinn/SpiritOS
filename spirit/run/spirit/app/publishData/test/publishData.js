@@ -375,10 +375,14 @@ test.run('Architecture is node.js\'s (x64, arm64)', 0.2, function () {
 }, test.limit.quick);
 // "## Summary", its four lines in the box's order, and nothing else: "no raw numbers".
 let SUM = null;
-test.run('the README\'s "## Summary" comes after the machine, with four bullets', 0.2, function () {
+// goal/G48.5, Andy: "in that document's \"Summary\" section, we can list add the following 3 bullets": seven bullets since, or
+// five when nothing is red, the two leader lines left out (cw, as built: "With nothing red, the two leader lines are left out").
+const issuesIn = function (b) { const m = /^- The product tree, right now, has (\d[\d,]*) outstanding issues in the test database\.$/.exec(b || ''); return m ? Number(m[1].replace(/,/g, '')) : null; };
+test.run('the README\'s "## Summary" comes after the machine, with seven bullets, five when nothing is red', 0.2, function () {
   if (!RL.length) return false;
   SUM = bulletsUnder('## Summary');
-  return (!!SUM && RL.indexOf('## Summary') > RL.indexOf('## The Machine the Measurements come from') && SUM.length === 4) || false;
+  const n = SUM ? issuesIn(SUM[4]) : null;
+  return (!!SUM && RL.indexOf('## Summary') > RL.indexOf('## The Machine the Measurements come from') && n !== null && SUM.length === (n > 0 ? 7 : 5)) || false;
 }, test.limit.quick);
 // "computed by the relay's own rule": no more than the relay allows in 512 MB with nothing of it at rest, in seats.
 test.run('the first summary bullet gives how many users a relay holds live streams for in 512 MB, within the relay\'s own rule', 0.2, function () {
@@ -402,6 +406,29 @@ test.run('the fourth summary bullet gives a card request\'s time through a relay
   if (!SUM) return false;
   const m = /^- A card request through a relay takes ([\d.]+) ms, the slowest ([\d.]+) ms; sealing and signing take ([\d.]+) ms of it\.$/.exec(SUM[3] || '');
   return (!!m && Number(m[1]) > 0 && Number(m[1]) <= Number(m[2]) && Number(m[3]) > 0 && Number(m[3]) <= Number(m[1])) || false;
+}, test.limit.quick);
+// THE OUTSTANDING ISSUES (goal/G48.5; Andy: "The product tree, right now, has <number> outstanding issues in the test
+// database.", "The leading module responsible for that count is <full-module-name>.", "The leading test suite contributing to the
+// error count is <full-suite-name>."): the module and the suite named by their full paths, each a file the tree holds.
+const tracked = function (rel) { return /^spirit\/[\w./-]+\.js$/.test(rel) && fs.existsSync(path.join(RUN, rel)); };
+test.run('the fifth Summary bullet is "The product tree, right now, has <number> outstanding issues in the test database."', 0.4, function () {
+  if (!SUM) return false;
+  return /^- The product tree, right now, has \d[\d,]* outstanding issues in the test database\.$/.test(SUM[4] || '') || false;
+}, test.limit.quick);
+// Andy: "fix my bullets to also reflect the errors contributed by the leading script and suite": each leader with its own count.
+test.run('the sixth Summary bullet names the leading module, a script of the tree, with its count of the issues', 0.4, function () {
+  if (!SUM) return false;
+  if (issuesIn(SUM[4]) === 0) return SUM.length === 5 || false;
+  const m = /^- The leading module responsible for that count is (\S+), with (\d[\d,]*) of them\.$/.exec(SUM[5] || '');
+  const n = m ? Number(m[2].replace(/,/g, '')) : 0;
+  return (!!m && tracked(m[1]) && n > 0 && n <= issuesIn(SUM[4])) || false;
+}, test.limit.quick);
+test.run('the seventh Summary bullet names the leading test suite, a suite of the tree, with its count of the issues', 0.4, function () {
+  if (!SUM) return false;
+  if (issuesIn(SUM[4]) === 0) return SUM.length === 5 || false;
+  const m = /^- The leading test suite contributing to the error count is (\S+), with (\d[\d,]*) of them\.$/.exec(SUM[6] || '');
+  const n = m ? Number(m[2].replace(/,/g, '')) : 0;
+  return (!!m && tracked(m[1]) && /(^|\/)test\//.test(m[1]) && n > 0 && n <= issuesIn(SUM[4])) || false;
 }, test.limit.quick);
 // "no raw numbers: no iteration of a measurement is published, only these lines": no file it wrote holds a list of 100
 // numbers or more.
