@@ -297,3 +297,29 @@ test.after(function () {
   try { if (L.page && L.page.profile) fs.rmSync(L.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (L.node && L.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(L.node); } catch (e) { /* left */ }
 });
+
+// REFRESHED WHEN IT BECOMES VISIBLE (goal/G48.5; Andy: "there's something that the codeMirror element does when it is
+// activated. and it makes the text display properly aligned inside the codeMirror box. It should do the same thing when it
+// becomes visible."). What CodeMirror does when activated is refresh(), its measure and redraw. The page's two ways of being told
+// a box is shown, IntersectionObserver and ResizeObserver, stand in the world as recorders; a view made in a hidden box is then
+// told its box shows, by whichever it watches with, and CodeMirror is refreshed once more.
+test.run('a view made in a hidden box is refreshed again when its box becomes visible', 0.4, async function () {
+  if (!S.E) return false;
+  const watched = [];
+  const Recorder = function (kind) { return function (fn) { const o = { kind: kind, fn: fn, targets: [], observe: function (t) { o.targets.push(t); }, unobserve: function () {}, disconnect: function () {} }; watched.push(o); return o; }; };
+  S.win.IntersectionObserver = Recorder('intersection');
+  S.win.ResizeObserver = Recorder('resize');
+  const host = { id: 'host-hidden', offsetWidth: 0, offsetHeight: 0, getClientRects: function () { return []; } };
+  await S.E.create(host, { mode: 'read', text: 'one\ntwo', path: 'shown.md' });
+  await settle();
+  const cm = S.w.made[S.w.made.length - 1];
+  const before = cm ? cm.refreshed : 0;
+  host.offsetWidth = 400; host.offsetHeight = 200; host.getClientRects = function () { return [{ width: 400, height: 200 }]; };
+  watched.forEach(function (o) {
+    const entry = { target: o.targets[0] || host, isIntersecting: true, intersectionRatio: 1, contentRect: { width: 400, height: 200 } };
+    try { o.fn([entry], o); } catch (e) { /* a recorder the element does not use */ }
+  });
+  await settle();
+  delete S.win.IntersectionObserver; delete S.win.ResizeObserver;
+  return (!!cm && watched.length > 0 && cm.refreshed > before) || false;
+}, test.limit.quick);
