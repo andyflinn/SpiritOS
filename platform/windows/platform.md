@@ -1,6 +1,6 @@
 # windows
 
-**Measured 2026-11-19, against `2ed635eba`.**
+**Measured 2026-11-21, against `f1fd9378a`.**
 
 | | |
 |---|---|

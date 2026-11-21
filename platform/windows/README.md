@@ -1,6 +1,6 @@
 # Info and Measurements on windows
 
-Measurements were taken on **Thursday, November 19, 2026** for repository commit **2ed635eba**
+Measurements were taken on **Saturday, November 21, 2026** for repository commit **f1fd9378a**
 
 ## The Machine the Measurements come from
 
@@ -13,10 +13,13 @@ Measurements were taken on **Thursday, November 19, 2026** for repository commit
 
 ## Summary
 
-- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for 2,355 simultaneously.
-- A SpiritOS node at rest uses 85 MB of RAM.
-- A call to a node on its own machine answers in 15.1 ms, the slowest in 18.2 ms.
-- A card request through a relay takes 79.2 ms, the slowest 309.7 ms; sealing and signing take 1.6 ms of it.
+- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for 2,353 simultaneously.
+- A SpiritOS node at rest uses 87 MB of RAM.
+- A call to a node on its own machine answers in 15.2 ms, the slowest in 17.3 ms.
+- A card request through a relay takes 77.5 ms, the slowest 435.3 ms; sealing and signing take 1.6 ms of it.
+- The product tree, right now, has 35 outstanding issues in the test database.
+- The leading module responsible for that count is spirit/job.js, with 13 of them.
+- The leading test suite contributing to the error count is spirit/test/job.js, with 13 of them.
 
 ## Details
 

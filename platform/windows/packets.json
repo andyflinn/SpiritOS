@@ -1,16 +1,16 @@
 {
   "platform": "windows",
-  "commit": "2ed635eba",
-  "measuredAt": "2026-11-19T01:16:20.078Z",
+  "commit": "f1fd9378a",
+  "measuredAt": "2026-11-21T02:02:12.764Z",
   "asks": 20,
-  "posts": 1,
+  "posts": 0,
   "waitMs": {
-    "median": 23,
-    "max": 23
+    "median": 0,
+    "max": 0
   },
   "flight": {
-    "median": 167,
-    "max": 167
+    "median": 0,
+    "max": 0
   },
   "retried": 0,
   "refusals": {}
