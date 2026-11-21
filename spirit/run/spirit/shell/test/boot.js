@@ -17,7 +17,7 @@ function code(p) { const t = read(p); return t == null ? null : t.replace(/\/\*[
 
 // THE SERVERS' PAGE TABLE, LOADED BEFORE THE FIRST CHECK: testReport loads spirit.js for its record with the global
 // hidden, so a module that needs the spirit global (serveCommon.js) is required while it still stands.
-const pages = require(path.join(RUN, 'spirit', 'serveCommon.js'));
+const pages = require(path.join(RUN, 'spirit', 'server', 'serveCommon.js'));
 
 // boot.js: the face's boot. One test.run per test (goal/G47.2).
 

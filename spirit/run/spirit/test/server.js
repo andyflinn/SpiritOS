@@ -84,7 +84,13 @@ const OLD_FILES = ['spirit/' + 'appServer.js', 'spirit/' + 'relayServer.js', 'sp
 test.run('no tracked file names an old path: none of the three moved core files, none of the four node<Name>.js', 0.4, function () {
   const REPO = path.resolve(RUN, '..', '..');
   const hits = OLD_PATHS.filter(function (p) { try { execL('git', ['grep', '-l', '-F', p], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }); return true; } catch (e) { return false; } });
-  return !hits.length || false;
+  // Written in pieces too (cw: "the old-path check should also catch the pieces form, 'spirit', 'serveCommon.js'"; boot.js's test
+  // stalled Andy's Ubuntu testicle so): an old file built from the run root, RUN, 'spirit', '<old>.js'.
+  const q = "'";
+  const pieces = new RegExp('RUN, ' + q + 'spirit' + q + ', ' + q + '(' + ['app' + 'Server', 'relay' + 'Server', 'serve' + 'Common'].join('|') + ')\\.js' + q);
+  let built = '';
+  try { built = execL('git', ['grep', '-n', '-E', pieces.source], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { built = ''; }
+  return (!hits.length && !built.trim()) || false;
 }, test.limit.slow);
 test.run('no file stands at an old path: neither the three core files nor the four node<Name>.js', 0.4, function () {
   return !OLD_FILES.some(function (f) { return fs.existsSync(path.join(RUN, f)); }) || false;

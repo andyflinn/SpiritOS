@@ -482,7 +482,7 @@ const C = {};
 function cachesRead() {
   if (C.tracked) return;
   C.spiritJs = cacheCode(path.join(RUN, 'spirit', 'spirit.js'));
-  C.appServer = cacheCode(path.join(RUN, 'spirit', 'appServer.js'));
+  C.appServer = cacheCode(path.join(RUN, 'spirit', 'server', 'app.js'));
   // NOBODY ADDS A FAMILY PAST THE RULES (goal/G43.32; Andy: "make sure nobody can add an app implementing a family, without
   // adhering to the rules, this means that a test outside of each branch must assert this."): the tree is every file git
   // keeps and every file not yet added that git does not ignore, so a new app's family is judged before it is committed.

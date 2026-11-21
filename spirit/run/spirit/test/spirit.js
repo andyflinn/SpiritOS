@@ -223,7 +223,7 @@ function page() {
         return Promise.resolve({ status: status, text: function () { return Promise.resolve(typeof out === 'string' ? out : JSON.stringify(out)); } });
       }
       // The node's addresses, each served from its file (goal/G43.18, Q25: serveCommon.pageFile).
-      const file = path.join(RUN, require(path.join(RUN, 'spirit', 'serveCommon.js')).pageFile(String(url).replace(/^\/+/, '')));
+      const file = path.join(RUN, require(path.join(RUN, 'spirit', 'server', 'serveCommon.js')).pageFile(String(url).replace(/^\/+/, '')));
       const there = fs.existsSync(file);
       return Promise.resolve({ status: there ? 200 : 404, headers: { get: function () { return ''; } }, arrayBuffer: function () { return Promise.resolve(there ? new Uint8Array(fs.readFileSync(file)).buffer : new ArrayBuffer(0)); } });
     },
@@ -545,12 +545,12 @@ test.run('the node serves face.html byte for byte as it is on disk', 0.2, async 
   const served = await new Promise(function (resolve) {
     const chunks = [];
     const res = { writeHead: function () {}, setHeader: function () {}, end: function (b) { if (b) chunks.push(Buffer.from(b)); resolve(Buffer.concat(chunks)); } };
-    try { require(path.join(RUN, 'spirit', 'serveCommon.js')).sendFile(res, path.join(RUN, 'spirit', 'shell', 'face.html')); } catch (e) { resolve(Buffer.alloc(0)); }
+    try { require(path.join(RUN, 'spirit', 'server', 'serveCommon.js')).sendFile(res, path.join(RUN, 'spirit', 'shell', 'face.html')); } catch (e) { resolve(Buffer.alloc(0)); }
   });
   return served.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'))) || false;
 }, test.limit.quick);
 test.run('no server pastes spirit.js into a page, and serveCommon.inlineSpirit is gone from the node and the relay', 0.2, function () {
-  const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'serveCommon.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'spirit', 'relayServer.js'), 'utf8');
+  const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'serveCommon.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'spirit', 'server', 'relay.js'), 'utf8');
   return !/inlineSpirit/.test(serverSrc) || false;
 }, test.limit.quick);
 test.run('on the home node\'s page spirit.js gets shell/boot.js alone and runs it, spirit.booted answering; the seal waits for a face', 0.2, async function () {
@@ -558,7 +558,7 @@ test.run('on the home node\'s page spirit.js gets shell/boot.js alone and runs i
   const faceWindow = T.faceWindow = {
     fetch: function (url) {
       // The node's addresses, each served from its file (goal/G43.18, Q25: serveCommon.pageFile).
-      const file = path.join(RUN, require(path.join(RUN, 'spirit', 'serveCommon.js')).pageFile(String(url).replace(/^\/+/, '')));
+      const file = path.join(RUN, require(path.join(RUN, 'spirit', 'server', 'serveCommon.js')).pageFile(String(url).replace(/^\/+/, '')));
       const there = fs.existsSync(file);
       return Promise.resolve({ status: there ? 200 : 404, headers: { get: function () { return ''; } }, arrayBuffer: function () { return Promise.resolve(there ? new Uint8Array(fs.readFileSync(file)).buffer : new ArrayBuffer(0)); } });
     },

@@ -32,7 +32,7 @@ function scratch() {
   const dir = path.join(run, 'spirit', 'app', NAME);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, NAME + '.json'), JSON.stringify({ identity: { icon: '🧪', label: NAME, intrinsic: false }, mount: { [NAME + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }));
-  fs.writeFileSync(path.join(dir, NAME + '.js'), "'use strict';\nif (typeof window === 'undefined') {\n  require('../../spirit.js');\n  const n = " + SIZE + ";\n  require('../../appServer.js').serve({ big: { request: {}, reply: {}, handler: function () { return { text: Array.from({ length: n }, function (x, i) { return String.fromCharCode(97 + (i % 26)); }).join('') }; } } }, {});\n}\n");
+  fs.writeFileSync(path.join(dir, NAME + '.js'), "'use strict';\nif (typeof window === 'undefined') {\n  require('../../spirit.js');\n  const n = " + SIZE + ";\n  require('../../server/app.js').serve({ big: { request: {}, reply: {}, handler: function () { return { text: Array.from({ length: n }, function (x, i) { return String.fromCharCode(97 + (i % 26)); }).join('') }; } } }, {});\n}\n");
   fs.writeFileSync(path.join(dir, 'api.js'), 'module.exports = { verbs: { big: {} } };\n');
   const state = path.join(run, 'spirit', 'state', NAME);
   fs.mkdirSync(state, { recursive: true });
@@ -151,7 +151,7 @@ if (process.platform === 'linux') {
   test.run('the permanent zzbig runs as spirit/server/app.js with its path', 0.2, function () {
     if (noNode()) return false;
     const perm = runsOf(W.s.root, NAME).map(cmdOf).filter(Boolean);
-    return (perm.length === 1 && /spirit[\\/]appServer\.js\s/.test(perm[0]) && perm[0].indexOf(path.join('spirit', 'app', NAME, NAME + '.js')) > perm[0].indexOf('appServer.js')) || false;
+    return (perm.length === 1 && /spirit[\\/]server\.js\s+--app\s/.test(perm[0]) && perm[0].indexOf(path.join('spirit', 'app', NAME, NAME + '.js')) > perm[0].indexOf('--app')) || false;
   }, test.limit.quick);
   test.run('a call that breaks icons\'s api.js, with op 42 instead of an id, is refused 400', 0.2, async function () {
     if (noNode()) return false;
@@ -184,6 +184,6 @@ if (process.platform === 'linux') {
   test.run('the run started for that call is spirit/server/app.js with icons\'s path', 0.2, function () {
     if (!W.oneShot) return false;
     const seenCmd = W.oneShot.seenCmd;
-    return (seenCmd.length >= 1 && seenCmd.every(function (c) { return /spirit[\\/]appServer\.js\s/.test(c); })) || false;
+    return (seenCmd.length >= 1 && seenCmd.every(function (c) { return /spirit[\\/]server\.js\s+--app\s/.test(c); })) || false;
   }, test.limit.quick);
 }

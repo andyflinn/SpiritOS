@@ -64,8 +64,8 @@ test.run('api.js names exactly testicle\'s verbs, no more and no fewer', 0.2, fu
 // subscribe and unsubscribe are appServer's streamPublisher, which testicle.js asks for by its publisher.
 test.run('each verb is a handler of testicle.js, or of appServer\'s streamPublisher, which testicle.js asks for', 0.2, function () {
   if (!W.api) return false;
-  const own = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'testicle.js'), 'utf8');
-  const app = fs.readFileSync(path.join(RUN, 'spirit', 'appServer.js'), 'utf8');
+  const own = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'server', 'server.js'), 'utf8');
+  const app = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'app.js'), 'utf8');
   if (!/\n {2}publisher:\s*\{/.test(own)) return false;
   const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
   const unserved = W.names.filter(function (v) {
@@ -76,7 +76,7 @@ test.run('each verb is a handler of testicle.js, or of appServer\'s streamPublis
 }, test.limit.quick);
 test.run('testicle.js serves no verb that api.js does not list', 0.2, function () {
   if (!W.api) return false;
-  const own = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'testicle.js'), 'utf8');
+  const own = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'server', 'server.js'), 'utf8');
   const served = []; const re = /\n {2}'?([a-zA-Z.]+)'?:\s*\{\s*\n\s*request:/g; let m;
   while ((m = re.exec(own))) served.push(m[1]);
   const unlisted = served.filter(function (v) { return W.names.indexOf(v) === -1; });
