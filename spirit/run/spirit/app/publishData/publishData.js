@@ -186,11 +186,21 @@ function writeSuiteDocs(out, report) {
 // platform/<platform>/README.md, written by agentReadme.js (goal/G47.1, box v170): the title, the measured-on line, the
 // machine, Summary (its figures measure.js's, on lab nodes and a lab relay) and Details, testState.md first.
 const README = spirit.require('spirit/app/publishData/agentReadme.js');
-function writeIndex(out, platform, commit, measured) {
+// THE REDS AND THEIR TWO LEADERS (goal/G48.5, Andy: "in that document's \"Summary\" section, we can list add the following 3
+// bullets": the outstanding issues, "the leading module responsible for that count", "the leading test suite contributing
+// to the error count"): from the test state's reds, the script and the suite holding the most, the more severe first on a tie.
+function leaderOf(reds, key) {
+  const by = Object.create(null);
+  reds.forEach(function (r) { const b = by[r[key]] || (by[r[key]] = { name: r[key], count: 0, worst: 0 }); b.count += 1; if (r.severity > b.worst) b.worst = r.severity; });
+  return Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.count - a.count || b.worst - a.worst || (a.name < b.name ? -1 : 1); })[0] || null;
+}
+function writeIndex(out, platform, commit, measured, state) {
   const members = (README.summaryOf({ relayAtRestRss: measured.relayAtRestRss }) || {}).members || 0;
+  const reds = (state && state.reds) || [];
   README.write(out, platform, {
     at: new Date(), commit: commit,
-    summary: { members: members, nodeAtRestMB: measured.nodeAtRestMB, loop: measured.loop, relayed: measured.relayed },
+    summary: { members: members, nodeAtRestMB: measured.nodeAtRestMB, loop: measured.loop, relayed: measured.relayed,
+      issues: state ? { count: reds.length, module: leaderOf(reds, 'script'), suite: leaderOf(reds, 'suite') } : null },
     details: [{ label: 'The test state', file: 'testState.md' }].concat(SUITE_DOCS),
   });
 }
@@ -262,16 +272,17 @@ async function main() {
   }
   // 3. THE TEST STATE, from this node's testicle.db (goal/G47.1: "publish Data uses testicle data.").
   await step(2, 'reading the test state from testicle');
+  let state = null;
   try {
-    const rep = writeTestState(out, platform, commit);
-    say('testState: ' + rep.tests + ' tests, ' + rep.red + ' red');
+    state = writeTestState(out, platform, commit);
+    say('testState: ' + state.tests + ' tests, ' + state.red + ' red');
   } catch (e) { say('testState not written: ' + ((e && e.message) || e)); }
   // 4. THE SUMMARY'S FIGURES, on lab nodes and a lab relay (measure.js), then the README.
   await step(3, 'measuring on lab nodes');
   let measured = null;
   try { measured = await spirit.require('spirit/app/publishData/measure.js').measure(say); }
   catch (e) { end(1, 'publishData: the measurements failed: ' + ((e && e.message) || e)); }
-  writeIndex(out, platform, commit, measured);
+  writeIndex(out, platform, commit, measured, state);
   say('packets: ' + packets.posts + ' posts, wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms, ' + packets.retried + ' retried');
 
   // 5. COMMIT AND SAY SO, unless this was only a look.

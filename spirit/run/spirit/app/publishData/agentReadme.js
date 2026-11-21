@@ -71,6 +71,17 @@ function machineOf() {
 // "<Weekday>, <Month> <day-number-in-month>, <four-digit-year>", the day of the run on this machine.
 function dayOf(at) { return at.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
 
+// THE OUTSTANDING ISSUES, THREE BULLETS OF THE SUMMARY (goal/G48.5, Andy: "The product tree, right now, has <number>
+// outstanding issues in the test database.", "The leading module responsible for that count is <full-module-name>.", "The
+// leading test suite contributing to the error count is <full-suite-name>."): from issues { count, module, suite }, each
+// leader { name, count } or null; none when publishData read no test state; the two leaders left out when nothing is red.
+function issuesOf(issues) {
+  if (!issues) return [];
+  const out = ['- The product tree, right now, has ' + n(issues.count) + ' outstanding issues in the test database.'];
+  if (issues.module) out.push('- The leading module responsible for that count is ' + issues.module.name + '.');
+  if (issues.suite) out.push('- The leading test suite contributing to the error count is ' + issues.suite.name + '.');
+  return out;
+}
 function write(out, platform, facts) {
   const f = facts || {};
   const m = f.machine || machineOf();
@@ -90,9 +101,9 @@ function write(out, platform, facts) {
     '- A SpiritOS node at rest uses ' + n(s.nodeAtRestMB) + ' MB of RAM.',
     '- A call to a node on its own machine answers in ' + ms(s.loop && s.loop.median) + ' ms, the slowest in ' + ms(s.loop && s.loop.max) + ' ms.',
     '- A card request through a relay takes ' + ms(s.relayed && s.relayed.median) + ' ms, the slowest ' + ms(s.relayed && s.relayed.max) +
-      ' ms; sealing and signing take ' + ms(s.relayed && s.relayed.crypto) + ' ms of it.', '',
-    '## Details', '',
-  ].concat((f.details || []).map(function (d) { return '- [' + d.label + '](' + d.file + ')'; })).concat(['']);
+      ' ms; sealing and signing take ' + ms(s.relayed && s.relayed.crypto) + ' ms of it.',
+  ].concat(issuesOf(s.issues)).concat(['', '## Details', ''])
+    .concat((f.details || []).map(function (d) { return '- [' + d.label + '](' + d.file + ')'; })).concat(['']);
   fs.writeFileSync(path.join(out, 'README.md'), lines.join('\n'));
 }
 
