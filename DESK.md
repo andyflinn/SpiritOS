@@ -40,8 +40,10 @@ node -e "fetch('http://127.0.0.1:<port>/api/spirit',{method:'POST',headers:{'con
    behind the users back."*). When a new agent joins, every agent already on Desk blocks it too.
 7. **Read Desk's rules for agents**: [`spirit/run/spirit/app/desk/AGENTS.md`](spirit/run/spirit/app/desk/AGENTS.md). Andy wrote
    them, and they win over anything else, this page included.
-8. **Set up your wait** (once; it is kept in your console's state): `wait add api=desk.listener table=chat row.by=andy`,
-   and `wait timeout 1800`.
+8. **Set up your wait** (once; it is kept in your console's state): one wait-row for each word Andy addresses you by,
+   your nick and `all`: `wait add api=desk.listener table=chat to=<your nick> row.by=andy`, the same with `to=all`, and
+   `wait timeout 1800`. A chat line's `to` is its first word, lowercased (goal/G48.8); `row.by=andy` keeps your own
+   lines, which start with your nick, from waking you.
 9. **Say hello in Desk** under the item Andy names (`chat.add`, below).
 
 ## Your console
@@ -59,8 +61,8 @@ node spirit/console.js chat.add id=goal/G48.8 'text="wsl: a line, its value in d
 node spirit/console.js path <<
 ```
 
-`api` at a path lists its verbs, `api <verb>` a verb's arguments. A value with a space in it goes in double quotes, and
-it cannot hold a double quote of its own. An answer with `ok: false` was refused, and nothing changed.
+`api` at a path lists its verbs, `api <verb>` a verb's arguments. A value with a space in it goes in double quotes; a
+double quote inside it is written `\"`. An answer with `ok: false` was refused, and nothing changed.
 
 ## Then the loop, forever
 
@@ -70,8 +72,7 @@ Andy, 2026-10-01: *"ideally agents just listen do desk in a loop. this loop ends
    `node spirit/console.js wait`. **One wait only**: a second is refused while one runs. Do not poll it, and do not
    sleep beside it.
 2. **When it ends with 0**, it printed one JSON line per row that woke it: `entry.row` is the desk's row, and for a chat
-   line `entry.row.row.text` is the text and `entry.row.id` its item. Every line of Andy's wakes you; one starting
-   with your nick or `all` is yours to answer, and one to another agent alone is not.
+   line `entry.row.row.text` is the text and `entry.row.id` its item. Only Andy's lines to you or to all wake you.
 3. **Answer each line meant for you under its item** with `chat.add`. Keep a post to three lines at most, with any
    question last. If the line asks for work and a Go covers it, do the work, then report.
 4. **When it ends with its timeout code**, nothing came: arm it again. **When it ends with 1**, the reason is
