@@ -20,6 +20,7 @@
   ['spirit', 
     'api', 
     'app', 
+    'chat',
     'console',
     'contact',
     'data',
