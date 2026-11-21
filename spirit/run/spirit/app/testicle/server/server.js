@@ -983,6 +983,8 @@ function apply(changed, P) {
   // changes"): every file row and every suite row it touched, as they then stand.
   const files = new Set();
   const written = new Map();
+  // The test rows this write retires, streamed once it stands.
+  const retired = [];
   // A write that owes a class (the classifier changed) wakes the runner too, with no suite row written.
   let wake = false;
   // Whether each row was there before this write, so its publish says added or updated (deleted, by its own flag).
@@ -1073,6 +1075,15 @@ function apply(changed, P) {
     });
     if (shaped) Q.redRows.all().forEach(function (r) { if (isGeneral(r.suite) && there(r.script) && there(r.suite)) suiteUp(r.script, r.suite); });
     if (shaped) dropStale();
+    // A SUITE THAT NO LONGER EXISTS, WITH ALL ITS TEST RESULTS (goal/G47.1, box v95, 5: "prune suites that no longer exist
+    // (mark as deleted, and not show them again), including all their test results"): every current test row of a suite row
+    // now deleted is current no more, so no search shows it. IN THE SAME WRITE AS THE DELETE (goal/G48.5): retired after the
+    // commit, a node stopped between the two kept a deleted script's reds current, counted and shown, for good.
+    written.forEach(function (p) {
+      const r = Q.suiteRow.get(p[0], p[1]);
+      if (!r || !r.deleted) return;
+      T.ofSuite.all(p[0], p[1]).forEach(function (t) { T.retire.run(t.id); retired.push(t.id); });
+    });
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
@@ -1080,17 +1091,7 @@ function apply(changed, P) {
   }
   files.forEach(function (file) { const r = Q.script.get(file); if (r) tell('script', served(r), r.deleted ? 'deleted' : had['script|' + file] ? 'updated' : 'added'); });
   written.forEach(function (p) { const r = Q.suiteRow.get(p[0], p[1]); if (r) tell('suite', suiteServed(r), r.deleted ? 'deleted' : had['suite|' + p[0] + '|' + p[1]] ? 'updated' : 'added'); });
-  // A SUITE THAT NO LONGER EXISTS, WITH ALL ITS TEST RESULTS (goal/G47.1, box v95, 5: "prune suites that no longer exist
-  // (mark as deleted, and not show them again), including all their test results"): every current test row of a suite row
-  // now deleted is current no more, so no search shows it; each one streamed.
-  written.forEach(function (p) {
-    const r = Q.suiteRow.get(p[0], p[1]);
-    if (!r || !r.deleted) return;
-    T.ofSuite.all(p[0], p[1]).forEach(function (t) {
-      T.retire.run(t.id);
-      tell('testicle', testServed(T.row.get(t.id)), 'updated');
-    });
-  });
+  retired.forEach(function (id) { tell('testicle', testServed(T.row.get(id)), 'updated'); });
   // Whatever wrote it, a file change, a script.get or a testicle.set, a flag written wakes the runner (wsl's gap).
   if (written.size || wake) soon();
 }
@@ -1241,6 +1242,9 @@ db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (br
   names.forEach(function (n) { pending.add(n); });
   // Dependency rows of files already gone before this start (goal/G47.1, the reconciliation): no change event names them.
   dropStale();
+  // TEST ROWS OF A SUITE ROW ALREADY DELETED ARE CURRENT NO MORE (goal/G48.5; box v95, 5): a node stopped between the
+  // delete and the retire, before the two shared one write, left a deleted script's reds current; each start retires them.
+  db.prepare('UPDATE testicle SET current = 0 WHERE current = 1 AND EXISTS (SELECT 1 FROM suite s WHERE s.script = testicle.script AND s.suite = testicle.suite AND s.deleted = 1)').run();
   kick();
 }());
 // Rows already flagged at the start: the runner starts 1 second after the server starts.
