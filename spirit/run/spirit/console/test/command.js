@@ -277,3 +277,109 @@ test.run('the command history rolls at 256: after 300 more lines it holds 256, t
   const h = history();
   return (!!h && h.length === 256 && h[h.length - 2] === 'path node' && at() === '') || false;
 }, test.limit.long);
+
+// ── THE WAIT (goal/G48.6) ──────────────────────────────────────────────────────────────────────────────────────────────
+// The box: "an array of wait events will be maintained in spirit/state/console/node.json", with "wait", "wait add
+// <event-description>" and "wait remove <event-description-string>"; "wait reads node.db's log on its own node ... through
+// the log's one reader, arrivals in spirit/trafficLog.js"; "arrivals hands delivered inbound rows only, so the agent's own
+// outgoing calls ... never wake a wait"; "a stream's delivery to a server's listener carries a bundle ... each of its entries
+// is matched on its own"; "wait add api=<branch>.<verb> <field>=<value> ..."; the read-pointer: "a wake reads every row past
+// it once", "the first wait starts at the newest row"; the commands: "it blocks until a wait-row matches or the configured
+// timeout passes. A match prints its rows, one JSON line each with its wait-row, and ends 0; a timeout prints that nothing
+// came and ends with a code of its own; with no wait-row configured it is refused and ends 1", "one wait at a time per node",
+// "wait list shows the configured wait-rows", "wait timeout <seconds> sets the timeout".
+// What arrives is written into the scratch node's log by the log's own writer (trafficLog's note), each payload an envelope
+// made by the node's packet encoder, as a peer's call lands; no app of the tree is named, the branch is a made-up zzwait.
+const packetCodec = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
+let nodeLog = null;
+const arrive = function (body, dir) {
+  if (!nodeLog) nodeLog = require(path.join(RUN, 'spirit', 'trafficLog.js')).createTrafficLog({ rootDir: W.node.run });
+  const e = packetCodec.encode('api', body);
+  return nodeLog.note({ dir: dir || 'in', kind: 'request', peer: 'KEY-ZZWAITPEER', hash: e.envelope.id, outcome: 'delivered', payload: e.text });
+};
+const PING = 'api=zzwait.ping x=1';
+const LISTEN = 'api=zzwait.listener by=andy';
+const TIMEOUT_S = 3;
+// A wait started now, its end awaited later; what arrives meanwhile is written after a second.
+const waitWith = async function (whileWaiting) {
+  const p = run(['wait']);
+  if (whileWaiting) { await H.sleep(1000); whileWaiting(); }
+  return p;
+};
+const timedOut = function (p) { return p.ended && p.code !== 0 && p.code !== 1 && p.code !== null && String(p.out).trim() !== ''; };
+const woke = function (p, row) {
+  if (!(p.ended && p.code === 0)) return false;
+  return String(p.out).split('\n').some(function (l) { try { JSON.parse(l); } catch (e) { return false; } return l.indexOf(row) !== -1; });
+};
+test.run('wait with no wait-row configured is refused and ends 1', 0.4, async function () {
+  if (!up()) return false;
+  await go('path <<');
+  const p = await go('wait');
+  // Refused as a wait with nothing to wait on, not as a command the console does not know.
+  return (p.ended && p.code === 1 && p.out.indexOf('no-such-command') === -1) || false;
+}, test.limit.slow);
+test.run('wait add api=zzwait.ping x=1 is then shown by wait list', 0.4, async function () {
+  if (!up()) return false;
+  await go('wait add ' + PING);
+  const p = await go('wait list');
+  return (p.ended && p.out.indexOf(PING) !== -1) || false;
+}, test.limit.slow);
+test.run('the first wait starts at the newest row: a match that came before it does not wake it, and it times out', 0.4, async function () {
+  if (!up()) return false;
+  await go('wait timeout ' + TIMEOUT_S);
+  arrive({ zzwait: { ping: { x: 1 } } });
+  const t0 = Date.now();
+  const p = await waitWith();
+  W.waitMs = Date.now() - t0;
+  return timedOut(p) || false;
+}, test.limit.slow);
+test.run('wait timeout 3 ends a wait with nothing coming after about 3 s, with a code of its own', 0.4, function () {
+  return (typeof W.waitMs === 'number' && W.waitMs >= TIMEOUT_S * 1000 && W.waitMs < TIMEOUT_S * 1000 + 15000) || false;
+}, test.limit.quick);
+test.run('a delivered call matching api=zzwait.ping x=1 wakes the wait: one JSON line naming its wait-row, and it ends 0', 0.4, async function () {
+  if (!up()) return false;
+  const p = await waitWith(function () { arrive({ zzwait: { ping: { x: 1 } } }); });
+  return woke(p, PING) || false;
+}, test.limit.slow);
+test.run('the row one wait read does not wake the next', 0.4, async function () {
+  if (!up()) return false;
+  return timedOut(await waitWith()) || false;
+}, test.limit.slow);
+test.run('a delivered call of zzwait.ping with x=2 does not wake it', 0.4, async function () {
+  if (!up()) return false;
+  return timedOut(await waitWith(function () { arrive({ zzwait: { ping: { x: 2 } } }); })) || false;
+}, test.limit.slow);
+test.run('an outgoing call of zzwait.ping with x=1 does not wake it', 0.4, async function () {
+  if (!up()) return false;
+  return timedOut(await waitWith(function () { arrive({ zzwait: { ping: { x: 1 } } }, 'out'); })) || false;
+}, test.limit.slow);
+test.run('a match that came while no wait ran wakes the next wait', 0.4, async function () {
+  if (!up()) return false;
+  arrive({ zzwait: { ping: { x: 1 } } });
+  return woke(await waitWith(), PING) || false;
+}, test.limit.slow);
+const bundle = function (bys) { return JSON.stringify(bys.map(function (by, i) { return { run: 'zzrun', n: i + 1, row: { by: by, text: 'line ' + (i + 1) } }; })); };
+test.run('a listener\'s bundle is matched on each entry\'s row: api=zzwait.listener by=andy wakes on a bundle holding one', 0.4, async function () {
+  if (!up()) return false;
+  await go('wait add ' + LISTEN);
+  return woke(await waitWith(function () { arrive({ zzwait: { listener: { json: bundle(['bob', 'andy', 'bob']) } } }); }), LISTEN) || false;
+}, test.limit.slow);
+test.run('a bundle whose entries are all by bob does not wake api=zzwait.listener by=andy', 0.4, async function () {
+  if (!up()) return false;
+  return timedOut(await waitWith(function () { arrive({ zzwait: { listener: { json: bundle(['bob', 'bob']) } } }); })) || false;
+}, test.limit.slow);
+test.run('one wait at a time: a second wait while one runs is refused and ends 1', 0.4, async function () {
+  if (!up()) return false;
+  const first = run(['wait']);
+  await H.sleep(1000);
+  const second = await go('wait');
+  const one = await first;
+  // The first a real wait, ended by its timeout; the second refused as a second wait, not as an unknown command.
+  return (timedOut(one) && second.ended && second.code === 1 && second.out.indexOf('no-such-command') === -1) || false;
+}, test.limit.slow);
+test.run('wait remove takes the stored string out of wait list', 0.4, async function () {
+  if (!up()) return false;
+  await go('wait remove ' + PING);
+  const p = await go('wait list');
+  return (p.ended && p.out.indexOf(PING) === -1 && p.out.indexOf(LISTEN) !== -1) || false;
+}, test.limit.slow);

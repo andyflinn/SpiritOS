@@ -33,3 +33,26 @@ naming its id and `api` its verbs; at spirit.app.agent.test, no api.js, a JSON e
 `setDescription description="said in four words"` stores those four words, `debug debug={"on":...}` turns the debug flag; at
 spirit.auth `bundle op=get id=<n>` finds the bundle `bundle op=add` made, and an unknown id is the node's refusal as a JSON
 error; at spirit.contact `search keep=true` answers its items; after 300 more lines the history holds 256, the newest last.
+
+## The wait (goal/G48.6)
+
+The box: an array of wait events in spirit/state/console/node.json, with `wait`, `wait add <event-description>` and `wait
+remove <event-description-string>`; wait reads node.db's log through its one reader, trafficLog's arrivals, which hands
+delivered inbound rows only; a listener's bundle is matched entry by entry; `wait add api=<branch>.<verb> <field>=<value>`;
+the first wait starts at the newest row, and a wake reads every row past the pointer once; a match prints one JSON line per
+row with its wait-row and ends 0, a timeout prints that nothing came and ends with a code of its own, no wait-row configured
+is refused and ends 1; one wait at a time; `wait list`; `wait timeout <seconds>`.
+
+What arrives is written into the scratch node's log by the log's own writer (trafficLog's note), each payload an envelope made
+by the node's packet encoder, as a peer's call lands. The branch is a made-up zzwait; no app of the tree is named.
+
+- `wait` with no wait-row is refused and ends 1, and not as an unknown command;
+- `wait add api=zzwait.ping x=1` is then shown by `wait list`;
+- with `wait timeout 3`, a match that came before the first wait does not wake it, and it times out after about 3 s with a
+  code that is neither 0 nor 1, printing something;
+- a delivered `zzwait.ping {x: 1}` arriving while it waits wakes it: a JSON line naming `api=zzwait.ping x=1`, and it ends 0;
+- the row one wait read does not wake the next; `x: 2` does not wake it; an outgoing `zzwait.ping {x: 1}` does not wake it;
+- a match that came while no wait ran wakes the next wait;
+- `api=zzwait.listener by=andy` wakes on a listener bundle holding an entry by andy, and not on one whose entries are all by bob;
+- a second wait while one runs is refused and ends 1, not as an unknown command, and the first ends by its timeout;
+- `wait remove api=zzwait.ping x=1` takes it out of `wait list`, and the other stays.
