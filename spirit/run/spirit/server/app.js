@@ -943,7 +943,7 @@ function refreshRemote() {
 // EVERY SERVER HAS A listener, AN AUTO-VERB (goal/G47.5; Andy: "the listener must be an auto-verb of
 // spirit/server/app.js!"; box v12: "the replies and reply stream data ... also published to its own faces"): one that
 // follows no stream of its own (the desk) is given siblingListener below, which takes the chosen sibling's deliveries
-// alone, in client mode, and hands each row to this node's pages. On a switch the sibling is granted <server>.listener
+// alone, in client mode, keeps it in its cache (siblingKeep, below) and hands each row to this node's pages. On a switch the sibling is granted <server>.listener
 // and asked to subscribe this server. A server that follows a stream uses its own (heard, above).
 const siblingListener = {
   request: { json: '' }, reply: { heard: true },
@@ -956,8 +956,10 @@ const siblingListener = {
       if (!isPlain(e)) return;
       // The place it got to in the sibling's stream, handed back at the next subscribe (below).
       if (typeof e.run === 'string' && Number.isInteger(e.n)) { sibling.run = e.run; sibling.n = e.n; }
+      siblingKeep(e);
       if (isPlain(e.row)) { try { spirit.event.publish(e.row); } catch (err) { /* no page listens */ } }
     });
+    siblingSaveSoon();
     return { heard: true };
   },
 };
@@ -968,7 +970,66 @@ const siblingListener = {
 // SIBLING_RETRY_MS. That covers the sibling down for a while, this node down, and the sibling dropping it as away.
 const SIBLING_RETRY_MS = 15000;
 const SIBLING_EVERY_MS = 60000;
-const sibling = { key: '', run: '', n: 0, timer: null };
+const sibling = { key: '', run: '', n: 0, timer: null, rows: [], pushing: null, saving: null };
+// IN CLIENT MODE THE SIBLING'S ROWS ARE CACHED AS THEY ARE NOW (goal/G47.5, box v12: "the replies and reply stream data
+// are cached as they are now, but also published to its own faces"; Andy, from goal/G48.6: "it was ALWAYS obvious the me
+// that a spirit/server/app.js in client mode automatically caches the servers's state the way it always did", "go fix
+// 47.5 now!"). The sibling listener built in cecde22dc only handed rows to the pages; now it keeps them as a following
+// server keeps its sender's: the same file, spirit/state/<name>/cache/<node id>.json, { key, family, run, n, rows }, the
+// rows placed by the family's own keep and shed past CACHE_LIMIT, a full push landing whole on what was kept. Read back
+// at start, before the first subscribe, so a restart hands the sibling its place and is sent only what it missed.
+function siblingFile(key) { return path.join(RUN_ROOT, 'spirit', 'state', remote.name, 'cache', dataSet().nodeId(key) + '.json'); }
+function siblingRules() {
+  const api = familyApi(remote.name);
+  return api && api.cache && typeof api.cache === 'object' ? api.cache : null;
+}
+function siblingPlace(rows, row) {
+  const rules = siblingRules();
+  let placed = rows.concat([row]);
+  try { if (rules && typeof rules.keep === 'function') placed = rules.keep(rows, row); } catch (e) { placed = rows.concat([row]); }
+  if (!Array.isArray(placed)) placed = rows.concat([row]);
+  const bytes = bytesFor({ key: sibling.key, family: remote.name });
+  if (bytes(placed) <= CACHE_LIMIT) return placed;
+  let left = placed;
+  try { left = rules && typeof rules.shed === 'function' ? rules.shed(placed, CACHE_LIMIT, bytes) : shedOldest(placed, CACHE_LIMIT, bytes); } catch (e) { left = shedOldest(placed, CACHE_LIMIT, bytes); }
+  return Array.isArray(left) ? left : shedOldest(placed, CACHE_LIMIT, bytes);
+}
+// One entry of a delivery: a full push gathers until its end, then lands on what was kept; any other row is kept now.
+function siblingKeep(e) {
+  if (e.full === true && !sibling.pushing) sibling.pushing = [];
+  if (e.end === true) {
+    const fresh = sibling.pushing || [];
+    sibling.pushing = null;
+    fresh.forEach(function (row) { sibling.rows = siblingPlace(sibling.rows, row); });
+    return;
+  }
+  if (!isPlain(e.row)) return;
+  if (e.full === true) sibling.pushing.push(e.row);
+  else sibling.rows = siblingPlace(sibling.rows, e.row);
+}
+function siblingSaveSoon() {
+  if (!sibling.key || sibling.saving) return;
+  sibling.saving = setTimeout(function () {
+    sibling.saving = null;
+    try {
+      const file = siblingFile(sibling.key);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file + '.tmp', JSON.stringify({ key: sibling.key, family: remote.name, run: sibling.run, n: sibling.n, rows: sibling.rows }));
+      fs.renameSync(file + '.tmp', file);
+    } catch (err) { /* the next delivery saves again */ }
+  }, CACHE_SAVE_MS);
+}
+function siblingRestore() {
+  const key = remote.current;
+  if (!key) return;
+  let kept = null;
+  try { kept = JSON.parse(fs.readFileSync(siblingFile(key), 'utf8')); } catch (e) { kept = null; }
+  sibling.key = key; sibling.run = ''; sibling.n = 0; sibling.rows = []; sibling.pushing = null;
+  if (!isPlain(kept) || kept.key !== key || !Array.isArray(kept.rows)) return;
+  sibling.run = typeof kept.run === 'string' ? kept.run : '';
+  sibling.n = Number.isInteger(kept.n) && kept.n >= 0 ? kept.n : 0;
+  sibling.rows = kept.rows.filter(isPlain);
+}
 function siblingAgain(taken) {
   if (sibling.timer) clearTimeout(sibling.timer);
   sibling.timer = null;
@@ -980,7 +1041,8 @@ function listenToSibling() {
   const s = remote.server;
   if (!s || !clientMode()) return Promise.resolve(false);
   const key = remote.current;
-  if (sibling.key !== key) { sibling.key = key; sibling.run = ''; sibling.n = 0; }
+  // A sibling not heard from in this run: its cache file, if kept, gives the place to subscribe from.
+  if (sibling.key !== key) siblingRestore();
   let asked;
   if (remote.hasListener) {
     asked = typeof s.subscribe === 'function' ? s.subscribe(key, remote.name).catch(function () { return false; }) : Promise.resolve(false);
