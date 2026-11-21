@@ -110,12 +110,24 @@ function apiAt(p) {
 }
 // EVERY SERVER'S AUTO-VERBS (wsl, on goal/G48.8: "the console lists only api.js verbs, so the auto-verb remote cannot be
 // called from it"): remote and DEBUG, which spirit.js binds by hand on every branch and no api.js lists (spirit/server/app.js
-// serves them on every app server, goal/G47.5 and desk/G2.5), offered beside the api.js verbs of an app's branch.
+// serves them on every app server, goal/G47.5 and desk/G2.5), offered beside the api.js verbs of an app's branch when the
+// app has a server, and only then (wsl's rule 8 of app-child-general: "the auto-verbs only where the manifest says
+// node.mount"): its spirit/app/<name>/<name>.json, read through the node's fs as everything of the tree is.
 const AUTO_VERBS = { remote: { id: 'spirit.type.string.ID?' }, DEBUG: { on: 'spirit.type.boolean?' } };
+function served(p) {
+  const m = /^app\.([A-Za-z0-9_-]+)$/.exec(p);
+  if (!m) return Promise.resolve(false);
+  const file = 'spirit/app/' + m[1] + '/' + m[1] + '.json';
+  return spirit.require(spirit.familyPath('fs')).then(function (f) { return f.load({ path: file }); }).then(function (r) {
+    let manifest = null;
+    try { manifest = JSON.parse(String((r && r.text) || '')); } catch (e) { manifest = null; }
+    return !!(manifest && manifest.node && manifest.node.mount === true);
+  }, function () { return false; });
+}
 function verbsAt(p) {
   return apiAt(p).then(function (at) {
     if (!at) return null;
-    return /^app\.[A-Za-z0-9_-]+$/.test(p) ? Object.assign({}, AUTO_VERBS, at.verbs) : at.verbs;
+    return served(p).then(function (yes) { return yes ? Object.assign({}, AUTO_VERBS, at.verbs) : at.verbs; });
   });
 }
 function usageOf(verb, request) {
@@ -359,4 +371,4 @@ function run(line) {
   });
 }
 
-module.exports = { run: run, state: state, HISTORY_MAX: HISTORY_MAX };
+module.exports = { run: run, state: state, verbsAt: verbsAt, HISTORY_MAX: HISTORY_MAX };
