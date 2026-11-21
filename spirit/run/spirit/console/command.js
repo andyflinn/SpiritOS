@@ -309,18 +309,28 @@ function waitCommand(s, words, line) {
   // Rows shed under the pointer (the box: "when the pointer is older than the oldest row left, the wait says rows were shed").
   const oldest = (log.arrivals({ limit: 1 }) || [])[0];
   if (oldest && Date.parse(oldest.at) > Date.parse(s.since)) notes.push({ shed: true, since: s.since, oldest: oldest.at });
+  // A WAIT WRITES ITS POINTER ALONE (the wait-rows changed while it ran stay as they were changed): the state is read
+  // again when the pointer is written, and only since, and the history line once something matched, change in it.
+  const movePointer = function (since, withLine) {
+    const now = state();
+    now.since = since;
+    if (withLine) logged(now, line); else save(now);
+  };
   return new Promise(function (resolve) {
     function look() {
       let rows = [];
       try { rows = log.arrivals({ since: s.since, limit: WAIT_READ_MAX }) || []; } catch (e) { rows = []; }
+      // The wait-rows as they stand now, so one added or removed while this wait runs counts from its next look.
+      const waits = state().waits;
       let found = [];
-      rows.forEach(function (row) { found = found.concat(matchesOf(row, s.waits)); });
+      rows.forEach(function (row) { found = found.concat(matchesOf(row, waits)); });
       // The pointer moves to the last row read, matched or not, and is written once what matched is printed.
       if (rows.length) {
         const out = notes.concat(found).map(function (o) { return JSON.stringify(o); }).join('\n');
         s.since = rows[rows.length - 1].at;
-        if (found.length) { unlock(); resolve({ ok: true, out: out, path: s.path, printed: function () { logged(s, line); } }); return; }
-        save(s);
+        const since = s.since;
+        if (found.length) { unlock(); resolve({ ok: true, out: out, path: s.path, printed: function () { movePointer(since, true); } }); return; }
+        movePointer(since, false);
         if (rows.length >= WAIT_READ_MAX) { setImmediate(look); return; }
       }
       if (Date.now() >= deadline) {
