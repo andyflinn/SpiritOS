@@ -515,10 +515,20 @@ function goalGrantOf(text) { return /\badd\s+goal\b/i.test(String(text)) ? 1 : 0
 function newItemsOf(s, sess) {
   return (Array.isArray(sess.items) ? sess.items : []).filter(function (x) { const id = String((x && x.id) || ''); return id && !s.items[id]; }).length;
 }
-// A chat line as it is answered: what a line written before goal/G48.8 kept of takes and addresses stays inside.
+// WHOM A LINE IS FOR, BY ITS FIRST WORD (goal/G48.8; Andy: "all desk needs to do is scan for a line starting with a \"word\"
+// ... and throw it into a \"to\" field, that your wait can check", "desk doesn't need to know", "agreed, no punctuation."):
+// the line's first word, lowercased, whatever follows it, checked against nothing; '' for a line with no word first. Each
+// agent's wait asks for its own (to=cw, to=all); a word nobody asks for wakes nobody.
+function toOf(text) {
+  const m = /^\s*([\p{L}\p{N}]+)/u.exec(String(text || ''));
+  return m ? m[1].toLowerCase() : '';
+}
+// A chat line as it is answered: what a line written before goal/G48.8 kept of takes and addresses stays inside, its
+// list of keys in to among them; a line's to of its first word (toOf) is shown.
 function shownLine(l) {
   const o = Object.assign({}, l, { key: String(l.key || '') });
-  ['to', 'taken', 'takenKey', 'answered', 'bound', 'took', 'all', 'name'].forEach(function (k) { delete o[k]; });
+  ['taken', 'takenKey', 'answered', 'bound', 'took', 'all', 'name'].forEach(function (k) { delete o[k]; });
+  if (typeof o.to !== 'string') delete o.to;
   return o;
 }
 function blank(id, title, goalId) {
@@ -603,7 +613,9 @@ function apply(s, r, b, item, goalOf) {
     }
     case 'chat.add': {
       // EVERY LINE CARRIES ITS WRITER'S KEY (goal/G21.1); the label stays for showing where no name is set.
-      const line = { by: r.by, at: r.at, text: String(b.text), taken: '', key: String(r.key || '') };
+      const line = { by: r.by, at: r.at, text: String(b.text), key: String(r.key || '') };
+      const to = toOf(b.text);
+      if (to) line.to = to;
       it.chat.push(line);
       // HIS NEWEST LINE GRANTS ITEM ADDS, OR ENDS THE GRANT (goal/G29.21).
       // The item grant holds only for the goal his line is in: under the goal itself or one of its items.
@@ -1009,6 +1021,9 @@ function sidePublish(s, id, ch, change) {
   const o = { change: change, table: ch.table, goal: k[0], item: k[1], id: id };
   if (inSpecialGoal(s, k)) o.special = true;
   if (ch.removed) { o.removed = true; o.at = ch.key.split('|').slice(1).join('|'); } else o.row = ch.x.out();
+  // A CHAT ROW SAYS WHOM ITS LINE IS FOR (goal/G48.8, toOf): its first word, on the row itself, which an agent's wait
+  // asks for (to=cw, to=all). The app server reads none of it.
+  if (o.row && o.table === 'chat' && typeof o.row.to === 'string') o.to = o.row.to;
   return o;
 }
 // A GOAL BECOMING CURRENT IS PUSHED (goal/G33.4). Andy, in the item's box: "when a goal becomes current, the desk pushes
@@ -1409,7 +1424,7 @@ appServer.serve({
       const it0 = st0.items[String(a.id)];
       // Measured as it is stored and answered, with the key it is answered with (goal/G21.1), else the largest line
       // that passes here would not come back whole (oversize.js caught the ten bytes).
-      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), key: w.key });
+      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), key: w.key, to: toOf(a.text) });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
       // HIS CLEAR OF RED QS (goal/G21.2, clearOf): which open Qs it names, refused with a why when it names none.
       const clear = caller.owner === true && it0 ? clearOf(a.text) : null;
