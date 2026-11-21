@@ -1093,7 +1093,7 @@ function ownPart() {
   }, test.limit.slow);
   // goal/G47.5, the cache in client mode (see the child's clientCache): the same file a following server keeps, deskClient's,
   // in spirit/state/<server>/cache/<sender>.json, with the sibling's run, its place and every row it sent.
-  test.run('a server with a publisher only, as the desk is, in client mode keeps the sibling\'s rows as spirit/state/<server>/cache/<sibling>.json', 0.2, function () {
+  test.run('a desk-shaped server in client mode keeps the sibling\'s rows as spirit/state/<server>/cache/<sibling>.json', 0.2, function () {
     clearCache(FAMILY);
     const r = runChild('clientCache', FAMILY);
     clearCache(FAMILY);
