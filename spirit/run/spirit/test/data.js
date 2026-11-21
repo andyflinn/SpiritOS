@@ -620,7 +620,7 @@ test.run('no file in the repo names a replaced way, neither running uncached nor
 // object", "ALL "clientCacheManager.js" files will be converted to "data.js" files with the SAME pattern." Every check is per
 // family, so the count of what is owed falls as each family moves.
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
 // EVERY FAMILY OF THE TREE, READ FROM ITS FOLDERS (goal/G47.4; Andy: "you make bloody well sure that such stupid hard-coded

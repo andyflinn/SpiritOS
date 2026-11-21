@@ -28,7 +28,7 @@ const path = require('path');
 const relayConfig = spirit.require('spirit/relayConfig.js');
 const relayLimits = spirit.require('spirit/relayLimits.js');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
-const fileSystem = spirit.require('spirit/fileSystem.js');
+const fileSystem = spirit.require('spirit/fs/fileSystem.js');
 const createRelay = spirit.require('spirit/relay.js');
 // The build stamp for GET /api/version stood here; that route is closed
 // (goal/G22.6), and a relay's version reaches its owner in relay-status

@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/fileSystem.js
+// spirit/run/spirit/fs/fileSystem.js
 // THE NODE'S FILE SYSTEM (goal/G40.6): the files of the run folder, read, written, stated, annotated and listed, and
 // the two rules of what may ever be served or written. Andy, 2026-10-25: "lift the node version of those function from
 // the old kernel and put them in spirit/fileSystem.js, then have both the node and relay use those." Lifted whole from the
@@ -9,7 +9,7 @@
 // Node only: never served to a page (UNSERVABLE_FILES below names it).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('./spirit.js');
+require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -17,7 +17,7 @@ const path = require('path');
 // is always exactly one level up, regardless of which directory the server was actually launched from.
 // process.cwd() silently broke every path, discovery rule, and writable-root check if you started the server from
 // anywhere but spirit/run/ itself, with no error pointing at why.
-const ROOT_DIR = path.join(__dirname, '..');
+const ROOT_DIR = path.join(__dirname, '..', '..');
 
 function error(e) { console.log('ERROR: ' + e); }
 
@@ -89,9 +89,9 @@ const SIDECAR_SUFFIX = '.sidecar.json';
 // fileSystem.js, this file, joined it when it was lifted out of the old kernel (goal/G40.6).
 // DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/test/DEBUG.md).
 // spirit/server.js is the launcher since goal/G48.5; the servers it starts stand in spirit/server/, never served as a folder.
-const UNSERVABLE_FILES = ['spirit/fileSystem.js', 'spirit/job.js', 'spirit/server.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
+const UNSERVABLE_FILES = ['spirit/fs/fileSystem.js', 'spirit/job.js', 'spirit/server.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
 // goal/G43.9, Andy's box: "spirit/state/ is not servable, so a page cannot read other apps' state through a plain GET."
-// goal/G48.5, the box: "never served: UNSERVABLE_FOLDERS in spirit/fileSystem.js names spirit/server/ and every
+// goal/G48.5, the box: "never served: UNSERVABLE_FOLDERS in spirit/fs/fileSystem.js names spirit/server/ and every
 // spirit/app/<name>/server/": the node's, the relay's and the server processes' code, and each app's server-only files.
 const UNSERVABLE_FOLDERS = ['spirit/DEBUG/', 'spirit/state/', 'spirit/server/'].map(function (p) { return p.toLowerCase(); });
 const APP_SERVER_FOLDER = /^spirit\/app\/[^/]+\/server\//;

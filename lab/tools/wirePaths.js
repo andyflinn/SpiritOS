@@ -56,7 +56,7 @@ const path = require('path');
 
 const REPO = path.resolve(__dirname, '..', '..');
 const SELF = path.resolve(__filename);
-const VENDORED_FOLDERS = require('../../spirit/run/spirit/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require('../../spirit/run/spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 
 // ── THE BOTTOMS AN INTERFACE MAY FUNNEL INTO ────────────────────────
 //

@@ -64,7 +64,7 @@
     var fs = require('fs');
     var path = require('path');
     // Through spirit.require (goal/G43.32; Andy allowed word.js to be changed to the rules).
-    var VENDORED_FOLDERS = spirit.require('spirit/fileSystem.js').VENDORED_FOLDERS;
+    var VENDORED_FOLDERS = spirit.require('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
     var readOr = function (file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { return null; } };
     var check = function (at, word) {
       var w = wordOf(word);

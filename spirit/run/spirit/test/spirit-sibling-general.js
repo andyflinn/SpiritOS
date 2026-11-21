@@ -63,7 +63,7 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const { branchesOf } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 
 const ASK_MS = 8000;
 const BATCH = 10;
@@ -620,7 +620,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // The tools of spirit/test/ are no suites (spirit/test/testModule.js TOOLS).
 const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
@@ -879,7 +879,7 @@ const { execFileSync } = require('child_process');
 const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 const arg = String(ARGS[0] || '');
 // The tools of spirit/test/ are testModule.js's one list, and TEST_SYSTEM.md is their document.
 // The special general tests (testModule.js's SPECIAL, goal/G47.1, box v94, 1) are kept too, each with its .md.
@@ -1103,7 +1103,7 @@ const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 const arg = String(ARGS[0] || '');
 // WHAT FITS (box v94, 2): a production file; a file in a test folder is no module this rule judges.
 if (/(^|\/)test\//.test(arg.replace(/\\/g, '/'))) return;
@@ -1226,7 +1226,7 @@ const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 // Its arguments: the file it judges, if any.
 const arg = String(ARGS[0] || '');
 let full = '';

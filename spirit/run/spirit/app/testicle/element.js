@@ -44,7 +44,7 @@
   parts.catch(function () {});
 
   // A PRODUCTION SCRIPT: a .js outside any test/ folder. Vendored libraries' scripts never reach the list: the fs
-  // family's mirror holds none of them (spirit/fileSystem.js, VENDORED_FOLDERS).
+  // family's mirror holds none of them (spirit/fs/fileSystem.js, VENDORED_FOLDERS).
   function production(row) {
     var p = String((row && row.path) || '');
     return /\.js$/.test(p) && !/(^|\/)test\//.test(p);

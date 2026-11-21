@@ -16,7 +16,7 @@ const https = require('https');
 const path = require('path');
 
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
-const fileSystem = spirit.require('spirit/fileSystem.js');
+const fileSystem = spirit.require('spirit/fs/fileSystem.js');
 // The helpers this node shares with the relay's startup module — body
 // reading, file sending, the 413 and malformed-path guards, /api/version.
 const common = spirit.require('spirit/server/serveCommon.js');

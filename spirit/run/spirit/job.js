@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
-const fileSystem = spirit.require('spirit/fileSystem.js');
+const fileSystem = spirit.require('spirit/fs/fileSystem.js');
 const { EventEmitter } = require('events');
 const { monitorEventLoopDelay } = require('perf_hooks');
 
@@ -220,10 +220,11 @@ module.exports = function installJobs(port) {
     spirit.require('spirit/data.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
   }
   // THE TWO FOLDER FLAGS (goal/G49.1, the box): api, a folder holding api.js and data.js; app, a folder <name> holding
-  // <name>/<name>.json and <name>/<name>.js. Files are always false; set by this one writer on the folder's row.
+  // its manifest <name>/<name>.json (Q1, Andy: "yes. testicle already checks validity of an app.json": spirit/app/job,
+  // job.json and no job.js, is an app). Files are always false; set by this one writer on the folder's row.
   function folderFlags(dir, has) {
     const name = dir.slice(dir.lastIndexOf('/') + 1);
-    return { api: has(dir + '/api.js') && has(dir + '/data.js'), app: !!name && has(dir + '/' + name + '.json') && has(dir + '/' + name + '.js') };
+    return { api: has(dir + '/api.js') && has(dir + '/data.js'), app: !!name && has(dir + '/' + name + '.json') };
   }
 
   // THE STAT RIDES WITH EVERY CREATE AND CHANGE (goal/G29.8). The item's box: "The node streams the tree to the page as
@@ -322,13 +323,13 @@ module.exports = function installJobs(port) {
         if (!tree.file(rel)) return;
       } else held = heldOf(rel, full, 'file'); // a change: the new stat (a file never seen is made by it)
       send(commandOf(op, rel, new Date().toISOString(), held));
-      // A FOLDER'S FLAGS FOLLOW ITS FILES (goal/G49.1): api.js, data.js or <name>.json/.js made or gone inside a folder
+      // A FOLDER'S FLAGS FOLLOW ITS FILES (goal/G49.1): api.js, data.js or <name>.json made or gone inside a folder
       // works its flags out again, and a folder whose flags turned is sent again as a createDirectory with its new row.
       const cut = rel.lastIndexOf('/');
       const dir = cut > 0 ? rel.slice(0, cut) : '';
       const leaf = rel.slice(cut + 1);
       const dirName = dir.slice(dir.lastIndexOf('/') + 1);
-      if (dir && op !== 'changeFile' && (leaf === 'api.js' || leaf === 'data.js' || leaf === dirName + '.json' || leaf === dirName + '.js')) {
+      if (dir && op !== 'changeFile' && (leaf === 'api.js' || leaf === 'data.js' || leaf === dirName + '.json')) {
         const row = tree.file(dir);
         if (row && row.kind === 'folder') {
           const flags = folderFlags(dir, has);

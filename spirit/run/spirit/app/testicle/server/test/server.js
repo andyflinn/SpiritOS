@@ -375,7 +375,7 @@ test.run('the node lists the verbs testicle.set and testicle.search', 0.2, async
 
 // goal/G47.1, box v95, 5: "the server on start, before even classifying, must make sure that script, suite and testicle
 // tables reflect the current state" (it replaces "nothing is read at start"). Read once the start has done its work.
-const VENDORED = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 test.run('at start every product script on disc has its row in script', 0.2, async function () {
   if (!start) return false;
   // The scratch tree holds no git of its own: its files are the repo's list, as scratch() copied them, plus the planted.

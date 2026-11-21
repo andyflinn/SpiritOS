@@ -39,7 +39,7 @@ const fs = require('fs');
 const path = require('path');
 
 const REPO = path.join(__dirname, '..', '..');
-const VENDORED_FOLDERS = require('../../spirit/run/spirit/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require('../../spirit/run/spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 
 // The box says where its own askbox is: the environment, then the box
 // file, then this file's last resort.

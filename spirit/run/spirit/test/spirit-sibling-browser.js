@@ -40,7 +40,7 @@ const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 // Its arguments: the file it judges, if any.
 const ARGS = process.argv.slice(2);
 const arg = String(ARGS[0] || '');

@@ -19,7 +19,7 @@ let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/word/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/word'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // THE HARD-CODED WORDS, READ FROM word.js ITSELF, NEVER A COPY HERE (Andy, 2026-11-17, of a copy twelve days behind it:
 // "WHY WOULD A TEST HARD-CODE reserved words?", "IT's like hardcoded apps! IDIOTIC!"). The box: "word.js will have hardcoded
