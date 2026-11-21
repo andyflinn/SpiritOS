@@ -822,9 +822,22 @@ function ownPart() {
     await tick(500);
     return (again === true && has(30) && has(31) && has(32)) || false;
   }, test.limit.slow);
-  test.run('a row addressed to another key is left out of what it is handed', 0.2, function () {
+  // THE APP SERVER READS NO FIELD OF A ROW (goal/G48.8; Andy: "GET RID OF THAT FUCKING SHIT IN THE APPSERVER!", "GET RID OF
+  // ANY TEST THAT ASSERTS THAT SHIT!"): a row naming keys in a to of its own is handed to every subscriber, as any row is.
+  test.run('a row naming another key in its to is handed all the same, in the subscribe again\'s catch-up', 0.2, function () {
     if (noServer()) return false;
-    return (again === true && has(32) && !has(33)) || false;
+    return (again === true && has(32) && has(33)) || false;
+  }, test.limit.quick);
+  test.run('a row naming another key in its to is delivered all the same when it is published live', 0.2, async function () {
+    if (noServer() || again !== true) return false;
+    O.A.publish(Object.assign(row(item(34)), { to: ['KEY-SOMEONE-ELSE'] }));
+    await tick(500);
+    return has(34) || false;
+  }, test.limit.slow);
+  test.run('spirit/server/app.js reads no to of a row', 0.2, function () {
+    let t = '';
+    try { t = fs.readFileSync(FILE, 'utf8'); } catch (e) { t = ''; }
+    return (t !== '' && !/\brow\.to\b|\.to\.map\(|function forKey\(/.test(t)) || false;
   }, test.limit.quick);
   test.run('the sender\'s log answers the subscribe again, with no bootstrap, and the cache is not replaced', 0.2, function () {
     if (noServer()) return false;

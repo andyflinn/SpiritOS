@@ -30,7 +30,9 @@ stream"); Desk and deskClient move onto it.
 - **A subscribe again carries the position the client holds** (the sender's run id and the number of the last row
   it took).
 - **The sender's bounded log answers it**: what came after that number, oldest first, with no bootstrap and no
-  replacing of the cache. A row addressed to other keys (`to`) is left out.
+  replacing of the cache. The app server reads no field of a row (goal/G48.8; Andy: *"GET RID OF THAT FUCKING SHIT IN THE
+  APPSERVER!"*): a row naming another key in a `to` of its own is handed all the same, in that catch-up and when published
+  live, and spirit/server/app.js reads no `to` of a row.
 - **A number older than the log, or a different run id, means a full push**. The log's size is the publisher's
   `logMax` option (the test uses 5).
 - **A full push takes precedence and drops nothing** (goal/G41.15, Andy: "make sure the deskClient doesn't loose
@@ -121,8 +123,8 @@ stream"); Desk and deskClient move onto it.
 - The gate letting an extra key through, or a value of another type.
 - A family path written anywhere but `familyPath`, or a `<name>.family` folder left.
 - A delivery that is not an array, or one peerPost per backed-up row.
-- A subscribe again answered with a bootstrap, a cache swept by it, missed rows not handed, a row for another key
-  handed, or a full push that leaves old rows.
+- A subscribe again answered with a bootstrap, a cache swept by it, missed rows not handed, a row naming another key
+  in its `to` left out, or a full push that leaves old rows.
 - A cache file missing, misnamed, not read back, kept without the switch or for a sender with no family folder, or
   past its limit; a family's own shed passed over, or the default shedding the newest.
 
