@@ -114,6 +114,29 @@
         cm.refresh();
         if (firstAt) cm.scrollIntoView({ line: firstAt.line, ch: firstAt.ch }, 80);
       }, 0);
+      // AND AGAIN EACH TIME IT BECOMES VISIBLE (goal/G48.5; Andy: "there's something that the codeMirror element does when it
+      // is activated. and it makes the text display properly aligned inside the codeMirror box. It should do the same thing
+      // when it becomes visible."): what activating it does is CodeMirror measuring its box again; a box hidden behind a tab
+      // or a closed panel measured nothing, so each time its host comes into view, or grows from nothing, it is refreshed.
+      var wrapper = host;
+      var shown = false;
+      function redraw() { cm.refresh(); }
+      if (typeof IntersectionObserver === 'function') {
+        new IntersectionObserver(function (entries) {
+          var now = entries.some(function (e) { return e.isIntersecting; });
+          if (now && !shown) redraw();
+          shown = now;
+        }).observe(wrapper);
+      }
+      if (typeof ResizeObserver === 'function') {
+        var wasEmpty = true;
+        new ResizeObserver(function (entries) {
+          var r = entries[entries.length - 1].contentRect;
+          var empty = !(r.width > 0 && r.height > 0);
+          if (wasEmpty && !empty) redraw();
+          wasEmpty = empty;
+        }).observe(wrapper);
+      }
       return { mode: editing ? 'edit' : 'read', cm: cm, value: function () { return cm.getValue(); }, mark: mark };
     });
   }
