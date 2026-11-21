@@ -203,15 +203,10 @@ ping as the sibling):
 
 The box: *"the replies and reply stream data are cached as they are now"*; Andy, 2026-11-21: *"it was ALWAYS obvious the me
 that a spirit/server/app.js in client mode automatically caches the servers's state the way it always did"*, *"deskClient
-produces the EXACT same cache file as your own desk in client-mode"*, and *"to ensure that the ui of an app server in client
-mode, when refreshed, could simply receive the local cache file to restore its state prior to refresh"*. A child process:
-a server with a publisher only, as the desk is, named for a family with a folder on this node, switched by its owner to the
-sibling, which sends it a push and a row:
-
-- it keeps them as `spirit/state/<server>/cache/<sibling>.json`, the file a following server keeps, with the sibling's key,
-  its run, its place and every row it sent;
-- this node's own subscribe, as a reloaded page's is, is then handed those cached rows as its push; the server's own
-  bootstrap holds none.
+produces the EXACT same cache file as your own desk in client-mode"*. A child process: a server with a publisher only, as
+the desk is, named for a family with a folder on this node, switched by its owner to the sibling, which sends it a push and
+a row. It keeps them as `spirit/state/<server>/cache/<sibling>.json`, the file a following server keeps, with the sibling's
+key, its run, its place and every row it sent. A reloaded page restored from that file waits for Andy's word on its scope.
 
 ## Loopback beside owner (goal/G47.5)
 

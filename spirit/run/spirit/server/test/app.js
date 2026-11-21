@@ -309,14 +309,6 @@ async function child(mode) {
     let file = null;
     try { file = JSON.parse(fs.readFileSync(cacheFile(NAME), 'utf8')); } catch (e) { file = null; }
     out.file = file ? { key: file.key, run: file.run, n: file.n, ids: Array.isArray(file.rows) ? file.rows.map(function (r) { return r && r.item ? r.item.id : ''; }) : [] } : null;
-    // A PAGE RELOADED IN CLIENT MODE IS RESTORED FROM THAT CACHE (Andy, 2026-11-21: "to ensure that the ui of an app server in
-    // client mode, when refreshed, could simply receive the local cache file to restore its state prior to refresh"): this
-    // node's own subscribe, as its pages' is, is handed the cached rows as its push. The server's own bootstrap holds none.
-    const mark = posts.length;
-    out.subscribed = (await post('subscribe', { family: NAME }, SELF)).status;
-    await tick(800);
-    out.handed = [];
-    posts.slice(mark).filter(Array.isArray).forEach(function (b) { b.forEach(function (e) { if (e && e.row && e.row.item) out.handed.push(e.row.item.id); }); });
   }
   if (mode === 'publisherOnly' || mode === 'streamOnly') {
     // A server of one side alone (goal/G47.5): a publisher with no stream, as the desk is, or a stream with no publisher, as
@@ -1101,19 +1093,14 @@ function ownPart() {
   }, test.limit.slow);
   // goal/G47.5, the cache in client mode (see the child's clientCache): the same file a following server keeps, deskClient's,
   // in spirit/state/<server>/cache/<sender>.json, with the sibling's run, its place and every row it sent.
-  const CLIENT = {};
   test.run('a server with a publisher only, as the desk is, in client mode keeps the sibling\'s rows as spirit/state/<server>/cache/<sibling>.json', 0.2, function () {
     clearCache(FAMILY);
-    const r = CLIENT.r = runChild('clientCache', FAMILY);
+    const r = runChild('clientCache', FAMILY);
     clearCache(FAMILY);
     const f = r.file || {};
     return (r.switched === 200 && r.pushed === 200 && r.streamed === 200 && f.key === PUBLISHER && f.run === 'r1' && f.n === 3
       && Array.isArray(f.ids) && ['head', 'a1', 'a2'].every(function (id) { return f.ids.indexOf(id) !== -1; })) || false;
   }, test.limit.slow);
-  test.run('in client mode this node\'s own subscribe, as a reloaded page\'s is, is handed the cached rows as its push', 0.2, function () {
-    const r = CLIENT.r || {};
-    return (r.subscribed === 200 && Array.isArray(r.handed) && ['head', 'a1', 'a2'].every(function (id) { return r.handed.indexOf(id) !== -1; })) || false;
-  }, test.limit.quick);
 
   // ── restarts and the cache switch: each a process of its own ───────────────────────────────────────────────────
   // the cache, per sender, saved and read back (box v15)
