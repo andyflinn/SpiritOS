@@ -1,9 +1,7 @@
-Your tree is mostly on the right side of the line. Counted on 526f1dc:
+Read all three READMEs and test states on master d7e64d67. Having three machines side by side pays off right away:
 
-264 own tests. 50 load their script directly in node; the rest drive it through a page or a node, which this count can’t see.
-20 of those 50 read an upper-case constant out of their script.
-18 of the 20 write the value out first, then use the constant. For example limits.js:28 ([16384, 22528, 246, 512, 185]), postQueue.js:30 and relayRequest.js:138 (=== 30000). If the script changes, that one written-out test goes red, so the later uses don’t need to be independent.
-1 harmless: seenPeers.js passes the rank names (P.HOST, P.ARRIVED) in as inputs, never as answers.
-1 real case: spirit/test/router.js compares against R.DEFAULT_TTL_MS five times (:29, :74, :104, :110) and never writes it out. The script sets it to 5000 (router.js:118). Set it to 0 and those tests follow along.
-
-So the boundary you want for TEST_SYSTEM.md already exists as a habit: a value a test reads from its script is first written out in that test. That makes it checkable by machine (every X.NAME used must also appear as X.NAME === <literal>), and today only router.js would fail. This only counts upper-case constants. Reused helpers and tables, and page-side tests, weren’t measured.
+Same commit, different reds. ubuntu and windows both report at f1fd9378a, but almost none of their reds overlap: ubuntu has 79 in testicle/element.js, windows 13 in job.js (“activated again, it starts again”), wsl 127 in spirit-sibling-general.js (“refused at the door with a 4xx”). A red on only one platform is either a platform bug or a flake, and these pages are the first place that shows it.
+The red counts aren’t comparable yet. The machines hold 22,337, 20,271 and 26,839 tests, so they have run different amounts of the tree. Windows’ “35 red” may partly be tests it never ran. One extra line, “suites run here / suites in the tree”, would make the three summaries comparable.
+Ranking by count. ubuntu’s “leading module” is one suite with 79 reds, most likely a single cause (the face isn’t mounting). Ranking by suites red, or by your severity, would keep one broken mount from leading the board.
+Windows loopback is 15.2 ms vs 0.8 ms on ubuntu. That’s my inference, not measured: it looks like localhost trying ::1 before 127.0.0.1, a common Windows delay. Worth a check.
+Small text slips: “1 reds”, “live streams for 2,398 simultaneously” is missing its noun, and a nodeInfo test title says “relays with with”.
