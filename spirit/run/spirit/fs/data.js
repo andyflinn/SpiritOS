@@ -39,8 +39,9 @@
           Object.keys(V.branch(FILES)).forEach(function (k) { if (k.indexOf(p + '/') === 0) V.del(FILES + '/' + k); });
         } else {
           var was = V.branch(FILES)[p] || {};
-          // core: the node's word that the file is core (goal/G30.21), painted yellow by its row.
-          V.set(FILES + '/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified, core: cmd.core === true });
+          // core: the node's word that the file is core (goal/G30.21), painted yellow by its row. api and app: the node's
+          // word that a folder holds api.js and data.js, or <name>.json and <name>.js (goal/G49.1); a file's are false.
+          V.set(FILES + '/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified, core: cmd.core === true, api: cmd.api === true, app: cmd.app === true });
         }
       },
     });

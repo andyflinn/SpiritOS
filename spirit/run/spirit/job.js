@@ -208,7 +208,23 @@ module.exports = function installJobs(port) {
   // and reports at startup what the seed already holds, which sends nothing.
   const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
   const RUN_ROOT = path.join(__dirname, '..');
-  let fsTree = null; // the tree of the latest watcher this module started: Map relativePath -> {kind, size, modified}
+  // THE TREE IS spirit.data.fs (goal/G49.1, box v17: "chokidar --> (node: spirit.data.fs) --> spirit.event --> browsers and
+  // node processes"; "job.js's own tree (fsTree) goes. Nothing else holds a tree on the node"): the watcher writes each
+  // command into this process's spirit.data, where spirit/fs/data.js files it as it does a page's stream, and reads it back
+  // from there. fsTreeCommands and fsTreeEntries keep their names and their answers (box v17: "so their callers ... stay
+  // untouched"). fsWatching is the watcher whose tree it is, null once it stopped.
+  const FS_HOME = 'local'; // the node's own name in its spirit.data, as a child that follows the stream names it (spirit/data.js)
+  let fsWatching = null;
+  function fsDataset() { return spirit.require('spirit/fs.js'); }
+  function fsWrite(command) {
+    spirit.require('spirit/data.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
+  }
+  // THE TWO FOLDER FLAGS (goal/G49.1, the box): api, a folder holding api.js and data.js; app, a folder <name> holding
+  // <name>/<name>.json and <name>/<name>.js. Files are always false; set by this one writer on the folder's row.
+  function folderFlags(dir, has) {
+    const name = dir.slice(dir.lastIndexOf('/') + 1);
+    return { api: has(dir + '/api.js') && has(dir + '/data.js'), app: !!name && has(dir + '/' + name + '.json') && has(dir + '/' + name + '.js') };
+  }
 
   // THE STAT RIDES WITH EVERY CREATE AND CHANGE (goal/G29.8). The item's box: "The node streams the tree to the page as
   // it does, the watcher's updates, now each with its stat: size and modified, for every create and change; a delete
@@ -235,30 +251,48 @@ module.exports = function installJobs(port) {
     if (held && held.size !== undefined) c.size = held.size;
     if (held && held.modified !== undefined) c.modified = held.modified;
     if (held && held.core === true) c.core = true;
+    if (held && held.api === true) c.api = true;
+    if (held && held.app === true) c.app = true;
     return c;
   }
 
   function fsTreeCommands() {
-    if (!fsTree) return [];
+    if (!fsWatching) return [];
+    const files = fsDataset().files();
     const at = new Date().toISOString();
     // A folder sorts before everything inside it: its path is a prefix of theirs.
-    return Array.from(fsTree.keys()).sort().map(function (p) {
-      const held = fsTree.get(p);
+    return Object.keys(files).sort().map(function (p) {
+      const held = files[p];
       return commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, at, held);
     });
   }
   // The tree as entries {name, relativePath, kind}, for the counts and fs.search, which read it in place.
   function fsTreeEntries() {
-    if (!fsTree) return [];
-    return Array.from(fsTree.keys()).sort().map(function (p) {
-      return { name: p.slice(p.lastIndexOf('/') + 1), relativePath: p, kind: fsTree.get(p).kind };
+    if (!fsWatching) return [];
+    const files = fsDataset().files();
+    return Object.keys(files).sort().map(function (p) {
+      return { name: p.slice(p.lastIndexOf('/') + 1), relativePath: p, kind: files[p].kind };
     });
   }
 
   function startFsWatcherJob(rootDir) {
-    const tree = new Map();
-    scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); tree.set(m.relativePath, heldOf(m.relativePath, m.fullPath, m.kind)); });
-    fsTree = tree;
+    const tree = fsDataset();
+    tree.FedHere();
+    const own = {};
+    fsWatching = own;
+    // The tree as it was, gone (a watcher started again), then the seed: each path filed as a create, the folder flags
+    // worked out from the seed itself, then the tree's end.
+    Object.keys(tree.files()).sort().reverse().forEach(function (p) { const was = tree.file(p); if (was) fsWrite({ op: was.kind === 'folder' ? 'deleteDirectory' : 'deleteFile', path: p }); });
+    const seed = new Map();
+    scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); seed.set(m.relativePath, heldOf(m.relativePath, m.fullPath, m.kind)); });
+    const seedAt = new Date().toISOString();
+    Array.from(seed.keys()).sort().forEach(function (p) {
+      const held = seed.get(p);
+      if (held.kind === 'folder') Object.assign(held, folderFlags(p, function (q) { return seed.has(q); }));
+      fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
+    });
+    spirit.require('spirit/data.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
+    const has = function (q) { return !!tree.file(q); };
     // THE NODE'S FILES ARE spirit.fs (goal/G43.20).
     const job = ownJob('spirit.fs');
     // No face part is streamed: the old shell's face parts are gone (goal/G43.20; Andy: "drop the old shells face parts
@@ -274,31 +308,47 @@ module.exports = function installJobs(port) {
     watcher.on('all', function (event, full) {
       const op = FS_OPS[event];
       const rel = full ? relOf(full) : '';
-      if (!op || !rel || rel.indexOf('..') === 0) return;
+      if (!op || !rel || rel.indexOf('..') === 0 || fsWatching !== own) return;
+      // Each command goes into spirit.data.fs first, then up the stream, so what a page is handed is what the node holds.
+      const send = function (command) { fsWrite(command); updateJob(job.id, { data: { command: command } }); };
+      let held = null;
       if (op === 'createFile' || op === 'createDirectory') {
         const kind = op === 'createDirectory' ? 'folder' : 'file';
-        if (tree.has(rel) && tree.get(rel).kind === kind) return; // already held: the startup report, or a repeat
-        tree.set(rel, heldOf(rel, full, kind));
-      } else if (op === 'deleteFile') {
-        if (!tree.has(rel)) return;
-        tree.delete(rel);
-      } else if (op === 'deleteDirectory') {
-        if (!tree.has(rel)) return;
-        Array.from(tree.keys()).forEach(function (p) { if (p === rel || p.indexOf(rel + '/') === 0) tree.delete(p); });
-      } else tree.set(rel, heldOf(rel, full, 'file')); // a change: the new stat (a file never seen is made by it)
-      const held = op === 'deleteFile' || op === 'deleteDirectory' ? null : tree.get(rel);
-      updateJob(job.id, { data: { command: commandOf(op, rel, new Date().toISOString(), held) } });
+        const was = tree.file(rel);
+        if (was && was.kind === kind) return; // already held: the startup report, or a repeat
+        held = heldOf(rel, full, kind);
+        if (kind === 'folder') Object.assign(held, folderFlags(rel, has));
+      } else if (op === 'deleteFile' || op === 'deleteDirectory') {
+        if (!tree.file(rel)) return;
+      } else held = heldOf(rel, full, 'file'); // a change: the new stat (a file never seen is made by it)
+      send(commandOf(op, rel, new Date().toISOString(), held));
+      // A FOLDER'S FLAGS FOLLOW ITS FILES (goal/G49.1): api.js, data.js or <name>.json/.js made or gone inside a folder
+      // works its flags out again, and a folder whose flags turned is sent again as a createDirectory with its new row.
+      const cut = rel.lastIndexOf('/');
+      const dir = cut > 0 ? rel.slice(0, cut) : '';
+      const leaf = rel.slice(cut + 1);
+      const dirName = dir.slice(dir.lastIndexOf('/') + 1);
+      if (dir && op !== 'changeFile' && (leaf === 'api.js' || leaf === 'data.js' || leaf === dirName + '.json' || leaf === dirName + '.js')) {
+        const row = tree.file(dir);
+        if (row && row.kind === 'folder') {
+          const flags = folderFlags(dir, has);
+          if (flags.api !== (row.api === true) || flags.app !== (row.app === true)) {
+            send(commandOf('createDirectory', dir, new Date().toISOString(), Object.assign({}, row, flags)));
+          }
+        }
+      }
       // AN APP'S <name>.json CHANGED, MADE OR GONE: whether its files are core may have changed with it (coreFiles.js reads
       // its identity.intrinsic), so its files' flags are worked out again, and each one that turned is sent as a change.
       const app = /^spirit\/app\/([^/]+)\/([^/]+)\.json$/.exec(rel);
       if (app && app[1] === app[2] && op !== 'createDirectory' && op !== 'deleteDirectory') {
         const under = 'spirit/app/' + app[1] + '/';
-        tree.forEach(function (h, p) {
+        const files = tree.files();
+        Object.keys(files).forEach(function (p) {
+          const h = files[p];
           if (h.kind !== 'file' || p.indexOf(under) !== 0 || p === rel) return;
           const core = spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'));
           if (core === (h.core === true)) return;
-          if (core) h.core = true; else delete h.core;
-          updateJob(job.id, { data: { command: commandOf('changeFile', p, new Date().toISOString(), h) } });
+          send(commandOf('changeFile', p, new Date().toISOString(), Object.assign({}, h, { core: core })));
         });
       }
     });
@@ -313,7 +363,7 @@ module.exports = function installJobs(port) {
 
     job._stop = function() {
       watcher.close();
-      if (fsTree === tree) fsTree = null;
+      if (fsWatching === own) fsWatching = null;
     };
 
     return job;
