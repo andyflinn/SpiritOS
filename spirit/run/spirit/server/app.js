@@ -43,6 +43,9 @@ const path = require('path');
 const http = require('http');
 const errors = spirit.require('spirit/spiritErrors.js');
 const limits = spirit.require('spirit/limits.js');
+// A STREAM'S BUNDLE IN ONE PLACE (goal/G48.7; Andy: "i would NOT want that to be done in two places", "the module is
+// spirit/streamBundle.js"): the publisher packs with it, both listeners unpack with it.
+const streamBundle = spirit.require('spirit/streamBundle.js');
 
 const RESERVED = ['api', 'ok'];
 const VERB_RE = /^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/;
@@ -596,9 +599,8 @@ function withStreamListener(verbs, stream, followed, name) {
     request: { json: '' }, reply: { heard: true },
     handler: function (a, caller) {
       if (!caller || caller.owner === true || !followed.has(String(caller.key || ''))) throw Object.assign(new Error('not-granted'), { refusal: 'not-granted', extra: { why: 'this server follows no stream from this key' } });
-      let bundle = null;
-      try { bundle = JSON.parse(String(a.json)); } catch (e) { bundle = null; }
-      if (!Array.isArray(bundle)) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a delivery is one bundle: a JSON array of entries' } });
+      const bundle = streamBundle.unpack(a.json);
+      if (!bundle) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a delivery is one bundle: a JSON array of entries' } });
       const from = String(caller.key);
       const st = senderOf(from);
       // In order, each entry once the one before it is taken.
@@ -670,19 +672,7 @@ let published = 0;
 const log = [];                  // { run, n, row }, oldest first, bounded by publisher.logMax
 // A server family's interface: the one family path function (spirit.js, goal/G41.12), handed out by this file too.
 function familyPath(name) { return spirit.familyPath(name); }
-const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
-// One answer's room, as the desk's lists were cut (ANSWER_ROOM): half a sealed packet less 512 bytes for its envelope,
-// less the bytes the bundle's JSON gains as the json string of its request.
-const BUNDLE_ROOM = Math.floor(limits.SEALED_MAX / 2) - 512;
 function forKey(row, key) { return !(row && Array.isArray(row.to)) || row.to.map(String).indexOf(key) !== -1; }
-function bundleOf(rows) {
-  const bucket = createProbabilityBucket(rows.length);
-  // Every row at probability 0, so the queue's order stands; measured as it travels, a string inside the request.
-  rows.forEach(function (e) { bucket.seatFor(0, e); });
-  const room = BUNDLE_ROOM - Buffer.byteLength(JSON.stringify({ json: '' }), 'utf8');
-  const fit = bucket.serialize(null, Math.floor(room / 2)).items.length;
-  return rows.slice(0, Math.max(1, fit));
-}
 function deliver(key, q, bundle) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), with the publisher's own wait.
   return spirit.require(familyPath(q.family), key, { waitMs: publisher.waitMs }).then(function (branch) {
@@ -694,7 +684,7 @@ function pumpTo(key) {
   const q = subscribers.get(key);
   if (!q || q.busy || !q.rows.length) return;
   q.busy = true;
-  const bundle = bundleOf(q.rows);
+  const bundle = streamBundle.pack(q.rows);
   deliver(key, q, bundle).then(function (said) {
     // Away: dropped, its queue with it, until it subscribes again (a later subscribe is a new queue, kept).
     if (said !== 'taken') { if (subscribers.get(key) === q) subscribers.delete(key); return; }
@@ -973,11 +963,9 @@ const siblingListener = {
   request: { json: '' }, reply: { heard: true },
   handler: function (a, caller) {
     if (!clientMode() || !caller || caller.owner === true || String(caller.key || '') !== remote.current) throw Object.assign(new Error('not-granted'), { refusal: 'not-granted', extra: { why: 'this server hears its chosen sibling alone, in client mode' } });
-    let bundle = null;
-    try { bundle = JSON.parse(String(a.json)); } catch (e) { bundle = null; }
-    if (!Array.isArray(bundle)) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a delivery is one bundle: a JSON array of entries' } });
+    const bundle = streamBundle.unpack(a.json);
+    if (!bundle) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'a delivery is one bundle: a JSON array of entries' } });
     bundle.forEach(function (e) {
-      if (!isPlain(e)) return;
       // The place it got to in the sibling's stream, handed back at the next subscribe (below).
       if (typeof e.run === 'string' && Number.isInteger(e.n)) { sibling.run = e.run; sibling.n = e.n; }
       siblingKeep(e);
