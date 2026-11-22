@@ -371,46 +371,59 @@ const WATCH = String.raw`(function () {
     var els = o.element;
     Object.defineProperty(o, 'element', { configurable: true, enumerable: true, get: function () { return els; }, set: function (v) { els = v; searches(v); } });
     searches(els);
-    [['event', 'subscribe'], ['data', 'watch']].forEach(function (k) {
-      var cur = o[k[0]];
+    // THE DATA SET STANDS AT spirit.required.spirit.data (goal/G49.4, step 1; Andy: "spirit.require() places the loaded
+    // script at the exact same location/path in the spirit object"): its watches are kept there, the stream's on spirit.
+    // A level not made yet is waited for, as spirit.js makes spirit.required and its first levels as it goes.
+    function at(obj, keys, then) {
+      if (!obj || typeof obj !== 'object') return;
+      if (!keys.length) return then(obj);
+      var key = keys[0], cur = obj[key];
+      if (cur && typeof cur === 'object') return at(cur, keys.slice(1), then);
+      Object.defineProperty(obj, key, { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; Object.defineProperty(obj, key, { configurable: true, enumerable: true, writable: true, value: v }); at(v, keys.slice(1), then); } });
+    }
+    [[['event', 'subscribe'], []], [['data', 'watch'], ['required', 'spirit']]].forEach(function (kk) {
+      var k = kk[0];
+      at(o, kk[1], function (place) {
+      var cur = place[k[0]];
       function wrap(v) {
-        if (k[0] === 'data' && v && typeof v.seatRows === 'function' && !v.seatRows.__kept) {
-          var seat = v.seatRows;
-          v.seatRows = function () { streamed(); return seat.apply(this, arguments); };
-          v.seatRows.__kept = true;
+          if (k[0] === 'data' && v && typeof v.seatRows === 'function' && !v.seatRows.__kept) {
+            var seat = v.seatRows;
+            v.seatRows = function () { streamed(); return seat.apply(this, arguments); };
+            v.seatRows.__kept = true;
+          }
+          if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) {
+            var f = kept(k[0] + '.' + k[1], v[k[1]]);
+            // Each stream handler told first that the stream spoke (streamed, above).
+            if (k[0] === 'event') f = (function (inner) { return function (h) { var hh = {}; Object.keys(h || {}).forEach(function (n) { hh[n] = typeof h[n] === 'function' && STREAMED.indexOf(n) !== -1 ? function () { streamed(); return h[n].apply(this, arguments); } : h[n]; }); return inner.call(this, hh); }; }(f));
+            f.__kept = true; v[k[1]] = f;
+          }
+          // A family's view (goal/G41.28), spirit.required.spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
+          // as one on spirit.required.spirit.data, under the whole path it watches.
+          // spirit.required.spirit.data names it viewAt (spirit/data.js); a watch through the view is the module's own watch.
+          var VIEW = v && typeof v.viewAt === 'function' ? 'viewAt' : 'at';
+          if (k[0] === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
+            var at = v[VIEW];
+            v[VIEW] = function () {
+              var view = at.apply(this, arguments);
+              var node = arguments[0];
+              if (view && typeof view.watch === 'function') {
+                // The path as the view watches it: the node's id, or '~' for the home node, then the family, then p.
+                var own = view.watch;
+                var vw = kept('data.watch', function (whole, fn) { return own(whole.rel, fn); });
+                view.watch = function (p, fn) {
+                  var whole = new String((node ? v.nodeId(node) : '~') + '/' + view.family + '/' + String(p || ''));
+                  whole.rel = p;
+                  return vw(whole, fn);
+                };
+              }
+              return view;
+            };
+            v[VIEW].__kept = true;
+          }
         }
-        if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) {
-          var f = kept(k[0] + '.' + k[1], v[k[1]]);
-          // Each stream handler told first that the stream spoke (streamed, above).
-          if (k[0] === 'event') f = (function (inner) { return function (h) { var hh = {}; Object.keys(h || {}).forEach(function (n) { hh[n] = typeof h[n] === 'function' && STREAMED.indexOf(n) !== -1 ? function () { streamed(); return h[n].apply(this, arguments); } : h[n]; }); return inner.call(this, hh); }; }(f));
-          f.__kept = true; v[k[1]] = f;
-        }
-        // A family's view (goal/G41.28), spirit.required.spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
-        // as one on spirit.required.spirit.data, under the whole path it watches.
-        // spirit.required.spirit.data names it viewAt (spirit/data.js); a watch through the view is the module's own watch.
-        var VIEW = v && typeof v.viewAt === 'function' ? 'viewAt' : 'at';
-        if (k[0] === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
-          var at = v[VIEW];
-          v[VIEW] = function () {
-            var view = at.apply(this, arguments);
-            var node = arguments[0];
-            if (view && typeof view.watch === 'function') {
-              // The path as the view watches it: the node's id, or '~' for the home node, then the family, then p.
-              var own = view.watch;
-              var vw = kept('data.watch', function (whole, fn) { return own(whole.rel, fn); });
-              view.watch = function (p, fn) {
-                var whole = new String((node ? v.nodeId(node) : '~') + '/' + view.family + '/' + String(p || ''));
-                whole.rel = p;
-                return vw(whole, fn);
-              };
-            }
-            return view;
-          };
-          v[VIEW].__kept = true;
-        }
-      }
-      Object.defineProperty(o, k[0], { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; wrap(v); } });
-      wrap(cur);
+        Object.defineProperty(place, k[0], { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; wrap(v); } });
+        wrap(cur);
+      });
     });
   }
   var real = window.spirit;
