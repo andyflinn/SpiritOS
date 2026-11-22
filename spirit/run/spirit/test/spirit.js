@@ -628,11 +628,24 @@ test.run('in node, a component that is not there refuses', 0.2, async function (
 // ON A PAGE A FILE RUNS AS A PLAIN SCRIPT (goal/G41.7; Andy: "script IS what codeMirror Is, use the require interfaces
 // that exists in spirit.js or boot.js, NOTHING HAND-ROLLED"): no module box, so a file written for both takes its page
 // branch and puts itself on the page, as every shell element does; a stylesheet is put on as a style.
-test.run('on a page, spirit/fieldRules.js runs as a plain script, puts itself on window.spirit, and the require answers an empty object', 0.2, async function () {
+// THE SAME PLACE ON BOTH SIDES (goal/G49.4; Andy: "have i NOT fucking specified, that on both, browser and node,
+// spirit.require() places the loaded script at the exact same motherfucking location/path in the spirit object", "FUCKING
+// FIX THAT!!"; G43.32: "helpers with no create are no fucking elements. they live in require."): on a page a required helper
+// stands at spirit.required.<its path>, the real object as in node, and the require answers it.
+test.run('on a page, spirit/fieldRules.js required stands at spirit.required.spirit.fieldRules, the real one, and the require answers it', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const onPage = await wq.spirit.require(PAGE_COMPONENT);
-  return (!!onPage && Object.keys(onPage).length === 0 && !!wq.spirit.fieldRules && typeof wq.spirit.fieldRules.problem === 'function' && !wq.scriptError) || false;
+  const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.fieldRules;
+  return (!!placed && typeof placed.problem === 'function' && onPage === placed && !wq.scriptError) || false;
+}, test.limit.quick);
+test.run('on a page, spirit/data.js required stands at spirit.required.spirit.data, the real one, and the require answers it', 0.2, async function () {
+  if (!T.wq) return false;
+  const wq = T.wq;
+  let onPage = null;
+  try { onPage = await wq.spirit.require('spirit/data.js'); } catch (e) { onPage = null; }
+  const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.data;
+  return (!!placed && typeof placed.makeFamily === 'function' && typeof placed.viewAt === 'function' && onPage === placed) || false;
 }, test.limit.quick);
 // A CodeMirror mode file, written for both node and a page: given no module box it finds CodeMirror on the page (here
 // a stand-in, the library itself needs a real browser) and defines its mode on it.
