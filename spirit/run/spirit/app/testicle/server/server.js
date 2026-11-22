@@ -527,18 +527,26 @@ function nextJob() {
 // runner has nothing left to choose, so a lab node is held only while testicle works.
 let world = null;
 let worldBoot = null;
+// A RUN JUDGES THE TREE AS IT IS (goal/G49.5, wsl's red 9a7a1ea3; Andy: "could it be possible that you might fix a few of
+// those 2000 bugs on linux/wsl????"): the world stands on a copy of the tree made when it boots, and was let go only when the
+// runner had nothing left to choose, so while the tree changed all evening every run judged new tests against the old copy.
+// A change after the world booted (onFile) lets it go at the next run's ask, and a new one is booted on the tree as it is.
+// One run at a time, so no run still stands on the world let go; the classifier keeps its own.
+let treeChangedAt = 0;
 // The node and the Chrome are a test tool's, so they come as a process of it, never required (the box: "no production module
 // loads or requires any test file"): spirit/test/headLessChrome.js --world, which prints where they are and holds them until
 // its input closes.
 const WORLD_TOOL = 'spirit/test/headLessChrome.js';
 function handWorld() {
+  if (world && treeChangedAt >= world.since) dropWorld();
   if (world) return Promise.resolve(world);
   if (!worldBoot) {
+    const since = Date.now();
     worldBoot = new Promise(function (resolve) {
       const kid = spawn(process.execPath, [WORLD_TOOL, '--world'], { cwd: RUN, stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
       let out = '';
       let said = false;
-      const say = function (env) { if (said) return; said = true; world = { kid: kid, env: env }; resolve(world); };
+      const say = function (env) { if (said) return; said = true; world = { kid: kid, env: env, since: since }; resolve(world); };
       kid.stdout.on('data', function (d) {
         out += d;
         const m = /@@WORLD (.*)\r?\n/.exec(out);
@@ -1200,8 +1208,10 @@ const tree = spirit.require('spirit/fs/script.js');
 const held = new Set();
 function onFile(event, rel) {
   if (!rel || ignored(path.join(RUN, rel))) return;
+  // The world handed to the runs is a copy of the tree as it stood when it booted (handWorld): a change makes it old.
+  treeChangedAt = Date.now();
   // Any other file counts only by being added or taken away: the tree changed, so the general tests' reds run again (apply).
-  const script = /.js$/.test(rel);
+  const script = /\.js$/.test(rel);
   if (!script && event === 'change') return;
   pending.add(rel);
   if (script) { try { topFix(rel); } catch (e) { logError('topFix ' + rel, e); } }
@@ -1239,7 +1249,7 @@ tree.watch(function (rel, row) {
 // (nextJob waits for it), so classifying comes after.
 function treeScripts() {
   const files = tree.files();
-  return Object.keys(files).filter(function (p) { return files[p].kind === 'file' && /.js$/.test(p) && !ignored(path.join(RUN, p)); }).sort();
+  return Object.keys(files).filter(function (p) { return files[p].kind === 'file' && /\.js$/.test(p) && !ignored(path.join(RUN, p)); }).sort();
 }
 // Every script already classified, swept once: its rows that its class rules out leave the tables (pruneUnfit).
 db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (browserOnly = 1 OR nodeOnly = 1)').all().forEach(function (r) { pruneUnfit(r.name); });
