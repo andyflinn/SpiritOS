@@ -40,6 +40,10 @@ const PLUGIN_PATH = /^spirit\/app\/([^/]+)(\/\1\.json)?$/;
 Promise.resolve(spirit.require('spirit/app/api.js')).then(null, function () { /* the binding; the verbs are read below */ });
 const VERBS = spirit.required.spirit.app.api.verbs;
 
+// The tree's paths are the run folder's, so the app folders stand under spirit/app/.
+const APP_ROOT = 'spirit/app/';
+function tree() { return spirit.require('spirit/fs.js'); }
+
 function createApp(opts) {
   const o = opts || {};
   const folder = path.join(o.rootDir, 'spirit', 'app');
@@ -78,12 +82,18 @@ function createApp(opts) {
       shellMount: !!(own && own.shell && own.shell.mount === true),
       // A FAMILY OF ITS OWN (goal/G43.27; Andy: "an app must have an api.js"): spirit/app/<name>/api.js is there, so a page
       // finds its data.js beside it; an app without one leaves the name to the system's spirit/<name>/.
-      api: fs.existsSync(path.join(folder, name, 'api.js')) };
+      api: !!tree().file(APP_ROOT + name + '/api.js') };
   }
+  // THE FOLDERS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
+  // "fix spirit/app.js, NOW"): the plugins are the folders directly in spirit/app/ as spirit/fs.js holds them, fed in this,
+  // the node's main process, by its file watcher (goal/G49.1). A plugin's own <name>.json is still read for its content.
   function names() {
-    try {
-      return fs.readdirSync(folder, { withFileTypes: true }).filter(function (d) { return d.isDirectory() && !VERBS[d.name]; }).map(function (d) { return d.name; });
-    } catch (e) { return []; }
+    const files = tree().files();
+    return Object.keys(files).filter(function (p) {
+      if (p.indexOf(APP_ROOT) !== 0 || files[p].kind !== 'folder') return false;
+      const name = p.slice(APP_ROOT.length);
+      return name.indexOf('/') === -1 && !VERBS[name];
+    }).map(function (p) { return p.slice(APP_ROOT.length); }).sort();
   }
 
   function search(body) {
