@@ -82,7 +82,9 @@ function createApp(opts) {
       shellMount: !!(own && own.shell && own.shell.mount === true),
       // A FAMILY OF ITS OWN (goal/G43.27; Andy: "an app must have an api.js"): spirit/app/<name>/api.js is there, so a page
       // finds its data.js beside it; an app without one leaves the name to the system's spirit/<name>/.
-      api: !!tree().file(APP_ROOT + name + '/api.js') };
+      // goal/G49.2, Q1 ("may an app row's api become the cache's flag (api.js AND data.js)?"; Andy: "sure, retrofit that"):
+      // the folder's own api flag in the dataset.
+      api: ((tree().file(APP_ROOT + name) || {}).api) === true };
   }
   // THE FOLDERS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
   // "fix spirit/app.js, NOW"): the plugins are the folders directly in spirit/app/ as spirit/fs.js holds them, fed in this,
