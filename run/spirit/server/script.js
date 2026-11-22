@@ -5,7 +5,9 @@
 //
 //   node spirit/server/script.js [--port N]     (from repo://run/)
 //
-// The folder above this one, run/spirit/, is the web root: / answers index.html, any other path the file at that place.
+// THE URL IS THE FILE'S PATH (goal/G50.1; Andy: "shouldn't the script tag specify spirit/script.js, and no fudging of the
+// namespace???"): the web root is repo://run/, two folders up, so /spirit/script.js is run/spirit/script.js. A folder's
+// address answers its index.html, the one special name, so the page is /spirit/.
 // NEVER SERVED, BY NAME (goal/G50.1, cw's line the box left as is: "server/ never served by its name"): a path with a
 // folder named server anywhere in it is refused, wherever that folder stands, so the server's own code never reaches a
 // page. A path that climbs out of the root is refused too.
@@ -14,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const spirit = require('../script.js');
 
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, '..', '..');
 const NEVER_SERVED = 'server';
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
 
@@ -28,11 +30,11 @@ function portOf(argv) {
 function fileOf(url) {
   let p = '';
   try { p = decodeURIComponent(String(url || '/').split('?')[0]); } catch (e) { return null; }
-  if (p === '/' || p === '') p = '/index.html';
   const parts = p.split('/').filter(Boolean);
   if (parts.some(function (s) { return s === '..' || s.toLowerCase() === NEVER_SERVED; })) return null;
-  const full = path.resolve(ROOT, parts.join(path.sep));
+  let full = path.resolve(ROOT, parts.join(path.sep));
   if (full !== ROOT && full.indexOf(ROOT + path.sep) !== 0) return null;
+  try { if (fs.statSync(full).isDirectory()) full = path.join(full, 'index.html'); } catch (e) { /* not there: answered 404 */ }
   return full;
 }
 
