@@ -40,7 +40,7 @@ module.exports = {
     // appServer's streamPublisher (spirit/server/app.js), as agent's: the caller's key subscribes to testicle's rows, sent to
     // its family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared
     // here for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js").
-    subscribe: { family: 'spirit.type.string.word', run: 'spirit.type.string.word?', since: 'spirit.type.number.integer?' },
+    subscribe: { branch: 'spirit.type.string.word', run: 'spirit.type.string.word?', since: 'spirit.type.number.integer?' },
     unsubscribe: {},
   },
 };

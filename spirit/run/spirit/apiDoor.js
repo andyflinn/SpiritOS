@@ -110,11 +110,11 @@ function answer(servers, ask, caller) {
   // A FAMILY'S INTERFACE (goal/G32.3, the approved api {family}): the text of its api.js, for a member holding a grant
   // in that family, the family whole or one of its verbs; any other family is refused as its verbs would be.
   if (ask && typeof ask === 'object' && !Array.isArray(ask) && Object.keys(ask).length === 1 && ask.api && typeof ask.api === 'object') {
-    const fam = String(ask.api.family || '');
+    const fam = String(ask.api.branch || '');
     if (ownerFamily(fam)) return Promise.resolve(refusal('owner-only', 'the ' + fam + ' family is the owner\'s alone'));
     const held = paths.some(function (p) { return p === fam || p.indexOf(fam + '.') === 0; });
     if (!fam || !held) return Promise.resolve(refusal('not-granted', 'no grant in the family ' + fam + ' is held by this key'));
-    return Promise.resolve(servers.ask({ api: { family: fam } }, who));
+    return Promise.resolve(servers.ask({ api: { branch: fam } }, who));
   }
   // A call runs only when its app or its exact app.verb is granted; a
   // granted app's missing verb is the server's to answer, never the gate's.

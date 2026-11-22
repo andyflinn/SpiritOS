@@ -744,7 +744,7 @@ function subscribe(key, family, run, since) {
 // client mode, as kept (the sibling listener's rows, or a following server's from its chosen sibling), the bootstrap in
 // server mode; each row as it would be published, so a page files it as it always has.
 function isLoopbackSubscribe(caller, a) {
-  return !!caller && caller.owner !== true && String(caller.key || '') === selfKey() && !!selfKey() && String(a.family) === listenersName;
+  return !!caller && caller.owner !== true && String(caller.key || '') === selfKey() && !!selfKey() && String(a.branch) === listenersName;
 }
 function pushToPages() {
   let rows = [];
@@ -765,19 +765,19 @@ function withPublisher(verbs, opts) {
   const all = Object.assign({}, verbs);
   const refusedNoKey = function () { return Object.assign(new Error('not-granted'), { refusal: 'not-granted', extra: { why: 'a subscriber is a peer\'s key' } }); };
   all.subscribe = {
-    request: { family: '', run: '', since: 0 }, reply: { subscribed: true },
+    request: { branch: '', run: '', since: 0 }, reply: { subscribed: true },
     // The position (run and since together) is the caller's to leave out.
     accepts: function (x) {
-      return isPlain(x) && typeof x.family === 'string' && (x.run === undefined || typeof x.run === 'string') &&
+      return isPlain(x) && typeof x.branch === 'string' && (x.run === undefined || typeof x.run === 'string') &&
         (x.since === undefined || typeof x.since === 'number') &&
-        Object.keys(x).every(function (k) { return k === 'family' || k === 'run' || k === 'since'; });
+        Object.keys(x).every(function (k) { return k === 'branch' || k === 'run' || k === 'since'; });
     },
     handler: function (a, caller) {
       if (!caller || !caller.key) throw refusedNoKey();
-      if (!/^[A-Za-z]\w*$/.test(String(a.family || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its listener\'s' } });
+      if (!/^[A-Za-z]\w*$/.test(String(a.branch || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its listener\'s' } });
       if (isLoopbackSubscribe(caller, a)) { pushToPages(); return { subscribed: true }; }
-      subscribe(caller.key, String(a.family), a.run, a.since);
-      if (listeners[String(caller.key)] !== String(a.family)) { listeners[String(caller.key)] = String(a.family); saveListeners(); }
+      subscribe(caller.key, String(a.branch), a.run, a.since);
+      if (listeners[String(caller.key)] !== String(a.branch)) { listeners[String(caller.key)] = String(a.branch); saveListeners(); }
       return { subscribed: true };
     },
   };
@@ -1061,7 +1061,7 @@ function listenToSibling() {
   if (remote.hasListener) {
     asked = typeof s.subscribe === 'function' ? s.subscribe(key, remote.name).catch(function () { return false; }) : Promise.resolve(false);
   } else {
-    const position = sibling.run ? { family: remote.name, run: sibling.run, since: sibling.n } : { family: remote.name };
+    const position = sibling.run ? { branch: remote.name, run: sibling.run, since: sibling.n } : { branch: remote.name };
     asked = spirit.outcome(Promise.resolve(spirit.require('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.listener' }); })).then(function () {
       return spirit.outcome(Promise.resolve(spirit.require(branchPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') throw Object.assign(new Error('the sibling takes no subscribe'), { status: 0 });
@@ -1192,7 +1192,7 @@ function serve(verbs, opts) {
     // is kept as rows of the sender, and the position stays where it was.
     const st = senderOf(k, fam);
     if (st.pushing) { const cut = st.pushing; st.pushing = null; cut.forEach(function (r) { keepRow(st, r); }); }
-    const position = st.run ? { family: name, run: st.run, since: st.n } : { family: name };
+    const position = st.run ? { branch: name, run: st.run, since: st.n } : { branch: name };
     // A SUBSCRIBE IS A PLAIN peerPost TOO (goal/G41.22; Andy: "take the 3 seconds out"): answered no, or not within the
     // binding's wait, it answers false, and the caller asks again later.
     return s.follow(k).catch(function () { return false; }).then(function () {

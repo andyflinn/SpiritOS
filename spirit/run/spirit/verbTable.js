@@ -288,14 +288,14 @@ function createVerbTable() {
       var text = null;
       if (dir) { try { text = require('fs').readFileSync(require('path').join(dir, 'api.js'), 'utf8'); } catch (e) { text = null; } }
       if (text === null) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-interface', error: 'no interface for the branch ' + fam } });
-      return Promise.resolve({ status: 200, body: { family: fam, interface: text } });
+      return Promise.resolve({ status: 200, body: { branch: fam, interface: text } });
     }
     function asksInterface(body) {
-      return !!body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 && body.api && typeof body.api === 'object' && typeof body.api.family === 'string';
+      return !!body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 && body.api && typeof body.api === 'object' && typeof body.api.branch === 'string';
     }
     var d = {
       ask: function (body, caller) {
-        if (asksInterface(body)) return interfaceOf(body.api.family);
+        if (asksInterface(body)) return interfaceOf(body.api.branch);
         if (body === 'api') {
           return Promise.resolve(apps && typeof apps.ask === 'function' ? apps.ask('api', caller) : { status: 200, body: {} }).then(function (r) {
             var flat = Object.assign({}, (r && r.body && typeof r.body === 'object') ? r.body : {});
@@ -350,7 +350,7 @@ function createVerbTable() {
           // The call's args, as the door handed them on (goal/G41.15): read as they came, never sifted.
           var args = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
           var asked = name;
-          if (name === 'api' && typeof args.family === 'string') asked = { api: { family: args.family } };
+          if (name === 'api' && typeof args.branch === 'string') asked = { api: { branch: args.branch } };
           else if (name !== 'api') {
             asked = {};
             asked[name.slice(0, dot)] = {};
@@ -385,7 +385,7 @@ function createVerbTable() {
       var dot = name.indexOf('.');
       if (name !== 'api' && !d.handlerFor(name)) return Promise.resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: name });
       var asked = name;
-      if (name === 'api' && args && typeof args.family === 'string') asked = { api: { family: args.family } };
+      if (name === 'api' && args && typeof args.branch === 'string') asked = { api: { branch: args.branch } };
       else if (name !== 'api') {
         var given = args && typeof args === 'object' && !Array.isArray(args) ? args : {};
         asked = {};

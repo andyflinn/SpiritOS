@@ -1255,7 +1255,7 @@ catch (e) {
     try { key = String(spirit.require('spirit/relayAuth.js').loadIdentity(ROOT_DIR).publicKey || ''); } catch (e) { key = ''; }
     if (!key) return;
     appClient.servers().forEach(function (name) {
-      Promise.resolve(appClient.ask({ [name]: { subscribe: { family: name } } }, { key: key })).catch(function () { /* a server down is asked at the next connect */ });
+      Promise.resolve(appClient.ask({ [name]: { subscribe: { branch: name } } }, { key: key })).catch(function () { /* a server down is asked at the next connect */ });
     });
   };
   // THE ONE DOOR TO THE FLAT TABLE (goal/G30.4): this node's families and its apps' side by side. apiDoor (a

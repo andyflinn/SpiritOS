@@ -317,9 +317,9 @@
     };
     if (!out.listener) out.listener = autoVerb('listener', function (a) { return Object.keys(a).length === 1 && typeof a.json === 'string'; }, 'listener takes {json}');
     if (!out.subscribe) out.subscribe = autoVerb('subscribe', function (a) {
-      return typeof a.family === 'string' && (a.run === undefined || typeof a.run === 'string') && (a.since === undefined || typeof a.since === 'number') &&
-        Object.keys(a).every(function (k) { return k === 'family' || k === 'run' || k === 'since'; });
-    }, 'subscribe takes {family, run?, since?}');
+      return typeof a.branch === 'string' && (a.run === undefined || typeof a.run === 'string') && (a.since === undefined || typeof a.since === 'number') &&
+        Object.keys(a).every(function (k) { return k === 'branch' || k === 'run' || k === 'since'; });
+    }, 'subscribe takes {branch, run?, since?}');
     if (!out.unsubscribe) out.unsubscribe = autoVerb('unsubscribe', function (a) { return Object.keys(a).length === 0; }, 'unsubscribe takes {}');
     if (typeof def.names === 'function') {
       var extra = def.names(call, { file: function (p) { return getFile(p); }, text: text, refusal: refusal, check: check });
@@ -346,7 +346,7 @@
       if (!Object.prototype.hasOwnProperty.call(nodeOnce, p)) { nodeOnce[p] = require(file); placeAt(required, p, nodeOnce[p]); }
       return Promise.resolve(nodeOnce[p]);
     }
-    return Promise.resolve(post('api', { family: fam })).then(function (got) {
+    return Promise.resolve(post('api', { branch: fam })).then(function (got) {
       if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'no interface for the branch ' + fam);
       return loadInterface(got.body.interface, fam);
     });
@@ -387,7 +387,7 @@
     return function (verb, args) {
       var n = String(verb || '');
       var body;
-      if (n === 'api') body = args && args.family ? { api: { family: String(args.family) } } : 'api';
+      if (n === 'api') body = args && args.branch ? { api: { branch: String(args.branch) } } : 'api';
       else {
         var dot = n.indexOf('.');
         body = {};

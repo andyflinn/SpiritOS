@@ -44,7 +44,7 @@ module.exports = {
     // its family of that name; unsubscribe stops it. Who may is the node's grant.
     // run and since (goal/G41.12): the subscriber's position, the run of the desk and the number of the last row it took
     // in it; the desk's log hands what came after, or the desk pushes in full.
-    subscribe: { family: 'spirit.type.string.word', run: 'spirit.type.string.word?', since: 'spirit.type.number.integer?' },
+    subscribe: { branch: 'spirit.type.string.word', run: 'spirit.type.string.word?', since: 'spirit.type.number.integer?' },
     unsubscribe: {},
   },
 };
