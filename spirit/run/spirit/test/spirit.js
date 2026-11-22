@@ -129,24 +129,24 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     const fams = await Promise.all([s.require(s.branchPath('demo')), s.require(s.branchPath('demo'))]);
     const two = await Promise.all([fams[0].hello({ name: 'bert' }), fams[1].hello({ name: 'carl' })]);
     out.two = two.map(function (r) { return r.said; });
-    out.bound = fams[0] === fams[1] && fams[0] === s.required.spirit.demo.api && typeof s.demo.hello === 'function';
+    out.bound = fams[0] === fams[1] && fams[0] === s.required.spirit.demo.api && typeof s.required.spirit.demo.api.hello === 'function';
     // ONE PLACE FOR A BRANCH (goal/G49.6; Andy, of G40.6 beside G43.32/G49.5: "AND WHICH FUCKING RULING DO YOU THINK
     // APPLIES??????", the later: "spirit.require() places the loaded script at the exact same path"): its verbs stand at
     // spirit.required.spirit.<branch-path>.api, the require answers that, and nothing of it stands on spirit.<branch>.
     const placed = s.required && s.required.spirit && s.required.spirit.demo && s.required.spirit.demo.api;
     out.onePlace = !!placed && typeof placed.hello === 'function' && fams[0] === placed && !Object.prototype.hasOwnProperty.call(s, 'demo');
-    out.hi = (await s.demo.hi('dave')).said;
-    out.dotted = typeof s.demo.lineWrite === 'function' && s.demo.lineWrite === s.demo['line.write'] && (await s.demo.lineWrite({ text: 't' })).wrote;
+    out.hi = (await s.required.spirit.demo.api.hi('dave')).said;
+    out.dotted = typeof s.required.spirit.demo.api.lineWrite === 'function' && s.required.spirit.demo.api.lineWrite === s.required.spirit.demo.api['line.write'] && (await s.required.spirit.demo.api.lineWrite({ text: 't' })).wrote;
     // No FS set on a family (goal/G43.20): its files are spirit.fs's, by the path its id names.
     out.fs = !('FS' in s.required.spirit.demo.api);
-    out.noArg = await code(s.demo.hello({ nme: 'x' }));
-    out.noVerb = typeof s.demo.nothing === 'undefined';
+    out.noArg = await code(s.required.spirit.demo.api.hello({ nme: 'x' }));
+    out.noVerb = typeof s.required.spirit.demo.api.nothing === 'undefined';
     out.noFamily = await code(s.require(s.branchPath('gone')));
-    try { await s.demo.hello({ name: 'held' }); } catch (e) { out.held = [e.code, e.message, e.status]; }
-    try { await s.demo.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
+    try { await s.required.spirit.demo.api.hello({ name: 'held' }); } catch (e) { out.held = [e.code, e.message, e.status]; }
+    try { await s.required.spirit.demo.api.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
     out.tree = Object.keys(await s.tree()).sort();
     out.viaRequire = (await s.require(s.branchPath('demo'))) === s.required.spirit.demo.api;
-    out.outcome = [await s.outcome(s.demo.hello({ name: 'eve' })), await s.outcome(s.demo.hello({ nme: 1 })), await s.outcome(s.demo.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error()))]
+    out.outcome = [await s.outcome(s.required.spirit.demo.api.hello({ name: 'eve' })), await s.outcome(s.required.spirit.demo.api.hello({ nme: 1 })), await s.outcome(s.required.spirit.demo.api.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error()))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
     // This process's job, published by event.publish with its own id, the one path.
     out.publish = s.event.publish({ x: 1 });
