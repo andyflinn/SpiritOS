@@ -405,6 +405,14 @@ test.run('in node, every name on the spirit instance but required has an upperca
   const o = O(); if (!o || !o.keys) return false;
   return o.keys.length > 0 && trunkWords(o.keys).length === 0;
 }, test.limit.quick);
+// THE NEW NAMES (goal/G49.6; cw's proposal, Andy: "wsl, function names accepted."): each helper on the trunk under the name
+// that says what it does. In node the instance holds these at start, as it held their old names.
+const NODE_HELPERS = ['requireScript', 'checkArgs', 'ruleNames', 'callOutcome', 'apiTree', 'logError', 'debugLog', 'eventStream', 'nodeFacts', 'processJob'];
+const PAGE_HELPERS = ['requireScript', 'readyPromise', 'startPage', 'checkArgs', 'ruleNames', 'callOutcome', 'apiTree', 'logError', 'debugLog', 'faceLogin'];
+test.run('in node, the helpers stand under their accepted names: requireScript, checkArgs, ruleNames, callOutcome, apiTree, logError, debugLog, eventStream, nodeFacts, processJob', 0.2, function () {
+  const o = O(); if (!o || !o.keys) return false;
+  return NODE_HELPERS.every(function (k) { return o.keys.indexOf(k) >= 0; });
+}, test.limit.quick);
 // goal/G49.6: G43.32's decided 8 (verbs bound on spirit.<branch> as well) is reversed; the later ruling applies, one place.
 test.run('in node, a branch\'s verbs stand at spirit.required.spirit.demo.api, the require answers it, and spirit.demo is not there', 0.2, function () {
   const o = O(); if (!o) return false;
@@ -544,6 +552,11 @@ test.run('on a page, started and a branch called, every name on window.spirit bu
   if (!T.ps) return false;
   const keys = Object.keys(T.wq.spirit);
   return keys.length > 0 && trunkWords(keys).length === 0;
+}, test.limit.quick);
+test.run('on a page, started, the helpers stand under their accepted names: requireScript, readyPromise, startPage, checkArgs, ruleNames, callOutcome, apiTree, logError, debugLog, faceLogin', 0.2, async function () {
+  if (!T.ps) return false;
+  const keys = Object.keys(T.wq.spirit);
+  return PAGE_HELPERS.every(function (k) { return keys.indexOf(k) >= 0; });
 }, test.limit.quick);
 test.run('on a page with window.spirit.transport set, every call goes through that link and nothing is fetched', 0.2, async function () {
   if (!T.ps) return false;
