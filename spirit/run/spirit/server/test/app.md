@@ -9,7 +9,7 @@ stream"); Desk and deskClient move onto it.
 
 ### The family path (goal/G41.12)
 
-- **One function, `familyPath(name)`, exported by appServer**, answers a family's own `api.js`: an app's
+- **One function, `branchPath(name)`, exported by appServer**, answers a family's own `api.js`: an app's
   `spirit/app/<name>/api.js`, the node's own `spirit/<name>/api.js` (goal/G43.20). Every caller uses it; no other file writes a family path: no `<name>.family`, no `family/api.js`, no join onto `'family'`.
   spirit.js holds the function, since the browser cannot load appServer, and appServer hands out the same one (cw,
   goal/G41.12 Q3); it is the one other file that writes the path.
@@ -63,7 +63,7 @@ stream"); Desk and deskClient move onto it.
   key in base64url and nothing beside it, and under it the family (`<key>.<family>`). The test reads what the cache holds through the
   family's data.js (`spirit.data.<family>.data`), never by a branch's name.
 - **It keeps every goal the sender sends**, no filtering on the client side, within its limit.
-- **A sender whose family has no folder on this node** (`familyPath` of it resolved from the run root) is not cached.
+- **A sender whose branch has no folder on this node** (`branchPath` of it resolved from the run root) is not cached.
 - **The cache keeps to its limit, and the sender's family api.js on the client's node does the shedding**, declaring
   nothing (Andy, Q2: "it sits at the receiving end of the stream, it owns the cache, it knows the default cache limit,
   IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE"). **A family with a shed of its own is shed by it**; **a
@@ -121,7 +121,7 @@ stream"); Desk and deskClient move onto it.
 ## What its test must try to break
 
 - The gate letting an extra key through, or a value of another type.
-- A family path written anywhere but `familyPath`, or a `<name>.family` folder left.
+- A family path written anywhere but `branchPath`, or a `<name>.family` folder left.
 - A delivery that is not an array, or one peerPost per backed-up row.
 - A subscribe again answered with a bootstrap, a cache swept by it, missed rows not handed, a row naming another key
   in its `to` left out, or a full push that leaves old rows.

@@ -60,7 +60,7 @@
   function bodyOf(got) { return got !== undefined && got !== null ? got : { ok: false, error: 'no answer' }; }
   function refusalOf(e) { return { ok: false, error: String((e && e.message) || e) }; }
   // A family of this node, bound by the one loader (goal/G43.27: bound on first call).
-  function family(name) { return S.require(S.familyPath(name)); }
+  function family(name) { return S.require(S.branchPath(name)); }
   // A relay row's key is its url; its key on the wire is the one its roll names (as Contacts reads it).
   function relayKey(party) {
     if (party.relayKey) return Promise.resolve(party.relayKey);

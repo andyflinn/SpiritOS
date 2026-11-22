@@ -68,7 +68,7 @@ function chKeep(peer, lines) { var C = chData(); if (C && peer) C.keep(peer, lin
 // ITS SERVER THROUGH THE SPIRIT OBJECT (goal/G43.24): the chat branch, bound by the one loader; a refusal throws its code.
 function chAsk(verb, args) {
   var S = window.spirit;
-  return Promise.resolve(S.require(S.familyPath('chat'))).then(function (b) { return b[verb](args || {}); }).then(function (body) {
+  return Promise.resolve(S.require(S.branchPath('chat'))).then(function (b) { return b[verb](args || {}); }).then(function (body) {
     if (!body || body.ok === false) throw new Error((body && (body.code || body.error)) || 'the chat server did not answer');
     return body;
   }, function (e) { throw new Error((e && (e.code || e.message)) || 'the chat server did not answer'); });

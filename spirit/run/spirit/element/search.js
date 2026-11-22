@@ -19,7 +19,7 @@
 // spirit.element.spirit.element.search.create(container, {   (the probabilitySearch)
 //   server, verb               the family searched and its search verb: the list asks server.verb itself, through the spirit
 //                              object (goal/G43.24; Andy: "every element that accesses ANY api must require them
-//                              themselves"), a family on spirit.ready or one spirit.require(spirit.familyPath(server))
+//                              themselves"), a family on spirit.ready or one spirit.require(spirit.branchPath(server))
 //                              binds, a dotted verb walked as a path into it
 //   search(args, verb)         optional: the list's own data source, asked instead, answering { status, body } (a list
 //                              that shapes its answer itself: contacts, branches, grants); verb is the search's or ask's
@@ -83,7 +83,7 @@
     var n = String(name || '');
     var dot = n.indexOf('.');
     var fam = n.slice(0, dot);
-    return S.outcome(Promise.resolve(S.ready).then(function (s) { return (s && s[fam]) || S.require(S.familyPath(fam)); }).then(function (f) {
+    return S.outcome(Promise.resolve(S.ready).then(function (s) { return (s && s[fam]) || S.require(S.branchPath(fam)); }).then(function (f) {
       var at = n.slice(dot + 1).split('.');
       var owner = f;
       for (var i = 0; i < at.length - 1; i++) owner = owner ? owner[at[i]] : null;

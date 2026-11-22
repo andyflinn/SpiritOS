@@ -83,7 +83,7 @@ if (require.main === module) {
     const cut = verb.indexOf('.');
     const family = verb.slice(0, cut);
     const name = verb.slice(cut + 1);
-    return spirit.outcome(spirit.require(spirit.familyPath(family)).then(function (c) { return c[name](args); }))
+    return spirit.outcome(spirit.require(spirit.branchPath(family)).then(function (c) { return c[name](args); }))
       .then(function (r) { return r && r.body; });
   };
   const say = function (text) {

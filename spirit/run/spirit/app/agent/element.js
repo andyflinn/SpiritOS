@@ -22,8 +22,8 @@
 //   first real tool: the bundle editor"): spirit/element/bundleEditor.js, beside the agent server's DEBUG box.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-// Each by its family's name, its path spirit.familyPath's (the family app).
-if (window.spirit && typeof window.spirit.require === 'function' && typeof window.spirit.familyPath === 'function') ['app'].forEach(function (n) { Promise.resolve(window.spirit.require(window.spirit.familyPath(n))).catch(function () {}); });
+// Each by its family's name, its path spirit.branchPath's (the family app).
+if (window.spirit && typeof window.spirit.require === 'function' && typeof window.spirit.branchPath === 'function') ['app'].forEach(function (n) { Promise.resolve(window.spirit.require(window.spirit.branchPath(n))).catch(function () {}); });
 (function () {
   // one: the table's name as a detail pane's title row says it ("[Table-Icon] \"Add | Change\" [Table-name]").
   var TABLES = [

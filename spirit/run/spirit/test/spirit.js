@@ -122,11 +122,11 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
   out.keys = Object.keys(s).sort();
   out.same = require(process.argv[2] + '/spirit/spirit.js') === s && globalThis.spirit === s;
   if (process.argv[3] === 'none') {
-    out.require = await code(s.require(s.familyPath('demo')));
+    out.require = await code(s.require(s.branchPath('demo')));
     out.tree = await code(s.tree());
     out.noPort = !('port' in s);
   } else {
-    const fams = await Promise.all([s.require(s.familyPath('demo')), s.require(s.familyPath('demo'))]);
+    const fams = await Promise.all([s.require(s.branchPath('demo')), s.require(s.branchPath('demo'))]);
     const two = await Promise.all([fams[0].hello({ name: 'bert' }), fams[1].hello({ name: 'carl' })]);
     out.two = two.map(function (r) { return r.said; });
     out.bound = fams[0] === fams[1] && fams[0] === s.demo && typeof s.demo.hello === 'function';
@@ -138,11 +138,11 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     out.fs = !('FS' in s.demo);
     out.noArg = await code(s.demo.hello({ nme: 'x' }));
     out.noVerb = typeof s.demo.nothing === 'undefined';
-    out.noFamily = await code(s.require(s.familyPath('gone')));
+    out.noFamily = await code(s.require(s.branchPath('gone')));
     try { await s.demo.hello({ name: 'held' }); } catch (e) { out.held = [e.code, e.message, e.status]; }
     try { await s.demo.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
     out.tree = Object.keys(await s.tree()).sort();
-    out.viaRequire = (await s.require(s.familyPath('demo'))) === s.demo;
+    out.viaRequire = (await s.require(s.branchPath('demo'))) === s.demo;
     out.outcome = [await s.outcome(s.demo.hello({ name: 'eve' })), await s.outcome(s.demo.hello({ nme: 1 })), await s.outcome(s.demo.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error()))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
     // This process's job, published by event.publish with its own id, the one path.
@@ -172,7 +172,7 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
       out.peerHow = how && how.waitMs;
       return new Promise(function (r) { setTimeout(function () { r(body && body.api ? { interface: '${POISON.replace(/'/g, "\\'")}' } : { said: 'hello from ' + peer }); }, 20); });
     };
-    const both = await Promise.all([s.require(s.familyPath('demo'), 'peerKey1', { waitMs: 777 }), s.require(s.familyPath('demo'), 'peerKey1', { waitMs: 777 })]);
+    const both = await Promise.all([s.require(s.branchPath('demo'), 'peerKey1', { waitMs: 777 }), s.require(s.branchPath('demo'), 'peerKey1', { waitMs: 777 })]);
     out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.demo !== both[0]];
     out.peerRan = globalThis.peerCodeRan === true;
     out.peerOwn = typeof both[0].hello === 'function' && typeof both[0].peerOnly === 'undefined';
@@ -277,9 +277,9 @@ test.run('the source sets the global before its first require', 0.2, function ()
 test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs', 0.2, function () {
   return !/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')) || false;
 }, test.limit.quick);
-// data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
+// data: the cache, spirit.data (goal/G41.3); branchPath: the one family path function (goal/G41.12); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'branchPath', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
 test.run('in node the instance holds exactly its members, and the families it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
@@ -391,7 +391,7 @@ test.run('spirit.tree() answers its node\'s api as it stands', 0.2, function () 
   const o = O(); if (!o) return false;
   return JSON.stringify(o.tree) === JSON.stringify(['demo', 'gone']) || false;
 }, test.limit.quick);
-test.run('spirit.require(spirit.familyPath(\'demo\')) answers the same member, spirit.demo', 0.2, function () {
+test.run('spirit.require(spirit.branchPath(\'demo\')) answers the same member, spirit.demo', 0.2, function () {
   const o = O(); if (!o) return false;
   return !!o.viaRequire || false;
 }, test.limit.quick);
@@ -626,13 +626,13 @@ test.run('on a page, a component that is not there refuses not-found', 0.2, asyn
 }, test.limit.quick);
 test.run('on a page, an interface answers its member on window.spirit', 0.2, async function () {
   if (!T.wq) return false;
-  const pf = await T.wq.spirit.require(T.wq.spirit.familyPath('demo'));
+  const pf = await T.wq.spirit.require(T.wq.spirit.branchPath('demo'));
   return pf === T.wq.spirit.demo || false;
 }, test.limit.quick);
 test.run('on a page, a require with a key answers the peer\'s family through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
-  const pp = await wq.spirit.require(wq.spirit.familyPath('demo'), 'peerKey2');
+  const pp = await wq.spirit.require(wq.spirit.branchPath('demo'), 'peerKey2');
   const ppa = await pp.hello({ name: 'x' });
   return (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.demo) || false;
 }, test.limit.quick);
@@ -683,7 +683,7 @@ test.run('on the node, spirit/app.js stands at spirit.required.spirit.app, and s
   return (placeOf(s, 'spirit/app.js') === appJs && placeOf(s, 'spirit/app/api.js') === require(path.join(RUN, 'spirit/app/api.js'))) || false;
 }, test.limit.quick);
 test.run('on the node, an interface is still bound by asking a node, as a promise', 0.2, function () {
-  const iface = s.require(s.familyPath('demo'));
+  const iface = s.require(s.branchPath('demo'));
   if (iface && typeof iface.then === 'function') { iface.then(null, function () {}); return true; }
   return false;
 }, test.limit.quick);
@@ -843,7 +843,7 @@ test.run('on a real page, using the family the page has not used yet for the fir
 // it asks desk itself and draws its list, never "the desk server did not answer".
 test.run('desk, off at load, is switched on from the page with app.active', 0.2, async function () {
   if (!L.atLoad) return false;
-  L.on = await L.page.evaluate("window.spirit.ready.then(function (s) { return Promise.resolve(s.require(s.familyPath('app'))).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
+  L.on = await L.page.evaluate("window.spirit.ready.then(function (s) { return Promise.resolve(s.require(s.branchPath('app'))).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
   return L.on === true || false;
 }, test.limit.quick);
 test.run('the desk server answers the page once switched on', 0.2, async function () {
@@ -1154,26 +1154,26 @@ test.run('the check sees the planted second relay/api.js, with both spirit/relay
 }, test.limit.quick);
 
 // goal/G43.20, its box: "a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js, a job is named by its
-// route, and nothing falls back to process/js/<name>". In a process: the path spirit.familyPath gives is the family's own
+// route, and nothing falls back to process/js/<name>". In a process: the path spirit.branchPath gives is the family's own
 // api.js, a system family's in spirit/<name>/, an app's in spirit/app/<name>/, and none names process/js.
 // goal/G43.20: in a process, a family's path is its own api.js, and nothing falls back to process/js
 let paths = null;
-function familyPaths() {
+function branchPaths() {
   if (paths) return paths;
   paths = JSON.parse(require('child_process').spawnSync(process.execPath, ['-e',
-    "require('./spirit/spirit.js'); console.log(JSON.stringify({ fs: spirit.familyPath('fs'), desk: spirit.familyPath('desk'), agent: spirit.familyPath('agent'), none: spirit.familyPath('zzNoSuchFamily') }));"],
+    "require('./spirit/spirit.js'); console.log(JSON.stringify({ fs: spirit.branchPath('fs'), desk: spirit.branchPath('desk'), agent: spirit.branchPath('agent'), none: spirit.branchPath('zzNoSuchFamily') }));"],
     { cwd: RUN, encoding: 'utf8' }).stdout || '{}');
   return paths;
 }
 test.run('a system family\'s path is spirit/<name>/api.js, so fs is spirit/fs/api.js', 0.2, function () {
-  return familyPaths().fs === 'spirit/fs/api.js' || false;
+  return branchPaths().fs === 'spirit/fs/api.js' || false;
 }, test.limit.quick);
 test.run('an app\'s path is spirit/app/<name>/api.js, as for desk and agent', 0.2, function () {
-  const p = familyPaths();
+  const p = branchPaths();
   return (p.desk === 'spirit/app/desk/api.js' && p.agent === 'spirit/app/agent/api.js') || false;
 }, test.limit.quick);
 test.run('no path names process/js, a name of no family\'s included', 0.2, function () {
-  const p = familyPaths();
+  const p = branchPaths();
   return (Object.keys(p).length === 4 && !/process\/js/.test(JSON.stringify(p))) || false;
 }, test.limit.quick);
 

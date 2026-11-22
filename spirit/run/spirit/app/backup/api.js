@@ -1,5 +1,5 @@
 'use strict';
-// spirit/run/spirit/app/backup/: the backup server's family interface, where spirit.familyPath('backup') finds it (goal/G41.12)
+// spirit/run/spirit/app/backup/: the backup server's family interface, where spirit.branchPath('backup') finds it (goal/G41.12)
 // THE backup SERVER'S INTERFACE (goal/G32.3): every verb it serves, each argument with its rule (spirit.js's
 // standard, '?' optional). The node answers this text to api {family} without the server hearing of it, and maps it
 // to its name: it names no family of its own. The rules are written by hand from the handlers in backup.js, not from

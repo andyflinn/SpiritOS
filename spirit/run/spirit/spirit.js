@@ -10,14 +10,14 @@
 //
 // WHAT IT IS
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
-//   - The rest comes from the api.js every family folder holds (spirit/fs/api.js, spirit/contact/api.js ...; a server's in
-//     its family folder, familyPath(name)), written to this file's standard: module.exports = { verbs: { <verb>:
-//     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per family: spirit.fs.load({path}),
+//   - The rest comes from the api.js every branch folder holds (spirit/fs/api.js, spirit/contact/api.js ...; a server's in
+//     its branch folder, branchPath(name)), written to this file's standard: module.exports = { verbs: { <verb>:
+//     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per branch: spirit.fs.load({path}),
 //     spirit.contact.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
 //     there in camel case (spirit.chat.lineWrite for line.write).
 //   - WHERE A MEMBER COMES FROM (goal/G32.3). Andy, 2026-10-22: "the api.js files should not assume the namespace they
-//     will occupy in the spirit object, that mapping belongs to the node". The names are the families the verb api
-//     answers; each family's interface is api {family}, the text of its api.js as the node reads it, run here as a
+//     will occupy in the spirit object, that mapping belongs to the node". The names are the branches the verb api
+//     answers; each branch's interface is api {branch}, the text of its api.js as the node reads it, run here as a
 //     module and bound under the name the node gave. No path of the page's own, and no api.js names itself.
 //
 // THE CHECK IS COMPLETE (Andy: "the pages check must be complete"): before a call goes out, every argument is checked
@@ -25,7 +25,7 @@
 // each by its rule (bad-request). A malformed call never leaves. The node stays the gate and checks everything again.
 // A reply that is not 2xx refuses, with its status and the node's own code.
 //
-// THE RULES (the standard a family's api.js writes to; '?' after a rule makes the argument optional):
+// THE RULES (the standard a branch's api.js writes to; '?' after a rule makes the argument optional):
 //   text        any string                      flag      '' or 'yes'
 //   name        a label by fieldRules.js        number    a finite number
 //   description a description by fieldRules    bool      true or false
@@ -181,7 +181,7 @@
   // post(verb, args) -> {status, text, body}: { call: verb, args } to the node's /api/spirit, the name and the arguments
   // apart (goal/G41.15; the box: "ONE ENVELOPE for every call to a node's door"), so an argument named verb is the
   // verb's own. post(verb, args, {stream: true, headers}) answers the response itself, read as it comes: the events
-  // family's subscribe (below).
+  // branch's subscribe (below).
   function post(verb, args, how) {
     var l = link();
     if (l && typeof l.ask === 'function') return Promise.resolve(l.ask(verb, args || {}));
@@ -206,7 +206,7 @@
   function text(bytes) {
     return new TextDecoder().decode(bytes);
   }
-  // A family's interface, the text api {family} answered, run as a module: its module.exports is the definition. What it
+  // A branch's interface, the text api {branch} answered, run as a module: its module.exports is the definition. What it
   // requires as it runs is its tree, as a page script's is (requireOne): its companion data.js (goal/G47.1; Andy's rule:
   // "every api.js requires it's companion data.js, and is the only script to require that data.js"). It answers once those have; one that fails leaves the interface standing.
   function loadInterface(source, name) {
@@ -230,15 +230,15 @@
   }
 
   // ── THE ASSEMBLING ───────────────────────────────────────────────────────────────────────────────────────────────
-  // One member per family, each verb a checked async call; then the family's own names (the kernel's, for fs).
-  // The name is the one the node gives the family (its api answer), never one the family's api.js claims.
+  // One member per branch, each verb a checked async call; then the branch's own names (the kernel's, for fs).
+  // The name is the one the node gives the branch (its api answer), never one the branch's api.js claims.
   function member(ask, getFile, fam, def) {
     var out = {};
     // ONE SEARCH ON THE WIRE AT A TIME (goal/G43.27; Andy: "a search over the wire should always be \"serialized\" having two
-    // of those in flight at the some time is ridiculous.", "put that throttle on spirit.js"): per family and the node or peer
+    // of those in flight at the some time is ridiculous.", "put that throttle on spirit.js"): per branch and the node or peer
     // it asks (this member), a search verb (search, or a name ending in .search) waits until the one before it has its
     // answer; the same search asked again while it is on the wire gets that one answer. Every caller is served the same way,
-    // the search element's lists, the finder, a family's own names, with no code of its own.
+    // the search element's lists, the finder, a branch's own names, with no code of its own.
     var searchTail = Promise.resolve();
     var searchOut = Object.create(null);
     function isSearch(verb) { return verb === 'search' || /\.search$/.test(verb); }
@@ -253,7 +253,7 @@
     function call(verb, args) {
       var spec = def.verbs[verb];
       var name = fam + '.' + verb;
-      if (!spec) return Promise.reject(refusal('no-such-verb', 'the ' + fam + ' family has no verb ' + verb));
+      if (!spec) return Promise.reject(refusal('no-such-verb', 'the ' + fam + ' branch has no verb ' + verb));
       var bad = check(name, spec, args);
       if (bad) return Promise.reject(bad);
       var send = function () { return ask(name, args || {}); };
@@ -265,7 +265,7 @@
       });
     }
     Object.keys(def.verbs || {}).forEach(function (verb) {
-      // A family may name the function that implements a verb (def.functions; goal/G43.7): the verb stays as it is on the wire.
+      // A branch may name the function that implements a verb (def.functions; goal/G43.7): the verb stays as it is on the wire.
       var named = def.functions && def.functions[verb];
       if (named) { out[named] = function (args) { return call(verb, args); }; return; }
       out[verb] = function (args) { return call(verb, args); };
@@ -273,9 +273,9 @@
       var camel = verb.replace(/\.([a-zA-Z0-9])/g, function (m, c) { return c.toUpperCase(); });
       if (camel !== verb && !(camel in out)) out[camel] = out[verb];
     });
-    // NO FS SET (goal/G43.20): a family's files are spirit.fs's, by the path its id names.
+    // NO FS SET (goal/G43.20): a branch's files are spirit.fs's, by the path its id names.
     // EVERY SERVER'S DEBUG (desk/G2.5, appServer's own verb), bound by hand (goal/G43.15): {} reads it, {on} sets it, and it
-    // answers {debug}. A family's api.js does not list it, so serverDEBUG would find no such function without this.
+    // answers {debug}. A branch's api.js does not list it, so serverDEBUG would find no such function without this.
     if (!out.DEBUG) out.DEBUG = function (args) {
       var a = args || {};
       var keys = Object.keys(a);
@@ -303,7 +303,7 @@
     // \"listener\""), bound by hand as remote is: { json } is one bundle of a stream's deliveries. A server delivers to a
     // subscriber's branch through this binding (appServer's deliver); with no api.js listing it, a desk subscribed to its
     // sibling's desk was never sent a row.
-    // subscribe { family, run?, since? } and unsubscribe {}, the publisher's two, are bound beside it the same way.
+    // subscribe { branch, run?, since? } and unsubscribe {}, the publisher's two, are bound beside it the same way.
     var autoVerb = function (verb, fits, says) {
       return function (args) {
         var a = args || {};
@@ -327,27 +327,27 @@
     }
     return out;
   }
-  // ── THE ONE INSTANCE BINDS ITS FAMILIES ON ITSELF (goal/G40.6) ──────────────────────────────────────────────────────
+  // ── THE ONE INSTANCE BINDS ITS BRANCHES ON ITSELF (goal/G40.6) ──────────────────────────────────────────────────────
   // Andy: "every javascript VM has ONE, one and only spirit object"; "What is createSpirit, it is completely
   // unnecessary"; "every loaded/required module then simply inserts its api functions into the one spirit object".
-  // Nothing here makes a second object. A node family's api.js, run here, inserts its verbs on the instance as
-  // spirit.<family>; a peer's family is held under that peer's key and answered by spirit.require.
+  // Nothing here makes a second object. A node branch's api.js, run here, inserts its verbs on the instance as
+  // spirit.<branch>; a peer's branch is held under that peer's key and answered by spirit.require.
   //
-  // A family's interface asked by ask, and made a member over ask and getFile, or refused no-interface.
+  // A branch's interface asked by ask, and made a member over ask and getFile, or refused no-interface.
   var interfaceDefs = Object.create(null);
   // A BRANCH IS BOUND FROM THE CALLER'S OWN COPY OF ITS api.js, A PEER'S TOO (goal/G43.32; Andy: "ALL, DO IT! WITH CODE FROM
   // THE OWN NODE!"): in node the file on its own disc, required as it is; on a page what its own node answers for it. Only
   // the calls go where ask sends them, to this node or to a peer; nothing a peer hands over is run here.
   function ownInterface(fam) {
     if (isNode()) {
-      var p = familyPath(fam);
+      var p = branchPath(fam);
       var file = require('path').join(RUN_ROOT, p);
-      if (!require('fs').existsSync(file)) return Promise.reject(refusal('no-interface', 'no interface for the family ' + fam));
+      if (!require('fs').existsSync(file)) return Promise.reject(refusal('no-interface', 'no interface for the branch ' + fam));
       if (!Object.prototype.hasOwnProperty.call(nodeOnce, p)) { nodeOnce[p] = require(file); placeAt(required, p, nodeOnce[p]); }
       return Promise.resolve(nodeOnce[p]);
     }
     return Promise.resolve(post('api', { family: fam })).then(function (got) {
-      if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'no interface for the family ' + fam);
+      if (!got || got.status !== 200 || !got.body || typeof got.body.interface !== 'string') throw refusal('no-interface', 'no interface for the branch ' + fam);
       return loadInterface(got.body.interface, fam);
     });
   }
@@ -361,9 +361,9 @@
       return member(ask, getFile, fam, def);
     });
   }
-  // This VM's node's family, on the instance as spirit.<family>. Two callers at once ask once; a refusal is asked
+  // This VM's node's branch, on the instance as spirit.<branch>. Two callers at once ask once; a refusal is asked
   // again next time.
-  // A family whose name is already on the instance (spirit.job, holding this process's job in node; spirit.event, the
+  // A branch whose name is already on the instance (spirit.job, holding this process's job in node; spirit.event, the
   // one stream) is extended, not replaced, and what it holds stays: a verb of the same name does not overwrite it.
   var asking = {};
   var bound = {};
@@ -380,8 +380,8 @@
     }, function (e) { delete asking[fam]; throw e; });
     return asking[fam];
   }
-  // A PEER'S FAMILY (goal/G33.4, box v38), held under its key. Its calls are packed as the far node's apiDoor takes them
-  // ('api', {api: {family}}, {family: {verb: args}}) and sent by spirit.peerPost; the apiDoor answers the body alone: ok
+  // A PEER'S BRANCH (goal/G33.4, box v38), held under its key. Its calls are packed as the far node's apiDoor takes them
+  // ('api', {api: {branch}}, {branch: {verb: args}}) and sent by spirit.peerPost; the apiDoor answers the body alone: ok
   // false is a refusal, 409, or 0 when the post never reached the peer or nothing answered.
   function peerAsk(key, how) {
     return function (verb, args) {
@@ -411,7 +411,7 @@
     return held[fam];
   }
 
-  // spirit.tree() -> the node's api answer as it stands: every family and verb this caller may call.
+  // spirit.tree() -> the node's api answer as it stands: every branch and verb this caller may call.
   function tree() {
     return post('api', {}).then(function (r) {
       if (r && r.status >= 200 && r.status < 300) return r.body || {};
@@ -434,17 +434,17 @@
   // can load its needed components there."; "the loaders name should be spirit.require()"; the key "a second argument
   // in spirit.require(), by default it's null (owner node) otherwise it's a peer ID". The one async loader, the same on a
   // page and in node. path is from the run root. A path in the node's own naming of an interface,
-  // familyPath(name) (a server's) or spirit/<name>/api.js (a node family's), binds that family: on the
-  // instance as spirit.<name> from this VM's node, or with a key as that peer's family (how, in node, is peerPost's
+  // branchPath(name) (a server's) or spirit/<name>/api.js (a node branch's), binds that branch: on the
+  // instance as spirit.<name> from this VM's node, or with a key as that peer's branch (how, in node, is peerPost's
   // waiting). Any other path is a component: in node required, answering its module.exports; on a page got and run as a
   // plain script (a stylesheet put on as a style), answering an empty object.
-  // THE ONE FAMILY PATH (goal/G41.12, box v15: "One function finds a family path ... and every caller uses it"; Andy,
-  // Q3, on holding it here, since this file runs on a page where appServer.js cannot load: "sure"). A family's path is its
-  // own api.js (goal/G43.20, the box: "a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js ... nothing
-  // falls back"): a system family's spirit/<name>/api.js, or in node, when that is not there and the app has one, an app's
-  // spirit/app/<name>/api.js. On a page the path only names the family (interfaceName); the node finds its folder.
+  // THE ONE BRANCH PATH (goal/G41.12, box v15: "One function finds a branch path ... and every caller uses it"; Andy,
+  // Q3, on holding it here, since this file runs on a page where appServer.js cannot load: "sure"). A branch's path is its
+  // own api.js (goal/G43.20, the box: "a branch is found as spirit/<name>/api.js or spirit/app/<name>/api.js ... nothing
+  // falls back"): a system branch's spirit/<name>/api.js, or in node, when that is not there and the app has one, an app's
+  // spirit/app/<name>/api.js. On a page the path only names the branch (interfaceName); the node finds its folder.
   // appServer.js hands out this same function. No other file writes the path.
-  function familyPath(name) {
+  function branchPath(name) {
     var n = String(name || '');
     if (isNode()) {
       var fs = require('fs');
@@ -454,7 +454,7 @@
     return 'spirit/' + n + '/api.js';
   }
   function interfaceName(p) {
-    // An app's family sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27).
+    // An app's branch sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27).
     var m = /^spirit\/app\/([^/]+)\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
   }
@@ -615,7 +615,7 @@
   self.outcome = outcome;
   self.tree = tree;
   self.require = requireOne;
-  self.familyPath = familyPath;
+  self.branchPath = branchPath;
 
   self.MIME_TYPES = MIME_TYPES;
   self.VERSION = VERSION;
@@ -623,7 +623,7 @@
   self.debug = debug;
 
   // ── THE ONE STREAM OF THIS VM: spirit.event.subscribe(handlers) (goal/G40.6) ──────────────────────────────────────
-  // Andy: "two verbs on events - publish - subscribe". The node's events family is its one dispatcher; this is its
+  // Andy: "two verbs on events - publish - subscribe". The node's events branch is its one dispatcher; this is its
   // subscribe, moved here from the old kernel's page stream. ONE STREAM PER PAGE (goal/G30.16; Andy: "the home page should
   // need one stream only."): every subscriber shares it, and one that comes later is handed the jobs as they stand and
   // told the stream is up. It comes back by itself (Andy, 2026-09-30: "this should work without a hickup."): an end or an
@@ -960,7 +960,7 @@
   // only when it reached and the peer did not refuse. A page hears no answer-post: the node's own peerPost waits on the
   // node's server stream, which a page does not hold, so peer.post's reply is the answer.
   // spirit.start() runs once the page can reach its node (the face shell after its link is up; index.html at load). It asks
-  // no api (goal/G43.27, Q1): spirit.ready answers the instance, on which any family named stands, bound when first called.
+  // no api (goal/G43.27, Q1): spirit.ready answers the instance, on which any branch named stands, bound when first called.
   self.peerPost = function (peer, app, body, how) {
     var whole = !!(how && how.answer === true);
     // What it needs, it requires itself: packet.js on a page wants the limits before it (spirit/limits.js).
@@ -985,11 +985,11 @@
     });
   };
   var started = null;
-  // A FAMILY THAT BINDS WHEN FIRST CALLED (goal/G43.27). spirit.<family> stands as an object at once: what it already holds
-  // (spirit.event' stream, spirit.job in node) answers as it is, and any other name is a call waiting for the family: called,
-  // it binds the family once (bindOwn: one api call), then calls the bound function of that name, a dotted path included
-  // (spirit.<family>.a.b). Once bound, the bound functions are on the object itself. Nothing is then-able, so a
-  // family handed to Promise.resolve stays a family.
+  // A BRANCH THAT BINDS WHEN FIRST CALLED (goal/G43.27). spirit.<branch> stands as an object at once: what it already holds
+  // (spirit.event' stream, spirit.job in node) answers as it is, and any other name is a call waiting for the branch: called,
+  // it binds the branch once (bindOwn: one api call), then calls the bound function of that name, a dotted path included
+  // (spirit.<branch>.a.b). Once bound, the bound functions are on the object itself. Nothing is then-able, so a
+  // branch handed to Promise.resolve stays a branch.
   function lazyCall(fam, path) {
     var fn = function () {
       var args = arguments;
@@ -997,7 +997,7 @@
         var at = m;
         var owner = m;
         for (var i = 0; i < path.length; i++) { owner = at; at = at ? at[path[i]] : undefined; }
-        if (typeof at !== 'function') throw refusal('no-such-verb', 'the ' + fam + ' family has no ' + path.join('.'));
+        if (typeof at !== 'function') throw refusal('no-such-verb', 'the ' + fam + ' branch has no ' + path.join('.'));
         return at.apply(owner, args);
       });
     };
@@ -1009,7 +1009,7 @@
       },
     });
   }
-  function lazyFamily(fam) {
+  function lazyBranch(fam) {
     if (bound[fam] || typeof Proxy !== 'function') return;
     var held = self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam]) ? self[fam] : {};
     self[fam] = new Proxy(held, {
@@ -1019,15 +1019,15 @@
       },
     });
   }
-  // WHAT spirit.ready ANSWERS: the one instance, seen so that a family is there the moment it is named (goal/G43.27, Q1;
+  // WHAT spirit.ready ANSWERS: the one instance, seen so that a branch is there the moment it is named (goal/G43.27, Q1;
   // Andy: "shouldn't it work without making a call, since the elements will trigger the necessary calls?", "Q1: clear").
-  // A name the instance does not hold, read off it, stands there as a family waiting for its first call (lazyFamily), so an
-  // app switched on after the page loaded is reached with no reload. The cost wsl named: a misspelt family fails when it is
+  // A name the instance does not hold, read off it, stands there as a branch waiting for its first call (lazyBranch), so an
+  // app switched on after the page loaded is reached with no reload. The cost wsl named: a misspelt branch fails when it is
   // called, not at load. Everything the instance holds answers as it is; window.spirit itself stays the plain instance.
-  var FAMILY_NAME = /^[a-z][A-Za-z0-9]*$/;
+  var BRANCH_NAME = /^[a-z][A-Za-z0-9]*$/;
   var view = typeof Proxy !== 'function' ? self : new Proxy(self, {
     get: function (target, prop) {
-      if (typeof prop === 'string' && prop !== 'then' && !(prop in target) && FAMILY_NAME.test(prop)) lazyFamily(prop);
+      if (typeof prop === 'string' && prop !== 'then' && !(prop in target) && BRANCH_NAME.test(prop)) lazyBranch(prop);
       return target[prop];
     },
   });
@@ -1038,10 +1038,10 @@
   self.start = function () {
     if (started) return started;
     // NO API CALL AT LOAD (goal/G43.27, Q1, above; before it, "lazy-load, is a tree....", G41.3, and "AGAIN, when i say
-    // lazy-load you found a way to fuck it up"): the node's api is never asked whole. A family binds the first time
-    // something calls it (lazyFamily), as a file loads the first time it is required: one api call, for that family only.
+    // lazy-load you found a way to fuck it up"): the node's api is never asked whole. A branch binds the first time
+    // something calls it (lazyBranch), as a file loads the first time it is required: one api call, for that branch only.
     started = Promise.resolve().then(function () {
-      // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each family through its own
+      // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each branch through its own
       // data.js (goal/G41.28). Asked once the page is parsed, so a page that loads it by tag keeps the one
       // cache it made.
       // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by

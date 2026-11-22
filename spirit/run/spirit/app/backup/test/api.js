@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/backup/test/api.js
 // The tests of spirit/app/backup/api.js, and of no other module (spec: ./api.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
-// The backup server's family interface (goal/G32.3), where spirit.familyPath('backup') finds it (goal/G41.12): one verb,
+// The backup server's family interface (goal/G32.3), where spirit.branchPath('backup') finds it (goal/G41.12): one verb,
 // status.get, taking nothing. Required as the node reads it; the verb is checked by spirit.js's own check (spirit.check).
 // The server's source (backup.js) is read as text only, to find the handler. One test.run per test (goal/G47.2).
 
@@ -27,7 +27,7 @@ test.run('the backup family\'s api.js loads', 0.2, function () {
   return true;
 }, test.limit.quick);
 test.run('the spirit object\'s family path for backup finds this api.js', 0.2, function () {
-  return path.join(RUN, spirit.familyPath('backup')) === FILE || false;
+  return path.join(RUN, spirit.branchPath('backup')) === FILE || false;
 }, test.limit.quick);
 // "The node answers this text to api {family} without the server hearing of it, and maps it to its name: it names no family of its own."
 test.run('it exports a table of verbs and nothing else: it names no family of its own', 0.2, function () {

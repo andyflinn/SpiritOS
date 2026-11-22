@@ -505,7 +505,7 @@ test.run('the data set is spirit/data.js', 0.2, function () {
 }, test.limit.quick);
 test.run('appServer takes a family\'s cache from the family\'s own data.js', 0.2, function () {
   cachesRead();
-  return !!/path\.dirname\(\s*spirit\.familyPath\([^;]{0,60}?\)\s*\)\s*,\s*['"]data\.js['"]/.test(C.appServer) ? true
+  return !!/path\.dirname\(\s*spirit\.branchPath\([^;]{0,60}?\)\s*\)\s*,\s*['"]data\.js['"]/.test(C.appServer) ? true
     : false;
 }, test.limit.quick);
 

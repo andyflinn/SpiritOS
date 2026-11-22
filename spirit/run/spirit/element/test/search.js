@@ -600,7 +600,7 @@ test.run('typing asks srv.search on the family spirit.ready holds', 0.2, async f
   bound = [];
   SP = window.spirit;
   SP.ready = Promise.resolve({ srv: fam('srv'), desk: fam('desk') });
-  SP.familyPath = function (n) { return 'spirit/app/' + n + '/api.js'; };
+  SP.branchPath = function (n) { return 'spirit/app/' + n + '/api.js'; };
   SP.require = function (p) { bound.push(p); return Promise.resolve(fam(/^spirit\/app\/([^/]+)\//.exec(p)[1])); };
   SP.outcome = function (c) {
     return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
@@ -661,7 +661,7 @@ test.run('with nothing to show it shows its empty words', 0.2, function () {
   Ln.destroy();
   delete SP.ready;
   delete SP.require;
-  delete SP.familyPath;
+  delete SP.branchPath;
   delete SP.outcome;
   // create: an empty list, and no rows given
   c2 = container();

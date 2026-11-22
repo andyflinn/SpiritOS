@@ -136,7 +136,7 @@ function reportToTesticle(rec, verb) {
     globalThis.window = undefined;
     let real = null;
     try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
-    testicle = testicle || real.require(real.familyPath('testicle'));
+    testicle = testicle || real.require(real.branchPath('testicle'));
     // ITS FAILURE CAUGHT WHERE IT IS KEPT (the test review, fix 1: "testReport.js:137 stores the report promise with no handler, and
     // :209 charges the rejection to the running test"; with no node, three passing tests gave two greens and a red): a family
     // that cannot load is asked for again by the next try (once), and its rejection is never a crash of the test that runs.
@@ -149,7 +149,7 @@ function reportToTesticle(rec, verb) {
     // A family that failed to load is asked for again on the next try.
     const once = function () {
       if (nowhere) return Promise.resolve();
-      testicle = testicle || real.require(real.familyPath('testicle'));
+      testicle = testicle || real.require(real.branchPath('testicle'));
       if (testicle && typeof testicle.then === 'function') testicle.then(null, function () { /* handled below */ });
       return Promise.resolve(testicle).then(function (f) { return f[verb || 'testicle.set'](rec); }, function (e) { testicle = null; throw e; });
     };

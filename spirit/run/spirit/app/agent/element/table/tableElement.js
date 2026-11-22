@@ -46,7 +46,7 @@
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
 (function () {
-  var AGENT = spirit.familyPath('agent');
+  var AGENT = spirit.branchPath('agent');
   var made = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function agent() { return Promise.resolve(spirit.require(AGENT)); }

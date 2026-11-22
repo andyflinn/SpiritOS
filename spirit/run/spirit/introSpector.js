@@ -7,7 +7,7 @@
 //   place there (verb.design.md, README.md), and the family's api.js, which spirit.js reads
 //   (some hold more code beside it: desk's cacheRules.js, a test/ folder). Where it sits: an app of
 //   spirit/app/<name>/ has it at its top (appServer.withAgents, goal/G43.27), a node family's is spirit/<family>/
-//   (spirit.familyPath).
+//   (spirit.branchPath).
 //
 //   family(folder) answers the folder's FS verbs, FS.<name> with the kernel's fs names and a search, scoped to the
 //   folder. The AGENTS verbs that stood here (AGENTS, AGENTS.introspect, AGENTS.<verb>) are gone: an agent reads

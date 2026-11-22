@@ -10,7 +10,7 @@ The fs family's declaration and its kernel names. This test holds one part of it
 
 ## goal/G43.20: annotations are the node's only
 
-Andy: *"ANNOTATIONS WILL BE NODE ONLY."* The family has no `fs.annotations` and no `fs.annotate`, and no `getAnnotations`
+Andy: *"ANNOTATIONS WILL BE NODE ONLY."* The branch has no `fs.annotations` and no `fs.annotate`, and no `getAnnotations`
 among its kernel names.
 
 ## What its test must try to break

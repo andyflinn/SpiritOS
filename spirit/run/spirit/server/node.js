@@ -1270,12 +1270,12 @@ catch (e) {
       return own;
     },
     // A served app's family folder, where its api.js is (goal/G32.3), as the one family path function names it
-    // (spirit.familyPath, goal/G41.12).
+    // (spirit.branchPath, goal/G41.12).
     // An app of spirit/app/ has it at its top, beside <name>.js, as spirit/<family>/ has it (goal/G43.27); the node finds the
     // folder, so a page binds by the name alone.
     familyDir: function (name) {
       const app = path.join(ROOT_DIR, 'spirit', 'app', String(name));
-      return require('fs').existsSync(path.join(app, 'api.js')) ? app : path.join(ROOT_DIR, path.dirname(spirit.familyPath(name)));
+      return require('fs').existsSync(path.join(app, 'api.js')) ? app : path.join(ROOT_DIR, path.dirname(spirit.branchPath(name)));
     },
   });
   jobs.startNodeServers(ROOT_DIR, appClient);

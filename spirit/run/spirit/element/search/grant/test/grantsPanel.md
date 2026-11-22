@@ -19,7 +19,7 @@ boody well know how to configure the damn grantsPanel element"*.
 
 **What it needs, it gets itself** (goal/G43.24; Andy: *"every fucking element gets the interfaces it needs"*): it asks its
 verbs through the spirit object, `family.verb` called on that family as `spirit.ready` holds it, or, for a server's
-family not there, as `spirit.require(spirit.familyPath(name))` binds it; its answer read through `spirit.outcome`, and its
+family not there, as `spirit.require(spirit.branchPath(name))` binds it; its answer read through `spirit.outcome`, and its
 markup escaped with `spirit.escapeHtml`. No `api.verb`, no `api.escapeHtml`, and no api handed on: its rows' arming buttons hear a click elsewhere themselves. No family carries an FS set (goal/G43.20).
 
 Made without its ID table or its grants table, it throws nothing and says so (goal/G41.19, box v23: *"throws nothing

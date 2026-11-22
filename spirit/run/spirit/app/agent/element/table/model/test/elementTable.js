@@ -16,11 +16,11 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
+const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 const FILE = path.join(__dirname, '..', 'elementTable.js');
 const SHARED = 'spirit/app/agent/element/table/tableElement.js';
 const ROW = 'spirit/app/agent/element/table/model/elementRow.js';
-const AGENT = familyPath('agent');
+const AGENT = branchPath('agent');
 const PARTS = ['spirit/element/search.js', 'spirit/element/rowForm.js'];
 
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
@@ -72,7 +72,7 @@ function matches(n, s) { return s.charAt(0) === '#' ? n.id === s.slice(1) : s.ch
 // { host, o, face, value, destroyed }; W.asks: each ask of the agent family; W.answer: what it answers.
 const W = { required: [], tables: [], rows: [], forms: [], busy: [], drops: [], asks: [], answer: null, held: null };
 function world() {
-  global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, familyPath: familyPath, isBrowser: function () { return false; } } };
+  global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, branchPath: branchPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
   // As their own files place themselves: by the one helper, at spirit.element.<their path>.

@@ -121,9 +121,9 @@ const STUB = [
   "  log({ verb: 'busy', args: a });",
   "  return Promise.resolve({ busy: false });",
   "} };",
-  "const familyPath = require(" + JSON.stringify(SPIRIT) + ").familyPath;",
+  "const branchPath = require(" + JSON.stringify(SPIRIT) + ").branchPath;",
   "globalThis.spirit = {",
-  "  familyPath: familyPath,",
+  "  branchPath: branchPath,",
   // goal/G43.32, decided 3: on the node a script comes back at once, by its run-root path; a branch's api.js binds it.
   "  require: function (p) { if (!/\\/api\\.js$/.test(p)) return require(require('path').join(" + JSON.stringify(RUN) + ", p)); log({ require: p }); return Promise.resolve(family); },",
   "  outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
@@ -195,7 +195,7 @@ test.after(function () { try { fs.rmSync(TMP, { recursive: true, force: true });
 // run: one measurement run per platform
 test.run('a scratch clone is made with a bare origin beside it and a traffic log', 0.2, function () {
   // The testicle family as the one family path function names it (goal/G41.12).
-  WR.FAMILY = require(SPIRIT).familyPath('testicle');
+  WR.FAMILY = require(SPIRIT).branchPath('testicle');
   setup();
   WR.COMMIT = git(__dirname, ['rev-parse', '--short', 'HEAD']).out;
   WR.ready = fs.existsSync(PRELOAD) && fs.existsSync(path.join(CLONE, 'README.md')) && !!WR.COMMIT;

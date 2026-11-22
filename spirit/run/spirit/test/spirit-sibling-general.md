@@ -56,7 +56,7 @@ gone. From `./app.js`: that an app's description names its icon and label. A scr
 #### Its interface, where it holds an api.js
 
 - **Its verb rules live in its `api.js`** (decided 7): it loads, and declares each verb as its arguments and their rules.
-- **It stands where its family is found** (goal/G43.27, the fewest path elements): `spirit.familyPath(<name>)` is its
+- **It stands where its family is found** (goal/G43.27, the fewest path elements): `spirit.branchPath(<name>)` is its
   `api.js`; and **no other `<name>/api.js` is in the tree** (`spirit/<name>/`, `spirit/app/<name>/`,
   `process/js/<name>/[family/]`; Andy: *"duplicate <name>/api.js raise a red."*).
 - **Its verbs and their `.json` files match one to one** (goal/G47.4; Andy: *"api.js and <verb>.json files match

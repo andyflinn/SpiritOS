@@ -31,10 +31,10 @@ test.run('loading a file that is there answers its text', 0.2, async function ()
 }, test.limit.quick);
 
 // GOAL/G43.20 (Andy: "ANNOTATIONS WILL BE NODE ONLY."): no caller reads or writes an annotation.
-test.run('the family has no fs.annotations and no fs.annotate', 0.2, function () {
+test.run('the branch has no fs.annotations and no fs.annotate', 0.2, function () {
   return !('annotations' in api.verbs) && !('annotate' in api.verbs) ? true : false;
 }, test.limit.quick);
-test.run('the family has no getAnnotations among its kernel names', 0.2, function () {
+test.run('the branch has no getAnnotations among its kernel names', 0.2, function () {
   return !('getAnnotations' in names(function () { return Promise.resolve({}); })) ? true : false;
 }, test.limit.quick);
 

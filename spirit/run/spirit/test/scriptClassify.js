@@ -177,7 +177,7 @@ async function loadOnPage(rel) {
 // THE CLASS FROM THE TWO ANSWERS, or why there is none.
 // THE NODE REFUSING, NOT THE SCRIPT CRASHING: a page that ran the script and was refused a family's interface because that
 // family's server is off on the scratch node (testicle's own, which must stay off there) has loaded it.
-const REFUSED_BY_NODE = /^(?:Uncaught \(in promise\) )?(?:Error: )?no interface for the family \w+$/;
+const REFUSED_BY_NODE = /^(?:Uncaught \(in promise\) )?(?:Error: )?no interface for the branch \w+$/;
 function classOf(node, page) {
   if (page.err && REFUSED_BY_NODE.test(String(page.err).trim())) page = { err: '' };
   if (!node.err && !page.err) return { browserOnly: false, nodeOnly: false };
@@ -189,7 +189,7 @@ function classOf(node, page) {
 // The node's testicle, as the reporter finds it: the checkout's own node.
 let testicle = null;
 function tell(row) {
-  testicle = testicle || spirit.require(spirit.familyPath('testicle'));
+  testicle = testicle || spirit.require(spirit.branchPath('testicle'));
   return Promise.resolve(testicle).then(function (f) { return f['script.classify'](row); });
 }
 

@@ -922,7 +922,7 @@ test.after(stopAll);
   const fieldText = function () { return c4.evaluate('(function () { var f = ' + barForm() + '; var b = f && f.querySelector("button[id$=\'field\']"); return b ? String(b.textContent || "") : ""; }())'); };
   test.run('before any pick the dropdown\'s field names the server remote answers as current', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
-    W4.real = parsed(await c4.evaluate('spirit.require(spirit.familyPath("testicle")).then(function (f) { return f.remote({}); }).then(function (r) { return JSON.stringify(r); }, function () { return "null"; })')) || {};
+    W4.real = parsed(await c4.evaluate('spirit.require(spirit.branchPath("testicle")).then(function (f) { return f.remote({}); }).then(function (r) { return JSON.stringify(r); }, function () { return "null"; })')) || {};
     const c = (W4.real.items || []).filter(function (i) { return String(i.key) === String(W4.real.current); })[0];
     const label = c ? String(c.label || '') : '';
     if (!label) return false;

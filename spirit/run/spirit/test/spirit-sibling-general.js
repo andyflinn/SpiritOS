@@ -62,7 +62,7 @@ const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const { branchesOf } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
-const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
+const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 
 const ASK_MS = 8000;
@@ -166,7 +166,7 @@ if (withApi.length) {
   // Where it stands is where its family is found (goal/G43.27: spirit/<name>/, spirit/app/<name>/, the fewest path
   // elements), and no other api.js has its name.
   test.run('its api.js is where its branch is found', 0.4, function () {
-    return overAll(withApi, function (b) { return familyPath(b.family) === b.api; });
+    return overAll(withApi, function (b) { return branchPath(b.family) === b.api; });
   }, test.limit.quick);
   test.run('no other api.js of its branch in the tree', 0.4, function () {
     return overAll(withApi, function (b) {

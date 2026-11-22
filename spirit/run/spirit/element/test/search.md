@@ -74,7 +74,7 @@ draws and ranks.
   - Asks `server.verb` with `args(words, values)`, or `{ text }` without `args`: through its own data source
     `search(args, verb)` when the mounter hands one, else through the spirit object itself (goal/G43.24; Andy: *"every
     element that accesses ANY api must require them themselves"*): the family on `spirit.ready`, or the one
-    `spirit.require(spirit.familyPath(server))` binds, a dotted verb walked as a path into it, answered by
+    `spirit.require(spirit.branchPath(server))` binds, a dotted verb walked as a path into it, answered by
     `spirit.outcome`. It takes no api from its options. With neither a source nor a server and verb it asks nobody.
 - **One call on the wire**:
   - While a search is out, more typing sends nothing.

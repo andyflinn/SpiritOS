@@ -23,7 +23,7 @@ and this file.
   - anything else, a crash in both among it: not classifyable.
 - Its scratch node has every app's server on (an app whose `<name>.json` mounts on the node), testicle's left off (it would
   classify again inside this one): an app's `data.js` asks its family's interface on a page, which a node answers only
-  while that server is on. A page refused a family's interface (*no interface for the family …*, testicle's own) ran the
+  while that server is on. A page refused a family's interface (*no interface for the branch …*, testicle's own) ran the
   script and has loaded it: the node refused, the script did not crash.
 - No argument: every tracked product script, vendored code left out, as testicle never watches it.
 - A file in a test folder (a tool of the test system with a test of its own, `testReport.js`, `testModule.js`, or a

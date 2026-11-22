@@ -83,7 +83,7 @@ node at once (below).
 | path | in node | on a page |
 |---|---|---|
 | a component | required from the run root, its `module.exports` | got by `get` and run as a plain script, with no module box, so a file written for both node and a page takes its page branch and puts itself on the page (every shell element does; CodeMirror and its mode files too, goal/G41.7); a stylesheet is put on the page as a style; answers an empty object; `not-found` when it is not there |
-| an interface: `spirit/app/<name>/api.js` or `spirit/<name>/api.js` (`spirit.familyPath(name)`) | binds `spirit.<name>` from its node and answers it, asked once by any number of callers at once; `no-interface` for a family the node lacks, `no-node` with no port | the same |
+| an interface: `spirit/app/<name>/api.js` or `spirit/<name>/api.js` (`spirit.branchPath(name)`) | binds `spirit.<name>` from its node and answers it, asked once by any number of callers at once; `no-interface` for a family the node lacks, `no-node` with no port | the same |
 | an interface with `key` | the peer's family, through `spirit.peerPost` with `how`; held under the key, not on the instance | the peer's family, through the home node's `peer.post` |
 
 **`spirit.required.<path>`** (goal/G43.32; Andy: *"spirit.require() both on the node, AND on the browser should simply
@@ -322,7 +322,7 @@ The tree is read as it is. A second api.js is planted into a scratch node's copy
 ### goal/G43.20: a family's path in a process
 
 The box: *"a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js, a job is named by its route, and nothing
-falls back to process/js/<name>"*. In a process, `spirit.familyPath` gives a system family's own `spirit/<name>/api.js`
+falls back to process/js/<name>"*. In a process, `spirit.branchPath` gives a system family's own `spirit/<name>/api.js`
 (fs), an app's `spirit/app/<name>/api.js` (desk, agent), and no path it gives names `process/js`, a name of no family's
 included.
 

@@ -751,7 +751,7 @@ async function session() {
   const chrome = findChrome();
   if (!chrome) { P.fail = true; return P; }
   // ITS OWN APP'S SERVER ON TOO (goal/G47.1, cleaning, Andy's testicle's first red: spirit/app/backup/api.js never loaded,
-  // "no interface for the family backup", since backup was not turned on on the scratch node): a script of
+  // "no interface for the branch backup", since backup was not turned on on the scratch node): a script of
   // spirit/app/<name>/ is loaded with <name>'s server running, as on a node that uses it.
   // APP-OWNED ELEMENTS, THEIR SERVER STARTED FIRST (goal/G47.1; Andy: "for any element in a spirit/app/<name>/<name>.json
   // folder\" a server MUST be mounted if a mountable server exists in that app folder before a test is conducted", "wsl,

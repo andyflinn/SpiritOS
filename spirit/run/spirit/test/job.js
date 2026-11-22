@@ -1395,12 +1395,12 @@ function mountPart() {
   }, test.limit.quick);
   test.run('a page binds the new family by its name, and its verb answers', 0.2, async function () {
     if (noPage()) return false;
-    const pinged = await onPage("spirit.ready.then(function () { return spirit.require(spirit.familyPath('" + NAME + "')); }).then(function (f) { return f.ping({}); })");
+    const pinged = await onPage("spirit.ready.then(function () { return spirit.require(spirit.branchPath('" + NAME + "')); }).then(function (f) { return f.ping({}); })");
     return (!!pinged && !!pinged.v && Number(pinged.v.pid) > 0) || false;
   }, test.limit.quick);
   test.run('on a page, binding the family by its api.js loads and runs the data.js beside <name>.js', 0.2, async function () {
     if (noPage()) return false;
-    const managed = await onPage("spirit.ready.then(function () { return spirit.require(spirit.familyPath('" + NAME + "')); }).then(function () { return window.__appData; })");
+    const managed = await onPage("spirit.ready.then(function () { return spirit.require(spirit.branchPath('" + NAME + "')); }).then(function () { return window.__appData; })");
     return (!!managed && managed.v === NAME) || false;
   }, test.limit.quick);
   test.run('the one <name>.js also runs on a page, one file on the page and as the server', 0.2, async function () {

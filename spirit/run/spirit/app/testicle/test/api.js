@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/testicle/test/api.js
 // The tests of spirit/app/testicle/api.js, and of no other module (spec: ./api.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
-// The testicle server's family interface (goal/G32.3), where spirit.familyPath('testicle') finds it: every verb it serves,
+// The testicle server's family interface (goal/G32.3), where spirit.branchPath('testicle') finds it: every verb it serves,
 // each argument with its rule. Required as the node reads it; every verb is checked by spirit.js's own check
 // (spirit.check). The server's source (testicle.js) and appServer.js are read as text only, to find each verb's handler.
 // One test.run per test (goal/G47.2).
@@ -32,8 +32,8 @@ test.run('testicle\'s api.js loads', 0.2, function () {
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('spirit.familyPath of testicle finds api.js here', 0.2, function () {
-  return path.join(RUN, spirit.familyPath('testicle')) === FILE || false;
+test.run('spirit.branchPath of testicle finds api.js here', 0.2, function () {
+  return path.join(RUN, spirit.branchPath('testicle')) === FILE || false;
 }, test.limit.quick);
 
 // ── its shape ──

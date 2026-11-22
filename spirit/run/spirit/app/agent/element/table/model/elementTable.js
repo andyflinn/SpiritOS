@@ -38,7 +38,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
           var id = drop && drop.value ? String(drop.value) : '';
           if (!id) return null;
           said.textContent = '';
-          return Promise.resolve(spirit.require(spirit.familyPath('agent'))).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
+          return Promise.resolve(spirit.require(spirit.branchPath('agent'))).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
             if (!gone) said.textContent = window.spirit.element.spirit.app.agent.element.table.tableElement.whyOf(e);
           });
         } });

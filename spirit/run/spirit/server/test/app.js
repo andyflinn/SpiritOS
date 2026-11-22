@@ -109,10 +109,10 @@ const asked = [];
 // The one family path function (goal/G41.12), spirit.js's own, read before the stand-in takes spirit.js's place. spirit.js
 // loads the data set as it is required, onto the real spirit object; it is let go again, so appServer's own load of it
 // puts it on the stand-in, where the planted family's translator finds it.
-const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
+const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 delete require.cache[require.resolve(path.join(RUN, 'spirit', 'data.js'))];
 const fake = {
-  familyPath: familyPath,
+  branchPath: branchPath,
   require: function (p, key) {
     const q = String(p);
     if (/spirit\/auth\/api\.js$/.test(q)) {
@@ -122,7 +122,7 @@ const fake = {
       });
     }
     // A server family under a key (the publisher's, as the client subscribes; the client's, as the publisher delivers),
-    // at the path spirit.familyPath gives: routing only, this test writes no family path of its own.
+    // at the path spirit.branchPath gives: routing only, this test writes no family path of its own.
     // The node's contacts, as the background check of remote asks them (goal/G47.5): one that lets this node in, one whose
     // server refuses it, one that stays silent.
     if (/spirit\/contact\/api\.js$/.test(q)) {
@@ -258,7 +258,7 @@ async function child(mode) {
     out.title = itemOf('a1') && itemOf('a1').title;
     out.two = hasIn(D, 2);
   } else if (mode === 'off' || mode === 'nofamily') {
-    // off: no cache switch; nofamily: the switch on, but the sender's family has no folder on this node.
+    // off: no cache switch; nofamily: the switch on, but the sender's branch has no folder on this node.
     const { s } = start(mode === 'off' ? {} : { cache: true });
     await tick(100);
     bootstrap = [row(GOAL), row(item(1))];
@@ -692,14 +692,14 @@ function stateCachePart() {
 // ── its own checks: one stream protocol for every server (goal/G41.11, goal/G41.12) ─────────────────────────────────────
 function ownPart() {
   // the family path: one function, in appServer (box v15)
-  test.run('appServer exports familyPath', 0.2, function () {
+  test.run('appServer exports branchPath', 0.2, function () {
     const A0 = require(FILE);
-    return typeof A0.familyPath === 'function' || false;
+    return typeof A0.branchPath === 'function' || false;
   }, test.limit.quick);
-  test.run('the familyPath of an app named <name> is spirit/app/<name>/api.js', 0.2, function () {
+  test.run('the branchPath of an app named <name> is spirit/app/<name>/api.js', 0.2, function () {
     const A0 = require(FILE);
     // The planted family, an app of spirit/app/ for this run (goal/G47.4: no app of the tree named as a fixture).
-    const fp = typeof A0.familyPath === 'function' ? A0.familyPath(FAMILY) : null;
+    const fp = typeof A0.branchPath === 'function' ? A0.branchPath(FAMILY) : null;
     return fp === 'spirit/app/' + FAMILY + '/api.js' || false;
   }, test.limit.quick);
   // Apps of spirit/app/ since goal/G43.27: the family's interface at the top of the app folder, no family/ left. Every
@@ -721,7 +721,7 @@ function ownPart() {
   // A join onto 'family' is a path; a bare 'family' is no path since goal/G41.14, where it names a column and a field
   // (Andy: "these four following NAMES will be used in SpiritOS: bundle > branch > family > verb").
   const FAMILY_PATH_WRITTEN = [/\.family(?=['"`\/\\]|$)/m, /(^|[^\\])\/?family\/api\.js/, /join\([^)]*['"`]family['"`]\s*[),]/];
-  test.run('no file outside appServer\'s familyPath writes a family path', 0.2, function () {
+  test.run('no file outside appServer\'s branchPath writes a family path', 0.2, function () {
     const SPIRIT_JS = path.join(RUN, 'spirit', 'spirit.js');
     const writers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && f !== SPIRIT_JS; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
@@ -1186,7 +1186,7 @@ function ownPart() {
     runChild('off', 'cacheOff');
     return !fs.existsSync(cacheFile('cacheOff')) || false;
   }, test.limit.quick);
-  test.run('a sender whose family has no folder on this node is not cached', 0.2, function () {
+  test.run('a sender whose branch has no folder on this node is not cached', 0.2, function () {
     clearCache('cacheNoFam');
     runChild('nofamily', 'cacheNoFam', 'noSuchServer');
     return !fs.existsSync(cacheFile('cacheNoFam')) || false;

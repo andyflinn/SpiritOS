@@ -339,7 +339,7 @@ test.run('app.icon writes node.json', 0.2, async function () {
   return (iconed.status === 200 && stateRead('agent').icon === '🧪') || false;
 }, test.limit.quick);
 // app.shell went (goal/G43.18, Q10): whether an app may be a shell is its <name>.json's alone; spirit/test/nodeShell.js.
-test.run('the app family has no verb shell', 0.2, function () {
+test.run('the app branch has no verb shell', 0.2, function () {
   return !V.shell || false;
 }, test.limit.quick);
 test.run('neither app.label nor app.icon writes <name>.json', 0.2, function () {

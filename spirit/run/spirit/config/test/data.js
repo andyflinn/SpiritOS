@@ -71,7 +71,7 @@ test.run('run beside spirit.data, it makes its family there', 0.2, function () {
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
 
-// IT KEEPS NOTHING, AND NAMES NO BRANCH: the family has no verb yet (kept empty for later use, goal/G30.20).
+// IT KEEPS NOTHING, AND NAMES NO BRANCH: the branch has no verb yet (kept empty for later use, goal/G30.20).
 test.run('it has no reads yet', 0.2, function () {
   if (!w) return false;
   return Object.keys(w.X).length === 0 || false;

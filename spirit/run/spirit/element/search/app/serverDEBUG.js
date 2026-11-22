@@ -37,7 +37,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     function press() {
       var want = !on();
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
-      return Promise.resolve(S.require(S.familyPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
+      return Promise.resolve(S.require(S.branchPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
     }
     var t = S.element.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
@@ -61,7 +61,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       var j = JSON.parse(String(text));
       serves = !!(j.node && j.node.mount === true);
       paint();
-      if (serves) return Promise.resolve(S.require(S.familyPath(key))).then(function (fam) { return fam.DEBUG({}); }).then(function (r) {
+      if (serves) return Promise.resolve(S.require(S.branchPath(key))).then(function (fam) { return fam.DEBUG({}); }).then(function (r) {
         if (!job()) asked = !!(r && r.debug === true);
         paint();
       }, function () { /* not running: it stays hidden */ });

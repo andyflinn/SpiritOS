@@ -4,7 +4,7 @@ What a client knows of the config family (goal/G41.28; Andy: *"WSL, make sure yo
 tree HAS a clientCacheManager"*). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs as it does, in a window of its own beside the real
 `spirit/data.js`, which it writes into; in node it is loaded as every client loads it, by requiring its branch's api.js.
 
-The family has no verb yet (kept empty for later use, goal/G30.20).
+The branch has no verb yet (kept empty for later use, goal/G30.20).
 
 - In node, requiring its branch's api.js, `spirit.require('spirit/config/api.js')`, puts it at `spirit.data.config.data`
   (the api.js is the one script that requires its data.js).

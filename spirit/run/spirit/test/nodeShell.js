@@ -70,7 +70,7 @@ test.run('the app app\'s element.js loads the app search', 0.2, function () {
 test.run('the app selector\'s rowFormAppShell.js is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'spirit', 'app', 'appSelector', 'rowFormAppShell.js')) || false;
 }, test.limit.quick);
-test.run('the app family has no verb shell', 0.2, function () {
+test.run('the app branch has no verb shell', 0.2, function () {
   const appApi = require(path.join(RUN, 'spirit', 'app', 'api.js'));
   return (!('shell' in appApi.verbs) && !('shell' in (appApi.functions || {}))) || false;
 }, test.limit.quick);

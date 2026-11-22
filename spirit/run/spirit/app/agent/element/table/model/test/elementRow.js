@@ -13,7 +13,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
+const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 const FILE = path.join(__dirname, '..', 'elementRow.js');
 const ROW = 'spirit/app/agent/element/table/row.js';
 
@@ -26,7 +26,7 @@ const at = function (place) { return String(place).split('.').reduce(function (o
 // W.made: each row element made, { container, o, destroyed }. W.held: while set, the row element's file has not loaded yet.
 const W = { required: [], made: [], held: null };
 function world() {
-  global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, familyPath: familyPath, isBrowser: function () { return false; } } };
+  global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, branchPath: branchPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
   // The tables' row element, as its own file places itself: by the one helper, at spirit.element.<its path>.

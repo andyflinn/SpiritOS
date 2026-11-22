@@ -30,8 +30,8 @@ const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
 function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal, why: (e.extra && e.extra.why) || e.message }; } }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
-const AGENT = familyPath('agent');
+const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
+const AGENT = branchPath('agent');
 // A box: its markup makes a part per id, each with its own listeners; a new markup makes new parts.
 function box(name) {
   let html = '';
@@ -199,7 +199,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   });
   // goal/G43.32: the stand-ins stand where the page files read them, at spirit.element.<their path>; the shared table
   // element's pieces (once agentDetail) with its create.
-  global.window = { spirit: { familyPath: familyPath, element: { spirit: {
+  global.window = { spirit: { branchPath: branchPath, element: { spirit: {
     element: { search: STAND.search, rowForm: STAND.rowForm, busyButton: STAND.busyButton },
     app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), row: STAND.agentRow } } } } } } } };
   global.spirit = global.window.spirit;
