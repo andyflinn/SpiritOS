@@ -31,14 +31,14 @@
     window.spirit.require('spirit/element/search/api/detail.js'), window.spirit.require('spirit/client/apiTreeIndex.js'),
     window.spirit.require('spirit/node/api.js')]);
 
-  // THE NODE'S API TREE IN spirit.data (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
-  // apiTree branch of spirit.data, read again when a server job changes, and the family, verb and app-server selectors
-  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (spirit.data.node.data:
+  // THE NODE'S API TREE IN spirit.required.spirit.data (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
+  // apiTree branch of spirit.required.spirit.data, read again when a server job changes, and the family, verb and app-server selectors
+  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (spirit.required.spirit.data.node.data:
   // families, and each family's verbs, as apiTreeIndex reads the tree). Read again, the tree replaces both whole. A server
   // job changing on the stream reads it again: one translator for every list. Another party's tree (options.tree:
   // introSpector's peer or relay) is that party's, and stays out of it.
   function keepTree(tree) {
-    window.spirit.data.node.data.keepTree(tree, window.spirit.apiTreeIndex);
+    window.spirit.required.spirit.data.node.data.keepTree(tree, window.spirit.apiTreeIndex);
   }
   var reading = null;
   function readOwnTree() {
@@ -53,8 +53,8 @@
   function follow(D) {
     if (D && typeof D.addTranslator === 'function') D.addTranslator({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
   }
-  if (window.spirit && window.spirit.data) follow(window.spirit.data);
-  else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('spirit/data.js')).then(function () { follow(window.spirit.data); }, function () {});
+  if (window.spirit && window.spirit.required.spirit.data) follow(window.spirit.required.spirit.data);
+  else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('spirit/data.js')).then(function () { follow(window.spirit.required.spirit.data); }, function () {});
 
   function createFamilyList(options) {
     options = options || {};
@@ -76,7 +76,7 @@
     root.value = '';
     root.tree = null;
 
-    // EVERY TREE IS A spirit.data BRANCH (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
+    // EVERY TREE IS A spirit.required.spirit.data BRANCH (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
     // branch, another party's the apiTree branch under that party's node (spirit/node/data.js keepTree's party); root.party
     // names whose it draws, '' for this node's own.
     root.party = typeof options.tree === 'function' ? partyOf(options.party) : '';
@@ -92,7 +92,7 @@
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a server…'),
         all: isPane ? undefined : options.all,
-        data: window.spirit.data.node.data.treeBranchOf(root.party),
+        data: window.spirit.required.spirit.data.node.data.treeBranchOf(root.party),
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         element: function (row, key) { return E.search.api.row.create(Object.assign({ name: key }, row)); },
@@ -129,7 +129,7 @@
       return Promise.all([got, made]).then(function (both) {
         var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
-        if (party) window.spirit.data.node.data.keepTree(root.tree, window.spirit.apiTreeIndex, party);
+        if (party) window.spirit.required.spirit.data.node.data.keepTree(root.tree, window.spirit.apiTreeIndex, party);
         list.redraw();
         root.dispatchEvent(new Event('tree', { bubbles: false }));
       }, function () { /* the list stays empty; the node says why elsewhere */ });

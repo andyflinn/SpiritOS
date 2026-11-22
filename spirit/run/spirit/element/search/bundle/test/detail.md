@@ -20,7 +20,7 @@ the code draws no title row (the tab's label, its mounter's, names the bundle), 
   `spirit/element/rowForm.js` and `spirit/element/armingButton.js`, and the auth branch's interface
   (`spirit.require('spirit/auth/api.js')`), which alone requires its data.js (goal/G47.1).
 - **Its Delete row** (goal/G41.32): a rowForm below the list, ❌, *"Delete <bundle-name> bundle and branches"*, an armingButton whose
-  second press asks `auth.bundle { op: 'delete', id }`; a refusal is said below it, in the node's words. Hearing that bundle's row gone in `spirit.data.auth.data.bundles`, from any screen,
+  second press asks `auth.bundle { op: 'delete', id }`; a refusal is said below it, in the node's words. Hearing that bundle's row gone in `spirit.required.spirit.data.auth.data.bundles`, from any screen,
   it calls `options.gone`. A bundle whose `options.owner` is not `node` is shown only: no form, no Delete column.
 - It registers `spirit.element.spirit.element.search.bundle.detail.create(container, options)`, and no page of its own, which draws the same editor into the container
   and answers a handle with `destroy` (the shell's element shape, goal/G41.19).

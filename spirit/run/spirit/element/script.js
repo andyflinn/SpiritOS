@@ -80,10 +80,10 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       Promise.resolve(stack.open(kind + '/' + key, spec)).then(function (layer) {
         if (!layer || gone) return;
         if (look) {
-          look.set = function () { layer.set(barOf(S.data.app.data.rows()[key] || row, look)); };
+          look.set = function () { layer.set(barOf(S.required.spirit.data.app.data.rows()[key] || row, look)); };
           if (look.file) look.set();
         }
-        watches.push(S.data.app.data.watch(key, function (now) {
+        watches.push(S.required.spirit.data.app.data.watch(key, function (now) {
           if (!now) return;
           layer.set(barOf(now, look));
           // Q11: a launched app switched off leaves the view; it stays loaded.

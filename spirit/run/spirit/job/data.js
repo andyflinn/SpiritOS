@@ -2,17 +2,17 @@
 // spirit/run/spirit/job/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S JOBS, IN THE jobs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the new
 // spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it through
-// its api.js (spirit/job/api.js), the one file that requires it; it keeps the node's jobs in that page's spirit.data, under the node that served them.
+// its api.js (spirit/job/api.js), the one file that requires it; it keeps the node's jobs in that page's spirit.required.spirit.data, under the node that served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the Jobs app and its details dialog, Stats, the
-// face's boot) asks spirit.data.job.data (below), never a branch by name.
+// face's boot) asks spirit.required.spirit.data.job.data (below), never a branch by name.
 //   jobs     id -> the job as the stream last handed it
 //   events   id -> { lines: [{ at, json }] }, the job's last EVENT_WINDOW events, oldest falling off the top (moved here
 //            from the job details dialog, goal/G29.14): an event is what a job publishes, its app object when it differs
 //            from the one heard before; for spirit.fs the tree command each change carries (goal/G4.25), and for the
 //            node's other jobs (spirit, spirit.contact) their data, each time it changes. Nothing is asked of the node.
 // Every job the node's stream hands over is kept as it came, and one the stream deletes goes; a connect hands the whole
-// set again (spirit.data forgets on a snapshot). It asks nothing.
+// set again (spirit.required.spirit.data forgets on a snapshot). It asks nothing.
 (function family() {
   var JOBS = 'jobs';
   var EVENTS = 'events';
@@ -22,10 +22,10 @@
     if (!obj || typeof obj !== 'object') return '';
     try { return JSON.stringify(obj); } catch (e) { return ''; }
   }
-  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('job', function () {
     var HOME = D.viewAt(null, 'job');
     D.addTranslator({

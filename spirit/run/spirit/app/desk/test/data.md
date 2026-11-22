@@ -1,8 +1,8 @@
 # spirit/app/desk/data.js
 
 What the desk knows of its own rows at the receiving end, in the page and in a subscribing appServer alike: the desk's
-translator into spirit.data (`spirit/data.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
-it beside the real spirit.data, as the module runs.
+translator into spirit.required.spirit.data (`spirit/data.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
+it beside the real spirit.required.spirit.data, as the module runs.
 
 **Where it lives** (goal/G41.24): in the desk's own folder, above its `family/api.js`, so it works in the browser and
 in an appServer that subscribes, which reads it from its own disc.
@@ -16,12 +16,12 @@ in an appServer that subscribes, which reads it from its own disc.
 
 ## API
 
-It registers a translator on `spirit.data` (its `onJob` reads jobs of module `spirit/app/desk` whose `app` is an
-object) and answers `spirit.data.desk.data = { published(o), took(verb, args, answer), item, items, part, current, change,
-... }`. Without `spirit.data` it does nothing. It writes only through `set`, `merge` and `del`, into the desk family's
+It registers a translator on `spirit.required.spirit.data` (its `onJob` reads jobs of module `spirit/app/desk` whose `app` is an
+object) and answers `spirit.required.spirit.data.desk.data = { published(o), took(verb, args, answer), item, items, part, current, change,
+... }`. Without `spirit.required.spirit.data` it does nothing. It writes only through `set`, `merge` and `del`, into the desk family's
 view of the node that served the row (goal/G41.28, Andy, the box: *"The RAM-CACHE-is organized BY SERVER-NODE-ID at
 it's lowest level."*): a row comes with its job's `fromNode`, appServer's sender. Its branches are its own and only it
-names them; the test reads through `spirit.data.desk.data`: `item(id)` an item's facts, `items()` every one, `part(id)` the
+names them; the test reads through `spirit.required.spirit.data.desk.data`: `item(id)` an item's facts, `items()` every one, `part(id)` the
 parts read so far, `current()` the goal last pushed whole, `change()` the newest change number heard.
 
 ## Requirements

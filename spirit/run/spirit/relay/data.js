@@ -2,20 +2,20 @@
 // spirit/run/spirit/relay/data.js
 // WHAT A CLIENT KNOWS OF ITS NODE'S RELAYS, IN THE relay FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page or process
-// loads it through its api.js (spirit/relay/api.js), the one file that requires it; it keeps what relay.get answered in that client's spirit.data, under
+// loads it through its api.js (spirit/relay/api.js), the one file that requires it; it keeps what relay.get answered in that client's spirit.required.spirit.data, under
 // the node that served it.
 //
-// THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader asks spirit.data.relay.data (below), never a branch by
-// name. A relay's row in the one table (people and relays) is the contact family's (spirit.data.contact.data); this keeps
+// THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader asks spirit.required.spirit.data.relay.data (below), never a branch by
+// name. A relay's row in the one table (people and relays) is the contact family's (spirit.required.spirit.data.contact.data); this keeps
 // what relay.get adds to it.
 //   relayRows   the relay's key (its url) -> { relay, report } as relay.get last answered them
 // The node publishes no relay.get answer, so it translates nothing: spirit.relay.status keeps each one it got (keep).
 (function family() {
   var ROWS = 'relayRows';
-  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('relay', function () {
     var HOME = D.viewAt(null, 'relay');
     // THE READS AND THE ONE WRITE:

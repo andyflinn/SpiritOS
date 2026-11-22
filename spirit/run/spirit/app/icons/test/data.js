@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/icons/test/data.js
 // The tests of spirit/app/icons/data.js, and of no other module (spec: ./data.md; goal/G43.19, box v16). The box: "it
 // implements a database-table interface, also reflected in api.js and data.js", and 10: "data.js on every open page follows
-// that one job", spirit.app.icons. The translator runs as it does: in a window of its own beside the real spirit.data
+// that one job", spirit.app.icons. The translator runs as it does: in a window of its own beside the real spirit.required.spirit.data
 // (spirit/data.js), which it writes into; the runs' rows are handed in as the node's stream hands them, jobs of module
 // spirit.app.icons.
 
@@ -25,7 +25,7 @@ function world() {
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  const D = win.spirit.data;
+  const D = win.spirit.required.spirit.data;
   let n = 0;
   const I = ((D || {}).icons || {}).data;
   return { D: D, I: I,

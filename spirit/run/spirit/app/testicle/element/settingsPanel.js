@@ -47,7 +47,7 @@
         } });
       return Promise.resolve(S.require('spirit/app/testicle/api.js')).then(function () {
         if (gone) return;
-        var P = S.data.testicle.data.preferences;
+        var P = S.required.spirit.data.testicle.data.preferences;
         draw(P.get());
         release = P.watch(draw);
         // What it stands at before anything streamed: asked once, kept in the branch the switch follows.

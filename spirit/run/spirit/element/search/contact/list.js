@@ -9,7 +9,7 @@
 //   - One search in two tiers. contact.search answers at once from the one table (goal/G40.11): the people and relays
 //     the owner keeps, owns or blocked; and starts a network search on the node, whose finds stream in, one row each,
 //     stored as nothing (goal/G43.17). All of it lands in
-//     the contact family's cache (spirit.data.contact.data, goal/G41.28), and this list is a view of it: every list
+//     the contact family's cache (spirit.required.spirit.data.contact.data, goal/G41.28), and this list is a view of it: every list
 //     of contacts on the page shows the same rows.
 //   - One list, cached by key: one row per ID, a relay as well as a person. One row of filters instead of two folds:
 //     all, my puppets, blocked, relays, and at its end a network toggle, off at first (box v8): on, the rows the owner
@@ -195,9 +195,9 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     list = window.spirit.element.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
-      // A view of the node's contacts, the branch the contact family's manager keeps (spirit.data.contact.data.branch); an
+      // A view of the node's contacts, the branch the contact family's manager keeps (spirit.required.spirit.data.contact.data.branch); an
       // ID table of another family is the branch its caller names.
-      data: o.data || (table ? undefined : window.spirit.data.contact.data.branch),
+      data: o.data || (table ? undefined : window.spirit.required.spirit.data.contact.data.branch),
       server: table ? table.family : 'contact',
       verb: table ? table.verb : 'search',
       face: o.face,

@@ -52,7 +52,7 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/data.js): the stream's branch rows land there.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  DATA = global.window.spirit.data;
+  DATA = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
@@ -68,7 +68,7 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
-  A = ((global.window.spirit.data || {}).auth || {}).data;
+  A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
   return true;

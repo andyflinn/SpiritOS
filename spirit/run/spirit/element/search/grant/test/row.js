@@ -6,8 +6,8 @@
 // it. The shared row element and the page's data set are real; the arming button is a stand-in that records what it was
 // handed. The grants table is the caller's, handed in as a configuration (goal/G41.16), each call recorded; two are
 // tried, so nothing of either is the row's own: the node's auth grants as the Grants app configures them since
-// goal/G41.28 (spirit/element/search/grant/grantsPanel.js, which spirit/app/grants/element.js mounts: the branch the auth family's cache manager keeps, spirit.data.auth.data.grants.branch,
-// and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.data path
+// goal/G41.28 (spirit/element/search/grant/grantsPanel.js, which spirit/app/grants/element.js mounts: the branch the auth family's cache manager keeps, spirit.required.spirit.data.auth.data.grants.branch,
+// and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.required.spirit.data path
 // (node/family/branch) and its watch that branch's. The auth family's data.js is loaded as a
 // page's spirit.require('spirit/auth/api.js') brings it, as the Grants app asks it, the page's node known as spirit.start makes it
 // known (spirit.node.key, then data.homeNode).
@@ -42,11 +42,11 @@ function grantsTable(o) {
   return t;
 }
 // As spirit/element/search/grant/grantsPanel.js, in the Grants app, configures the node's grants (goal/G41.28): the auth family's branch and its watch.
-const NODE = grantsTable({ get branch() { return ((global.window.spirit.data || {}).auth || {}).data ? global.window.spirit.data.auth.data.grants.branch : ''; }, key: 'key', label: 'label',
-  watch: function (fn) { return global.window.spirit.data.auth.data.grants.watch(fn); } });
-// A second table, its branch a whole spirit.data path of the home node, its watch that branch's.
-const AGENT = grantsTable({ get branch() { return global.window.spirit.data.viewAt(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
-  watch: function (fn) { const v = global.window.spirit.data.viewAt(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
+const NODE = grantsTable({ get branch() { return ((global.window.spirit.required.spirit.data || {}).auth || {}).data ? global.window.spirit.required.spirit.data.auth.data.grants.branch : ''; }, key: 'key', label: 'label',
+  watch: function (fn) { return global.window.spirit.required.spirit.data.auth.data.grants.watch(fn); } });
+// A second table, its branch a whole spirit.required.spirit.data path of the home node, its watch that branch's.
+const AGENT = grantsTable({ get branch() { return global.window.spirit.required.spirit.data.viewAt(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
+  watch: function (fn) { const v = global.window.spirit.required.spirit.data.viewAt(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let SRC, required, loaded, armed, DATA, A, V, E;
@@ -67,7 +67,7 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  DATA = global.window.spirit.data;
+  DATA = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
@@ -75,7 +75,7 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   // The auth family's data.js, run from its path as the auth interface brings it: the Grants app requires
   // spirit/auth/api.js as it loads (spirit/element/search/grant/grantsPanel.js), and that api.js requires its data.js.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' });
-  A = ((global.window.spirit.data || {}).auth || {}).data;
+  A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   V = DATA.viewAt(null, 'auth');
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };

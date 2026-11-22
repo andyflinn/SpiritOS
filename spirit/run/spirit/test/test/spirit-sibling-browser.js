@@ -164,7 +164,7 @@ test.run('a change written into a row of true or false fields alone redraws the 
     '(function () {',
     '  var S = window.spirit;',
     '  function create(container) {',
-    '    var D = S.data;',
+    '    var D = S.required.spirit.data;',
     '    var V = (typeof D.viewAt === \'function\' ? D.viewAt : D.at)(null, \'zzflag\');',
     '    var el = document.createElement(\'div\'); container.appendChild(el);',
     '    try { V.set(\'zz/flag\', { on: false }); } catch (e) { /* kept */ }',

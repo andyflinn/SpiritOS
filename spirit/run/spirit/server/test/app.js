@@ -185,7 +185,7 @@ const row = function (f) { return { item: f }; };
 // The client's cache file for the publisher (goal/G41.28, box v19; Andy: "this way an appServer in client-mode can derive
 // the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"): in spirit/state/<client server>/cache/
 // (goal/G43.20: "cache, which is written by spirit/server/app.js was ALWAYS supposed to go into spirit/state/<name>/cache/"),
-// named by the sender's key in base64url (Andy, Q9 of Desk: "Shall the server key in spirit.data and in the cache file
+// named by the sender's key in base64url (Andy, Q9 of Desk: "Shall the server key in spirit.required.spirit.data and in the cache file
 // name be base64url (- for +, _ for /), since a plain base64 / splits both?" "yes"): no + and no /, and it reads back
 // to the sender's key.
 const SENDER = Buffer.from(PUBLISHER, 'base64');
@@ -208,8 +208,8 @@ function start(streamOpts, publisherOpts) {
   return { A: A, s: s, D: A.data };
 }
 // What the client's cache holds, asked of the family's data.js, which alone names its branches (goal/G41.28; Andy:
-// "the client manager should keep that cache"): spirit.data.<family>.data, attached by appServer to the process's spirit.
-const kept = function () { return (globalThis.spirit && ((globalThis.spirit.data || {})[FAMILY] || {}).data) || null; };
+// "the client manager should keep that cache"): spirit.required.spirit.data.<family>.data, attached by appServer to the process's spirit.
+const kept = function () { return (globalThis.spirit && ((globalThis.spirit.required.spirit.data || {})[FAMILY] || {}).data) || null; };
 const itemOf = function (id) { const K = kept(); return K ? K.item(id) : null; };
 const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 
@@ -241,7 +241,7 @@ async function child(mode) {
     await tick(400);
     out.one = hasIn(D, 1); out.two = hasIn(D, 2);
     // THE CACHE BY SERVER NODE (box v19: "The RAM-CACHE-is organized BY SERVER-NODE-ID at it's lowest level. IE:
-    // spirit.data.<server-public-key-in-base64>.<api-family>...."): what the data set holds at its top, and under it.
+    // spirit.required.spirit.data.<server-public-key-in-base64>.<api-family>...."): what the data set holds at its top, and under it.
     const kept = (D && D.allBranches()) || [];
     const top = kept.map(function (b) { return b.split('/')[0]; }).filter(function (n, i, all) { return all.indexOf(n) === i; });
     out.top = top;
@@ -1165,11 +1165,11 @@ function ownPart() {
     try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
     return text.indexOf('item 2') !== -1 || false;
   }, test.limit.quick);
-  test.run('its spirit.data holds the cache under the sender\'s key, and nothing beside it at the top', 0.2, function () {
+  test.run('its spirit.required.spirit.data holds the cache under the sender\'s key, and nothing beside it at the top', 0.2, function () {
     const one = C.one || {};
     return (!!one.byNode && one.byNode.length === 1 && !!one.top && one.top.length === 1) || false;
   }, test.limit.quick);
-  test.run('under the sender\'s key its spirit.data holds the family, as <key>.<family>', 0.2, function () {
+  test.run('under the sender\'s key its spirit.required.spirit.data holds the family, as <key>.<family>', 0.2, function () {
     const one = C.one || {};
     return (Array.isArray(one.family) && one.family.indexOf(FAMILY) !== -1) || false;
   }, test.limit.quick);

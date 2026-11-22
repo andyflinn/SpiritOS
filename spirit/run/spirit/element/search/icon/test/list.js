@@ -71,7 +71,7 @@ const MAKE = '(function () {' +
   ' return window.spirit.ready.then(function (s) { if (window.__asks) return null; window.__asks = []; window.__watches = [];' +
   '  return Promise.resolve(s.fs.loadFile("spirit/fieldRules.js")).then(null, function () {}).then(function () {' +
   '  var read = s.fs.loadFile; s.fs.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); }).then(function () {' +
-  '  return window.spirit.require("spirit/element/search/icon/list.js"); }).then(function () { var F = window.spirit.data.fs.data;' +
+  '  return window.spirit.require("spirit/element/search/icon/list.js"); }).then(function () { var F = window.spirit.required.spirit.data.fs.data;' +
   '   if (!F.__kept) { F.__kept = true; var watch = F.watch; F.watch = function (p) { window.__watches.push(typeof p === "function" ? "the tree" : String(p)); return watch.apply(this, arguments); }; }' +
   '   var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:600px;height:400px;display:flex;flex-direction:column;background:#fff;z-index:99999";' +
   '   window.__list = window.spirit.element.spirit.element.search.icon.list.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';

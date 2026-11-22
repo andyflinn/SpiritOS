@@ -23,8 +23,8 @@
 // (a third of the height: the last event clicked, JSON.stringify(object, null, 2), in a read-only CodeMirror text view). The
 // log and the Extract box scroll inside themselves.
 //
-// LIVE THROUGH spirit.data (goal/G41.28): the job and its last events are the jobs family's cache manager's
-// (spirit.data.job.data, spirit/job/data.js), which keeps every job's events whatever is on screen, so a reopen shows what
+// LIVE THROUGH spirit.required.spirit.data (goal/G41.28): the job and its last events are the jobs family's cache manager's
+// (spirit.required.spirit.data.job.data, spirit/job/data.js), which keeps every job's events whatever is on screen, so a reopen shows what
 // came meanwhile. It repaints when its job changes there.
 (function () {
   var S = window.spirit = window.spirit || {};
@@ -46,7 +46,7 @@
     error: '⚠️',
   };
 
-  function data() { return ((S.data || {}).job || {}).data || null; }
+  function data() { return ((S.required.spirit.data || {}).job || {}).data || null; }
 
   // A facts bubble: the old shell's factRow markup and classes, drawn here (new code requires nothing of the old shell).
   function factRow(pairs) {
@@ -167,7 +167,7 @@
         view = v;
         if (view && view.cm && typeof view.cm.setSize === 'function') view.cm.setSize('100%', '100%');
       }, function () { /* the Extract box stays empty */ });
-      // It repaints when its job changes in spirit.data, or when the whole set is read again. With no job named it shows
+      // It repaints when its job changes in spirit.required.spirit.data, or when the whole set is read again. With no job named it shows
       // that none is listed and watches nothing: a watch it never redraws for is no listening (goal/G43.32, the general
       // rules' "redraws for none"; Andy: "fix what needs fixing.").
       if (J && id) off = J.watch(function (changed) { if (!changed || changed === id) render(); });

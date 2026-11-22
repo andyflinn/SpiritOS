@@ -3,15 +3,15 @@
 // WHAT THE DESK KNOWS OF ITS ROWS AT THE RECEIVING END, IN THE DESK'S OWN FOLDER (goal/G41.24; Andy: "where
 // clientCacheManager.js must work in both browser and an appServer that subscribes? and deskClient can get it form its own
 // disc?"). Two halves: the cache rules, family/cacheRules.js (a node's alone), and the translator. A page loads it from the node that served it (spirit.require); a subscribing appServer
-// requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.data.
+// requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.required.spirit.data.
 // It is read by peers through the family's FS verbs like anything in this folder: rules, never secrets.
 //
-// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (spirit/data.js),
+// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.required.spirit.data (spirit/data.js),
 // in the page and in node alike. Andy: a desk client keeps what it learned of the current goal "like face-apps do", in
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
 // already on hand". THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM (goal/G41.28; Andy: "the FUCKING desk cache
-// is NOT to be found in spirit.data.data.desk", and "doesn't the fucking ... clientCacheManager.js take care of that"):
-// every reader, the page, deskDetails and deskClient, asks spirit.data.desk.data (below), never a branch by its name.
+// is NOT to be found in spirit.required.spirit.data.data.desk", and "doesn't the fucking ... clientCacheManager.js take care of that"):
+// every reader, the page, deskDetails and deskClient, asks spirit.required.spirit.data.desk.data (below), never a branch by its name.
 //   desk        id -> the item's facts, as items.search labels them and the List draws them (the trunk)
 //   deskItem    id -> the parts of an item read so far, each on its own: { box, version }, { chat, chatMore },
 //               { checks } (a branch). goal/G33.4 (box v46): a part comes when it is needed, by
@@ -33,16 +33,16 @@
   var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
     ? require('../../spirit.js').require('spirit/app/desk/cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
-  // THE TRANSLATOR, ONCE PER DATA SET: spirit.data.makeFamily runs this once, however often the file is loaded.
-  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data;
+  // THE TRANSLATOR, ONCE PER DATA SET: spirit.required.spirit.data.makeFamily runs this once, however often the file is loaded.
+  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
-    // SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk
+    // SERVER-NODE-ID at it's lowest level. IE: spirit.required.spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk
     // family's view of one node. A row from the stream is filed under its job's node (fromNode); every read is of the
-    // home node (spirit.data's home(): a page's own node, a process's sender).
+    // home node (spirit.required.spirit.data's home(): a page's own node, a process's sender).
     var HOME = D.viewAt(null, 'desk');
     var V = HOME;
 

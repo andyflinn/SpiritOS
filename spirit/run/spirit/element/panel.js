@@ -76,12 +76,12 @@
           (Array.isArray(r.items) ? r.items : []).forEach(function (i) { labels[String(i.key)] = String(i.label || i.key); });
           showCurrent();
         }
-        // WHAT LANDS IN spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/data.js"): the server's
+        // WHAT LANDS IN spirit.required.spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/data.js"): the server's
         // published remote row, filed there by spirit/data.js, is followed as it comes.
-        var unwatchRemote = S.data && typeof S.data.watchPath === 'function' ? S.data.watchPath('remote/' + server, function (p, r) { take(r); }) : null;
+        var unwatchRemote = S.required.spirit.data && typeof S.required.spirit.data.watchPath === 'function' ? S.required.spirit.data.watchPath('remote/' + server, function (p, r) { take(r); }) : null;
         S.require('spirit/element/search.js').then(function () {
           if (dropped) return;
-          take(S.data && S.data[server] && S.data[server].remote);
+          take(S.required.spirit.data && S.required.spirit.data[server] && S.required.spirit.data[server].remote);
           var fam = function () { return Promise.resolve(S.require(S.branchPath(server))); };
           opts = {
             face: 'dropdown', placeholder: 'remote…',

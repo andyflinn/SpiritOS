@@ -1,12 +1,12 @@
 'use strict';
 // spirit/run/spirit/app/agent/data.js
 // WHAT A CLIENT KNOWS OF THE AGENT SERVER'S TABLES, IN THE agent FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done
-// until every family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A
-// page loads it through its api.js (spirit/app/agent/api.js), the one file that requires it; it runs the translator into that page's spirit.data, under the
+// until every family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.required.spirit.data". A
+// page loads it through its api.js (spirit/app/agent/api.js), the one file that requires it; it runs the translator into that page's spirit.required.spirit.data, under the
 // node that served the rows.
 //
 // THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the agent tables' lists and editors) asks
-// spirit.data.agent.data (below), never a branch by name.
+// spirit.required.spirit.data.agent.data (below), never a branch by name.
 //   job, model, persona, provider   id -> the row, one branch per table of the agent server
 // The agent server publishes each row as it changes, its job's app { agent: { table, row } }, or { agent: { table, id,
 // removed } } for one gone (./table/rowTable.js), moved here from the four tables' row elements (goal/G41.16): the row is
@@ -14,10 +14,10 @@
 // rows, another module's, or a row with no id write nothing. It asks nothing.
 (function family() {
   var TABLES = ['job', 'model', 'persona', 'provider'];
-  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('agent', function () {
     var HOME = D.viewAt(null, 'agent');
     D.addTranslator({

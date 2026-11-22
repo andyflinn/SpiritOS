@@ -42,7 +42,7 @@ function world() {
     spirit: { element: { spirit: { element: E } }, escapeHtml: function (s) { return String(s); },
       ready: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }),
       // A branch's api.js, as a page's: its real companion data.js run on this window, attaching itself to the data set, as
-      // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.data.node.data).
+      // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.required.spirit.data.node.data).
       require: function (p) {
         w.required.push(String(p));
         const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
@@ -61,7 +61,7 @@ function world() {
   vm.createContext(win);
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
-  pageData = win.spirit.data;
+  pageData = win.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   win.spirit.node = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
@@ -70,7 +70,7 @@ function world() {
   w.E = win.spirit.element.spirit.element;
   return w;
 }
-// What a list offers, as the search element would draw it: the rows of its spirit.data branch (goal/G41.28), or for
+// What a list offers, as the search element would draw it: the rows of its spirit.required.spirit.data branch (goal/G41.28), or for
 // another party's tree, kept out of the node's, the rows it is handed; narrowed by its filters; each by its name.
 let pageData = null;
 const names = function (l) {

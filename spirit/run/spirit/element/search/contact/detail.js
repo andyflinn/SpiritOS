@@ -1909,12 +1909,12 @@ var ndPage = ({
     // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
     // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
     ndStops.push(Promise.resolve(spirit.require('spirit/contact/api.js')).then(function () {
-      if (ndGone || !((window.spirit.data || {}).contact || {}).data) return function () {};
-      return window.spirit.data.contact.data.watch(ndHearRow);
+      if (ndGone || !((window.spirit.required.spirit.data || {}).contact || {}).data) return function () {};
+      return window.spirit.required.spirit.data.contact.data.watch(ndHearRow);
     }));
     // ITS REPORT, ON THE RELAY EVENT (goal/G41.32): whole, paced by the node (presenceNode.js), so this keeps no timer.
-    // Through spirit.data, which takes the node's stream for every client (goal/G43.5).
-    ndStops.push(Promise.resolve(window.spirit.data.addTranslator({ onRelay: function (event) {
+    // Through spirit.required.spirit.data, which takes the node's stream for every client (goal/G43.5).
+    ndStops.push(Promise.resolve(window.spirit.required.spirit.data.addTranslator({ onRelay: function (event) {
       if (ndGone || !event || event.kind !== 'status' || !event.report || !ndBadge || event.relay !== ndUrl) return;
       ndBadge.report = event.report;
       ndRender();
@@ -2066,7 +2066,7 @@ function ndHearRow(key, row) {
   if (key !== ndKey) return;
   // A change with no value is not a row gone until the cache says so.
   if (!row) {
-    if (window.spirit.data.contact.data.contact(key)) return;
+    if (window.spirit.required.spirit.data.contact.data.contact(key)) return;
     ndBadge = null; ndUnlisted = true; ndRender(); return;
   }
   var next = Object.assign({}, ndBadge || {}, row);
@@ -2153,7 +2153,7 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
     // IT KNOWS THE CONTACT'S TYPE (goal/G43.32; Andy: "the contact list already knows the difference between contact types. so
     // should the detail panel."): a relay's details are drawn by cdRelay, above; a person's are this panel. options.relay
     // says so, else the contact family's cache, as the list has the row.
-    var C = ((window.spirit.data || {}).contact || {}).data;
+    var C = ((window.spirit.required.spirit.data || {}).contact || {}).data;
     var held = C && typeof C.contact === 'function' ? C.contact(o.key) : null;
     var relay = o.relay === true || (o.relay !== false && !!held && held.relay === true);
     if (relay) return cdRelay(container, o);

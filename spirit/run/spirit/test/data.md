@@ -22,7 +22,7 @@ what judges no branch. The numbers are those of the requirements before they mov
 3. **The same rows make the same cache**: the desk's `data.js` and the data set, run in node as appServer
    runs them (required, on the process's global) and in a page's window as a page runs them (plain scripts,
    no module), are told the same serving node (`homeNode(key)`, a key holding a `+` and a `/`) and handed the same rows (two
-   goal pushes, an item as a JSON string, a rule), and end with the same `spirit.data.desk.cache`. Its top level is that node
+   goal pushes, an item as a JSON string, a rule), and end with the same `spirit.required.spirit.data.desk.cache`. Its top level is that node
    alone, its key in base64url (Q5 of goal/G43.7: *"yes."*).
 4. **The one difference is the disk**: appServer writes each sender's cache to its own file; no other module writes a
    cache file of its own.
@@ -41,7 +41,7 @@ what judges no branch. The numbers are those of the requirements before they mov
 
 8. **A branch's watch is called `watch`** (Andy, goal/G43.32: *"that's a decision: a BRANCHE's what is called
    "watch""*, *"the branch is already implied in it's containing object."*, *"wsl, assert this in a test for
-   branches."*): every object a family's reads hold (`spirit.data.<name>.data`, and each object inside it) is a branch.
+   branches."*): every object a family's reads hold (`spirit.required.spirit.data.<name>.data`, and each object inside it) is a branch.
    - Its watch is the member named `watch`, and no member is named `watch` and more (`watchFile`, `watchApp`, `watchRow`
      are the names it replaces). Each family is its own check.
    - A watch is never told its branch, the object it sits on: it takes the function and at most the row it narrows to,
@@ -61,36 +61,36 @@ committed.
 - A module writing a cache file besides appServer.
 - A client taking the node's stream itself; a file naming a replaced way.
 
-## The families part: every family at spirit.data.<name>
+## The families part: every family at spirit.required.spirit.data.<name>
 
-The end state of goal/G43.7: every family at `spirit.data.<name>`, through `spirit/data.js`. Its test, once `./data-families.js`, is a section of `./data.js`. Each family is checked on its own, so the count of what is owed falls as each one moves.
+The end state of goal/G43.7: every family at `spirit.required.spirit.data.<name>`, through `spirit/data.js`. Its test, once `./data-families.js`, is a section of `./data.js`. Each family is checked on its own, so the count of what is owed falls as each one moves.
 
-Andy, box: *"we rename it spirit/data.js and it IS the the spirit.data object."*
+Andy, box: *"we rename it spirit/data.js and it IS the the spirit.required.spirit.data object."*
 
 ### Requirements
 
 Each family's own (its `data.js` there, the old file gone, none of it rolled by hand, `data` and `cache` in node and
 on a page) is judged on each branch folder by `./spirit-sibling-general.js (branchRules)` since goal/G43.32. Here, what judges
-no one branch: one helper for all, no old names in the code, the shape of `spirit.data` and `spirit.app`, the cache by
+no one branch: one helper for all, no old names in the code, the shape of `spirit.required.spirit.data` and `spirit.app`, the cache by
 node, the reads moved.
 
 - `spirit/data.js` stands.
 - Each family's own `data.js` (there, made with the one helper under its folder's name, rolling nothing by hand, the old file gone) is judged on each branch folder by `./spirit-sibling-general.js`, its branch rules. That no code reads a `spirit.<name>Data`, or names the old cache manager or the old module, is that file's rule of every file (goal/G47.1). Andy's words in a comment are not judged.
 - On a page, each family's data comes with its interface (goal/G47.1: *"every api.js requires it's companion data.js,
   and is the only script to require that data.js"*): the page requires `spirit/app/api.js` for `app`,
-  `spirit/<name>/api.js` for a node family, `spirit/app/<name>/api.js` for an app's, and each `spirit.data.<name>` stands.
+  `spirit/<name>/api.js` for a node family, `spirit/app/<name>/api.js` for an app's, and each `spirit.required.spirit.data.<name>` stands.
 - On a page, the first level of `spirit` holds no `<name>Data`.
-- *"spirit.data.<name>.data"* and *"spirit.data.<name>.cache"* stand for each family, under its own name (Q1), so `spirit.data.chat` and `spirit.data.desk`. Every family the tree holds is judged in node, read from its folders, none named in the test (goal/G47.4): a node family is a folder `spirit/<name>/` with an `api.js`, an app's family a folder `spirit/app/<name>/` with one; and on a page all but `agent`, `chat` and `deskClient`, which a scratch node does not offer to a page.
-- *"this object has only helper functions and object <name> for every application"*: nothing else is on `spirit.data`, so the shared tree `spirit.data.data` is gone.
-- Every helper on `spirit.data` has a capital in its name, Andy: *"all the helperFunctions in objects like spirit.data should potential \"words\" the should have a capital in it"*, and on Q10: *"it belongs to \"Fix 'data'\", THIS item."* A word is a to z, so no family can land on a helper.
-- Q5, *"Does spirit.data.<name>.cache hold a level per node, as the tree does today?"*, Andy: *"yes."* The app rows stand at `spirit.data.app.cache[<node>].apps`, and a row of another node stands under that node and not under this page's.
+- *"spirit.required.spirit.data.<name>.data"* and *"spirit.required.spirit.data.<name>.cache"* stand for each family, under its own name (Q1), so `spirit.required.spirit.data.chat` and `spirit.required.spirit.data.desk`. Every family the tree holds is judged in node, read from its folders, none named in the test (goal/G47.4): a node family is a folder `spirit/<name>/` with an `api.js`, an app's family a folder `spirit/app/<name>/` with one; and on a page all but `agent`, `chat` and `deskClient`, which a scratch node does not offer to a page.
+- *"this object has only helper functions and object <name> for every application"*: nothing else is on `spirit.required.spirit.data`, so the shared tree `spirit.required.spirit.data.data` is gone.
+- Every helper on `spirit.required.spirit.data` has a capital in its name, Andy: *"all the helperFunctions in objects like spirit.required.spirit.data should potential \"words\" the should have a capital in it"*, and on Q10: *"it belongs to \"Fix 'data'\", THIS item."* A word is a to z, so no family can land on a helper.
+- Q5, *"Does spirit.required.spirit.data.<name>.cache hold a level per node, as the tree does today?"*, Andy: *"yes."* The app rows stand at `spirit.required.spirit.data.app.cache[<node>].apps`, and a row of another node stands under that node and not under this page's.
 - `spirit.app`'s own rules (no `createApp`, no helper a word) are the app branch's, in `spirit/app/test/data.md` (goal/G47.1).
-- The reads moved: `spirit.data.app.data` answers `rows` and `watch`, and `spirit.data.fs.data.watch` stands, which `word.js` follows.
+- The reads moved: `spirit.required.spirit.data.app.data` answers `rows` and `watch`, and `spirit.required.spirit.data.fs.data.watch` stands, which `word.js` follows.
 
 ### Assumed by this test
 
-The box names no helper, so the test finds it by its call: a function called with the family's name as a string. A row of another node is written through `spirit.data.viewAt(node, family)`, and the page node comes from `spirit.data.homeNode()`, the builder's names.
+The box names no helper, so the test finds it by its call: a function called with the family's name as a string. A row of another node is written through `spirit.required.spirit.data.viewAt(node, family)`, and the page node comes from `spirit.required.spirit.data.homeNode()`, the builder's names.
 
 - On a reconnect the cache stays (box v148; Andy: "THE FUCKING CACHE IS NOT WIPED OUT."): what a search seated is still there after a second snapshot, and the snapshot's jobs bring it up to date.
 - `whenReconnected(fn)` (box v148: on a reconnect every search a page shows runs once more): fn is told each time the page's stream comes back, so a search hears it without taking the node's stream itself (only this file does); answers its release. Not judged by this test: spirit/element/test/search.js judges a search asked again after a node restart.
-- Every server's remote row is filed here (goal/G47.5; Andy: *"all, agreed. spirit/data.js"*, not a server's own data.js, which *"would have to be duplicated for all servers"*): a job of module `spirit.app.<name>` whose app is `{ remote: { current, items, more } }` lands under `spirit.data.<name>.remote`; a later row of the same server replaces it, and another server's lands under its own name.
+- Every server's remote row is filed here (goal/G47.5; Andy: *"all, agreed. spirit/data.js"*, not a server's own data.js, which *"would have to be duplicated for all servers"*): a job of module `spirit.app.<name>` whose app is `{ remote: { current, items, more } }` lands under `spirit.required.spirit.data.<name>.remote`; a later row of the same server replaces it, and another server's lands under its own name.

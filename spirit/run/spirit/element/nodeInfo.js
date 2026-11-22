@@ -113,7 +113,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
       made.push(E.spirit.element.changeMyDescription.create(slot('description')));
       var rotate = E.spirit.element.rowForm.create(slot('rotate'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
       rotate.button.addEventListener('click', function () { openRotate(); });
-      // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.data.node.data, and each of
+      // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.required.spirit.data.node.data, and each of
       // the two fields draws itself from it.
       return S.require('spirit/node/api.js').then(function () {
         return S.outcome(Promise.resolve(S.ready).then(function (s) { return s.node.card({}); }));
@@ -121,7 +121,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
         if (gone) return;
         var card = r && r.body;
         if (!card || !card.ok) { say((card && card.error) || 'node.card did not answer'); return; }
-        S.data.node.data.card.keep(card);
+        S.required.spirit.data.node.data.card.keep(card);
       });
     }, function () { say('Info could not be loaded.'); });
     // TWO CALLS, NOT ONE AWAITING THE OTHER: the card is a file on this disk and lands at once; the relays take as long as

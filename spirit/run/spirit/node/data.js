@@ -1,15 +1,15 @@
 'use strict';
 // spirit/run/spirit/node/data.js
 // WHAT A CLIENT KNOWS OF A NODE ITSELF, IN THE node FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until every
-// family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A page loads
-// it through its api.js (spirit/node/api.js), the one file that requires it; it keeps what the node said of itself in that page's spirit.data, under the
+// family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.required.spirit.data". A page loads
+// it through its api.js (spirit/node/api.js), the one file that requires it; it keeps what the node said of itself in that page's spirit.required.spirit.data, under the
 // node.
 //
 // THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the app-server, family and verb selectors)
-// asks spirit.data.node.data (below), never a branch by name.
+// asks spirit.required.spirit.data.node.data (below), never a branch by name.
 //   apiTree    family -> { name }, the node's api tree as apiTreeIndex reads it (a server that did not answer left out)
 //   apiVerbs   'family.verb' -> { family, name }, each family's verbs (DEBUG never offered)
-// Andy, Q7: "Shall the app-server selector keep the node's api tree in an apiTree branch of spirit.data, read again when
+// Andy, Q7: "Shall the app-server selector keep the node's api tree in an apiTree branch of spirit.required.spirit.data, read again when
 // a server job changes, and the family, verb and app-server selectors draw from it?" "yes." The selector reads the tree
 // (spirit.tree) and hands it here; read again, the tree replaces both branches whole. This file asks nothing.
 //   nodeCard   'self' -> { name, description }, what the node says of itself, as node.card answered it and each save
@@ -18,10 +18,10 @@
   var TREE = 'apiTree';
   var VERBS = 'apiVerbs';
   var CARD = 'nodeCard';
-  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('node', function () {
     var HOME = D.viewAt(null, 'node');
     var parties = {};
@@ -50,7 +50,7 @@
       // ANOTHER PARTY'S TREE IS ITS OWN NODE'S (goal/G48.4; Andy: "fix the introSpector, too", ending the box's "the only
       // exception is introspector, deferred for network-scope design reasons."): party, a peer's key or a relay's address,
       // keeps that party's tree in the same two branches under that party's own node, so every list of a tree is a view of a
-      // spirit.data branch; '' or left out is this node's own.
+      // spirit.required.spirit.data branch; '' or left out is this node's own.
       keepTree: function (tree, index, party) {
         var S = (typeof window !== 'undefined' ? window : globalThis).spirit;
         var I = index || (S && S.apiTreeIndex);

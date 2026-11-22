@@ -2,7 +2,7 @@
 
 The icons list and the file behind it (goal/G43.11). Its test is `./list.js`.
 
-Andy: *"run://spirit/iconSet.json IS the system set now."*. The box: *"A read that is refused is not kept, so a face that gets its star can read it later."* Since goal/G43.32 the set is the fs family's, and followed, no longer a constant (Andy: *"It obviously must require the fs interface so it can listen to changes in the file it loads for it's icon list...."*, which replaces G43.11's *"we make it a constant"*): it is kept in the fs family's cache (`spirit.data.fs.data.icons`), the list draws that branch, and each list watches the fs tree, reading the file again when its row changes, and the fs tree for it coming back after a reconnect.
+Andy: *"run://spirit/iconSet.json IS the system set now."*. The box: *"A read that is refused is not kept, so a face that gets its star can read it later."* Since goal/G43.32 the set is the fs family's, and followed, no longer a constant (Andy: *"It obviously must require the fs interface so it can listen to changes in the file it loads for it's icon list...."*, which replaces G43.11's *"we make it a constant"*): it is kept in the fs family's cache (`spirit.required.spirit.data.fs.data.icons`), the list draws that branch, and each list watches the fs tree, reading the file again when its row changes, and the fs tree for it coming back after a reconnect.
 
 Asked of a real Chrome on a scratch node's page and on a real face through a real relay. The node holds an Icons app file of its own, with a glyph the set does not have.
 

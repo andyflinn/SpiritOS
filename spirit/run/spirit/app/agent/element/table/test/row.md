@@ -15,7 +15,7 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   configured and throws nothing; its `destroy` empties the box (goal/G41.19, box v23), as the table does.
 - **A row's editor**, `agentRow.create(container, { table, id, added, look, fields, required })`, handed no api
   (goal/G43.24): its pick lists, its bundle selector and its Delete each reach what they need themselves:
-  - Its row is the one at `<node>/agent/<table>/<id>` in spirit.data. It asks `{ op: 'get', id }` as it opens, whatever the
+  - Its row is the one at `<node>/agent/<table>/<id>` in spirit.required.spirit.data. It asks `{ op: 'get', id }` as it opens, whatever the
     branch holds, and puts the answer there: a search answers only what a list shows, so a row in the branch may be
     slim (goal/G41.18; Andy: *"that exactly what GET is for, to bring in the rest for detail panels etc..."*).
   - Its title row says Add while the row is new, and Change once saved or when opened from the list.
@@ -103,7 +103,7 @@ Andy: *"persona detail: the bundle picker doesn not let me change values! (actua
 - agentTable registered by this file; the shared element not loaded by it; an unconfigured row that throws, or draws
   an editor instead of saying it is not configured.
 - A save that sends an empty secret, or draws what was typed before the stream says it.
-- An editor that does not follow its row in spirit.data, or keeps hearing it after destroy.
+- An editor that does not follow its row in spirit.required.spirit.data, or keeps hearing it after destroy.
 - A narrowed pick searching the whole table, or shown with nothing to pick; a bundle field drawn as a pane, or not saved.
 - A bundle the node no longer has left unsaid.
 - A narrowed pick offering the branch's other rows, the server's ask narrowed alone.

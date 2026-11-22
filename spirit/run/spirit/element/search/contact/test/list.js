@@ -86,13 +86,13 @@ test.run('the contacts list runs on a window of its own, with its row element an
     if (companion && !ran[companion] && fs.existsSync(path.join(JS, '..', '..', companion))) { ran[companion] = true; load(path.join(JS, '..', '..', companion)); }
     return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
   };
-  // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.data takes it itself).
+  // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.required.spirit.data takes it itself).
   window.spirit.event = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
   load(path.join(JS, '..', '..', 'spirit', 'data.js'));
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.node = { key: NODE_KEY };
-  window.spirit.data.homeNode(NODE_KEY);
+  window.spirit.required.spirit.data.homeNode(NODE_KEY);
   load(path.join(JS, 'row.js'));
   load(path.join(JS, 'search', 'contact', 'row.js'));
   dataSubscribed = subscribers.length;
@@ -182,7 +182,7 @@ test.run('the named filter is never a button, and it lets through a row with a n
 }, test.limit.quick);
 
 // create hands the search element the one table
-test.run('the list is a view of spirit.data.contact.data.branch, with its filters and the columns presence, status, label and add', 0.2, function () {
+test.run('the list is a view of spirit.required.spirit.data.contact.data.branch, with filters and columns presence, status, label and add', 0.2, function () {
   if (!L) return false;
   const host = { isConnected: true, addEventListener: function (t, fn) { if (t === 'click') clicks.push(fn); } };
   // The mounter's panel stack's open (goal/G43.18), filling its pane at once.
@@ -190,7 +190,7 @@ test.run('the list is a view of spirit.data.contact.data.branch, with its filter
   // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): it is handed no api; its search is its own data source.
   pane = L.create(host, { open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   o = made.opts;
-  CD = ((window.spirit.data || {}).contact || {}).data;
+  CD = ((window.spirit.required.spirit.data || {}).contact || {}).data;
   return required.indexOf('spirit/contact/api.js') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && Array.isArray(o.filters) && o.filters.length === L.filters.length && L.filters.every(function (f, i) { return o.filters[i] === f; }) && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add'
     ? true : false;
 }, test.limit.quick);
@@ -348,7 +348,7 @@ test.run('loaded and created, the list subscribes to no stream of its own', 0.2,
 }, test.limit.quick);
 test.run('a row the node\'s shadow job hands is in the branch the list handed its search', 0.2, async function () {
   if (!o) return false;
-  window.spirit.data.takeJob({ id: 'spirit.contact', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
+  window.spirit.required.spirit.data.takeJob({ id: 'spirit.contact', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
   await tick();
   const kept = CD && CD.contact('K1');
   return kept && kept.blocked === true && o.data === CD.branch ? true : false;

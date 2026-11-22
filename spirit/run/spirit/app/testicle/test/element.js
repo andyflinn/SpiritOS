@@ -531,12 +531,12 @@ test.run('a tab\'s close button takes it away', 0.2, async function () {
 // goal/G47.1, the cycle "the test table streamed, and the page showing the current tests", the box: "The testicle server
 // streams every update, to every table: on a flip, the replaced row turning current false is published too, beside the new
 // current row", "The UI then sorts out the current tests from the old ones: the page keeps test rows by their full key,
-// script|suite|test|flipped". What the page keeps is read from its own spirit.data, the test table's branch that
+// script|suite|test|flipped". What the page keeps is read from its own spirit.required.spirit.data, the test table's branch that
 // spirit/app/testicle/data.js names; nothing is asked of the node for it.
 const ETA_TEST = 'eta answers its question';
 const pageTests = function () {
-  return c.evaluate('(function () { var R = window.spirit.data.testicle && window.spirit.data.testicle.data; if (!R) return null; ' +
-    'var b = window.spirit.data.getPath(R.branch("testicle")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
+  return c.evaluate('(function () { var R = window.spirit.required.spirit.data.testicle && window.spirit.required.spirit.data.testicle.data; if (!R) return null; ' +
+    'var b = window.spirit.required.spirit.data.getPath(R.branch("testicle")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
 };
 const etaRows = function (all) { return (all || []).filter(function (e) { return e.row && e.row.script === F3 && e.row.suite === etaOwn && e.row.test === ETA_TEST; }); };
 let flipSet = null, kept = null;

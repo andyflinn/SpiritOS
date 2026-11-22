@@ -2,16 +2,16 @@
 // spirit/run/spirit/fs/script.js
 // THE FS DATASET'S ONE ENTRY IN A NODE PROCESS (goal/G49.1, box v17: "spirit/fs/script.js is the one entry for a node process
 // that wants the fs dataset: it wraps spirit/fs/data.js and, in a child process, adds the followStream call opaquely. A
-// caller never knows how the dataset is created or updated"). It answers spirit.data.fs's reads: file(path), files(),
+// caller never knows how the dataset is created or updated"). It answers spirit.required.spirit.data.fs's reads: file(path), files(),
 // ready(), watch(fn) / watch(path, fn), branch.
 //
-// WHO FEEDS IT: in the node's main process the file watcher (spirit/job.js) writes every change into spirit.data.fs and
-// says so with FedHere(); in any other process nothing does, so spirit.data follows the node's stream, which hands the
+// WHO FEEDS IT: in the node's main process the file watcher (spirit/job.js) writes every change into spirit.required.spirit.data.fs and
+// says so with FedHere(); in any other process nothing does, so spirit.required.spirit.data follows the node's stream, which hands the
 // whole tree and then each change into the same fs/data.js translator a page uses.
 //
 // Node only. It changes no caller (box v17, "OUT OF SCOPE OF THIS ITEM: changing any future client of spirit/fs/script.js").
 require('../spirit.js');
-// The branch's api.js, which brings its companion spirit/fs/data.js, which makes spirit.data.fs. In node spirit.require
+// The branch's api.js, which brings its companion spirit/fs/data.js, which makes spirit.required.spirit.data.fs. In node spirit.require
 // loads the file at once and then binds spirit.fs; a process with no port to bind to (the node's own main process on a
 // fresh tree) is refused the binding, never the file, so that refusal is let go.
 Promise.resolve(spirit.require('spirit/fs/api.js')).then(null, function () { /* the binding; the dataset is here */ });
@@ -48,7 +48,7 @@ module.exports = {
   watch: function (p, fn) { fill(); return reads().watch(p, fn); },
   get branch() { fill(); return reads().branch; },
   // THE WHOLE TREE, READ FROM THE DATASET (goal/G49.2; Andy: "go on the five!"; G49.1's box: "event.js, faceHome.js and
-  // nodeSearches.js read spirit.data.fs"): as create commands for a connect, a folder before what is inside it, and as
+  // nodeSearches.js read spirit.required.spirit.data.fs"): as create commands for a connect, a folder before what is inside it, and as
   // entries { name, relativePath, kind } for the counts and fs.search.
   commands: function () {
     fill();

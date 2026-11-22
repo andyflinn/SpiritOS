@@ -91,13 +91,13 @@ is the appServer serializes the cache to disk."*
 
 - **A branch with an interface has its `data.js`** in its own folder.
 - **Its branches are named by it alone**: the names it gives `var` constants (`var ITEMS = 'desk'`); no other file hands a
-  path of them to a `spirit.data` reader or writer (`D.get('desk/' + id)`).
+  path of them to a `spirit.required.spirit.data` reader or writer (`D.get('desk/' + id)`).
 - **It touches no file and no browser storage**: no `fs` or `path`, no file read or written, no browser storage.
 - **It makes the branch of its folder's name** (goal/G43.31; Andy: *"The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is
   motherfucking <name> in spirit/app/<name>...."*, *"make sure, IN THIS ITEM that family names MATCH folder names"*):
   `makeFamily('<name>')`, `<name>` its folder's (from `./spirit-sibling-generalRules.js`).
-- **One contract**: it loads, exports cache rules only as an object, and stands at `spirit.data.<name>` through
-  `spirit.data.makeFamily`, the name it hands `makeFamily`.
+- **One contract**: it loads, exports cache rules only as an object, and stands at `spirit.required.spirit.data.<name>` through
+  `spirit.required.spirit.data.makeFamily`, the name it hands `makeFamily`.
 - **A branch's watch is called `watch`** (Andy: *"that's a decision: a BRANCHE's what is called "watch""*, *"the branch is
   already implied in it's containing object."*, *"wsl, assert this in a test for branches."*): every object its reads hold
   names no member `watch` and more (`watchFile`, `watchApp`, `watchRow` are the names it replaces), and no `watch` takes
@@ -321,7 +321,7 @@ script when its own code assigns it (goal/G47.1; Andy: *"no developer will want 
 name-spaces."*; severity 0.7, Andy: *"name-space pollution is 0.7"*; the page side is spirit-sibling-browser.md's); no temp path of its own, no call of the system temp folder in its code, its temp
 folder from spirit/tempFolder.js (the box: *"nothing else builds a temp path"*), the helper, its own test and the lab's own
 test, which reads the temp folder's top to find no copy of the tree there, the three that may; its require paths; for an
-element, no matched() of its own, its writes watched in spirit.data (a watch of its own, a search on a branch, or a child element it requires that searches a branch,
+element, no matched() of its own, its writes watched in spirit.required.spirit.data (a watch of its own, a search on a branch, or a child element it requires that searches a branch,
 handed the branch by name), no api taken from what it is handed. Its full
 contract, page parts included, is in `spirit-sibling-browser.md`.
 

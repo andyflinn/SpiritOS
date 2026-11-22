@@ -6,12 +6,12 @@ tree HAS a clientCacheManager"*). Owed since the rule *"every production script 
 
 net.fetch answers one fetch the node made for the caller, not a row anyone reads again.
 
-- In node, requiring `spirit/net/api.js` brings it, and it stands at `spirit.data.net.data`.
-- Run beside spirit.data it makes its family there; it has no reads yet.
+- In node, requiring `spirit/net/api.js` brings it, and it stands at `spirit.required.spirit.data.net.data`.
+- Run beside spirit.required.spirit.data it makes its family there; it has no reads yet.
 - **It keeps nothing, and names no branch**: it adds no translator, and a job of every kind the node streams, and a
   rename, leave its family's cache empty.
 
 ## What its test must try to break
 
-- The family made under another name, so requiring `spirit/net/api.js` leaves nothing at `spirit.data.net.data`.
+- The family made under another name, so requiring `spirit/net/api.js` leaves nothing at `spirit.required.spirit.data.net.data`.
 - A translator or a branch added here that keeps rows another family keeps.

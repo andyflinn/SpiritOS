@@ -6,7 +6,7 @@ served it. Owed since the rule *"every production script has its own test"* (goa
 of its own beside the real `spirit/data.js`, the rows handed in as the stream hands them; in node it comes with the family's
 interface, `spirit.require('spirit/app/agent/api.js')`, the one script that requires it.
 
-- It stands at `spirit.data.agent.data`; its `tables` are job, model, persona, provider.
+- It stands at `spirit.required.spirit.data.agent.data`; its `tables` are job, model, persona, provider.
 - The translator (goal/G41.16): a row published, `{ agent: { table, row } }`, is merged into `<node>/agent/<table>/<id>`
   under the node that served it, keeping the fields a later publish did not carry; `{ agent: { table, id, removed } }`
   takes it out. Another table's rows, another module's, a row with no id write nothing.
@@ -16,7 +16,7 @@ interface, `spirit.require('spirit/app/agent/api.js')`, the one script that requ
   called "watch""*): `watch(fn)` is told `fn(id, row)` on every change of that table and no other; `watch(id, fn)` is
   told `fn(row)` each time that row is written, undefined once it is gone; each answers its release. No id watches
   nothing.
-- In node, `spirit.require('spirit/app/agent/api.js')` brings it, and it stands at `spirit.data.agent.data`.
+- In node, `spirit.require('spirit/app/agent/api.js')` brings it, and it stands at `spirit.required.spirit.data.agent.data`.
 
 ## What its test must try to break
 

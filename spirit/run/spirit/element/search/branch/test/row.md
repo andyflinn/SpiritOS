@@ -13,15 +13,15 @@ and *"A branch row with an empty verb shows as \"(ALL)\", as the filter does."*
   Its row is the branch as `auth.branch` answers it, `{ id, bundle, family, verb }`.
 - Its fields are `family`, `verb` and `delete`, in that order. Family and verb are drawn escaped; an empty verb shows as
   `(ALL)`. Delete is a button naming its action.
-- It repaints from the data set (goal/G41.14): when its row in the auth family's branches (`spirit.data.auth.data.branches.row(<its id>)`; goal/G41.28,
-  `<node>/auth/branches/<id>` in `spirit.data`) changes, as the node's stream sets it,
+- It repaints from the data set (goal/G41.14): when its row in the auth family's branches (`spirit.required.spirit.data.auth.data.branches.row(<its id>)`; goal/G41.28,
+  `<node>/auth/branches/<id>` in `spirit.required.spirit.data`) changes, as the node's stream sets it,
   its fields repaint; another branch's row changes nothing.
 - Mounted, its Delete is an `armingButton`: the first press asks nothing, the second asks
   `auth.branch { op: 'delete', id }`.
 
 - The node's branch rows are taken from the stream by the auth family's data.js
   (`spirit/run/spirit/auth/data.js`, goal/G41.28), which the auth family's interface brings; the row element requires
-  that interface itself (`spirit.require('spirit/auth/api.js')`) and no data.js (G41.14 until then, its own translation), into `spirit.data.auth.data.branches`: the node publishes each changed row of its two
+  that interface itself (`spirit.require('spirit/auth/api.js')`) and no data.js (G41.14 until then, its own translation), into `spirit.required.spirit.data.auth.data.branches`: the node publishes each changed row of its two
   bundle tables on one permanent job of type `bundles`, `{ table, row }`, and `{ table, row: { id }, gone: true }`. A row
   published is kept by its id, published again replaces it, gone takes it out; the other table's rows, another job's, and
   a row with no id write nothing. It requires no data script.

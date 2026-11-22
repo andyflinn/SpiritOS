@@ -2,8 +2,8 @@
 
 One contact as a row element: `spirit.element.search.contact.row.create(row, options)` builds it through the shared
 `row.create` (`spirit/element/row.js`). Its subject is a public key; it reads the node's contacts as the contact
-family's cache manager keeps them (`spirit/run/spirit/contact/data.js`, `spirit.data.contact.data`; goal/G41.28:
-in `spirit.data` under the serving node, `<node>/contact/contacts/<key>`), requires the contact interface, which brings that data script
+family's cache manager keeps them (`spirit/run/spirit/contact/data.js`, `spirit.required.spirit.data.contact.data`; goal/G41.28:
+in `spirit.required.spirit.data` under the serving node, `<node>/contact/contacts/<key>`), requires the contact interface, which brings that data script
 (`spirit.require('spirit/contact/api.js')`), and repaints from it. The test loads it as a page does, the page's node known
 (`spirit.node.key`, `data.homeNode`).
 
@@ -28,8 +28,8 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
 - **Cells**: presence 🟢 present, 🔴 absent, ⚪ not known; status ❌ blocked over ⭐ mine, else blank; label
   the name, HTML-escaped; add an Add button only on a row neither in the book nor a relay; mark the glyph `options.mark(key)`
   answers, HTML-escaped, blank with none (goal/G43.32: the caller's mark, Chat's ⌛), repainted when the row is told `mark`.
-- **Presence already known** in the contacts (`spirit.data.contact.data`) wins over the row's own `present` at create.
-- **Dispatch**: one watch on the contacts (`spirit.data.contact.data.watch`); a write to a key repaints every live row of that key, only the fields
+- **Presence already known** in the contacts (`spirit.required.spirit.data.contact.data`) wins over the row's own `present` at create.
+- **Dispatch**: one watch on the contacts (`spirit.required.spirit.data.contact.data.watch`); a write to a key repaints every live row of that key, only the fields
   whose values (or `from` values) changed. A destroyed row is no longer repainted.
 - **Label editor**: normalizes and checks the name by `spirit.fieldRules` first; a refused name is answered
   `{ ok: false, error }` without asking; a good one asks `contact.label { publicKey, myLabel }`.
@@ -46,7 +46,7 @@ HTML name; a blank name; a relay that is also kept; acting a verb the row lacks;
 The contacts' translation, `spirit/element/search/contact/data.js` until G41.16, then this element's, is since goal/G41.28 the contact
 family's cache manager's (`spirit/contact/data.js`), which this element gets through `spirit/contact/api.js`, the one script that requires it (Andy: *"get rid of thos FUCKING
 data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"*; G30.18: rowElements carry the listeners a subject
-needs). The manager registers one translation with `spirit.data.addTranslator` as it loads; the element requires no data
+needs). The manager registers one translation with `spirit.required.spirit.data.addTranslator` as it loads; the element requires no data
 script. It writes only through `merge`, `seat` and `del`.
 
 - **relay-presence**: for each key in `data.presence` whose value is an object, the row's `present` becomes

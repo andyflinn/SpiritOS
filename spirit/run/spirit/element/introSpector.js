@@ -176,7 +176,7 @@
             : { kind: relay ? 'relay' : 'peer', key: relay ? String(row.url || key) : key, name: String(row.name || key) };
           show('');
           say('asking ' + party.name + ' for its api…');
-          // EACH PARTY'S TREE IN spirit.data (goal/G48.4; Andy: "fix the introSpector, too"): self is this node's own branch,
+          // EACH PARTY'S TREE IN spirit.required.spirit.data (goal/G48.4; Andy: "fix the introSpector, too"): self is this node's own branch,
           // a peer or a relay is the branch under its own node, named by its key or its address.
           branch.load(party.kind === 'self' ? undefined : function () { return treeOf(party); }, party.key);
         },

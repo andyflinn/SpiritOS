@@ -46,14 +46,14 @@ function world(join) {
   w.publish = function (id, j) { w.fns.slice().forEach(function (fn) { fn(id, j); }); };
   win.spirit = {
     element: { spirit: { element: {}, app: {} } },
-    data: { job: { data: jobs } },
+    required: { spirit: { data: { job: { data: jobs } } } },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
     ready: Promise.resolve({
       fs: { loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } },
       relay: { status: function () { return Promise.resolve({ body: { rows: [] } }); } },
     }),
     // The parts it draws with: joinSteps the real one, run in this window; the forms and the icon are not judged here, nor
-    // the job branch's api.js, whose data.js's reads stand above as spirit.data.job.data.
+    // the job branch's api.js, whose data.js's reads stand above as spirit.required.spirit.data.job.data.
     require: function (p) {
       if (p === 'spirit/element/joinSteps.js') vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p });
       return Promise.resolve({});
@@ -97,7 +97,7 @@ test.run('with nothing done, every step is marked ⬜', 0.2, function () {
 test.run('it watches the jobs family\'s cache once', 0.2, function () {
   return (w.watches === 1) ? true : false;
 }, test.limit.quick);
-test.run('a new join on the spirit job, taken into spirit.data, redraws the steps', 0.2, async function () {
+test.run('a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps', 0.2, async function () {
   // what it watches redraws it
   w.publish('spirit', { id: 'spirit', data: { join: { seated: true, contact: false } } });
   await settle();

@@ -166,12 +166,12 @@ const SERVERS = { servers: ['agent'] };
 // A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
 // bare mount never has; its own test's check, by its words, stands for it here.
 const OWN_PROOF = {
-  'spirit/app/desk/element/deskDetails/deskDetails.js': { test: 'spirit/app/desk/element/deskDetails/test/deskDetails.js', check: 'a verifier publish taken into spirit.data redraws the run' },
+  'spirit/app/desk/element/deskDetails/deskDetails.js': { test: 'spirit/app/desk/element/deskDetails/test/deskDetails.js', check: 'a verifier publish taken into spirit.required.spirit.data redraws the run' },
   // Join draws only the join news on the spirit job, which a marked row in the jobs or the contacts cannot change (Andy,
   // goal/G43.32: "cw, yes", to "shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"). The
   // Join app is joinList mounted, so its page takes the same proof.
-  'spirit/element/joinList.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.data, redraws the steps' },
-  'spirit/app/join/element.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.data, redraws the steps' },
+  'spirit/element/joinList.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
+  'spirit/app/join/element.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
 };
 // THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
 const FIELD_RULES = require(path.join(RUN, 'spirit', 'fieldRules.js'));
@@ -182,7 +182,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 // (spirit/data.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
-//   subs:  every spirit.event.subscribe and spirit.data.watchPath (a family view's, spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
+//   subs:  every spirit.event.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
@@ -238,8 +238,8 @@ const WATCH = String.raw`(function () {
   function closed() { W.out = Math.max(0, W.out - 1); if (!W.out && W.writes.length > w0) stop(); }
   // THE STREAM ANSWERED (rule/19, the box: "after a press, until the stream answers"): a stream event that comes while a write
   // is out ends the watch, even before the write's own reply; what the element draws from it is its stream's, not its own.
-  // So does a search answer seated into spirit.data, "merged into the tree like any event" (spirit/data.js seatRows): what it
-  // brings is the node's word, drawn from spirit.data.
+  // So does a search answer seated into spirit.required.spirit.data, "merged into the tree like any event" (spirit/data.js seatRows): what it
+  // brings is the node's word, drawn from spirit.required.spirit.data.
   function streamed() { if (watching && W.writes.length > w0) stop(); }
   var STREAMED = ['onSnapshot', 'onUpdate', 'onDelete', 'onPacket', 'onRelayEvent', 'onContactRename'];
   W.press = function (i) {
@@ -285,7 +285,7 @@ const WATCH = String.raw`(function () {
       return function () { s.live = false; return typeof off === 'function' ? off.apply(this, arguments) : undefined; };
     };
   }
-  // EVERY SEARCH THE PAGE MAKES, as it is made (goal/G41.28): its spirit.data branch, and whether it ranks rows of its own.
+  // EVERY SEARCH THE PAGE MAKES, as it is made (goal/G41.28): its spirit.required.spirit.data branch, and whether it ranks rows of its own.
   function searches(els) {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
@@ -301,12 +301,12 @@ const WATCH = String.raw`(function () {
       if (at) took(at);
     }
     function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane'), mount: !!host && (host === (window.spiritMount && window.spiritMount.box) || (typeof host.hasAttribute === 'function' && host.hasAttribute('data-spirit-cycle'))) }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
-  // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.data path the module watches, and whether its
+  // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.required.spirit.data path the module watches, and whether its
   // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
   // a branch, or '<node>/<family>/<branch>/<row>', a row; a watch of the home node holds '~' for the node, the page's
   // own node (data.home()) once it knows it.
   W.probe = function () {
-    var D = window.spirit && window.spirit.data;
+    var D = window.spirit && window.spirit.required.spirit.data;
     var box = window.spiritMount && window.spiritMount.box;
     var paths = []; W.subs.forEach(function (x) { if (x.mine && x.live && x.kind === 'data.watch' && x.path && paths.indexOf(x.path) === -1) paths.push(x.path); });
     if (!D || !box || typeof D.setPath !== 'function') return Promise.resolve([]);
@@ -347,9 +347,9 @@ const WATCH = String.raw`(function () {
       });
     }, Promise.resolve([]));
   };
-  // What each search draws that its spirit.data branch does not hold: the keys of its rows on screen, against the branch.
+  // What each search draws that its spirit.required.spirit.data branch does not hold: the keys of its rows on screen, against the branch.
   W.drawnOutside = function () {
-    var D = window.spirit && window.spirit.data;
+    var D = window.spirit && window.spirit.required.spirit.data;
     return W.searches.map(function (x, i) {
       var host = (window.spiritSearchHosts || [])[i];
       if (!host || !host.isConnected || !x.data || !D || typeof D.rowsOf !== 'function') return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
@@ -385,9 +385,9 @@ const WATCH = String.raw`(function () {
           if (k[0] === 'event') f = (function (inner) { return function (h) { var hh = {}; Object.keys(h || {}).forEach(function (n) { hh[n] = typeof h[n] === 'function' && STREAMED.indexOf(n) !== -1 ? function () { streamed(); return h[n].apply(this, arguments); } : h[n]; }); return inner.call(this, hh); }; }(f));
           f.__kept = true; v[k[1]] = f;
         }
-        // A family's view (goal/G41.28), spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
-        // as one on spirit.data, under the whole path it watches.
-        // spirit.data names it viewAt (spirit/data.js); a watch through the view is the module's own watch.
+        // A family's view (goal/G41.28), spirit.required.spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
+        // as one on spirit.required.spirit.data, under the whole path it watches.
+        // spirit.required.spirit.data names it viewAt (spirit/data.js); a watch through the view is the module's own watch.
         var VIEW = v && typeof v.viewAt === 'function' ? 'viewAt' : 'at';
         if (k[0] === 'data' && v && typeof v[VIEW] === 'function' && !v[VIEW].__kept) {
           var at = v[VIEW];
@@ -980,14 +980,14 @@ async function session() {
   const W = P.W = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch || null, function (k, v) { return k === "listeners" || k === "intervals" ? undefined : v; })')) || { net: [], subs: [], writes: [], moved: [] };
   // THE FAMILIES IT USES, AND WHETHER IT LOADED THEIR INTERFACES ITSELF (Andy: "JUST BECAUSE api branches are intrinsic doesn't
   // fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT
-  // FUCKING NEEDS"): the families it called, and those whose spirit.data branches it watched; on a bare page each one's api.js
+  // FUCKING NEEDS"): the families it called, and those whose spirit.required.spirit.data branches it watched; on a bare page each one's api.js
   // (spirit/<family>/api.js or spirit/app/<family>/api.js) stands in spirit.required only if this file loaded it.
   P.usedFamilies = (W.families || []).slice();
   (W.subs || []).forEach(function (x) { if (x.mine && x.kind === 'data.watch' && x.path) { const f = String(x.path).split('/')[1]; if (f && P.usedFamilies.indexOf(f) === -1) P.usedFamilies.push(f); } });
   P.unloaded = JSON.parse(await page.evaluate('JSON.stringify(' + JSON.stringify(P.usedFamilies) + '.filter(function (f) { var r = (window.spirit && window.spirit.required) || {}; var s = r.spirit || {}; return !((s[f] && s[f].api) || (s.app && s.app[f] && s.app[f].api)); }))'));
 
   // AND ITS WATCHING REDRAWS IT (goal/G41.28; Andy: "YOUR TEST WILL MAKE SURE THAT THE CACHING AND LISTENING IS DONE TO
-  // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.data path it watches must change
+  // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.required.spirit.data path it watches must change
   // its box. A watch that redraws nothing is not listening.
   let probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
   // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (spirit/element/search.js, setOpen: "opened, ... draw()"): while
@@ -1176,10 +1176,10 @@ function oneFile(P) {
   // they cause, since andy request an element generates would imply that it must listen for confirmation of the
   // results"): one that sent a write holds, while mounted, a listener on the page's stream of its own making.
   // THROUGH SPIRIT.DATA, NOT THE RAW STREAM (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
-  // changes shit it listens to fucking update via the spirit object"): what it listens with is a spirit.data.watchPath of
+  // changes shit it listens to fucking update via the spirit object"): what it listens with is a spirit.required.spirit.data.watchPath of
   // its own making, its searches' included. A subscription of its own to the raw stream, taken into a store of its own,
-  // is how the Desk List kept rows spirit.data never held: it does not count.
-  // <address>: what it watches in spirit.data redraws it
+  // is how the Desk List kept rows spirit.required.spirit.data never held: it does not count.
+  // <address>: what it watches in spirit.required.spirit.data redraws it
   const probed = P.probed || [];
   const seenProbe = probed.filter(function (x) { return !x.hidden; });
   if (mounted && !probed.length) {}
@@ -1209,10 +1209,10 @@ function oneFile(P) {
       return !P.unloaded.length || false;
     }, test.limit.quick);
   }
-  // <address>: what it changes, it listens for through spirit.data
+  // <address>: what it changes, it listens for through spirit.required.spirit.data
   if (mounted && !W.writes.length) {}
   else {
-    test.run('it sent writes and watches spirit.data paths for them', 0.4, function () {
+    test.run('it sent writes and watches spirit.required.spirit.data paths for them', 0.4, function () {
       if (notDrawn()) return false;
       const watching = W.subs.filter(function (x) { return x.mine && x.live && x.kind === 'data.watch'; }).length;
       return watching > 0 || false;
@@ -1230,28 +1230,28 @@ function oneFile(P) {
     }, test.limit.quick);
   }
   // EVERY SEARCH FROM SPIRIT.DATA (goal/G41.28; Andy, box v15: "general test for screen objects will make sure that all
-  // damn data is cached in spirit data.", and "every probabilitySearch on a page is made with a spirit.data branch (its
+  // damn data is cached in spirit data.", and "every probabilitySearch on a page is made with a spirit.required.spirit.data branch (its
   // data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes red.").
-  // <address>: every search it makes ranks spirit.data
+  // <address>: every search it makes ranks spirit.required.spirit.data
   // ITS searches: the ones the module makes. When the module handed is the search itself (spirit/element/search.js),
   // the test's own mounts of it, bare in the mount box and once more in the create-and-destroy box, are the test's, not
   // searches the module made, and are not judged; every search the module makes inside them is.
   const made = (W.searches || []).filter(function (x) { return !x.mount; });
   if (mounted && !made.length) {}
   else {
-    test.run('its searches are each made with a spirit.data branch, no rows of their own', 0.4, function () {
+    test.run('its searches are each made with a spirit.required.spirit.data branch, no rows of their own', 0.4, function () {
       if (notDrawn()) return false;
       const off = made.filter(function (x) { return !x.data || x.rows; });
       return !off.length || false;
     }, test.limit.quick);
   }
   // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a
-  // row of its branch in spirit.data. A list that keeps its rows anywhere else draws what the branch does not hold.
+  // row of its branch in spirit.required.spirit.data. A list that keeps its rows anywhere else draws what the branch does not hold.
   const outside = P.outside || [];
   const drew = outside.reduce(function (n, x) { return n + x.drawn; }, 0);
   if (mounted && !drew) {}
   else {
-    test.run('every row its searches draw is a row their spirit.data branch holds', 0.4, function () {
+    test.run('every row its searches draw is a row their spirit.required.spirit.data branch holds', 0.4, function () {
       if (notDrawn()) return false;
       const strays = outside.filter(function (x) { return x.outside.length; });
       return !strays.length || false;

@@ -21,7 +21,7 @@
     var gone = false;
     var off = function () {};
     var shown = null;
-    function reads() { return ((sp().data || {}).app || {}).data; }
+    function reads() { return ((((sp().required || {}).spirit || {}).data || {}).app || {}).data; }
     function isOn() { var A = reads(); var row = A ? A.rows()[key] : null; return !!row && row.active === true; }
     // AN INTRINSIC APP GETS NO BUTTON (goal/G43.15): its row says so, and app.active would refuse it.
     function isIntrinsic() { var A = reads(); var row = A ? A.rows()[key] : null; return !!row && row.intrinsic === true; }

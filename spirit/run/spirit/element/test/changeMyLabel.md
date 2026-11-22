@@ -24,7 +24,7 @@ this node may.
   saved, and keeps the stored name in the node card. Enter in the field presses Save. Its Save is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): the press settles only once the node has answered, so the button is busy until then.
 - **What it changes, it listens for** (goal/G41.28): it requires the node family's interface (`spirit.require('spirit/node/api.js')`), which brings its data.js, and no
   data.js itself,
-  and draws the field from `spirit.data.node.data.card.watch`; a name changed in the card from elsewhere redraws the field.
+  and draws the field from `spirit.required.spirit.data.node.data.card.watch`; a name changed in the card from elsewhere redraws the field.
 - A refusal from the node is said beside the field; the field keeps what was typed.
 
 ## What its test must try to break

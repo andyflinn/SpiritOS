@@ -11,7 +11,7 @@ Its code read from the disc; then mounted alone in a box of a real Chrome on a s
 - Its code reaches no old shell (no `activateApp`, no `spirit.shell`) and names no chatClerver.
 - It loads through `spirit.require('spirit/app/chat/element.js')`, and `spirit.element.spirit.app.chat.element.create(container, {})` answers `{ destroy }`.
 - It draws today's chatter: the chat's input saying *Enter sends, Shift+Enter a new line*, and its contacts pane, the contact search.
-- At mount it asks `chat.chats.search`, and never a `chatClerver.<verb>`; its lines are `spirit.data.chat`.
+- At mount it asks `chat.chats.search`, and never a `chatClerver.<verb>`; its lines are `spirit.required.spirit.data.chat`.
 - `destroy` empties its container; the page throws nothing.
 
 ## What its test must try to break

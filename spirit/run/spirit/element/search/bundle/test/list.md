@@ -6,7 +6,7 @@ dropdown. Its test is `./list.js`.
 
 Andy, box: *"bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and
 selecting bundle rows."* Since goal/G41.14 it is a view of the node's bundles (since goal/G41.28 the auth family's cache manager's,
-`spirit.data.auth.data.bundles.branch`), kept current by the node's stream, which the auth family's cache manager takes in (no data script of its own, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
+`spirit.required.spirit.data.auth.data.bundles.branch`), kept current by the node's stream, which the auth family's cache manager takes in (no data script of its own, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
 list of bundles on a page shows the same rows (Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 their data set"*).
 
@@ -19,14 +19,14 @@ their data set"*).
 - `opts.face`, `opts.placeholder`, `opts.all` and `opts.pick(row, key)` are handed on, as probabilitySearch's.
 - Its search asks `auth.bundle { op: 'search', text }` through the spirit object, the text trimmed, and answers as a
   reply, `{ items, more }`. An empty answer is an empty list.
-- It hands its search no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.data."*).
+- It hands its search no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.required.spirit.data."*).
 - Each row is a `spirit.element.search.bundle.row` of that bundle, `{ id, label, owner }`.
 - By default its columns are the label, then the owner (goal/G41.25, Andy: *"the bundleSelector's list will gain a
   new column \"owner\", displayed right after the bundles label"*). `opts.columns` names the row's fields it shows, in order (the bundle editor:
   `label`, `owner`). No row edits its label: `editable` is no option (goal/G41.26, Andy: *"the Label should now just be an output"*), so a list asked for it hands its rows none.
 - `refresh()` and `destroy()` reach the search element; `.list` is it.
 
-- Its probabilitySearch's `data` is `spirit.data.auth.data.bundles.branch`: the search's answers are seated there, and a row the stream changes redraws
+- Its probabilitySearch's `data` is `spirit.required.spirit.data.auth.data.bundles.branch`: the search's answers are seated there, and a row the stream changes redraws
   the list.
 
 - A picked bundle is shown by its label, never its number (the list's `name(row)`; Andy: *"the bundleSelector shows a
@@ -36,7 +36,7 @@ their data set"*).
   bundleSelector will show/search ALL/ANY bundles"*, and *"if the bundleSelector IS configured for an appServer, then it
   will only list bundles \"owned\" by that Appserver"*. With `opts.family`:
   - its search asks `auth.bundle { op: 'search', text, owner: family }`;
-  - of the bundles the page holds (`spirit.data.auth.data.bundles`), it offers that owner's alone, as the real `probabilitySearch.order` judges its
+  - of the bundles the page holds (`spirit.required.spirit.data.auth.data.bundles`), it offers that owner's alone, as the real `probabilitySearch.order` judges its
     state.
   Without it, its search names no owner and it offers every bundle.
 

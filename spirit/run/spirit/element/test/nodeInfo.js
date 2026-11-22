@@ -114,7 +114,7 @@ function world(o) {
       if (opt.cardHeld) return opt.cardHeld;
       const a = opt.card ? opt.card() : { status: 200, body: CARD };
       return a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: a.status, body: a.body }); } };
-  S.data.homeNode(S.node.key);
+  S.required.spirit.data.homeNode(S.node.key);
   S.relay = { status: function (arg) { w.statuses += 1; w.calls.push({ name: 'relay.status', args: arg });
     if (opt.relaysHeld) return opt.relaysHeld;
     if (opt.relaysRefused) return Promise.reject({ status: 503, body: { ok: false, error: 'no relay answered' } });
@@ -129,7 +129,7 @@ function world(o) {
     // A family's cache (goal/G41.28): a branch's interface brings its data.js, as the real api.js does; it runs once on
     // this window over the real data set, from its path.
     const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
-    if (fam && !(S.data[fam[1]] && S.data[fam[1]].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', fam[1], 'data.js'), 'utf8'), win, { filename: 'spirit/' + fam[1] + '/data.js' });
+    if (fam && !(S.required.spirit.data[fam[1]] && S.required.spirit.data[fam[1]].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', fam[1], 'data.js'), 'utf8'), win, { filename: 'spirit/' + fam[1] + '/data.js' });
     (FILES[p] || []).forEach(function (k) { els[k] = E[k]; });
     if (p === 'spirit/element/panel.js') els.panel = panel;
     if (p === 'spirit/element/rotateKey.js') els.rotateKey = rotateKey;
@@ -251,8 +251,8 @@ test.run('it asks spirit.node.card once, with an empty object', 0.2, function ()
   card = w.calls.filter(function (c) { return c.name === 'node.card'; });
   return (card.length === 1 && JSON.stringify(card[0].args) === '{}') ? true : false;
 }, test.limit.quick);
-test.run('it requires spirit/node/api.js and no data.js, and keeps node.card\'s answer in spirit.data.node.data\'s card, each field\'s source', 0.2, function () {
-  N = ((w.S.data || {}).node || {}).data;
+test.run('it requires spirit/node/api.js, no data.js, and keeps node.card\'s answer in spirit.required.spirit.data.node.data', 0.2, function () {
+  N = ((w.S.required.spirit.data || {}).node || {}).data;
   return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node') ? true : false;
 }, test.limit.quick);
 test.run('a card read says nothing', 0.2, function () {
@@ -269,7 +269,7 @@ test.run('a card refused is said in the node\'s words, and nothing is kept', 0.2
   m2 = refused.els.nodeInfo.create(h2, {});
   await m2.ready;
   await settle();
-  N2 = refused.S.data.node && refused.S.data.node.data;
+  N2 = refused.S.required.spirit.data.node && refused.S.required.spirit.data.node.data;
   return (/owner only/.test(refused.slot(h2, 'said').textContent) && !(N2 && N2.card.get())) ? true : false;
 }, test.limit.quick);
 test.run('a node that does not answer is said as node.card did not answer', 0.2, async function () {
@@ -313,7 +313,7 @@ test.run('the fields and the card do not wait for the relays', 0.2, async functi
   m4 = slow.els.nodeInfo.create(h4, {});
   await m4.ready;
   await settle();
-  return (slow.made.length === 2 && !!(slow.S.data.node && slow.S.data.node.data.card.get()) && slow.forms.length === 0) ? true : false;
+  return (slow.made.length === 2 && !!(slow.S.required.spirit.data.node && slow.S.required.spirit.data.node.data.card.get()) && slow.forms.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('the forms are drawn when the relays land', 0.2, async function () {
   letRelays(answered(ROWS));
@@ -401,7 +401,7 @@ test.run('a card that lands after destroy is not kept', 0.2, async function () {
   m6.destroy();
   letCard(CARD);
   await settle();
-  return (!(late.S.data.node && late.S.data.node.data.card.get())) ? true : false;
+  return (!(late.S.required.spirit.data.node && late.S.required.spirit.data.node.data.card.get())) ? true : false;
 }, test.limit.quick);
 test.run('relays that land after destroy draw no form', 0.2, async function () {
   letRel = null;
@@ -504,7 +504,7 @@ function formsPart() {
       return f;
     } };
     S.node = { key: 'NODEKEY+INFO==', card: function () { return Promise.resolve(CARD); } };
-    S.data.homeNode(S.node.key);
+    S.required.spirit.data.homeNode(S.node.key);
     // As the relay family's status answers (spirit/relay/api.js, status): { status, text, body: { rows, ... } }.
     S.relay = { status: function () {
       const body = { name: '', rows: relayRows.slice(), ownedUrls: [], claimedUrls: [], mustPick: false, relayStatus: {}, more: false };
@@ -524,7 +524,7 @@ function formsPart() {
       if (real[p]) { vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p }); delete real[p]; }
       // A branch's interface brings its data.js, as the real api.js does: run once on this window from its path.
       const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
-      if (fam && !(S.data[fam[1]] && S.data[fam[1]].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', fam[1], 'data.js'), 'utf8'), win, { filename: 'spirit/' + fam[1] + '/data.js' });
+      if (fam && !(S.required.spirit.data[fam[1]] && S.required.spirit.data[fam[1]].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', fam[1], 'data.js'), 'utf8'), win, { filename: 'spirit/' + fam[1] + '/data.js' });
       if (p === 'spirit/element/panel.js') at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } };
       if (p === 'spirit/element/rotateKey.js') at.rotateKey = { create: function () { return { destroy: function () {} }; } };
       return Promise.resolve({});

@@ -8,10 +8,10 @@
 //
 // THE SET IS THE FS FAMILY'S, AND FOLLOWED (goal/G43.32; Andy: "It obviously must require the fs interface so it can
 // listen to changes in the file it loads for it's icon list...."): the file is read through the fs family, kept in the fs
-// family's cache (spirit.data.fs.data.icons), and the list draws that branch. Each list watches the file's row and reads it
+// family's cache (spirit.required.spirit.data.fs.data.icons), and the list draws that branch. Each list watches the file's row and reads it
 // again when it changes, and the fs tree for it coming back whole after a reconnect forgot the set; lists read together
 // read once. This ends
-// the set as a constant held beside spirit.data (goal/G43.11, "we make it a constant"): his newer words.
+// the set as a constant held beside spirit.required.spirit.data (goal/G43.11, "we make it a constant"): his newer words.
 //
 //   set() -> the set, { glyph: [keywords] }, as the fs cache holds it, read once when it holds none; the icon selector
 //            offers the same one
@@ -33,17 +33,17 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
 
   // The fs family's cache, where the set is kept and the file followed.
   var cache = window.spirit.require('spirit/fs/api.js');
-  function F() { return ((window.spirit.data || {}).fs || {}).data || null; }
+  function F() { return ((window.spirit.required.spirit.data || {}).fs || {}).data || null; }
 
   // A read that is refused keeps nothing, so a face that gets its star can read it later. Lists read together read once.
   var reading = null;
   // The file's row as last read (modified and size): a row written again unchanged is read only if the set is gone (a
-  // reconnect empties spirit.data, and the push sets the row again).
+  // reconnect empties spirit.required.spirit.data, and the push sets the row again).
   var readStamp = '';
   function stampOf(row) { return row ? String(row.modified) + ':' + String(row.size) : ''; }
   function held() {
     var I = F() && F().icons;
-    var rows = I && window.spirit.data.rowsOf ? window.spirit.data.rowsOf(I.branch) || [] : [];
+    var rows = I && window.spirit.required.spirit.data.rowsOf ? window.spirit.required.spirit.data.rowsOf(I.branch) || [] : [];
     if (!rows.length) return null;
     var set = {};
     rows.forEach(function (r) { set[r.glyph || r.key] = Array.isArray(r.keywords) ? r.keywords : []; });

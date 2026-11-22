@@ -213,7 +213,7 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
-  // The page's caches are the desk and backup families' data.js, over the one spirit.data (goal/G41.28): each comes with
+  // The page's caches are the desk and backup families' data.js, over the one spirit.required.spirit.data (goal/G41.28): each comes with
   // its family's api.js, as the real api.js requires its companion data.js (goal/G47.1), and runs as it is, so the List is
   // a search of what the cache holds; anything else is answered and not run.
   const REAL = { 'spirit/data.js': 'spirit/data.js', 'spirit/app/desk/api.js': 'spirit/app/desk/data.js', 'spirit/app/backup/api.js': 'spirit/app/backup/data.js' };
@@ -247,7 +247,7 @@ function deskWorld(goal, items) {
   // spirit.node.key, so a page files its own node's rows under it?" "yes."): as spirit.start does once node.card answers,
   // the key kept on spirit.node and handed to the data set, so the cache files the page's rows under its node.
   win.spirit.node = { key: PAGE_NODE_KEY };
-  win.spirit.data.homeNode(PAGE_NODE_KEY);
+  win.spirit.required.spirit.data.homeNode(PAGE_NODE_KEY);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'row.js'), 'utf8'), win, { filename: 'row.js' });
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
@@ -256,7 +256,7 @@ function deskWorld(goal, items) {
     await settle();
     // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, the one its last
     // goal.whole named; the page reads it from there, never from a search answer.
-    const K = ((win.spirit.data || {}).desk || {}).data;
+    const K = ((win.spirit.required.spirit.data || {}).desk || {}).data;
     if (K && typeof K.published === 'function') { [goal].concat(items).forEach(function (r) { K.published({ verb: 'goal.whole', item: r, change: 1 }); }); await settle(); }
     // The List's rows, drawn by the page's own element into the List's box, where its click listener hears them.
     if (listOpts) {

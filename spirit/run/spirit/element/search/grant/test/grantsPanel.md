@@ -66,7 +66,7 @@ Moved here from the Grants app (the box: *"Still its own: the panel's data sourc
 auth.revoke over the auth cache (GR_GRANTS). It moves into grantsPanel."*). The panel still knows no table of its own: a
 caller picks this one by name, `grants: grantsPanel.nodeGrants`, and the panel takes it as any grants table.
 
-- `branch` the auth family's cache, `spirit.data.auth.data.grants.branch` (goal/G41.28); keyed `key`, labelled `label`;
+- `branch` the auth family's cache, `spirit.required.spirit.data.auth.data.grants.branch` (goal/G41.28); keyed `key`, labelled `label`;
   no `stream` of its own.
 - `search(text)` asks `auth.search { text }` and answers `{ items, more }`, each found grant carrying whose it is in the
   label field, `label` (auth.search says it as `name`; found live by cw, goal/G41.16); a row it cannot read is handed on

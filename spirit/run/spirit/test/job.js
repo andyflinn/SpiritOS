@@ -70,11 +70,11 @@ const PLANTED = {
   'zzserve/zzserve.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Serve', intrinsic: false }, mount: { 'zzserve.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }),
   'zzserve/zzserve.js': ["'use strict';", "require('../../spirit.js');", "spirit.require('spirit/server/app.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
   'zzserve/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').require('spirit/app/zzserve/data.js'); else window.spirit.require('spirit/app/zzserve/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data; if (!D) return; D.makeFamily('zzserve', function () { return {}; }); }());", ''].join('\n'),
+  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('zzserve', function () { return {}; }); }());", ''].join('\n'),
   'zzshot/zzshot.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Shot', intrinsic: false }, mount: { 'zzshot.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: false } }),
   'zzshot/zzshot.js': ["'use strict';", "require('../../spirit.js');", ''].join('\n'),
   'zzshot/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').require('spirit/app/zzshot/data.js'); else window.spirit.require('spirit/app/zzshot/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data; if (!D) return; D.makeFamily('zzshot', function () { return {}; }); }());", ''].join('\n'),
+  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('zzshot', function () { return {}; }); }());", ''].join('\n'),
 };
 function plantApps(run) {
   Object.keys(PLANTED).forEach(function (rel) { const p = path.join(run, 'spirit', 'app', rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, PLANTED[rel]); });
@@ -898,7 +898,7 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
     "const fs = require('fs'), dir = process.argv[1];",
     "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job.js')) + ")(1);",
     "const job = jobs.startFsWatcherJob(dir);",
-    // goal/G49.2: the tree is spirit.data.fs, through spirit/fs/script.js, which this process's watcher fills; read once it is whole.
+    // goal/G49.2: the tree is spirit.required.spirit.data.fs, through spirit/fs/script.js, which this process's watcher fills; read once it is whole.
     "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'script.js')) + ");",
     "const rowsOf = function () { const all = F.files(); return Object.keys(all).map(function (p) { return Object.assign({ path: p }, all[p]); }); };",
     "const end = Date.now() + 40000;",
@@ -957,7 +957,7 @@ test.run('a scratch tree holds an app zzKept whose json turns intrinsic true and
       "const jobs = require(path.join(run, 'spirit', 'job.js'))(1);",
       "const job = jobs.startFsWatcherJob(run);",
       "const json = path.join(run, 'spirit', 'app', 'zzKept', 'zzKept.json');",
-      // goal/G49.2: the row is spirit.data.fs's, through spirit/fs/script.js, which this process's watcher fills.
+      // goal/G49.2: the row is spirit.required.spirit.data.fs's, through spirit/fs/script.js, which this process's watcher fills.
       "const F = require(path.join(run, 'spirit', 'fs', 'script.js'));",
       "const core = function () { const c = F.file('spirit/app/zzKept/zzKept.js'); return c ? c.core === true : null; };",
       "const wait = function (want, ms) { const end = Date.now() + ms; return new Promise(function (r) { (function tick() { const now = core(); if (now === want || Date.now() > end) return r(now); setTimeout(tick, 100); })(); }); };",
@@ -1051,7 +1051,7 @@ function mountPart() {
     fs.writeFileSync(path.join(dir, OLD_FOLDER, 'note.txt'), 'the decoy');
     fs.writeFileSync(path.join(dir, 'data.js'), [
       '(function family() {',
-      "  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../data.js');",
+      "  var D = typeof window !== 'undefined' ? window.spirit.required.spirit.data : require('../../data.js');",
       "  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }",
       "  D.makeFamily('" + name + "');",
       "  (typeof window !== 'undefined' ? window : global).__appData = '" + name + "';",
@@ -1417,10 +1417,10 @@ function mountPart() {
     const same = await onPage("spirit.require('spirit/app/" + NAME + '/' + NAME + ".js').then(function () { return window.__appOnPage; })");
     return (!!same && same.v === NAME) || false;
   }, test.limit.quick);
-  // A process requires the family's api.js alone, and says whether its data.js then stands at spirit.data.<family>, and
+  // A process requires the family's api.js alone, and says whether its data.js then stands at spirit.required.spirit.data.<family>, and
   // what the planted data.js marked.
   const inNode = function (family) {
-    const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.data && global.spirit.data[" + JSON.stringify(family) + "]), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
+    const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); require(" + JSON.stringify('./spirit/app/' + family + '/api.js') + "); console.log(JSON.stringify({ stands: !!(global.spirit.required.spirit.data && global.spirit.required.spirit.data[" + JSON.stringify(family) + "]), mark: global.__appData || '' }));"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
     return parsed(String(r.stdout || '').trim()) || {};
   };
   test.run('in a process, requiring a tree app\'s api.js loads its data.js', 0.2, function () {
@@ -1532,7 +1532,7 @@ test.run('spirit/job.js asks the disc for no file: no existsSync', 0.2, function
 
 // ── job.js keeps no file tree of its own for others (goal/G49.2; Andy: "go on the five!") ──
 // G49.1's box: "Once every client reads spirit/fs/script.js, job.js's fsTreeCommands and fsTreeEntries go, and event.js,
-// faceHome.js and nodeSearches.js read spirit.data.fs". job.js's code holds neither, and each of the three reaches the
+// faceHome.js and nodeSearches.js read spirit.required.spirit.data.fs". job.js's code holds neither, and each of the three reaches the
 // dataset through spirit/fs/script.js, naming neither. The two names are written in pieces, so this check does not count itself.
 const TREE_NAMES = ['fsTree' + 'Commands', 'fsTree' + 'Entries'];
 function codeOf(rel) { try { return code(fs.readFileSync(path.join(RUN, rel), 'utf8')); } catch (e) { return ''; } }

@@ -8,7 +8,7 @@
 //
 // The chat server is faceless and knows keys only; this element is everything a person sees. It asks its server through
 // the chat branch spirit.require binds (spirit.chat.<verb>), and hears every kept line through the chat branch's cache
-// (spirit.data.chat.data); nothing is handed to it (goal/G43.24). It builds with the shell's elements: the peer pane is the contact
+// (spirit.required.spirit.data.chat.data); nothing is handed to it (goal/G43.24). It builds with the shell's elements: the peer pane is the contact
 // search (spirit/element/search/contact.js) in pane face, every name a contactLabel.
 //
 // THREE PANES (the objects pane on the right is empty until file transfer, goal/G4.12):
@@ -59,10 +59,10 @@ var chInterfaces = window.spirit && typeof window.spirit.require === 'function'
 
 // THE LINES ARE THE chat BRANCH'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
 // buddies clientCacheManager.js must do so in this item. no exceptions."): every line a read, a search or a send brings is
-// kept by the family's cache manager (spirit.data.chat.data.keep), and every line the server publishes too; the window places
+// kept by the family's cache manager (spirit.required.spirit.data.chat.data.keep), and every line the server publishes too; the window places
 // a line of the open chat from there (its watch), and an arrival (its published) is read, made current and scrolled to.
 // chLines holds the window's own elements, each with the line it paints.
-function chData() { return (window.spirit && ((window.spirit.data || {}).chat || {}).data) || null; }
+function chData() { return (window.spirit && ((window.spirit.required.spirit.data || {}).chat || {}).data) || null; }
 function chKeep(peer, lines) { var C = chData(); if (C && peer) C.keep(peer, lines); }
 
 // ITS SERVER THROUGH THE SPIRIT OBJECT (goal/G43.24): the chat branch, bound by the one loader; a refusal throws its code.
@@ -333,7 +333,7 @@ function chSend() {
   });
 }
 
-// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.data.chat.data.published): every kept line, written or
+// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.required.spirit.data.chat.data.published): every kept line, written or
 // received. The window has placed it already (its watch); another chat's line marks the peer list again only, and a new
 // line of the open chat is read, made current and scrolled to.
 function chArrived(peer, l, fresh) {
@@ -559,8 +559,8 @@ function chMount(container) {
     // chat.search for the open chat's lines; nothing is asked until words are typed. A row is keyed by its chat as
     // well, so a line of another chat held from an earlier search never stands for this one; a press puts the line
     // in view when the window holds it.
-    // A VIEW OF THE CHATS' LINES IN spirit.data (goal/G41.28): the probability search over the lines the chat
-    // branch's cache keeps (spirit.data.chat.data.branch), each line the shared row element; the open chat's alone, by the
+    // A VIEW OF THE CHATS' LINES IN spirit.required.spirit.data (goal/G41.28): the probability search over the lines the chat
+    // branch's cache keeps (spirit.required.spirit.data.chat.data.branch), each line the shared row element; the open chat's alone, by the
     // who filter. Asked of the chat server's chat.search once words are typed; every line found is seated in the branch and
     // so joins the history (Andy, 2026-10-18: "all found lines are added to the chat, if they're missing, that won't
     // hurt"), each by its time.
@@ -671,9 +671,9 @@ function chMount(container) {
       chKeep(C.watch(function (peer, line) { if (peer && peer === chPeer) chUpsert(line); }));
       chKeep(C.published(chArrived));
     }, function () { /* no lines are kept: the chat says so as it is read */ });
-    // THE STREAM BACK AFTER A DROP (Andy: "this should work without a hickup"): spirit.data forgets what it kept on a
+    // THE STREAM BACK AFTER A DROP (Andy: "this should work without a hickup"): spirit.required.spirit.data forgets what it kept on a
     // reconnect, and the chat branch's cache says so (forgot), so the chats and the open chat are asked again. The element
-    // takes no stream of its own (only spirit.data does).
+    // takes no stream of its own (only spirit.required.spirit.data does).
     Promise.resolve(spirit.require('spirit/app/chat/api.js')).then(function () {
       var C = chData();
       if (C && typeof C.forgot === 'function') chKeep(C.forgot(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); }));

@@ -67,6 +67,6 @@ test.run('once the stream\'s reading is in, each tile holds its icon and a value
 }, test.limit.slow);
 test.run('destroyed, it leaves its container empty, and a later change of the spirit job draws nothing', 0.2, async function () {
   if (!W.made) return false;
-  const html = await js('(function () { window.__made.destroy(); var D = window.spirit.data; var at = D.homeNode() + "/job/jobs/spirit"; var before = D.getPath(at); if (before) { D.setPath(at, Object.assign({}, before, { label: "zzafter" })); D.setPath(at, before); } return window.__box.innerHTML; })()');
+  const html = await js('(function () { window.__made.destroy(); var D = window.spirit.required.spirit.data; var at = D.homeNode() + "/job/jobs/spirit"; var before = D.getPath(at); if (before) { D.setPath(at, Object.assign({}, before, { label: "zzafter" })); D.setPath(at, before); } return window.__box.innerHTML; })()');
   return html === '' ? true : false;
 }, test.limit.quick);

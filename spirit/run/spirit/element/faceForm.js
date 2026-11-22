@@ -119,7 +119,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       var mineNow = function (r) { return r && (r.key === key || (row && row.url && r.url === row.url)); };
       if (!row) {
         // A change with no value is not a row gone until the cache says so.
-        if (window.spirit.data.contact.data.contact(key)) return;
+        if (window.spirit.required.spirit.data.contact.data.contact(key)) return;
         box._spFace.relays = now.filter(function (r) { return !mineNow(r); });
       } else {
         if (row.relay !== true) return;
@@ -140,7 +140,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     }
     var left = false;
     Promise.resolve(window.spirit.require('spirit/contact/api.js')).then(function () {
-      if (!left && ((window.spirit.data || {}).contact || {}).data) stop = window.spirit.data.contact.data.watch(take);
+      if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
     });
     box._spFaceStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
 

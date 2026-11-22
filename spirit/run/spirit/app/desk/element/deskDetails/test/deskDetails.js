@@ -230,7 +230,7 @@ function ddWorld(facts, checks, o) {
   };
   // THE ROWS THE PAGE HOLDS (goal/G48.8: a goal's Close counts its open items "from the page's own rows"), when a case
   // hands some: the desk family's kept data, as spirit/app/desk/data.js gives it a page.
-  if (o && o.kept) win.spirit.data = { desk: { data: { part: function () { return null; }, items: function () { return o.kept; }, forget: function () {} } } };
+  if (o && o.kept) win.spirit.required.spirit.data = { desk: { data: { part: function () { return null; }, items: function () { return o.kept; }, forget: function () {} } } };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the dialog places itself by installSpiritElement as it runs.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);

@@ -85,7 +85,7 @@ function world(answer) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+LABEL/NODE==' };
-  win.spirit.data.homeNode(win.spirit.node.key);
+  win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
   if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24): no api is handed. The page's spirit object stands in: its escapeHtml, its
   // outcome as spirit.js has it, and the node family's setName, which records every call and answers as the node would
@@ -191,7 +191,7 @@ test.run('after Save it says saved', 0.2, function () {
 }, test.limit.quick);
 test.run('it requires spirit/node/api.js and no data.js, and the name the node stored is kept in the node family\'s card', 0.2, function () {
   // what it changes, it listens for: the node card in the node family's cache (goal/G41.28)
-  N = ((w.win.spirit.data || {}).node || {}).data;
+  N = ((w.win.spirit.required.spirit.data || {}).node || {}).data;
   return (w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && !!N.card.get() && N.card.get().name === 'Bob') ? true : false;
 }, test.limit.quick);
 test.run('a name changed in the card, from elsewhere, redraws the field', 0.2, async function () {

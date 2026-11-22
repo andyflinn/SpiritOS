@@ -1,11 +1,11 @@
 'use strict';
 // spirit/run/spirit/app/testicle/data.js
 // WHAT A CLIENT KNOWS OF TESTICLE'S SERVER, IN THE testicle FAMILY'S OWN FOLDER (goal/G41.28, goal/G47.1). A page loads it
-// through its api.js (spirit/app/testicle/api.js), the one file that requires it; it runs the translator into that page's spirit.data, under the node that served
+// through its api.js (spirit/app/testicle/api.js), the one file that requires it; it runs the translator into that page's spirit.required.spirit.data, under the node that served
 // the rows.
 //
 // THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the suite search, testicle's face) asks
-// spirit.data.testicle.data (below), never a branch by name.
+// spirit.required.spirit.data.testicle.data (below), never a branch by name.
 //   script         name -> the script row { name, hash, deleted, changed }
 //   suite          script|suite -> the suite row { key, script, suite, test, status, deleted, outcome, changed }
 //   testicle       script|suite|test|id -> each test row the server published, the replaced one and the
@@ -18,15 +18,15 @@
 // of the branch follows it. What a search answers is kept the same way (keep).
 (function family() {
   var TABLES = ['script', 'suite', 'testicle'];
-  // The monitor's one row, in its own branch (spirit.data keeps rows as branch/key): what the stream last said of busy and
+  // The monitor's one row, in its own branch (spirit.required.spirit.data keeps rows as branch/key): what the stream last said of busy and
   // of the last change.
   var MONITOR = 'monitor/now';
   // The preferences, one row of their own: what the preferences verb answered last, or the stream told since.
   var PREFERENCES = 'preferences/now';
-  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('testicle', function () {
     var HOME = D.viewAt(null, 'testicle');
     // A TEST ROW KEPT WITH ITS FILE NAMES, scriptName and suiteName, the last part of each path: the testicle search shows and

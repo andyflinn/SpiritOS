@@ -6,13 +6,13 @@ tree HAS a clientCacheManager"*). Owed since the rule *"every production script 
 
 The branch has no verb yet (kept empty for later use, goal/G30.20).
 
-- In node, requiring its branch's api.js, `spirit.require('spirit/config/api.js')`, puts it at `spirit.data.config.data`
+- In node, requiring its branch's api.js, `spirit.require('spirit/config/api.js')`, puts it at `spirit.required.spirit.data.config.data`
   (the api.js is the one script that requires its data.js).
-- Run beside spirit.data it makes its family there; it has no reads yet.
+- Run beside spirit.required.spirit.data it makes its family there; it has no reads yet.
 - **It keeps nothing, and names no branch**: it adds no translator, and a job of every kind the node streams, and a
   rename, leave its family's cache empty.
 
 ## What its test must try to break
 
-- The family made under another name, so requiring `spirit/config/api.js` leaves nothing at `spirit.data.config.data`.
+- The family made under another name, so requiring `spirit/config/api.js` leaves nothing at `spirit.required.spirit.data.config.data`.
 - A translator or a branch added here that keeps rows another family keeps.

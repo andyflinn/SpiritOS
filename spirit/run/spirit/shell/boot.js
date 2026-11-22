@@ -78,7 +78,7 @@
   var subscribers = [];
   // THE FACE LINK'S SNAPSHOT: what this face's stream hands a subscriber that comes late, as spirit.js's own stream keeps
   // its own (spirit.event). It is the stream, not a store: every reader reads the jobs from the jobs family's cache
-  // (spirit.data.job.data, goal/G41.28), which this stream feeds.
+  // (spirit.required.spirit.data.job.data, goal/G41.28), which this stream feeds.
   var linkJobs = {};
   var presence = {};
   var streamStopped = false;

@@ -76,7 +76,7 @@ test.run('it adds apiVerbSelector with a create to window.spirit.element, and cr
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+VERB/SELECTOR==' };
-  win.spirit.data.homeNode(win.spirit.node.key);
+  win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   // goal/G43.32: it stands at its path, spirit.element.spirit.element.search.api.verb.
   E = ((win.spirit.element.spirit || {}).element || {});
@@ -143,14 +143,14 @@ test.run('it requires spirit/node/api.js and no data.js, and its list is a view 
   mine = made.create(node('div'), {});
   await settle();
   m = w.lists[w.lists.length - 1];
-  N = ((win.spirit.data || {}).node || {}).data;
+  N = ((win.spirit.required.spirit.data || {}).node || {}).data;
   return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
 test.run('show, given the tree and a server, narrows the kept verbs to that family\'s and never DEBUG', 0.2, function () {
   if (!N || !m) return false;
   N.keepTree(TREE, win.spirit.apiTreeIndex);
   mine.show(TREE, 'fs');
-  const kept = win.spirit.data.getPath(N.verbsBranch) || {};
+  const kept = win.spirit.required.spirit.data.getPath(N.verbsBranch) || {};
   const fam = (m.opts.filters || []).filter(function (x) { return x.name === 'family'; })[0];
   const shown = Object.keys(kept).filter(function (k) { return fam && fam.test(kept[k]); }).map(function (k) { return kept[k].name; }).sort();
   return !!fam && short(shown) === short(['loadFile', 'search']) && mine.hidden === false ? true : false;

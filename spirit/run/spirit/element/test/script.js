@@ -196,7 +196,7 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('the stream brings active to the row without a search being asked', 0.2, async function () {
     if (!W1.up) return false;
-    rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())'); }, 5000);
+    rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())'); }, 5000);
     return (rowActive) ? true : false;
   }, test.limit.slow);
   test.run('the button follows and says Deactivate', 0.2, async function () {
@@ -206,8 +206,8 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('a search seated over it does not lose active', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.searchApp({ q: "" }).then(function (got) { spirit.data.seatRows(spirit.data.app.data.branch, got.items); return true; })');
-    return (await chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())') === true) ? true : false;
+    await chrome.evaluate('spirit.app.searchApp({ q: "" }).then(function (got) { spirit.required.spirit.data.seatRows(spirit.required.spirit.data.app.data.branch, got.items); return true; })');
+    return (await chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())') === true) ? true : false;
   }, test.limit.quick);
 
   // Andy: "the detail panel needs to open on top of the whole container", and the form he drew for it.
@@ -335,7 +335,7 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('the stream brings the new label to the row', 0.2, async function () {
     if (!W1.up) return false;
-    inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.label === "Renamed"; }())'); }, 5000);
+    inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows().hearing; return !!r && r.label === "Renamed"; }())'); }, 5000);
     return (inRow) ? true : false;
   }, test.limit.slow);
   test.run('the title bar and the rows of the panel say the new label', 0.2, async function () {
@@ -348,7 +348,7 @@ test.after(stopAll);
     await chrome.evaluate('(function () { var f = [].filter.call(((' + panel + ') || document.createElement("div")).querySelectorAll(".shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
     await press(2);
     await until(function () { return Promise.resolve(stateOf().label === monitorLabel); }, 5000);
-    await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
+    await until(function () { return chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows().hearing; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
     return (!/Uptime|waiting/i.test(await chrome.evaluate('String((' + panel + ' || {}).innerText || "")'))) ? true : false;
   }, test.limit.slow);
   test.run('its x brings the list back', 0.2, async function () {
@@ -476,7 +476,7 @@ test.after(stopAll);
   }, test.limit.long);
 
   // EVERY APP ACTIVE, planted and the tree's: what keeps a tile away below can only be shell.mount.
-  const rows = function () { return chrome.evaluate('(function () { var r = (spirit.data.app && spirit.data.app.data) ? spirit.data.app.data.rows() : {}; var out = {}; ' + JSON.stringify(keys) + '.forEach(function (k) { out[k] = r[k] ? { active: r[k].active === true } : null; }); return JSON.stringify(out); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return {}; } }); };
+  const rows = function () { return chrome.evaluate('(function () { var r = (spirit.required.spirit.data.app && spirit.required.spirit.data.app.data) ? spirit.required.spirit.data.app.data.rows() : {}; var out = {}; ' + JSON.stringify(keys) + '.forEach(function (k) { out[k] = r[k] ? { active: r[k].active === true } : null; }); return JSON.stringify(out); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return {}; } }); };
   test.run('every app, planted and the tree\'s, is made active', 0.2, async function () {
     if (!W1.loaded) return false;
     keys = Object.keys(PLANT);
@@ -801,7 +801,7 @@ test.after(stopAll);
   // WHAT IT RUNS ON, SHOWN (Andy: "the selector dropdown on andy-wsl's desk finds \"Andy Flinn\" but won't accept the
   // selection, the setting remains on \"WSL ANDY VSCode\""; "nothing returned handles the data"; "all, agreed. spirit/data.js"):
   // before any pick the field names the server remote answers as current; testicle's published remote row reaches the page's
-  // spirit.data.testicle.remote; and the field follows what lands there.
+  // spirit.required.spirit.data.testicle.remote; and the field follows what lands there.
   const barForm = function () { return '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(TESTICLE) + ') !== -1; })[0]'; };
   const fieldText = function () { return c4.evaluate('(function () { var f = ' + barForm() + '; var b = f && f.querySelector("button[id$=\'field\']"); return b ? String(b.textContent || "") : ""; }())'); };
   test.run('before any pick the dropdown\'s field names the server remote answers as current', 0.2, async function () {
@@ -812,18 +812,18 @@ test.after(stopAll);
     if (!label) return false;
     return (await fieldText()).indexOf(label) !== -1 || false;
   }, test.limit.slow);
-  test.run('testicle\'s published remote row reaches the page\'s spirit.data.testicle.remote, naming the same current', 0.2, async function () {
+  test.run('testicle\'s published remote row reaches the page\'s spirit.required.spirit.data.testicle.remote, naming the same current', 0.2, async function () {
     if (W4.bar !== 'dropdown' || !W4.real || !W4.real.current) return false;
-    return (await until(function () { return c4.evaluate('(function () { var t = (window.spirit.data || {}).testicle; return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }())'); }, 15000)) ? true : false;
+    return (await until(function () { return c4.evaluate('(function () { var t = (window.spirit.required.spirit.data || {}).testicle; return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }())'); }, 15000)) ? true : false;
   }, test.limit.slow);
-  test.run('a remote row landing in spirit.data.testicle.remote is what the field then names', 0.2, async function () {
+  test.run('a remote row landing in spirit.required.spirit.data.testicle.remote is what the field then names', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
     const fake = { current: 'K-ZZELSEWHERE', items: [{ key: 'K-ZZELSEWHERE', label: 'zz Elsewhere' }], more: false };
-    await c4.evaluate('(function () { window.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.testicle", app: { remote: ' + JSON.stringify(fake) + ' } }); return true; }())');
+    await c4.evaluate('(function () { window.spirit.required.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.testicle", app: { remote: ' + JSON.stringify(fake) + ' } }); return true; }())');
     await sleep(1000);
     const shown = await fieldText();
     // The node's own row back, for what follows.
-    if (W4.real && W4.real.current) await c4.evaluate('(function () { window.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.testicle", app: { remote: ' + JSON.stringify(W4.real) + ' } }); return true; }())');
+    if (W4.real && W4.real.current) await c4.evaluate('(function () { window.spirit.required.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.testicle", app: { remote: ' + JSON.stringify(W4.real) + ' } }); return true; }())');
     return shown.indexOf('zz Elsewhere') !== -1 || false;
   }, test.limit.slow);
   test.run('picking a row of the dropdown sends remote with that row\'s id', 0.2, async function () {

@@ -3,7 +3,7 @@
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
 // (mine, blocked: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
 // and add (a button on a row the owner does not keep). It reads the node's contacts as the contact family's cache
-// manager keeps them (spirit.data.contact.data, goal/G41.28), which presence, renames, the network search and every contact
+// manager keeps them (spirit.required.spirit.data.contact.data, goal/G41.28), which presence, renames, the network search and every contact
 // search keep, so a peer arriving repaints that peer's dot and a rename that peer's label, and nothing else.
 // row.js does the shared work; this file says what a contact is.
 //
@@ -29,8 +29,8 @@
 
   // A NODE'S CONTACTS ARE THE contact FAMILY'S CACHE (goal/G41.28): what the stream means for them, and their branch, are
   // the family's own data.js's (spirit/contact/data.js), which this element loads itself
-  // (rule/26), as part of its tree; a row reads spirit.data.contact.data.
-  function contactReads() { return (window.spirit && ((window.spirit.data || {}).contact || {}).data) || null; }
+  // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.contact.data.
+  function contactReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).contact || {}).data) || null; }
   var contactReady = Promise.resolve(window.spirit.require('spirit/contact/api.js')).then(function () { return contactReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.

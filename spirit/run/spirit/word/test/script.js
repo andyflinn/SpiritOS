@@ -354,7 +354,7 @@ test.run('a browser opens the page of a scratch node, for the asks below', 0.2, 
 // NO ASK FOR A word.json THE PAGE KNOWS IS NOT THERE (goal/G43.32). cw, measured on Andy's node: opening Files
 // made 1821 requests, 1818 of them 404, all fs.load of a word.json (spirit/app/word.json alone 712 times). Andy:
 // "wsl, add a test to test/word.js to make sure this won't happend again." The page holds the node's file list
-// (spirit.data.fs), so word.js asks only for a word.json the list holds, and each of those once until the stream
+// (spirit.required.spirit.data.fs), so word.js asks only for a word.json the list holds, and each of those once until the stream
 // says it changed. One word.json is planted on the scratch node (spirit/app/word.json, the word zzword); then many
 // checks along many paths, every call the page sends recorded as it leaves.
 // on a page: no word.json asked that the file list does not hold, each one held asked once
@@ -371,7 +371,7 @@ test.run('the planted spirit/app/word.json is read, and its word is found at spi
     ' var f = window.fetch; window.fetch = function (u, o) { keep(String(u) + " " + (o && o.body || "")); return f.apply(this, arguments); };' +
     ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { keep(b); return x.apply(this, arguments); };' +
     ' return spirit.require("spirit/word/script.js"); }).then(function () {' +
-    ' var paths = ["spirit.app.zz", "spirit.app.table.zz", "spirit.app.table.rows.zz", "spirit.element.search.zz", "spirit.fs.zz", "spirit.contact.zz", "spirit.data.zz", "spirit.app.desk.element.zz"];' +
+    ' var paths = ["spirit.app.zz", "spirit.app.table.zz", "spirit.app.table.rows.zz", "spirit.element.search.zz", "spirit.fs.zz", "spirit.contact.zz", "spirit.required.spirit.data.zz", "spirit.app.desk.element.zz"];' +
     ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(spirit.word.check(p, "zzword")); asks.push(spirit.word.check(p, "other")); });' +
     ' return Promise.all(asks); }).then(function (answers) { return new Promise(function (r) { setTimeout(function () { r(answers); }, 1500); }); })' +
     '.then(function (answers) { return JSON.stringify({ sent: window.sentWord, appSees: answers[0], under: answers[2] }); }, function () { return JSON.stringify({ threw: true }); })');

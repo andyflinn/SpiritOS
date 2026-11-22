@@ -103,8 +103,8 @@ function world() {
   w.provider = [];
   w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); },
     provider: function (args) { w.provider.push(args); return Promise.resolve({ ok: true, items: [{ key: 'KP', label: '{}' }], more: false }); } };
-  // The server's job as the node's stream hands it to the page's spirit.data, which the jobs family's cache keeps.
-  w.stream = function (debug) { w.win.spirit.data.takeJob({ id: 'job-agent', module: 'spirit.app.agent', app: { agent: { debug: debug } } }); };
+  // The server's job as the node's stream hands it to the page's spirit.required.spirit.data, which the jobs family's cache keeps.
+  w.stream = function (debug) { w.win.spirit.required.spirit.data.takeJob({ id: 'job-agent', module: 'spirit.app.agent', app: { agent: { debug: debug } } }); };
   return w;
 }
 // The app loaded on a window of its own, with this world's stubs.
@@ -126,7 +126,7 @@ function load(w) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+AGENT/APP==' };
-  global.window.spirit.data.homeNode(global.window.spirit.node.key);
+  global.window.spirit.required.spirit.data.homeNode(global.window.spirit.node.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app places itself by installSpiritElement as it runs.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
@@ -607,7 +607,7 @@ async function tabOpens(kind, row) {
     // Who listens, listens once: a press on a row that has its tab adds no second listener, and closing a tab lets go of its own.
     // A row's listeners are counted where the tab and its editor ask for them: the agent family's cache, its table's watch(id, fn) (goal/G43.32:
     // a reader asks its family's cache, which alone names its addresses).
-    await c.evaluate('(function () { var A = window.spirit.data.agent.data; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; A.tables.forEach(function (t) { var B = A[t]; var made = B.watch; B.watch = function (id, fn) { var mine = typeof id === "string" && "/" + id === window.__rowPath; var off = made.call(B, id, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; }); return true; }())');
+    await c.evaluate('(function () { var A = window.spirit.required.spirit.data.agent.data; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; A.tables.forEach(function (t) { var B = A[t]; var made = B.watch; B.watch = function (id, fn) { var mine = typeof id === "string" && "/" + id === window.__rowPath; var off = made.call(B, id, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; }); return true; }())');
     for (let i = 0; i < 3; i++) { await pressRow('zzProvider'); await sleep(250); }
     stacked = await c.evaluate('window.__live');
     return (stacked === 0) ? true : false;
@@ -936,7 +936,7 @@ async function tabOpens(kind, row) {
     win.spirit.require('spirit/data.js');
     // Its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
     win.spirit.node = { key: 'KEY+AGENT/BOXES==' };
-    win.spirit.data.homeNode(win.spirit.node.key);
+    win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
     vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
     return { document: document, win: win, panes: panes };
   }
@@ -1059,7 +1059,7 @@ async function paneFills(t) {
   test.run('every list pane is handed its table\'s branch of the agent family\'s cache', 0.2, async function () {
     if (STOP) return false;
 
-    AD = ((w.win.spirit.data || {}).agent || {}).data;
+    AD = ((w.win.spirit.required.spirit.data || {}).agent || {}).data;
     off = all.filter(function (p) { return !AD || !p.o.data || p.o.data !== AD.branch(p.o.verb); });
     return (!!AD && all.length >= 4 && !off.length) ? true : false;
   }, test.limit.quick);

@@ -6,12 +6,12 @@ tree HAS a clientCacheManager"*). Owed since the rule *"every production script 
 
 No client reads the owner's boxes or sends his commands from a page yet.
 
-- In node, `spirit.require('spirit/owner/api.js')` brings it, and it stands at `spirit.data.owner.data`.
-- Run beside spirit.data it makes its family there; it has no reads yet.
+- In node, `spirit.require('spirit/owner/api.js')` brings it, and it stands at `spirit.required.spirit.data.owner.data`.
+- Run beside spirit.required.spirit.data it makes its family there; it has no reads yet.
 - **It keeps nothing, and names no branch**: it adds no translator, and a job of every kind the node streams, and a
   rename, leave its family's cache empty.
 
 ## What its test must try to break
 
-- The family made under another name, so `spirit.require('spirit/owner/api.js')` leaves nothing at `spirit.data.owner.data`.
+- The family made under another name, so `spirit.require('spirit/owner/api.js')` leaves nothing at `spirit.required.spirit.data.owner.data`.
 - A translator or a branch added here that keeps rows another family keeps.

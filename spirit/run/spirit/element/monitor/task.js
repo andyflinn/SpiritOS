@@ -38,7 +38,7 @@
     var said = null;
     var label = name;
 
-    function cache() { return S.data && S.data.job && S.data.job.data ? S.data.job.data : null; }
+    function cache() { return S.required.spirit.data && S.required.spirit.data.job && S.required.spirit.data.job.data ? S.required.spirit.data.job.data : null; }
     function job() { var J = cache(); return J && typeof J.job === 'function' ? J.job(id) : null; }
     function actionOf(j) { return j ? S.element.spirit.element.search.job.row.actionOf(j) : 'run'; }
     function messageOf(j) {

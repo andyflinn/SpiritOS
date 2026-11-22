@@ -11,13 +11,13 @@ grantsPanel element"*: the row knows no table.
 
 `spirit.element.search.grant.row.create(row, { grants, serves })`, `grants` the caller's configuration of one grants table:
 
-- `branch`: the data branch its grants are kept in, a whole `spirit.data` path, node/family/branch (goal/G41.28): the
-  node's grants are the auth family's cache manager's (`spirit.data.auth.data.grants.branch`, as `spirit/element/search/grant/grantsPanel.js`, in the Grants app,
+- `branch`: the data branch its grants are kept in, a whole `spirit.required.spirit.data` path, node/family/branch (goal/G41.28): the
+  node's grants are the auth family's cache manager's (`spirit.required.spirit.data.auth.data.grants.branch`, as `spirit/element/search/grant/grantsPanel.js`, in the Grants app,
   configures them), another table names one of its own;
 - `key`, `label`: the fields of a grant row holding its ID and whose grant it is (`key`/`label`, `job_id`/`job`);
 - `revoke(id, path)`: how a grant is revoked;
 - `watch(fn(id + newline + path, row))`: its rows' changes, from its family's cache manager (the node's grants:
-  `spirit.data.auth.data.grants.watch`, goal/G41.28), answering its release. A table without one is no table: the row has no
+  `spirit.required.spirit.data.auth.data.grants.watch`, goal/G41.28), answering its release. A table without one is no table: the row has no
   Revoke.
 
 ## Requirements

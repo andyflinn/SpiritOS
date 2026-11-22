@@ -222,42 +222,42 @@ box is its own check, named by the element's path and the box's id chain."*
 - **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
   since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
   that sent a write (a call it made that is not the stream, not an interface, and carries no read op or read verb)
-  holds, while mounted, a `spirit.event.subscribe` or `spirit.data.watchPath` of its own making (a family view's watch, `spirit.data.viewAt(node, family).watch`, counts as one, under its whole path).
+  holds, while mounted, a `spirit.event.subscribe` or `spirit.required.spirit.data.watchPath` of its own making (a family view's watch, `spirit.required.spirit.data.viewAt(node, family).watch`, counts as one, under its whole path).
 - **While a write is out, it draws nothing of its own** (rule/19; the box: *"after a press, until the stream answers, an
   element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
   is red"*): from a press that sent a write until the node has answered it, the only changes in its box are a busy mark
   (`shell-busy`), a button's `disabled`, `aria-busy` or class, and fine print (`job-manifest-note`, `job-start-error`,
   `job-refusal`, `fine-print`). A press that sends no write is not judged. A child put into or taken out of a node is
   judged by itself, so a busy mark put into its button is a busy mark. The watch ends at the node's answer, at the
-  first stream event, or at a search answer seated into spirit.data (*"merged into the tree like any event"*, spirit/data.js),
+  first stream event, or at a search answer seated into spirit.required.spirit.data (*"merged into the tree like any event"*, spirit/data.js),
   whichever comes first. Before each watched press an open dropdown is shut by a press on the page
   outside every element, so its closing is not counted against the next press.
 - **Its searches match the whole row** (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and
-  search the whole row, as cached in spirit.data."*): judged in its code, no app or element but the search element
+  search the whole row, as cached in spirit.required.spirit.data."*): judged in its code, no app or element but the search element
   itself hands a search a `matched(...)` of its own, a few fields in place of the whole row.
 - **What it needs, it requires itself** (goal/G43.24; Andy: *"every element that accesses ANY api must require them
   themselves, (fast if an other element already required it), that way anybody can mount any element without knowing
   what it actually needs...."*, *"wsl, you may as well add that to the general headless browser test."*): judged in its
   code, it takes no interface from what it is handed (no `api.verb`, `api.escapeHtml`, nor an `api` off its options);
   it reaches its verbs through the spirit object itself.
-- **Every search it makes ranks spirit.data** (box v15: *"every probabilitySearch on a page is made with a spirit.data
+- **Every search it makes ranks spirit.required.spirit.data** (box v15: *"every probabilitySearch on a page is made with a spirit.required.spirit.data
   branch (its data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes
   red."*): every probabilitySearch the page makes, watched as it is made, has a `data` branch and no `rows()` of its own.
   And every row a search draws (its `[data-key]` rows shown on screen, after its tools and buttons are pressed; a row the list hides where it stands, as
   it does a row its branch no longer holds, is no row drawn) is a row its
-  branch holds in `spirit.data` (`spirit.data.rowsOf(branch)`): a list that keeps its rows anywhere else draws what the
+  branch holds in `spirit.required.spirit.data` (`spirit.required.spirit.data.rowsOf(branch)`): a list that keeps its rows anywhere else draws what the
   branch does not hold.
   **One exception, deferred and still red** (the box: *"the only exception is introspector, deferred for network-scope
   design reasons."*): the probability search keeps rows of its own for introSpector's selectors over another node, so
   its own page, mounted bare, still makes one, and introSpector's own page makes two. Each red names the deferral; it is
   not met, so it is not green.
-- **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
+- **What it changes, it listens for through spirit.required.spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
   make sure when it changes shit it listens to fucking update via the spirit object"*, and *"YOUR TEST WILL MAKE SURE THAT
   THE CACHING AND LISTENING IS DONE TO FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"*), judged three ways:
-  - on the page: a module that sent a write holds a `spirit.data.watchPath` of its own making, its searches' included. A
+  - on the page: a module that sent a write holds a `spirit.required.spirit.data.watchPath` of its own making, its searches' included. A
     subscription to the raw stream does not count: taken into a store of its own, it is how the Desk List kept rows
-    `spirit.data` never held;
-  - its watching redraws it: a marked row written into each `spirit.data` path it watches must change its box within a
+    `spirit.required.spirit.data` never held;
+  - its watching redraws it: a marked row written into each `spirit.required.spirit.data` path it watches must change its box within a
     second. A path is by server node first (goal/G41.28), `<node>/<family>/<branch>[/<row>]`, a watch of the home node
     holding `~` for the page's node: a branch gets a row of its own, a row path is set and put back: its text fields marked, its true or false fields flipped (goal/G47.1; wsl: a row of true or false fields alone was written back the same, so nothing could redraw). A watch that redraws nothing is not
     listening. A box that shows nothing at all (a selector hidden until its family is chosen) has nothing to redraw,
@@ -265,14 +265,14 @@ box is its own check, named by the element's path and the box's id chain."*
     closed dropdown on the page is opened in turn, what it watches written again, and shut. **A redraw proved in its own test** (Andy, Q24: *"Shall deskDetails' own test be the proof that it
     redraws from the verifier, since the page sweep opens no item?"* *"yes."*): `spirit/app/desk/element/deskDetails/deskDetails.js` draws
     the verifier's run only for an item open, which a bare mount never has; its own test is run, and the check is green
-    only when its check *"a verifier publish taken into spirit.data redraws the run"* passed. So for Join (Andy,
+    only when its check *"a verifier publish taken into spirit.required.spirit.data redraws the run"* passed. So for Join (Andy,
     goal/G43.32: *"cw, yes"*, to *"shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"*):
     `spirit/element/joinList.js` and the Join app that mounts it, `spirit/app/join/element.js`, draw only the join news on
     the spirit job, which a marked row cannot change; `spirit/element/test/joinList.js` is run, and the check is green only
-    when its check *"a new join on the spirit job, taken into spirit.data, redraws the steps"* passed;
+    when its check *"a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps"* passed;
   - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
     row, a setting verb named as a string such as `'node.setName'`, a relay `join` or `face`, a `grant`, a `saveFile`)
-    holds a `.watch(` or makes a search on a `spirit.data` branch. The code rule is a net for what the page cannot
+    holds a `.watch(` or makes a search on a `spirit.required.spirit.data` branch. The code rule is a net for what the page cannot
     reach, not the whole judgement.
 - **Nothing judged is no pass** (Andy: *"You fucking fudge tests to get away with total fucking sloppyness!"*): a rule
   that finds nothing to judge on a page (no field, no write, no search, no row drawn, no subscription, no watch) says
@@ -301,7 +301,7 @@ editor's scroller still is.
 - A fetch, XMLHttpRequest, WebSocket, EventSource or sendBeacon of its own.
 - A draw made after a press and before its write is answered; a press that sends no write judged all the same.
 - A subscription still held after destroy.
-- A write sent by a module that watches nothing in spirit.data, or only the raw stream; a write in code with no watch
+- A write sent by a module that watches nothing in spirit.required.spirit.data, or only the raw stream; a write in code with no watch
   beside it; a watch that redraws nothing.
 - A rule that found nothing to judge counted as green.
 - A list that hands its search a matched(); a search made with no data branch, or fed by its own rows(); a row drawn

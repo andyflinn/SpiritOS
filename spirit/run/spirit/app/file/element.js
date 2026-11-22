@@ -38,7 +38,7 @@
     // opener app's icon, its label, a colon and the file's name, from what the node says of that app; a ❔ file, which only
     // fstat shows, its icon and its name.
     function barOf(opener, name, t) {
-      var app = (S.data && S.data.app && S.data.app.data ? S.data.app.data.rows()[opener] : null) || {};
+      var app = (S.required.spirit.data && S.required.spirit.data.app && S.required.spirit.data.app.data ? S.required.spirit.data.app.data.rows()[opener] : null) || {};
       return { icon: (t && t.icon) || app.icon || '', label: (app.label ? app.label + ': ' : '') + name };
     }
     function open(key, words, line) {

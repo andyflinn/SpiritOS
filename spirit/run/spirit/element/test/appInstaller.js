@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/test/appInstaller.js
 // The tests of spirit/element/appInstaller.js, and of no other module (spec: ./appInstaller.md; goal/G41.1, box v14). The
 // browser file runs in node on a window of its own: the spirit object's app family and the app family's cache
-// (spirit.data.app.data, goal/G43.9) are stubs that keep what the element asked of them, and the test plays the node's
+// (spirit.required.spirit.data.app.data, goal/G43.9) are stubs that keep what the element asked of them, and the test plays the node's
 // answers and the cache's changes.
 
 const fs = require('fs');
@@ -46,12 +46,12 @@ function world(rows) {
   const win = { spirit: {
     ready: Promise.resolve({ fs: fsApi, app: { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } }), fs: fsApi,
     // The one loader, a recorder: every path it is asked for; what the app branch's api.js loads, its data.js, stands
-    // below as spirit.data.app.
+    // below as spirit.required.spirit.data.app.
     require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
-    data: { app: { data: {
+    required: { spirit: { data: { app: { data: {
       rows: function () { return w.rows; },
       watch: function (key, fn) { (w.watchers[key] = w.watchers[key] || []).push(fn); return function () { w.released += 1; w.watchers[key] = w.watchers[key].filter(function (x) { return x !== fn; }); }; },
-    } } },
+    } } } } },
     escapeHtml: function (s) { return String(s); },
   }, setTimeout: setTimeout, Promise: Promise, JSON: JSON, console: { log: function () {}, error: function () {} } };
   win.window = win;

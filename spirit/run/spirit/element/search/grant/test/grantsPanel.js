@@ -163,14 +163,14 @@ function world() {
   const page = {};
   const branchPath = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
-    // The page knows its node: spirit.data files nothing before it does (goal/G41.28, Q10).
+    // The page knows its node: spirit.required.spirit.data files nothing before it does (goal/G41.28, Q10).
     spirit: { element: page, node: { key: 'KEY+GRANTS/PANEL==' },
       require: function (p) {
         w.required.push(String(p));
         const server = Object.keys(servers).filter(function (k) { return branchPath(k) === p; })[0];
         if (server) return Promise.resolve(servers[server]);
         // A branch's api.js: its real companion data.js run once on this window over the real data set, as the real api.js
-        // requires it (goal/G47.1), so the server jobs the test hands spirit.data reach the panel as the page's would, and
+        // requires it (goal/G47.1), so the server jobs the test hands spirit.required.spirit.data reach the panel as the page's would, and
         // the auth tables' grants reach nodeGrants.
         const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
@@ -201,7 +201,7 @@ function world() {
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
-  win.spirit.data.homeNode(win.spirit.node.key);
+  win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.page = page;
   return w;
@@ -436,7 +436,7 @@ test.run('it reads no api tree', 0.2, function () {
 }, test.limit.quick);
 test.run('a server job changing reads nothing', 0.2, async function () {
   if (!gl) return false;
-  D = w.win.spirit.data;
+  D = w.win.spirit.required.spirit.data;
   const asked0 = w.treeAsked;
   const calls0 = w.calls.length;
   D.takeJob({ id: 'spirit.app.gone', kind: 'server', status: 'running', module: 'spirit.app.gone', data: {} });
@@ -597,7 +597,7 @@ test.run('it acts on what is chosen in it, not on what the list\'s filters choos
 // Grant: the bundle's branches, through the grants table it was handed
 test.run('with no bundle or no ID chosen, Grant asks nothing', 0.2, async function () {
   if (!box) return false;
-  D = w.win.spirit.data;
+  D = w.win.spirit.required.spirit.data;
   grantBtn = rf ? rf.button : null;
   press = function () { if (grantBtn) grantBtn.fire('click', { target: grantBtn, preventDefault: function () {} }); };
   at0 = w.calls.length;
@@ -742,10 +742,10 @@ test.run('the request settles once every grant is answered, so the button is pla
 // grantsPanel.nodeGrants: the node's own grants table, one a caller picks by name (goal/G43.24)
 // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
 // (GR_GRANTS). It moves into grantsPanel."
-test.run('grantsPanel.nodeGrants\'s branch is the auth cache at spirit.data.auth.data.grants.branch, keyed by key, labelled by label', 0.2, function () {
+test.run('grantsPanel.nodeGrants\'s branch is spirit.required.spirit.data.auth.data.grants.branch, keyed by key, labelled by label', 0.2, function () {
   if (!GP) return false;
   g = GP.nodeGrants;
-  A = ((w.win.spirit.data || {}).auth || {}).data;
+  A = ((w.win.spirit.required.spirit.data || {}).auth || {}).data;
   return !!g && !!A && g.branch === A.grants.branch && g.key === 'key' && g.label === 'label' ? true : false;
 }, test.limit.quick);
 test.run('grantsPanel.nodeGrants has search, grant, revoke and watch, and no stream of its own', 0.2, function () {
@@ -797,9 +797,9 @@ test.run('the revoke of nodeGrants asks auth.revoke with the key and the path an
 }, test.limit.quick);
 // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27, G41.28): a grant the node's auth job hands comes back through watch.
 let heard, off;
-test.run('the watch of nodeGrants hears a grant kept in spirit.data.auth as <key>\\n<path> with its row, and once revoked with none', 0.2, function () {
+test.run('the watch of nodeGrants hears a grant in spirit.required.spirit.data.auth as <key>\\n<path> with its row, once revoked none', 0.2, function () {
   if (!g || !A) return false;
-  D = w.win.spirit.data;
+  D = w.win.spirit.required.spirit.data;
   heard = [];
   off = g.watch(function (k, row) { heard.push({ k: k, row: row }); });
   D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
@@ -834,7 +834,7 @@ test.run('Grants\' data source has moved into grantsPanel, which asks auth.grant
 test.run('Grants\' data source has moved into grantsPanel, which asks auth.revoke', 0.2, function () {
   return /\bauth\W{1,4}revoke\b/.test(panel) ? true : false;
 }, test.limit.quick);
-test.run('grantsPanel holds the auth cache it reads, spirit.data.auth', 0.2, function () {
+test.run('grantsPanel holds the auth cache it reads, spirit.required.spirit.data.auth', 0.2, function () {
   const holds = /\bdata\.auth\b|require\s*\(\s*['"]spirit\/auth\/api\.js['"]/.test(panel);
   return holds ? true : false;
 }, test.limit.quick);

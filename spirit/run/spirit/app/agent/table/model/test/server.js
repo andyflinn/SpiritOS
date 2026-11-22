@@ -25,7 +25,7 @@ const DIR = path.join(__dirname, '..');
 // Its list and editor are the agent app's elements, in spirit/app/agent/element/table/model/ since goal/G43.32 (rule 5).
 const EL = path.join(__dirname, '..', '..', '..', 'element', 'table', 'model');
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
-// base64url (spirit.data.nodeId).
+// base64url (spirit.required.spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
 function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal, why: (e.extra && e.extra.why) || e.message }; } }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -192,8 +192,8 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     busyButton: { attach: function (button, opts) { const a = { button: button, opts: opts || {}, answers: [] }; made.busy.push(a); button.addEventListener('click', function () { if (typeof a.opts.run === 'function') a.answers.push(a.opts.run()); }); return button; } },
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
-    // branch's data.js names it (spirit.data.agent.data.branch, goal/G41.28).
-    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
+    // branch's data.js names it (spirit.required.spirit.data.agent.data.branch, goal/G41.28).
+    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element.spirit.element; const AD2 = ((global.window.spirit.required.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   });
@@ -221,7 +221,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   // data.js is loaded by its api.js, through the stand-in above.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
-  global.window.spirit.data.homeNode(HOME_KEY);
+  global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
   const T = global.window.spirit.element.spirit.app.agent.element.table.model || {};
   X.E = { modelTable: T.elementTable, modelRow: T.elementRow };
@@ -284,7 +284,7 @@ test.run('the Ask form\'s span holds the providerSelector:dropdown, showing Pick
   if (!X.made) return false;
   const rf = X.rf, drop = X.drop;
   const inSpan = !!rf && !!drop && (drop.host === rf.span || rf.span.children.indexOf(drop.host) !== -1) && rf.span.children.length <= 1;
-  return !!drop && drop.o.face === 'dropdown' && drop.o.server === 'agent' && drop.o.data === global.window.spirit.data.nodeId(HOME_KEY) + '/agent/provider' && drop.o.placeholder === 'Pick a provider' && inSpan
+  return !!drop && drop.o.face === 'dropdown' && drop.o.server === 'agent' && drop.o.data === global.window.spirit.required.spirit.data.nodeId(HOME_KEY) + '/agent/provider' && drop.o.placeholder === 'Pick a provider' && inSpan
     ? true : false;
 }, test.limit.quick);
 test.run('the word from is gone, and it draws no Ask button of its own', 0.2, function () {
@@ -377,7 +377,7 @@ test.run('the provider is picked from a search of the provider table', 0.2, func
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), which only its api.js requires (goal/G47.1); it files the rows under the
-// node that served them, and is read through spirit.data.agent.data.
+// node that served them, and is read through spirit.required.spirit.data.agent.data.
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require no data script', 0.2, function () {
   if (!X.made) return false;
@@ -385,14 +385,14 @@ test.run('its page files require no data script', 0.2, function () {
 }, test.limit.quick);
 test.run('the page files require spirit/app/agent/api.js, and its model branch is the home node\'s agent/model branch', 0.2, function () {
   if (!X.made || X.made.required.indexOf('spirit/app/agent/api.js') === -1) return false;
-  const DATA = global.window.spirit.data;
-  const AD = X.AD = ((global.window.spirit.data || {}).agent || {}).data;
+  const DATA = global.window.spirit.required.spirit.data;
+  const AD = X.AD = ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
   X.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/model';
   return !!AD && typeof AD.branch === 'function' && AD.branch('model') === X.BRANCH ? true : false;
 }, test.limit.quick);
 test.run('a model row on the stream lands at <node>/agent/model/<id>, and the branch\'s watcher hears it', 0.2, function () {
   if (!X.AD) return false;
-  const DATA = global.window.spirit.data, AD = X.AD, BRANCH = X.BRANCH;
+  const DATA = global.window.spirit.required.spirit.data, AD = X.AD, BRANCH = X.BRANCH;
   const heard = [];
   const off = DATA.watchPath(BRANCH, function (p) { heard.push(p); });
   DATA.takeJob(job({ table: 'model', row: { id: 'KT', label: 'First', extra: 1 } }));
@@ -401,19 +401,19 @@ test.run('a model row on the stream lands at <node>/agent/model/<id>, and the br
 }, test.limit.quick);
 test.run('a changed row is merged: what it names changes, what it does not stays', 0.2, function () {
   if (!X.AD) return false;
-  const DATA = global.window.spirit.data, AD = X.AD;
+  const DATA = global.window.spirit.required.spirit.data, AD = X.AD;
   DATA.takeJob(job({ table: 'model', row: { id: 'KT', label: 'Renamed' } }));
   return AD.row('model', 'KT') && AD.row('model', 'KT').label === 'Renamed' && AD.row('model', 'KT').extra === 1 ? true : false;
 }, test.limit.quick);
 test.run('a row removed, by its id, is gone', 0.2, function () {
   if (!X.AD) return false;
-  const DATA = global.window.spirit.data, AD = X.AD;
+  const DATA = global.window.spirit.required.spirit.data, AD = X.AD;
   DATA.takeJob(job({ table: 'model', id: 'KT', removed: true }));
   return !AD.row('model', 'KT') && !('KT' in DATA.branchAt(X.BRANCH)) ? true : false;
 }, test.limit.quick);
 test.run('another table\'s rows, another module\'s, and a row with no id write nothing here', 0.2, function () {
   if (!X.AD) return false;
-  const DATA = global.window.spirit.data;
+  const DATA = global.window.spirit.required.spirit.data;
   const before = JSON.stringify(DATA.branchAt(X.BRANCH));
   DATA.takeJob(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
   DATA.takeJob(job({ table: 'model', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));

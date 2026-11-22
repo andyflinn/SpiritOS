@@ -47,8 +47,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     list = window.spirit.element.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
-      // A view of the node's bundles, the branch the auth family's manager keeps (spirit.data.auth.data.bundles.branch).
-      data: window.spirit.data.auth.data.bundles.branch,
+      // A view of the node's bundles, the branch the auth family's manager keeps (spirit.required.spirit.data.auth.data.bundles.branch).
+      data: window.spirit.required.spirit.data.auth.data.bundles.branch,
       server: 'auth',
       verb: 'bundle',
       face: o.face,

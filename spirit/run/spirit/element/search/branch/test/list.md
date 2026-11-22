@@ -8,7 +8,7 @@ Andy, box: *"the branchSelector element will use the standard apiFamilySelector 
 for family and verb search filters, if no valid family is selected, the verb selector is invisible, set to \"(ALL)\"."*,
 and since: *"apiFamiliySelector.js will use apiVerbSelector as part of itself"*: the family selector carries the verb.
 Since goal/G41.14 it is a view of the node's branches (since goal/G41.28 the auth family's data.js's,
-`spirit.data.auth.data.branches.branch`), kept current by the node's stream, which the auth family's data.js takes in (no data script required by the list, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
+`spirit.required.spirit.data.auth.data.branches.branch`), kept current by the node's stream, which the auth family's data.js takes in (no data script required by the list, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
 list of branches on a page shows the same rows (Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 their data set"*).
 
@@ -26,7 +26,7 @@ their data set"*).
   trimmed, `bundle` from `opts.bundle`, and answers as a reply, `{ items, more }`.
 - `opts.columns` names the row's fields it shows, in order (the branch editor: `family`, `verb`, `delete`).
   `opts.face`, `opts.placeholder`, `opts.all` and `opts.pick(row, key)` are handed on.
-- Each row is a `spirit.element.search.branch.row` of that branch. Its search is handed no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.data."*).
+- Each row is a `spirit.element.search.branch.row` of that branch. Its search is handed no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.required.spirit.data."*).
 - The filter, the family selector's `family` and `verb`:
   - nothing chosen: the search narrows by neither;
   - a family chosen searches again, narrowed by the family;
@@ -35,7 +35,7 @@ their data set"*).
 - `refresh()` and `destroy()` reach the search element; `.list` is it. `destroy()` leaves `host` empty, the filters
   with it (box v23: *"destroy empties it"*).
 
-- Its probabilitySearch's `data` is `spirit.data.auth.data.branches.branch`: the search's answers are seated there, and a row the stream changes redraws
+- Its probabilitySearch's `data` is `spirit.required.spirit.data.auth.data.branches.branch`: the search's answers are seated there, and a row the stream changes redraws
   the list.
 
 - A picked branch is shown as `family.verb`, or `family (ALL)`, never its number (the list's `name(row)`).

@@ -5,7 +5,7 @@
 //
 //   spirit.element.spirit.element.search.app.row.create(row) -> a row of kind app; row { key, label, icon }
 //
-// WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.data.app.data for every app row on the page, each change to the rows
+// WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.required.spirit.data.app.data for every app row on the page, each change to the rows
 // of that key. A row asks nothing of its own; what it shows is what the stream said.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
@@ -15,7 +15,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/element/search/app/rowFormAppActive.js'].forEach(function (p) { window.spirit.require(p); });
-  var appReady = Promise.resolve(window.spirit.require('spirit/app/api.js')).then(function () { return ((window.spirit.data || {}).app || {}).data; });
+  var appReady = Promise.resolve(window.spirit.require('spirit/app/api.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
 
   var apps = null;
   function dispatch(idx) {
@@ -28,7 +28,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
         idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || ''), icon: String(v.icon || '') }); });
       });
     }
-    listen(((window.spirit.data || {}).app || {}).data);
+    listen(((window.spirit.required.spirit.data || {}).app || {}).data);
     if (!off) appReady.then(listen);
     return function () { gone = true; if (off) off(); off = null; };
   }

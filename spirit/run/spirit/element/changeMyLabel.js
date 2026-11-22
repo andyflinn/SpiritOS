@@ -61,12 +61,12 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
       return root.spirit.outcome(Promise.resolve(root.spirit.ready).then(function (s) { return s.node.setName({ name: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
-        root.spirit.data.node.data.card.keep({ name: String(body.name == null ? '' : body.name) });
+        root.spirit.required.spirit.data.node.data.card.keep({ name: String(body.name == null ? '' : body.name) });
         say('saved', false);
       }, function (e) { say((e && e.message) || 'could not save', true); });
     }
     // WHAT IT CHANGES, IT LISTENS FOR (goal/G41.27, G41.28): the node's card as the node family's cache keeps it
-    // (spirit.data.node.data). The field shows the name the card holds; a save keeps there what the node stored.
+    // (spirit.required.spirit.data.node.data). The field shows the name the card holds; a save keeps there what the node stored.
     var stop = null;
     function show(card) {
       if (gone || !card) return;
@@ -77,8 +77,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     }
     root.spirit.require('spirit/node/api.js').then(function () {
       if (gone) return;
-      stop = root.spirit.data.node.data.card.watch(show);
-      show(root.spirit.data.node.data.card.get());
+      stop = root.spirit.required.spirit.data.node.data.card.watch(show);
+      show(root.spirit.required.spirit.data.node.data.card.get());
     });
 
     parts.then(function () {

@@ -41,14 +41,14 @@
     if (file) {
       var own = file.slice(0, file.lastIndexOf('/') + 1) + 'test/' + file.slice(file.lastIndexOf('/') + 1);
       var drawOwn = function () {
-        var F = S.data && S.data.fs && S.data.fs.data;
+        var F = S.required.spirit.data && S.required.spirit.data.fs && S.required.spirit.data.fs.data;
         if (gone || !F) return;
         ownLine.textContent = F.ready() && !F.file(own) ? own : '';
       };
       Promise.resolve(S.require('spirit/fs/api.js')).then(function () {
         if (gone) return;
         drawOwn();
-        release = S.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
+        release = S.required.spirit.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
       }, function () {});
       parts.then(function () {
         return Promise.resolve(S.testicle['script.get']({ name: file }));

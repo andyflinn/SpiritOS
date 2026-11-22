@@ -152,7 +152,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     }
     var left = false;
     Promise.resolve(window.spirit.require('spirit/contact/api.js')).then(function () {
-      if (!left && ((window.spirit.data || {}).contact || {}).data) stop = window.spirit.data.contact.data.watch(take);
+      if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
     });
     box._spJoinStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
     function go() {

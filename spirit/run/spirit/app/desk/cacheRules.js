@@ -84,7 +84,7 @@ module.exports = function rules(N) {
   // THE CACHE ANSWERS A READ AS THE DESK WOULD (goal/G41.11's kept reads; box v15: "The client queries its own cache
   // through that api.js"): item.get from an item's facts, item.box, item.checks and item.chat from the parts
   // kept, each filled to room as the desk fills its answer; null when the cache does not hold it all, so the desk is
-  // asked. D is the client's data set as the desk's translator (spirit.data.desk.data) keeps it.
+  // asked. D is the client's data set as the desk's translator (spirit.required.spirit.data.desk.data) keeps it.
   function bytes(x) { return Buffer.byteLength(JSON.stringify(x), 'utf8'); }
   function answer(verb, args, D, room) {
     var id = String((args && args.id) || '');

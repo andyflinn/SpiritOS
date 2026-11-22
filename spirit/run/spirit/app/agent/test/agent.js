@@ -201,14 +201,14 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
   test.run('the server adds one more provider', 0.2, async function () {
     if (STOP) return false;
 
-    // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into spirit.data.
+    // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into spirit.required.spirit.data.
     added = await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.2:9/' });
     liveId = added.body && added.body.id;
     return (!!liveId) ? true : false;
   }, test.limit.quick);
-  test.run('it reaches the page\'s spirit.data.agent with no reload', 0.2, async function () {
+  test.run('it reaches the page\'s spirit.required.spirit.data.agent with no reload', 0.2, async function () {
     if (STOP) return false;
-    onPage = function () { return c.evaluate('(function () { var r = spirit.data.agent && spirit.data.agent.data && spirit.data.agent.data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
+    onPage = function () { return c.evaluate('(function () { var r = spirit.required.spirit.data.agent && spirit.required.spirit.data.agent.data && spirit.required.spirit.data.agent.data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
     return (!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000)) ? true : false;
   }, test.limit.quick);
   // ── goal/G43.15, the box: "On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG" ──

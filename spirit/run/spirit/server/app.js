@@ -380,7 +380,7 @@ function reportDebug() {
 //   nor client sees it."
 //
 // A sender (opts.publisher) publishes rows; a client (opts.stream) follows a sender and keeps what it sends in its
-// spirit.data through the stream's translator. Between them every delivery is one peerPost to the client's
+// spirit.required.spirit.data through the stream's translator. Between them every delivery is one peerPost to the client's
 // listener {json}, json one JSON array (a bundle), each element one entry:
 //   { run, n, row }                     a row the sender published, numbered n in its run
 //   { run, n, row, full: true }         a row of a full push, n the sender's newest number when the push began
@@ -403,7 +403,7 @@ const RUN_ROOT = path.resolve(__dirname, '..', '..');
 // A server that follows a stream hands serve() opts.stream = { module, translator, onRow, cache }: the module the
 // sender publishes as (spirit.app.<name>), the stream's translator (its data.js), a handler for each row if it wants
 // one, and the cache switch. serve() then adds the verb listener {json} -> {heard: true}: one bundle. Each row
-// goes straight into the server's spirit.data (spirit/data.js) through the translator, exactly as a face app
+// goes straight into the server's spirit.required.spirit.data (spirit/data.js) through the translator, exactly as a face app
 // keeps it in the page, and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror of its
 // own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
 // follow(key) also grants that key the verb on this server's own node (auth.grant <server>.listener, through the
@@ -434,7 +434,7 @@ function dataSet() {
 // paths are what the row wrote into the data set (spirit/data.js recording), so a row that goes takes them with it.
 const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
-// THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28): its name the key as spirit.data names the node, <node id>.json.
+// THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28): its name the key as spirit.required.spirit.data names the node, <node id>.json.
 // ITS FOLDER IS spirit/state/<name>/cache/ (goal/G43.20; Andy: "cache, which is written by spirit/server/app.js was ALWAYS
 // supposed to go into spirit/state/<name>/cache/", "NO FUCKING RESCUE CODE"): read and written there and nowhere else; a
 // file left at an older place is not read, and is rebuilt from the stream.
@@ -1097,7 +1097,7 @@ function withRemote(verbs, name) {
     accepts: function (x) { return isPlain(x) && Object.keys(x).every(function (k) { return k === 'id'; }) && (x.id === undefined || (typeof x.id === 'string' && !!x.id)); },
     handler: function (a, caller) {
       if (!caller || caller.owner !== true) throw Object.assign(new Error('owner-only'), { refusal: 'owner-only', extra: { why: 'remote is the owner\'s alone' } });
-      // An empty call publishes the list too, to this node's own pages alone, so every open page's spirit.data.<server>.remote
+      // An empty call publishes the list too, to this node's own pages alone, so every open page's spirit.required.spirit.data.<server>.remote
       // holds it (spirit/data.js files it), and then the peers are checked again in the background.
       if (a.id === undefined) { publishRemote(); refreshRemote(); return remoteList(); }
       return switchRemote(String(a.id));

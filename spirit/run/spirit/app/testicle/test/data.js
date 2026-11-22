@@ -5,7 +5,7 @@
 // "every production script has its own test" (goal/G47.1, box v72).
 // What a client knows of testicle's server (goal/G41.28, goal/G47.1): its three tables, script, suite and testicle, each
 // a branch under the node that served it, the rows the server publishes merged in, every suite made once from its rows,
-// and the monitor's one row. It runs as a page runs it: in a window of its own beside the real spirit.data
+// and the monitor's one row. It runs as a page runs it: in a window of its own beside the real spirit.required.spirit.data
 // (spirit/data.js), which it writes into; the rows are handed in as the stream hands them, jobs of module
 // spirit.app.testicle. In node it is loaded by its api.js, spirit/app/testicle/api.js, the one script that requires it.
 // One test.run per test (goal/G47.2).
@@ -29,7 +29,7 @@ const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module
 const at = function (table, key, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/testicle/' + table + '/' + key); };
 const suiteRow = function (script, suite, more) { return Object.assign({ key: script + '|' + suite, script: script, suite: suite, test: false, status: 'green', deleted: false, outcome: 'green', changed: 1 }, more || {}); };
 
-test.run('in a window, beside the real spirit.data, it stands at spirit.data.testicle.data', 0.2, function () {
+test.run('in a window, beside the real spirit.required.spirit.data, it stands at spirit.required.spirit.data.testicle.data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
@@ -37,10 +37,10 @@ test.run('in a window, beside the real spirit.data, it stands at spirit.data.tes
   try {
     vm.createContext(win);
     vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
-    win.spirit.data.homeNode(HOME_KEY);
+    win.spirit.required.spirit.data.homeNode(HOME_KEY);
     vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   } catch (e) { return false; }
-  W.D = win.spirit.data;
+  W.D = win.spirit.required.spirit.data;
   W.T = ((W.D || {}).testicle || {}).data;
   return !!W.T || false;
 }, test.limit.quick);
@@ -202,10 +202,10 @@ test.run('a row from another node is kept under that node', 0.2, function () {
 }, test.limit.quick);
 
 // ── in node, loaded by its api.js, the one script that requires it (goal/G47.1) ──
-test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at spirit.data.testicle.data', 0.2, async function () {
+test.run('in node, requiring spirit/app/testicle/api.js loads it, and it stands at spirit.required.spirit.data.testicle.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
   try { require(path.join(RUN, 'spirit', 'app', 'testicle', 'api.js')); } catch (e) { return false; }
-  const T = s.data && s.data.testicle && s.data.testicle.data;
+  const T = s.required.spirit.data && s.required.spirit.data.testicle && s.required.spirit.data.testicle.data;
   return (!!T && typeof T.keep === 'function' && !!T.monitor) || false;
 }, test.limit.quick);

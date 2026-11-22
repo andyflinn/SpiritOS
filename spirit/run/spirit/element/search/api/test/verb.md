@@ -19,7 +19,7 @@ it is the verb half of the family selector, `spirit/element/search/api.js`.
 - A pick sets `value` and fires a bubbling `change`.
 
 - **This node's own verbs are the node family's cache** (goal/G41.28; Andy, Q7: *"the family, verb and app-server
-  selectors draw from it"*): it requires the node branch's interface `spirit/node/api.js`, which brings its data.js, and no data.js itself; its list is a view of `spirit.data.node.data.verbsBranch`,
+  selectors draw from it"*): it requires the node branch's interface `spirit/node/api.js`, which brings its data.js, and no data.js itself; its list is a view of `spirit.required.spirit.data.node.data.verbsBranch`,
   no rows of its own, and `show(tree, server)` narrows it to that family's verbs, DEBUG never.
 - **Another party's tree** (`own: false`) is listed from that tree: introSpector's deferral (the box: *"the only
   exception is introspector, deferred for network-scope design reasons."*).

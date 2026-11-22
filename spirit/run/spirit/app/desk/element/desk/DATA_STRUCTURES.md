@@ -6,7 +6,7 @@ git (desk/G1 D5: *"any appServer state is none of git's business"*). The
 page reaches it by the server's verbs, `desk.<verb>`, on the flat apiDoor,
 and hears every change as the server's publish, which the desk family's
 cache manager (`spirit/run/spirit/app/desk/data.js`) keeps in
-`spirit.data.desk.data`. Andy, 2026-09-28: *"this IS the official project
+`spirit.required.spirit.data.desk.data`. Andy, 2026-09-28: *"this IS the official project
 governance. NOW."*
 
 ## Where it lives
@@ -31,6 +31,6 @@ stamped on each row it changed and on each row it publishes.
 ## What the page holds
 
 Only what it shows: the List is `items.search`'s answer and the publishes
-seated in the desk's branch of `spirit.data`; an item's box, checks
+seated in the desk's branch of `spirit.required.spirit.data`; an item's box, checks
 and chat are its dialog's (`spirit/app/desk/element/deskDetails`). The List's toggles are
 Current Goal Only (on when Desk opens), Goals Only and Include Closed.

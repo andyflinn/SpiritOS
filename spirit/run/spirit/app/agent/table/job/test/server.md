@@ -27,9 +27,9 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
 - **elementRow.js requires the agent family's api.js, whose data.js takes the job table's rows from the stream** (goal/G41.16;
   Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; they require
   the agent family's interface, `spirit.require('spirit/app/agent/api.js')`, which brings its data.js (goal/G47.1:
-  *"every api.js requires it's companion data.js"*), and `spirit.data.agent.data.branch('job')` is the home node's `<node>/agent/job`; a row
+  *"every api.js requires it's companion data.js"*), and `spirit.required.spirit.data.agent.data.branch('job')` is the home node's `<node>/agent/job`; a row
   of the agent stream (`{ agent: { table: 'job', row } }`, module `spirit.app.agent`) lands at `<node>/agent/job/<id>`,
-  read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
+  read through `spirit.required.spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
 ## Requirements (goal/G41.21, box v17)

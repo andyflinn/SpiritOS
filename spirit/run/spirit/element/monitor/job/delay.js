@@ -24,7 +24,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/job/a
     var tile = null;
     function paint() {
       if (gone || !tile) return;
-      var job = S.data.job.data.job('spirit');
+      var job = S.required.spirit.data.job.data.job('spirit');
       var d = job && job.data && job.data.stats;
       tile.set(d ? valueOf(d) : '–');
     }
@@ -32,7 +32,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/job/a
       if (gone) return;
       tile = S.element.spirit.element.monitor.value.create(container, { icon: '🔁', label: 'Event loop delay', mode: o.mode });
       paint();
-      off = S.data.job.data.watch('spirit', paint);
+      off = S.required.spirit.data.job.data.watch('spirit', paint);
     });
     return {
       destroy: function () {

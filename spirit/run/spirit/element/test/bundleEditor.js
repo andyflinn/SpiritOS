@@ -72,7 +72,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+BUNDLE/EDITOR==' };
-  global.window.spirit.data.homeNode(global.window.spirit.node.key);
+  global.window.spirit.required.spirit.data.homeNode(global.window.spirit.node.key);
   // A family's cache: the auth branch's interface brings its data.js, as the real api.js does, run once on this window
   // from its path; the watches on its bundles table counted, and their releases.
   watches = { made: 0, released: 0 };
@@ -81,14 +81,14 @@ test.run('the bundle editor requires the field input and the bundle selector thr
     if (authData) return;
     authData = true;
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' });
-    const T = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.bundles;
+    const T = ((global.window.spirit.required.spirit.data || {}).auth || {}).data && global.window.spirit.required.spirit.data.auth.data.bundles;
     if (T && !T.counted) {
       const own = T.watch; T.counted = true;
       T.watch = function (fn) { watches.made += 1; const stop = own(fn); return function () { watches.released += 1; return stop(); }; };
     }
   };
   // A bundle row on the node's own job spirit.auth, as the auth family's data.js takes it (goal/G43.20).
-  arrive = function (id, label) { global.window.spirit.data.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); };
+  arrive = function (id, label) { global.window.spirit.required.spirit.data.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); };
   global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js') family(); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
@@ -100,7 +100,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
 }, test.limit.quick);
 test.run('the bundle editor requires spirit/auth/api.js and no data.js, and the auth bundles it adds stand on the page', 0.2, function () {
   if (!loaded) return false;
-  return (loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && !!(((global.window.spirit.data || {}).auth || {}).data)) ? true : false;
+  return (loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && !!(((global.window.spirit.required.spirit.data || {}).auth || {}).data)) ? true : false;
 }, test.limit.quick);
 test.run('the bundle editor registers spirit.element.spirit.element.bundleEditor.create', 0.2, function () {
   return (E.bundleEditor && typeof E.bundleEditor.create === 'function') ? true : false;
@@ -172,7 +172,7 @@ test.run('a valid label asks auth.bundle to add it, as the rule writes it, with 
 }, test.limit.quick);
 test.run('once answered, but before the bundle is in the auth family\'s cache, the label stays and nothing is said added', 0.2, function () {
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
-  // via the spirit object"): what it adds, it listens for, in spirit.data.auth.data.bundles.
+  // via the spirit object"): what it adds, it listens for, in spirit.required.spirit.data.auth.data.bundles.
   return (input.value === '  Reader ' && !/\badded\b/.test(text(box))) ? true : false;
 }, test.limit.quick);
 test.run('another bundle arriving leaves the label as it is', 0.2, async function () {
@@ -180,7 +180,7 @@ test.run('another bundle arriving leaves the label as it is', 0.2, async functio
   await settle();
   return (input.value === '  Reader ') ? true : false;
 }, test.limit.quick);
-test.run('once the bundle it asked for is in spirit.data.auth.data.bundles, the input is empty for the next and the add is said', 0.2, async function () {
+test.run('once the bundle it asked for is in spirit.required.spirit.data.auth.data.bundles, the input is empty and the add is said', 0.2, async function () {
   arrive(8, 'Reader');
   await settle();
   return (input.value === '' && /\badded\b/.test(text(box))) ? true : false;
@@ -213,7 +213,7 @@ test.run('destroy empties its box', 0.2, function () {
   made.destroy();
   return (box.kids.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('destroy lets its watch on spirit.data.auth.data.bundles go', 0.2, function () {
+test.run('destroy lets its watch on spirit.required.spirit.data.auth.data.bundles go', 0.2, function () {
   return (watches.released === w0 + 1) ? true : false;
 }, test.limit.quick);
 test.run('destroy lets its bundle pane go', 0.2, function () {

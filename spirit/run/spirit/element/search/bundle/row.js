@@ -12,7 +12,7 @@
 // their data set. and the SHELL's spirit fucking object is supposed to hold ALL cached data, and propagate updates to the
 // fucking elements", "NO FUCKING DATA SCRIPT", "THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"): the node
 // publishes each changed bundle row on its permanent job 'bundles' ({ table: 'bundle', row }, gone when deleted); the
-// auth family's cache manager (below) puts it into spirit.data.auth.data.bundles, and every bundle row on the page repaints from there through its
+// auth family's cache manager (below) puts it into spirit.required.spirit.data.auth.data.bundles, and every bundle row on the page repaints from there through its
 // kind's index. A row asks and draws nothing of its own (rule/19): what it shows is what the stream said.
 //
 //   spirit.element.spirit.element.search.bundle.row.create(row) -> a row of kind bundle
@@ -27,8 +27,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
 
   // A NODE'S BUNDLES ARE THE auth FAMILY'S CACHE (goal/G41.28): what a bundle row on the stream means, and its branch,
   // are the family's own data.js's (spirit/auth/data.js), which this element loads itself
-  // (rule/26), as part of its tree; a row reads spirit.data.auth.data.bundles.
-  var authReady = Promise.resolve(window.spirit.require('spirit/auth/api.js')).then(function () { return window.spirit.data.auth.data.bundles; });
+  // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.auth.data.bundles.
+  var authReady = Promise.resolve(window.spirit.require('spirit/auth/api.js')).then(function () { return window.spirit.required.spirit.data.auth.data.bundles; });
   // THE KIND'S INDEX: one watch on the bundles for every bundle row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var bundles = null;
@@ -43,7 +43,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       });
     }
     // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
-    listen(((window.spirit.data || {}).auth || {}).data && window.spirit.data.auth.data.bundles);
+    listen(((window.spirit.required.spirit.data || {}).auth || {}).data && window.spirit.required.spirit.data.auth.data.bundles);
     if (!off) authReady.then(listen);
     return function () { gone = true; if (off) off(); off = null; };
   }

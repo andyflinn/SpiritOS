@@ -59,7 +59,7 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/data.js), which spirit.js brings with the client.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  const DATA = global.window.spirit.data;
+  const DATA = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
@@ -113,7 +113,7 @@ test.run('it fills as soon as it is drawn', 0.2, function () {
 // goal/G41.28: the branch the auth family's data.js keeps.
 test.run('it is a view of the auth family\'s branches as kept in the spirit object\'s cache', 0.2, function () {
   if (!l) return false;
-  const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.branches;
+  const B = ((global.window.spirit.required.spirit.data || {}).auth || {}).data && global.window.spirit.required.spirit.data.auth.data.branches;
   return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : false;
 }, test.limit.quick);
 let got;
@@ -136,7 +136,7 @@ test.run('each row is a branchElement of that branch', 0.2, function () {
   return el && el.kind === 'branch' && el.row.id === 3 && el.row.family === 'desk' ? true : false;
 }, test.limit.quick);
 // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
-// cached in spirit.data."): the list hands its search no matched() of its own.
+// cached in spirit.required.spirit.data."): the list hands its search no matched() of its own.
 test.run('it hands its search no matched function of its own, so the whole row is matched', 0.2, function () {
   if (!l) return false;
   return typeof o.matched !== 'function' ? true : false;

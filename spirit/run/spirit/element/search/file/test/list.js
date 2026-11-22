@@ -51,7 +51,7 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  D = global.window.spirit.data;
+  D = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
@@ -63,7 +63,7 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
-  F = ((global.window.spirit.data || {}).fs || {}).data;
+  F = ((global.window.spirit.required.spirit.data || {}).fs || {}).data;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.require).
   loaded = required.slice();
@@ -102,7 +102,7 @@ test.run('it draws one probabilitySearch into a fill box of its host', 0.2, asyn
   if (l) o = l.o;
   return !!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('it is a view of the fs family\'s file tree in spirit.data.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
+test.run('it is a view of the fs family\'s file tree in spirit.required.spirit.data.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
   if (!l) return false;
   return typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]' ? true : false;
 }, test.limit.quick);

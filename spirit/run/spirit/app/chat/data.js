@@ -2,11 +2,11 @@
 // spirit/run/spirit/app/chat/data.js
 // WHAT A CLIENT KNOWS OF THE CHATS, IN THE chat BRANCH'S OWN FOLDER (goal/G41.28; the branch is chat since goal/G43.31). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it
-// through its api.js (spirit/app/chat/api.js), the one file that requires it; it keeps the chats' lines in that page's spirit.data, under the node that
+// through its api.js (spirit/app/chat/api.js), the one file that requires it; it keeps the chats' lines in that page's spirit.required.spirit.data, under the node that
 // served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (Chatter's window and its search) asks
-// spirit.data.chat.data (below), never a branch by name.
+// spirit.required.spirit.data.chat.data (below), never a branch by name.
 //   lines   peer + newline + sent + ':' + seq -> the line { peer, sent, seq, at, text, receivedAt, re, refused }
 //   chats   peer -> that chat's row as chats.search answers it { at, sent, seq, unanswered }
 // Every line the server publishes ({ line }, goal/G4.2: each kept line, written or received, and each change of a
@@ -19,10 +19,10 @@
     return { peer: String(peer), sent: Number(l.sent), seq: Number(l.seq), at: String(l.at || ''), text: String(l.text || ''),
       receivedAt: String(l.receivedAt || ''), re: l.re || { writer: '', seq: 0 }, refused: String(l.refused || '') };
   }
-  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('chat', function () {
     var HOME = D.viewAt(null, 'chat');
     function put(V, peer, l) {
@@ -47,7 +47,7 @@
     //   watch(fn)           fn(peer, line) on every line kept or changed; answers its release
     //   published(fn)       fn(peer, line, fresh) for a line the server published, once kept (an arrival, not a read);
     //                       fresh when it was not kept before (a new line, not a mark changed); answers its release
-    //   forgot(fn)          fn() when the cache forgot every line (the stream came back: spirit.data forgets on a reconnect,
+    //   forgot(fn)          fn() when the cache forgot every line (the stream came back: spirit.required.spirit.data forgets on a reconnect,
     //                       goal/G41.3), so a reader asks again what it shows; answers its release
     //   branch              the lines' whole path, for a list that is a view of it (probabilitySearch's data)
     var chatReads = {

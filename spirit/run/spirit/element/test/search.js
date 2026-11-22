@@ -95,16 +95,16 @@ require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window
 // The element, once the first test has run its file.
 let PS = null;
 
-// EVERY SEARCH IS A VIEW OF A spirit.data BRANCH (goal/G48.4; the browser rule: "its searches are each made with a
-// spirit.data branch, no rows of their own"): the search takes no rows of its own, so each list here is made with a branch
-// of the real spirit.data (spirit/data.js, which runs in node), and the rows it shows are written into that branch.
+// EVERY SEARCH IS A VIEW OF A spirit.required.spirit.data BRANCH (goal/G48.4; the browser rule: "its searches are each made with a
+// spirit.required.spirit.data branch, no rows of their own"): the search takes no rows of its own, so each list here is made with a branch
+// of the real spirit.required.spirit.data (spirit/data.js, which runs in node), and the rows it shows are written into that branch.
 // branchOf(rows) makes a branch holding them; fill(branch, rows) makes it hold those rows, in that order, and no other.
-function loadData() { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'spirit/data.js' }); return window.spirit.data; }
+function loadData() { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'spirit/data.js' }); return window.spirit.required.spirit.data; }
 let REAL_DATA = loadData();
 let BRANCHES = 0;
 function rowOf(r) { const v = Object.assign({}, r); delete v.key; return v; }
 function fill(b, rows) {
-  const D = window.spirit.data;
+  const D = window.spirit.required.spirit.data;
   const want = (rows || []).map(function (r) { return String(r.key); });
   const had = Object.keys(D.branchAt(b) || {});
   had.filter(function (k) { return want.indexOf(k) === -1; }).forEach(function (k) { D.delPath(b + '/' + k); });
@@ -116,10 +116,10 @@ function fill(b, rows) {
   (rows || []).forEach(function (r) { D.setPath(b + '/' + r.key, rowOf(r)); });
 }
 function branchOf(rows) { const b = 'searchTest/search/b' + (++BRANCHES); fill(b, rows); return b; }
-// The same two on a page, over the page's own spirit.data (spirit.js loads spirit/data.js as it gets ready): window.__fill and
+// The same two on a page, over the page's own spirit.required.spirit.data (spirit.js loads spirit/data.js as it gets ready): window.__fill and
 // window.__branchOf, put on the page before a search is made there.
 const PAGE_DATA = 'window.__nb = window.__nb || 0; ' +
-  'window.__fill = function (b, rows) { var D = window.spirit.data; var want = (rows || []).map(function (r) { return String(r.key); }); ' +
+  'window.__fill = function (b, rows) { var D = window.spirit.required.spirit.data; var want = (rows || []).map(function (r) { return String(r.key); }); ' +
   'var had = Object.keys(D.branchAt(b) || {}); had.filter(function (k) { return want.indexOf(k) === -1; }).forEach(function (k) { D.delPath(b + "/" + k); }); ' +
   'var kept = had.filter(function (k) { return want.indexOf(k) !== -1; }); if (kept.join("|") !== want.slice(0, kept.length).join("|")) kept.forEach(function (k) { D.delPath(b + "/" + k); }); ' +
   '(rows || []).forEach(function (r) { var v = Object.assign({}, r); delete v.key; D.setPath(b + "/" + r.key, v); }); return b; }; ' +
@@ -251,7 +251,7 @@ test.run('a negative score is clamped to 0, and a null score falls back to the m
 }, test.limit.quick);
 test.run('a matched function a list hands is not used, and the whole row is matched', 0.2, function () {
   // THE WHOLE ROW, ALWAYS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole
-  // row, as cached in spirit.data."): what a list shows, or a matched() it hands, narrows nothing.
+  // row, as cached in spirit.required.spirit.data."): what a list shows, or a matched() it hands, narrows nothing.
   r = PS.order(W, { words: 'qu', matched: function (row) { return { other: row.name === 'zed' ? 'quiz' : 'nothing' }; } });
   return (r[0].key === 'q' && r[0].rank > 0 && r.filter(function (x) { return x.key === 'z'; })[0].rank === 0) ? true : false;
 }, test.limit.quick);
@@ -951,8 +951,8 @@ test.run('with data its rows are the branch\'s, drawn at once', 0.2, function ()
   unwatched = 0;
   // The branch as spirit/data.js holds it, id -> fields: the search reads a view's rows by branchAt (goal/G47.4), each filed
   // by its id there.
-  REAL_DATA = window.spirit.data;
-  window.spirit.data = { branchAt: function (type) { return type === 'people' ? { p1: { name: 'pia' } } : {}; },
+  REAL_DATA = window.spirit.required.spirit.data;
+  window.spirit.required.spirit.data = { branchAt: function (type) { return type === 'people' ? { p1: { name: 'pia' } } : {}; },
     seatRows: function (type, items) { seatedIn.push([type, items]); },
     watchPath: function (type, fn) { watched.push([type, fn]); return function () { unwatched += 1; }; } };
   c7 = container();
@@ -971,7 +971,7 @@ test.run('an answer is seated into the branch, not into the list\'s own cache', 
   return (seatedIn.length === 1 && seatedIn[0][0] === 'people' && seatedIn[0][1][0].key === 'p2' && c7.shown().indexOf('p2') === -1) ? true : false;
 }, test.limit.quick);
 test.run('a write to the branch redraws the list', 0.2, function () {
-  window.spirit.data.branchAt = function () { return { p1: { name: 'pia' }, p2: { name: 'per' } }; };
+  window.spirit.required.spirit.data.branchAt = function () { return { p1: { name: 'pia' }, p2: { name: 'per' } }; };
   watched[0][1]('people/p2', {});
   return (c7.shown().length === 2) ? true : false;
 }, test.limit.quick);
@@ -981,15 +981,15 @@ test.run('destroy drops the watch', 0.2, function () {
 }, test.limit.quick);
 // EVERY ROW OF THE BRANCH ITS OWN LINE, WHATEVER ITS FIELDS (goal/G47.4; Andy: "i want to see every single fucking grant row
 // that matches the fucking search, and not only one of many for a fucking family when the fucking verbs were fucking
-// granted separetely."). Over the real spirit.data (spirit/data.js): a grant row's key field is its contact's key, so two
+// granted separetely."). Over the real spirit.required.spirit.data (spirit/data.js): a grant row's key field is its contact's key, so two
 // grants of one contact, filed apart in the branch by key and path, share that field; the list draws them as two rows.
 let c7b = null;
-test.run('over the real spirit.data, two rows filed apart in the branch but sharing a key field are drawn as two rows', 0.2, async function () {
-  window.spirit.data = undefined;
+test.run('over the real spirit.required.spirit.data, two rows filed apart in the branch but sharing a key field are drawn as two rows', 0.2, async function () {
+  window.spirit.required.spirit.data = undefined;
   try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'spirit/data.js' }); } catch (e) { return false; }
   // The auth family's grants, as a node's stream hands them (spirit/auth/data.js), the branch the Grants app's list views.
   try { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } catch (e) { return false; }
-  const D = window.spirit.data;
+  const D = window.spirit.required.spirit.data;
   const X = D && D.auth && D.auth.data;
   if (!X || typeof D.takeJob !== 'function') return false;
   const K = 'MCowBQYDK2VwAyEAsearchTestContactKey0123456789abcdefghijk=';
@@ -1001,11 +1001,11 @@ test.run('over the real spirit.data, two rows filed apart in the branch but shar
   await tick();
   const shown = c7b.shown().length;
   L.destroy();
-  window.spirit.data = REAL_DATA;
+  window.spirit.required.spirit.data = REAL_DATA;
   return (shown === 2) ? true : false;
 }, test.limit.quick);
 test.run('a dropdown starts shut, its list not drawn', 0.2, function () {
-  window.spirit.data = REAL_DATA;
+  window.spirit.required.spirit.data = REAL_DATA;
   // create: the dropdown
   c8 = container();
   pk8 = [];

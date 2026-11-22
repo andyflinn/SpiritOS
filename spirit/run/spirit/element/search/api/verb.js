@@ -32,7 +32,7 @@
     var server = '';
     var list = { redraw: function () {} };
 
-    // THE VERBS ARE spirit.data's (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors draw from it"): a view of
+    // THE VERBS ARE spirit.required.spirit.data's (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors draw from it"): a view of
     // the verbs the node family's cache manager keeps, the chosen family's alone. ANOTHER PARTY'S TOO (goal/G48.4; Andy:
     // "fix the introSpector, too", ending the box's deferred exception): its verbs are the apiVerbs branch under that party's
     // node, kept there by the family list (./list.js) that loaded its tree; party is whose, '' this node's own.
@@ -44,7 +44,7 @@
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
-        data: window.spirit.data.node.data.verbsBranchOf(party),
+        data: window.spirit.required.spirit.data.node.data.verbsBranchOf(party),
         filters: [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server ? 1 : 0; } }],
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },

@@ -58,19 +58,19 @@ test.run('mounted, it is a value tile: its icon 🔁 drawn by the icon element, 
 // The box: "fills itself from the stats the node's spirit job publishes".
 test.run('its value is the 99th percentile of the event loop delay of the node, one decimal and ms, from the spirit job\'s stats', 0.4, async function () {
   if (!W.made) return false;
-  if (!(await until(function () { return js('!!((window.spirit.data.job.data.job("spirit") || {}).data || {}).stats'); }, 20000))) return false;
+  if (!(await until(function () { return js('!!((window.spirit.required.spirit.data.job.data.job("spirit") || {}).data || {}).stats'); }, 20000))) return false;
   let shown = '';
-  const ok = await until(function () { return js('(function () { var S = window.spirit, d = S.data.job.data.job("spirit").data.stats; var want = ' + EXPECTED + '; var v = window.__box.querySelector(".value").textContent; return v === want ? v : ""; })()').then(function (v) { shown = v; return !!v; }); }, 10000);
+  const ok = await until(function () { return js('(function () { var S = window.spirit, d = S.required.spirit.data.job.data.job("spirit").data.stats; var want = ' + EXPECTED + '; var v = window.__box.querySelector(".value").textContent; return v === want ? v : ""; })()').then(function (v) { shown = v; return !!v; }); }, 10000);
   return ok && SHAPE.test(String(shown)) ? true : false;
 }, test.limit.slow);
 // spirit-sibling-browser.js: "a change written into what it watches redraws it": the row written again, its stats unchanged.
 test.run('a change written into the spirit job\'s row writes its value again at once', 0.4, async function () {
   if (!W.made) return false;
-  const said = await js('(function () { var D = window.spirit.data; var at = D.homeNode() + "/job/jobs/spirit"; var before = D.getPath(at); if (!before) return Promise.resolve("no row"); var n = 0; var mo = new MutationObserver(function (l) { n += l.length; }); mo.observe(window.__box, { subtree: true, childList: true, characterData: true }); D.setPath(at, Object.assign({}, before, { label: "zzprobe" })); return new Promise(function (r) { setTimeout(r, 300); }).then(function () { mo.disconnect(); D.setPath(at, before); return n > 0 ? "redrew" : "still"; }); })()');
+  const said = await js('(function () { var D = window.spirit.required.spirit.data; var at = D.homeNode() + "/job/jobs/spirit"; var before = D.getPath(at); if (!before) return Promise.resolve("no row"); var n = 0; var mo = new MutationObserver(function (l) { n += l.length; }); mo.observe(window.__box, { subtree: true, childList: true, characterData: true }); D.setPath(at, Object.assign({}, before, { label: "zzprobe" })); return new Promise(function (r) { setTimeout(r, 300); }).then(function () { mo.disconnect(); D.setPath(at, before); return n > 0 ? "redrew" : "still"; }); })()');
   return said === 'redrew' || false;
 }, test.limit.quick);
 test.run('destroyed, it leaves its container empty, and a change of the row draws nothing', 0.2, async function () {
   if (!W.made) return false;
-  const html = await js('(function () { window.__made.destroy(); var D = window.spirit.data; var at = D.homeNode() + "/job/jobs/spirit"; var before = D.getPath(at); if (before) { D.setPath(at, Object.assign({}, before, { label: "zzafter" })); D.setPath(at, before); } return window.__box.innerHTML; })()');
+  const html = await js('(function () { window.__made.destroy(); var D = window.spirit.required.spirit.data; var at = D.homeNode() + "/job/jobs/spirit"; var before = D.getPath(at); if (before) { D.setPath(at, Object.assign({}, before, { label: "zzafter" })); D.setPath(at, before); } return window.__box.innerHTML; })()');
   return html === '' ? true : false;
 }, test.limit.quick);

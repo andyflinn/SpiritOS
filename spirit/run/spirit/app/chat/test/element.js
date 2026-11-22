@@ -102,10 +102,10 @@ test.run('it never asks a verb of chatClerver', 0.2, async function () {
   return await page.evaluate('!window.sent.some(function (b) { return /chatClerver/.test(b); })')
     ? true : false;
 }, test.limit.quick);
-test.run('its lines are the branch chat\'s cache, spirit.data.chat', 0.2, async function () {
+test.run('its lines are the branch chat\'s cache, spirit.required.spirit.data.chat', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return false;
-  return await H.until(function () { return page.evaluate('!!(spirit.data && spirit.data.chat && spirit.data.chat.data)'); }, 10000) ? true : false;
+  return await H.until(function () { return page.evaluate('!!(spirit.required.spirit.data && spirit.required.spirit.data.chat && spirit.required.spirit.data.chat.data)'); }, 10000) ? true : false;
 }, test.limit.quick);
 
 // ── destroy ──

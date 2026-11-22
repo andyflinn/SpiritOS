@@ -86,14 +86,14 @@
     // branch holds, newest flip first, drawn again on every change the stream brings.
     var prefix = script + '|' + suite + '|' + test + '|';
     function fromBranch() {
-      var D = S.data.testicle.data;
-      var b = S.data.getPath(D.branch('testicle'));
+      var D = S.required.spirit.data.testicle.data;
+      var b = S.required.spirit.data.getPath(D.branch('testicle'));
       return Object.keys(b || {}).filter(function (k) { return k.indexOf(prefix) === 0; }).map(function (k) { return b[k]; })
         .sort(function (a, c) { return Number(c.id) - Number(a.id); });
     }
     function ask() {
       return Promise.resolve(S.testicle['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
-        .then(function (b) { S.data.testicle.data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
+        .then(function (b) { S.required.spirit.data.testicle.data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
     }
 
     function said(text) { var el = container.querySelector('[data-history="said"]'); if (el) el.textContent = text || ''; }
@@ -131,7 +131,7 @@
       if (gone) return;
       ask();
       forms();
-      release = S.data.testicle.data.testicle.watch(function () { draw(fromBranch()); });
+      release = S.required.spirit.data.testicle.data.testicle.watch(function () { draw(fromBranch()); });
     }, function () { container.textContent = 'The history could not be loaded.'; });
 
     return {

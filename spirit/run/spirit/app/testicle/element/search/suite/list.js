@@ -15,8 +15,8 @@
 // and its status; the words narrow among them", "The UI must listen to changes on all tables it interacts with, and the
 // server, of course, publishes changes".
 //
-// A VIEW OF testicle's SUITE ROWS IN spirit.data (goal/G41.28): the probability search over the suite branch testicle's
-// cache manager keeps (spirit.data.testicle.data, spirit/app/testicle/data.js), only the given file's rows, by a filter
+// A VIEW OF testicle's SUITE ROWS IN spirit.required.spirit.data (goal/G41.28): the probability search over the suite branch testicle's
+// cache manager keeps (spirit.required.spirit.data.testicle.data, spirit/app/testicle/data.js), only the given file's rows, by a filter
 // not drawn. The server publishes every row it writes, so a suite written for the file shows by itself. What the branch
 // does not hold yet is asked once, of testicle.suite.search with no words, and kept there; words ask it again.
 (function () {
@@ -40,7 +40,7 @@
 
     parts.then(function () {
       if (gone) return;
-      var data = S.data.testicle.data;
+      var data = S.required.spirit.data.testicle.data;
       var ask = function (text) {
         return Promise.resolve(S.testicle['suite.search']({ script: script, text: String(text || '') })).then(function (b) {
           data.keep('suite', rowsOf(b));

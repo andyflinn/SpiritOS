@@ -7,14 +7,14 @@
 // revoke/delete that grant in the database"). row.js does the shared work; this file says what a grant is.
 //
 // NO STREAM OF ITS OWN (goal/G41.28; Andy: "get rid of thos FUCKING data.js scripts"): each grants table handed in has
-// its own branch of spirit.data, kept by its family's cache manager, and its own watch, so two tables on one page never
+// its own branch of spirit.required.spirit.data, kept by its family's cache manager, and its own watch, so two tables on one page never
 // mix, and every grant row repaints from that watch through its table's index. A row asks and draws nothing of its own
 // (rule/19).
 //
 //   spirit.element.spirit.element.search.grant.row.create(row, opts) -> a row of kind grant
 //     row            a grant row, its id and whose grant it is in the fields its table names
 //     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), watch(fn(id + newline + path,
-//                    row)) }; branch is a whole spirit.data path (node/family/branch), its rows its family's cache
+//                    row)) }; branch is a whole spirit.required.spirit.data path (node/family/branch), its rows its family's cache
 //                    manager's
 //   A grant shows as it is, whether a server serves its path today or not (goal/G47.4; Andy: "get rid of that deprecated
 //   filter ... what the hell is it even for?").

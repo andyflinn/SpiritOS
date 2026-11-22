@@ -4,8 +4,8 @@
 // The tests of spirit/contact/data.js, and of no other module (spec: ./data.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of a node's contacts, people and relays in one table (goal/G41.28, goal/G40.11), from the node's job spirit.contact (goal/G43.20).
-// It runs as it does: in a window of its own beside the real spirit.data (spirit/data.js), which it writes into, the
-// stream's events handed in as spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
+// It runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data.js), which it writes into, the
+// stream's events handed in as spirit.required.spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
 // it comes with the family's api.js (spirit.require('spirit/contact/api.js')), the one script that requires it. The reads alone are read, never a branch.
 
 const fs = require('fs');
@@ -21,15 +21,15 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const OTHER = 'Zy+x/WvU9876543210zyxwvutsrqponmlkjihgfedcb=';
 
-// A window of its own: the real spirit.data, then the file, as a page loads them. Each translator the file adds is kept,
-// so an event spirit.data hands no suite (a job gone) can be handed as spirit.data hands it.
+// A window of its own: the real spirit.required.spirit.data, then the file, as a page loads them. Each translator the file adds is kept,
+// so an event spirit.required.spirit.data hands no suite (a job gone) can be handed as spirit.required.spirit.data hands it.
 function world() {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
-  const D = win.spirit.data;
+  const D = win.spirit.required.spirit.data;
   const translators = [];
   const add = D.addTranslator;
   D.addTranslator = function (t) { translators.push(t); return add(t); };
@@ -49,7 +49,7 @@ function pageWorld() {
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  const D = win.spirit.data;
+  const D = win.spirit.required.spirit.data;
   const F = D['contact'];
   return { D: D, X: F && F.data, job: function (job, from) { D.takeJob(job, from || SENDER); }, nodes: function () { return Object.keys((F && F.cache) || {}); } };
 }
@@ -57,15 +57,15 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, requiring spirit/contact/api.js brings the contact family\'s data.js, which stands at spirit.data.contact.data', 0.2, async function () {
+test.run('in node, requiring spirit/contact/api.js brings the contact family\'s data.js, at spirit.required.spirit.data.contact.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
   try { await Promise.resolve(S.require('spirit/contact/api.js')); } catch (e) { threw = e; }
-  const X = S.data && S.data['contact'] && S.data['contact'].data;
+  const X = S.required.spirit.data && S.required.spirit.data['contact'] && S.required.spirit.data['contact'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.required.spirit.data, it makes its family there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);

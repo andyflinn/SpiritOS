@@ -5,7 +5,7 @@ each a branch under the node that served it, and the monitor's one row. Owed sin
 has its own test"* (goal/G47.1, box v72). It runs in a window of its own beside the real `spirit/data.js`, the rows
 handed in as the stream hands them; in node it is loaded by its api.js, `spirit/app/testicle/api.js`, the one script that requires it (goal/G47.1).
 
-- It stands at `spirit.data.testicle.data`; its `tables` are script, suite, testicle; `branch(table)` is
+- It stands at `spirit.required.spirit.data.testicle.data`; its `tables` are script, suite, testicle; `branch(table)` is
   `<node>/testicle/<table>`, `''` for any other.
 - The translator (the box: *"the server, of course, publishes changes"*): a script row kept at `script/<name>`, a
   suite row at `suite/<key>` (or `script|suite`), a test row at `testicle/<key>` with `scriptName` and `suiteName`, the

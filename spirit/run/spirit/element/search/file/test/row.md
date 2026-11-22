@@ -4,8 +4,8 @@
 to goal/G41.28 it was also what the fs-watcher's stream means for the page's mirror of the node's tree. Its test is `./row.js`.
 
 Since goal/G41.28 the tree is the fs family's cache: its translator and its branch are
-`spirit/run/spirit/fs/data.js`'s, filed in `spirit.data` under the serving node
-(`<node>/fs/files/<path>`), and read through `spirit.data.fs.data`. The element requires the fs family's interface
+`spirit/run/spirit/fs/data.js`'s, filed in `spirit.required.spirit.data` under the serving node
+(`<node>/fs/files/<path>`), and read through `spirit.required.spirit.data.fs.data`. The element requires the fs family's interface
 (`spirit.require('spirit/fs/api.js')`), which brings that data.js (goal/G47.1: *"every api.js requires it's companion
 data.js"*); the test brings it as a page does, the page's node known (`spirit.node.key`, `data.homeNode`).
 
@@ -19,9 +19,9 @@ a subject needs), and is since goal/G41.28 the fs family's data.js's, which the 
   `spirit/element/fstat.js` and the fs family's interface, `spirit/fs/api.js`; no data script, since only an api.js
   requires its data.js.
 - It registers `spirit.element.search.file.row.create(row)`.
-- **What the stream means for the file tree** (`spirit.data.fs.data`) (fs-watcher jobs, `data.command { op, path, size, modified, core }`):
-  - before `treeComplete` the branch fills unready; `treeComplete` makes the tree ready (`spirit.data.fs.data.ready()`);
-  - `createDirectory` is a folder at its path (`spirit.data.fs.data.file(path)`); any other create or change sets a file with its size, its time and
+- **What the stream means for the file tree** (`spirit.required.spirit.data.fs.data`) (fs-watcher jobs, `data.command { op, path, size, modified, core }`):
+  - before `treeComplete` the branch fills unready; `treeComplete` makes the tree ready (`spirit.required.spirit.data.fs.data.ready()`);
+  - `createDirectory` is a folder at its path (`spirit.required.spirit.data.fs.data.file(path)`); any other create or change sets a file with its size, its time and
     its core flag (the node's word, kept), its kind kept when it was known;
   - `deleteFile` takes that file out; `deleteDirectory` the folder and everything under it;
   - another job's command, or a command with no path, writes nothing.

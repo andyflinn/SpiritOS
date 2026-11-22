@@ -177,7 +177,7 @@ function plant(search) {
   P.spirit = {
     contact: { search: function (a) { P.asked.push(a); return typeof search === 'function' ? search() : Promise.resolve(search); } },
     require: function (p) { P.required.push(p); return Promise.resolve({}); },
-    data: { relay: { data: { keep: function (got) { P.kept.push(got); } } } },
+    required: { spirit: { data: { relay: { data: { keep: function (got) { P.kept.push(got); } } } } } },
   };
   return P;
 }
@@ -220,7 +220,7 @@ test.run('status then gets each relay listed by its key, through the family\'s o
   const keys = S.P.calls.map(function (c) { return c[1] && c[1].key; });
   return (verbs.every(function (v) { return v === 'get'; }) && JSON.stringify(keys) === JSON.stringify([A, B, C, 'https://d.relay.example'])) || false;
 }, test.limit.quick);
-// goal/G41.28: each relay got is kept by the family's own data script, spirit/relay/data.js, at spirit.data.relay.data
+// goal/G41.28: each relay got is kept by the family's own data script, spirit/relay/data.js, at spirit.required.spirit.data.relay.data
 test.run('it requires spirit/relay/data.js, and each relay got is handed to the relay family\'s data to keep', 0.2, function () {
   if (!S.out) return false;
   return (S.P.required.indexOf('spirit/relay/data.js') !== -1 && S.P.kept.indexOf(GETS[A]) !== -1 && S.P.kept.indexOf(GETS[B]) !== -1) || false;

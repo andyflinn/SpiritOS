@@ -540,6 +540,18 @@
     }
     return o[last];
   }
+  // ON A PAGE, WHAT A SCRIPT PLACED FOR ITSELF IS ITS ANSWER (goal/G43.32; Andy, goal/G49.4: "have i NOT fucking specified, that
+  // on both, browser and node, spirit.require() places the loaded script at the exact same motherfucking location/path in the
+  // spirit object??????", "FUCKING FIX THAT!!"): a page script has no module box, so it stands at spirit.required.<its path>
+  // by placing itself there as it runs (spirit/data.js does); the loader answers that object, as in node it answers the
+  // module's exports. A script that placed nothing gets an empty object there, which says it is loaded.
+  function keptAt(p) {
+    var keys = String(p).replace(/\.js$/, '').split('/').filter(Boolean);
+    var o = required;
+    for (var i = 0; i < keys.length && o; i += 1) o = o[keys[i]];
+    if (o && (typeof o === 'object' || typeof o === 'function') && !isHolder(o)) return o;
+    return placeAt(required, p, {});
+  }
   // THE NODE'S MODULES, KEPT AT ONCE (Andy: "box that spirit.require() on the node is just a path-translating wrapper."):
   // a script's module.exports, the same one every time, no promise. An interface is still bound by asking a node.
   var nodeOnce = Object.create(null);
@@ -575,7 +587,7 @@
     }
     if (requiredOnce[p]) { if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
     // A script the page loaded by its own tag (the home shell's index.html) has run: it counts as required.
-    if (loadedByTag(p)) { requiredOnce[p] = Promise.resolve({}); placeAt(required, p, {}); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
+    if (loadedByTag(p)) { requiredOnce[p] = Promise.resolve(keptAt(p)); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
     var answer = get(p).then(function (r) {
       if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
       var outer = collecting;
@@ -583,9 +595,9 @@
       // ON A PAGE A FILE RUNS AS A PLAIN SCRIPT (goal/G41.7; Andy: "script IS what codeMirror Is, use the require
       // interfaces that exists in spirit.js or boot.js, NOTHING HAND-ROLLED"): every shell element puts itself into
       // window.spirit as it runs, so none is handed a module box, and a file written for both node and a page
-      // (CodeMirror's) takes its page branch. A stylesheet goes on the page as a style. The answer is an empty object.
+      // (CodeMirror's) takes its page branch. A stylesheet goes on the page as a style.
       try { inject(p, text(r.bytes)); } finally { collecting = outer; }
-      return Promise.all(tree).then(function () { var mark = {}; placeAt(required, p, mark); return mark; });
+      return Promise.all(tree).then(function () { return keptAt(p); });
     });
     requiredOnce[p] = answer;
     // A refused require is not kept: it may be asked again.
@@ -968,9 +980,9 @@
         return { ok: false, code: 'not-posted', error: 'the node stream could not open: ' + ((e && e.message) || e) };
       });
     };
-    // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2), in a process as on a page: spirit.data, filled by each type's
+    // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2), in a process as on a page: spirit.required.spirit.data, filled by each type's
     // translator, which its type loads; a process follows a stream only through appServer's listener.
-    // Through the one loader, as every component is; in a process its require runs at once, so spirit.data is there now.
+    // Through the one loader, as every component is; in a process its require runs at once, so spirit.required.spirit.data is there now.
     module.exports = self;
     requireOne('spirit/data.js');
     return;
@@ -1079,7 +1091,7 @@
         var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
         if (!key) return;
         self.node.key = key;
-        if (self.data && typeof self.data.homeNode === 'function') self.data.homeNode(key);
+        if (self.required.spirit.data && typeof self.required.spirit.data.homeNode === 'function') self.required.spirit.data.homeNode(key);
       }, function () { /* the page files nothing until its node is known */ });
     }).then(function () { return view; });
     if (readyNow) readyNow(started);

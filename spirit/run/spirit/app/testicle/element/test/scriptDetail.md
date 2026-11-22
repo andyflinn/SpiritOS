@@ -24,7 +24,7 @@ tab's file detail)"*). It was `fileDetail` in `../element.js`. Its test: `./scri
 - **The own test, in red when missing** (the box: *"A script tab shows, right under its title line, the name of the
   script's own test in red when that test is missing on disc: the folder test/ beside the script, the same file name"*,
   *"When the own test is there, nothing shows in that place"*): read from the fs family's mirror of the tree
-  (`spirit.data.fs`), only once the tree is whole, and drawn again as the mirror changes that path.
+  (`spirit.required.spirit.data.fs`), only once the tree is whole, and drawn again as the mirror changes that path.
 - **destroy()** stops its watch of the mirror, destroys the suite search it mounted, and leaves its container empty; an
   answer that arrives after it is ignored.
 

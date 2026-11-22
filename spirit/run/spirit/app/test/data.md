@@ -6,7 +6,7 @@ The box: *"a node:run app shows as a tile with Activate: app/data.js drops run a
 
 ## Requirements
 
-- Every row of a run-only app that the app cache (`spirit.data.app`) holds once the `apps` job has come keeps `run` and `runOnly`, while a list is on the page and with none.
+- Every row of a run-only app that the app cache (`spirit.required.spirit.data.app`) holds once the `apps` job has come keeps `run` and `runOnly`, while a list is on the page and with none.
 - The tiles, on the page while the job comes, never draw a tile for a run-only app.
 - The app detail of a run-only app, made after the job, shows no Activate, where an app that mounts shows one.
 

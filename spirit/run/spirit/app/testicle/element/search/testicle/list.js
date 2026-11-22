@@ -14,8 +14,8 @@
 // result first, as an icon, ❌ for a failure, ✅ for a success; severity second; the title third; then the script name (no
 // path), then the suite name (no path)".
 //
-// A VIEW OF testicle's TEST ROWS IN spirit.data (goal/G41.28): the probability search over the testicle branch testicle's
-// cache manager keeps (spirit.data.testicle.data, spirit/app/testicle/data.js), its current rows only, by a filter not
+// A VIEW OF testicle's TEST ROWS IN spirit.required.spirit.data (goal/G41.28): the probability search over the testicle branch testicle's
+// cache manager keeps (spirit.required.spirit.data.testicle.data, spirit/app/testicle/data.js), its current rows only, by a filter not
 // drawn: the branch keeps a flipped test's replaced row beside its current one. The server publishes every row it writes,
 // so a test set anywhere shows by itself. What the branch does not hold yet is asked of testicle.testicle.search, the reds
 // first, and kept there; words, a filter or a selector ask it again, sent with what is chosen, so the server narrows before
@@ -71,7 +71,7 @@
 
     parts.then(function () {
       if (gone) return;
-      var data = S.data.testicle.data;
+      var data = S.required.spirit.data.testicle.data;
       // WHAT IS CHOSEN GOES TO THE SERVER (goal/G47.1, the box: "Red, green, the script and the suite go to the server with
       // the words, so the server narrows before it cuts an answer", "the page asks for the following answers while the
       // server says there are more, up to 100 tests"): one answer holds about 12 tests.

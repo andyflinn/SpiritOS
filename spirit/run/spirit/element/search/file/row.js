@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/search/file/row.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
-// it reads the node's file tree as the fs family's cache manager keeps it (spirit.data.fs.data, goal/G41.28), which the
+// it reads the node's file tree as the fs family's cache manager keeps it (spirit.required.spirit.data.fs.data, goal/G41.28), which the
 // spirit.fs's stream keeps, so a change to a file repaints that file's cells and nothing else. row.js does the
 // shared work; this file says what a file is.
 //
@@ -24,8 +24,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
 
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
   // data.js's (spirit/fs/data.js), which this element loads itself (rule/26), with the data set
-  // it fills; a row reads spirit.data.fs.data.
-  function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
+  // it fills; a row reads spirit.required.spirit.data.fs.data.
+  function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
   // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
   var fsReady = Promise.resolve(window.spirit.require('spirit/fs/api.js')).then(function () { return fsReads(); });
 

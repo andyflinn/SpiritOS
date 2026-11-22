@@ -27,7 +27,7 @@ test.after(async function () {
   try { if (chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 const ask = async function (verb, args) { const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return { status: r.status, body: JSON.parse(await r.text()) }; } catch (e) { return { status: r.status, body: null }; } };
-const held = function () { return W.chrome.evaluate('JSON.stringify(spirit.data.app.data.rows())').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }); };
+const held = function () { return W.chrome.evaluate('JSON.stringify(spirit.required.spirit.data.app.data.rows())').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }); };
 // Each run-only app of the tree written out, so that each check has a plain title of its own.
 const rowsOf = function (K) {
   const a = W.only.filter(function (a) { return a.key === K; })[0] || { key: K, label: K };
@@ -110,7 +110,7 @@ test.run('before the job the tiles draw apps, no run-only one among them', 0.2, 
   // From here on: every value the cache holds for a run-only app, and every app label a tile ever draws (a MutationObserver).
   const LABELS = JSON.stringify(W.own.map(function (a) { return a.label; }));
   await chrome.evaluate('(function () { window.seen = {}; window.drawn = []; var want = window.want = ' + LABELS + ';' +
-    ' ' + JSON.stringify(only.map(function (a) { return a.key; })) + '.forEach(function (k) { window.seen[k] = []; spirit.data.app.data.watch(k, function (r) { window.seen[k].push(r === undefined ? null : r); }); });' +
+    ' ' + JSON.stringify(only.map(function (a) { return a.key; })) + '.forEach(function (k) { window.seen[k] = []; spirit.required.spirit.data.app.data.watch(k, function (r) { window.seen[k].push(r === undefined ? null : r); }); });' +
     ' function look() { var all = document.querySelectorAll("#tiles *"); for (var i = 0; i < all.length; i++) { var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && window.drawn.indexOf(t) === -1) window.drawn.push(t); } }' +
     ' look(); window.before = window.drawn; window.drawn = []; new MutationObserver(look).observe(document.getElementById("tiles"), { childList: true, subtree: true, characterData: true }); return true; }())');
   const before = JSON.parse(await chrome.evaluate('JSON.stringify(window.before)'));

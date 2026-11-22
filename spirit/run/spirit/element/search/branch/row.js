@@ -11,7 +11,7 @@
 // THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything
 // that changes their data set", "NO FUCKING DATA SCRIPT"): the node publishes each changed branch row on its permanent
 // job 'bundles' ({ table: 'branch', row }, gone when deleted, a bundle's branches each gone with it); the auth family's
-// cache manager (below) puts it into spirit.data.auth.data.branches, and every branch row on the page repaints from there
+// cache manager (below) puts it into spirit.required.spirit.data.auth.data.branches, and every branch row on the page repaints from there
 // through its kind's index. A row asks and draws nothing of its own (rule/19).
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
@@ -26,8 +26,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
 
   // A NODE'S BRANCHES ARE THE auth FAMILY'S CACHE (goal/G41.28): what a branch row on the stream means, and its branch,
   // are the family's own data.js's (spirit/auth/data.js), which this element loads itself
-  // (rule/26), as part of its tree; a row reads spirit.data.auth.data.branches.
-  var authReady = Promise.resolve(window.spirit.require('spirit/auth/api.js')).then(function () { return window.spirit.data.auth.data.branches; });
+  // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.auth.data.branches.
+  var authReady = Promise.resolve(window.spirit.require('spirit/auth/api.js')).then(function () { return window.spirit.required.spirit.data.auth.data.branches; });
   // THE KIND'S INDEX: one watch on the branches for every branch row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var branches = null;
@@ -42,7 +42,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       });
     }
     // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
-    listen(((window.spirit.data || {}).auth || {}).data && window.spirit.data.auth.data.branches);
+    listen(((window.spirit.required.spirit.data || {}).auth || {}).data && window.spirit.required.spirit.data.auth.data.branches);
     if (!off) authReady.then(listen);
     return function () { gone = true; if (off) off(); off = null; };
   }

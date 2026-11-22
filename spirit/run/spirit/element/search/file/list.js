@@ -3,7 +3,7 @@
 // The list the file selector, ../file.js, draws (goal/G43.32: it was search/file.js). Its test: ../test/file.js, through the selector.
 // THE FILES LIST, A DROP-IN SHELL ELEMENT (goal/G30.20): the node's files on the standard list-tool
 // (spirit/element/search.js), each row a file row element (file/row.js), the list a view of the fs family's
-// cache (spirit/fs/data.js, spirit.data.fs.data: the faceless layer's mirror of the node's tree). The Files app draws it as a pane, an app picking a file as a
+// cache (spirit/fs/data.js, spirit.required.spirit.data.fs.data: the faceless layer's mirror of the node's tree). The Files app draws it as a pane, an app picking a file as a
 // dropdown; it replaced the legacy file selector, deleted with it.
 //   - Names are ranked from the mirror at once; fs.search is asked only by contents, what the page cannot answer.
 //   - No words: the tree, in path order, every folder folded at first, 2em of indent per slash; a folder's press opens
@@ -31,7 +31,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   if (window.spirit.require) ['spirit/element/search/file/row.js', 'spirit/element/search/file/tile.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
   window.spirit.require('spirit/fs/api.js');
-  function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
+  function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
 
   function accepted(accept, row) {
     if (row.kind === 'folder' || accept == null) return true;
@@ -97,7 +97,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     list = E.spirit.element.search.create(inner, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: function (args) { return search(args, function (next, at) { scores = next; lines = at; }); },
-      // A view of the node's file tree, the branch the fs family's manager keeps (spirit.data.fs.data.branch).
+      // A view of the node's file tree, the branch the fs family's manager keeps (spirit.required.spirit.data.fs.data.branch).
       data: fsReads().branch,
       server: 'fs',
       verb: 'search',

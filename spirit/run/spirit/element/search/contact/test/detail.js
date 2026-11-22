@@ -259,14 +259,14 @@ function relayWorld(rows, relayStatus) {
     // The stream, for its report on the relay event (goal/G41.32).
     event: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
     // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
-    data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } },
+    required: { spirit: { data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } } } },
     // The contact family's cache (goal/G41.28): the contact api.js brings its data.js, as the real one does (goal/G47.1:
-    // "every api.js requires it's companion data.js"); here that data stands in as spirit.data.contact.data, whose rows
+    // "every api.js requires it's companion data.js"); here that data stands in as spirit.required.spirit.data.contact.data, whose rows
     // the page watches. A data.js asked for directly is only recorded.
     require: function (p) {
       const at = String(p).replace(/^\/+/, '');
       w.required.push(at);
-      if (at === 'spirit/contact/api.js') ((win.spirit.data = win.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } };
+      if (at === 'spirit/contact/api.js') ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } };
       return Promise.resolve({});
     },
     ready: Promise.resolve(families),
@@ -852,7 +852,7 @@ test.run('A relay\'s detail sends its title to the layer it is drawn in', 0.2, f
 // ONE DETAIL FOR EVERY KIND OF CONTACT (goal/G43.32; Andy: "the contact list already knows the difference between contact
 // types. so should the detail panel."): not told, the contact family's cache says what the row is.
 // it knows the contact's type, from the contact family's cache when not told
-const held = function (wx, relay) { (wx.win.spirit.data = wx.win.spirit.data || {}).contact = { data: { contact: function (k) { return { key: k, relay: relay }; }, watch: function () { return function () {}; } } }; };
+const held = function (wx, relay) { (wx.win.spirit.required.spirit.data = wx.win.spirit.required.spirit.data || {}).contact = { data: { contact: function (k) { return { key: k, relay: relay }; }, watch: function () { return function () {}; } } }; };
 test.run('Holding a relay\'s row in the cache, the detail draws the relay\'s details and does not ask for a person\'s row', 0.2, async function () {
   const wr = relayWorld(OWNED, OWNED_SAID);
   held(wr, true);

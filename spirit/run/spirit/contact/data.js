@@ -1,12 +1,12 @@
 'use strict';
 // spirit/run/spirit/contact/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S CONTACTS, IN THE contact FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until
-// every family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A page
-// loads it through its api.js (spirit/contact/api.js), the one file that requires it; it runs the translator into that page's spirit.data, under the node
+// every family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.required.spirit.data". A page
+// loads it through its api.js (spirit/contact/api.js), the one file that requires it; it runs the translator into that page's spirit.required.spirit.data, under the node
 // that served the rows.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the contacts rows and list, the contact
-// selector) asks spirit.data.contact.data (below), never a branch by name.
+// selector) asks spirit.required.spirit.data.contact.data (below), never a branch by name.
 //   contacts   key -> the contact row: what a contact search answered (seated by the lists that are a view of it),
 //              present from the spirit.contact job, a row the network found from the peer-search job, name from a rename
 // What the stream means for contacts (goal/G41.16; moved here from the contacts row element): the spirit.contact job
@@ -15,10 +15,10 @@
 // set, merge, del or seat; it asks nothing.
 (function family() {
   var CONTACTS = 'contacts';
-  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('contact', function () {
     var HOME = D.viewAt(null, 'contact');
     var told = Object.create(null);   // keys the presence table has spoken of, by node

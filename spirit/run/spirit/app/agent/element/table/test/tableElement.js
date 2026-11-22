@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/agent/element/table/test/tableElement.js
 // The tests of spirit/app/agent/element/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4, goal/G41.18).
-// The browser file runs in node on a window of its own, over the real spirit.data (spirit/data.js). The boxes,
+// The browser file runs in node on a window of its own, over the real spirit.required.spirit.data (spirit/data.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
 // One test.run per test (goal/G47.2): each test does its step and judges it; what the steps make is kept below for the
@@ -18,7 +18,7 @@ const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 const FILE = path.join(__dirname, '..', 'tableElement.js');
 const AGENT = branchPath('agent');
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
-// base64url (spirit.data.nodeId).
+// base64url (spirit.required.spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -86,17 +86,17 @@ let BRANCH = null;
 const E = {};
 
 // ── its file ──
-test.run('the shared element runs on a window of its own, over the real spirit.data', 0.2, async function () {
+test.run('the shared element runs on a window of its own, over the real spirit.required.spirit.data', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, branchPath: branchPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   load(path.join(RUN, 'spirit', 'data.js'));
-  D = global.window.spirit.data;
+  D = global.window.spirit.required.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.node.key; the agent family's api.js, asked of the stand-in require below, brings its companion data.js
   // with it, the real file run once from disk, as the real api.js does. That data.js (spirit/app/agent/data.js) keeps the tables'
-  // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
+  // branches, <node>/agent/<table>, and answers them through spirit.required.spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
   const ran = {};
@@ -209,11 +209,11 @@ test.run('branchOf a table is the home node\'s <node>/agent/<table>, as the agen
 // why: never a list drawn with no branch.
 test.run('with no agent family\'s cache on the page, branchOf refuses and says why', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
-  const keptAD = ((global.window.spirit.data || {}).agent || {}).data;
-  delete ((global.window.spirit.data || {}).agent || {}).data;
+  const keptAD = ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
+  delete ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
   let why = null; let drawn;
   try { drawn = AD.branchOf('job'); } catch (e) { why = e; }
-  global.window.spirit.data.agent.data = keptAD;
+  global.window.spirit.required.spirit.data.agent.data = keptAD;
   return !!why && /agent/.test(String(why.message)) && /cache/.test(String(why.message)) ? true : false;
 }, test.limit.quick);
 
@@ -260,7 +260,7 @@ test.run('its list is a probabilitySearch in its own box, searched as it is made
   T.list = w.searches[0];
   return T.list && T.list.host === the(T.left, 'list') && T.list.refreshed >= 1 ? true : false;
 }, test.limit.quick);
-test.run('it searches the agent server\'s provider verb, seated in the branch <node>/agent/provider of spirit.data', 0.2, function () {
+test.run('it searches the agent server\'s provider verb, seated in the branch <node>/agent/provider of spirit.required.spirit.data', 0.2, function () {
   if (!T.list) return false;
   return T.list.o.server === 'agent' && T.list.o.verb === 'provider' && T.list.o.data === BRANCH('provider') ? true : false;
 }, test.limit.quick);

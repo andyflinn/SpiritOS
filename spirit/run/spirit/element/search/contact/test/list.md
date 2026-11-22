@@ -1,7 +1,7 @@
 # spirit/element/search/contact/list.js
 
 The contacts list, a drop-in shell element: a pane in Contacts and Join, a dropdown in grants and introSpector. It is
-a view of the node's contacts, the branch the contact branch's data.js keeps (`spirit.data.contact.data.branch`,
+a view of the node's contacts, the branch the contact branch's data.js keeps (`spirit.required.spirit.data.contact.data.branch`,
 goal/G41.28), drawn by `probabilitySearch`, each row a contact row element (`spirit/element/search/contact/row.js`).
 
 ## API
@@ -18,7 +18,7 @@ the probabilitySearch's own data source (`options.search`), and what it asks a p
 - **network** (a toggle, last): a row with no flag (not kept, mine, blocked or a relay) shows only when on;
   every other row always.
 - **named** (never a button): a row passes only with a name or as a relay; a bare presence is no row.
-- **create** hands `probabilitySearch` `data: spirit.data.contact.data.branch`, these filters, columns presence, status, label, add, and
+- **create** hands `probabilitySearch` `data: spirit.required.spirit.data.contact.data.branch`, these filters, columns presence, status, label, add, and
   refreshes once at once. Its search asks `contact.search { q }` with the text trimmed and answers `{ status: 200,
   body: { ok, items, more } }`, an empty answer an empty list. Rows are contact row elements by key; a row matches on name
   and public label.
@@ -28,7 +28,7 @@ the probabilitySearch's own data source (`options.search`), and what it asks a p
 - **A row's Add**: a click on a `[data-action]` inside a row runs that element's action, says `added <label>`, calls
   `onAdded`, searches again. A click on no button or a row the list did not make does nothing.
 - **The one table is the contact family's cache** (goal/G41.28): the list subscribes to no stream of its own; a row
-  the node's `shadow` job hands is in `spirit.data.contact.data`'s branch, the one the list hands its search.
+  the node's `shadow` job hands is in `spirit.required.spirit.data.contact.data`'s branch, the one the list hands its search.
 - `refresh` and `destroy` are the search element's.
 - **One contact list** (goal/G43.32; Andy: *"contact: there should be only 1 list, i didn't even know there where two...."*):
   what the contact picker drew as a list of its own, this list does. `opts.filters`, the caller's hidden filters, come after

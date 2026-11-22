@@ -54,7 +54,7 @@ on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows 
 
 ## What its test must try to break
 
-- A DEBUG switch that does not follow the server's job in spirit.data.job.data, or follows the click instead.
+- A DEBUG switch that does not follow the server's job in spirit.required.spirit.data.job.data, or follows the click instead.
 - A state kept in the cache before the app opened, not shown at once.
 - A table handed an api, or an api made in its code.
 - A file saved at all.
@@ -127,7 +127,7 @@ Andy, the box: *"anything not using the new spiritData.js and it's buddies clien
 item. no exceptions."*
 
 - Every list pane the app drew is a view of its table in the agent family's cache: it is handed that table's branch,
-  `spirit.data.agent.data.branch(table)`. The page runs the real data set, its node known, and each branch's data.js,
+  `spirit.required.spirit.data.agent.data.branch(table)`. The page runs the real data set, its node known, and each branch's data.js,
   which only its api.js requires (`spirit.require('spirit/app/agent/api.js')`, goal/G47.1).
 
 ### What its test must try to break

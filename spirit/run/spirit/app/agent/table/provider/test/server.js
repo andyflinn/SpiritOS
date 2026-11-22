@@ -26,7 +26,7 @@ const DIR = path.join(__dirname, '..');
 // Its list and editor are the agent app's elements, in spirit/app/agent/element/table/provider/ since goal/G43.32 (rule 5).
 const EL = path.join(__dirname, '..', '..', '..', 'element', 'table', 'provider');
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
-// base64url (spirit.data.nodeId).
+// base64url (spirit.required.spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
 function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || true, why: (e.extra && e.extra.why) || e.message }; } }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -406,7 +406,7 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.eleme
   // data.js comes with its api.js, and the stand-in require above runs the real file for it.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
-  global.window.spirit.data.homeNode(HOME_KEY);
+  global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
   const T = global.window.spirit.element.spirit.app.agent.element.table.provider || {};
   P.E = { providerTable: T.elementTable, providerRow: T.elementRow };
@@ -461,7 +461,7 @@ test.run('the provider editor\'s fields in order: label, url, API key as a secre
 // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
 // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
 // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
-// node that served them, and is read through spirit.data.agent.data.
+// node that served them, and is read through spirit.required.spirit.data.agent.data.
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
 test.run('its page files require the agent family\'s interface, spirit/app/agent/api.js', 0.2, function () {
   if (!P.made) return false;
@@ -473,14 +473,14 @@ test.run('its page files require no data script, as only an api.js requires its 
 }, test.limit.quick);
 test.run('the agent family\'s data.js is loaded with its api.js, and its provider branch is the home node\'s agent/provider path', 0.2, function () {
   if (!P.made) return false;
-  const DATA = global.window.spirit.data;
-  const AD = P.AD = ((global.window.spirit.data || {}).agent || {}).data;
+  const DATA = global.window.spirit.required.spirit.data;
+  const AD = P.AD = ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
   P.BRANCH = DATA.nodeId(HOME_KEY) + '/agent/provider';
   return !!AD && typeof AD.branch === 'function' && AD.branch('provider') === P.BRANCH ? true : false;
 }, test.limit.quick);
 test.run('a provider row on the stream lands under the node\'s agent/provider path at its id, and the branch\'s watcher hears it', 0.2, function () {
   if (!P.AD) return false;
-  const DATA = global.window.spirit.data, AD = P.AD, BRANCH = P.BRANCH;
+  const DATA = global.window.spirit.required.spirit.data, AD = P.AD, BRANCH = P.BRANCH;
   const heard = [];
   const off = DATA.watchPath(BRANCH, function (p) { heard.push(p); });
   DATA.takeJob(job({ table: 'provider', row: { id: 'KT', label: 'First', extra: 1 } }));
@@ -489,19 +489,19 @@ test.run('a provider row on the stream lands under the node\'s agent/provider pa
 }, test.limit.quick);
 test.run('a changed row is merged: what it names changes, what it does not stays', 0.2, function () {
   if (!P.AD) return false;
-  const DATA = global.window.spirit.data, AD = P.AD;
+  const DATA = global.window.spirit.required.spirit.data, AD = P.AD;
   DATA.takeJob(job({ table: 'provider', row: { id: 'KT', label: 'Renamed' } }));
   return AD.row('provider', 'KT') && AD.row('provider', 'KT').label === 'Renamed' && AD.row('provider', 'KT').extra === 1 ? true : false;
 }, test.limit.quick);
 test.run('a row removed, by its id, is gone', 0.2, function () {
   if (!P.AD) return false;
-  const DATA = global.window.spirit.data, AD = P.AD;
+  const DATA = global.window.spirit.required.spirit.data, AD = P.AD;
   DATA.takeJob(job({ table: 'provider', id: 'KT', removed: true }));
   return !AD.row('provider', 'KT') && !('KT' in DATA.branchAt(P.BRANCH)) ? true : false;
 }, test.limit.quick);
 test.run('another table\'s rows, another module\'s, and a row with no id write nothing here', 0.2, function () {
   if (!P.AD) return false;
-  const DATA = global.window.spirit.data;
+  const DATA = global.window.spirit.required.spirit.data;
   const before = JSON.stringify(DATA.branchAt(P.BRANCH));
   DATA.takeJob(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
   DATA.takeJob(job({ table: 'provider', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));

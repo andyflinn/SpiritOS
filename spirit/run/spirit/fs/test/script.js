@@ -4,7 +4,7 @@
 // The tests of spirit/fs/script.js (spec: ./script.md; goal/G49.1, step 1, "migration scaffolding only"). The box: "spirit/fs/script.js is
 // the one entry for a node process that wants the fs dataset: it wraps spirit/fs/data.js and, in a child process, adds the
 // followStream call opaquely. A caller never knows how the dataset is created or updated"; "on the node's main process,
-// chokidar writes straight into spirit.data.fs; job.js's own tree (fsTree) goes"; "spirit.js knows nothing about fs
+// chokidar writes straight into spirit.required.spirit.data.fs; job.js's own tree (fsTree) goes"; "spirit.js knows nothing about fs
 // streaming"; and of the rows: "api folders are marked with a boolean api:true, if they contain api.js and data.js, api:false
 // for all files and folders without data.js or api.js", "both flags are set by the one writer of the dataset ... on the
 // folder's row, whenever api.js, data.js or a manifest in it comes or goes".
@@ -37,7 +37,7 @@ function caller() {
     "Promise.resolve(spirit.require('spirit/fs/script.js')).then(function () {",
     "  setInterval(function () {",
     "    let rows = null, ready = false;",
-    "    try { const V = spirit.data.viewAt(null, 'fs'); const b = V.branch('files') || {}; ready = V.ready('files') === true; rows = {}; asked.forEach(function (p) { rows[p] = b[p] || null; }); rows.count = Object.keys(b).length; } catch (e) { rows = null; }",
+    "    try { const V = spirit.required.spirit.data.viewAt(null, 'fs'); const b = V.branch('files') || {}; ready = V.ready('files') === true; rows = {}; asked.forEach(function (p) { rows[p] = b[p] || null; }); rows.count = Object.keys(b).length; } catch (e) { rows = null; }",
     "    process.stdout.write(JSON.stringify({ ready: ready, rows: rows }) + '\\n');",
     "  }, 500);",
     "});",
@@ -65,7 +65,7 @@ test.run('a scratch node comes up', 0.2, async function () {
 const up = function () { return !!W.node && W.node.up; };
 
 // ── one entry, the dataset behind it ──
-test.run('a child process that requires spirit/fs/script.js alone holds the whole tree in spirit.data.fs, marked complete', 0.4, async function () {
+test.run('a child process that requires spirit/fs/script.js alone holds the whole tree in spirit.required.spirit.data.fs, marked complete', 0.4, async function () {
   if (!up()) return false;
   W.kid = caller();
   const whole = await until(function () { return !!W.last && W.last.ready && W.last.rows && W.last.rows.count > 100; }, 30000);
@@ -127,7 +127,7 @@ test.run('spirit.js knows nothing of fs streaming: it names neither followStream
 // Andy: "the shared dataset needs to be complete, period.", "it is at publish-to-clients time that !fileServable be the
 // filter.", "it would be weird to deny a node process like backup knowledge of all files", "the node knows if a browser is
 // the loopback client, that's really the only place where fileServable() should be used to filter the publish stream",
-// "only brosers can be efectively gated from file access", "go". A node process's spirit.data.fs holds the server code and
+// "only brosers can be efectively gated from file access", "go". A node process's spirit.required.spirit.data.fs holds the server code and
 // the node's own state folder; a page's holds neither, while it holds a file a page may be served, so it was judged.
 test.run('a node process\'s dataset holds spirit/server/node.js, which no page may be served', 0.2, async function () {
   if (!up() || !W.kid) return false;
@@ -139,9 +139,9 @@ test.run('a node process\'s dataset holds the node\'s own state folder, spirit/s
 }, test.limit.slow);
 const P = {};
 test.after(function () { try { if (P.chrome && P.chrome.kid) P.chrome.kid.kill(); } catch (e) { /* gone */ } });
-const PAGE_ROWS = "(function () { try { var V = window.spirit.data.viewAt(null, 'fs'); var b = V.branch('files') || {}; return JSON.stringify({ ready: V.ready('files') === true, count: Object.keys(b).length, desk: !!b['spirit/app/desk/desk.js'], server: !!b['spirit/server/node.js'], state: Object.keys(b).some(function (k) { return k === 'spirit/state' || k.indexOf('spirit/state/') === 0; }) }); } catch (e) { return 'null'; } })()";
+const PAGE_ROWS = "(function () { try { var V = window.spirit.required.spirit.data.viewAt(null, 'fs'); var b = V.branch('files') || {}; return JSON.stringify({ ready: V.ready('files') === true, count: Object.keys(b).length, desk: !!b['spirit/app/desk/desk.js'], server: !!b['spirit/server/node.js'], state: Object.keys(b).some(function (k) { return k === 'spirit/state' || k.indexOf('spirit/state/') === 0; }) }); } catch (e) { return 'null'; } })()";
 async function pageRows() { try { return JSON.parse(await P.chrome.evaluate(PAGE_ROWS)); } catch (e) { return null; } }
-test.run('a page on the node holds the whole servable tree in its spirit.data.fs', 0.4, async function () {
+test.run('a page on the node holds the whole servable tree in its spirit.required.spirit.data.fs', 0.4, async function () {
   if (!up()) return false;
   P.chrome = await H.chromePage(H.findChrome());
   if (!P.chrome || P.chrome.error) return false;

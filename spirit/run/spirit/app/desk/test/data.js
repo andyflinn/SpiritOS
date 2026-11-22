@@ -6,7 +6,7 @@
 // section at the end: noTeamChat.
 // The tests of spirit/app/desk/data.js, and of no other module (spec: ./data.md;
 // goal/G41.11, goal/G41.24). The translator
-// runs as it does: in a window of its own beside the real spirit.data (spirit/data.js), which it writes into;
+// runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data.js), which it writes into;
 // the desk's rows are handed in as appServer's listener hands them, jobs of module spirit/app/desk.
 
 const fs = require('fs');
@@ -25,12 +25,12 @@ function world() {
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  const D = win.spirit.data;
+  const D = win.spirit.required.spirit.data;
   let n = 0;
-  const X = ((win.spirit.data || {}).desk || {}).data;
+  const X = ((win.spirit.required.spirit.data || {}).desk || {}).data;
   // THE ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY SERVER-NODE-ID at
   // it's lowest level."): a row comes as appServer hands it, with its sender's key (take(job, key)); every read is
-  // spirit.data.desk.data's, which alone names the desk's branches.
+  // spirit.required.spirit.data.desk.data's, which alone names the desk's branches.
   return { win: win, D: D, X: X,
     // A row as the stream hands it: a job of module spirit/app/desk whose app is the desk's publish, from SENDER.
     job: function (app, module) { D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.desk', data: {}, app: app }, SENDER); },
@@ -66,9 +66,9 @@ test.run('the desk family\'s api.js holds its verbs alone, with no cache', 0.2, 
 }, test.limit.quick);
 
 // Its translator is tested below, run as the page and the subscribing appServer run it; without the file there is none.
-test.run('with spirit.data it answers the desk family\'s data with published and took', 0.2, function () {
+test.run('with spirit.required.spirit.data it answers the desk family\'s data with published and took', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
-  // it registers on spirit.data
+  // it registers on spirit.required.spirit.data
   w = world();
   return (!!w.X && typeof w.X.published === 'function' && typeof w.X.took === 'function') ? true : false;
 }, test.limit.quick);

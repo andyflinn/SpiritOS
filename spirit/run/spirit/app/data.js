@@ -1,19 +1,19 @@
 'use strict';
 // spirit/run/spirit/app/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S APPS, IN THE app FAMILY'S OWN FOLDER (goal/G43.2). A page loads it through
-// its api.js (spirit/app/api.js), the one file that requires it; it runs the translator into that page's spirit.data, under the node that served the rows.
+// its api.js (spirit/app/api.js), the one file that requires it; it runs the translator into that page's spirit.required.spirit.data, under the node that served the rows.
 //
-// THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the app row and list) asks spirit.data.app.data
+// THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the app row and list) asks spirit.required.spirit.data.app.data
 // (below), never a branch by name.
 //   apps   key -> { key, label, icon, active, shell, intrinsic, nodeMount }, what app.search answered (seated by the list that is a view of it), and the
 //          whole table the apps news of the node's own job spirit.app holds (spirit/app/script.js): a key it no longer names is gone.
 // Every event ends in set or del; it asks nothing.
 (function family() {
   var APPS = 'apps';
-  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('app', function () {
     var HOME = D.viewAt(null, 'app');
     D.addTranslator({

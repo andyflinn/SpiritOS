@@ -82,7 +82,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
       function follow(spec, name) {
         // Asked of the agent family's cache, which alone names its addresses: its table's branch, watch(id, fn)
         // (spirit/app/agent/data.js).
-        var B = (((window.spirit.data || {}).agent || {}).data || {})[spec.table];
+        var B = (((window.spirit.required.spirit.data || {}).agent || {}).data || {})[spec.table];
         if (!B) return function () {};
         return B.watch(spec.id, function (value) {
           if (value === undefined) { tabs.close(name); return; }
@@ -97,7 +97,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
           var adding = !s.id;
           var name = adding ? s.table + '/new' + (++unsaved) : (s.chat ? 'chat/' : s.table + '/') + s.id;
           var T = agentAt('spirit.app.agent.element.table.tableElement');
-          var kept = !adding && T && window.spirit.data ? window.spirit.data.getPath(T.branchOf(s.table) + '/' + s.id) : null;
+          var kept = !adding && T && window.spirit.required.spirit.data ? window.spirit.required.spirit.data.getPath(T.branchOf(s.table) + '/' + s.id) : null;
           var off = null;
           tabs.add({ name: name, label: adding ? 'new ' + s.table + '*' : header(s, Object.assign({}, s.row || {}, kept || {})), closable: true, mount: function (box) {
             // Once, with the tab: a press on a row already open adds nothing here.

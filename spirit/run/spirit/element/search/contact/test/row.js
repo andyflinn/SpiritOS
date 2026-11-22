@@ -62,12 +62,12 @@ test.run('the contact row runs on a window of its own, with the data set and the
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.node = { key: NODE_KEY };
-  window.spirit.data.homeNode(NODE_KEY);
+  window.spirit.required.spirit.data.homeNode(NODE_KEY);
   load(path.join(JS, 'row.js'));
   load(path.join(JS, 'search', 'contact', 'row.js'));
   C = window.spirit.element.spirit.element.search.contact.row;
-  D = window.spirit.data;
-  CD = ((window.spirit.data || {}).contact || {}).data;
+  D = window.spirit.required.spirit.data;
+  CD = ((window.spirit.required.spirit.data || {}).contact || {}).data;
   // What the row asked as it loaded; the runner's own asks after this test are not the row's.
   loaded = required.slice();
   // The direct writes below are the contact family's own view of the home node, as its manager files them.
@@ -101,7 +101,7 @@ test.run('a row carrying publicKey instead of key is keyed by it', 0.2, function
   const byPublic = C.create({ publicKey: 'K9', keep: true });
   return byPublic.key === 'K9' ? true : false;
 }, test.limit.quick);
-test.run('the row requires the contact interface spirit/contact/api.js, which puts the contact family\'s data in spirit.data on the page', 0.2, function () {
+test.run('the row requires spirit/contact/api.js, which puts the contact family\'s data in spirit.required.spirit.data on the page', 0.2, function () {
   return required.indexOf('spirit/contact/api.js') !== -1 && CD && typeof CD.contact === 'function' ? true : false;
 }, test.limit.quick);
 

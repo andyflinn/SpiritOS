@@ -16,11 +16,11 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   // the public key of its identity file), a key in its shadow roll (the seen table of its node.db, opened read-only once and
   // kept); a tree with no node checks the form only. A store busy for a moment lets the key through rather than stop the
   // call. ON A PAGE, ITS CACHE (Andy: "the shadow roll is in the browser cache as soon as the contact api is loaded"): the
-  // page's own node key, or a contact spirit.data.contact.data holds; until the contact api is loaded, the form decides.
+  // page's own node key, or a contact spirit.required.spirit.data.contact.data holds; until the contact api is loaded, the form decides.
   var knows;
   var ownOnDisc = '';
   function onPage() {
-    var C = root && root.spirit && root.spirit.data && root.spirit.data.contact && root.spirit.data.contact.data;
+    var C = root && root.spirit && root.spirit.required.spirit.data && root.spirit.required.spirit.data.contact && root.spirit.required.spirit.data.contact.data;
     if (!C || typeof C.contact !== 'function') return null;
     return function (k) { var N = root.spirit.node; return (N && N.key === k) || !!C.contact(k); };
   }

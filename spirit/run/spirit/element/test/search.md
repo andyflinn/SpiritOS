@@ -46,9 +46,9 @@ draws and ranks.
   - A row the words miss stays, last, at 0.
 - **What the words are matched against**:
   - `score(row, values)` replaces the match when it answers a value. A null or undefined answer falls back to the match.
-  - Otherwise the whole row, as cached in `spirit.data`, its fields not shown too: with columns or without, and a
+  - Otherwise the whole row, as cached in `spirit.required.spirit.data`, its fields not shown too: with columns or without, and a
     `matched(row)` a list hands is not used (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too,
-    and search the whole row, as cached in spirit.data."*).
+    and search the whole row, as cached in spirit.required.spirit.data."*).
 - **Without words**:
   - With `sort` naming a column that has a `sort`, the rows go by that column, ascending or descending.
     - `text` compares case-insensitively.
@@ -64,9 +64,9 @@ draws and ranks.
 
 - **Drawing**:
   - It draws its search field, its list and its filters into the container.
-  - With `data`, a branch of spirit.data, it draws at once (goal/G48.4; the browser rule: *"its searches are each made
-    with a spirit.data branch, no rows of their own"*). Every list in this test is made with a branch of the real
-    spirit.data (`spirit/data.js`), the rows it shows written into that branch; it takes no rows of its own.
+  - With `data`, a branch of spirit.required.spirit.data, it draws at once (goal/G48.4; the browser rule: *"its searches are each made
+    with a spirit.required.spirit.data branch, no rows of their own"*). Every list in this test is made with a branch of the real
+    spirit.required.spirit.data (`spirit/data.js`), the rows it shows written into that branch; it takes no rows of its own.
   - Each row is a `tr` with `data-key`, its cells marked by `matchRanges`.
   - With no row to show, it shows `empty`, or "Nothing matches.".
 - **Typing**:
@@ -86,7 +86,7 @@ draws and ranks.
   - `ask(verb, args)` lends the wire. It resolves the answer's body.
   - It rejects a failed one with its error.
 - **The branch's rows**:
-  - The rows of its `data` branch (`spirit.data.branchAt`) join the cache.
+  - The rows of its `data` branch (`spirit.required.spirit.data.branchAt`) join the cache.
   - A row the page no longer has is gone from the list.
   - With `data`, the answers are seated into it, and its watch redraws.
 - **Headers**:
@@ -281,6 +281,6 @@ The box: *"Tile mode is a search's own: a search that has a tile.js, beside its 
 ## Every row of the branch its own line (goal/G47.4)
 
 Andy: *"i want to see every single fucking grant row that matches the fucking search, and not only one of many for a
-fucking family when the fucking verbs were fucking granted separetely."* Over the real spirit.data and the auth family's
+fucking family when the fucking verbs were fucking granted separetely."* Over the real spirit.required.spirit.data and the auth family's
 data (spirit/data.js, spirit/auth/data.js), two grants of one contact, filed apart in the branch by key and path but
 sharing the key field (the contact's key), are drawn as two rows.

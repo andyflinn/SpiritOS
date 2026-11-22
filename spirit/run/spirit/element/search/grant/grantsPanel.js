@@ -51,7 +51,7 @@
   }
 
   // THE NODE'S GRANTS, AS A GRANTS TABLE (goal/G43.24, moved here from the Grants app): kept by the auth family's cache
-  // manager (spirit.data.auth.data.grants, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
+  // manager (spirit.required.spirit.data.auth.data.grants, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
   // row arrives on the auth tables' job (table grant, gone when revoked, goal/G41.14). WHO ASKS FOR A CHANGE LISTENS FOR IT
   // (goal/G41.27): what grant and revoke send comes back through watch. The panel still knows no table of its own (Andy,
   // G41.16: "the callers ... should boody well know how to configure the damn grantsPanel element"): a caller picks this
@@ -62,9 +62,9 @@
     return { ok: false, code: String(b.code || ''), error: String(b.error || b.code || 'refused') };
   }
   var nodeGrants = {
-    get branch() { return window.spirit.data.auth.data.grants.branch; },
+    get branch() { return window.spirit.required.spirit.data.auth.data.grants.branch; },
     // watch(fn): fn(id + newline + path, row) on every grant kept or let go; answers its release.
-    watch: function (fn) { return window.spirit.data.auth.data.grants.watch(fn); },
+    watch: function (fn) { return window.spirit.required.spirit.data.auth.data.grants.watch(fn); },
     key: 'key',
     label: 'label',
     // auth.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
@@ -141,14 +141,14 @@
     // A FILTER CHOSEN ASKS THE NODE AGAIN (goal/G47.4, the box: "the search therefore must find any user that has grants for
     // any branch/verb combination"; Andy: "the more i modify the search, the more records will be cached"): the grants table
     // answers one packet, so the ID, branch and verb chosen go to its search as its text, and what comes is seated in the
-    // list's branch of spirit.data, where the list draws it and the exact filters pick from it.
+    // list's branch of spirit.required.spirit.data, where the list draws it and the exact filters pick from it.
     function chosenText() {
       return [filterId ? filterId.value : '', filterFamily ? filterFamily.family : '', filterFamily ? filterFamily.verb : '']
         .filter(function (w) { return !!w; }).join(' ');
     }
     function askAgain() {
       return Promise.resolve(g.search(chosenText())).then(function (got) {
-        var D = window.spirit.data;
+        var D = window.spirit.required.spirit.data;
         if (!gone && D && typeof D.seatRows === 'function' && got && Array.isArray(got.items)) D.seatRows(String(g.branch), got.items);
         redraw();
       }, function () { /* the cache stands; the next choice asks again */ });
@@ -213,7 +213,7 @@
       });
     }
 
-    // WHAT IT GRANTS, IT FOLLOWS IN spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
+    // WHAT IT GRANTS, IT FOLLOWS IN spirit.required.spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
     // changes shit it listens to fucking update via the spirit object"): the grants table's own watch (g.watch, its
     // cache manager's). A grant asked for counts as made once its row is there; the panel says how many of the bundle's
     // paths arrived.

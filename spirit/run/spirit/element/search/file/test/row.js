@@ -49,7 +49,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // goal/G43.32: every element places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  D = global.window.spirit.data;
+  D = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
@@ -63,7 +63,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
-  F = ((global.window.spirit.data || {}).fs || {}).data;
+  F = ((global.window.spirit.required.spirit.data || {}).fs || {}).data;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
   return true;

@@ -32,7 +32,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
   function nameOf(r, columns) { return A().nameOf(r, columns); }
   function columnsOf(table) { return A().columnsOf(table); }
   function search(host, o, more) { return A().search(host, o, more); }
-  function D() { return window.spirit.data; }
+  function D() { return window.spirit.required.spirit.data; }
   var STRETCH = 'width:100%;box-sizing:border-box';
   // EVERY ROW'S EDITOR OPENS ON ITS ICON (Andy: "the detail panel's first input will be the icon i choose for that row"),
   // chosen with the shell's icon selector (spirit/element/search/icon.js).
@@ -313,11 +313,11 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
         if (typeof container.dispatchEvent === 'function' && typeof CustomEvent === 'function') container.dispatchEvent(new CustomEvent('agent-row-added', { bubbles: true, detail: { table: o.table, id: o.id, row: a } }));
       });
     }
-    // THE ROW AS spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so. Asked of the
+    // THE ROW AS spirit.required.spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so. Asked of the
     // agent family's cache, which alone names its addresses: its table's branch, watch(id, fn) (spirit/app/agent/data.js).
     var unwatch = function () {};
     function attach() {
-    var B = window.spirit.data.agent.data[o.table];
+    var B = window.spirit.required.spirit.data.agent.data[o.table];
     unwatch = !B ? function () {} : B.watch(o.id, function (value) {
       if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
       row = value;

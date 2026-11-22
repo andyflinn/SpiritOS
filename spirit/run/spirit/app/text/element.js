@@ -70,7 +70,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
         // family's cache keeps it. Its own save is "saved" once the tree has it; any other change of the file is "changed on
         // disk".
         // Asked of the fs family's cache, which alone names its addresses: the tree's watch(path, fn) (spirit/fs/data.js).
-        off = S.data && S.data.fs && S.data.fs.data ? S.data.fs.data.watch(path, function (r) {
+        off = S.required.spirit.data && S.required.spirit.data.fs && S.required.spirit.data.fs.data ? S.required.spirit.data.fs.data.watch(path, function (r) {
           if (!r || gone || shown !== mine) return;
           status.textContent = saving ? 'saved' : 'changed on disk';
           saving = false;

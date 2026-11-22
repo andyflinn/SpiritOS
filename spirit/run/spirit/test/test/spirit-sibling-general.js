@@ -48,7 +48,7 @@ PLANT[LATE] = '\'use strict\';\nconst fs = require(\'fs\');\nrequire(\'../spirit
 // that writes and listens to nothing. Planted in a folder of their own, so the five above stay the garbage folder's.
 const LISTENS = 'spirit/zzListen/writer.js';
 const DEAF = 'spirit/zzListen/deaf.js';
-const WRITES = 'it sends writes and watches spirit.data';
+const WRITES = 'it sends writes and watches spirit.required.spirit.data';
 PLANT['spirit/zzListen/child.js'] = '\'use strict\';\nwindow.spirit.require(\'spirit/element/search.js\');\nfunction branchOf(n) { return \'zz/\' + n; }\nvar made = function (o) { return { data: branchOf(o.table) }; };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/child.js\', { create: made });\n';
 PLANT[LISTENS] = '\'use strict\';\nwindow.spirit.require(\'spirit/zzListen/child.js\');\nvar ask = { op: \'set\', table: \'zz\' };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/writer.js\', { create: function () { return ask; } });\n';
 PLANT[DEAF] = '\'use strict\';\nvar ask = { op: \'set\', id: \'zz\' };\nwindow.spirit.required.spirit.element.installSpiritElement(window.spirit, \'spirit/zzListen/deaf.js\', { create: function () { return ask; } });\n';

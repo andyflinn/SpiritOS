@@ -2,10 +2,10 @@
 
 What a client knows of a node's contacts, people and relays in one table (goal/G41.28, goal/G40.11), from the node's job
 `spirit.contact` (goal/G43.20, Q1: *"presence, a search hit or a row, each event only its own"*). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside
-the real `spirit/data.js`; the test reads through `spirit.data.contact.data` alone.
+the real `spirit/data.js`; the test reads through `spirit.required.spirit.data.contact.data` alone.
 
 - In node, `spirit.require('spirit/contact/api.js')` brings it, the one script that requires it, and it stands at
-  `spirit.data.contact.data`.
+  `spirit.required.spirit.data.contact.data`.
 - The **presence table** sets each key's `present`; a key the table drops goes back to not known (`present`
   undefined).
 - A **search hit** the network found is seated as a row; a **row of the one table** is merged in by its public key, and

@@ -94,7 +94,7 @@ test.run('Cancel ends its job, and the row offers Run again with the name alone'
   if (!running) return false;
   await press('zztask');
   const back = await waitFor('zztask', function (l) { return l.button === 'Run' && l.line === 'Zz Task'; }, 15000);
-  const gone = await chrome.evaluate('!window.spirit.data.job.data.job("spirit.app.zztask")');
+  const gone = await chrome.evaluate('!window.spirit.required.spirit.data.job.data.job("spirit.app.zztask")');
   return back && gone === true ? true : false;
 }, test.limit.long);
 // Andy: "run-apps usually self-delete if they're successful, if they fail, they stay and offer "delete"".
@@ -111,7 +111,7 @@ test.run('Delete takes the failed job away, and the row offers Run again', 0.4, 
   if (!failed) return false;
   await press('zzfail');
   const back = await waitFor('zzfail', function (l) { return l.button === 'Run' && l.line === 'Zz Fail'; }, 15000);
-  const gone = await chrome.evaluate('!window.spirit.data.job.data.job("spirit.app.zzfail")');
+  const gone = await chrome.evaluate('!window.spirit.required.spirit.data.job.data.job("spirit.app.zzfail")');
   return back && gone === true ? true : false;
 }, test.limit.long);
 test.run('destroyed, it leaves its container empty', 0.2, async function () {

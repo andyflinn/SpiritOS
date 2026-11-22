@@ -41,7 +41,7 @@ Moved here from `spirit/test/spirit.js` (goal/G47.1; Andy: *"11. is spirit-sibli
 
 goal/G47.1. wsl, of the model table: *"the list it mounts ... is what shows the result, so it does listen, through its child"*; cw: *"A child it mounts on a branch counts as its listening"*. In the same scratch tree, three planted elements in `spirit/zzListen/`: `child.js`, which loads the search element and makes its search on a branch worked out from the name it is handed (`data: branchOf(o.table)`); `writer.js`, which writes, requires `child.js` and hands it a branch by name (`table: 'zz'`); and `deaf.js`, which writes and has no watch, no search and no child.
 
-- Handed `writer.js`, "it sends writes and watches spirit.data" is green. Red on the rule before (it read only the element's own code).
+- Handed `writer.js`, "it sends writes and watches spirit.required.spirit.data" is green. Red on the rule before (it read only the element's own code).
 - Handed `deaf.js`, the same check is red.
 
 ## The branch part uses the node its run is handed

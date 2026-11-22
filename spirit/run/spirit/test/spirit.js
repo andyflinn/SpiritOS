@@ -281,11 +281,11 @@ test.run('the source sets the global before its first require', 0.2, function ()
 test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs', 0.2, function () {
   return !/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')) || false;
 }, test.limit.quick);
-// data: the cache, spirit.data (goal/G41.3); branchPath: the one family path function (goal/G41.12); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
+// data: the cache, spirit.required.spirit.data (goal/G41.3); branchPath: the one family path function (goal/G41.12); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'branchPath', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'branchPath', 'check', 'debug', 'error', 'escapeHtml', 'event', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
 test.run('in node the instance holds exactly its members, and the families it binds', 0.2, function () {
-  return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
+  return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
 // BRANCH (goal/G49.2; Andy: "assert the \"branch\"", "yes on the two verbs. fix it all."): the instance finds a branch's
 // path by branchPath, on a page as in node, and a bound branch's subscribe takes {branch, run?, since?}.
@@ -742,13 +742,13 @@ test.run('on a page, a script never required has no place in spirit.required', 0
 
 // ── 7b. spirit.js LOADS THE CACHE ITSELF (goal/G41.3, Q2) ──────────────
 // Andy: spirit.js "on start of this client functionality ... AUTOMATICALLY caches ALL streamed datasets", "yes." The
-// cache is spirit/data.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.
+// cache is spirit/data.js (spirit.required.spirit.data); spirit.js loads it when its client part starts, page and process alike.
 // 7b. spirit.js loads the cache itself, on a page and in a process
 function isCache(d) { return !!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'; }
-test.run('on a page, once spirit.js has started, spirit.data is the cache, with nothing else loading it', 0.2, async function () {
+test.run('on a page, once spirit.js has started, spirit.required.spirit.data is the cache, with nothing else loading it', 0.2, async function () {
   const cq = T.cq = page();
   try { await cq.spirit.start(); } catch (e) { /* the cache is the question here */ }
-  return isCache(cq.spirit.data) || false;
+  return isCache(cq.spirit.required.spirit.data) || false;
 }, test.limit.quick);
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the file tree's meaning is the files row element's, which
 // loads with a files element (rule/26); spirit.js loads the cache and no data script.
@@ -763,8 +763,8 @@ test.run('on a page spirit.js loads the cache and no element, and so no files ro
   const preloaded = T.cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/data\.js/.test(u) && /shell\//.test(u); });
   return !preloaded.length || false;
 }, test.limit.quick);
-test.run('in a process, requiring spirit.js gives spirit.data, the cache', 0.2, function () {
-  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'));", path.join(RUN, 'spirit', 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
+test.run('in a process, requiring spirit.js gives spirit.required.spirit.data, the cache', 0.2, function () {
+  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.required.spirit.data; process.stdout.write(String(!!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'));", path.join(RUN, 'spirit', 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
   return inProcess.stdout === 'true' || false;
 }, test.limit.quick);
 

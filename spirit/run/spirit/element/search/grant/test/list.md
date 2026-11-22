@@ -12,13 +12,13 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./grant.js`.
   with no grants table, it throws nothing and draws only a note that it is not configured.
 - It draws one probabilitySearch pane into `host`, and fills it as soon as it is drawn; given `face: 'dropdown'`, a closed
   field opening to the same list instead, `placeholder` and `pick` its own (box v123: every search has both).
-- It is a view of the branch its table names (`grants.branch`, a whole `spirit.data` path, goal/G41.28), which the
+- It is a view of the branch its table names (`grants.branch`, a whole `spirit.required.spirit.data` path, goal/G41.28), which the
   table's cache manager keeps: a grant landing there before any row is drawn is in the list.
 - Its search is the table's `search(text)`, the text trimmed, answered as a reply, handed to the probabilitySearch as
   its own data source (`options.search`), never as an api (goal/G43.24).
 - Its columns are `name` (whose grant), `path` and `revoke`, Revoke the rightmost. Each row is a grant row element (`spirit/element/search/grant/row.js`), handed
   the same table and `serves`.
-- It hands its search no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.data."*).
+- It hands its search no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.required.spirit.data."*).
 - `filters` are its own: the page hands them. So are `selectors`, handed to the search as they are, for its 🪣 row
   (goal/G41.26).
 - `refresh()` and `destroy()` reach the search element; `.list` is it.

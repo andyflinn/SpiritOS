@@ -24,7 +24,7 @@ judged in its rotate part (once `./nodeInfo-rotate.js`), the sections below.
   description slot, each made with its container alone (no api handed); each holds its own rule, check and save.
 - **The card**: it requires the node branch's interface (`spirit.require('spirit/node/api.js')`, which brings its data.js; no data.js
   itself), asks `spirit.node.card({})`
-  once and keeps the answer in `spirit.data.node.data.card` (goal/G41.28), from which each field draws itself. A refusal
+  once and keeps the answer in `spirit.required.spirit.data.node.data.card` (goal/G41.28), from which each field draws itself. A refusal
   is said in the node's words and nothing is kept; no answer is said as *node.card did not answer*.
 - **No key is shown** (goal/G40.10; Andy: *"remove ANY indication of keys from all user interfaces"*): neither the
   node's nor a relay's.

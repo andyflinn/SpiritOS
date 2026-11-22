@@ -13,7 +13,7 @@ Andy, box: *"i will track nameSpace claims."*
 - On a page `spirit.word.check` answers through a promise, since a page asks its node for each `word.json`, kept until the node's file stream says it changed; `spirit.word.changed(fn)` tells a listener when one does. `spirit/element/search/file/row.js` paints from these; its test judges them.
 - **No ask for a `word.json` that is not there** (goal/G43.32; cw measured on Andy's node 1821 requests on opening Files,
   1818 of them 404, all `fs.load` of a `word.json`; Andy: *"wsl, add a test to test/word.js to make sure this won't
-  happend again."*): on a page `word.js` asks only for a `word.json` the node's file list (`spirit.data.fs`) holds, and
+  happend again."*): on a page `word.js` asks only for a `word.json` the node's file list (`spirit.required.spirit.data.fs`) holds, and
   each of those once until the stream says it changed. The test plants `spirit/app/word.json` on a scratch node and makes
   80 checks along 8 paths: the planted word is found, no other `word.json` is asked for, and that one at most once.
 - `add('path.in.words', 'word')`, Andy: *"all, implement add()"*, answers a boolean. *"add('spirit.app', 'activate') would add the 'activate' to "run://spirit/app/word.json"."* The word goes in with the value `true`, the words already in the file stay, and a level with no `word.json` yet gets one.

@@ -5,7 +5,7 @@
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of the agent server's tables (goal/G41.28): job, model, persona and provider, each its own branch,
 // id -> the row, under the node that served it; the rows the server publishes merged in (goal/G41.16), and the reads the
-// tables' lists and editors ask. It runs as a page runs it: in a window of its own beside the real spirit.data
+// tables' lists and editors ask. It runs as a page runs it: in a window of its own beside the real spirit.required.spirit.data
 // (spirit/data.js), which it writes into; the rows are handed in as the stream hands them, jobs of module spirit.app.agent.
 // In node it comes with the family's api.js, spirit.require('spirit/app/agent/api.js'). One test.run per test (goal/G47.2).
 
@@ -28,7 +28,7 @@ let n = 0;
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.agent', data: {}, app: app }, from || HOME_KEY); };
 const at = function (table, id, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/agent/' + table + '/' + id); };
 
-test.run('loaded in a window beside the real spirit.data, the agent family\'s cache stands at spirit.data.agent.data', 0.2, function () {
+test.run('loaded in a window beside the real data set, the agent family\'s cache stands at spirit.required.spirit.data.agent.data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.
@@ -36,10 +36,10 @@ test.run('loaded in a window beside the real spirit.data, the agent family\'s ca
   try {
     vm.createContext(win);
     vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
-    win.spirit.data.homeNode(HOME_KEY);
+    win.spirit.required.spirit.data.homeNode(HOME_KEY);
     vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   } catch (e) { return false; }
-  W.D = win.spirit.data;
+  W.D = win.spirit.required.spirit.data;
   W.A = ((W.D || {}).agent || {}).data;
   return !!W.A || false;
 }, test.limit.quick);
@@ -160,10 +160,10 @@ test.run('a table\'s watch with no id and no function watches nothing and answer
 }, test.limit.quick);
 
 // ── in node, brought by its api.js (goal/G47.1: "every api.js requires it's companion data.js") ──
-test.run('in node, requiring the agent interface brings its data.js, standing at spirit.data.agent.data with row and branch', 0.2, async function () {
+test.run('in node, requiring the agent interface brings its data.js, at spirit.required.spirit.data.agent.data with row and branch', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.require('spirit/app/agent/api.js')); } catch (e) { return false; }
-  const A = s.data && s.data.agent && s.data.agent.data;
+  const A = s.required.spirit.data && s.required.spirit.data.agent && s.required.spirit.data.agent.data;
   return (!!A && typeof A.row === 'function' && typeof A.branch === 'function') || false;
 }, test.limit.quick);

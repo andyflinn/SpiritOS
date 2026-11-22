@@ -5,13 +5,13 @@
 // all data in one central location". The UI is a fast reading of this; nothing here touches the page, so it runs and
 // tests in node.
 //
-//   spirit.data     HELPER FUNCTIONS AND ONE OBJECT PER FAMILY (goal/G43.7; Andy, the box: "this object has only helper functions
-//                   and object <name> for every application"). spirit.data.<name>.data is what the family's data.js answers,
-//                   its reads; spirit.data.<name>.cache is its rows, a level per node (Q5: "yes."), the same in a page and in an
+//   spirit.required.spirit.data     HELPER FUNCTIONS AND ONE OBJECT PER FAMILY (goal/G43.7; Andy, the box: "this object has only helper functions
+//                   and object <name> for every application"). spirit.required.spirit.data.<name>.data is what the family's data.js answers,
+//                   its reads; spirit.required.spirit.data.<name>.cache is its rows, a level per node (Q5: "yes."), the same in a page and in an
 //                   appServer in client mode: cache[node][branch][row] -> value. node is the key of the node that served the
 //                   rows, in base64url (Q8: "yes."), so neither a path nor appServer's cache file name splits on its / or +.
 //   makeFamily(name, make)  the one way a family's data.js stands: make() runs once, for this data set, translates what it keeps
-//                   and answers its reads, and they stand at spirit.data.<name>.data. Answers the family.
+//                   and answers its reads, and they stand at spirit.required.spirit.data.<name>.data. Answers the family.
 //   a path          '<node>/<family>/<branch>/<row>' (a row may hold slashes, a file's path does); '<node>/<family>/<branch>'
 //                   is the branch. The tree is addressed through the family's own view, at(node, family), below.
 //   setPath(path, v)    the one write
@@ -45,7 +45,7 @@
 // bounding those browser site caches completely. no cache bounding on the browser side."). A PROCESS'S CACHE IS A NODE
 // STORE (goal/G41.3, Q2): past its byte cap it sheds the oldest writes first, each told as a delete.
 (function (root) {
-  var families = Object.create(null);  // name -> spirit.data.<name>
+  var families = Object.create(null);  // name -> spirit.required.spirit.data.<name>
   var watchers = Object.create(null);   // path -> [fn]
   var readyOf = Object.create(null);
   var quiet = Object.create(null);      // a type being filled without telling (the tree arriving)
@@ -209,7 +209,7 @@
   }
 
   // ── THE SERVER NODE (goal/G41.28) ─────────────────────────────────────────────────────────────────────────────────
-  // A public key as data names it: base64url (Andy, Q8: "Shall the server key in spirit.data and in the cache file name be
+  // A public key as data names it: base64url (Andy, Q8: "Shall the server key in spirit.required.spirit.data and in the cache file name be
   // base64url, - for + and _ for /?" "yes."), without the padding, as Buffer's base64url writes it.
   function nodeId(key) { return String(key || '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   var homeNode = '';
@@ -314,7 +314,7 @@
   // Every job is handed over, data or none: each translator reads what it needs (the jobs family keeps them whole).
   // EVERY SERVER'S remote ROW, FILED HERE ONCE (goal/G47.5; Andy: "all, agreed. spirit/data.js", not a server's own data.js,
   // which "would have to be duplicated for all servers"): a server publishes { remote: { current, items, more } } as a job of
-  // its module, spirit.app.<name>; it is kept as spirit.data.<name>.remote, a later row replacing it, and told to whoever
+  // its module, spirit.app.<name>; it is kept as spirit.required.spirit.data.<name>.remote, a later row replacing it, and told to whoever
   // watches remote/<name> (the title bar's Remote dropdown, spirit/element/panel.js).
   function remoteOf(job) {
     var r = job && job.app && job.app.remote;
@@ -361,7 +361,7 @@
   }
 
   // ── searchDataSet (goal/G33.7, box v9) ──────────────────────────────────────────────────────────────────────────
-  //   Andy, in the item's box: "a cache-only search in the component that keeps the data set (spirit.data), so it
+  //   Andy, in the item's box: "a cache-only search in the component that keeps the data set (spirit.required.spirit.data), so it
   //   serves the page and every server alike. It asks nobody and ranks by probability across every table it holds,
   //   returning the most relevant rows whatever table they are in, bounded like every search."
   //
@@ -419,7 +419,7 @@
   }
 
   // A HELPER'S NAME HOLDS A CAPITAL, so it is no word and no family can land on it (goal/G43.7; Andy: "all the helperFunctions in
-  // objects like spirit.data should potential "words" the should have a capital in it"). A view at() hands back is no such object.
+  // objects like spirit.required.spirit.data should potential "words" the should have a capital in it"). A view at() hands back is no such object.
   var api = { makeFamily: family, getPath: get, setPath: set, mergePath: merge, delPath: del, watchPath: watch, rowsOf: rows, seatRows: seat,
     addTranslator: translate, setQuietly: quietly, readyBranch: ready, branchAt: branch, searchAll: search, forgetAll: forget, byteCap: cap,
     recordPaths: recording, nodeId: nodeId, homeNode: home, viewAt: at, allBranches: branches,
@@ -463,6 +463,11 @@
       onConnection: function (up) { followers.slice().forEach(function (fn) { try { fn(up); } catch (e) { /* one reader's fault */ } }); } });
   }
   api.followStream = follow;
-  (root.spirit = root.spirit || {}).data = api;
+  // ONE PLACE, spirit.required.spirit.data (goal/G43.32, G49.4; Andy: "if all of data functionality is already in
+  // spirit.required.data, why the fuck would it waste more namespace as spirit.data?"): in node the loader places the exports
+  // there; on a page this file has no module box, so it places itself, and the loader answers what stands there.
+  var sr = (root.spirit = root.spirit || {});
+  var req = (sr.required = sr.required || {});
+  (req.spirit = req.spirit || {}).data = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof window !== 'undefined' ? window : globalThis));

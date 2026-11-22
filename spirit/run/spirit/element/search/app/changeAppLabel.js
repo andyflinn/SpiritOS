@@ -5,7 +5,7 @@
 //
 //   spirit.element.spirit.element.search.app.changeAppLabel.create(host, { key }) -> { destroy() }
 //
-// Its input holds the row's label in spirit.data.app and follows it while it is not being typed in; Change asks the node,
+// Its input holds the row's label in spirit.required.spirit.data.app and follows it while it is not being typed in; Change asks the node,
 // spirit.app.labelApp, and the row the stream then brings redraws it.
 (function () {
   window.spirit.require('spirit/element/rowForm.js');
@@ -20,7 +20,7 @@
     // NO APP NAMED, NOTHING TO FOLLOW (goal/G41.19, box v23: an element missing its options "mounts and says it is not
     // configured"): it watches no row and asks nothing.
     if (!key) { host.textContent = 'No app named: not configured.'; return { destroy: function () { host.innerHTML = ''; } }; }
-    function row() { var A = S.data.app && S.data.app.data; return A ? A.rows()[key] || null : null; }
+    function row() { var A = S.required.spirit.data.app && S.required.spirit.data.app.data; return A ? A.rows()[key] || null : null; }
     // ITS CHANGE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, so Change is busy until the node answers.
     var input = null;
@@ -39,11 +39,11 @@
     }
     function ask() {
       S.ready.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
-        if (!gone) S.data.seatRows(S.data.app.data.branch, got.items);
+        if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
-    var offRow = S.data.app.data.watch(key, paint);
-    var offAll = S.data.app.data.watch(function (k) { if (!k) ask(); });
+    var offRow = S.required.spirit.data.app.data.watch(key, paint);
+    var offAll = S.required.spirit.data.app.data.watch(function (k) { if (!k) ask(); });
     if (!row()) ask();
     paint();
     return { destroy: function () { gone = true; offRow(); offAll(); host.innerHTML = ''; } };

@@ -3,17 +3,17 @@
 // WHAT A CLIENT KNOWS OF THE ICON SET, IN THE icons FAMILY'S OWN FOLDER (goal/G43.19; the box: "it implements a
 // database-table interface, also reflected in api.js and data.js"). A page loads it through its api.js (spirit/app/icons/api.js), the one file that requires it.
 //
-// THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the Icons face) asks spirit.data.icons.data.
+// THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the Icons face) asks spirit.required.spirit.data.icons.data.
 //   icons   glyph -> { glyph, keywords }, what icon.search answered (seated by the list that is a view of it), and every
 //           row a run publishes: { icons: { row } } for a row added or changed, { icons: { glyph, removed: true } } for one
 //           gone, as the job's app of spirit.app.icons (the box, 10: "data.js on every open page follows that one job").
 // Every event ends in set or del; it asks nothing.
 (function family() {
   var ICONS = 'icons';
-  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.data;
+  var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('icons', function () {
     var HOME = D.viewAt(null, 'icons');
     D.addTranslator({

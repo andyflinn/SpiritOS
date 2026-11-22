@@ -5,7 +5,7 @@
 // implied by MANY design decisions."). Its contract and its test: ./test/job.md and ./test/job.js.
 //
 // A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/job/list.js, WHICH IT LOADS ITSELF (rule/26), as the
-// bundle selector is over its list. The list draws the node's jobs from spirit.data, each row ./job/row.js, and a
+// bundle selector is over its list. The list draws the node's jobs from spirit.required.spirit.data, each row ./job/row.js, and a
 // press opens ./job/detail.js over it.
 //
 //   spirit.element.spirit.element.search.job.create(container, options) -> root

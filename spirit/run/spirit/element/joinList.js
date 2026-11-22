@@ -136,7 +136,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       return S.require('spirit/job/api.js');
     }).then(function () {
       if (gone) return;
-      var J = ((S.data || {}).job || {}).data;
+      var J = ((S.required.spirit.data || {}).job || {}).data;
       if (!J) return;
       // THE JOIN STEPS, news of spirit (goal/G43.20): { join }.
       var take = function (j) { if (j && j.id === 'spirit' && j.data && j.data.join) { job = j.data.join; show(); } };

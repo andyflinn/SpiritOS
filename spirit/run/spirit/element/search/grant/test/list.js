@@ -70,7 +70,7 @@ test.run('made with no grants table, it is refused, and draws nothing', 0.2, fun
 test.run('it draws one probabilitySearch into its host, and fills it as soon as it is drawn', 0.2, async function () {
   if (noList()) return false;
   searched = [];
-  // Its branch a whole spirit.data path, node/family/branch (goal/G41.28), the node's key in base64url.
+  // Its branch a whole spirit.required.spirit.data path, node/family/branch (goal/G41.28), the node's key in base64url.
   AGENT = { branch: 'nOdE-key_one/agent/grant', key: 'job_id', label: 'job',
     search: function (text) { searched.push(text); return Promise.resolve({ items: [{ key: 'J1\nfs.search', label: JSON.stringify({ job_id: 'J1', path: 'fs.search', job: 'Night' }) }], more: false }); },
     revoke: function () { return Promise.resolve({}); }, watch: function () { return function () {}; } };
@@ -113,7 +113,7 @@ test.run('each row is a grantElement, handed the same table and nothing that jud
   return el && el.kind === 'grant' && el.opts.grants === AGENT && !('serves' in el.opts) ? true : false;
 }, test.limit.quick);
 // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
-// cached in spirit.data."): the list hands its search no matched() of its own.
+// cached in spirit.required.spirit.data."): the list hands its search no matched() of its own.
 test.run('it hands its search no matched function, so the whole row is matched', 0.2, function () {
   if (!l) return false;
   return typeof o.matched !== 'function' ? true : false;
@@ -142,16 +142,16 @@ test.run("it is a pane unless told otherwise; given face dropdown, a dropdown, i
 // an empty list holds its first grant (goal/G41.16), its cache manager's (goal/G41.28)
 // Found by cw live: a list with no rows drawn never heard its first grant. Since goal/G41.28 a table's rows are its
 // family's cache manager's from the page's start: here the real data set and the auth family's manager, a list made
-// for the node's grants with no row drawn, and its first grant taken by spirit.data.
+// for the node's grants with no row drawn, and its first grant taken by spirit.required.spirit.data.
 test.run('a list made with no row drawn is a view of the branch its first grant lands in', 0.2, async function () {
   if (noList()) return false;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  const DATA = global.window.spirit.data;
+  const DATA = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   global.window.spirit.node = { key: 'nOdE+key/one==' };
   DATA.homeNode('nOdE+key/one==');
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'auth/data.js' });
-  const A = ((global.window.spirit.data || {}).auth || {}).data;
+  const A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   const GRANTS = { get branch() { return A.grants.branch; }, key: 'key', label: 'label', search: function () { return Promise.resolve({ items: [], more: false }); },
     revoke: function () { return Promise.resolve({}); }, watch: function (fn) { return A.grants.watch(fn); } };
   const n = lists.length;

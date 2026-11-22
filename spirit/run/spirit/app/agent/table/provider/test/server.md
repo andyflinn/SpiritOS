@@ -63,9 +63,9 @@ which will never reach the browser or any place outside of the agent process exc
 - **elementRow.js requires the agent family's api.js, whose data.js takes the provider table's rows from the stream**
   (goal/G41.16; Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28; goal/G47.1: only an api.js requires its
   companion data.js): its page files require no data script; the row element requires
-  `spirit.require('spirit/app/agent/api.js')`, which brings `spirit/app/agent/data.js`, and `spirit.data.agent.data.branch('provider')` is the home node's `<node>/agent/provider`; a row
+  `spirit.require('spirit/app/agent/api.js')`, which brings `spirit/app/agent/data.js`, and `spirit.required.spirit.data.agent.data.branch('provider')` is the home node's `<node>/agent/provider`; a row
   of the agent stream (`{ agent: { table: 'provider', row } }`, module `spirit.app.agent`) lands at `<node>/agent/provider/<id>`,
-  read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
+  read through `spirit.required.spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
 ## Requirements (goal/G41.21, box v17)

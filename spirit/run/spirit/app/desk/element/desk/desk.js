@@ -9,7 +9,7 @@
 //
 // The face of the desk server (spirit/run/spirit/app/desk): the List tab. Every read and every press is a desk.<verb> ask on the flat
 // apiDoor (deskAsk); what changes arrives as the desk server's publish, kept by the desk family's cache manager in
-// spirit.data.desk.data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
+// spirit.required.spirit.data.desk.data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
 // id (goal/G<n> or goal/G<n>.<m>) and opens the item's dialog (spirit/app/desk/element/deskDetails).
 
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9; goal/G43.27, requirement 23): the page is an element of the new
@@ -51,7 +51,7 @@ function deskHear(fn) {
   deskHeard.push(fn);
   if (!deskHearing) {
     deskHearing = Promise.resolve(S.require('spirit/app/desk/api.js')).then(function () {
-      S.data.addTranslator({
+      S.required.spirit.data.addTranslator({
         onJob: function (job) {
           if (!(job && job.module === 'spirit.app.desk' && job.app && typeof job.app === 'object')) return;
           deskHeard.slice().forEach(function (h) { try { h(job.app); } catch (e) { /* one listener's fault */ } });
@@ -120,11 +120,11 @@ var deskVia = {
 };
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the
 // content to be drawn." "no pulling". ITS ROWS ARE spirit.data's (goal/G41.28; Andy: "the FUCKING desk cache is NOT to
-// be found in spirit.data.data.desk... something keeps throwing out that shit", and "doesn't the fucking ...
+// be found in spirit.required.spirit.data.data.desk... something keeps throwing out that shit", and "doesn't the fucking ...
 // clientCacheManager.js take care of that"): the desk's rows the cache manager keeps, every goal pushed and every
-// search answer seated there, read through spirit.data.desk.data. The page keeps no rows of its own, so a search that answers
+// search answer seated there, read through spirit.required.spirit.data.desk.data. The page keeps no rows of its own, so a search that answers
 // few rows drops none; what the toggles leave out is decided here, in the order goal, then its members.
-function deskKept() { return (typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).desk || {}).data) || null; }
+function deskKept() { return (typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {}).desk || {}).data) || null; }
 function deskIdOrder(a, b) {
   var x = String(a.id).match(/\d+/g) || [];
   var y = String(b.id).match(/\d+/g) || [];
@@ -276,8 +276,8 @@ function deskSearchItems() {
   };
   return deskAsk('items.search', { text: text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
     .then(function (r) {
-      // The answer seated in the desk's branch of spirit.data, beside what is there: nothing held is dropped.
-      var D = window.spirit && window.spirit.data;
+      // The answer seated in the desk's branch of spirit.required.spirit.data, beside what is there: nothing held is dropped.
+      var D = window.spirit && window.spirit.required.spirit.data;
       var K = deskKept();
       if (forCurrent) ((r && r.items) || []).forEach(function (it) { try { var row = JSON.parse(it.label); if (row.goal === '' && !deskSearchedGoal) deskSearchedGoal = row.id; } catch (e) { /* not a row */ } });
       if (D && K && typeof D.seatRows === 'function') D.seatRows(K.branch, (r && r.items) || []);
@@ -346,7 +346,7 @@ function deskOnPublished(obj) {
 //   them itself at mount: "it is ok for apps to know about other apps and their shared elements. i like this solution."
 //   Once per page: a second app finds each there.
 // THE DESK'S TRANSLATOR (goal/G33.3, goal/G41.24): the desk family's data.js, from the node that served this page;
-// spirit.data keeps the current goal for this page and the item dialog, as deskClient keeps it in node. Loaded once.
+// spirit.required.spirit.data keeps the current goal for this page and the item dialog, as deskClient keeps it in node. Loaded once.
 var DESK_DATA = '/spirit/app/desk/data.js';
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21: "always look for existing code", and Andy, on the add-rule
 // dropdown that sometimes never appeared: "FIX IT"): spirit.require, never a script tag of its own. It loads a part once
@@ -382,13 +382,13 @@ function deskWatchIcons(root) {
   if (typeof MutationObserver === 'function' && root) new MutationObserver(function () { deskPaintIcons(root); }).observe(root, { childList: true, subtree: true });
 }
 function deskLoadData() {
-  if (typeof window === 'undefined' || (window.spirit && ((window.spirit.data || {}).desk || {}).data)) return;
+  if (typeof window === 'undefined' || (window.spirit && ((window.spirit.required.spirit.data || {}).desk || {}).data)) return;
   deskNeed(DESK_DATA);
 }
 // Everything kept of whole items is forgotten after a gap: what was published while the stream was down was never heard.
 function deskForgetKept() {
   // Asked of the cache's manager (goal/G41.28): it names its branches, this page does not.
-  var K = typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).desk || {}).data;
+  var K = typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {}).desk || {}).data;
   if (K && typeof K.forgetAll === 'function') K.forgetAll();
 }
 // The ids a publish changes rows of.
@@ -508,7 +508,7 @@ function deskAddGoal() {
 // ── THE LIST, ON THE PROBABILITY SEARCH (goal/G40.12) ─────────────────
 //
 // The element in its pane face (spirit/element/search.js): the search box, the filters in the row above it, its
-// one call on the wire. IT IS A VIEW OF THE DESK'S BRANCH OF spirit.data (goal/G41.28), the cache manager's (its data
+// one call on the wire. IT IS A VIEW OF THE DESK'S BRANCH OF spirit.required.spirit.data (goal/G41.28), the cache manager's (its data
 // option, deskKept().branch), which every publish keeps current; items.search's answers to the words are seated in it. Each row is a row element
 // (spirit/element/row.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
 // repaints the cells that changed. A press in a row is the page's (data-press), a press on the row opens it.
@@ -704,7 +704,7 @@ function deskLoad() {
 //   Andy: "how can i trust the copy mechanist when i cant see it working".
 // The backup server's status.get: its last check and last copy, marked red
 // when something was closed after the last check. Kept by the backup family's
-// cache manager (goal/G41.28), spirit.data.backup.data; the line follows its watch.
+// cache manager (goal/G41.28), spirit.required.spirit.data.backup.data; the line follows its watch.
 // THROUGH ITS INTERFACE (goal/G47.1; Andy: "every api.js requires it's companion data.js, and is the only script to require
 // that data.js"): the backup family's api.js, which brings its data.js. A node with no backup server serves no interface
 // for it: then nothing is asked and no line is drawn.
@@ -717,7 +717,7 @@ function deskBackupPaint() {
 }
 function deskAskBackup() {
   return deskNeed(DESK_BACKUP_API).then(function () {
-    var B = ((window.spirit.data || {}).backup || {}).data;
+    var B = ((window.spirit.required.spirit.data || {}).backup || {}).data;
     if (!B) return;
     if (!deskBackupWatched) deskBackupWatched = B.watch(deskBackupPaint);
     return Promise.resolve(deskVia.verb('backup.status.get', {})).then(function (r) {
@@ -726,7 +726,7 @@ function deskAskBackup() {
   }, function () { /* no backup server on this node: no line */ });
 }
 function deskBackupHtml() {
-  var B = typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).backup || {}).data;
+  var B = typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {}).backup || {}).data;
   var deskBackup = B ? B.status() : null;
   if (!deskBackup) return '';
   var stale = false;

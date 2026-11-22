@@ -81,7 +81,7 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream's rows land there.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  DATA = global.window.spirit.data;
+  DATA = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
@@ -95,7 +95,7 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.element || {}).spirit || {}).element || {};
-  A = ((global.window.spirit.data || {}).auth || {}).data;
+  A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.require).
   loaded = required.slice();
