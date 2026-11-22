@@ -1506,3 +1506,17 @@ function mountPart() {
   }, test.limit.slow);
 }
 mountPart();
+
+// ── job.js's app checks read the common file/folder cache (goal/G49.2) ──
+// Andy: "portion to use the common file/folder cache?", "fix job.js"; G49.1's box: "job.js's manifest and api.js checks"
+// move onto spirit/fs.js, and "each disc scan goes in the same commit that moves its client onto spirit/fs.js". job.js's
+// code, comments left out, asks the dataset whether an app's files are there and which folders spirit/app/ holds: no
+// readdirSync of spirit/app/ and no existsSync of an app's <name>.js, api.js or data.js. Its statSync stays: it is the
+// watcher's own, which feeds the dataset. A manifest's or a node.json's content is no row of the cache, so those reads stay.
+const JOB_CODE = (function () { try { return code(fs.readFileSync(path.join(RUN, 'spirit', 'job.js'), 'utf8')); } catch (e) { return ''; } })();
+test.run('spirit/job.js lists no folder on disc: no readdirSync', 0.2, function () {
+  return (JOB_CODE.length > 0 && !/\breaddirSync\b|\breaddir\(/.test(JOB_CODE)) || false;
+}, test.limit.quick);
+test.run('spirit/job.js asks the disc for no file: no existsSync', 0.2, function () {
+  return (JOB_CODE.length > 0 && !/\bexistsSync\b/.test(JOB_CODE)) || false;
+}, test.limit.quick);
