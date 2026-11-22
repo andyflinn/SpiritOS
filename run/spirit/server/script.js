@@ -34,7 +34,9 @@ function fileOf(url) {
   if (parts.some(function (s) { return s === '..' || s.toLowerCase() === NEVER_SERVED; })) return null;
   let full = path.resolve(ROOT, parts.join(path.sep));
   if (full !== ROOT && full.indexOf(ROOT + path.sep) !== 0) return null;
-  try { if (fs.statSync(full).isDirectory()) full = path.join(full, 'index.html'); } catch (e) { /* not there: answered 404 */ }
+  // A folder is asked by its address with the slash, /spirit/, never /spirit (Andy: "the only URL that should work is:
+  // 127.0.0.1:11111/spirit/   or 127.0.0.1:11111/spirit/index.html").
+  try { if (fs.statSync(full).isDirectory()) { if (p.slice(-1) !== '/') return null; full = path.join(full, 'index.html'); } } catch (e) { /* not there: answered 404 */ }
   return full;
 }
 
