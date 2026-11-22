@@ -1204,7 +1204,7 @@ function oneFile(P) {
   // <address>: every interface it needs, it requires itself
   if (mounted && !(P.usedFamilies || []).length) {}
   else {
-    test.run('every BRANCH it calls or watches, it required that family\'s interface itself', 0.8, function () {
+    test.run('every BRANCH it calls or watches, it required that BRANCH\'s interface itself', 0.8, function () {
       if (notDrawn()) return false;
       return !P.unloaded.length || false;
     }, test.limit.quick);
