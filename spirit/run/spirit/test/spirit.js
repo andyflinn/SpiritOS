@@ -130,8 +130,11 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     const two = await Promise.all([fams[0].hello({ name: 'bert' }), fams[1].hello({ name: 'carl' })]);
     out.two = two.map(function (r) { return r.said; });
     out.bound = fams[0] === fams[1] && fams[0] === s.demo && typeof s.demo.hello === 'function';
-    // goal/G43.32, decided 8: the api.js required stands at spirit.required.spirit.<branch-path>.api as well.
-    out.apiPlaced = !!(s.required && s.required.spirit && s.required.spirit.demo && s.required.spirit.demo.api !== undefined);
+    // ONE PLACE FOR A BRANCH (goal/G49.6; Andy, of G40.6 beside G43.32/G49.5: "AND WHICH FUCKING RULING DO YOU THINK
+    // APPLIES??????", the later: "spirit.require() places the loaded script at the exact same path"): its verbs stand at
+    // spirit.required.spirit.<branch-path>.api, the require answers that, and nothing of it stands on spirit.<branch>.
+    const placed = s.required && s.required.spirit && s.required.spirit.demo && s.required.spirit.demo.api;
+    out.onePlace = !!placed && typeof placed.hello === 'function' && fams[0] === placed && !Object.prototype.hasOwnProperty.call(s, 'demo');
     out.hi = (await s.demo.hi('dave')).said;
     out.dotted = typeof s.demo.lineWrite === 'function' && s.demo.lineWrite === s.demo['line.write'] && (await s.demo.lineWrite({ text: 't' })).wrote;
     // No FS set on a family (goal/G43.20): its files are spirit.fs's, by the path its id names.
@@ -394,10 +397,10 @@ test.run('spirit.require of the demo interface binds spirit.demo once for two ca
   const node = T.node;
   return (!!o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && !!o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.branch === 'demo'; }).length === 0) || false;
 }, test.limit.quick);
-// goal/G43.32, decided 8: "spirit.require of a branch's api.js places the api.js at spirit.required.spirit.<branch-path>.api and binds its verbs on spirit.<branch>.<verb>".
-test.run('in node, the api.js required also stands at spirit.required.spirit.demo.api, the verbs bound on spirit.demo', 0.2, function () {
+// goal/G49.6: G43.32's decided 8 (verbs bound on spirit.<branch> as well) is reversed; the later ruling applies, one place.
+test.run('in node, a branch\'s verbs stand at spirit.required.spirit.demo.api, the require answers it, and spirit.demo is not there', 0.2, function () {
   const o = O(); if (!o) return false;
-  return (!!o.bound && !!o.apiPlaced) || false;
+  return o.onePlace === true;
 }, test.limit.quick);
 test.run('a bound branch has its own names, a dotted verb in camel case too (line.write as lineWrite), and no FS set', 0.2, function () {
   const o = O(); if (!o) return false;
@@ -520,6 +523,14 @@ test.run('on a page with no link, calls go to the page\'s own origin, /api/spiri
   const pc = await T.ps.demo.hello({ name: 'hal' });
   const toDoor = wq.fetched.filter(function (f) { return f.url === '/api/spirit'; });
   return (pc.said === 'hello hal' && toDoor.length > 0 && isCall(JSON.parse(toDoor[toDoor.length - 1].body)) && JSON.parse(toDoor[toDoor.length - 1].body).call === 'demo.hello') || false;
+}, test.limit.quick);
+// goal/G49.6, the same one place on a page: once called, the branch's verbs stand at spirit.required.spirit.demo.api,
+// and window.spirit holds no demo of its own.
+test.run('on a page, a branch called has its verbs at spirit.required.spirit.demo.api, and window.spirit holds no demo', 0.2, async function () {
+  if (!T.ps) return false;
+  const wq = T.wq;
+  const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.demo && wq.spirit.required.spirit.demo.api;
+  return (!!placed && typeof placed.hello === 'function' && !Object.prototype.hasOwnProperty.call(wq.spirit, 'demo')) || false;
 }, test.limit.quick);
 test.run('on a page with window.spirit.transport set, every call goes through that link and nothing is fetched', 0.2, async function () {
   if (!T.ps) return false;
