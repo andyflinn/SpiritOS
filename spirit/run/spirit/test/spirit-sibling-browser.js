@@ -852,7 +852,8 @@ async function session() {
   // loading, the page looks at window.spirit.required at the script's own path, where installSpiritElement puts an element
   // with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
   // green"): the bare page says so when nothing with a create stands there (spirit/DEBUG/headLessBrowser.js).
-  if (report && report.state === 'failed' && /places no element with a create at spirit\.element\./.test(report.error)) { P.noElement = true; P.stage = 'no element'; return P; }
+  // Since goal/G49.5's step 2 an element stands at spirit.required.<its path>, and the bare page names that place.
+  if (report && report.state === 'failed' && /places no element with a create at spirit\.required\./.test(report.error)) { P.noElement = true; P.stage = 'no element'; return P; }
   if (!report || report.state !== 'mounted') return P;
   P.stage = 'mounted';
 
