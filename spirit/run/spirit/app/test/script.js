@@ -1,13 +1,13 @@
 'use strict';
 
-// spirit/run/spirit/test/app.js
-// The tests of spirit/app.js and its family, and of no other module (spec: ./app.md; goal/G43.2). Andy, box: "we build a
+// spirit/run/spirit/app/test/script.js
+// The tests of spirit/app/script.js and its family, and of no other module (spec: ./script.md; goal/G43.2). Andy, box: "we build a
 // skeleton core-api-family, not a separate server, precisely the OLD way, the new family is called \"app\"". Raw calls over
 // http to a scratch node's door; neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const { scratchNode, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 // Up here, before the first result: under the verifier testReport.js loads spirit.js for its records with the global
@@ -26,7 +26,7 @@ function holds(items, words) { return !!items && items.some(function (i) { retur
 
 // What the tests share: the scratch node, the family's api and what the steps before a test found.
 const W = {};
-const FILE = path.join(RUN, 'spirit', 'app.js');
+const FILE = path.join(RUN, 'spirit', 'app', 'script.js');
 const FOLDER = path.join(RUN, 'spirit', 'app');
 function noNode() { return !(W.node && W.node.up); }
 function scratchApp(...p) { return path.join(W.node.root, 'spirit', 'run', 'spirit', 'app', ...p); }
@@ -36,7 +36,7 @@ const stateRead = function (k) { try { return JSON.parse(fs.readFileSync(stateFi
 // An intrinsic app is always active (goal/G43.14), so it is no app the user set.
 const intrinsicApp = function (k) { try { return JSON.parse(fs.readFileSync(scratchApp(k, k + '.json'), 'utf8')).identity.intrinsic === true; } catch (e) { return false; } };
 
-test.run('spirit/app.js is there, the family\'s core module', 0.2, function () { return fs.existsSync(FILE) || false; }, test.limit.quick);
+test.run('spirit/app/script.js is there, the family\'s core module', 0.2, function () { return fs.existsSync(FILE) || false; }, test.limit.quick);
 test.run('spirit/app/api.js is there, as in every core family', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'api.js')) || false; }, test.limit.quick);
 test.run('spirit/app/AGENTS.md is there, as in every core family', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'AGENTS.md')) || false; }, test.limit.quick);
 test.run('spirit/app/data.js is there, as in every core family', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'data.js')) || false; }, test.limit.quick);
@@ -165,15 +165,15 @@ test.run('a folder without its own .json is not one', 0.2, async function () {
   return (!!rows(bare) && !holds(rows(bare), 'zzbare')) || false;
 }, test.limit.quick);
 // THE APP LIST COMES FROM THE COMMON FILE/FOLDER CACHE (goal/G49.2; Andy: "portion to use the common file/folder cache?",
-// "fix spirit/app.js, NOW"; G49.1's box: "the modules that scan folder data (apps, api folders, plugins) move onto
-// spirit/fs.js one at a time", "each disc scan goes in the same commit that moves its client onto spirit/fs.js"). app.js's
+// "fix spirit/app/script.js, NOW"; G49.1's box: "the modules that scan folder data (apps, api folders, plugins) move onto
+// spirit/fs/script.js one at a time", "each disc scan goes in the same commit that moves its client onto spirit/fs/script.js"). app.js's
 // code, comments left out, reaches the dataset through its one entry, and scans no folder on disc any more: its readdirSync
 // of spirit/app/ and its existsSync of each api.js go. A manifest's content is no row of the cache, so its read stays.
 function appCode() { let t = ''; try { t = fs.readFileSync(FILE, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
-test.run('spirit/app.js reaches the file/folder cache through spirit/fs.js', 0.2, function () {
-  return /require\(\s*['"][^'"]*spirit\/fs\.js['"]\s*\)/.test(appCode()) || false;
+test.run('spirit/app/script.js reaches the file/folder cache through spirit/fs/script.js', 0.2, function () {
+  return /require\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(appCode()) || false;
 }, test.limit.quick);
-test.run('spirit/app.js scans no folder on disc: no readdirSync and no existsSync', 0.2, function () {
+test.run('spirit/app/script.js scans no folder on disc: no readdirSync and no existsSync', 0.2, function () {
   const c = appCode();
   return (c.length > 0 && !/\breaddirSync\b|\breaddir\b|\bexistsSync\b/.test(c)) || false;
 }, test.limit.quick);

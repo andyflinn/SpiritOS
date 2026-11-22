@@ -1,7 +1,7 @@
-# spirit/console.js
+# spirit/console/script.js
 
 The console's one door from a system shell (goal/G48.2, the box: *"there is only one system shell way into console:
-"node spirit/console.js", the console itself knows that it must enter the loop if no arguments was specified."*). The
+"node spirit/console/script.js", the console itself knows that it must enter the loop if no arguments was specified."*). The
 console is core (goal/G48, Andy: *"console is core."*); its parts are `./console/command.js`, the command processor, and
 `./console/loop.js`, the interactive loop. Its test: `./console.js`.
 

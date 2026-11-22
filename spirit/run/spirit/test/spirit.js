@@ -707,9 +707,9 @@ test.run('on the node, spirit/relayUrl.js stands at spirit.required.spirit.relay
 }, test.limit.quick);
 // A FILE AND ITS FOLDER BOTH STAND (goal/G43.32): spirit/app.js takes spirit.required.spirit.app, a first level spirit.js
 // makes ahead, and keeps spirit/app/api.js placed under it; the verifier's general rules found it standing nowhere.
-test.run('on the node, spirit/app.js stands at spirit.required.spirit.app, and spirit/app/api.js under it', 0.2, function () {
-  const appJs = s.require('spirit/app.js');
-  return (placeOf(s, 'spirit/app.js') === appJs && placeOf(s, 'spirit/app/api.js') === require(path.join(RUN, 'spirit/app/api.js'))) || false;
+test.run('on the node, spirit/app/script.js stands at spirit.required.spirit.app.script, and spirit/app/api.js beside it', 0.2, function () {
+  const appJs = s.require('spirit/app/script.js');
+  return (placeOf(s, 'spirit/app/script.js') === appJs && placeOf(s, 'spirit/app/api.js') === require(path.join(RUN, 'spirit/app/api.js'))) || false;
 }, test.limit.quick);
 test.run('on the node, an interface is still bound by asking a node, as a promise', 0.2, function () {
   const iface = s.require(s.branchPath('demo'));

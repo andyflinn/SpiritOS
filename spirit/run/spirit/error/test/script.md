@@ -1,4 +1,4 @@
-# spirit/spiritErrors.js — its own test
+# spirit/error/script.js — its own test
 
 What an error means, one place for the relay and the node. Owed since the rule *"every production script has its own
 test"* (goal/G47.1, the cycle "the top 10 reds of Andy's testicle", 10).

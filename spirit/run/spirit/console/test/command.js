@@ -28,7 +28,7 @@ const history = function () {
 };
 const last = function () { const h = history(); return h && h.length ? h[h.length - 1] : null; };
 function run(words, input) {
-  const kid = spawn(process.execPath, [path.join(W.node.run, 'spirit', 'console.js')].concat(words || []), { cwd: W.node.root, stdio: ['pipe', 'pipe', 'pipe'] });
+  const kid = spawn(process.execPath, [path.join(W.node.run, 'spirit', 'console', 'script.js')].concat(words || []), { cwd: W.node.root, stdio: ['pipe', 'pipe', 'pipe'] });
   const p = { kid: kid, out: '', ended: false, code: null };
   kid.stdout.on('data', function (d) { p.out += String(d); });
   kid.stderr.on('data', function (d) { p.out += String(d); });

@@ -1,13 +1,13 @@
 # word.js
 
-`spirit/run/spirit/word.js` tracks the namespace claims (goal/G43.4). Its test is `./word.js`.
+`spirit/run/spirit/word/script.js` tracks the namespace claims (goal/G43.4). Its test is `./word.js`.
 
 Andy, box: *"i will track nameSpace claims."*
 
 ## Requirements
 
 - A word is a string of `a` to `z`. word.js hard-codes a set of words, *"(this may change)"*. The test reads that set from word.js itself and keeps no copy of it (Andy, 2026-11-17: *"WHY WOULD A TEST HARD-CODE reserved words?"*, *"IT's like hardcoded apps! IDIOTIC!"*): every word Andy adds or takes out is judged the day he does. The set read is red when it is empty or lacks `spirit`.
-- `check('path.in.words', 'word')` compares case-insensitively and answers the lower-case word, else null. It looks at the `word.json` of each level on its path below the root, and at the hard-coded words. It reads no `run://spirit/word.json`. It sees nothing lower down and nothing in another branch.
+- `check('path.in.words', 'word')` compares case-insensitively and answers the lower-case word, else null. It looks at the `word.json` of each level on its path below the root, and at the hard-coded words. It reads no `run://spirit/word/script.json`. It sees nothing lower down and nothing in another branch.
 - A word an object inherits, like `constructor`, is not reserved. A missing `word.json` counts as empty. A `word.json` is an object of word to `true`.
 - A changed `word.json` is seen by the next `check`.
 - On a page `spirit.word.check` answers through a promise, since a page asks its node for each `word.json`, kept until the node's file stream says it changed; `spirit.word.changed(fn)` tells a listener when one does. `spirit/element/search/file/row.js` paints from these; its test judges them.

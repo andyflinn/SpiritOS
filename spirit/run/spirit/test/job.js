@@ -898,8 +898,8 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
     "const fs = require('fs'), dir = process.argv[1];",
     "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job.js')) + ")(1);",
     "const job = jobs.startFsWatcherJob(dir);",
-    // goal/G49.2: the tree is spirit.data.fs, through spirit/fs.js, which this process's watcher fills; read once it is whole.
-    "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs.js')) + ");",
+    // goal/G49.2: the tree is spirit.data.fs, through spirit/fs/script.js, which this process's watcher fills; read once it is whole.
+    "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'script.js')) + ");",
     "const rowsOf = function () { const all = F.files(); return Object.keys(all).map(function (p) { return Object.assign({ path: p }, all[p]); }); };",
     "const end = Date.now() + 40000;",
     "(function tick() {",
@@ -957,8 +957,8 @@ test.run('a scratch tree holds an app zzKept whose json turns intrinsic true and
       "const jobs = require(path.join(run, 'spirit', 'job.js'))(1);",
       "const job = jobs.startFsWatcherJob(run);",
       "const json = path.join(run, 'spirit', 'app', 'zzKept', 'zzKept.json');",
-      // goal/G49.2: the row is spirit.data.fs's, through spirit/fs.js, which this process's watcher fills.
-      "const F = require(path.join(run, 'spirit', 'fs.js'));",
+      // goal/G49.2: the row is spirit.data.fs's, through spirit/fs/script.js, which this process's watcher fills.
+      "const F = require(path.join(run, 'spirit', 'fs', 'script.js'));",
       "const core = function () { const c = F.file('spirit/app/zzKept/zzKept.js'); return c ? c.core === true : null; };",
       "const wait = function (want, ms) { const end = Date.now() + ms; return new Promise(function (r) { (function tick() { const now = core(); if (now === want || Date.now() > end) return r(now); setTimeout(tick, 100); })(); }); };",
       "const out = { before: null, turned: null, back: null };",
@@ -1518,7 +1518,7 @@ mountPart();
 
 // ── job.js's app checks read the common file/folder cache (goal/G49.2) ──
 // Andy: "portion to use the common file/folder cache?", "fix job.js"; G49.1's box: "job.js's manifest and api.js checks"
-// move onto spirit/fs.js, and "each disc scan goes in the same commit that moves its client onto spirit/fs.js". job.js's
+// move onto spirit/fs/script.js, and "each disc scan goes in the same commit that moves its client onto spirit/fs/script.js". job.js's
 // code, comments left out, asks the dataset whether an app's files are there and which folders spirit/app/ holds: no
 // readdirSync of spirit/app/ and no existsSync of an app's <name>.js, api.js or data.js. Its statSync stays: it is the
 // watcher's own, which feeds the dataset. A manifest's or a node.json's content is no row of the cache, so those reads stay.
@@ -1531,9 +1531,9 @@ test.run('spirit/job.js asks the disc for no file: no existsSync', 0.2, function
 }, test.limit.quick);
 
 // ── job.js keeps no file tree of its own for others (goal/G49.2; Andy: "go on the five!") ──
-// G49.1's box: "Once every client reads spirit/fs.js, job.js's fsTreeCommands and fsTreeEntries go, and event.js,
+// G49.1's box: "Once every client reads spirit/fs/script.js, job.js's fsTreeCommands and fsTreeEntries go, and event.js,
 // faceHome.js and nodeSearches.js read spirit.data.fs". job.js's code holds neither, and each of the three reaches the
-// dataset through spirit/fs.js, naming neither. The two names are written in pieces, so this check does not count itself.
+// dataset through spirit/fs/script.js, naming neither. The two names are written in pieces, so this check does not count itself.
 const TREE_NAMES = ['fsTree' + 'Commands', 'fsTree' + 'Entries'];
 function codeOf(rel) { try { return code(fs.readFileSync(path.join(RUN, rel), 'utf8')); } catch (e) { return ''; } }
 test.run('spirit/job.js holds neither of its old tree reads', 0.2, function () {
@@ -1541,8 +1541,8 @@ test.run('spirit/job.js holds neither of its old tree reads', 0.2, function () {
   return (c.length > 0 && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
 }, test.limit.quick);
 ['spirit/event/event.js', 'spirit/faceHome.js', 'spirit/nodeSearches.js'].forEach(function (rel) {
-  test.run(rel + ' reads the tree through spirit/fs.js, not through job.js', 0.2, function () {
+  test.run(rel + ' reads the tree through spirit/fs/script.js, not through job.js', 0.2, function () {
     const c = codeOf(rel);
-    return (c.length > 0 && /require\(\s*['"][^'"]*spirit\/fs\.js['"]\s*\)/.test(c) && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
+    return (c.length > 0 && /require\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(c) && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
   }, test.limit.quick);
 });

@@ -39,7 +39,7 @@ require(path.join(RUN, 'spirit', 'spirit.js'));
 const J = require(path.join(RUN, 'spirit', 'joinStepsJob.js'));
 const relayKeys = spirit.require('spirit/relayKeys.js');
 const ownerBadge = spirit.require('spirit/ownerBadge.js');
-const contacts = spirit.require('spirit/contacts.js');
+const contacts = spirit.require('spirit/contact/script.js');
 const auth = spirit.require('spirit/relayAuth.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

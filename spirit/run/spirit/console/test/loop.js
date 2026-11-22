@@ -28,7 +28,7 @@ const plain = function (t) { return String(t).replace(/\x1b\[[0-9;?]*[A-Za-z]/g,
 function open() {
   // A data URL, not a file: nothing is left in the lab copy, which keeps its root between runs.
   const tty = 'data:text/javascript,process.stdin.isTTY=true;process.stdout.isTTY=true;process.stdout.columns=200;';
-  const kid = spawn(process.execPath, ['--import', tty, path.join(W.node.run, 'spirit', 'console.js')], { cwd: W.node.root, stdio: ['pipe', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TERM: 'xterm' }) });
+  const kid = spawn(process.execPath, ['--import', tty, path.join(W.node.run, 'spirit', 'console', 'script.js')], { cwd: W.node.root, stdio: ['pipe', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TERM: 'xterm' }) });
   const t = { kid: kid, out: '', ended: false };
   kid.stdout.on('data', function (d) { t.out += String(d); });
   kid.on('exit', function () { t.ended = true; });

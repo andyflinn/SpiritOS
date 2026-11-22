@@ -1,12 +1,12 @@
 # app.js
 
-`spirit/run/spirit/app.js` and its folder are the `app` family (goal/G43.2). Its test is `./app.js`.
+`spirit/run/spirit/app/script.js` and its folder are the `app` family (goal/G43.2). Its test is `./app.js`.
 
 Andy, box: *"we build a skeleton core-api-family, not a separate server, precisely the OLD way, the new family is called "app""*.
 
 ## Requirements
 
-- `spirit/app.js` beside `spirit/app/`, which holds what every core family holds: `api.js`, `AGENTS.md`, `data.js`, `search.json`.
+- `spirit/app/script.js` beside `spirit/app/`, which holds what every core family holds: `api.js`, `AGENTS.md`, `data.js`, `search.json`.
 - One verb, `app.search`, one optional search string, no filters: *"it's minimum, no filters, just a search string."* A filter is refused at the door.
 - The node's api names the family beside the others.
 - `spirit/app/text/text.json` has `identity.icon` and `identity.label`: the text editor stands for the dummy server app
@@ -46,6 +46,6 @@ The first activate, Andy: *"on first activate, spirit/state/<name>/node.json sho
 - `app.active` with false does not switch it off.
 - Before any press, no row says active but an intrinsic app's.
 - goal/G43.15: an app's row carries `intrinsic`, true or false. `app.active` on an intrinsic app is refused by name, not 200, with a code, and writes nothing.
-- Not asserted by this test (`spirit/app.js` does it; no test asserts it yet): the two G43.21 lines below.
+- Not asserted by this test (`spirit/app/script.js` does it; no test asserts it yet): the two G43.21 lines below.
 - goal/G43.21: an app's row carries `run`, its `<name>.json`'s `node.run`, true or false.
 - goal/G43.21: and `runOnly`, true when its `<name>.json` says `node.run` and neither `node.mount` nor `shell.mount`. Andy: *"and the node should know it, too."*: `app.active` on such an app is refused by name, `app-run-only`, 409, and writes nothing.

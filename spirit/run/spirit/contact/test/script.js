@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/contacts.js
-// The tests of spirit/contacts.js: where the star comes from, and the verb that sets 😏, contact.faceable (spec:
+// spirit/run/spirit/contact/test/script.js
+// The tests of spirit/contact/script.js: where the star comes from, and the verb that sets 😏, contact.faceable (spec:
 // ./contacts.md). This file holds goal/G47.4 (box v33: "the star is shown as before on nodes and relays and is set only by
 // true ownership (the signed card names this node as owner); no button or verb changes it", "😏 is the row field faceable,
 // set by the new verb contact.faceable {key, faceable}, for a relay this node holds a seat on only", "contact.own goes"):
@@ -9,17 +9,19 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../tempFolder.js');
+const tempFolder = require('../../tempFolder.js');
 let tempAsked = 0;
-function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/contacts/' + name + tempAsked); }
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/contact/test/script/' + name + tempAsked); }
 // Its store closed first: on Windows a folder holding an open database cannot be removed, and the suite was red on
 // 'it leaves no temp folder behind' for that alone.
-test.after(function () { try { if (W.store) W.store.close(); } catch (e) { /* closed */ } try { fs.rmSync(tempFolder.path('spirit/test/contacts'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const contacts = require(path.join(RUN, 'spirit', 'contacts.js'));
+test.after(function () { try { if (W.store) W.store.close(); } catch (e) { /* closed */ } try { fs.rmSync(tempFolder.path('spirit/contact/test/script'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// A file not there yet is no crash at load: each check below finds nothing and is red (goal/G49.4, the move).
+let contacts = {};
+try { contacts = require(path.join(RUN, 'spirit', 'contact', 'script.js')); } catch (e) { contacts = {}; }
 const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
 const nodeCard = require(path.join(RUN, 'spirit', 'nodeCard.js'));
 const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));

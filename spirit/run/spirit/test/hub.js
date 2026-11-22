@@ -103,7 +103,7 @@ test.run('on a scratch node, forgetting a contact answers 200, forgotten', 0.2, 
     fs.mkdirSync(path.join(W.forgetHome, 'spirit', 'state'), { recursive: true });
     const relayAuth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
     relayAuth.saveIdentity(W.forgetHome, relayAuth.generateIdentity());
-    const book = require(path.join(RUN, 'spirit', 'contacts.js'));
+    const book = require(path.join(RUN, 'spirit', 'contact', 'script.js'));
     book.noteLabel(W.forgetHome, FORGOT_KEY, 'Gone');
     book.accept(W.forgetHome, FORGOT_KEY);
     W.store = require(path.join(RUN, 'spirit', 'nodeStore.js')).open(W.forgetHome).auth;
@@ -158,7 +158,7 @@ test.run('on a scratch node, the hub has a handler for faceable and none for own
     W.seatedRelay = relayAuth.generateIdentity().publicKey; W.loneRelay = relayAuth.generateIdentity().publicKey;
     seen.set(W.seatedRelay, { relay: true, seated: true, label: 'seated' });
     seen.set(W.loneRelay, { relay: true, label: 'lone' });
-    const book = require(path.join(RUN, 'spirit', 'contacts.js'));
+    const book = require(path.join(RUN, 'spirit', 'contact', 'script.js'));
     W.ownedNode = relayAuth.generateIdentity(); W.freeNode = relayAuth.generateIdentity();
     book.setCard(W.faceHome, W.ownedNode.publicKey, ownCardOf(W.ownedNode, W.faceMe.publicKey));
     book.setCard(W.faceHome, W.freeNode.publicKey, ownCardOf(W.freeNode, ''));
@@ -170,7 +170,7 @@ test.run('on a scratch node, the hub has a handler for faceable and none for own
 test.run('a relay this node holds a seat on takes 😏, and its row says faceable', 0.2, async function () {
   if (!W.faceName) return false;
   const a = await faceAsk(W.seatedRelay, true);
-  const row = require(path.join(RUN, 'spirit', 'contacts.js')).byPublicKey(W.faceHome, W.seatedRelay) || {};
+  const row = require(path.join(RUN, 'spirit', 'contact', 'script.js')).byPublicKey(W.faceHome, W.seatedRelay) || {};
   return (a.status === 200 && row.faceable === true) || false;
 }, test.limit.quick);
 test.run('a relay with no seat is refused 😏', 0.2, async function () {
@@ -186,16 +186,16 @@ test.run('a node is refused 😏, even one whose card names this node', 0.2, asy
 test.run('😏 always comes off', 0.2, async function () {
   if (!W.faceName) return false;
   const off = await faceAsk(W.seatedRelay, false);
-  const row = require(path.join(RUN, 'spirit', 'contacts.js')).byPublicKey(W.faceHome, W.seatedRelay) || {};
+  const row = require(path.join(RUN, 'spirit', 'contact', 'script.js')).byPublicKey(W.faceHome, W.seatedRelay) || {};
   return (off.status === 200 && row.faceable !== true) || false;
 }, test.limit.quick);
 test.run('the star stands on a node whose card names this node, with no verb asked', 0.2, function () {
   if (!W.faceHome) return false;
-  const row = require(path.join(RUN, 'spirit', 'contacts.js')).byPublicKey(W.faceHome, W.ownedNode.publicKey) || {};
+  const row = require(path.join(RUN, 'spirit', 'contact', 'script.js')).byPublicKey(W.faceHome, W.ownedNode.publicKey) || {};
   return row.mine === true || false;
 }, test.limit.quick);
 test.run('a node whose card names no owner has no star', 0.2, function () {
   if (!W.faceHome) return false;
-  const row = require(path.join(RUN, 'spirit', 'contacts.js')).byPublicKey(W.faceHome, W.freeNode.publicKey) || {};
+  const row = require(path.join(RUN, 'spirit', 'contact', 'script.js')).byPublicKey(W.faceHome, W.freeNode.publicKey) || {};
   return row.mine !== true || false;
 }, test.limit.quick);

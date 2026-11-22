@@ -265,7 +265,7 @@ test.run('asked from inside a lab node\'s tree, scratchNode hands out another no
   const h = await within(host.got, 120000);
   if (!h || h === 'waiting' || h.error) { host.kid.kill(); return false; }
   const planted = path.join(h.run, 'spirit', 'zzFromLabTree.js');
-  const gone = path.join(h.run, 'spirit', 'word.js');
+  const gone = path.join(h.run, 'spirit', 'word', 'script.js');
   try { fs.writeFileSync(planted, "'use strict';\n// planted in a lab node's tree\n"); fs.rmSync(gone, { force: true }); } catch (e) { host.kid.kill(); return false; }
   const inner = ask('node', 500, '', h.run);
   const n = await within(inner.got, 120000);
@@ -275,7 +275,7 @@ test.run('asked from inside a lab node\'s tree, scratchNode hands out another no
   if (!n || n === 'waiting' || n.error) return false;
   if (n.root === h.root) return false;
   if (!fs.existsSync(path.join(n.run, 'spirit', 'zzFromLabTree.js'))) return false;
-  if (fs.existsSync(path.join(n.run, 'spirit', 'word.js'))) return false;
+  if (fs.existsSync(path.join(n.run, 'spirit', 'word', 'script.js'))) return false;
   return true;
 }, test.limit.long);
 test.run('scratchRelay hands out one of lab\'s two relays, under repo://lab/node/; two asked at once are two different relays', 0.4, async function () {

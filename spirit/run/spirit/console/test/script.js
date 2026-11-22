@@ -1,20 +1,20 @@
 'use strict';
 
-// spirit/run/spirit/test/console.js
-// The tests of spirit/console.js, and of no other module (spec: ./console.md). goal/G48.2, the box: "there is only one system
-// shell way into console: \"node spirit/console.js\", the console itself knows that it must enter the loop if no arguments was
+// spirit/run/spirit/console/test/script.js
+// The tests of spirit/console/script.js, and of no other module (spec: ./script.md). goal/G48.2, the box: "there is only one system
+// shell way into console: \"node spirit/console/script.js\", the console itself knows that it must enter the loop if no arguments was
 // specified"; "the card feature from 48.1 will be completely dropped and the console will feature namevation only."
 // On a scratch node of its own: the console of that node's tree run there.
 
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const RUN = path.resolve(__dirname, '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 
 const W = {};
-const consoleOf = function () { return path.join(W.node.run, 'spirit', 'console.js'); };
+const consoleOf = function () { return path.join(W.node.run, 'spirit', 'console', 'script.js'); };
 const stateOf = function () { try { return JSON.parse(fs.readFileSync(path.join(W.node.run, 'spirit', 'state', 'console', 'node.json'), 'utf8')); } catch (e) { return null; } };
 // The console started with the words given; what it printed, and whether and how it ended.
 function start(words) {
@@ -32,8 +32,8 @@ async function once(words) {
   return p;
 }
 
-test.run('spirit/console.js exists', 0.2, function () {
-  return fs.existsSync(path.join(RUN, 'spirit', 'console.js')) || false;
+test.run('spirit/console/script.js exists', 0.2, function () {
+  return fs.existsSync(path.join(RUN, 'spirit', 'console', 'script.js')) || false;
 }, test.limit.quick);
 test.run('a scratch node comes up', 0.2, async function () {
   W.node = await H.scratchNode({});

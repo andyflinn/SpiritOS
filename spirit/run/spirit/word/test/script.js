@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/word.js
-// The tests of spirit/word.js (spec: ./word.md; goal/G43.4). Andy, the box: "i will track nameSpace claims." word.js runs
+// spirit/run/spirit/word/test/script.js
+// The tests of spirit/word/script.js (spec: ./script.md; goal/G43.4). Andy, the box: "i will track nameSpace claims." word.js runs
 // from a copy of the run tree, with word.json files planted there, so nothing here writes into this checkout. Then the
 // word system is held against this checkout's own tree: "the test for word will go red if the word system and the tree
 // contradict", and "the red generated from this will point us toward the next steps in restructuring the namespace. live
@@ -10,14 +10,14 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const RUN = path.resolve(__dirname, '../..');
+const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../tempFolder.js');
+const tempFolder = require('../../tempFolder.js');
 let tempAsked = 0;
-function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/word/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/word'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/word/test/script/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/word/test/script'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
 
@@ -26,7 +26,9 @@ const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')
 // intitialized set of keys", "(this may change)": the list that fills its HARD, as it stands in the file, so a word Andy adds
 // or takes out is judged the day he does.
 const HARD = (function () {
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'word.js'), 'utf8');
+  // A file not there yet is no crash at load: HARD is empty, and the checks that need it are red (goal/G49.4, the move).
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, 'spirit', 'word', 'script.js'), 'utf8'); } catch (e) { src = ''; }
   const m = /\[([^\]]*)\]\s*\.forEach\(\s*function\s*\(\s*w\s*\)\s*\{\s*HARD\[w\]\s*=\s*true;?\s*\}\s*\)/.exec(src);
   return m ? (m[1].match(/'([a-z]+)'/g) || []).map(function (s) { return s.slice(1, -1); }) : [];
 }());
@@ -37,7 +39,7 @@ function mixed(w) { return w.split('').map(function (c, i) { return i % 2 ? c : 
 
 // What word.js answers in a tree: each ask run in one child, whose word.js finds its word.json files by its own place.
 function asks(run, list) {
-  const code = 'const w = require(' + JSON.stringify(path.join(run, 'spirit', 'word.js')) + ');' +
+  const code = 'const w = require(' + JSON.stringify(path.join(run, 'spirit', 'word', 'script.js')) + ');' +
     'Promise.all(' + JSON.stringify(list) + '.map(function (a) { return Promise.resolve(w.check(a[0], a[1])); }))' +
     '.then(function (r) { console.log("ANSWER" + JSON.stringify({ answers: r })); process.exit(0); },' +
     ' function () { console.log("ANSWER" + JSON.stringify({ threw: true })); process.exit(0); });';
@@ -50,7 +52,7 @@ function answerOf(run, code) {
 }
 // What add answers, each in turn in one child and unwrapped: the box's add "returns boolean", so a promise is no answer.
 function adds(run, list) {
-  const code = 'const w = require(' + JSON.stringify(path.join(run, 'spirit', 'word.js')) + ');' +
+  const code = 'const w = require(' + JSON.stringify(path.join(run, 'spirit', 'word', 'script.js')) + ');' +
     'try { console.log("ANSWER" + JSON.stringify({ answers: ' + JSON.stringify(list) + '.map(function (a) { return w.add(a[0], a[1]); }) })); }' +
     ' catch (e) { console.log("ANSWER" + JSON.stringify({ threw: true })); }' +
     ' process.exit(0);';
@@ -251,7 +253,7 @@ test.run('the new spirit/fs/word.json holds that word and nothing else', 0.2, fu
 // Q5, "Should add work from a page too, the way check does?", Andy: "no." word.js's page half, run on a bare window.
 test.run('on a page spirit.word has check and no add', 0.2, function () {
   const bare = { window: { spirit: {} } };
-  require('vm').runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'word.js'), 'utf8'), bare);
+  require('vm').runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'word', 'script.js'), 'utf8'), bare);
   const onPage = bare.window.spirit.word || {};
   return (typeof onPage.check === 'function' && onPage.add === undefined) || false;
 }, test.limit.quick);
@@ -368,7 +370,7 @@ test.run('the planted spirit/app/word.json is read, and its word is found at spi
     ' window.sentWord = []; var keep = function (b) { try { var s = String(b || ""); if (/word\\.json/.test(s)) window.sentWord.push(s); } catch (e) {} };' +
     ' var f = window.fetch; window.fetch = function (u, o) { keep(String(u) + " " + (o && o.body || "")); return f.apply(this, arguments); };' +
     ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { keep(b); return x.apply(this, arguments); };' +
-    ' return spirit.require("spirit/word.js"); }).then(function () {' +
+    ' return spirit.require("spirit/word/script.js"); }).then(function () {' +
     ' var paths = ["spirit.app.zz", "spirit.app.table.zz", "spirit.app.table.rows.zz", "spirit.element.search.zz", "spirit.fs.zz", "spirit.contact.zz", "spirit.data.zz", "spirit.app.desk.element.zz"];' +
     ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(spirit.word.check(p, "zzword")); asks.push(spirit.word.check(p, "other")); });' +
     ' return Promise.all(asks); }).then(function (answers) { return new Promise(function (r) { setTimeout(function () { r(answers); }, 1500); }); })' +

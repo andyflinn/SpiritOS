@@ -1,4 +1,4 @@
-# spirit/contacts.js
+# spirit/contact/script.js
 
 The owner's acts on the contacts, rows of the one table (`seen` in node.db): where the star comes from, and the verb that
 sets 😏. This test holds one part of it (goal/G47.4).

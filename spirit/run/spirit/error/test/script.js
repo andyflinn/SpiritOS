@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/spiritErrors.js
-// The tests of spirit/spiritErrors.js, and of no other module (spec: ./spiritErrors.md). Its own test, owed since the rule
+// spirit/run/spirit/error/test/script.js
+// The tests of spirit/error/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule
 // "every production script has its own test" (goal/G47.1, the cycle "the top 10 reds of Andy's testicle", 10: spiritErrors
 // was red in the garbage rule because it had none).
 //
@@ -10,10 +10,12 @@
 
 const path = require('path');
 const { spawnSync } = require('child_process');
-const RUN = path.resolve(__dirname, '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const FILE = path.join(RUN, 'spirit', 'spiritErrors.js');
-const E = require(FILE);
+const FILE = path.join(RUN, 'spirit', 'error', 'script.js');
+// A file not there yet is no crash at load: each check below finds nothing and is red (goal/G49.4, the move).
+let E = {};
+try { E = require(FILE); } catch (e) { E = {}; }
 
 // ── byCode and all: the catalogue ──
 test.run('byCode answers the entry of a code it knows: peer-unreachable, 503, absent, the target\'s', 0.2, function () {
