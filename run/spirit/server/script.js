@@ -45,7 +45,9 @@ function answer(req, res) {
   if (!file || req.method !== 'GET') { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('not found'); return; }
   fs.readFile(file, function (err, body) {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('not found'); return; }
-    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream' });
+    // NO STALE COPY (goal/G50.1; Andy loaded the page after the push and found no requireScript): the browser asks again
+    // on every load, so a page always shows the tree as it is on disc.
+    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(body);
   });
 }
