@@ -3,7 +3,7 @@
 // spirit/run/spirit/node/test/api.js
 // The tests of spirit/node/api.js, and of no other module (spec: ./api.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
-// The node family: the node itself, its card, its name, its description, its cipher key and its shell (goal/G32.1).
+// The node family: the node itself, its card, its name, its description, its cipher key (goal/G32.1; its shell went with goal/G49.4).
 // The interface is run as spirit.js runs the text api {family} answers (loadInterface: the text, with module and exports
 // alone), each call checked by spirit.js's own check (spirit.check, its rules spirit.rules), the one the spirit object
 // runs before a call leaves. server.js is read as text only, to find the table the node mounts for the family.
@@ -149,9 +149,4 @@ test.run('setName\'s name passes the name rule', 0.2, function () {
 test.run('setDescription\'s description passes the description rule', 0.2, function () {
   if (!W.api) return false;
   return (passes('setDescription', { description: 'my box' }) && refusedAs('setDescription', { description: 'x'.repeat(5000) }) === 'bad-request') || false;
-}, test.limit.quick);
-// goal/G43.18, box v29: "The verb is node.shell": the shell the node names, at home or face
-test.run('shell takes where it is asked, at, and a name it may be given', 0.2, function () {
-  if (!W.api) return false;
-  return (passes('shell', { at: 'home' }) && passes('shell', { at: 'face', name: 'classic' }) && refusedAs('shell', {}) === 'bad-request' && refusedAs('shell', { at: 'home', name: 3 }) === 'bad-request') || false;
 }, test.limit.quick);

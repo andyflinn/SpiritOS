@@ -100,11 +100,13 @@ test.run('boot, the seal, the sheet, the icon and the Join app whole are core', 
 
 // GOAL/G43.18, BOX V29, "The shell": "boot.js does the link home and the face stream only, then loads the shell the node
 // names, spirit/app/<name>"; Q22: the link is spirit.js's; Q23: no desktop of boot's own; Q18: Join shows itself.
-// the shell the node names, and no desktop of its own (goal/G43.18)
-test.run('boot asks node.shell and loads spirit/app/<name>/element.js, the shell\'s main element', 0.2, function () {
+// THE ONE SHELL (goal/G49.4, box v15; Andy: "spirit/element/script.js becomes the hard-coded only shell there is in
+// SpiritOS, and replaces whatever the fuck element is dynamically loaded via spirit/shell as shell", "the verb node.shell
+// goes", "go!"): boot loads spirit/element/script.js, the one shell, and asks the node for no shell.
+test.run('boot loads spirit/element/script.js, the one shell, and asks the node for none', 0.2, function () {
   const boot = code('spirit/shell/boot.js');
   if (!boot) return false;
-  return (/node\.shell\(\{ at: at \}\)/).test(boot) && (/'spirit\/app\/' \+ name \+ '\/element\.js'/).test(boot) ? true : false;
+  return (boot.indexOf('spirit/element/script.js') !== -1 && !/node\.shell\b/.test(boot)) || false;
 }, test.limit.quick);
 test.run('no desktop of its own: no drawDesktop, readFace, listApps, openApp, loadApp or serverUp', 0.2, function () {
   const boot = code('spirit/shell/boot.js');

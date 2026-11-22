@@ -202,7 +202,7 @@ const T = function (expr) { return W.c.evaluate('window.__t.' + expr); };
 // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
 const waitFor = function (expr, ms) { return until(function () { return W.c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
 const selector = function (face) {
-  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.element.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
 };
 
 // the box: "file.js is an element, spirit.element.spirit.app.file.element.create(container) -> { destroy() }"

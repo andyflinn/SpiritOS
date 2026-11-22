@@ -85,7 +85,7 @@ test.run('pressed again, the Agent is no longer active', 0.2, async function () 
 // the box: "The appSelector's detail and its rows use them": no Activate on an intrinsic app's row
 test.run('the appSelector\'s pane is made', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  listed = await chrome.evaluate('spirit.require("spirit/app/app/element.js").then(function () { var b = document.createElement("div"); b.id = "pane"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); window.__sel = spirit.element.spirit.app.app.element.create(b, { face: "pane" }); return true; })');
+  listed = await chrome.evaluate('spirit.require("spirit/element/script.js").then(function () { var b = document.createElement("div"); b.id = "pane"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); window.__sel = spirit.element.spirit.element.script.create(b, { face: "pane" }); return true; })');
   return listed === true ? true : false;
 }, test.limit.quick);
 test.run('the pane lists Contacts and the Agent', 0.2, async function () {

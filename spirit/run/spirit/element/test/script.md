@@ -1,8 +1,8 @@
 # appSelector.js
 
-`spirit/run/spirit/app/app/element.js` is the app selector (goal/G43.2), following `spirit/element/search/bundle.js`: a thin selector over the app list, `spirit/element/search/app.js`, which it loads itself. Its test is `./appSelector.js`, in a real browser on a scratch node.
+`spirit/run/spirit/element/script.js` is the app selector (goal/G43.2), following `spirit/element/search/bundle.js`: a thin selector over the app list, `spirit/element/search/app.js`, which it loads itself. Its test is `./appSelector.js`, in a real browser on a scratch node.
 
-    spirit.element.spirit.app.app.element.create(container, options) -> root
+    spirit.element.spirit.element.script.create(container, options) -> root
       root.value   the chosen app's key, '' while none is
       root.row     the chosen app, null while none is
       one bubbling `change` on a pick
@@ -52,7 +52,7 @@ goal/G43.18, box v29, *The shell* and *Join*. Its test is `./shell.js`: a real n
 
 ### Requirements
 
-- Q12, with no shell chosen: the page loads `spirit/app/app/element.js`, and the app search is on it, Contacts listed.
+- Q12, with no shell chosen: the page loads `spirit/element/script.js`, and the app search is on it, Contacts listed.
 - Andy: *"the shell should exclude itself completely from the app-list, haha..."*: the shell app's list shows Contacts, and no `shell` row or tile.
 - *"RULE: a shell must be able to replace itself"*, *"boot.js does the link home and the face stream only, then loads the shell the node names"*: with `zzshell` named at home, the page loads and draws it, and shows nothing of the other shell nor a desktop of boot.js's own.
 - Q19 (goal/G47.1), *"On a fake shell, which is possible, join (apps) don't need to be visible, that's the job of the shell, not the app."*: nothing is asserted of Join under `zzshell`.

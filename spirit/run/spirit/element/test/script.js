@@ -1,16 +1,17 @@
 'use strict';
 
-// spirit/run/spirit/app/app/test/element.js
+// spirit/run/spirit/element/test/script.js
 // One file for every test of its script (Andy: "there is ONE FUCKING test file in the test folder per script file, and every fucking
 // test that applies to that file must be inserted in the that one file"; spirit/test/TEST_SYSTEM.md): each part below is its own
 // section at the end: nodeRun, shell.
-// The tests of spirit/app/app/element.js, the app selector, and of no other module (spec: ./element.md; goal/G43.2).
+// The tests of spirit/element/script.js, the one shell and app selector, and of no other module (spec: ./script.md; goal/G43.2;
+// moved from spirit/element/script.js by goal/G49.4).
 // Since goal/G43.32 the app app's main element (it was spirit/app/appSelector.js). A real Chrome on a
 // scratch node's face page; neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..');
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
@@ -19,7 +20,7 @@ const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 's
 // One test.run per test (goal/G47.2): the three parts below run one after the other, each its own scratch node and Chrome,
 // each stopped when the next part's world starts, and all of them again at the end (test.after).
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-const FILE = path.join(RUN, 'spirit', 'app', 'app', 'element.js');
+const FILE = path.join(RUN, 'spirit', 'element', 'script.js');
 // The planted apps: one that mounts, the one tile there must be, and every way of not saying shell.mount true.
 const PLANT = {
   zzmounted: { label: 'Zz Mounted', shell: { true: false, mount: true, tile: true }, tile: true },
@@ -76,9 +77,9 @@ test.after(stopAll);
   let made, text;
   test.run('it loads through spirit.require and mounts as a pane', 0.2, async function () {
     if (!W1.up) return false;
-    made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/app/element.js"); }).then(function () {' +
+    made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () {' +
       ' var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); window.changes = 0;' +
-      ' window.sel = spirit.element.spirit.app.app.element.create(c, { face: "pane" }); if (window.sel.parentNode !== c) c.appendChild(window.sel); window.sel.addEventListener("change", function () { window.changes += 1; }); return "made"; }, function () { return false; })');
+      ' window.sel = spirit.element.spirit.element.script.create(c, { face: "pane" }); if (window.sel.parentNode !== c) c.appendChild(window.sel); window.sel.addEventListener("change", function () { window.changes += 1; }); return "made"; }, function () { return false; })');
     return (made === 'made') ? true : false;
   }, test.limit.quick);
   text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
@@ -164,7 +165,7 @@ test.after(stopAll);
   }, test.limit.quick);
   const monitorLabel = 'Hearing';
   const serverLabel = 'Changed On Disk';
-  const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fs = spirit.element.spirit.app.app.element.create(c, ' + JSON.stringify(opts) + '); if (window.fs.parentNode !== c) c.appendChild(window.fs); return true; }())'); };
+  const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fs = spirit.element.spirit.element.script.create(c, ' + JSON.stringify(opts) + '); if (window.fs.parentNode !== c) c.appendChild(window.fs); return true; }())'); };
   const inFaces = function () { return chrome.evaluate('String((document.getElementById("faces") || {}).innerText || "")'); };
   const rowOf = function (label) { return '(function () { var all = document.querySelectorAll("#faces tr, #faces .list-row"); for (var i = 0; i < all.length; i++) if (String(all[i].textContent).indexOf(' + JSON.stringify(label) + ') !== -1) return all[i]; return null; }())'; };
   const tileOf = function (label) { return 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf(' + JSON.stringify(label) + ') !== -1; })[0]'; };
@@ -469,7 +470,7 @@ test.after(stopAll);
     if (!W1.up) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/app/element.js"); }).then(function () { return "loaded"; }, function () { return false; })');
+    loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () { return "loaded"; }, function () { return false; })');
     W1.loaded = loaded === 'loaded';
     return (loaded === 'loaded') ? true : false;
   }, test.limit.long);
@@ -526,7 +527,7 @@ test.after(stopAll);
     return (!!r['zzrunonly']) ? true : false;
   }, test.limit.quick);
 
-  const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.element.spirit.app.app.element.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
+  const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.element.spirit.element.script.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
   // The labels drawn as tiles: every visible leaf under the tiles whose text is a label of the test's.
   // LABELS is set by the world above it, so drawn() reads it when it runs.
   const drawn = function () { return chrome.evaluate('(function () { var c = document.getElementById("faces"); if (!c) return "[]"; var want = ' + JSON.stringify(LABELS) + '; var out = []; var all = c.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var e = all[i]; if (!e.getClientRects().length) continue; var t = String(e.innerText || e.textContent || "").trim(); if (!e.children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return JSON.stringify(out.sort()); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return []; } }); };
@@ -668,33 +669,16 @@ test.after(stopAll);
 
 // ── THE shell PART ───────────────────────────────────────────────────────────────────────────────────────────
 {
-  // The shell part of ./element.js.
-  // THE APP APP AS THE SHELL, AND A SHELL THAT REPLACES ITSELF (goal/G43.18, box v29, "The shell" and "Join"; spec: ./element.md, its shell section).
-  // Since goal/G43.32 the shell app is the app app (the box: "spirit/app/shell/ becomes spirit/app/app/. Its element.js is today's
-  // spirit/app/appSelector.js; shell.js goes. app.json is shell.json, renamed"). A real
-  // node on a scratch copy of the tracked files, with a shell-worthy app of the test's own beside the shell app, and real
-  // clicks in a real Chrome on the page Andy uses at home, /face.html. Neither Andy's node nor an agent's is touched.
+  // THE ONE SHELL (goal/G49.4, box v15; Andy: "spirit/element/script.js becomes the hard-coded only shell there is in
+  // SpiritOS", "the app manifests shell:true goes, and all the logic that goes with it, including any places where the
+  // \"current\" shell is stored", "the verb node.shell goes", "go!"). A real node on a scratch copy of the tracked files, and
+  // a real Chrome on the page Andy uses at home, /face.html. Neither Andy's node nor an agent's is touched.
 
   const os = require('os');
   const { spawn, execSync } = require('child_process');
   const REPO = path.resolve(RUN, '..', '..');
   const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
-  function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
-
-  // The test's own shell: it draws one line and nothing else, and knows nothing of Join.
-  const MARK = 'zz shell drawn';
-  const ZZ = { identity: { label: 'Zz Shell', icon: '🧪' }, shell: { true: true, mount: true, tile: true } };
-  const ZZ_JS = '(function () { var b = document.createElement("div"); b.id = "zzShell"; b.textContent = ' + JSON.stringify(MARK) + '; document.body.appendChild(b); }());\n';
-  function scratch() {
-    const root = LABH.scratchTree().root;
-    const run = path.join(root, 'spirit', 'run');
-    const zz = path.join(run, 'spirit', 'app', 'zzshell');
-    fs.mkdirSync(zz, { recursive: true });
-    fs.writeFileSync(path.join(zz, 'zzshell.json'), JSON.stringify(ZZ));
-    fs.writeFileSync(path.join(zz, 'element.js'), ZZ_JS);
-    return { root: root, run: run };
-  }
   async function call(base, verb, args) {
     try {
       const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
@@ -711,19 +695,13 @@ test.after(stopAll);
   }
   function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
 
-  // shell: the app app as the shell, and a shell that replaces itself (goal/G43.18, G43.32)
   const W3 = {};
-  let shellJson, SHELL_LABEL, LABELS, s, N, c;
-  test.run('the shell app has a label', 0.2, async function () {
-    shellJson = readJson(path.join(RUN, 'spirit', 'app', 'app', 'app.json'));
-    SHELL_LABEL = String((shellJson && shellJson.identity && shellJson.identity.label) || '');
-    LABELS = fs.readdirSync(path.join(RUN, 'spirit', 'app')).map(function (n) { const j = readJson(path.join(RUN, 'spirit', 'app', n, n + '.json')); return j && j.identity && j.identity.label; }).filter(Boolean).concat([ZZ.identity.label]);
-    return (!!SHELL_LABEL) ? true : false;
-  }, test.limit.quick);
-  test.run('a scratch node comes up with a shell of the test\'s own', 0.2, async function () {
+  let s, N, c;
+  test.run('a scratch node comes up', 0.2, async function () {
     // The part before is done: its scratch node and Chrome stop here.
     stopAll();
-    s = scratch();
+    s = { root: LABH.scratchTree().root };
+    s.run = path.join(s.root, 'spirit', 'run');
     LIVE.push({ s: s });
     N = await boot(s.run);
     LIVE.push({ N: N });
@@ -749,122 +727,27 @@ test.after(stopAll);
   const loaded = function () { return c.evaluate('performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); })'); };
   const text = function () { return c.evaluate('String(document.body.innerText || "")'); };
 
-  // the box: "spirit/app/shell/ ... is the default for home and face on a first boot" (Q12: no spirit/state/shell.json), the app app since goal/G43.32
-  let first, drawn, second;
+  let first;
   test.run('the face page opens', 0.2, async function () {
     if (!W3.up) return false;
     W3.opened = !!(await open());
     return W3.opened || false;
   }, test.limit.long);
-  test.run('with no shell chosen the page loads spirit/app/app/element.js', 0.2, async function () {
+  test.run('the page loads spirit/element/script.js, the one shell', 0.2, async function () {
     if (!W3.opened) return false;
     first = await loaded();
-    return (first.some(function (n) { return (/^\/spirit\/app\/app\/element\.js(\?|$)/).test(n); })) ? true : false;
+    return (first.some(function (n) { return (/^\/spirit\/element\/script\.js(\?|$)/).test(n); })) ? true : false;
   }, test.limit.quick);
-  test.run('the shell is an app that wraps the app search: the app search is on the page, with Contacts listed', 0.2, async function () {
+  test.run('the shell wraps the app search: the app search is on the page, with Contacts listed', 0.2, async function () {
     if (!first) return false;
     return (first.some(function (n) { return (/^\/spirit\/element\/search\/app\.js(\?|$)/).test(n); }) && /\bContacts\b/.test(await text())) ? true : false;
   }, test.limit.quick);
-
-  // goal/G43.18, Andy: "the shell should exclude itself completely from the app-list, haha..."
-  test.run('the shell leaves itself out of the app list: Contacts is listed, the shell is not', 0.2, async function () {
+  // goal/G43.18, Andy: "the shell should exclude itself completely from the app-list, haha..."; since goal/G49.4 the shell is
+  // no app at all, so the list holds no row of it.
+  test.run('the app list holds Contacts and no row of the shell', 0.2, async function () {
     if (!W3.opened) return false;
     const keys = await c.evaluate('Array.prototype.slice.call(document.querySelectorAll("[data-key]")).filter(function (e) { return e.offsetParent !== null; }).map(function (e) { return e.getAttribute("data-key"); })');
-    return (keys.indexOf('contact') !== -1 && keys.indexOf('app') === -1 && !new RegExp('(^|\\n)\\s*' + SHELL_LABEL + '\\s*(\\n|$)').test(await text())) ? true : false;
-  }, test.limit.quick);
-
-  // the box: "RULE: a shell must be able to replace itself", "boot.js ... then loads the shell the node names"
-  test.run('node.shell is told to name zzshell at home', 0.2, async function () {
-    if (!W3.up) return false;
-    const set = await call(N.base, 'node.shell', { at: 'home', name: 'zzshell' });
-    return (set.status === 200) ? true : false;
-  }, test.limit.quick);
-  test.run('the page loads the shell the node names, zzshell, and it draws', 0.2, async function () {
-    if (!W3.up) return false;
-    await open();
-    second = await loaded();
-    drawn = await text();
-    return (drawn.indexOf(MARK) !== -1 && second.some(function (n) { return (/^\/spirit\/app\/zzshell\/element\.js(\?|$)/).test(n); })) ? true : false;
-  }, test.limit.long);
-  test.run('the page then loads nothing of the other shell, nor a desktop of boot.js\'s own', 0.2, async function () {
-    if (!second) return false;
-    return (drawn.indexOf(MARK) !== -1 && !second.some(function (n) { return (/^\/spirit\/app\/app\/element\.js(\?|$)/).test(n); }) && !/\bContacts\b/.test(drawn)) ? true : false;
-  }, test.limit.quick);
-
-  // No Join check under zzshell (goal/G47.1, Q19, Andy: "On a fake shell, which is possible, join (apps) don't need to be
-  // visible, that's the job of the shell, not the app.").
-
-  // the box: the two rows of the app detail, "shown only for an app whose <name>.json says shell:true:true"
-  const detail = function (key) {
-    return c.evaluate('(function () { return spirit.ready.then(function (s) { return s.app.searchApp({ q: "" }); }).then(function (got) { var it = (got.items || []).filter(function (i) { return i.key === ' + JSON.stringify(key) + '; })[0]; if (!it) return false; var row = Object.assign({ key: it.key }, JSON.parse(it.label || "{}")); return spirit.require("spirit/element/search/app/detail.js").then(function () { var old = document.getElementById("zzDetail"); if (old) old.remove(); var h = document.createElement("div"); h.id = "zzDetail"; document.body.appendChild(h); spirit.element.spirit.element.search.app.detail.create(h, { row: row, panel: true }); return "made"; }); }); }())');
-  };
-  const inDetail = function () { return c.evaluate('String((document.getElementById("zzDetail") || {}).innerText || "")'); };
-  test.run('Contacts\' detail is drawn', 0.2, async function () {
-    if (!W3.up) return false;
-    await call(N.base, 'node.shell', { at: 'home', name: 'app' });
-    await open();
-    return ((await detail('contact')) === 'made') ? true : false;
-  }, test.limit.long);
-  test.run('Contacts, whose shell.true is false, has no Home shell or Face shell row in its detail', 0.2, async function () {
-    if (!W3.up) return false;
-    await sleep(2000);
-    const plain = await inDetail();
-    return (plain.length > 0 && !/Home shell|Face shell/.test(plain)) ? true : false;
-  }, test.limit.slow);
-  test.run('zzshell\'s detail is drawn', 0.2, async function () {
-    if (!W3.up) return false;
-    return ((await detail('zzshell')) === 'made') ? true : false;
-  }, test.limit.quick);
-  test.run('zzshell, whose shell.true is true, has a Home shell and a Face shell row in its detail', 0.2, async function () {
-    if (!W3.up) return false;
-    await sleep(2000);
-    const worthy = await inDetail();
-    return (/Home shell/.test(worthy) && /Face shell/.test(worthy)) ? true : false;
-  }, test.limit.slow);
-  // "the dropdown first showing the configured home shell": the shell app, by Q12 and as set back above.
-  const rowText = function (words) { return c.evaluate('(function () { var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); if (!r) return ""; var i = r.querySelector("input"); return String(r.innerText || "") + " | " + (i ? i.value : ""); }())'); };
-  test.run('its Home shell dropdown first shows the configured home shell, Shell', 0.2, async function () {
-    if (!W3.up) return false;
-    const homeRow = await rowText('Home shell');
-    return (!!SHELL_LABEL && /Home shell/.test(homeRow) && homeRow.indexOf(SHELL_LABEL) !== -1 && homeRow.indexOf(ZZ.identity.label) === -1) ? true : false;
-  }, test.limit.quick);
-
-  // the box: "Both dropdowns list only the apps whose <name>.json says shell:true:true"
-  const listsShells = async function (words) {
-    if (!W3.up) return false;
-    try {
-      const opened = await c.evaluate('(function () { var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); var i = r && r.querySelector("input"); if (!i) return false; i.focus(); i.click(); i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
-      await sleep(1500);
-      // What the dropdown lists: the labels inside that row, its own field and title aside.
-      const seen = parsed(await c.evaluate('JSON.stringify((function () { var want = ' + JSON.stringify(LABELS) + '; var out = []; var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); Array.prototype.slice.call(r ? r.querySelectorAll("[data-key] td, li") : []).forEach(function (e) { var t = String(e.innerText || "").trim(); if ( e.offsetParent !== null && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); }); return out.sort(); }()))')) || [];
-      const others = seen.filter(function (l) { return l !== SHELL_LABEL && l !== ZZ.identity.label; });
-      // Q28, Andy: "no, the shell icon is now properly missing :)": the shell app leaves itself out here too.
-      const held1 = opened && seen.indexOf(ZZ.identity.label) !== -1 && seen.indexOf(SHELL_LABEL) === -1 && !others.length;
-      return held1 ? true : false;
-    } finally {
-      await c.evaluate('document.body.click(); true');
-    }
-  };
-  test.run('the Home shell dropdown, opened, lists Zz Shell, not Shell, and no app that is no shell', 0.2, async function () {
-    return listsShells('Home shell');
-  }, test.limit.slow);
-  test.run('the Face shell dropdown, opened, lists Zz Shell, not Shell, and no app that is no shell', 0.2, async function () {
-    return listsShells('Face shell');
-  }, test.limit.slow);
-
-  // the box: "[armingButton-'Set']" and node.shell
-  test.run('zzshell is chosen in Home shell, and Set is armed by the first press and pressed again', 0.2, async function () {
-    if (!W3.up) return false;
-    const chose = await c.evaluate('(function () { var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf("Home shell") !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); var i = r && r.querySelector("input"); if (!i) return false; i.focus(); i.click(); i.value = "Zz"; i.dispatchEvent(new Event("input", { bubbles: true })); return new Promise(function (res) { setTimeout(function () { var hit = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (e) { return !e.children.length && e.offsetParent !== null && String(e.innerText || "").trim() === ' + JSON.stringify(ZZ.identity.label) + '; })[0]; if (!hit) return res(false); hit.click(); setTimeout(function () { var b = Array.prototype.slice.call(r.querySelectorAll("button")).filter(function (x) { return /^Set\\b/.test(String(x.textContent).trim()); })[0]; if (!b) return res(false); b.click(); setTimeout(function () { var armed = b.hasAttribute("data-armed"); b.click(); res(armed ? "pressed twice" : false); }, 300); }, 500); }, 1500); }); }())');
-    return (chose === 'pressed twice') ? true : false;
-  }, test.limit.slow);
-  test.run('after Set the node names zzshell at home', 0.2, async function () {
-    if (!W3.up) return false;
-    return (await until(function () { return call(N.base, 'node.shell', { at: 'home' }).then(function (a) { return a.body && a.body.name === 'zzshell'; }); }, 6000)) ? true : false;
-  }, test.limit.slow);
-  test.run('the face shell stays its own, still the app app', 0.2, async function () {
-    if (!W3.up) return false;
-    return ((await call(N.base, 'node.shell', { at: 'face' })).body.name === 'app') ? true : false;
+    return (keys.indexOf('contact') !== -1 && keys.indexOf('app') === -1) ? true : false;
   }, test.limit.quick);
 
   // ── THE remote PART (goal/G47.5, box v12: "all appServer faces now carry a Remote element in the center of their titlebar",

@@ -739,7 +739,7 @@ function rotatePart() {
     await c.evaluate(HANDS);
     await c.evaluate('window.__in = "zzBox"');
     // the box, 8: "nodeInfo's rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"
-    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function () { return false; }); }())');
+    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__shell = spirit.element.spirit.element.script.create(b); return "made"; }, function () { return false; }); }())');
     return (shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : false;
   }, test.limit.quick);
   test.run('Info opens from its tile, showing its name field and its rotate button', 0.2, async function () {

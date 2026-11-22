@@ -328,7 +328,7 @@ test.run('the face page has its spirit', 0.2, async function () {
 // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
 test.run('the shell app is drawn', 0.2, async function () {
   if (!B.page) return false;
-  const made = await B.chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function () { return false; }); }())');
+  const made = await B.chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__shell = spirit.element.spirit.element.script.create(b); return "made"; }, function () { return false; }); }())');
   B.shell = made === 'made';
   return B.shell || false;
 }, test.limit.quick);
@@ -703,7 +703,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   // The shell app, as boot.js hands it the page's app area, here in a box of its own over the page.
   test.run('the shell draws its tiles, Files among them', 0.2, async function () {
     if (!R.page) return false;
-    const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__shell = spirit.element.spirit.app.app.element.create(b); return "made"; }, function () { return false; }); }())');
+    const shell = await R.c.evaluate('(function () { var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__shell = spirit.element.spirit.element.script.create(b); return "made"; }, function () { return false; }); }())');
     return shell === 'made' && await wwaitFor('tiles().indexOf("file") !== -1', 10000) ? true : false;
   }, test.limit.quick);
   test.run('Grants has its tile, with nothing pressed', 0.2, async function () {

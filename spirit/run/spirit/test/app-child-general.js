@@ -275,3 +275,20 @@ appRules(TARGETS.filter(function (n) { return n !== BRANCH_TESTS; }).map(factsOf
 }
 if (!GIVEN.length) appChild([]);
 else GIVEN.forEach(function (one) { require('./testReport.js').forScript(one, function () { appChild([one]); }); });
+
+// NO APP IS A SHELL ANY MORE (goal/G49.4, box v15; Andy: "the app manifests shell:true goes, and all the logic that goes
+// with it"): no app's <name>.json carries shell.true. Its shell.mount and shell.tile stay, which give an app its face and
+// its tile; and spirit/app/app/, the shell app, is gone (Andy: "spirit/app/app will be deleted.").
+test.run('no app manifest carries shell.true; mount and tile stay its own', 0.2, function () {
+  const apps = path.join(RUN, 'spirit', 'app');
+  let names = [];
+  try { names = fs.readdirSync(apps, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; }); } catch (e) { return false; }
+  const manifests = names.filter(function (n) { return fs.existsSync(path.join(apps, n, n + '.json')); });
+  const carrying = manifests.filter(function (n) {
+    try { const j = JSON.parse(fs.readFileSync(path.join(apps, n, n + '.json'), 'utf8')); return !!j.shell && Object.prototype.hasOwnProperty.call(j.shell, 'true'); } catch (e) { return true; }
+  });
+  return (manifests.length > 10 && carrying.length === 0) || false;
+}, test.limit.quick);
+test.run('spirit/app/app/, the shell app, is gone: the one shell is spirit/element/script.js', 0.2, function () {
+  return (!fs.existsSync(path.join(RUN, 'spirit', 'app', 'app')) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'script.js'))) || false;
+}, test.limit.quick);

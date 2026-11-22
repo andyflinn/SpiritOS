@@ -142,7 +142,7 @@ test.run('app.active switches the app on', 0.2, async function () {
 }, test.limit.quick);
 test.run('its tile is there and is pressed', 0.2, async function () {
   if (!W.page) return false;
-  await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzSel"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:10000;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: "tiles" }); return "made"; }); }())');
+  await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzSel"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:10000;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.element.spirit.element.script.create(b, { face: "tiles" }); return "made"; }); }())');
   const pressed = await until(function () { return W.c.evaluate('(function () { var t = document.querySelector("#zzSel .app-icon[data-key=' + NAME + ']"); if (!t) return false; t.click(); return true; }())'); }, 15000);
   return !!pressed || false;
 }, test.limit.quick);

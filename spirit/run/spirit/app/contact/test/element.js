@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/contact/test/element.js
 // The tests of spirit/app/contact/element.js, and of Contacts as Andy sees it (spec: ./contact.md; goal/G43.14). Andy: "the new
 // contact app will be exactly the same as the old, merely placed where it now belongs." A real node on a scratch copy of the
-// tracked files, and real clicks in a real Chrome on the appSelector, made as the shell app (spirit/app/app/element.js) makes it. Neither Andy's node nor an
+// tracked files, and real clicks in a real Chrome on the appSelector, made as the shell app (spirit/element/script.js) makes it. Neither Andy's node nor an
 // agent's is touched.
 
 const fs = require('fs');
@@ -144,9 +144,9 @@ test.run('a Chrome page opens', 0.2, async function () {
   if (W.c.error) { W.c = null; return false; }
   return true;
 }, test.limit.quick);
-// The shell Andy uses, /face.html, where the shell app (spirit/app/app/element.js) runs the appSelector (boot.js loads what an app's pages open with).
+// The shell Andy uses, /face.html, where the shell app (spirit/element/script.js) runs the appSelector (boot.js loads what an app's pages open with).
 const selector = function (face) {
-  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/app/element.js").then(function () { window.__sel = spirit.element.spirit.app.app.element.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.element.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
 };
 // The box's text on one line, so a failure says what was on the page.
 const shown = function () { return W.c.evaluate('(document.getElementById("zzBox") || {}).innerText || ""').then(function (t) { return String(t).replace(/\s+/g, ' '); }); };
