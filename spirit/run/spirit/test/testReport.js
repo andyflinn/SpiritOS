@@ -280,7 +280,7 @@ async function runAll() {
     // A SCRIPT DONE (goal/G47.1, box v129-131): the first test of another script ends the one before, whose success goes
     // out as that test starts, before it runs (a run stopped while it waits must find the one before already reported). A run
     // with a title (--test) ran part of its suite and reports no success at all.
-    if (doing !== null && doing !== script) succeeded(doing);
+    if (doing !== null && doing !== script) { succeeded(doing); await reportChain; }
     // THE SCRIPT, AS A HEADING, where it changes: the script is part of the testicle row's key (script, suite, title), so
     // the lines under it are its tests, each its title and its mark.
     if (doing !== script) { doing = script; held[script] = true; line(script); }
@@ -299,8 +299,13 @@ async function runAll() {
     if (!v.pass) held[script] = false;
     if (!v.pass && v.crash) reasonOf[script] = (v.hung || reasonOf[script] === 'hung') ? 'hung' : 'crashed';
     reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
+    // EVERY RESULT REACHES TESTICLE THE MOMENT ITS TEST IS DONE (goal/G49.5; Andy: "the testicle server gets a report
+    // IMMEDIATELY after completion of a test", "it is supposed to pick up there where it was interrupted", "suites are NOT
+    // allowed to fail. they must be FIXED!"): the next test starts only once this one's report has landed (or given up), so
+    // no result ever waits in a queue, and a run interrupted or killed has lost none it finished.
+    await reportChain;
   }
-  if (doing !== null) succeeded(doing);
+  if (doing !== null) { succeeded(doing); await reportChain; }
   // A cleanup that throws is no test and has no title: nothing of it is printed or reported.
   await runAfters();
   test.reportSuccessFailureCount();
