@@ -135,10 +135,10 @@ test.run('run takes a script and a suite, required, and a test\'s title, optiona
   return (passes('run', { script: 'spirit/seal.js', suite: 'spirit/test/seal.js' }) && passes('run', { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', testicle: 'a title' })
     && refusedAs('run', { script: 'spirit/seal.js' }) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('subscribe takes the family, a non-empty id, and optional run and since, and unsubscribe takes nothing', 0.2, function () {
+test.run('subscribe takes the branch, a non-empty id, and optional run and since, and unsubscribe takes nothing', 0.2, function () {
   if (!W.api) return false;
-  return (passes('subscribe', { family: 'testicle' }) && passes('subscribe', { family: 'testicle', run: 'r', since: 3 }) && refusedAs('subscribe', { family: '' }) === 'bad-request'
-    && passes('unsubscribe', {}) && refusedAs('unsubscribe', { family: 'testicle' }) === 'no-such-argument') || false;
+  return (passes('subscribe', { branch: 'testicle' }) && passes('subscribe', { branch: 'testicle', run: 'r', since: 3 }) && refusedAs('subscribe', { branch: '' }) === 'bad-request'
+    && passes('unsubscribe', {}) && refusedAs('unsubscribe', { branch: 'testicle' }) === 'no-such-argument') || false;
 }, test.limit.quick);
 
 // goal/G47.1, box v94, 1: "a new verb testicle.script.classify (arguments: script, browserOnly and nodeOnly)".

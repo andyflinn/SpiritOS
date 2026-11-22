@@ -201,7 +201,7 @@ async function handed(opts) {
   if (run && typeof opts.before === 'function') await opts.before(run);
   for (const name of opts.servers || []) {
     await post('app.active', { key: name, active: true });
-    await until(function () { return post('api', { family: name }).then(function (r) { return !!(r.body && r.body.interface); }); }, 30000);
+    await until(function () { return post('api', { branch: name }).then(function (r) { return !!(r.body && r.body.interface); }); }, 30000);
   }
   const theRuns = function () { return Promise.reject(new Error('a handed node is its run\'s: ask scratchNode({ own: true }) for one to stop or restart')); };
   return { base: base, root: run ? path.dirname(path.dirname(run)) : '', run: run, child: null, up: true, debug: true, shared: true,

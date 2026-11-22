@@ -331,8 +331,8 @@ test.run('testicle.db is made in its state folder, spirit/state/testicle/data/, 
 // work, false if it is idle."
 test.run('the node lists the verb testicle.busy', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { family: 'testicle' });
-  // api {family} answers { family, interface }, the interface the text of its api.js.
+  const api = await call(N.base, 'api', { branch: 'testicle' });
+  // api {branch} answers { branch, interface }, the interface the text of its api.js.
   const iface = String((api.body && api.body.interface) || '');
   return (api.status === 200 && /\bverbs\s*:/.test(iface) && /['"]?busy['"]?\s*:/.test(iface)) || false;
 }, test.limit.quick);
@@ -368,7 +368,7 @@ test.run('the index over the current rows is on the table testicle', 0.2, functi
 }, test.limit.quick);
 test.run('the node lists the verbs testicle.set and testicle.search', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { family: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return (/['"]testicle\.set['"]\s*:/.test(iface) && /['"]testicle\.search['"]\s*:/.test(iface)) || false;
 }, test.limit.quick);
@@ -412,7 +412,7 @@ const prefsOf = function (r) { const b = r && r.body; return (b && typeof b.pref
 let p0 = null;
 test.run('the node lists the verb testicle.preferences', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { family: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return /['"]?preferences['"]?\s*:/.test(iface) || false;
 }, test.limit.quick);
@@ -1186,7 +1186,7 @@ const rowOf = function (script, suite, name) { return currentOf(tables(DB), scri
 let run1 = null;
 test.run('the node lists the verb testicle.run', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { family: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return /['"]?\brun['"]?\s*:/.test(iface) || false;
 }, test.limit.quick);
@@ -1798,7 +1798,7 @@ let zc = null, zcCleared = {};
 
 test.run('the node lists the verb testicle.script.classify', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { family: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return /['"]script\.classify['"]\s*:/.test(iface) || false;
 }, test.limit.quick);
@@ -2291,7 +2291,7 @@ const SUC = 'spirit/app/testicle/temp/zzSucc/zzSucc.js', SUCS = 'spirit/app/test
 let succWorld = false;
 test.run('the node lists the verb testicle.suite.success', 0.4, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { family: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return /['"]suite\.success['"]\s*:/.test(iface) || false;
 }, test.limit.quick);

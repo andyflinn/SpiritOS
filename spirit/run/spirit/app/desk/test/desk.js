@@ -91,7 +91,7 @@ function plantOldRules(stateDir) {
     db.prepare('INSERT INTO rule_chat (rule, seq, at, by, creator, text, born) VALUES (?, ?, ?, ?, ?, ?, ?)').run(1, 1, at, 'andy', 'andy', 'an old line', 1);
   } finally { db.close(); }
 }
-// A family's interface, as a node's door answers {api: {family}}.
+// A branch's interface, as a node's door answers {api: {branch}}.
 function interfaceOf(body) {
   if (!body || !body.api || typeof body.api.branch !== 'string' || !/^[A-Za-z]\w*$/.test(body.api.branch)) return null;
   const f = body.api.branch;

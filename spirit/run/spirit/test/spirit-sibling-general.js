@@ -482,7 +482,7 @@ if (served.length) {
     let ok = true;
     for (const b of served) {
       if (!branchIn(b)) { ok = false; continue; }
-      const fam = await raw('api', { family: b.family });
+      const fam = await raw('api', { branch: b.family });
       const iface = fam.body && typeof fam.body.interface === 'string' ? fam.body.interface.replace(/\r\n/g, '\n') : '';
       const mine = fs.readFileSync(path.join(RUN, b.api), 'utf8').replace(/\r\n/g, '\n');
       if (!(fam.status === 200 && iface === mine)) ok = false;

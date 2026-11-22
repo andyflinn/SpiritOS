@@ -221,7 +221,7 @@ const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 async function selfSubscribe() {
   const publishedAt = fake.event.published.length;
   const postsAt = posts.length;
-  const status = (await post('subscribe', { family: NAME }, SELF)).status;
+  const status = (await post('subscribe', { branch: NAME }, SELF)).status;
   await tick(800);
   const ids = function (list) { const out = []; list.forEach(function (e) { (Array.isArray(e) ? e : [e]).forEach(function (x) { const r = x && (x.row || x); if (r && r.item && r.item.id) out.push(r.item.id); }); }); return out; };
   return { selfStatus: status, toPages: ids(fake.event.published.slice(publishedAt)), byPost: ids(posts.slice(postsAt)) };
@@ -961,7 +961,7 @@ function ownPart() {
   test.after(function () { try { fs.rmSync(listenersFile, { force: true }); } catch (e) { /* none */ } });
   test.run('a subscribe writes its key and the branch it names to spirit/state/<server>/clientListeners.json', 0.2, async function () {
     if (noServer()) return false;
-    const r = await post('subscribe', { family: 'zzbranch' }, SUB_KEY);
+    const r = await post('subscribe', { branch: 'zzbranch' }, SUB_KEY);
     if (!(r.status === 200 && r.body && r.body.subscribed === true)) return false;
     let j = null;
     try { j = JSON.parse(listenersText()); } catch (e) { j = null; }
