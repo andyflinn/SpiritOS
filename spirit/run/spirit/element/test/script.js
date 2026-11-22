@@ -679,6 +679,7 @@ test.after(stopAll);
   const REPO = path.resolve(RUN, '..', '..');
   const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
+  function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
   async function call(base, verb, args) {
     try {
       const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
