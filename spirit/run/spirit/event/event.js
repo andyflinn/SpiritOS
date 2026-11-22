@@ -101,7 +101,7 @@ function createEvents(o) {
     // so the shell knows the tree is whole before it discovers apps from it.
     const fsJob = o.jobs.getJob ? o.jobs.getJob('spirit.fs') : null;
     if (fsJob) {
-      spirit.require('spirit/fs.js').commands().forEach(function (command) { write('job-updated', Object.assign({}, fsJob, { data: { command: command } })); });
+      spirit.require('spirit/fs/script.js').commands().forEach(function (command) { write('job-updated', Object.assign({}, fsJob, { data: { command: command } })); });
       write('job-updated', Object.assign({}, fsJob, { data: { treeComplete: true } }));
     }
 

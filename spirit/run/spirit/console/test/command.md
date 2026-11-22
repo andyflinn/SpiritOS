@@ -1,7 +1,7 @@
 # spirit/console/command.js
 
 The console's command processor (goal/G48.2, the box: *"the script run://spirit/console/command.js will be the consoles
-command processor."*). It is reached through the console's one door, `node spirit/console.js <words>`. Its test:
+command processor."*). It is reached through the console's one door, `node spirit/console/script.js <words>`. Its test:
 `./command.js`.
 
 ## What it does
@@ -23,7 +23,7 @@ command processor."*). It is reached through the console's one door, `node spiri
 
 ## What its test judges
 
-On a scratch node of its own, one command at a time through `spirit/console.js`, the state file read where the box puts it:
+On a scratch node of its own, one command at a time through `spirit/console/script.js`, the state file read where the box puts it:
 `path app` stores app and logs `path app`; `path` shows app and leaves it; `path agent` stores app.agent and logs
 `path app.agent`; `path nope` refused, the path kept; `path <` back to app; `path app.agent` at app refused (app.app.agent);
 `path <<` to the root; `path app.agent` at the root stores app.agent; `path <<` straight back; `path <` and `path <<` at the

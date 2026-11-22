@@ -509,7 +509,7 @@
   function isHolder(o) { return !!(holders && o && typeof o === 'object' && holders.has(o)); }
   function holder() { var h = {}; if (holders) holders.add(h); return h; }
   // Its first levels made here, so a reader asking spirit.required.spirit.element.<x> before any helper ran reads undefined
-  // instead of throwing (goal/G43.32). Holders, as any folder's place: spirit/app.js takes spirit.required.spirit.app
+  // instead of throwing (goal/G43.32). Holders, as any folder's place: spirit/app/script.js takes spirit.required.spirit.app
   // and keeps the spirit/app/ scripts placed under it.
   required.spirit = holder();
   required.spirit.element = holder();

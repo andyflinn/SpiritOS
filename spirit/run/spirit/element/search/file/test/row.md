@@ -15,7 +15,7 @@ a subject needs), and is since goal/G41.28 the fs family's data.js's, which the 
 
 ## Requirements
 
-- It loads what it uses itself (rule/26): `spirit/element/row.js`, `spirit/element/icon.js`, `spirit/word.js`,
+- It loads what it uses itself (rule/26): `spirit/element/row.js`, `spirit/element/icon.js`, `spirit/word/script.js`,
   `spirit/element/fstat.js` and the fs family's interface, `spirit/fs/api.js`; no data script, since only an api.js
   requires its data.js.
 - It registers `spirit.element.search.file.row.create(row)`.

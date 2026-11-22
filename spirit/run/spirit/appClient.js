@@ -39,7 +39,7 @@ const path = require('path');
 const crypto = require('crypto');
 const relayRequest = spirit.require('spirit/relayRequest.js');
 const limits = spirit.require('spirit/limits.js');
-const errors = spirit.require('spirit/spiritErrors.js');
+const errors = spirit.require('spirit/error/script.js');
 
 // A process's folder name: nothing that could climb out of a folder or
 // name a pipe path.

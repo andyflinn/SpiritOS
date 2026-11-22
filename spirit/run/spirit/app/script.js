@@ -1,7 +1,7 @@
 'use strict';
-require('./spirit.js');
+require('../spirit.js');
 
-// spirit/run/spirit/app.js
+// spirit/run/spirit/app/script.js
 // THE app FAMILY'S CORE MODULE (goal/G43.2). Andy, box: "we build a skeleton core-api-family, not a separate server,
 // precisely the OLD way, the new family is called "app"", and "it provides a probabilitySearch, over the list of it's
 // "plugin" modules". Its contract and its test: ./test/app.md and ./test/app.js.
@@ -42,7 +42,7 @@ const VERBS = spirit.required.spirit.app.api.verbs;
 
 // The tree's paths are the run folder's, so the app folders stand under spirit/app/.
 const APP_ROOT = 'spirit/app/';
-function tree() { return spirit.require('spirit/fs.js'); }
+function tree() { return spirit.require('spirit/fs/script.js'); }
 
 function createApp(opts) {
   const o = opts || {};
@@ -87,7 +87,7 @@ function createApp(opts) {
       api: ((tree().file(APP_ROOT + name) || {}).api) === true };
   }
   // THE FOLDERS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
-  // "fix spirit/app.js, NOW"): the plugins are the folders directly in spirit/app/ as spirit/fs.js holds them, fed in this,
+  // "fix spirit/app/script.js, NOW"): the plugins are the folders directly in spirit/app/ as spirit/fs/script.js holds them, fed in this,
   // the node's main process, by its file watcher (goal/G49.1). A plugin's own <name>.json is still read for its content.
   function names() {
     const files = tree().files();

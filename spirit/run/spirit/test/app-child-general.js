@@ -3,7 +3,7 @@
 // spirit/run/spirit/test/app-child-general.js [file]
 // THE RULES FOR THE SUB-FOLDERS OF spirit/app/ (goal/G43.32; spec: ./app-child-general.md). Andy, the box: "rules for
 // sub-folders of run://spirit/app/", 0 to 6, and of its name: "if app-child-general.js works that is my decision." A
-// -child- general test beside spirit/app.js (./TEST_SYSTEM.md): it judges spirit/app.js and spirit/app/ and below.
+// -child- general test beside spirit/app/script.js (./TEST_SYSTEM.md): it judges spirit/app/script.js and spirit/app/ and below.
 //
 //   node spirit/test/app-child-general.js spirit/app/desk/desk.js     the app the file is in
 //   node spirit/test/app-child-general.js                             every sub-folder of spirit/app/
@@ -38,7 +38,7 @@ const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude
 const BRANCH_TESTS = 'test';
 const APPS = Array.from(new Set(TREE.map(function (f) { const m = /^spirit\/app\/([^/]+)\//.exec(f); return m ? m[1] : ''; }).filter(Boolean))).sort();
 
-// Asked about one file: the app it is in. spirit/app.js and the branch's own files (spirit/app/<file>, spirit/app/test/)
+// Asked about one file: the app it is in. spirit/app/script.js and the branch's own files (spirit/app/<file>, spirit/app/test/)
 // are judged with every app, since they are no app's.
 const asked = ARGS[0] ? String(ARGS[0]).replace(/\\/g, '/').replace(/^\.\//, '').replace(/^spirit\/run\//, '') : '';
 const askedApp = (/^spirit\/app\/([^/]+)\//.exec(asked) || [])[1] || '';

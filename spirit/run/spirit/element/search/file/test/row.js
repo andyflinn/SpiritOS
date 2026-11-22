@@ -231,7 +231,7 @@ test.run('expandInfo asks fs.stat, and no annotations, which are the node\'s onl
 }, test.limit.quick);
 
 // ── goal/G43.4: THE RESERVED WORDS IN COLOUR, IN A REAL BROWSER ───────────────────────────────────
-// Real rows on a scratch node (./row-words.html), spirit/word.js and the node's own file stream under them.
+// Real rows on a scratch node (./row-words.html), spirit/word/script.js and the node's own file stream under them.
 // goal/G43.18, Andy: "file app: please change the green colored paths/files in light blue instead.", and then "ALL, ONLY
 // REPLACE RED WITH LIGHT PURPLE, KEEP THE BLUE!!!!!!!!!!!!!!!!": a word that holds is light blue, one that does not is light
 // purple, and no red is left.

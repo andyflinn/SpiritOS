@@ -36,7 +36,7 @@ const createRelay = spirit.require('spirit/relay.js');
 const common = spirit.require('spirit/server/serveCommon.js');
 const streamSink = spirit.require('spirit/streamSink.js');
 // R36 phase B: a refusal carries the catalogue's code beside its sentence.
-const spiritErrors = spirit.require('spirit/spiritErrors.js');
+const spiritErrors = spirit.require('spirit/error/script.js');
 const readJsonBody = common.readJsonBody;
 const nodeRefusal = common.nodeRefusal;
 

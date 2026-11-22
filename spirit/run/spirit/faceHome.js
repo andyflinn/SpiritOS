@@ -409,7 +409,7 @@ function createFaceHome(opts) {
       // A face is a page: the servable tree only (goal/G49.2; Andy: "it is at publish-to-clients time that !fileServable be the
       // filter").
       const servable = spirit.require('spirit/fs/fileSystem.js').fileServable;
-      spirit.require('spirit/fs.js').commands().forEach(function (command) {
+      spirit.require('spirit/fs/script.js').commands().forEach(function (command) {
         if (!servable(String(command.path))) return;
         face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { command: command } }) });
       });

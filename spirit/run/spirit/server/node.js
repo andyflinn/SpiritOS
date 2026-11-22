@@ -27,7 +27,7 @@ const nodeCard = spirit.require('spirit/nodeCard.js');
 // has PROVEN onto a contact row that already exists. Everything else that
 // touches the book goes through hub; this does not, because it is a
 // stream event with no request behind it and no response to build.
-const contactBook = spirit.require('spirit/contacts.js');
+const contactBook = spirit.require('spirit/contact/script.js');
 // The keys this node has accepted for the relays it uses. Turning the URL
 // a packet arrived on into the relay KEY a route is made of.
 const relayKeys = spirit.require('spirit/relayKeys.js');
@@ -317,7 +317,7 @@ function handleCreateJob(req, res) {
     catch (e) {
       // A process this node does not include is refused by name (slim/G1.3).
       if (e && (e.refusal === 'process-not-included' || e.refusal === 'not-a-process' || e.refusal === 'already-running')) {
-        const known = spirit.require('spirit/spiritErrors.js').byCode(e.refusal);
+        const known = spirit.require('spirit/error/script.js').byCode(e.refusal);
         res.writeHead(known.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: false, code: e.refusal, error: known.text, process: e.process }));
         return;
@@ -1175,7 +1175,7 @@ catch (e) {
     // wanted answer: Contacts asks strangers for a card BEFORE adding
     // them, and a question must not write somebody into the book.
     keepCard: function (toKey, cardText) {
-      const book = spirit.require('spirit/contacts.js');
+      const book = spirit.require('spirit/contact/script.js');
       // ── A CARD WE ASKED FOR SITS ON THAT KEY'S ROW ──────────────
       //
       // After cycle 10 R5 a node cannot POST to somebody whose card it does not hold, so the card goes on the row,
@@ -1200,8 +1200,8 @@ catch (e) {
     // is: a card can arrive, and a key can rotate, while the process
     // runs. Empty means the post is refused — never sent plain.
     sealKeyFor: function (toKey) {
-      var row = spirit.require('spirit/contacts.js').byPublicKey(ROOT_DIR, toKey);
-      var fromCard = row && spirit.require('spirit/contacts.js').sealKeyOf(row);
+      var row = spirit.require('spirit/contact/script.js').byPublicKey(ROOT_DIR, toKey);
+      var fromCard = row && spirit.require('spirit/contact/script.js').sealKeyOf(row);
       if (fromCard) return fromCard;
       return answerer.relaySealKeyByKey ? answerer.relaySealKeyByKey(toKey) : '';
     },
@@ -1274,10 +1274,10 @@ catch (e) {
     // An app of spirit/app/ has it at its top, beside <name>.js, as spirit/<family>/ has it (goal/G43.27); the node finds the
     // folder, so a page binds by the name alone.
     // FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2; Andy: "go on node.js"): whether spirit/app/<name>/api.js is
-    // there is asked of spirit/fs.js, whole in this, the node's main process, since its watcher started at boot.
+    // there is asked of spirit/fs/script.js, whole in this, the node's main process, since its watcher started at boot.
     branchDir: function (name) {
       const app = path.join(ROOT_DIR, 'spirit', 'app', String(name));
-      return spirit.require('spirit/fs.js').file('spirit/app/' + String(name) + '/api.js') ? app : path.join(ROOT_DIR, path.dirname(spirit.branchPath(name)));
+      return spirit.require('spirit/fs/script.js').file('spirit/app/' + String(name) + '/api.js') ? app : path.join(ROOT_DIR, path.dirname(spirit.branchPath(name)));
     },
   });
   jobs.startNodeServers(ROOT_DIR, appClient);
@@ -1584,7 +1584,7 @@ catch (e) {
       // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why."): the reason in
       // extra.why beside the code's own words.
       const refusal = function (code, why) {
-        const e = spirit.require('spirit/spiritErrors.js').byCode(code);
+        const e = spirit.require('spirit/error/script.js').byCode(code);
         const body = { ok: false, code: code, error: e ? e.text : code };
         if (why) body.extra = { why: String(why) };
         send((e && e.status) || 400, body);
@@ -1641,8 +1641,8 @@ catch (e) {
   loopbackVerbs.mount('config', path.join(__dirname, '..', 'config'), {}, { wire: false, by: 'server.js' });
 
   // THE app FAMILY (goal/G43.2; Andy, box: "the "app" api-family will sit nicely beside all other families"): its verbs,
-  // "just a search string", over the plugins in its folder (spirit/app.js). A face with no star may call it (Andy, box).
-  const appFamily = spirit.require('spirit/app.js').createApp({ rootDir: ROOT_DIR, jobs: jobs });
+  // "just a search string", over the plugins in its folder (spirit/app/script.js). A face with no star may call it (Andy, box).
+  const appFamily = spirit.require('spirit/app/script.js').createApp({ rootDir: ROOT_DIR, jobs: jobs });
   loopbackVerbs.mount('app', path.join(__dirname, '..', 'app'), {
     'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return appFamily.search(b); }) },
     // goal/G43.9, peer review wsl, Andy's yes on Q1. Off the face with no star: spirit/faceHome.js.

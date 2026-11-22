@@ -1,7 +1,7 @@
 'use strict';
-require('./spirit.js');
+require('../spirit.js');
 
-// spirit/run/spirit/spiritErrors.js
+// spirit/run/spirit/error/script.js
 // WHAT AN ERROR MEANS — ONE PLACE, FOR THE RELAY AND THE NODE ALIKE.
 //
 //   Andy: "now that we know most of failure states, wouldn't it be time to

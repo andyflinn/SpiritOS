@@ -6,7 +6,7 @@
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the app row and list) asks spirit.data.app.data
 // (below), never a branch by name.
 //   apps   key -> { key, label, icon, active, shell, intrinsic, nodeMount }, what app.search answered (seated by the list that is a view of it), and the
-//          whole table the apps news of the node's own job spirit.app holds (spirit/app.js): a key it no longer names is gone.
+//          whole table the apps news of the node's own job spirit.app holds (spirit/app/script.js): a key it no longer names is gone.
 // Every event ends in set or del; it asks nothing.
 (function family() {
   var APPS = 'apps';
@@ -23,7 +23,7 @@
         if (!all || typeof all !== 'object') return;
         var V = D.viewAt(job.fromNode || null, 'app');
         Object.keys(V.branch(APPS)).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(all, k)) V.del(APPS + '/' + k); });
-        // Every field the node's row carries (spirit/app.js rowOf), run and runOnly among them (goal/G43.21: a node:run app
+        // Every field the node's row carries (spirit/app/script.js rowOf), run and runOnly among them (goal/G43.21: a node:run app
         // is listed in pane mode only, and shows Run, not Activate).
         Object.keys(all).forEach(function (k) {
           var r = all[k] || {};

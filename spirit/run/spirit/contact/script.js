@@ -1,7 +1,7 @@
 'use strict';
-require('./spirit.js');
+require('../spirit.js');
 
-// spirit/run/spirit/contacts.js — the owner's acts on the one table.
+// spirit/run/spirit/contact/script.js — the owner's acts on the one table.
 //
 // ── THE ONE TABLE (goal/G40.11) ──────────────────────────────────────
 //

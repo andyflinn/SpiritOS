@@ -9,7 +9,7 @@ Not spirit-3. Not pretty UI.
 
 ## What this pack is
 
-- `spirit/run/spirit/contacts.js` — the private contacts book on a personal node, rows of the one table `seen` in `node.db` (goal/G40.11)
+- `spirit/run/spirit/contact/script.js` — the private contacts book on a personal node, rows of the one table `seen` in `node.db` (goal/G40.11)
 - `spirit/test/identityPerception.js` — two johns as two keys; captions stay local
 - labMaster — sticks, not a new framework
 

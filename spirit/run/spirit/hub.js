@@ -11,7 +11,7 @@ const auth = require('./spirit.js').require('spirit/relayAuth.js');
 // invites.js STOOD HERE, required and never used — it is the relay's
 // waiting room, on the relay's disc (cycle 3), and nothing on a node reads it.
 const ownerBadge = require('./spirit.js').require('spirit/ownerBadge.js');
-const contactBook = require('./spirit.js').require('spirit/contacts.js');
+const contactBook = require('./spirit.js').require('spirit/contact/script.js');
 const relayKeys = require('./spirit.js').require('spirit/relayKeys.js');
 // WHAT A SEARCH LEARNED, kept until it becomes useful. A search answer
 // says where each person lives, and that was thrown away — see
@@ -71,7 +71,7 @@ function learnPresence(rootDir, toKey, answer) {
   if (answer && answer.ok) {
     present = true;
   } else {
-    var meant = require('./spirit.js').require('spirit/spiritErrors.js').classifyAnswer(answer);
+    var meant = require('./spirit.js').require('spirit/error/script.js').classifyAnswer(answer);
     present = meant ? meant.presence : null;
   }
   if (present !== true && present !== false) return;

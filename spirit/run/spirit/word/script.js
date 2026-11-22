@@ -1,5 +1,5 @@
 'use strict';
-// spirit/run/spirit/word.js
+// spirit/run/spirit/word/script.js
 // THE NAMESPACE CLAIMS (goal/G43.4). Andy, the box: "i will track nameSpace claims." After this item it is his, with every
 // word.json: "ANDY owns word.js and ALL word.json files." Its contract and its test: ./test/word.md and ./test/word.js.
 //
@@ -45,7 +45,7 @@
   ].forEach(function (w) { HARD[w] = true; });
 
   function wordOf(word) { var w = String(word == null ? '' : word); return /^[A-Za-z]+$/.test(w) ? w.toLowerCase() : ''; }
-  // The word.json of each level on the path, below the root: the box's "it would NOT check" run://spirit/word.json.
+  // The word.json of each level on the path, below the root: the box's "it would NOT check" run://spirit/word/script.json.
   function levels(path) {
     var parts = String(path || '').split('.');
     var out = [];
@@ -60,7 +60,7 @@
 
   if (typeof module === 'object' && module && module.exports) {
     // The spirit object first (goal/G40.1).
-    require('./spirit.js');
+    require('../spirit.js');
     var fs = require('fs');
     var path = require('path');
     // Through spirit.require (goal/G43.32; Andy allowed word.js to be changed to the rules).
@@ -71,7 +71,7 @@
       if (!w) return null;
       if (HARD[w]) return w;
       return levels(at).some(function (rel) {
-        try { return holds(fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'), w); } catch (e) { return false; }
+        try { return holds(fs.readFileSync(path.join(__dirname, '..', '..', rel), 'utf8'), w); } catch (e) { return false; }
       }) ? w : null;
     };
     // A word.json anywhere below a folder holding the word.
@@ -91,7 +91,7 @@
         var rel = levels(at)[0];
         // A path holds words, a to z, so nothing but a level of the tree is ever written.
         if (!w || !rel || !/^[a-z]+(\.[a-z]+)*$/.test(String(at)) || check(at, w)) return false;
-        var file = path.join(__dirname, '..', rel);
+        var file = path.join(__dirname, '..', '..', rel);
         // Andy: "wince fucking when does add() add a MOTHERFUCKING FOLDER?" A level is a folder that stands.
         var dir = path.dirname(file);
         try { if (!fs.statSync(dir).isDirectory()) return false; } catch (e) { return false; }

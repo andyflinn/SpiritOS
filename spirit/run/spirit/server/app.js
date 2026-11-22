@@ -41,7 +41,7 @@ require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const errors = spirit.require('spirit/spiritErrors.js');
+const errors = spirit.require('spirit/error/script.js');
 const limits = spirit.require('spirit/limits.js');
 // A STREAM'S BUNDLE IN ONE PLACE (goal/G48.7; Andy: "i would NOT want that to be done in two places", "the module is
 // spirit/streamBundle.js"): the publisher packs with it, both listeners unpack with it.

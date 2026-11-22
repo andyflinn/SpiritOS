@@ -20,7 +20,7 @@ require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 const nodeStore = spirit.require('spirit/nodeStore.js');
-const contacts = spirit.require('spirit/contacts.js');
+const contacts = spirit.require('spirit/contact/script.js');
 const limits = spirit.require('spirit/limits.js');
 const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
 const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;

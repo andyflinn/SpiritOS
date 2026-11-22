@@ -19,7 +19,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   // goal/G41.23: a file's icon is the icon element (spirit/element/icon.js), loaded here too.
   // goal/G43.17: a file's icon is its kind's, which fstat says.
-  if (window.spirit.require) ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/word.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.require) ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/word/script.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
   var files = null;
 
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
@@ -163,7 +163,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       paintWords();
     };
     if (window.spirit.word) listen();
-    else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/word.js')).then(listen, function () { /* no colours */ });
+    else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/word/script.js')).then(listen, function () { /* no colours */ });
     var destroy = el.destroy;
     el.destroy = function () { live = false; if (offWords) offWords(); return destroy.apply(el, arguments); };
     // A FILE DELETED ON DISC TAKES ITS ROW OUT OF THE LIST (goal/G47.1; Andy: "why would the file row not listen to a file

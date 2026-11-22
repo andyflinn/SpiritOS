@@ -1,7 +1,7 @@
 # spirit/console/loop.js
 
 The console's interactive loop (goal/G48.2, the box: *"the script run://spirit/console/loop.js will be the consoles
-interactive user loop"*), entered by `node spirit/console.js` with no words. Its test: `./loop.js`.
+interactive user loop"*), entered by `node spirit/console/script.js` with no words. Its test: `./loop.js`.
 
 ## What it does
 

@@ -1,6 +1,6 @@
 # spirit/test/app-child-general.js, the rules for the sub-folders of spirit/app/
 
-A `-child-` general test beside `spirit/app.js` (`./TEST_SYSTEM.md`): it judges `spirit/app.js` and `spirit/app/` and
+A `-child-` general test beside `spirit/app/script.js` (`./TEST_SYSTEM.md`): it judges `spirit/app/script.js` and `spirit/app/` and
 below. Given a file, it judges the app that file is in; given none, or a file of the app branch itself, every
 sub-folder. Given several, each in turn, in one run, its results reported for that file (testReport's
 `test.forScript`; box v94, 2: *"else it will process all scripts listed in the arguments that fit"*). Judged on disc, from

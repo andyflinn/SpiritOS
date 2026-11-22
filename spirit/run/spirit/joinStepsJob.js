@@ -19,7 +19,7 @@ require('./spirit.js');
 
 const auth = spirit.require('spirit/relayAuth.js');
 const relayKeys = spirit.require('spirit/relayKeys.js');
-const contactBook = spirit.require('spirit/contacts.js');
+const contactBook = spirit.require('spirit/contact/script.js');
 
 function facts(rootDir) {
   const out = { seated: false, relayUrl: '', contact: false, face: '', faceUrl: '' };

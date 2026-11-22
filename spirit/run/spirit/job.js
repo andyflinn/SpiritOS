@@ -203,7 +203,7 @@ module.exports = function installJobs(port) {
   // The watcher keeps the tree (path -> {kind, size, modified}) and sends what changed, one command per job-updated:
   // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
   // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
-  // commands read from spirit/fs.js (commands(), in event/event.js and faceHome.js). THE TREE IS COMPLETE (goal/G49.2; Andy:
+  // commands read from spirit/fs/script.js (commands(), in event/event.js and faceHome.js). THE TREE IS COMPLETE (goal/G49.2; Andy:
   // "the shared dataset needs to be complete, period", "it is at publish-to-clients time that !fileServable be the filter"):
   // seeded from scanFolder's whole walk and watched whole, .git alone left out, the node's state, its server code and the
   // vendored folders in it; only what is published to a page is cut by fileServable (event/event.js, faceHome.js). chokidar
@@ -213,12 +213,12 @@ module.exports = function installJobs(port) {
   // THE TREE IS spirit.data.fs (goal/G49.1, box v17: "chokidar --> (node: spirit.data.fs) --> spirit.event --> browsers and
   // node processes"; "job.js's own tree (fsTree) goes. Nothing else holds a tree on the node"): the watcher writes each
   // command into this process's spirit.data, where spirit/fs/data.js files it as it does a page's stream, and reads it back
-  // from there. Its readers ask spirit/fs.js for it, commands() and entries() (goal/G49.2: "job.js's fsTreeCommands and
+  // from there. Its readers ask spirit/fs/script.js for it, commands() and entries() (goal/G49.2: "job.js's fsTreeCommands and
   // fsTreeEntries go, and event.js, faceHome.js and nodeSearches.js read spirit.data.fs"). fsWatching is the watcher whose tree it
   // is, null once it stopped.
   const FS_HOME = 'local'; // the node's own name in its spirit.data, as a child that follows the stream names it (spirit/data.js)
   let fsWatching = null;
-  function fsDataset() { return spirit.require('spirit/fs.js'); }
+  function fsDataset() { return spirit.require('spirit/fs/script.js'); }
   function fsWrite(command) {
     spirit.require('spirit/data.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
   }
@@ -250,7 +250,7 @@ module.exports = function installJobs(port) {
     if (kind === 'file' && spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
     return held;
   }
-  // A file row as a tree command: spirit/fs.js's, where a connect's whole tree is read too (goal/G49.2).
+  // A file row as a tree command: spirit/fs/script.js's, where a connect's whole tree is read too (goal/G49.2).
   function commandOf(op, p, at, held) { return fsDataset().CommandOf(op, p, at, held); }
 
   function startFsWatcherJob(rootDir) {
@@ -682,7 +682,7 @@ module.exports = function installJobs(port) {
 
   // THE APPS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
   // "fix job.js"): the folders directly in spirit/app/ and the files in them, as this process's spirit.data.fs holds them
-  // (spirit/fs.js), fed by the watcher the node starts first (startFsWatcherJob). A <name>.json is still read for what it says.
+  // (spirit/fs/script.js), fed by the watcher the node starts first (startFsWatcherJob). A <name>.json is still read for what it says.
   function inTree(rel) { return !!fsDataset().file(rel); }
   function appFolders() {
     const files = fsDataset().files();

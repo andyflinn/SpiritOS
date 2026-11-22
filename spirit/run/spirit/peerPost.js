@@ -48,7 +48,7 @@ const postQueue = spirit.require('spirit/postQueue.js');
 // by holdStreams below and reached by nobody else; oneDoorStacks.js holds
 // the line.
 const presenceNode = spirit.require('spirit/presenceNode.js');
-const spiritErrors = spirit.require('spirit/spiritErrors.js');
+const spiritErrors = spirit.require('spirit/error/script.js');
 // The node layer's one reading of what arrived (N1, goal/G16.5).
 const arrivals = spirit.require('spirit/arrivals.js');
 

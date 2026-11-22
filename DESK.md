@@ -49,16 +49,16 @@ node -e "fetch('http://127.0.0.1:<port>/api/spirit',{method:'POST',headers:{'con
 ## Your console
 
 Andy, 2026-11-21: *"console can be your manual and interface for your personal node"*. Every call below runs in your
-own clone's `spirit/run`, one line at a time: `node spirit/console.js <line>` runs the line once, prints the answer and
-ends (`node spirit/console.js` alone is the interactive loop). The console keeps its path between calls:
+own clone's `spirit/run`, one line at a time: `node spirit/console/script.js <line>` runs the line once, prints the answer and
+ends (`node spirit/console/script.js` alone is the interactive loop). The console keeps its path between calls:
 
 ```
-node spirit/console.js path app.desk
-node spirit/console.js items.search text= currentGoalOnly=true goalsOnly=false includeClosed=false
-node spirit/console.js item.get id=goal/G48.8
-node spirit/console.js item.chat id=goal/G48.8
-node spirit/console.js chat.add id=goal/G48.8 'text="wsl: a line, its value in double quotes"'
-node spirit/console.js path <<
+node spirit/console/script.js path app.desk
+node spirit/console/script.js items.search text= currentGoalOnly=true goalsOnly=false includeClosed=false
+node spirit/console/script.js item.get id=goal/G48.8
+node spirit/console/script.js item.chat id=goal/G48.8
+node spirit/console/script.js chat.add id=goal/G48.8 'text="wsl: a line, its value in double quotes"'
+node spirit/console/script.js path <<
 ```
 
 `api` at a path lists its verbs, `api <verb>` a verb's arguments. A value with a space in it goes in double quotes; a
@@ -69,7 +69,7 @@ double quote inside it is written `\"`. An answer with `ok: false` was refused, 
 Andy, 2026-10-01: *"ideally agents just listen do desk in a loop. this loop ends only when i close vscode."*
 
 1. **Arm the wait in the background**, as a command your tooling runs detached and tells you about when it exits:
-   `node spirit/console.js wait`. **One wait only**: a second is refused while one runs. Do not poll it, and do not
+   `node spirit/console/script.js wait`. **One wait only**: a second is refused while one runs. Do not poll it, and do not
    sleep beside it.
 2. **When it ends with 0**, it printed one JSON line per row that woke it: `entry.row` is the desk's row, and for a chat
    line `entry.row.row.text` is the text and `entry.row.id` its item. Only Andy's lines to you or to all wake you.

@@ -239,7 +239,7 @@ function cdRender() {
   // OFFERED IN BOTH STATES, unlike Accept and Unblock, because it is not
   // about the relationship: it is about this node's own book. A blocked
   // person can be forgotten without being unblocked — the node's forget
-  // (spirit/contacts.js) downgrades that row rather than deleting it, or the block would evaporate and
+  // (spirit/contact/script.js) downgrades that row rather than deleting it, or the block would evaporate and
   // they would be readmitted the moment they wrote.
   //
   // Two presses, for the same reason Block has two: it is at the end of a

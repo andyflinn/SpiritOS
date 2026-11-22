@@ -1,6 +1,6 @@
 'use strict';
-// spirit/run/spirit/fs.js
-// THE FS DATASET'S ONE ENTRY IN A NODE PROCESS (goal/G49.1, box v17: "spirit/fs.js is the one entry for a node process
+// spirit/run/spirit/fs/script.js
+// THE FS DATASET'S ONE ENTRY IN A NODE PROCESS (goal/G49.1, box v17: "spirit/fs/script.js is the one entry for a node process
 // that wants the fs dataset: it wraps spirit/fs/data.js and, in a child process, adds the followStream call opaquely. A
 // caller never knows how the dataset is created or updated"). It answers spirit.data.fs's reads: file(path), files(),
 // ready(), watch(fn) / watch(path, fn), branch.
@@ -9,8 +9,8 @@
 // says so with FedHere(); in any other process nothing does, so spirit.data follows the node's stream, which hands the
 // whole tree and then each change into the same fs/data.js translator a page uses.
 //
-// Node only. It changes no caller (box v17, "OUT OF SCOPE OF THIS ITEM: changing any future client of spirit/fs.js").
-require('./spirit.js');
+// Node only. It changes no caller (box v17, "OUT OF SCOPE OF THIS ITEM: changing any future client of spirit/fs/script.js").
+require('../spirit.js');
 // The branch's api.js, which brings its companion spirit/fs/data.js, which makes spirit.data.fs. In node spirit.require
 // loads the file at once and then binds spirit.fs; a process with no port to bind to (the node's own main process on a
 // fresh tree) is refused the binding, never the file, so that refusal is let go.

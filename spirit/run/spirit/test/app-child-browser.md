@@ -1,6 +1,6 @@
 # spirit/test/app-child-browser.js
 
-The -browser general test beside `spirit/app.js` (goal/G47.1, box v140-142): it judges the scripts under `spirit/app/` and
+The -browser general test beside `spirit/app/script.js` (goal/G47.1, box v140-142): it judges the scripts under `spirit/app/` and
 below in a page, the page twin of `app-child-general.js`. What holds for every page script is
 `spirit-sibling-browser.js`'s.
 

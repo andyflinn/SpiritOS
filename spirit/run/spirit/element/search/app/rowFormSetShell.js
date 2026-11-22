@@ -42,7 +42,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     function ask() {
       return S.ready.then(function (s) { return s.node.shell({ at: at }); }).then(function (r) { named = String((r && r.name) || ''); paint(); }, function () { /* the row stays */ });
     }
-    // ONLY FOR AN APP THAT MAY BE A SHELL: its row, from <name>.json alone (spirit/app.js), drawn once it is known.
+    // ONLY FOR AN APP THAT MAY BE A SHELL: its row, from <name>.json alone (spirit/app/script.js), drawn once it is known.
     function draw() {
       if (gone || form) return;
       var row = rows()[key];

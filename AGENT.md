@@ -223,7 +223,7 @@ and *"we codify your behavior in AGENTS.md and CLAUDE.md for the repo AND
 AGENTS.md for desk"*. The loop, as the lead runs it:
 
 1. **No turn ends without a listener armed.** After every post, the agent
-   starts its console's wait in the background, `node spirit/console.js wait` in
+   starts its console's wait in the background, `node spirit/console/script.js wait` in
    its own clone's `spirit/run`, which ends on the next row of Andy's desk that
    matches its wait-rows. The agent's node runs a desk of its own, a client of
    Andy's (goal/G47.5): his desk's rows reach the agent's node as deliveries to

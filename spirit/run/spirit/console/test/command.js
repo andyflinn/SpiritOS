@@ -5,7 +5,7 @@
 // run://spirit/console/command.js will be the consoles command processor"; "the console internal command for navigation is
 // \"path\""; "the state of the console is kept in run://spirit/state/console/node.json ... the current navigation path of the
 // console and a 256 rolling command history."
-// It is reached as the box says it is, through the console's one door: "node spirit/console.js <words>" hands the words to
+// It is reached as the box says it is, through the console's one door: "node spirit/console/script.js <words>" hands the words to
 // command.js once. On a scratch node of its own; the state file is read where the box puts it, in that node's tree.
 
 const fs = require('fs');

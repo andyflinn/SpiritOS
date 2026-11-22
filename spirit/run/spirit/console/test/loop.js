@@ -5,7 +5,7 @@
 // run://spirit/console/loop.js will be the consoles interactive user loop"; its prompt; and "when the user in the interactive
 // loop uses the up/down arrow keys, only those history items will be offered that can be used from the current path. since
 // the log stores all commands as if typed from root prompt \"spirit: \", the loop must translate those back into its scope".
-// The loop is entered as the box says, "node spirit/console.js" with no words, on a scratch node of its own. The arrow keys
+// The loop is entered as the box says, "node spirit/console/script.js" with no words, on a scratch node of its own. The arrow keys
 // are a terminal's: the loop's node is told its input and output are a terminal (isTTY, set before console.js loads, by
 // --import), so readline reads keys and draws its line as in one, on every machine; its keys are written to it as a
 // terminal sends them (goal/G48.4; Andy's Windows run: script(1), util-linux, which the test used before, is Linux only).
@@ -24,7 +24,7 @@ const stateOf = function () { try { return JSON.parse(fs.readFileSync(STATE(), '
 const at = function () { const s = stateOf(); return s ? String(s.path || '') : null; };
 // What a terminal shows of it: escapes and carriage returns taken out.
 const plain = function (t) { return String(t).replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\r/g, '\n'); };
-// The loop in a terminal of its own: node spirit/console.js, its streams marked a terminal before it loads.
+// The loop in a terminal of its own: node spirit/console/script.js, its streams marked a terminal before it loads.
 function open() {
   // A data URL, not a file: nothing is left in the lab copy, which keeps its root between runs.
   const tty = 'data:text/javascript,process.stdin.isTTY=true;process.stdout.isTTY=true;process.stdout.columns=200;';
