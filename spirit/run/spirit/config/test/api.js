@@ -88,7 +88,7 @@ test.run('it asks for its companion data.js, spirit/config/data.js, and for noth
   if (!W.asked) return false;
   return W.asked.length === 1 && W.asked[0] === 'spirit/config/data.js' ? true : false;
 }, test.limit.quick);
-test.run('server.js mounts the config family', 0.2, function () {
+test.run('server.js mounts the config BRANCH', 0.2, function () {
   try { W.mounted = mounted('config'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
