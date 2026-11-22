@@ -126,3 +126,18 @@ test.run('the door\'s call of a verb neither the table nor an app answers says n
   const r = await createVerbTable().door(apps).call('zz.none', {});
   return (r.ok === false && r.code === 'no-such-verb') || false;
 }, test.limit.quick);
+
+// ── the interface is asked by branch (goal/G49.2) ──
+// Andy: "assert the \"branch\"", and of the interface ask and subscribe, "yes on the two verbs. fix it all.". The door
+// answers {api: {branch}} with {branch, interface}, the text of the branch's api.js from the folder it was mounted with.
+test.run('the door answers {api: {branch}} with {branch, interface}, the text of that branch\'s api.js', 0.2, async function () {
+  const fs = require('fs');
+  const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'zzBranch-'));
+  fs.writeFileSync(path.join(dir, 'api.js'), "'use strict';\nmodule.exports = { verbs: { ping: {} } };\n");
+  const t = createVerbTable();
+  t.mount('zz', dir, { ping: { request: {}, reply: {}, handler: answers({}) } }, { wire: false });
+  const apps = { apps: function () { return []; }, ask: function () { return Promise.resolve({ status: 200, body: {} }); } };
+  const r = await t.door(apps).ask({ api: { branch: 'zz' } });
+  fs.rmSync(dir, { recursive: true, force: true });
+  return (r.status === 200 && !!r.body && r.body.branch === 'zz' && typeof r.body.interface === 'string' && r.body.interface.indexOf('ping') !== -1) || false;
+}, test.limit.quick);

@@ -184,6 +184,10 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     s.peerPost = function (peer, app, body) { posted = body; return Promise.resolve({ heard: true }); };
     try { await both[0].listener({ json: '[]' }); } catch (e) { /* judged by what was posted */ }
     out.peerListener = !!(posted && posted.demo && posted.demo.listener && posted.demo.listener.json === '[]');
+    // goal/G49.2 (Andy: "assert the \"branch\"", "yes on the two verbs"): subscribe takes {branch, run?, since?}, and goes out so.
+    posted = null;
+    try { await both[0].subscribe({ branch: 'zzBranch', since: 3 }); } catch (e) { /* judged by what was posted */ }
+    out.peerSubscribe = !!(posted && posted.demo && posted.demo.subscribe && posted.demo.subscribe.branch === 'zzBranch' && posted.demo.subscribe.since === 3);
   }
   process.stdout.write(JSON.stringify(out));
 }()).catch(function (e) { process.stdout.write(JSON.stringify({ threw: String(e && e.stack || e) !== '' })); });
@@ -282,6 +286,15 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'branchPath', 'check', 'data', 'debug', 'error', 'escapeHtml', 'event', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
 test.run('in node the instance holds exactly its members, and the families it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
+}, test.limit.quick);
+// BRANCH (goal/G49.2; Andy: "assert the \"branch\"", "yes on the two verbs. fix it all."): the instance finds a branch's
+// path by branchPath, on a page as in node, and a bound branch's subscribe takes {branch, run?, since?}.
+test.run('the instance holds branchPath, in node and on a page', 0.2, function () {
+  if (!T.w || !T.w.spirit) return false;
+  return (typeof s.branchPath === 'function' && typeof T.w.spirit.branchPath === 'function') || false;
+}, test.limit.quick);
+test.run('branchPath names the api.js of a branch in its own folder: spirit/desk/api.js for desk', 0.2, function () {
+  return (typeof s.branchPath === 'function' && /^spirit\/(app\/)?desk\/api\.js$/.test(String(s.branchPath('desk')))) || false;
 }, test.limit.quick);
 test.run('no factory, no transport and no second object is handed out, in node or on a page', 0.2, function () {
   if (!T.w || !T.w.spirit) return false;
@@ -454,6 +467,11 @@ test.run('a peer\'s branch has listener, subscribe and unsubscribe, auto-verbs i
   const o = O(); if (!o) return false;
   const p = o.peerAuto || [];
   return ['listener', 'subscribe', 'unsubscribe', 'remote'].every(function (v) { return p.indexOf(v) !== -1; }) || false;
+}, test.limit.quick);
+// goal/G49.2 (Andy: "assert the \"branch\"", "yes on the two verbs").
+test.run('a bound branch\'s subscribe takes {branch, run?, since?} and sends it as given', 0.2, function () {
+  const o = O(); if (!o) return false;
+  return o.peerSubscribe === true || false;
 }, test.limit.quick);
 test.run('a call of the peer branch\'s listener goes to the peer as that branch\'s listener', 0.8, function () {
   const o = O(); if (!o) return false;
