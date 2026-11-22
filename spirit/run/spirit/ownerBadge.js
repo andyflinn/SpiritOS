@@ -449,7 +449,7 @@ function chooseUrl(urls, wanted) {
 
 // The node side gets everything. The browser gets the rules it has to
 // obey and nothing that would need a filesystem — the relay panel
-// (element/search/contact/detail.js, a relay's details) reads window.spirit.ownerBadge,
+// (element/search/contact/detail.js, a relay's details) reads window.spirit.required.spirit.ownerBadge,
 // and if this script never loaded it finds no
 // helper and draws no Remove at all, which is the safe way to be wrong.
 if (isNode) {
@@ -474,7 +474,10 @@ if (isNode) {
     chooseUrl: chooseUrl,
   };
 } else if (typeof window !== 'undefined') {
-  (window.spirit = window.spirit || {}).ownerBadge = {
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
+  var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  (R.spirit = R.spirit || {}).ownerBadge = {
     normalizeUrl: normalizeUrl,
     removalRefusal: removalRefusal,
     isPublicRelay: isPublicRelay,

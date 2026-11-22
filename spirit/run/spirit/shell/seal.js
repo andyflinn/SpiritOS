@@ -11,7 +11,7 @@ if (typeof require === 'function') require('../spirit.js'); // node only: a page
 // session. A browser whose WebCrypto lacks X25519 answers supported() false and the face runs unsealed, warned.
 //
 // Every call is a promise (WebCrypto is asynchronous). Served by the relay beside face.html and loaded by spirit.js's
-// link (requireOne) onto spirit.seal; also a module, so the suites can hold it against spirit/seal.js.
+// link (requireOne) onto spirit.required.shell.seal; also a module, so the suites can hold it against spirit/seal.js.
 
 (function (root) {
   'use strict';
@@ -91,7 +91,10 @@ if (typeof require === 'function') require('../spirit.js'); // node only: a page
   }
 
   var api = { LABEL: LABEL, supported: supported, newKey: newKey, seal: seal, open: open, toB64: toB64, fromB64: fromB64 };
-  // On the one spirit object (goal/G40.7), nothing on window: spirit.seal.
-  (root.spirit = root.spirit || {}).seal = api;
+  // On the one spirit object (goal/G40.7), nothing on window: spirit.required.shell.seal.
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
+  var R = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
+  (R.shell = R.shell || {}).seal = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -65,11 +65,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   var WORD_COLOUR = { holds: '#87cefa', red: '#d8b4fe' };
   function wordColours(p) {
     var parts = String(p || '').split('/');
-    if (parts[0] !== 'spirit' || !window.spirit.word) return Promise.resolve({});
+    if (parts[0] !== 'spirit' || !((((window.spirit || {}).required || {}).spirit || {}).word || {}).script) return Promise.resolve({});
     var out = { spirit: WORD_COLOUR.holds };
     return Promise.all(parts.slice(1).map(function (part, i) {
       var stem = part.split('.')[0];
-      return window.spirit.word.check(parts.slice(0, i + 1).join('.'), stem).then(function (word) {
+      return ((((window.spirit || {}).required || {}).spirit || {}).word || {}).script.check(parts.slice(0, i + 1).join('.'), stem).then(function (word) {
         if (!word) return;
         var at = window.spirit;
         parts.slice(1, i + 1).forEach(function (up) { at = at ? at[up.split('.')[0]] : undefined; });
@@ -158,11 +158,11 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     var paintWords = function () { wordColours(p).then(function (words) { if (live) el.apply({ words: words }); }); };
     var offWords = null;
     var listen = function () {
-      if (!live || !window.spirit.word) return;
-      offWords = window.spirit.word.changed(paintWords);
+      if (!live || !((((window.spirit || {}).required || {}).spirit || {}).word || {}).script) return;
+      offWords = ((((window.spirit || {}).required || {}).spirit || {}).word || {}).script.changed(paintWords);
       paintWords();
     };
-    if (window.spirit.word) listen();
+    if (((((window.spirit || {}).required || {}).spirit || {}).word || {}).script) listen();
     else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/word/script.js')).then(listen, function () { /* no colours */ });
     var destroy = el.destroy;
     el.destroy = function () { live = false; if (offWords) offWords(); return destroy.apply(el, arguments); };

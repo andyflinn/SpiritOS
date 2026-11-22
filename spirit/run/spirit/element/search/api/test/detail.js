@@ -35,8 +35,8 @@ test.run('the detail runs on a bare window, the real api tree reader beside it',
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { required.push(String(p)); return Promise.resolve(true); };
-  // In node apiTreeIndex.js answers its module; a page has it at spirit.apiTreeIndex, as here.
-  global.window.spirit.apiTreeIndex = require(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'));
+  // In node apiTreeIndex.js answers its module; a page has it at spirit.required.spirit.client.apiTreeIndex, as here.
+  ((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}); (global.window.spirit.required.spirit.client = global.window.spirit.required.spirit.client || {}); global.window.spirit.required.spirit.client.apiTreeIndex = require(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'));
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   D = global.window.spirit.element.spirit.element.search && global.window.spirit.element.spirit.element.search.api && global.window.spirit.element.spirit.element.search.api.detail;

@@ -7,7 +7,7 @@
 //
 //   Andy: "the appServer selector (a subComponent of the api-path selector)", and the tree it reads: "the shell's api tree is
 //   a straight copy of the node's owner-api-tree ?" — "yes". So it fills itself from the verb api on the flat apiDoor
-//   (goal/G30.6), and lists spirit.apiTreeIndex.servers(tree): sorted, a server that did not answer left out
+//   (goal/G30.6), and lists spirit.required.spirit.client.apiTreeIndex.servers(tree): sorted, a server that did not answer left out
 //   (apiTreeIndex.js decides; this paints). SINCE goal/G30.4 that answer is the whole flat table, the node's own families
 //   (fs, job, relay ...) beside the apps', so the list holds every family the grant system sees (Andy, 2026-10-20: "the grant
 //   system looks at apiDoors whole damn table of families and verbs").
@@ -38,7 +38,7 @@
   // job changing on the stream reads it again: one translator for every list. Another party's tree (options.tree:
   // introSpector's peer or relay) is that party's, and stays out of it.
   function keepTree(tree) {
-    window.spirit.required.spirit.data.node.data.keepTree(tree, window.spirit.apiTreeIndex);
+    window.spirit.required.spirit.data.node.data.keepTree(tree, ((((window.spirit || {}).required || {}).spirit || {}).client || {}).apiTreeIndex);
   }
   var reading = null;
   function readOwnTree() {
@@ -129,7 +129,7 @@
       return Promise.all([got, made]).then(function (both) {
         var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
-        if (party) window.spirit.required.spirit.data.node.data.keepTree(root.tree, window.spirit.apiTreeIndex, party);
+        if (party) window.spirit.required.spirit.data.node.data.keepTree(root.tree, ((((window.spirit || {}).required || {}).spirit || {}).client || {}).apiTreeIndex, party);
         list.redraw();
         root.dispatchEvent(new Event('tree', { bubbles: false }));
       }, function () { /* the list stays empty; the node says why elsewhere */ });

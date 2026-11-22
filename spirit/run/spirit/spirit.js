@@ -1001,13 +1001,13 @@
     var whole = !!(how && how.answer === true);
     // What it needs, it requires itself: packet.js on a page wants the limits before it (spirit/limits.js).
     return Promise.resolve(requireOne('spirit/limits.js')).then(function () { return requireOne('spirit/client/packet.js'); }).then(function () {
-      var made = self.packet.encode(app, body);
+      var made = self.required.spirit.client.packet.encode(app, body);
       if (!made || !made.ok) return whole ? { ok: false, body: null, card: null, from: '', error: (made && made.error) || 'the ask could not be encoded' }
         : { ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' };
       return post('peer.post', { to: String(peer), text: made.text }).then(function (r) {
         var said = (r && r.body) || {};
         var text = typeof said.text === 'string' ? said.text : '';
-        var decoded = text ? self.packet.decode(text) : null;
+        var decoded = text ? self.required.spirit.client.packet.decode(text) : null;
         var got = decoded ? decoded.body : null;
         if (whole) {
           var yes = !got || got.ok === undefined || !!got.ok;
@@ -1140,10 +1140,10 @@
   // (faceHome.js) answers 202 to each but the last, whose answer is this call's. The relay reads none of them.
   function postCall(t) {
     var once = function (x) { return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: x }); };
-    var BODY_MAX = (self.limits && self.limits.BODY_MAX) || 23552;
+    var BODY_MAX = (self.required.spirit.limits && self.required.spirit.limits.BODY_MAX) || 23552;
     var bytes = new TextEncoder().encode(t);
     if (bytes.length <= BODY_MAX - 1024) return once(t);
-    var b64 = self.seal.toB64(bytes);
+    var b64 = self.required.shell.seal.toB64(bytes);
     var size = BODY_MAX - 1024;
     var of = Math.ceil(b64.length / size);
     var id = randomId();
@@ -1161,11 +1161,11 @@
     var parts = [];
     return lines.reduce(function (chain, l) {
       return chain.then(function () {
-        return self.seal.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
+        return self.required.shell.seal.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
       }).then(function (got) {
         if (!got) throw new Error('an answer did not open');
         if (!head) head = JSON.parse(got.text);
-        else parts.push(self.seal.fromB64(got.text));
+        else parts.push(self.required.shell.seal.fromB64(got.text));
       });
     }, Promise.resolve()).then(function () { return { head: head, parts: parts }; });
   }
@@ -1179,7 +1179,7 @@
   // One request to the home node through the relay: { status, type, bytes }. Sealed when this page can seal.
   function linkCall(request) {
     var sending = faceLink.sealed
-      ? self.seal.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) { s.k = faceLink.key.publicKey; return s; })
+      ? self.required.shell.seal.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) { s.k = faceLink.key.publicKey; return s; })
       : Promise.resolve(request);
     return sending.then(function (body) { return postCall(JSON.stringify(body)); }).then(function (r) {
       if (r.status === 503 || r.status === 504) linkDown();
@@ -1197,7 +1197,7 @@
     var each = typeof onPiece === 'function' ? onPiece : function () {};
     var request = { get: String(p || '').replace(/^\/+/, '') };
     if (!faceLink.sealed) return linkCall(request).then(function (r) { if (r.status === 200) each(r.bytes); return r; });
-    return self.seal.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) {
+    return self.required.shell.seal.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) {
       s.k = faceLink.key.publicKey;
       return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(s) });
     }).then(function (r) {
@@ -1212,11 +1212,11 @@
       var chain = Promise.resolve();
       function open(l) {
         chain = chain.then(function () {
-          return self.seal.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
+          return self.required.shell.seal.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
         }).then(function (got) {
           if (!got) throw new Error('an answer did not open');
           if (!head) { head = JSON.parse(got.text); return; }
-          var piece = self.seal.fromB64(got.text);
+          var piece = self.required.shell.seal.fromB64(got.text);
           parts.push(piece);
           if ((head.status || 0) === 200) each(piece);
         });
@@ -1242,7 +1242,7 @@
     var of = Math.max(1, Math.ceil(bytes.length / UPLOAD_PART));
     var id = randomId();
     function next(n) {
-      var part = { id: id, n: n, of: of, size: bytes.length, path: String(args.path), bytes: self.seal.toB64(bytes.subarray(n * UPLOAD_PART, (n + 1) * UPLOAD_PART)) };
+      var part = { id: id, n: n, of: of, size: bytes.length, path: String(args.path), bytes: self.required.shell.seal.toB64(bytes.subarray(n * UPLOAD_PART, (n + 1) * UPLOAD_PART)) };
       return linkCall({ upload: part }).then(function (r) {
         if (n === of - 1 || r.status !== 202) return r;
         return next(n + 1);
@@ -1272,10 +1272,10 @@
       faceLink.node = { publicKey: keys.publicKey, sealKey: keys.sealKey || '' };
       // The tab says whose face this is (goal/G30.15).
       if (keys.name && root.document) root.document.title = String(keys.name);
-      return self.seal && faceLink.node.sealKey ? self.seal.supported() : false;
+      return (self.required.shell || {}).seal && faceLink.node.sealKey ? self.required.shell.seal.supported() : false;
     }).then(function (can) {
       if (!can) return null;
-      return self.seal.newKey().then(function (key) { faceLink.key = key; faceLink.sealed = true; });
+      return self.required.shell.seal.newKey().then(function (key) { faceLink.key = key; faceLink.sealed = true; });
     }).then(function () {
       self.link = {
         get sealed() { return faceLink.sealed; }, get key() { return faceLink.key; }, get node() { return faceLink.node; },

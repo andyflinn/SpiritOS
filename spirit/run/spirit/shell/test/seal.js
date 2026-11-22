@@ -23,12 +23,12 @@ const W = {};
 test.run('face/seal.js is gone', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'face', 'seal.js')) || false;
 }, test.limit.quick);
-test.run('the browser seal loads on spirit.seal with supported, newKey, seal and open', 0.2, function () {
+test.run('the browser seal loads on spirit.required.shell.seal with supported, newKey, seal and open', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   const win = { crypto: globalThis.crypto, TextEncoder: TextEncoder, TextDecoder: TextDecoder, btoa: btoa, atob: atob, Uint8Array: Uint8Array, Promise: Promise, JSON: JSON, Buffer: Buffer };
   win.window = win;
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), vm.createContext(win), { filename: FILE });
-  const S = win.spirit && win.spirit.seal;
+  const S = win.spirit && win.spirit.required.shell.seal;
   W.S = S;
   return S && ['supported', 'newKey', 'seal', 'open'].every(function (f) { return typeof S[f] === 'function'; }) ? true : false;
 }, test.limit.quick);

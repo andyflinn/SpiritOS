@@ -14,7 +14,7 @@ box v72). Pure, so each test makes its own bucket in process.
   unbounded (goal/G27.14); `more` when something was turned away or pushed out, `truncated` only when cut.
 - `sort(compare)` (goal/G27.14): every held object re-scored, highest first, equal ones keeping their place; one scored
   outside 0 to 1 stays held but out of `serialize` until scored again; no function, no change.
-- In a page alike: loaded as a plain script it is on `window.spirit.probability`, beside what was there, and leaks no
+- In a page alike: loaded as a plain script it stands at `spirit.required.spirit.listLimiter`, beside what was there, and leaks no
   name.
 
 ## What its test must try to break

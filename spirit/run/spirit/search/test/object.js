@@ -110,12 +110,13 @@ test.run('a key whose value is false is never matched', 0.2, function () {
 }, test.limit.quick);
 
 // ── in a page ──
-test.run('in a page, it is found on window.spirit.probability, and the string match is read there when called, not as the file loads', 0.2, function () {
+test.run('in a page it stands at spirit.required.spirit.search.object, and reads the string match there when called, not at load', 0.2, function () {
   const win = {};
   vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), { window: win });
-  const P = win.spirit && win.spirit.probability;
+  const Q = (((win.spirit || {}).required || {}).spirit || {}).search || {};
+  const P = Q.object;
   if (!P || typeof P.probabilityStringObjectMatch !== 'function' || typeof P.measureObject !== 'function') return false;
-  P.probabilityStringMatch = function (a, b) { return a === b ? 1 : 0; };
+  Q.string = { probabilityStringMatch: function (a, b) { return a === b ? 1 : 0; } };
   return near(P.probabilityStringObjectMatch('andy', { andy: 'andy' }), 1) || false;
 }, test.limit.quick);
 test.run('the module answers measureObject and probabilityStringObjectMatch', 0.2, function () {

@@ -377,8 +377,9 @@
       return { match: require('./spirit.js').require('spirit/search/object.js').probabilityStringObjectMatch,
         bucket: require('./spirit.js').require('spirit/listLimiter.js').createProbabilityBucket, limits: require('./spirit.js').require('spirit/limits.js') };
     }
-    var p = (root.spirit && root.spirit.probability) || {};
-    return { match: p.probabilityStringObjectMatch, bucket: p.createProbabilityBucket, limits: root.spirit && root.spirit.limits };
+    // On a page each at its one place, spirit.required.<its path> (goal/G49.4).
+    var q = ((root.spirit && root.spirit.required) || {}).spirit || {};
+    return { match: ((q.search || {}).object || {}).probabilityStringObjectMatch, bucket: (q.listLimiter || {}).createProbabilityBucket, limits: q.limits };
   }
   function defaultRoom(limits) {
     // appClient.ANSWER_MAX is half a sealed packet; the desk's ANSWER_ROOM leaves 512 bytes of it for the envelope.

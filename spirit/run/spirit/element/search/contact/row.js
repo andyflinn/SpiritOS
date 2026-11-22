@@ -13,7 +13,7 @@
 // What a row offers depends on what it is (goal/G30.19): a kept or blocked row open (Contact), block, unblock and
 // remove (contact.forget); a row not decided about add (peer.acquire); a relay open (Relay Details). An action asks and paints
 // nothing: the node's confirmed change on the stream repaints. The label's editor
-// checks spirit/fieldRules.js (spirit.fieldRules, the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
+// checks spirit/fieldRules.js (spirit.required.spirit.fieldRules, the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
 // once.
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
@@ -61,7 +61,7 @@
   }
   // The label's rule, from the one definition (goal/G4.16).
   function nameRules() {
-    var R = window.spirit.fieldRules || {};
+    var R = (((window.spirit || {}).required || {}).spirit || {}).fieldRules || {};
     return { normalize: R.normalize, problem: R.problem, maxBytes: R.MAX_BYTES };
   }
 

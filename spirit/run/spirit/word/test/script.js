@@ -251,10 +251,10 @@ test.run('the new spirit/fs/word.json holds that word and nothing else', 0.2, fu
   return JSON.stringify(wordsIn('fs')) === '{"fresh":true}' || false;
 }, test.limit.quick);
 // Q5, "Should add work from a page too, the way check does?", Andy: "no." word.js's page half, run on a bare window.
-test.run('on a page spirit.word has check and no add', 0.2, function () {
+test.run('on a page spirit.required.spirit.word.script has check and no add', 0.2, function () {
   const bare = { window: { spirit: {} } };
   require('vm').runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'word', 'script.js'), 'utf8'), bare);
-  const onPage = bare.window.spirit.word || {};
+  const onPage = bare.window.spirit.required.spirit.word.script || {};
   return (typeof onPage.check === 'function' && onPage.add === undefined) || false;
 }, test.limit.quick);
 // Whether add takes a word in capitals is the box's "addedWoRD": what lands in the file is a to z either way.
@@ -372,7 +372,7 @@ test.run('the planted spirit/app/word.json is read, and its word is found at spi
     ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { keep(b); return x.apply(this, arguments); };' +
     ' return spirit.require("spirit/word/script.js"); }).then(function () {' +
     ' var paths = ["spirit.app.zz", "spirit.app.table.zz", "spirit.app.table.rows.zz", "spirit.element.search.zz", "spirit.fs.zz", "spirit.contact.zz", "spirit.required.spirit.data.zz", "spirit.app.desk.element.zz"];' +
-    ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(spirit.word.check(p, "zzword")); asks.push(spirit.word.check(p, "other")); });' +
+    ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(spirit.required.spirit.word.script.check(p, "zzword")); asks.push(spirit.required.spirit.word.script.check(p, "other")); });' +
     ' return Promise.all(asks); }).then(function (answers) { return new Promise(function (r) { setTimeout(function () { r(answers); }, 1500); }); })' +
     '.then(function (answers) { return JSON.stringify({ sent: window.sentWord, appSees: answers[0], under: answers[2] }); }, function () { return JSON.stringify({ threw: true }); })');
   let got = null;

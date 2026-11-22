@@ -246,10 +246,12 @@ function probabilityStringMatch(A, B) {
 
 // IN NODE AND IN A PAGE ALIKE (goal/G27.14). Andy, 2026-10-17: "why down't the UI run the exact same search code in
 // the shell? ... any search can then easiliy accumulate a cache that can be expanded with every search? it's a
-// pattern....". A page loads this file as it is and finds it on window.spirit.probability.
+// pattern....". A page loads this file as it is and finds it at spirit.required.spirit.search.string.
 if (typeof module !== 'undefined' && module && module.exports) module.exports = { probabilityStringMatch: probabilityStringMatch };
 if (typeof window !== 'undefined' && window) {
-  (window.spirit = window.spirit || {}).probability = window.spirit.probability || {};
-  window.spirit.probability.probabilityStringMatch = probabilityStringMatch;
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
+  var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  ((R.spirit = R.spirit || {}).search = R.spirit.search || {}).string = { probabilityStringMatch: probabilityStringMatch };
 }
 }());

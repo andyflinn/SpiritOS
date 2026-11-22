@@ -12,7 +12,7 @@ the rule *"every production script has its own test"* (goal/G47.1, box v72). Pur
 - Weights: (S - L) / S / (n - 1), one string alone 1.0, adding up to 1, the shortest heaviest.
 - A weighted sum, not the best field, on purpose: a perfect hit on one field is diluted, more so among more fields; a
   near hit counts less than an exact one; numbers match as text; a false key never matches.
-- In a page: on `window.spirit.probability`, the string match read there when called, not when the file loads
+- In a page: at `spirit.required.spirit.search.object`, the string match read at `spirit.required.spirit.search.string` when called, not when the file loads
   (goal/G41.18).
 
 ## What its test must try to break

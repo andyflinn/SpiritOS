@@ -118,12 +118,12 @@ test.run('a whole word beats a part of one', 0.2, function () {
 test.run('the module answers probabilityStringMatch alone', 0.2, function () {
   return short(Object.keys(M)) === short(['probabilityStringMatch']) || false;
 }, test.limit.quick);
-test.run('loaded in a page as a plain script, it is found on window.spirit.probability, and it keeps its names to itself', 0.2, function () {
-  const win = { spirit: { probability: { other: 1 } } };
+test.run('loaded in a page as a plain script, it stands at spirit.required.spirit.search.string, and it keeps its names to itself', 0.2, function () {
+  const win = { spirit: { required: { spirit: { other: 1 } } } };
   const ctx = { window: win };
   vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'search', 'string.js'), 'utf8'), ctx);
-  const f = win.spirit.probability.probabilityStringMatch;
+  const f = win.spirit.required.spirit.search.string.probabilityStringMatch;
   if (typeof f !== 'function') return false;
   const leaked = Object.keys(ctx).filter(function (k) { return k !== 'window'; });
-  return (win.spirit.probability.other === 1 && leaked.length === 0) || false;
+  return (win.spirit.required.spirit.other === 1 && leaked.length === 0) || false;
 }, test.limit.quick);

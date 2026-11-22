@@ -53,7 +53,7 @@
       // spirit.required.spirit.data branch; '' or left out is this node's own.
       keepTree: function (tree, index, party) {
         var S = (typeof window !== 'undefined' ? window : globalThis).spirit;
-        var I = index || (S && S.apiTreeIndex);
+        var I = index || (S && ((((S || {}).required || {}).spirit || {}).client || {}).apiTreeIndex);
         if (!I) return;
         var V = viewOf(party);
         var names = tree ? I.servers(tree) : [];

@@ -118,7 +118,7 @@
         said('');
         return Promise.resolve(S.testicle['testicle.title']({ script: script, suite: suite, oldTitle: test, title: to })).then(function () {
           if (gone) return;
-          test = S.fieldRules ? S.fieldRules.normalize(to) : String(to).trim();
+          test = (((S || {}).required || {}).spirit || {}).fieldRules ? (((S || {}).required || {}).spirit || {}).fieldRules.normalize(to) : String(to).trim();
           prefix = script + '|' + suite + '|' + test + '|';
           input.value = test;
           titleLine.textContent = test;

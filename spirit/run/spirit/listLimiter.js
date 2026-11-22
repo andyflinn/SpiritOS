@@ -83,10 +83,12 @@ function createProbabilityBucket(capacity) {
   };
 }
 
-// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as spirit/search/string.js: a page finds it on window.spirit.probability.
+// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as spirit/search/string.js: a page finds it at spirit.required.spirit.listLimiter.
 if (typeof module !== 'undefined' && module && module.exports) module.exports = { createProbabilityBucket: createProbabilityBucket };
 if (typeof window !== 'undefined' && window) {
-  (window.spirit = window.spirit || {}).probability = window.spirit.probability || {};
-  window.spirit.probability.createProbabilityBucket = createProbabilityBucket;
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
+  var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  (R.spirit = R.spirit || {}).listLimiter = { createProbabilityBucket: createProbabilityBucket };
 }
 }());

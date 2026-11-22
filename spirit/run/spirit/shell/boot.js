@@ -160,7 +160,7 @@
     }
     setConnected(true);
     if (!L.sealed) { deliver(got); return Promise.resolve(); }
-    return spirit.seal.open(L.key.privateKey, L.key.publicKey, L.node.publicKey, L.key.publicKey, got)
+    return (((spirit || {}).required || {}).shell || {}).seal.open(L.key.privateKey, L.key.publicKey, L.node.publicKey, L.key.publicKey, got)
       .then(function (o) { if (o) deliver(JSON.parse(o.text)); });
   }
   function openStream() {

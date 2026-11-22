@@ -187,7 +187,7 @@
       // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.
       branch.addEventListener('tree', function () {
         var tree = branch.tree;
-        var families = tree && tree.ok !== false ? S.apiTreeIndex.servers(tree) : [];
+        var families = tree && tree.ok !== false ? ((((S || {}).required || {}).spirit || {}).client || {}).apiTreeIndex.servers(tree) : [];
         branch.hidden = !families.length;
         if (!families.length) {
           say('no verbs available' + (tree && tree.ok === false ? ': ' + (tree.error || tree.code || 'refused') : ''));

@@ -35,12 +35,12 @@
 
 // limits.js IS dual target — the relay and server.js read it too, which is
 // why it stays up in spirit/ while this file sits in spirit/client/. Required
-// from one directory up on the node, read off `window.spirit.limits` in the
+// from one directory up on the node, read off `window.spirit.required.spirit.limits` in the
 // page. spirit.js requires limits.js before packet.js for exactly that
 // reason (spirit.peerPost).
 var limits = (typeof process !== 'undefined' && process.versions && process.versions.node)
   ? require('../spirit.js').require('spirit/limits.js')
-  : (typeof window !== 'undefined' ? window.spirit.limits : null);
+  : (typeof window !== 'undefined' ? ((((window.spirit || {}).required || {}).spirit || {}).limits || null) : null);
 
 // WHAT IT NEEDS, IT LOADS ITSELF (rule/26; goal/G47.1, Andy: "cw, FIX IT!", after the classifier found this file failing
 // in a page loaded alone): in a page with no limits yet, this file asks for spirit/limits.js and defines itself once it is
@@ -380,10 +380,13 @@ var packetApi = {
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = packetApi;
 } else if (typeof window !== 'undefined') {
-  (window.spirit = window.spirit || {}).packet = packetApi;
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
+  var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  ((R.spirit = R.spirit || {}).client = R.spirit.client || {}).packet = packetApi;
 }
 }
 
 if ((typeof process !== 'undefined' && process.versions && process.versions.node) || limits) definePacket();
-else window.spirit.require('spirit/limits.js').then(function () { limits = window.spirit.limits; definePacket(); });
+else window.spirit.require('spirit/limits.js').then(function () { limits = ((((window.spirit || {}).required || {}).spirit || {}).limits || null); definePacket(); });
 }());

@@ -12,7 +12,7 @@ production script has its own test"* (goal/G47.1, box v72). Pure: two strings in
   order (labels of the same length, so only those two signals differ).
 - goal/G29.1: case counts by a hair, 0.000001 per character whose case differs, and nothing more.
 - goal/G41.28: a typed word longer than the label's word still counts by the part they share; a whole word beats a part.
-- In a page alike: on `window.spirit.probability`, leaking no name.
+- In a page alike: at `spirit.required.spirit.search.string`, leaking no name.
 
 ## What its test must try to break
 

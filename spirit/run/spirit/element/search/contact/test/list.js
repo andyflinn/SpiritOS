@@ -39,18 +39,18 @@ test.run('the contacts list runs on a window of its own, with its row element an
     peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); },
       // A card ask through the spirit object (goal/G43.24): the packet as it went, and the card the node verified.
       post: function (b) {
-        const sent = window.spirit.packet.decode(b.text);
+        const sent = window.spirit.required.spirit.client.packet.decode(b.text);
         asked.push({ verb: 'peer.post', key: b.to, body: sent.body, app: sent.app, legacy: sent.legacy });
         return Promise.resolve(b.to === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } });
       } },
   });
   // The packet envelope, the real one (spirit/client/packet.js), as the list requires it.
-  window.spirit.packet = require(path.join(__dirname, '..', '..', '..', '..', 'client', 'packet.js'));
+  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); (window.spirit.required.spirit.client = window.spirit.required.spirit.client || {}); window.spirit.required.spirit.client.packet = require(path.join(__dirname, '..', '..', '..', '..', 'client', 'packet.js'));
   Object.assign(window.spirit, {
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
     // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
     peerPost: function (peer, app, body, how) {
-      const PK = window.spirit.packet;
+      const PK = window.spirit.required.spirit.client.packet;
       const m = PK.encode(app, body);
       return Promise.resolve(window.spirit.ready).then(function (f) { return f.peer.post({ to: String(peer), text: m.text }); }).then(function (s) {
         const text = s && typeof s.text === 'string' ? s.text : '';

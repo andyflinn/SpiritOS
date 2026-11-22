@@ -31,7 +31,7 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
 - **Presence already known** in the contacts (`spirit.required.spirit.data.contact.data`) wins over the row's own `present` at create.
 - **Dispatch**: one watch on the contacts (`spirit.required.spirit.data.contact.data.watch`); a write to a key repaints every live row of that key, only the fields
   whose values (or `from` values) changed. A destroyed row is no longer repainted.
-- **Label editor**: normalizes and checks the name by `spirit.fieldRules` first; a refused name is answered
+- **Label editor**: normalizes and checks the name by `spirit.required.spirit.fieldRules` first; a refused name is answered
   `{ ok: false, error }` without asking; a good one asks `contact.label { publicKey, myLabel }`.
 - **expandInfo**: a row in the book asks `contact.get { key }` once and keeps the answer; a row not in the book and a relay give
   `null` and ask nothing.

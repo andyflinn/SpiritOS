@@ -12,7 +12,7 @@ so the deciding is asserted in node; dual target, so it is loaded once more in a
 - `serves` (apiAuth/G1.6): a server that answered, and a verb among its verbs, are served; a missing verb, a server
   gone or broken, `fs.DEBUG`, and no path are not. It only reports: the tree is unchanged after asking (Andy: *"we defer
   pruning to be triggered by the owners auth app"*).
-- In a page, with no `require`: `window.spirit.apiTreeIndex`, the same three.
+- In a page, with no `require`: `window.spirit.required.spirit.client.apiTreeIndex`, the same three.
 
 ## What its test must try to break
 

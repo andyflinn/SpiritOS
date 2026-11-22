@@ -148,7 +148,7 @@ test.run('it requires spirit/node/api.js and no data.js, and its list is a view 
 }, test.limit.quick);
 test.run('show, given the tree and a server, narrows the kept verbs to that family\'s and never DEBUG', 0.2, function () {
   if (!N || !m) return false;
-  N.keepTree(TREE, win.spirit.apiTreeIndex);
+  N.keepTree(TREE, win.spirit.required.spirit.client.apiTreeIndex);
   mine.show(TREE, 'fs');
   const kept = win.spirit.required.spirit.data.getPath(N.verbsBranch) || {};
   const fam = (m.opts.filters || []).filter(function (x) { return x.name === 'family'; })[0];

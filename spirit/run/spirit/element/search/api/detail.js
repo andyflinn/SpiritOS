@@ -30,7 +30,7 @@
     host.appendChild(box);
     parts.then(function () {
       if (gone) return;
-      var verbs = tree ? S.apiTreeIndex.verbs(tree, family) : [];
+      var verbs = tree ? ((((S || {}).required || {}).spirit || {}).client || {}).apiTreeIndex.verbs(tree, family) : [];
       box.innerHTML = '<div class="api-family-detail-name">' + esc(family) + '</div>' + (verbs.length ? verbs.map(function (v) {
         var spec = tree[family][v];
         var req = spec && spec.request && typeof spec.request === 'object' ? Object.keys(spec.request) : [];

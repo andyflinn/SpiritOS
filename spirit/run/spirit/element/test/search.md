@@ -9,7 +9,7 @@ rows by a column sort or in arrival order.
 - It draws a pane, or a dropdown that opens to the same pane.
 - It loads on `window.spirit.element.search` (the probabilitySearch; goal/G43.18, Q5). It also sets `window.spirit.matchRanges`, the one marking rule.
 
-It reads `window.spirit.probability` (`probabilityStringObjectMatch`, `createProbabilityBucket`), and nothing else of
+It reads `spirit.required.spirit.search.object` (`probabilityStringObjectMatch`, `measureObject`) and `spirit.required.spirit.listLimiter` (`createProbabilityBucket`), and nothing else of
 the spirit.
 
 **It loads those files itself** (rule/26: every element loads its own parts via spirit.require; nothing is preloaded;

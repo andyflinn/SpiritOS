@@ -139,12 +139,12 @@ test.run('sort with no function changes nothing', 0.2, function () {
 test.run('the module answers createProbabilityBucket alone', 0.2, function () {
   return short(Object.keys(B)) === short(['createProbabilityBucket']) || false;
 }, test.limit.quick);
-test.run('in a page too, loaded as a plain script, it is found on window.spirit.probability, and its names stay its own', 0.2, function () {
-  const win = { spirit: { probability: { other: 1 } } };
+test.run('in a page too, loaded as a plain script, it stands at spirit.required.spirit.listLimiter, and its names stay its own', 0.2, function () {
+  const win = { spirit: { required: { spirit: { other: 1 } } } };
   const ctx = { window: win };
   vm.runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'listLimiter.js'), 'utf8'), ctx);
-  const f = win.spirit.probability.createProbabilityBucket;
+  const f = win.spirit.required.spirit.listLimiter.createProbabilityBucket;
   if (typeof f !== 'function') return false;
   const leaked = Object.keys(ctx).filter(function (k) { return k !== 'window'; });
-  return (win.spirit.probability.other === 1 && leaked.length === 0) || false;
+  return (win.spirit.required.spirit.other === 1 && leaked.length === 0) || false;
 }, test.limit.quick);

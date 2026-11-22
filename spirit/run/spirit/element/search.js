@@ -74,7 +74,12 @@
     ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/icon.js',
       'spirit/element/fieldInput.js', 'spirit/limits.js'].forEach(function (p) { var got = window.spirit.require(p); if (p === 'spirit/element/fieldInput.js') fieldInputIn = got; });
   }
-  function P() { return window.spirit.probability || {}; }
+  // The three ranking helpers, each at its one place, spirit.required.<its path> (goal/G49.4).
+  function P() {
+    var q = ((window.spirit && window.spirit.required) || {}).spirit || {};
+    var o = (q.search || {}).object || {};
+    return { probabilityStringObjectMatch: o.probabilityStringObjectMatch, measureObject: o.measureObject, createProbabilityBucket: (q.listLimiter || {}).createProbabilityBucket };
+  }
   // A VERB OF A FAMILY, THROUGH THE SPIRIT OBJECT (goal/G43.24, as grantsPanel asks): family.verb called on that family as
   // spirit.ready holds it, or as spirit.require binds a server's; a dotted verb is a path into the family (a.b is
   // f.a.b); answered { status, body } by spirit.outcome, as the list reads it.

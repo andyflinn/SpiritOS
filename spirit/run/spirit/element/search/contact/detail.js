@@ -327,7 +327,7 @@ var cdPage = ({
       // checks again (spirit/fieldRules.js; Andy, goal/G4.16: "the shell may
       // as well rule that inputs themselves implement constraints in
       // fieldRules.js"). Empty clears your name for them, and is asked.
-      var rule = (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
+      var rule = (typeof window !== 'undefined' && window.spirit && (((window.spirit || {}).required || {}).spirit || {}).fieldRules) || null;
       var bad = (typed && rule) ? rule.problem(typed) : '';
       if (bad) { cdStatus(bad); return; }
       cdPeerAction('label', { myLabel: typed });
@@ -406,7 +406,7 @@ function ndIconHtml(glyph) {
 }
 
 // WHAT A LABEL MAY BE, asked before a round trip is spent on it. The
-// rule is spirit/fieldRules.js (spirit.fieldRules), and the relay enforces
+// rule is spirit/fieldRules.js (spirit.required.spirit.fieldRules), and the relay enforces
 // the same one — this only saves the hop and says what is wrong while
 // the cursor is still in the box.
 //
@@ -444,7 +444,7 @@ function ndNoKey(out, cls) {
 }
 
 function ndLabelProblem(name) {
-  var rule = (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
+  var rule = (typeof window !== 'undefined' && window.spirit && (((window.spirit || {}).required || {}).spirit || {}).fieldRules) || null;
   return rule ? rule.problem(name) : '';
 }
 var ndLayer = {};       // the layer it is drawn in: close() and setTitle(text), the mounter's (options.layer)
@@ -758,7 +758,7 @@ function ndRefusedHtml(refused) {
 // WHETHER THIS RELAY MAY COME OFF THE LIST, asked here (goal/G30.7): the one rule the node enforces too,
 // ownerBadge.removalRefusal, over the list's rows as ndLoad holds them (owned, claimed). '' when it may.
 function ndRemoveRefusal() {
-  var badge = window.spirit && window.spirit.ownerBadge;
+  var badge = window.spirit && (((window.spirit || {}).required || {}).spirit || {}).ownerBadge;
   if (!badge || typeof badge.removalRefusal !== 'function') return 'this page cannot tell whether it may be removed';
   return badge.removalRefusal(ndRows, ndUrl);
 }

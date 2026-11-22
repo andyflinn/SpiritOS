@@ -22,7 +22,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
   }).concat([window.spirit.require('spirit/auth/api.js')]));
   // The label's rule, the one definition both sides use (spirit/fieldRules.js).
   function labelOf(text) {
-    var R = window.spirit.fieldRules || {};
+    var R = (((window.spirit || {}).required || {}).spirit || {}).fieldRules || {};
     var v = typeof R.normalize === 'function' ? R.normalize(text) : String(text == null ? '' : text).trim();
     var bad = !v ? 'a bundle needs a label' : (typeof R.problem === 'function' ? R.problem(v) : '');
     return { value: v, why: bad || '' };

@@ -255,11 +255,10 @@ function relayWorld(rows, relayStatus) {
     escapeHtml: function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); },
     formatBytes: function (n) { return String(n) + ' B'; },
     shell: { factRow: function () { return '<div class="facts"></div>'; } },
-    ownerBadge: { removalRefusal: function () { return ''; } },
     // The stream, for its report on the relay event (goal/G41.32).
     event: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
     // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
-    required: { spirit: { data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } } } },
+    required: { spirit: { ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P }, data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } } } },
     // The contact family's cache (goal/G41.28): the contact api.js brings its data.js, as the real one does (goal/G47.1:
     // "every api.js requires it's companion data.js"); here that data stands in as spirit.required.spirit.data.contact.data, whose rows
     // the page watches. A data.js asked for directly is only recorded.
@@ -270,7 +269,6 @@ function relayWorld(rows, relayStatus) {
       return Promise.resolve({});
     },
     ready: Promise.resolve(families),
-    packet: P,
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
     // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
     peerPost: function (peer, app, body, how) {

@@ -160,7 +160,10 @@
       });
     });
   }
-  window.spirit.word = {
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
+  var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  ((R.spirit = R.spirit || {}).word = R.spirit.word || {}).script = {
     check: function (at, word) {
       var w = wordOf(word);
       if (!w) return Promise.resolve(null);

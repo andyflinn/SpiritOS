@@ -78,12 +78,12 @@ test.run('serves only reports, so asking leaves the tree as it was and a depreca
 }, test.limit.quick);
 
 // ── in a page ──
-test.run('in a page it is window.spirit.apiTreeIndex, the same three, with no require', 0.2, function () {
+test.run('in a page it is window.spirit.required.spirit.client.apiTreeIndex, the same three, with no require', 0.2, function () {
   const win = { spirit: {} };
   const ctx = { window: win };
   try { vm.runInNewContext(fs.readFileSync(FILE, 'utf8'), ctx, { filename: FILE }); }
   catch (e) { return false; }
-  const t = win.spirit.apiTreeIndex;
+  const t = win.spirit.required.spirit.client.apiTreeIndex;
   if (!t) return false;
   return (short(t.servers(TREE)) === short(['desk', 'fs']) && short(t.verbs(TREE, 'fs')) === short(['read', 'write']) && t.serves(TREE, 'desk.add') === true) || false;
 }, test.limit.quick);

@@ -86,10 +86,11 @@ function markup(k) {
   if (k.title) a += ' title="' + esc(k.title) + '"';
   return '<' + t + a + '>' + k.innerHTML + '</' + t + '>';
 }
-global.window = { spirit: { probability: {
-  probabilityStringObjectMatch: require(path.join(RUN, 'spirit', 'search', 'object.js')).probabilityStringObjectMatch,
-  createProbabilityBucket: require(path.join(RUN, 'spirit', 'listLimiter.js')).createProbabilityBucket,
-} } };
+// The ranking helpers at their one place, spirit.required.<their path>, as a page holds them (goal/G49.4).
+global.window = { spirit: { required: { spirit: {
+  search: { object: require(path.join(RUN, 'spirit', 'search', 'object.js')) },
+  listLimiter: require(path.join(RUN, 'spirit', 'listLimiter.js')),
+} } } };
 // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
 require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 // The element, once the first test has run its file.

@@ -41,7 +41,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
   global.spirit = window.spirit;
   window.spirit.ready = Promise.resolve({ contact: { block: verb('contact.block'), unblock: verb('contact.unblock'),
     forget: verb('contact.forget'), label: verb('contact.label'), get: verb('contact.get') }, peer: { acquire: verb('peer.acquire') } });
-  window.spirit.fieldRules = { normalize: function (t) { return String(t || '').trim(); },
+  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); window.spirit.required.spirit.fieldRules = { normalize: function (t) { return String(t || '').trim(); },
     problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
   // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
   // goal/G43.32: what the row opens stands where an element now finds it, spirit.element.spirit.element.
