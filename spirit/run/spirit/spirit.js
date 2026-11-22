@@ -342,7 +342,7 @@
     if (isNode()) {
       var p = branchPath(fam);
       var file = require('path').join(RUN_ROOT, p);
-      if (!require('fs').existsSync(file)) return Promise.reject(refusal('no-interface', 'no interface for the branch ' + fam));
+      if (!nodeFiles().statFile(p)) return Promise.reject(refusal('no-interface', 'no interface for the branch ' + fam));
       if (!Object.prototype.hasOwnProperty.call(nodeOnce, p)) { nodeOnce[p] = require(file); placeAt(required, p, nodeOnce[p]); }
       return Promise.resolve(nodeOnce[p]);
     }
@@ -463,15 +463,20 @@
   // falls back"): a system branch's spirit/<name>/api.js, or in node, when that is not there and the app has one, an app's
   // spirit/app/<name>/api.js. On a page the path only names the branch (interfaceName); the node finds its folder.
   // appServer.js hands out this same function. No other file writes the path.
+  // THROUGH spirit.fs's OWN PROCESSOR, NO RAW fs (goal/G49.2; Andy: "why would those two disk calls in processes have to reach
+  // for node.js require('fs') when the functions are sitting on spirit.js?", "go on the five!"): in node the two checks are
+  // statFile of spirit/fs/fileSystem.js, the very function spirit.fs.stat runs there, answering at once, with or without a
+  // node running.
   function branchPath(name) {
     var n = String(name || '');
     if (isNode()) {
-      var fs = require('fs');
-      var p = require('path');
-      if (!fs.existsSync(p.join(RUN_ROOT, 'spirit', n, 'api.js')) && fs.existsSync(p.join(RUN_ROOT, 'spirit', 'app', n, 'api.js'))) return 'spirit/app/' + n + '/api.js';
+      var stat = nodeFiles().statFile;
+      if (!stat('spirit/' + n + '/api.js') && stat('spirit/app/' + n + '/api.js')) return 'spirit/app/' + n + '/api.js';
     }
     return 'spirit/' + n + '/api.js';
   }
+  // The fs branch's node processor, the one place in node that reads the disc for spirit.fs (goal/G49.2).
+  function nodeFiles() { return require(require('path').join(RUN_ROOT, 'spirit', 'fs', 'fileSystem.js')); }
   function interfaceName(p) {
     // An app's branch sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27).
     var m = /^spirit\/app\/([^/]+)\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
@@ -546,7 +551,7 @@
     // placed at once, before the branch is bound, so an app server checks its calls by it without asking a node.
     if (fam && isNode() && !Object.prototype.hasOwnProperty.call(nodeOnce, p)) {
       var apiFile = require('path').join(RUN_ROOT, p);
-      if (require('fs').existsSync(apiFile)) { nodeOnce[p] = require(apiFile); placeAt(required, p, nodeOnce[p]); }
+      if (nodeFiles().statFile(p)) { nodeOnce[p] = require(apiFile); placeAt(required, p, nodeOnce[p]); }
     }
     if (fam && key) return bindPeer(key, fam, how);
     // On a page the api.js the node handed over stands at its place once its branch is bound.

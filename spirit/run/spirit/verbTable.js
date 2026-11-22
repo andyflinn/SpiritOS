@@ -221,7 +221,8 @@ function createVerbTable() {
       // The family's api.js through spirit.require (goal/G43.32), read where it is placed, spirit.required.spirit.<family>.api;
       // the binding it also starts asks this node, which the check needs nothing of.
       try {
-        if (require('fs').existsSync(require('path').join(__dirname, family, 'api.js'))) Promise.resolve(spirit.require('spirit/' + family + '/api.js')).then(null, function () { /* the binding */ });
+        // Through spirit.fs's own processor, never raw fs (goal/G49.2; Andy: "go on the five!").
+        if (require('./fs/fileSystem.js').statFile('spirit/' + family + '/api.js')) Promise.resolve(spirit.require('spirit/' + family + '/api.js')).then(null, function () { /* the binding */ });
         var placed = spirit.required && spirit.required.spirit && spirit.required.spirit[family] && spirit.required.spirit[family].api;
         declared[family] = (placed && placed.verbs) || null;
       } catch (e) { declared[family] = null; }
