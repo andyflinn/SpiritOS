@@ -96,24 +96,16 @@ function rule0() {
 
 // ── THE APP APP (the box, decided) ──────────────────────────────────────────────────────────────────────────────────
 function appApp() {
-  test.run('spirit/app/app/app.json says shell true:true, a shell a node may load', 0.4, function () {
-    const m = manifestOf('app');
-    return (!!m.j && isObj(m.j.shell) && m.j.shell.true === true) ? true : false;
-  }, test.limit.quick);
-  test.run('spirit/app/app/element.js is its element, the app selector', 0.4, function () {
-    return (isFile('spirit/app/app/element.js') && isElement('spirit/app/app/element.js')) ? true : false;
-  }, test.limit.quick);
+  // Since goal/G49.4 (box v15: "spirit/app/app will be deleted", "spirit/element/script.js becomes the hard-coded only shell")
+  // there is no shell app: its manifest, its element and the node's default shell went with it.
   test.run('the shell app, spirit/app/appSelector.js and spirit/app/appSelector/ are gone', 0.4, function () {
     const gone = ['spirit/app/shell', 'spirit/app/appSelector', 'spirit/app/appSelector.js'].filter(function (p) { return isDir(p) || isFile(p) || TREE.some(function (f) { return f.indexOf(p + '/') === 0; }); });
     return !gone.length ? true : false;
   }, test.limit.quick);
-  test.run('the app branch is intrinsic, its seven parts (changeAppIcon to serverDEBUG) standing in spirit/element/search/app/', 0.4, function () {
-    const parts = ['changeAppIcon', 'changeAppLabel', 'detail', 'rowFormAppActive', 'rowFormSetShell', 'rowFormToggle', 'serverDEBUG'];
+  test.run('the app branch is intrinsic, its six parts (changeAppIcon to serverDEBUG) standing in spirit/element/search/app/', 0.4, function () {
+    const parts = ['changeAppIcon', 'changeAppLabel', 'detail', 'rowFormAppActive', 'rowFormToggle', 'serverDEBUG'];
     const missing = parts.filter(function (p) { return !isFile('spirit/element/search/app/' + p + '.js'); });
     return !missing.length ? true : false;
-  }, test.limit.quick);
-  test.run('the node\'s default shell is app (spirit/nodeShell.js)', 0.4, function () {
-    return /DEFAULT\s*=\s*'app'/.test(code('spirit/nodeShell.js')) ? true : false;
   }, test.limit.quick);
 }
 
@@ -164,7 +156,8 @@ function appRules(all) {
       if (typeof id.label !== 'string' || !id.label) bad += 1;
       if (!isBool(id.intrinsic)) bad += 1;
       if (!isObj(j.mount)) bad += 1;
-      if (!isObj(j.shell) || !isBool(j.shell.true) || !isBool(j.shell.mount) || !isBool(j.shell.tile)) bad += 1;
+      // shell.true went with goal/G49.4 (box v15: "the app manifests shell:true goes"); mount and tile stay.
+      if (!isObj(j.shell) || !isBool(j.shell.mount) || !isBool(j.shell.tile)) bad += 1;
       if (!isObj(j.node) || !isBool(j.node.mount) || (j.node.run !== undefined && !isBool(j.node.run))) bad += 1;
       return !bad ? true : false;
     });

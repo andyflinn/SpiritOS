@@ -49,7 +49,8 @@ function keysAt(src, open) {
   return null;
 }
 function mounted(family) {
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
+  // The node's verbs are mounted in spirit/server/node.js since goal/G48.5 (spirit/server.js is the launcher).
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node.js'), 'utf8');
   const head = 'loopbackVerbs.mount(\'' + family + '\',';
   let at = src.indexOf(head);
   if (at === -1) return null;
