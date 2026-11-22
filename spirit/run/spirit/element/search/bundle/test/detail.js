@@ -129,7 +129,7 @@ test.run('the word "new" at its start is gone, and ➕ stands in its place', 0.2
   if (!fam || !add) return false;
   return !/\bnew\b/.test(text(box)) ? true : false;
 }, test.limit.quick);
-test.run('Add with no family asks nothing', 0.2, async function () {
+test.run('Add with no BRANCH asks nothing', 0.2, async function () {
   if (!fam || !add) return false;
   add.dispatchEvent({ type: 'click' });
   await settle();
