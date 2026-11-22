@@ -9,7 +9,6 @@
     "chat.js": true
   },
   "shell": {
-    "true": false,
     "mount": true,
     "tile": true
   },

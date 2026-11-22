@@ -47,13 +47,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       // Pressed, it leaves only the active apps that run on the node.
       filters: (o.servers === true ? [{ name: 'servers', word: 'servers', toggle: true,
         test: function (row, on) { return !on || (row && row.active === true && row.nodeMount === true) ? 1 : 0; } }] : [])
-        // THE SHELLS ALONE (goal/G43.18, box v29: "Both dropdowns list only the apps whose <name>.json says shell:true:true"):
-        // opts.shells, a filter with no button (when: never), for the Home shell and Face shell rows.
-        // The row as the family's cache holds it: a row's element keeps only its key, label and icon.
-        .concat(o.shells === true ? [{ name: 'shells', when: function () { return false; }, test: function (row) {
-          var held = row && window.spirit.data.app.data.rows()[row.key];
-          return held && held.shell === true ? 1 : 0;
-        } }] : [])
         // RUN APPS IN THE PANE ONLY (goal/G43.21; Andy, the box: "spirit app search will list these jobs (node:run) only in pane
         // mode, bacause it they have no shell-mount."): a filter with no button, the row as the family's cache holds it.
         .concat([{ name: 'runs', when: function () { return false; }, test: function (row) {

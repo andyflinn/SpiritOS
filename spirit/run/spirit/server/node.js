@@ -1720,8 +1720,6 @@ catch (e) {
         rs.end(JSON.stringify(Object.assign({ relays: relays }, said)));
       }).catch(function (e) { bodyRefused(rq, rs, e, true); });
     } },
-    // THE SHELL THE NODE NAMES (goal/G43.18, box v29; the verb reviewed by wsl, Andy: "the verb is node.shell"): spirit/nodeShell.js.
-    'shell': { request: { at: 'home', name: '' }, reply: { name: '' }, handler: proxyVerb(function (b) { return spirit.require('spirit/nodeShell.js').shell(ROOT_DIR, b); }) },
   }, { wire: false, by: 'hub.js' });
 
   // ── owner.command: A COMMAND FOR ONE OF THIS NODE'S PUPPETS (puppets/G4)

@@ -13,7 +13,6 @@
   // goal/G43.15: the switches are elements of their own, each hiding itself where it does not apply.
   window.spirit.require('spirit/element/search/app/rowFormAppActive.js');
   window.spirit.require('spirit/element/search/app/serverDEBUG.js');
-  window.spirit.require('spirit/element/search/app/rowFormSetShell.js');
   window.spirit.require('spirit/element/search/app/changeAppIcon.js');
   window.spirit.require('spirit/element/search/app/changeAppLabel.js');
   // goal/G43.21, goal/G47.1: the Run row is the task row.
@@ -34,16 +33,12 @@
     var labelBox = document.createElement('div');
     var activeBox = document.createElement('div');
     var debugBox = document.createElement('div');
-    var homeShellBox = document.createElement('div');
-    var faceShellBox = document.createElement('div');
     var runBox = document.createElement('div');
     // rule/2: every block carries a leading 1em: a rowForm carries its own since goal/G43.15, so a hidden one takes it along.
     box.appendChild(iconBox);
     box.appendChild(labelBox);
     box.appendChild(activeBox);
     box.appendChild(debugBox);
-    box.appendChild(homeShellBox);
-    box.appendChild(faceShellBox);
     box.appendChild(runBox);
     host.appendChild(box);
     // THE ICON AND THE LABEL (goal/G43.15, Q4): elements of their own, so an app's own face can show them too.
@@ -53,15 +48,11 @@
     // (goal/G43.18, box v29: its element is deleted, <name>.json alone says whether an app may be a shell).
     var active = S.element.spirit.element.search.app.rowFormAppActive.create(activeBox, { key: key });
     var debug = S.element.spirit.element.search.app.serverDEBUG.create(debugBox, { key: key });
-    // THE HOME SHELL AND THE FACE SHELL (goal/G43.18, box v29): two rows of their own, each showing only for an app whose
-    // <name>.json says shell:true:true; the RULE: a shell must be able to replace itself.
-    var homeShell = S.element.spirit.element.search.app.rowFormSetShell.create(homeShellBox, { key: key, at: 'home' });
-    var faceShell = S.element.spirit.element.search.app.rowFormSetShell.create(faceShellBox, { key: key, at: 'face' });
     // RUN IS THE TASK ROW (goal/G43.21; Andy, the box: "the app detail will show a run button."; goal/G47.1: "yes make it an
     // improvement on the current run-rowForm in app and isolate it as spirit/element/monitor/task.js"): it shows only for an app
     // whose <name>.json says node.run, and offers Run, Cancel or Delete as its job stands.
     var task = S.element.spirit.element.monitor.task.create(runBox, { id: 'spirit.app.' + key });
-    return { destroy: function () { task.destroy(); icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); homeShell.destroy(); faceShell.destroy(); host.innerHTML = ''; } };
+    return { destroy: function () { task.destroy(); icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); host.innerHTML = ''; } };
   }
 
   function create(host, opts) {

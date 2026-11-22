@@ -1,13 +1,13 @@
 'use strict';
-// spirit/run/spirit/app/app/element.js
-// THE APP APP'S MAIN ELEMENT, THE APP SELECTOR (goal/G43.2; Andy, box: "the face part of this api will be an probabilitySearch
-// derivative"), following spirit/element/search/bundle.js. Its contract and its test: ./test/element.md and ./test/element.js.
-// Since goal/G43.32 it is the app app's element.js, the shell app gone (the box: "spirit/app/shell/ becomes spirit/app/app/. Its
-// element.js is today's spirit/app/appSelector.js; shell.js goes."): app.json says shell true:true, and the node's default shell is app.
+// spirit/run/spirit/element/script.js
+// THE ONE SHELL OF SpiritOS (goal/G49.4; Andy: "spirit/element/script.js becomes the hard-coded only shell there is in SpiritOS"):
+// moved here from spirit/app/app/element.js, the app app gone with every shell choice.
+// THE APP SELECTOR (goal/G43.2; Andy, box: "the face part of this api will be an probabilitySearch derivative"), following
+// spirit/element/search/bundle.js.
 //
 // A THIN SELECTOR OVER THE APP LIST, spirit/element/search/app.js, WHICH IT LOADS ITSELF (rule/26).
 //
-//   spirit.element.spirit.app.app.element.create(container, options) -> root
+//   spirit.element.spirit.element.script.create(container, options) -> root
 //     root.value   the chosen app's key, '' while none is
 //     root.row     the chosen app, null while none is
 //     one bubbling `change` on a pick, which shows that app's detail under the list; refresh() asks again
@@ -167,5 +167,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     return root;
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/app/element.js', { create: function (container, options) { var root = createAppSelector(options); container.appendChild(root); return root; } }); });
+  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/script.js', { create: function (container, options) { var root = createAppSelector(options); container.appendChild(root); return root; } }); });
 })();

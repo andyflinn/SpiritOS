@@ -12,7 +12,7 @@
 //     read. Another device holding it is said, with Connect here; a face replaced by another device is told it was taken.
 //     The home node offline: the small red not connected mark shows.
 //   - THE PAGE'S PARTS, the home node's own, in its own version (FACE_PARTS), the sheets among them.
-//   - THE SHELL THE NODE NAMES (node.shell, at home or face; spirit/app/<name>/<name>.js), drawn in the page's area. The
+//   - THE ONE SHELL, spirit/element/script.js (goal/G49.4), drawn in the page's area. The
 //     RULE: a shell must be able to replace itself. No desktop of its own (Q23, Andy: "yes." to the old shell apps missing
 //     from the green shell for now).
 //   - JOIN IS AN APP (goal/G43.26; Andy: "the join icon sits next to all other icons on a shell (SO IT's A FCUKING APP,
@@ -214,27 +214,19 @@
     }, Promise.resolve());
   }
 
-  // ── THE SHELL THE NODE NAMES (goal/G43.18, box v29) ────────────────────────────────────────────────────────────
-  // node.shell({ at }) names it; its main element, spirit/app/<name>/element.js (goal/G43.32, rule 4), is loaded and made in
-  // the page's area. No shell named, or no answer: the app app (the box: "The node's default shell and every node's stored
-  // home and face shell are 'app'"); one that does not load is said in the banner.
+  // ── THE ONE SHELL (goal/G49.4; Andy: "spirit/element/script.js becomes the hard-coded only shell there is in SpiritOS, and
+  // replaces whatever the fuck element is dynamically loaded via spirit/shell as shell", "the verb node.shell goes, including its
+  // state-storage") ───────────────────────────────────────────────────────────────────────────────────────────────
+  // Its element is loaded and made in the page's area, at home and on a face alike; one that does not load is said in the banner.
   function loadShell() {
-    var at = state.home ? 'home' : 'face';
-    return Promise.resolve(spirit.ready).then(function (s) { return s.node.shell({ at: at }); }).then(function (r) {
-      return String((r && r.name) || 'app');
-    }, function () { return 'app'; }).then(function (name) {
-      if (!/^[A-Za-z0-9_-]+$/.test(name)) name = 'app';
-      return spirit.require('spirit/app/' + name + '/element.js').then(function () {
-        // The shell's element at the place of the file just loaded, spirit.element.<its path> (goal/G43.32).
-        var app = window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app;
-        var E = app && app[name] && app[name].element;
-        desktop.innerHTML = '';
-        // THE SHELL'S AREA IS NO DESKTOP GRID (Andy, of his face.html: "all icons of the app.search are in a thin strip in the left
-        // of my browser window"): a fill column the shell lays itself out in (face.css, #desktop.shell-area).
-        desktop.classList.add('shell-area');
-        desktop.hidden = false;
-        if (E && typeof E.create === 'function') E.create(desktop);
-      });
+    return Promise.resolve(spirit.require('spirit/element/script.js')).then(function () {
+      var E = window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.element && window.spirit.element.spirit.element.script;
+      desktop.innerHTML = '';
+      // THE SHELL'S AREA IS NO DESKTOP GRID (Andy, of his face.html: "all icons of the app.search are in a thin strip in the left
+      // of my browser window"): a fill column the shell lays itself out in (face.css, #desktop.shell-area).
+      desktop.classList.add('shell-area');
+      desktop.hidden = false;
+      if (E && typeof E.create === 'function') E.create(desktop);
     }).then(null, function (e) { say('The shell could not be loaded: ' + ((e && e.message) || e)); });
   }
 

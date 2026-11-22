@@ -64,11 +64,8 @@ function createApp(opts) {
     try { own = JSON.parse(fs.readFileSync(path.join(folder, name, name + '.json'), 'utf8')); } catch (e) { return null; }
     const i = own && own.identity && typeof own.identity === 'object' ? own.identity : {};
     const s = stateOf(name);
-    // A SHELL BY ITS OWN <name>.json ALONE (goal/G43.18, box v29, Q10: the Allow row and app.shell went, "and the shell field it
-    // writes into node.json"): no choice of the node's stands over it.
-    const asShell = !!(own && own.shell && own.shell.true === true);
     // AN INTRINSIC APP IS ALWAYS ACTIVE (goal/G43.14; Andy, Q1: "intrinsic apps will be always on."), whatever node.json says.
-    return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, shell: asShell, intrinsic: i.intrinsic === true,
+    return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, intrinsic: i.intrinsic === true,
       // WHETHER IT RUNS ON THE NODE (goal/G43.18, Q6, Andy: "yes."): its <name>.json's node.mount, for the app search's server filter.
       nodeMount: !!(own && own.node && own.node.mount === true),
       // RUN, NOT MOUNTED (goal/G43.21; Andy, the box: "spirit app search will list these jobs (node:run) only in pane mode", "the

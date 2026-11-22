@@ -5,7 +5,7 @@
 //
 //   spirit.element.spirit.app.desk.element.create(container, { title, open }) -> { destroy() }
 //
-// The shell's app selector launches it (spirit/app/app/element.js). It draws the Desk page, spirit.element.spirit.app.desk.element.desk.desk
+// The shell's app selector launches it (spirit/element/script.js). It draws the Desk page, spirit.element.spirit.app.desk.element.desk.desk
 // (./element/desk/desk.js), which it requires itself, so it is loaded once desk.js is (spirit.require answers once its tree
 // has). A dialog the page opens goes in the mounter's stack through open.
 (function () {
