@@ -351,14 +351,33 @@
       return loadInterface(got.body.interface, fam);
     });
   }
-  function bindOn(ask, getFile, fam) {
-    // Bound calls go to a node: in node with no port there is none to send them to, so nothing is bound (no default port).
-    if (isNode() && !PORT) return Promise.reject(noNode());
+  // A BRANCH'S NODE HALF (goal/G49.2; Andy: "the architechture in the old kernel.js was exactly that it would insert different
+  // versions of spirit.fs functions depending on isNode() and isBrowser()"): an api.js that names one (node: '<its path>')
+  // has its verbs answered in a node process by that file's answer(verb, args), as { status, body }, the node's own answer;
+  // a verb it leaves undefined goes to the node as before. On a page, and for a peer, the calls go where they always went.
+  function nodeHalf(def) {
+    if (!isNode() || !def || typeof def.node !== 'string') return null;
+    var half = null;
+    try { half = require(require('path').join(RUN_ROOT, def.node)); } catch (e) { half = null; }
+    return half && typeof half.answer === 'function' ? half : null;
+  }
+  function bindOn(ask, getFile, fam, own) {
     return ownInterface(fam).then(function (def) {
       // The api.js, kept for its place at spirit.required.<its path> (goal/G43.32; requireOne).
       if (def) interfaceDefs[fam] = def;
       if (!def || !def.verbs) throw refusal('no-interface', 'the interface of ' + fam + ' names no verbs');
-      return member(ask, getFile, fam, def);
+      // Only this process's own branch: a peer's calls always go to the peer.
+      var half = own ? nodeHalf(def) : null;
+      // Bound calls go to a node: in node with no port there is none to send them to, so a branch with no node half is not
+      // bound (no default port).
+      if (isNode() && !PORT && !half) throw noNode();
+      var through = !half ? ask : function (name, args) {
+        var a = half.answer(name.slice(fam.length + 1), args || {});
+        if (a !== undefined) return Promise.resolve(a);
+        if (!PORT) return Promise.reject(noNode());
+        return ask(name, args);
+      };
+      return member(through, getFile, fam, def);
     });
   }
   // This VM's node's branch, on the instance as spirit.<branch>. Two callers at once ask once; a refusal is asked
@@ -370,7 +389,7 @@
   function bindOwn(fam) {
     if (bound[fam]) return Promise.resolve(self[fam]);
     if (asking[fam]) return asking[fam];
-    asking[fam] = bindOn(post, get, fam).then(function (m) {
+    asking[fam] = bindOn(post, get, fam, true).then(function (m) {
       delete asking[fam];
       var held = self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam]) ? self[fam] : null;
       if (held) Object.keys(m).forEach(function (k) { if (!(k in held)) held[k] = m[k]; });

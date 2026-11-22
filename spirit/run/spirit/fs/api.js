@@ -9,6 +9,9 @@
 // (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
 if (typeof require === 'function') require('../spirit.js').require('spirit/fs/data.js'); else window.spirit.require('spirit/fs/data.js');
 module.exports = {
+  // THE NODE HALF (goal/G49.2; Andy: "fix spirit.fs NOW"): in a node process spirit.js answers these verbs through this
+  // file, on the process's own disc, and sends only what it does not answer to the node.
+  node: 'spirit/fs/node.js',
   verbs: {
     search: { q: 'spirit.type.string.descriptionSelect?', contents: 'spirit.type.boolean?' },
     stat: { path: 'spirit.type.string.file' },
