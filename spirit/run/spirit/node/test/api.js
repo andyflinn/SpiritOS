@@ -118,7 +118,7 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
 }, test.limit.quick);
 
 // "every verb the node mounts for this family, each argument with its rule": the declaration and the table are one
-test.run('it declares every verb the node mounts for the family, and no other', 0.2, function () {
+test.run('it declares every verb the node mounts for the BRANCH, and no other', 0.2, function () {
   if (!W.api) return false;
   if (!W.mounted) return false;
   const node = Object.keys(W.mounted).sort();
