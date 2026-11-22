@@ -72,6 +72,8 @@ test.run('it reads no component but its own: spirit\'s libraries, the sheets and
       p === 'spirit/element/joinSteps.js' ||
       // goal/G41.19: the file tree's row element, which spirit.js does not load.
       p === 'spirit/element/search/file/row.js' ||
+      // THE ONE SHELL (goal/G49.4, box v15: "spirit/element/script.js becomes the hard-coded only shell there is in SpiritOS").
+      p === 'spirit/element/script.js' ||
       // A FAMILY'S INTERFACE, which brings its data with it (goal/G47.1; Andy's rule: "every api.js requires it's companion
       // data.js, and is the only script to require that data.js"): boot reads the jobs it streams from the job family's.
       /^spirit\/[\w-]+\/api\.js$/.test(p);
