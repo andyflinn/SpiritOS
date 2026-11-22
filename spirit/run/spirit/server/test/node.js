@@ -505,6 +505,17 @@ test.run('the verbs that act took the whole garbage, bad strings, missing, extra
   return !(bad.length || fresh.length);
 }, test.limit.long);
 
+// ── node.js reads the common file/folder cache (goal/G49.2; Andy: "go on node.js") ──
+// G49.1's box: "node.js's branch folder lookup" moves onto spirit/fs.js, and "each disc scan goes in the same commit that
+// moves its client onto spirit/fs.js". node.js's code, comments left out, asks the disc for no file: the lookup of where a
+// served app's api.js is reads the dataset, which the node's own watcher keeps whole in this, its main process.
+const NODE_CODE = (function () {
+  try { return fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { return ''; }
+})();
+test.run('spirit/server/node.js asks the disc for no file and lists no folder: no existsSync, no readdirSync', 0.2, function () {
+  return (NODE_CODE.length > 0 && !/\bexistsSync\b|\breaddirSync\b|\breaddir\(/.test(NODE_CODE)) || false;
+}, test.limit.quick);
+
 test.after(function () {
   letGo(W.node, W.page);
   if (G.node) letGo(G.node, null);
