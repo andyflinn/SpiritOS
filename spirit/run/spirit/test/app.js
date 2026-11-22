@@ -177,6 +177,29 @@ test.run('spirit/app.js scans no folder on disc: no readdirSync and no existsSyn
   const c = appCode();
   return (c.length > 0 && !/\breaddirSync\b|\breaddir\b|\bexistsSync\b/.test(c)) || false;
 }, test.limit.quick);
+// AN APP ROW'S api IS THE CACHE'S FLAG (goal/G49.2, Q1: "may an app row's api become the cache's flag (api.js AND data.js),
+// where today it is api.js alone?"; Andy: "sure, retrofit that where we would have put the flag in 49.1"). On the scratch
+// node an app folder with its <name>.json and an api.js but no data.js has a row with api false; once data.js comes, true.
+async function apiOf(key) {
+  const row = (rows(await ask(W.node.base, 'app.search', { q: '' })) || []).filter(function (i) { return i.key === key; })[0];
+  return row ? (parsed(row.label) || {}).api : undefined;
+}
+test.run('an app with api.js and no data.js has a row with api false', 0.2, async function () {
+  if (noNode()) return false;
+  const dir = scratchApp('zzapiflag');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'zzapiflag.json'), JSON.stringify({ identity: { icon: '🧩', label: 'Zz Api Flag' } }));
+  fs.writeFileSync(path.join(dir, 'api.js'), "'use strict';\nmodule.exports = { verbs: {} };\n");
+  const listed = await until(function () { return apiOf('zzapiflag').then(function (a) { return a !== undefined; }); }, 5000);
+  return (listed && (await apiOf('zzapiflag')) === false) || false;
+}, test.limit.slow);
+test.run('once its data.js comes, the same row says api true', 0.2, async function () {
+  if (noNode()) return false;
+  fs.writeFileSync(path.join(scratchApp('zzapiflag'), 'data.js'), "'use strict';\n");
+  const flipped = await until(function () { return apiOf('zzapiflag').then(function (a) { return a === true; }); }, 5000);
+  fs.rmSync(scratchApp('zzapiflag'), { recursive: true, force: true });
+  return flipped || false;
+}, test.limit.slow);
 
 // ── app.active (goal/G43.9) ──
 // The box: "spirit.app gains a verb: "active"", "app.active { key, active } sets it; only the owner may."
