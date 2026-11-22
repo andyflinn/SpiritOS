@@ -5,7 +5,7 @@ require('../../spirit.js');
 // THE PLATFORM'S README (goal/G47.1, box v170, "#### publishData"), written by publishData.js into platform/<platform>/,
 // and the list of platforms, platform/README.md. In this order, as the box has it:
 //   the title "# Info and Measurements on <platform-name>"
-//   "Measurements were taken on **<Weekday>, <Month> <day-number-in-month>, <four-digit-year>** for repository commit **<commit-id>**"
+//   "Measurements were taken on **<Weekday>, <Month> <day-number-in-month>, <four-digit-year>, <hh:mm> UTC** for repository commit **<commit-id>**"
 //   "## The Machine the Measurements come from", six bullets, each value node.js's system info
 //   "## Summary": the members a 512 MB relay serves, a node at rest, a call on its own machine, a card request through a relay
 //   "## Details": links to documents beside it, testState.md first
@@ -68,8 +68,12 @@ function machineOf() {
   };
 }
 
-// "<Weekday>, <Month> <day-number-in-month>, <four-digit-year>", the day of the run on this machine.
-function dayOf(at) { return at.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
+// "<Weekday>, <Month> <day-number-in-month>, <four-digit-year>, <hh:mm> UTC", the day and the minute of the run, in UTC
+// (goal/G49.5; Andy: "README.md does not show the fucking time at all (UTC!!!)").
+function dayOf(at) {
+  var day = at.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  return day + ', ' + at.toISOString().slice(11, 16) + ' UTC';
+}
 
 // THE OUTSTANDING ISSUES, THREE BULLETS OF THE SUMMARY (goal/G48.5, Andy: "The product tree, right now, has <number>
 // outstanding issues in the test database.", "The leading module responsible for that count is <full-module-name>.", "The
