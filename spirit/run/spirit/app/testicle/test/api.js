@@ -37,7 +37,7 @@ test.run('spirit.branchPath of testicle finds api.js here', 0.2, function () {
 }, test.limit.quick);
 
 // ── its shape ──
-test.run('api.js exports a table of verbs and nothing else: it names no family of its own', 0.2, function () {
+test.run('api.js exports a table of verbs and nothing else: it names no BRANCH of its own', 0.2, function () {
   if (!W.api) return false;
   return (Object.keys(W.api).join() === 'verbs' && isPlain(W.verbs)) || false;
 }, test.limit.quick);
