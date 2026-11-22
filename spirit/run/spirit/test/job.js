@@ -898,13 +898,20 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
     "const fs = require('fs'), dir = process.argv[1];",
     "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job.js')) + ")(1);",
     "const job = jobs.startFsWatcherJob(dir);",
-    "const read = fs.readFileSync; let reads = 0;",
-    "fs.readFileSync = function (f) { if (/[\\\\/]spirit[\\\\/]app[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+\\.json$/.test(String(f))) reads += 1; return read.apply(fs, arguments); };",
-    "const first = jobs.fsTreeCommands(); const second = jobs.fsTreeCommands();",
-    "fs.readFileSync = read;",
-    "const of = function (p) { return first.filter(function (c) { return c.path === p; })[0] || null; };",
-    "console.log(JSON.stringify({ reads: reads, files: first.length, again: second.length, spirit: of('spirit/spirit.js'), noCore: of(" + JSON.stringify(String(NOT_INTRINSIC.file || '')) + "), ownJson: of(" + JSON.stringify(String(NOT_INTRINSIC.json || '')) + ") }));",
-    "job._stop(); process.exit(0);",
+    // goal/G49.2: the tree is spirit.data.fs, through spirit/fs.js, which this process's watcher fills; read once it is whole.
+    "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs.js')) + ");",
+    "const rowsOf = function () { const all = F.files(); return Object.keys(all).map(function (p) { return Object.assign({ path: p }, all[p]); }); };",
+    "const end = Date.now() + 40000;",
+    "(function tick() {",
+    "  if (!F.ready() && Date.now() < end) return setTimeout(tick, 200);",
+    "  const read = fs.readFileSync; let reads = 0;",
+    "  fs.readFileSync = function (f) { if (/[\\\\/]spirit[\\\\/]app[\\\\/][^\\\\/]+[\\\\/][^\\\\/]+\\.json$/.test(String(f))) reads += 1; return read.apply(fs, arguments); };",
+    "  const first = rowsOf(); const second = rowsOf();",
+    "  fs.readFileSync = read;",
+    "  const of = function (p) { return first.filter(function (c) { return c.path === p; })[0] || null; };",
+    "  console.log(JSON.stringify({ reads: reads, files: first.length, again: second.length, spirit: of('spirit/spirit.js'), noCore: of(" + JSON.stringify(String(NOT_INTRINSIC.file || '')) + "), ownJson: of(" + JSON.stringify(String(NOT_INTRINSIC.json || '')) + ") }));",
+    "  job._stop(); process.exit(0);",
+    "})();",
   ].join('\n'));
   try { treeSent = JSON.parse(String(out).trim().split('\n').pop()); } catch (e) { treeSent = null; }
   return (!!treeSent && treeSent.files > 100) || false;
@@ -922,7 +929,7 @@ test.run('a core file, spirit/spirit.js, comes with the core flag', 0.2, functio
 test.run('a file of an app whose json says intrinsic false comes without the core flag', 0.2, function () {
   if (!NOT_INTRINSIC.file) return false;
   if (!treeSent) return false;
-  return (!!treeSent.noCore && treeSent.noCore.core === undefined) || false;
+  return (!!treeSent.noCore && treeSent.noCore.core !== true) || false;
 }, test.limit.quick);
 test.run('that app\'s own json comes with the core flag', 0.2, function () {
   if (!treeSent) return false;
@@ -950,7 +957,9 @@ test.run('a scratch tree holds an app zzKept whose json turns intrinsic true and
       "const jobs = require(path.join(run, 'spirit', 'job.js'))(1);",
       "const job = jobs.startFsWatcherJob(run);",
       "const json = path.join(run, 'spirit', 'app', 'zzKept', 'zzKept.json');",
-      "const core = function () { const c = jobs.fsTreeCommands().filter(function (x) { return x.path === 'spirit/app/zzKept/zzKept.js'; })[0]; return c ? c.core === true : null; };",
+      // goal/G49.2: the row is spirit.data.fs's, through spirit/fs.js, which this process's watcher fills.
+      "const F = require(path.join(run, 'spirit', 'fs.js'));",
+      "const core = function () { const c = F.file('spirit/app/zzKept/zzKept.js'); return c ? c.core === true : null; };",
       "const wait = function (want, ms) { const end = Date.now() + ms; return new Promise(function (r) { (function tick() { const now = core(); if (now === want || Date.now() > end) return r(now); setTimeout(tick, 100); })(); }); };",
       "const out = { before: null, turned: null, back: null };",
       "setTimeout(async function () {",
