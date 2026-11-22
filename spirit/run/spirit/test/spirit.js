@@ -409,7 +409,7 @@ test.run('in node, every name on the spirit instance but required has an upperca
 // that says what it does. In node the instance holds these at start, as it held their old names.
 const NODE_HELPERS = ['requireScript', 'checkArgs', 'ruleNames', 'callOutcome', 'apiTree', 'logError', 'debugLog', 'eventStream', 'nodeFacts', 'processJob'];
 const PAGE_HELPERS = ['requireScript', 'readyPromise', 'startPage', 'checkArgs', 'ruleNames', 'callOutcome', 'apiTree', 'logError', 'debugLog', 'faceLogin'];
-test.run('in node, the helpers stand under their accepted names: requireScript, checkArgs, ruleNames, callOutcome, apiTree, logError, debugLog, eventStream, nodeFacts, processJob', 0.2, function () {
+test.run('in node, the ten helpers stand under their accepted names', 0.2, function () {
   const o = O(); if (!o || !o.keys) return false;
   return NODE_HELPERS.every(function (k) { return o.keys.indexOf(k) >= 0; });
 }, test.limit.quick);
@@ -553,7 +553,7 @@ test.run('on a page, started and a branch called, every name on window.spirit bu
   const keys = Object.keys(T.wq.spirit);
   return keys.length > 0 && trunkWords(keys).length === 0;
 }, test.limit.quick);
-test.run('on a page, started, the helpers stand under their accepted names: requireScript, readyPromise, startPage, checkArgs, ruleNames, callOutcome, apiTree, logError, debugLog, faceLogin', 0.2, async function () {
+test.run('on a page, started, the ten helpers stand under their accepted names', 0.2, async function () {
   if (!T.ps) return false;
   const keys = Object.keys(T.wq.spirit);
   return PAGE_HELPERS.every(function (k) { return keys.indexOf(k) >= 0; });
