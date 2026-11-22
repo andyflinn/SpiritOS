@@ -92,12 +92,12 @@ function plantOldRules(stateDir) {
   } finally { db.close(); }
 }
 // A family's interface, as a node's door answers {api: {family}}.
-function familyOf(body) {
-  if (!body || !body.api || typeof body.api.family !== 'string' || !/^[A-Za-z]\w*$/.test(body.api.family)) return null;
-  const f = body.api.family;
+function interfaceOf(body) {
+  if (!body || !body.api || typeof body.api.branch !== 'string' || !/^[A-Za-z]\w*$/.test(body.api.branch)) return null;
+  const f = body.api.branch;
   // A node family's, an app's (spirit/app/<name>/api.js, goal/G43.27), or a server's.
   const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, 'spirit', 'app', f, 'api.js'), path.join(RUN, require(path.join(RUN, 'spirit', 'spirit.js')).branchPath(f))];
-  for (const file of tried) if (fs.existsSync(file)) return { family: f, interface: fs.readFileSync(file, 'utf8') };
+  for (const file of tried) if (fs.existsSync(file)) return { branch: f, interface: fs.readFileSync(file, 'utf8') };
   return { ok: false, code: 'no-interface' };
 }
 function entriesOf(got) { return Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : []; }
@@ -120,13 +120,13 @@ function pretendNode() {
       }
       res.writeHead(200, { 'Content-Type': 'application/json' });
       if (b.verb === 'event.publish') { if (b.app) pages.push(b.app); res.end('{"ok":true}'); return; }
-      if (b.verb === 'api' && typeof b.family === 'string') { res.end(JSON.stringify(familyOf({ api: { family: b.family } }))); return; }
+      if (b.verb === 'api' && typeof b.branch === 'string') { res.end(JSON.stringify(interfaceOf({ api: { branch: b.branch } }))); return; }
       if (b.verb !== 'peer.post') { res.end('{"ok":true}'); return; }
       const hash = 'H' + Date.now() + Math.random();
       res.end(JSON.stringify({ ok: true, hash: hash }));
       let ask = null; try { ask = packet.decode(b.text); } catch (e) { ask = null; }
       const body = (ask && ask.body) || {};
-      let answer = familyOf(body);
+      let answer = interfaceOf(body);
       // A subscriber is another node's desk in client mode (goal/G47.5): deskClient went with goal/G48.8.
       const sl = body.desk && body.desk.listener;
       if (!answer && sl) {
@@ -221,7 +221,7 @@ test.run('a desk server starts for this suite', 0.2, async function () {
   for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await W.client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) return false;
   W.up = true;
-  await call('subscribe', { family: 'desk' }, CW);
+  await call('subscribe', { branch: 'desk' }, CW);
   return true;
 }, test.limit.slow);
 
@@ -392,7 +392,7 @@ const FRESH = { key: 'MCowBQYDK2VwAyEA' + 'deskProductTestFRESH'.padEnd(43, 'A')
 test.run('a subscribe with no since brings the current goal\'s facts whole, the goal and each of its six items', 0.2, async function () {
   if (!W.up) return false;
   const f0 = W.node.sent.length;
-  const plain = await call('subscribe', { family: 'desk' }, FRESH);
+  const plain = await call('subscribe', { branch: 'desk' }, FRESH);
   W.plainEnded = await waitEnd(FRESH.key, f0);
   W.plainRows = rowsTo(FRESH.key, f0);
   const plainIds = wholeOf(W.plainRows).map(function (r) { return String(r.item.id); });
@@ -406,7 +406,7 @@ test.run('a subscribe with no since brings no chat line, check or box, since it 
 test.run('a subscribe with since 0 is the same as one with no since', 0.2, async function () {
   if (!W.up) return false;
   const zero = W.node.sent.length;
-  await call('subscribe', { family: 'desk', since: 0 }, FRESH);
+  await call('subscribe', { branch: 'desk', since: 0 }, FRESH);
   await waitEnd(FRESH.key, zero);
   return (sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length) || false;
 }, test.limit.quick);

@@ -50,8 +50,8 @@ function answer(b) {
   if (!isCall(b)) return FLAT;
   const c = b.call;
   const a = b.args;
-  if (c === 'api' && a.family === 'demo') return [200, { interface: DEMO }];
-  if (c === 'api' && a.family) return [404, { ok: false, code: 'no-family', error: 'no family ' + a.family }];
+  if (c === 'api' && a.branch === 'demo') return [200, { interface: DEMO }];
+  if (c === 'api' && a.branch) return [404, { ok: false, code: 'no-branch', error: 'no branch ' + a.branch }];
   if (c === 'api') return [200, { demo: { hello: {} }, gone: {} }];
   if (c === 'demo.hello' && a.name === 'held') return [409, { ok: false, code: 'held', error: 'held by bert' }];
   if (c === 'demo.hello' && a.name === 'slow') return [504, 'the app server did not answer'];
@@ -381,7 +381,7 @@ test.run('the scratch run root\'s instance is its process\'s one global', 0.2, f
 test.run('spirit.require of the demo interface binds spirit.demo once for two callers at once, from its own disc, never asking its node', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
-  return (!!o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && !!o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.family === 'demo'; }).length === 0) || false;
+  return (!!o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && !!o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.branch === 'demo'; }).length === 0) || false;
 }, test.limit.quick);
 // goal/G43.32, decided 8: "spirit.require of a branch's api.js places the api.js at spirit.required.spirit.<branch-path>.api and binds its verbs on spirit.<branch>.<verb>".
 test.run('in node, the api.js required also stands at spirit.required.spirit.demo.api, the verbs bound on spirit.demo', 0.2, function () {
@@ -497,7 +497,7 @@ test.run('spirit.start() asks no api, spirit.ready answers the instance, a famil
   const ps = T.ps = await started;
   const askedAtStart = wq.fetched.filter(function (f) {
     const b = f.url === '/api/spirit' ? JSON.parse(f.body) : null;
-    return !!b && b.call === 'api' && !(b.args && b.args.family === 'node');
+    return !!b && b.call === 'api' && !(b.args && b.args.branch === 'node');
   });
   const goneSaid = await Promise.resolve(ps.gone && typeof ps.gone.anything === 'function' ? ps.gone.anything({}) : null)
     .then(function () { return null; }, function (e) { return (e && e.code) || null; });
@@ -775,12 +775,12 @@ test.run('the page called verbs as it loaded', 0.2, async function () {
   L.atLoad = calls();
   L.verbCalls = L.atLoad.filter(function (c) { return c.call !== 'api'; });
   L.used = new Set(L.verbCalls.map(function (c) { return String(c.call).split('.')[0]; }));
-  L.asked = L.atLoad.filter(function (c) { return c.call === 'api' && c.args && c.args.family; }).map(function (c) { return String(c.args.family); });
+  L.asked = L.atLoad.filter(function (c) { return c.call === 'api' && c.args && c.args.branch; }).map(function (c) { return String(c.args.branch); });
   return L.verbCalls.length > 0 || false;
 }, test.limit.slow);
 test.run('on a real page, the page never asks for the whole api, an api call with no family', 0.2, function () {
   if (!L.atLoad) return false;
-  const whole = L.atLoad.filter(function (c) { return c.call === 'api' && !(c.args && c.args.family); });
+  const whole = L.atLoad.filter(function (c) { return c.call === 'api' && !(c.args && c.args.branch); });
   return !whole.length || false;
 }, test.limit.quick);
 test.run('on a real page, no family\'s api is asked that the page neither calls nor reads the data of', 0.2, function () {
@@ -851,7 +851,7 @@ test.run('the family the page has not used yet is bound on the page once it is r
 }, test.limit.slow);
 test.run('on a real page, using the family the page has not used yet for the first time asks its api once, and using it again asks nothing', 0.2, function () {
   if (!L.reached) return false;
-  const later = calls().slice(L.before).filter(function (c) { return c.call === 'api' && c.args && c.args.family === L.fresh; });
+  const later = calls().slice(L.before).filter(function (c) { return c.call === 'api' && c.args && c.args.branch === L.fresh; });
   return later.length === 1 || false;
 }, test.limit.quick);
 

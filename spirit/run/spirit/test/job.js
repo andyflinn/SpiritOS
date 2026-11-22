@@ -606,7 +606,7 @@ const sask = function (call, args) {
     .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
 };
 const answersApi = function (name) {
-  return H.until(function () { return sask('api', { family: name }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
+  return H.until(function () { return sask('api', { branch: name }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
 };
 
 // stateLayout: spirit/state/<name>/ holds node.json, cache/, data/ and door.sock, and nothing else; no relay-state, no process (goal/G43.20)
@@ -1293,7 +1293,7 @@ function mountPart() {
   }, test.limit.quick);
   test.run('its interface is the api.js at the top of the app folder', 0.2, async function () {
     if (noNode()) return false;
-    const iface = (await call(N.base, 'api', { family: NAME })).body || {};
+    const iface = (await call(N.base, 'api', { branch: NAME })).body || {};
     return String(iface.interface || '').indexOf(INTERFACE) !== -1 || false;
   }, test.limit.quick);
   // No FS set (goal/G43.20; Andy: "those owner only FS verbs are no longer needed, because not the api ID ... ARE the path to
