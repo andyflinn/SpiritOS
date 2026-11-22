@@ -397,6 +397,14 @@ test.run('spirit.require of the demo interface binds spirit.demo once for two ca
   const node = T.node;
   return (!!o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && !!o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.branch === 'demo'; }).length === 0) || false;
 }, test.limit.quick);
+// THE TRUNK HOLDS spirit.js's HELPERS, EACH camelCase WITH AN UPPERCASE LETTER (goal/G49.6; Andy: "Make spirit functions
+// camelCase, you KNOW that the scheme asks for that!", "helpers are camelCase with at least one UPPERCASE letter!!!!"):
+// beside required, the one tree, no all-lowercase name stands on the instance.
+function trunkWords(keys) { return (keys || []).filter(function (k) { return k !== 'required' && !/[A-Z]/.test(k); }); }
+test.run('in node, every name on the spirit instance but required has an uppercase letter', 0.2, function () {
+  const o = O(); if (!o || !o.keys) return false;
+  return o.keys.length > 0 && trunkWords(o.keys).length === 0;
+}, test.limit.quick);
 // goal/G49.6: G43.32's decided 8 (verbs bound on spirit.<branch> as well) is reversed; the later ruling applies, one place.
 test.run('in node, a branch\'s verbs stand at spirit.required.spirit.demo.api, the require answers it, and spirit.demo is not there', 0.2, function () {
   const o = O(); if (!o) return false;
@@ -531,6 +539,11 @@ test.run('on a page, a branch called has its verbs at spirit.required.spirit.dem
   const wq = T.wq;
   const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.demo && wq.spirit.required.spirit.demo.api;
   return (!!placed && typeof placed.hello === 'function' && !Object.prototype.hasOwnProperty.call(wq.spirit, 'demo')) || false;
+}, test.limit.quick);
+test.run('on a page, started and a branch called, every name on window.spirit but required has an uppercase letter', 0.2, async function () {
+  if (!T.ps) return false;
+  const keys = Object.keys(T.wq.spirit);
+  return keys.length > 0 && trunkWords(keys).length === 0;
 }, test.limit.quick);
 test.run('on a page with window.spirit.transport set, every call goes through that link and nothing is fetched', 0.2, async function () {
   if (!T.ps) return false;
