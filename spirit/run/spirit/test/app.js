@@ -150,7 +150,7 @@ test.run('a folder named after the family\'s verb is no app', 0.2, async functio
   fs.rmSync(verbNamed, { recursive: true, force: true });
   return !stands || false;
 }, test.limit.slow);
-test.run('a second folder with its own .json is found: the list is the disk', 0.2, async function () {
+test.run('a second folder with its own .json is found: the list follows the tree', 0.2, async function () {
   if (noNode()) return false;
   const plugin = scratchApp('zzplugin');
   fs.mkdirSync(plugin, { recursive: true });
@@ -163,6 +163,19 @@ test.run('a folder without its own .json is not one', 0.2, async function () {
   fs.mkdirSync(scratchApp('zzbare'), { recursive: true });
   const bare = await ask(W.node.base, 'app.search', { q: 'zzbare' });
   return (!!rows(bare) && !holds(rows(bare), 'zzbare')) || false;
+}, test.limit.quick);
+// THE APP LIST COMES FROM THE COMMON FILE/FOLDER CACHE (goal/G49.2; Andy: "portion to use the common file/folder cache?",
+// "fix spirit/app.js, NOW"; G49.1's box: "the modules that scan folder data (apps, api folders, plugins) move onto
+// spirit/fs.js one at a time", "each disc scan goes in the same commit that moves its client onto spirit/fs.js"). app.js's
+// code, comments left out, reaches the dataset through its one entry, and scans no folder on disc any more: its readdirSync
+// of spirit/app/ and its existsSync of each api.js go. A manifest's content is no row of the cache, so its read stays.
+function appCode() { let t = ''; try { t = fs.readFileSync(FILE, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
+test.run('spirit/app.js reaches the file/folder cache through spirit/fs.js', 0.2, function () {
+  return /require\(\s*['"][^'"]*spirit\/fs\.js['"]\s*\)/.test(appCode()) || false;
+}, test.limit.quick);
+test.run('spirit/app.js scans no folder on disc: no readdirSync and no existsSync', 0.2, function () {
+  const c = appCode();
+  return (c.length > 0 && !/\breaddirSync\b|\breaddir\b|\bexistsSync\b/.test(c)) || false;
 }, test.limit.quick);
 
 // ── app.active (goal/G43.9) ──
