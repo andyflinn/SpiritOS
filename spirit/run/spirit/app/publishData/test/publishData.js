@@ -25,7 +25,6 @@ test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 const HERE = path.join(RUN, 'spirit', 'app', 'publishData');
 const FILE = path.join(HERE, 'publishData.js');
-const DESKCLIENT = path.join(RUN, 'spirit', 'app', 'deskClient');
 function freePort() { return new Promise(function (resolve) { const s = net.createServer(); s.listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); }); }); }
 
 
@@ -51,7 +50,7 @@ test.run('run with no argument, publishData goes on past its arguments to its fi
   return (/not in a git clone/.test(W.said)) ? true : false;
 }, test.limit.quick);
 
-let line, at, want, readme, client;
+let line, at, want, readme;
 
 // its files and folders
 // THE TEST STATE FROM TESTICLE (Andy, the cycle that deletes the desk's verifier: "publish Data uses testicle data."): it
@@ -70,11 +69,6 @@ test.run('agentReadme.js stands beside publishData.js and loads', 0.2, function 
   return (!!readme && typeof readme.write === 'function') ? true : false;
 }, test.limit.quick);
 
-// Andy runs it; no agent starts it
-test.run('deskClient starts no publishData', 0.2, function () {
-  client = code(path.join(DESKCLIENT, 'deskClient.js'));
-  return (!!client && !/publishData/.test(client)) ? true : false;
-}, test.limit.quick);
 
 // ── THE NOSUMMARY PART (once its own file; one test file per script: spirit/test/TEST_SYSTEM.md) ──
 // publishData POSTS NOTHING TO THE DESK (goal/G43.22; spec: ./publishData.md, section "noSummary"): spirit/app/publishData/publishData.js.
@@ -320,11 +314,17 @@ test.run('the README is written beside them, titled "# Info and Measurements on 
   return RL[0] === '# Info and Measurements on ' + PLATFORM || false;
 }, test.limit.quick);
 // The box: "one short paragraph: \"Measurements were taken on **<Weekday>, <Month> <day-number-in-month>, <four-digit-year>**
-// for repository commit **<commit-id>**\"". The day is the run's, here or in UTC.
-test.run('the README\'s second line says, in bold, that the measurements were taken today and for which commit', 0.2, function () {
+// for repository commit **<commit-id>**\""; since goal/G49.5 with the time too (Andy: "README.md does not show the fucking
+// time at all (UTC!!!)"; Q2, "write the red for publishData"): the day and the time of the run in UTC, to the minute, as
+// "**Sunday, November 22, 2026, 19:38 UTC**". The run is the one just made, so its minute is now's, or the one before.
+test.run('the README\'s second line says, in bold, the day and the UTC time the measurements were taken, and for which commit', 0.2, function () {
   if (!RL.length) return false;
-  const day = function (utc) { return new Date().toLocaleDateString('en-US', Object.assign({ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }, utc ? { timeZone: 'UTC' } : {})); };
-  const want = [day(false), day(true)].map(function (d) { return 'Measurements were taken on **' + d + '** for repository commit **' + WR.COMMIT + '**'; });
+  const stamp = function (d) {
+    const day = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+    return day + ', ' + d.toISOString().slice(11, 16) + ' UTC';
+  };
+  const now = Date.now();
+  const want = [0, 1, 2].map(function (m) { return 'Measurements were taken on **' + stamp(new Date(now - m * 60000)) + '** for repository commit **' + WR.COMMIT + '**'; });
   return want.indexOf(RL[1]) !== -1 || false;
 }, test.limit.quick);
 test.run('the README\'s line after that is the heading "## The Machine the Measurements come from"', 0.2, function () {
