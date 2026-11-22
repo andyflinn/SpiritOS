@@ -40,7 +40,7 @@ const PAD_STARS = '*'.repeat(INDENT_LENGTH);
 const PAD_SPACES = ' '.repeat(INDENT_LENGTH);
 const ICON = { SUCCESS: '✅', ERROR: '❌' };
 
-// How long an ended suite waits, at most, for its reports to testicle to land before it exits.
+// How long an ended suite waits with none of its reports to testicle landing before it gives up and exits.
 const RECORD_WAIT_MS = 10000;
 // One printed line of the runner's own: a script's name, or a test's title and its mark. No suite prints (no test.comment).
 function line(text) { console.log(PAD_STARS + PAD_SPACES + text); }
@@ -304,7 +304,18 @@ async function runAll() {
   // A cleanup that throws is no test and has no title: nothing of it is printed or reported.
   await runAfters();
   test.reportSuccessFailureCount();
-  await Promise.race([Promise.all(reportsLanded), new Promise(function (r) { ownTimeout(r, RECORD_WAIT_MS); })]);
+  // EVERY REPORT LANDS BEFORE IT EXITS, WHILE THEY STILL LAND (goal/G49.5; Andy: "the error count on all my systems is rising
+  // rapidly", "the discrepancy in error count between windows and others"): the reports go one at a time, a node's round trip
+  // each, and a general test's batch of 220 scripts sends ~9700, which on Windows fall minutes behind the tests. Cut at
+  // RECORD_WAIT_MS from the end, the process left with most still queued, each later script's success never sent, and testicle
+  // marked them all crashed with no test rows, so their reds went uncounted. It waits now while reports keep landing, and
+  // gives up only when RECORD_WAIT_MS passes with none landing.
+  for (;;) {
+    const left = reportsOut;
+    if (left <= 0) break;
+    await Promise.race([Promise.all(reportsLanded), new Promise(function (r) { ownTimeout(r, RECORD_WAIT_MS); })]);
+    if (reportsOut <= 0 || reportsOut >= left) break;
+  }
   process.exit(test.failureCount > 0 ? 1 : 0);
 }
 
