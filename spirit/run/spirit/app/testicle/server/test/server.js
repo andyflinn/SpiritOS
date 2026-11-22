@@ -3088,3 +3088,53 @@ test.run('with the runner kept busy, zzWorld.js changes to "v2", and the run aft
   const fresh = seenWorld().slice(before);
   return (!!later && fresh.length > 0 && fresh.every(function (x) { return x.v === 'v2'; })) || false;
 }, test.limit.long);
+
+// ── testicle.analyze: one red, its analysis in one payload (goal/G49.6, box v7) ──
+// Andy: "i proposed the friggin verb! GO!"; the box: "testicle.analyze(red-testicle)", "the red testicle row itself, as
+// testicle.red hands it", answering "1. the red itself: script, suite, test, severity, reason (crashed, hung or a plain fail),
+// when it ran", "2. flip or never green: its last green from the history rows ... and whether that green had the same script
+// hash and suite hash as the red", "5. what to fix first: ... then the script's other current reds, to fix together", "9. what
+// it does not know, said plainly". The field names are wsl's proposal (red, lastGreen, fixFirst, unknown), cw's to settle in
+// the build. A planted script and its suite: "zzFlip holds" green while the script says v1, red once it says v2; "zzFlip
+// neighbour fails" always red, a sibling.
+const AZ = 'spirit/app/testicle/temp/zzFlip/';
+const AFLIP = AZ + 'zzFlip.js', AFLIPS = AZ + 'test/zzFlip.js';
+const FLIP_SUITE = SUITE_HEAD +
+  "test.run('zzFlip holds', 0.6, function () { return /v1/.test(require('fs').readFileSync(path.join(__dirname, '..', 'zzFlip.js'), 'utf8')); }, test.limit.quick);\n" +
+  "test.run('zzFlip neighbour fails', 0.3, function () { return false; }, test.limit.quick);\n";
+const A = {};
+test.run('spirit/app/testicle/temp/zzFlip/ is planted, "zzFlip holds" green, then red once its script changes', 0.2, async function () {
+  if (!up()) return false;
+  put(AFLIP, "'use strict';\n// v1\n");
+  put(AFLIPS, FLIP_SUITE);
+  const green = await until(function () { const r = currentOf(tables(DB), AFLIP, AFLIPS, 'zzFlip holds')[0]; return Promise.resolve(!!r && yes(r.verified)); }, 240000);
+  if (!green) return false;
+  await idle(280000);
+  put(AFLIP, "'use strict';\n// v2\n");
+  A.red = await until(function () { const r = currentOf(tables(DB), AFLIP, AFLIPS, 'zzFlip holds')[0]; return Promise.resolve(!!r && no(r.verified) ? r : null); }, 240000);
+  return !!A.red || false;
+}, test.limit.long);
+test.run('testicle.red hands its row, and testicle.analyze answers it', 0.2, async function () {
+  if (!A.red) return false;
+  const reds = await call(N.base, 'testicle.red', {});
+  const item = ((reds.body && reds.body.items) || []).map(function (i) { return i.label; }).filter(function (l) { const r = parsed(l) || {}; return r.script === AFLIP && r.suite === AFLIPS && r.test === 'zzFlip holds'; })[0];
+  if (!item) return false;
+  const r = await call(N.base, 'testicle.analyze', { red: item });
+  A.answer = r.status === 200 && r.body && typeof r.body === 'object' ? r.body : null;
+  return !!A.answer || false;
+}, test.limit.quick);
+test.run('analyze answers the red itself: its script, suite, test, severity, reason and when it ran', 0.2, function () {
+  const x = A.answer && A.answer.red;
+  return (!!x && x.script === AFLIP && x.suite === AFLIPS && x.test === 'zzFlip holds' && Number(x.severity) === 0.6 && typeof x.reason === 'string' && Number(x.tested) > 0) || false;
+}, test.limit.quick);
+test.run('analyze answers its last green, which ran against another script hash', 0.2, function () {
+  const g = A.answer && A.answer.lastGreen;
+  return (!!g && Number(g.tested) > 0 && Number(g.tested) < Number(A.answer.red.tested) && g.sameHashes === false) || false;
+}, test.limit.quick);
+test.run('analyze names the script\'s other current red among what to fix with it: "zzFlip neighbour fails"', 0.2, function () {
+  const f = (A.answer && A.answer.fixFirst) || [];
+  return (Array.isArray(f) && f.some(function (x) { return x && x.test === 'zzFlip neighbour fails'; })) || false;
+}, test.limit.quick);
+test.run('analyze says plainly what it does not know, as a list', 0.2, function () {
+  return (!!A.answer && Array.isArray(A.answer.unknown)) || false;
+}, test.limit.quick);
