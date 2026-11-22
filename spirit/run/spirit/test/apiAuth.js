@@ -247,7 +247,7 @@ test.run('a branch search with no filter, or an empty one, answers every branch,
   return (every.length === 4 && every.every(function (x) { return x && isNum(x.id) && 'verb' in x; })) ? true : false;
 }, test.limit.quick);
 
-test.run('an empty family or verb filter narrows nothing', 0.2, async function () {
+test.run('an empty BRANCH or verb filter narrows nothing', 0.2, async function () {
   if (!auth) return false;
   return ((await keysOf({ family: '', verb: '' })).length === 4) ? true : false;
 }, test.limit.quick);
