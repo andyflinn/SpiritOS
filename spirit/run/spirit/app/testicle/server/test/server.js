@@ -3049,3 +3049,42 @@ test.run('testicle\'s treeScripts walks no folder on the disc', 0.2, function ()
   for (let i = open; i < TESTICLE_CODE.length; i++) { if (TESTICLE_CODE[i] === '{') depth++; else if (TESTICLE_CODE[i] === '}') { depth--; if (depth === 0) { end = i; break; } } }
   return !/\breaddirSync\b|\breaddir\(|\bstatSync\b/.test(TESTICLE_CODE.slice(open, end + 1)) || false;
 }, test.limit.quick);
+
+// ── A RUN JUDGES THE TREE AS IT IS (goal/G49.5) ──
+// Andy: "you're doing nothing! could it be possible that you might fix a few of those 2000 bugs on linux/wsl????". Those reds
+// were testicle's world: the node and Chrome it hands every run (SPIRIT_MOUNT_BASE, SPIRIT_MOUNT_RUN) stand on a copy of the
+// tree made when the world starts, and the world is let go only when the runner has nothing left to choose. While the tree
+// changed all evening the runner was never idle, so every run judged new tests against the old copy. A planted script,
+// zzWorld.js, and its suite, which writes what the world's copy of zzWorld.js holds; a 60 s suite keeps the runner busy
+// while zzWorld.js changes; the run after the change must find the changed text in the world it is handed.
+const WZ = 'spirit/app/testicle/temp/zzWorld/';
+const WPROD = WZ + 'zzWorld.js', WSUITE = WZ + 'test/zzWorld.js', WBUSY = WZ + 'zzBusy.js', WBUSYS = WZ + 'test/zzBusy.js';
+const WSEEN = "const SEEN = path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', 'worldSeen.txt');\n";
+const seenWorld = function () { try { return fs.readFileSync(path.join(s.root, 'worldSeen.txt'), 'utf8').trim().split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { return []; } };
+let worldOne = false;
+test.run('spirit/app/testicle/temp/zzWorld/ is planted, and its run reads "v1" from the world it is handed', 0.2, async function () {
+  if (!up()) return false;
+  try { fs.rmSync(path.join(s.root, 'worldSeen.txt'), { force: true }); } catch (e) { /* none */ }
+  put(WPROD, "'use strict';\n// v1\n");
+  put(WBUSY, "'use strict';\n// zzBusy\n");
+  put(WSUITE, SUITE_HEAD + WSEEN +
+    "test.run('zzWorld reads its script through the world', 0.2, function () {\n" +
+    "  let text = ''; try { text = require('fs').readFileSync(path.join(process.env.SPIRIT_MOUNT_RUN || '', 'spirit', 'app', 'testicle', 'temp', 'zzWorld', 'zzWorld.js'), 'utf8'); } catch (e) { text = ''; }\n" +
+    "  require('fs').appendFileSync(SEEN, JSON.stringify({ v: (/\\/\\/ (v\\d+)/.exec(text) || [])[1] || '', run: process.env.SPIRIT_MOUNT_RUN || '', at: Date.now() }) + '\\n');\n" +
+    "  return true;\n}, test.limit.quick);\n");
+  put(WBUSYS, SUITE_HEAD + "test.run('zzBusy keeps the runner busy for 60 s', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 60000); }); }, test.limit.slow);\n");
+  worldOne = !!(await until(function () { return Promise.resolve(seenWorld().some(function (x) { return x.v === 'v1'; })); }, 240000));
+  return worldOne || false;
+}, test.limit.long);
+test.run('with the runner kept busy, zzWorld.js changes to "v2", and the run after it reads "v2" from its world', 0.4, async function () {
+  if (!worldOne) return false;
+  await idle(280000);
+  const before = seenWorld().length;
+  // The busy suite first, so the runner is at work when the script changes and has something left to choose after.
+  append(WBUSYS, '// again ' + Date.now() + '\n');
+  await sleep(3000);
+  put(WPROD, "'use strict';\n// v2\n");
+  const later = await until(function () { return Promise.resolve(seenWorld().length > before); }, 240000);
+  const fresh = seenWorld().slice(before);
+  return (!!later && fresh.length > 0 && fresh.every(function (x) { return x.v === 'v2'; })) || false;
+}, test.limit.long);
