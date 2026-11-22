@@ -601,7 +601,7 @@ module.exports = function installJobs(port) {
   // ONE APP'S SERVER: spirit/app/<name>/<name>.js. ITS ARGUMENTS ARE ITS <name>.json's DEFAULTS; none without.
   function startAppServer(rootDir, client, name) {
     const script = path.join(rootDir, 'spirit', 'app', name, name + '.js');
-    if (!fs.existsSync(script)) return null;
+    if (!inTree('spirit/app/' + name + '/' + name + '.js')) return null;
     let own = null;
     try { own = JSON.parse(fs.readFileSync(path.join(rootDir, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { own = null; }
     const values = {};
@@ -666,8 +666,8 @@ module.exports = function installJobs(port) {
     let own = null;
     try { own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { return false; }
     if (own && own.node && own.node.mount === true) return false;
-    const dir = path.join(root, 'spirit', 'app', name);
-    if (!fs.existsSync(path.join(dir, name + '.js')) || !fs.existsSync(path.join(dir, 'api.js')) || !fs.existsSync(path.join(dir, 'data.js'))) return false;
+    const dir = 'spirit/app/' + name + '/';
+    if (!inTree(dir + name + '.js') || !inTree(dir + 'api.js') || !inTree(dir + 'data.js')) return false;
     return anyState === true || appActive(root, name);
   }
   function startOneShot(rootDir, client, name) {
@@ -704,10 +704,18 @@ module.exports = function installJobs(port) {
     if (client.registerOneShot(name, pipe, function () { return null; }, path.join(rootDir, 'spirit', 'app', name, 'api.js'))) client.serve(name, false);
   }
 
+  // THE APPS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
+  // "fix job.js"): the folders directly in spirit/app/ and the files in them, as this process's spirit.data.fs holds them
+  // (spirit/fs.js), fed by the watcher the node starts first (startFsWatcherJob). A <name>.json is still read for what it says.
+  function inTree(rel) { return !!fsDataset().file(rel); }
+  function appFolders() {
+    const files = fsDataset().files();
+    return Object.keys(files).filter(function (p) { return p.indexOf('spirit/app/') === 0 && files[p].kind === 'folder' && p.slice(11).indexOf('/') === -1; })
+      .map(function (p) { return p.slice(11); }).sort();
+  }
   function startNodeServers(rootDir, client) {
     serverHost = { rootDir: rootDir, client: client };
-    let apps = [];
-    try { apps = fs.readdirSync(path.join(rootDir, 'spirit', 'app')); } catch (e) { apps = []; }
+    const apps = appFolders();
     apps.filter(function (name) { return appOneShot(rootDir, name, true); }).forEach(function (name) {
       if (appActive(rootDir, name)) startOneShot(rootDir, client, name); else rememberOneShot(rootDir, client, name);
     });
