@@ -30,13 +30,22 @@ function portOf(argv) {
 function fileOf(url) {
   let p = '';
   try { p = decodeURIComponent(String(url || '/').split('?')[0]); } catch (e) { return null; }
-  const parts = p.split('/').filter(Boolean);
+  // ONE SPELLING PER FILE (goal/G50.1, wsl's red: /spirit//index.html/ answered the page): a path is /, then names joined
+  // by single slashes, a folder's ending in one slash; an empty name (//) or a slash after a file is refused.
+  if (p.charAt(0) !== '/') return null;
+  const trailing = p.length > 1 && p.slice(-1) === '/';
+  const parts = (trailing ? p.slice(1, -1) : p.slice(1)).split('/');
+  if (parts.some(function (s) { return s === ''; })) return null;
   if (parts.some(function (s) { return s === '..' || s.toLowerCase() === NEVER_SERVED; })) return null;
   let full = path.resolve(ROOT, parts.join(path.sep));
   if (full !== ROOT && full.indexOf(ROOT + path.sep) !== 0) return null;
   // A folder is asked by its address with the slash, /spirit/, never /spirit (Andy: "the only URL that should work is:
   // 127.0.0.1:11111/spirit/   or 127.0.0.1:11111/spirit/index.html").
-  try { if (fs.statSync(full).isDirectory()) { if (p.slice(-1) !== '/') return null; full = path.join(full, 'index.html'); } } catch (e) { /* not there: answered 404 */ }
+  try {
+    const dir = fs.statSync(full).isDirectory();
+    if (dir !== trailing) return null;
+    if (dir) full = path.join(full, 'index.html');
+  } catch (e) { /* not there: answered 404 */ }
   return full;
 }
 
