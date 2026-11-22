@@ -52,5 +52,5 @@ function answer(req, res) {
 
 const port = portOf(process.argv);
 http.createServer(answer).listen(port, '127.0.0.1', function () {
-  console.log(spirit.name + ' is listening on 127.0.0.1:' + port);
+  console.log('spirit is listening on 127.0.0.1:' + port);
 });
