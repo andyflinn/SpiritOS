@@ -79,22 +79,29 @@ const status = { lastCheck: '', lastCopy: seen['.lastCopy'] || '', lastError: ''
 const COMPANION = /-(wal|shm|journal)$/;
 function isDb(name) { return /\.(db|sqlite|sqlite3)$/i.test(name); }
 
+// THE NODE'S STATE FROM ITS ONE TREE, NO FOLDER WALK OF ITS OWN (goal/G49.2; Andy: "go on the five!", "the shared dataset
+// needs to be complete, period.", "it would be weird to deny a node process like backup knowledge of all files"): the files
+// under SOURCE as spirit/fs.js holds them, relative to SOURCE.
+const tree = spirit.require('spirit/fs.js');
+// SOURCE relative to the run folder, as the tree's paths are: spirit/state.
+const SOURCE_REL = path.relative(path.resolve(__dirname, '..', '..', '..', '..'), SOURCE).split(path.sep).join('/');
 function sourceFiles() {
+  const files = tree.files();
+  const pre = SOURCE_REL + '/';
   const out = [];
-  (function walk(dir, rel) {
-    let es = [];
-    try { es = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
-    es.forEach(function (e) {
-      const r = rel ? rel + '/' + e.name : e.name;
-      if (!rel && e.name === OWN) return;
-      // NEVER A KEY (Andy: "don't include my private key in the backup"). A
-      // face keeps its own node identity in a spirit/state/ of its own inside
-      // its state folder (slim/G1.4, goal/G43.8): it is not walked, and no
-      // identity.json is copied wherever it is.
-      if (e.isDirectory()) { if (!(e.name === 'state' && path.basename(dir) === 'spirit')) walk(path.join(dir, e.name), r); }
-      else if (e.isFile() && !COMPANION.test(e.name) && e.name !== 'identity.json') out.push(r);
-    });
-  })(SOURCE, '');
+  Object.keys(files).forEach(function (p) {
+    if (p.indexOf(pre) !== 0 || files[p].kind !== 'file') return;
+    const r = p.slice(pre.length);
+    const parts = r.split('/');
+    const name = parts[parts.length - 1];
+    if (parts[0] === OWN) return;
+    // NEVER A KEY (Andy: "don't include my private key in the backup"). A face keeps its own node identity in a spirit/state/
+    // of its own inside its state folder (slim/G1.4, goal/G43.8): nothing under such a folder is taken, and no identity.json
+    // is copied wherever it is.
+    for (let i = 1; i < parts.length - 1; i++) if (parts[i] === 'state' && parts[i - 1] === 'spirit') return;
+    if (COMPANION.test(name) || name === 'identity.json') return;
+    out.push(r);
+  });
   return out.sort();
 }
 function fingerprint(file) {
@@ -184,8 +191,12 @@ function kick() {
 }
 function soon() { clearTimeout(timer); timer = setTimeout(kick, QUIET); }
 
-fs.watch(SOURCE, { recursive: true }, function (type, name) {
-  const rel = String(name || '').split(path.sep).join('/');
+// A change under SOURCE, as the node's tree tells it (goal/G49.2): its own folder and a database's shared-memory file count not.
+tree.watch(function (p) {
+  const pre = SOURCE_REL + '/';
+  if (!p) { if (tree.ready()) soon(); return; }
+  if (p.indexOf(pre) !== 0) return;
+  const rel = p.slice(pre.length);
   if (!rel || rel === OWN || rel.indexOf(OWN + '/') === 0) return;
   if (/-shm$/.test(rel)) return;
   soon();

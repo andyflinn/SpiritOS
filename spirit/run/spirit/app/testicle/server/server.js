@@ -16,7 +16,7 @@ require('../../../spirit.js');
 // verb, \"busy\": it returns true if it is doing any work, false if it is idle." The columns are goal/G45.1's box.
 //
 // WHAT IT DOES:
-//   - it watches run:// with the node's own watcher (spirit/job/chokidar), nothing read at start (ignoreInitial);
+//   - it follows run:// through the node's one file tree (spirit/fs.js, goal/G49.2), no watcher of its own;
 //   - a changed .js in a test/ folder is a suite, any other .js a product file; the node's state, .git and vendored
 //     code are never watched, and a file that is no script is let go;
 //   - the changes of one moment are taken together: testModule.js is run once, as its own process (a test file is run,
@@ -1193,21 +1193,42 @@ function kick() {
   told();
 }
 
-const watcher = spirit.require('spirit/job/chokidar/index.js').watch(RUN, { ignored: ignored, ignoreInitial: true, persistent: true });
-watcher.on('all', function (event, full) {
-  if (['add', 'change', 'unlink'].indexOf(event) === -1 || !full) return;
-  const rel = posix(path.relative(RUN, full));
-  if (!rel || rel.indexOf('..') === 0) return;
+// THE NODE'S ONE TREE, NO WATCHER OF ITS OWN (goal/G49.2; Andy: "go on the five!", "the shared dataset needs to be complete,
+// period."): every change of the run folder comes from spirit/fs.js, the node's file tree as this process receives it, and
+// is passed on as the watcher passed it: add, change or unlink of a file, a path the server does not ignore.
+const tree = spirit.require('spirit/fs.js');
+const held = new Set();
+function onFile(event, rel) {
+  if (!rel || ignored(path.join(RUN, rel))) return;
   // Any other file counts only by being added or taken away: the tree changed, so the general tests' reds run again (apply).
-  const script = /\.js$/.test(rel);
+  const script = /.js$/.test(rel);
   if (!script && event === 'change') return;
   pending.add(rel);
   if (script) { try { topFix(rel); } catch (e) { logError('topFix ' + rel, e); } }
   kick();
   // The runner waits for a quiet second after the last change (the box: "a new event pushes the start back").
   soon();
+}
+let scanned = false;
+function whole() {
+  if (!tree.ready()) return;
+  const files = tree.files();
+  Object.keys(files).forEach(function (p) { if (files[p].kind === 'file') held.add(p); });
+  if (!scanned) { scanned = true; startScan(); }
+}
+tree.watch(function (rel, row) {
+  // The tree whole (or forgotten and whole again): the start scan once, then every file it holds is known.
+  if (!rel) {
+    whole();
+    return;
+  }
+  if (!scanned) return;
+  if (row && row.kind !== 'file') return;
+  if (!row) { if (held.delete(rel)) onFile('unlink', rel); return; }
+  const event = held.has(rel) ? 'change' : 'add';
+  held.add(rel);
+  onFile(event, rel);
 });
-watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e && e.message || e)); });
 // THE TABLES NEVER STALE (goal/G47.1, box v95, 5): "the testicle server is non-intrinsic: it is NOT always on", "the server
 // MUST do everything it can to reflect the current state of the tree", "the server, when starting up, must prune suites
 // that no longer exist ... including all their test results", "must of course, add new suites!", "on start, before even
@@ -1217,22 +1238,13 @@ watcher.on('error', function (e) { console.error('testicle: the watcher: ' + (e 
 // down gets its rows, flagged; one gone is marked deleted, its test rows current no more. Nothing runs before that write
 // (nextJob waits for it), so classifying comes after.
 function treeScripts() {
-  const out = [];
-  (function walk(dir) {
-    let names = [];
-    try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
-    names.forEach(function (d) {
-      const full = path.join(dir, d.name);
-      if (ignored(full)) return;
-      if (d.isDirectory()) walk(full);
-      else if (d.isFile() && /\.js$/.test(d.name)) out.push(posix(path.relative(RUN, full)));
-    });
-  }(RUN));
-  return out;
+  const files = tree.files();
+  return Object.keys(files).filter(function (p) { return files[p].kind === 'file' && /.js$/.test(p) && !ignored(path.join(RUN, p)); }).sort();
 }
 // Every script already classified, swept once: its rows that its class rules out leave the tables (pruneUnfit).
 db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (browserOnly = 1 OR nodeOnly = 1)').all().forEach(function (r) { pruneUnfit(r.name); });
-(function startScan() {
+// Run once the node's tree has come whole (tree.watch above), so the scan sees every script.
+function startScan() {
   // A SCRIPT LEFT NOT CLASSIFYABLE IS TRIED AGAIN AT EVERY START (a fault of the classifier or of the server, since fixed,
   // reaches it so, without the script itself changing; Andy's node kept three such reds after their fix): few, cheap.
   db.prepare('UPDATE script SET reClassify = 1 WHERE deleted = 0 AND name IN (SELECT script FROM testicle WHERE suite = ? AND current = 1 AND verified = 0)').run(CLASSIFY);
@@ -1246,7 +1258,8 @@ db.prepare('SELECT name FROM script WHERE deleted = 0 AND reClassify = 0 AND (br
   // delete and the retire, before the two shared one write, left a deleted script's reds current; each start retires them.
   db.prepare('UPDATE testicle SET current = 0 WHERE current = 1 AND EXISTS (SELECT 1 FROM suite s WHERE s.script = testicle.script AND s.suite = testicle.suite AND s.deleted = 1)').run();
   kick();
-}());
+}
+whole();
 // Rows already flagged at the start: the runner starts 1 second after the server starts.
 soon();
 
