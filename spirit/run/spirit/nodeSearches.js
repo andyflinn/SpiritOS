@@ -83,7 +83,7 @@ function createNodeSearches(opts) {
     // added, so the job still says how much it is watching.
     var out = {};
     Object.keys(job).forEach(function (k) { if (k.charAt(0) !== '_') out[k] = job[k]; });
-    if (out.id === 'spirit.fs') out.data = Object.assign({}, out.data, { fileCount: jobs.fsTreeEntries().length });
+    if (out.id === 'spirit.fs') out.data = Object.assign({}, out.data, { fileCount: spirit.require('spirit/fs.js').entries().length });
     return limits.boundedGet({ ok: true, status: 200, key: key, job: out });
   }
 
@@ -132,7 +132,7 @@ function createNodeSearches(opts) {
     var words = String((body && body.q) == null ? '' : body.q).trim();
     var contents = !!(body && body.contents === true) && !!rootDir && !!words;
     var ws = words.toLowerCase().split(/\s+/).filter(Boolean);
-    var files = jobs.fsTreeEntries();
+    var files = spirit.require('spirit/fs.js').entries();
     var bucket = createProbabilityBucket(Infinity);
     for (var i = 0; i < files.length; i += 1) {
       var f = files[i];

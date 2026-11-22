@@ -203,7 +203,7 @@ module.exports = function installJobs(port) {
   // The watcher keeps the tree (path -> {kind, size, modified}) and sends what changed, one command per job-updated:
   // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
   // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
-  // commands from fsTreeCommands (event/event.js, faceHome.js). The tree is seeded from scanFolder, so it skips what that skips
+  // commands read from spirit/fs.js (commands(), in event/event.js and faceHome.js). The tree is seeded from scanFolder, so it skips what that skips
   // (fileSystem.js's vendored folders, .git, anything fileServable refuses, the node's state among them); chokidar is asked to ignore the same,
   // and reports at startup what the seed already holds, which sends nothing.
   const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
@@ -211,8 +211,9 @@ module.exports = function installJobs(port) {
   // THE TREE IS spirit.data.fs (goal/G49.1, box v17: "chokidar --> (node: spirit.data.fs) --> spirit.event --> browsers and
   // node processes"; "job.js's own tree (fsTree) goes. Nothing else holds a tree on the node"): the watcher writes each
   // command into this process's spirit.data, where spirit/fs/data.js files it as it does a page's stream, and reads it back
-  // from there. fsTreeCommands and fsTreeEntries keep their names and their answers (box v17: "so their callers ... stay
-  // untouched"). fsWatching is the watcher whose tree it is, null once it stopped.
+  // from there. Its readers ask spirit/fs.js for it, commands() and entries() (goal/G49.2: "job.js's fsTreeCommands and
+  // fsTreeEntries go, and event.js, faceHome.js and nodeSearches.js read spirit.data.fs"). fsWatching is the watcher whose tree it
+  // is, null once it stopped.
   const FS_HOME = 'local'; // the node's own name in its spirit.data, as a child that follows the stream names it (spirit/data.js)
   let fsWatching = null;
   function fsDataset() { return spirit.require('spirit/fs.js'); }
@@ -247,34 +248,8 @@ module.exports = function installJobs(port) {
     if (kind === 'file' && spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
     return held;
   }
-  function commandOf(op, p, at, held) {
-    const c = { op: op, path: p, at: at };
-    if (held && held.size !== undefined) c.size = held.size;
-    if (held && held.modified !== undefined) c.modified = held.modified;
-    if (held && held.core === true) c.core = true;
-    if (held && held.api === true) c.api = true;
-    if (held && held.app === true) c.app = true;
-    return c;
-  }
-
-  function fsTreeCommands() {
-    if (!fsWatching) return [];
-    const files = fsDataset().files();
-    const at = new Date().toISOString();
-    // A folder sorts before everything inside it: its path is a prefix of theirs.
-    return Object.keys(files).sort().map(function (p) {
-      const held = files[p];
-      return commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, at, held);
-    });
-  }
-  // The tree as entries {name, relativePath, kind}, for the counts and fs.search, which read it in place.
-  function fsTreeEntries() {
-    if (!fsWatching) return [];
-    const files = fsDataset().files();
-    return Object.keys(files).sort().map(function (p) {
-      return { name: p.slice(p.lastIndexOf('/') + 1), relativePath: p, kind: files[p].kind };
-    });
-  }
+  // A file row as a tree command: spirit/fs.js's, where a connect's whole tree is read too (goal/G49.2).
+  function commandOf(op, p, at, held) { return fsDataset().CommandOf(op, p, at, held); }
 
   function startFsWatcherJob(rootDir) {
     const tree = fsDataset();
@@ -787,7 +762,7 @@ module.exports = function installJobs(port) {
       // no extra filesystem I/O, just tallying what it already holds.
       const filesystem = { files: 0, folders: 0, byMimeType: {} };
       {
-        fsTreeEntries().forEach(function(entry) {
+        fsDataset().entries().forEach(function(entry) {
           if (entry.kind === 'folder') {
             filesystem.folders++;
           } else {
@@ -842,8 +817,6 @@ module.exports = function installJobs(port) {
     cancelJob: cancelJob,
     deleteJob: deleteJob,
     startFsWatcherJob: startFsWatcherJob,
-    fsTreeCommands: fsTreeCommands,
-    fsTreeEntries: fsTreeEntries,
     startProcessJob: startProcessJob,
     startServerJob: startServerJob,
     followApp: followApp,

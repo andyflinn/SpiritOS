@@ -29,12 +29,39 @@ function reads() { return D.fs.data; }
 // requires this file, so the stream is followed on the next turn only where no watcher writes.
 setImmediate(fill);
 
+// ONE FILE ROW AS A TREE COMMAND (goal/G4.25, G29.8, G49.1): {op, path, at} with the row's size, modified, and core, api and app
+// when true; the watcher sends each change so, and a connect is handed the whole tree so.
+function CommandOf(op, p, at, row) {
+  const c = { op: op, path: p, at: at };
+  if (row && row.size !== undefined) c.size = row.size;
+  if (row && row.modified !== undefined) c.modified = row.modified;
+  if (row && row.core === true) c.core = true;
+  if (row && row.api === true) c.api = true;
+  if (row && row.app === true) c.app = true;
+  return c;
+}
+
 module.exports = {
   file: function (p) { fill(); return reads().file(p); },
   files: function () { fill(); return reads().files(); },
   ready: function () { fill(); return reads().ready(); },
   watch: function (p, fn) { fill(); return reads().watch(p, fn); },
   get branch() { fill(); return reads().branch; },
+  // THE WHOLE TREE, READ FROM THE DATASET (goal/G49.2; Andy: "go on the five!"; G49.1's box: "event.js, faceHome.js and
+  // nodeSearches.js read spirit.data.fs"): as create commands for a connect, a folder before what is inside it, and as
+  // entries { name, relativePath, kind } for the counts and fs.search.
+  commands: function () {
+    fill();
+    const files = reads().files();
+    const at = new Date().toISOString();
+    return Object.keys(files).sort().map(function (p) { return CommandOf(files[p].kind === 'folder' ? 'createDirectory' : 'createFile', p, at, files[p]); });
+  },
+  entries: function () {
+    fill();
+    const files = reads().files();
+    return Object.keys(files).sort().map(function (p) { return { name: p.slice(p.lastIndexOf('/') + 1), relativePath: p, kind: files[p].kind }; });
+  },
+  CommandOf: CommandOf,
   // The writer's word, said once by the node's file watcher before it writes: this process is fed here, not by a stream.
   FedHere: function () { fed = true; },
 };

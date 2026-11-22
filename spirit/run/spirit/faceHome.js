@@ -402,8 +402,8 @@ function createFaceHome(opts) {
     }
     const all =(jobs && typeof jobs.listJobs === 'function') ? jobs.listJobs() : [];
     const fsJob = all.filter(function (j) { return j.id === 'spirit.fs'; })[0];
-    if (fsJob && typeof jobs.fsTreeCommands === 'function') {
-      jobs.fsTreeCommands().forEach(function (command) {
+    if (fsJob) {
+      spirit.require('spirit/fs.js').commands().forEach(function (command) {
         face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { command: command } }) });
       });
       face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { treeComplete: true } }) });
