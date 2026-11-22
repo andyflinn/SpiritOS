@@ -313,7 +313,9 @@ function isVendored(p) {
 VENDORED_FOLDERS.holds = isVendored;
 Object.freeze(VENDORED_FOLDERS);
 
-function scanFolder(dirPath, result = []) {
+// all: every entry but .git, with no serve rule and no vendored skip (goal/G49.2; Andy: "the shared dataset needs to be
+// complete, period"), for the node's whole tree; without it, what may be served, as before.
+function scanFolder(dirPath, result = [], all = false) {
   try {
     // Returns an array of fs.Dirent objects
     const entries = fs.readdirSync(dirPath, { withFileTypes: true });
@@ -323,7 +325,7 @@ function scanFolder(dirPath, result = []) {
 
       if (entry.isDirectory()) {
         if (SCAN_EXCLUDED_DIR_NAMES.has(entry.name)) continue;
-        if (isVendored(path.relative(ROOT_DIR, path.resolve(entry.parentPath, entry.name)))) continue;
+        if (!all && isVendored(path.relative(ROOT_DIR, path.resolve(entry.parentPath, entry.name)))) continue;
 
         // A directory is asked the same question a file is.
         // fileServable already refuses the node's state and
@@ -340,10 +342,10 @@ function scanFolder(dirPath, result = []) {
         // reported by some later change to the file branch.
         const dirFull = path.resolve(entry.parentPath, entry.name);
         const dirRelative = path.relative(ROOT_DIR, dirFull).split(path.sep).join('/');
-        if (!fileServable(dirRelative)) continue;
+        if (!all && !fileServable(dirRelative)) continue;
 
         let subfolder = path.join(entry.parentPath, entry.name);
-        scanFolder(subfolder, result);
+        scanFolder(subfolder, result, all);
         result.push(entry);
 
       } else if (entry.isFile()) {
@@ -357,7 +359,7 @@ function scanFolder(dirPath, result = []) {
         // servableAssets.js) passes an absolute one.
         const fullPath = path.resolve(entry.parentPath, entry.name);
         const relativePath = path.relative(ROOT_DIR, fullPath).replace(/\\/g, '/');
-        if (fileServable(relativePath)) result.push(entry);
+        if (all || fileServable(relativePath)) result.push(entry);
       }
     }
   } catch (err) {

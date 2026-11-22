@@ -83,7 +83,8 @@ function createNodeSearches(opts) {
     // added, so the job still says how much it is watching.
     var out = {};
     Object.keys(job).forEach(function (k) { if (k.charAt(0) !== '_') out[k] = job[k]; });
-    if (out.id === 'spirit.fs') out.data = Object.assign({}, out.data, { fileCount: spirit.require('spirit/fs.js').entries().length });
+    // Its count only, never its last command, which may name a path no page may see (goal/G49.2).
+    if (out.id === 'spirit.fs') out.data = { fileCount: spirit.require('spirit/fs.js').entries().length };
     return limits.boundedGet({ ok: true, status: 200, key: key, job: out });
   }
 
@@ -134,8 +135,11 @@ function createNodeSearches(opts) {
     var ws = words.toLowerCase().split(/\s+/).filter(Boolean);
     var files = spirit.require('spirit/fs.js').entries();
     var bucket = createProbabilityBucket(Infinity);
+    // The tree is whole (goal/G49.2); fs.search answers what may be served, as it always has.
+    var servable = spirit.require('spirit/fs/fileSystem.js').fileServable;
     for (var i = 0; i < files.length; i += 1) {
       var f = files[i];
+      if (!servable(f.relativePath)) continue;
       var p = f.relativePath + (f.kind === 'folder' ? '/' : '');
       if (contents) {
         var found = f.kind === 'file' && isText(f.name) ? contentsScore(f, words, ws) : null;

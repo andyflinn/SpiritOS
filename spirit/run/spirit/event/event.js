@@ -67,7 +67,27 @@ function createEvents(o) {
     });
     // When it last wrote anything, so the beat below goes only into a quiet second.
     let wroteAt = Date.now();
-    const write = function (kind, data) { wroteAt = Date.now(); res.write('event: ' + kind + '\ndata: ' + JSON.stringify(data) + '\n\n'); };
+    // A PAGE GETS THE SERVABLE TREE ONLY (goal/G49.2; Andy: "it is at publish-to-clients time that !fileServable be the
+    // filter", "the node knows if a browser is the loopback client, that's really the only place"): the node's tree is whole,
+    // and a reader that is no process of a node (no X-Spirit-Reader: server) is handed no spirit.fs command of a path the serve
+    // rule refuses. A process of the node gets every one.
+    const asServer = req.headers['x-spirit-reader'] === 'server';
+    const fileServable = spirit.require('spirit/fs/fileSystem.js').fileServable;
+    const hidden = function (kind, data) {
+      const c = kind === 'job-updated' && data && data.id === 'spirit.fs' && data.data ? data.data.command : null;
+      return !asServer && !!c && !!c.path && !fileServable(String(c.path));
+    };
+    // The spirit.fs job keeps its last command; in a page's snapshot one of a refused path goes out of it.
+    const pageJob = function (j) {
+      const c = !asServer && j && j.id === 'spirit.fs' && j.data ? j.data.command : null;
+      return c && c.path && !fileServable(String(c.path)) ? Object.assign({}, j, { data: {} }) : j;
+    };
+    const write = function (kind, data) {
+      if (hidden(kind, data)) return;
+      if (kind === 'snapshot' && data && Array.isArray(data.jobs)) data = Object.assign({}, data, { jobs: data.jobs.map(pageJob) });
+      wroteAt = Date.now();
+      res.write('event: ' + kind + '\ndata: ' + JSON.stringify(data) + '\n\n');
+    };
 
     write('snapshot', { jobs: o.jobs.listJobs() });
     // THE NODE'S OWN JOBS, EACH KIND OF NEWS ONCE (goal/G43.20): a job of one family carries one kind of news per event, so
@@ -89,7 +109,6 @@ function createEvents(o) {
     // line once. A loopback server awaiting one reply (spirit.peerPost says so with X-Spirit-Reader: server) witnesses
     // instead: it sees each new packet, gets no backlog and marks nothing taken, or every post it made would eat the
     // owner's waiting lines.
-    const asServer = req.headers['x-spirit-reader'] === 'server';
     const off = subscribe(write, { packets: asServer ? 'witness' : 'take' });
     // A PAGE'S CONNECT IS PASSED ON TO THE APP SERVERS (goal/G47.5, part 2; Andy: "the node forwards a loopback connect to the
     // as server as a normal request, so that spirit/server/app.js knows a loopback client connected"): a page, never a

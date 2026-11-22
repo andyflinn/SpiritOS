@@ -361,6 +361,9 @@ function createFaceHome(opts) {
     // A FACE GETS WHAT THE LOOPBACK GETS (goal/G41.33, the box: "anything andy gets on his loopback screen, he can get on his
     // face, if he "stars" any relay"; every face is a starred one since goal/G43.18): every job, whole, a job with no place at
     // the app servers' priority.
+    // A tree change of a path no page may see is not sent (goal/G49.2).
+    const c = job && job.id === 'spirit.fs' && job.data ? job.data.command : null;
+    if (c && c.path && !spirit.require('spirit/fs/fileSystem.js').fileServable(String(c.path))) return;
     toFaces(priorityOf(job) || FACE_PRIORITY.app, { event: 'job-updated', data: job });
   }
   // ONE SUBSCRIBER OF THE NODE'S EVENTS (goal/G40.6): the face's home side hears the events family, as the loopback
@@ -403,7 +406,11 @@ function createFaceHome(opts) {
     const all =(jobs && typeof jobs.listJobs === 'function') ? jobs.listJobs() : [];
     const fsJob = all.filter(function (j) { return j.id === 'spirit.fs'; })[0];
     if (fsJob) {
+      // A face is a page: the servable tree only (goal/G49.2; Andy: "it is at publish-to-clients time that !fileServable be the
+      // filter").
+      const servable = spirit.require('spirit/fs/fileSystem.js').fileServable;
       spirit.require('spirit/fs.js').commands().forEach(function (command) {
+        if (!servable(String(command.path))) return;
         face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { command: command } }) });
       });
       face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { treeComplete: true } }) });
