@@ -246,7 +246,7 @@ test.run('the description is changeMyDescription, in the description slot', 0.2,
 test.run('each field is made with its container alone, handed no api, and gets what it needs itself', 0.2, function () {
   return (w.made.every(function (m) { return m.args === 1 && m.opts === undefined; })) ? true : false;
 }, test.limit.quick);
-test.run('it asks spirit.node.card once, with an empty object', 0.2, function () {
+test.run('it asks spirit.required.spirit.node.api.card once, with an empty object', 0.2, function () {
   // the card: node.card, kept in the node family's cache (goal/G41.28)
   card = w.calls.filter(function (c) { return c.name === 'node.card'; });
   return (card.length === 1 && JSON.stringify(card[0].args) === '{}') ? true : false;
@@ -725,7 +725,7 @@ function rotatePart() {
     if (!where) return false;
     if (!c || c.error) return false;
     // NO KEY IS ROTATED: the page's node.rotateCipher records the ask and refuses it.
-    spy = await c.evaluate('window.spirit.ready.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.node || typeof S.node.rotateCipher !== "function") return false; S.node.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
+    spy = await c.evaluate('window.spirit.ready.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.node || typeof S.required.spirit.node.api.rotateCipher !== "function") return false; S.required.spirit.node.api.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
     return (spy === 'spied') ? true : false;
   }, test.limit.quick);
   const T = function (expr) { return c.evaluate('window.__t.' + expr); };

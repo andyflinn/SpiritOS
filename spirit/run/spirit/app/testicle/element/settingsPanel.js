@@ -41,7 +41,7 @@
         press: function () {
           if (gone || typeof shown !== 'boolean') return;
           said.textContent = '';
-          Promise.resolve(S.testicle.preferences({ interactive: !shown })).then(null, function (e) {
+          Promise.resolve(S.required.spirit.app.testicle.api.preferences({ interactive: !shown })).then(null, function (e) {
             if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed');
           });
         } });
@@ -51,7 +51,7 @@
         draw(P.get());
         release = P.watch(draw);
         // What it stands at before anything streamed: asked once, kept in the branch the switch follows.
-        return Promise.resolve(S.testicle.preferences({})).then(function (p) { if (!gone) P.keep(p); });
+        return Promise.resolve(S.required.spirit.app.testicle.api.preferences({})).then(function (p) { if (!gone) P.keep(p); });
       });
     }).then(null, function (e) { if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed'); });
     return {

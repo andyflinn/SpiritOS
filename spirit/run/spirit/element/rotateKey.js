@@ -15,7 +15,7 @@
 // comes first, because pressing a red button twice only protects someone who knows what they are agreeing to. The button is
 // the shell's two-press one (armingButton): red when armed, disarmed the moment attention moves. Every create starts
 // disarmed and without an old result: two presses must mean two presses in this visit. The rotation is the node family's
-// own verb, spirit.node.rotateCipher.
+// own verb, spirit.required.spirit.node.api.rotateCipher.
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the arming button.

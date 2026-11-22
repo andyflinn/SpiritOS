@@ -32,11 +32,10 @@ module.exports = {
     function listed() {
       var one = typeof spirit !== 'undefined' ? spirit : (typeof window !== 'undefined' ? window.spirit : null);
       if (!one) return Promise.reject(new Error('no spirit object'));
-      // On a page through spirit.ready, where any family named stands, bound when first called (goal/G43.27, Q1: no api at
-      // load); in node, the instance itself.
-      return Promise.resolve(one.ready || one).then(function (s) {
-        if (!s || !s.contact || typeof s.contact.search !== 'function') throw new Error('no contact family on the spirit object');
-        return s.contact.search({ q: '*', relay: true, keep: true });
+      // The contact branch's api.js, where its functions stand, on a page as in node (goal/G49.6: spirit holds no branch).
+      return Promise.resolve(one.require('spirit/contact/api.js')).then(function (contact) {
+        if (!contact || typeof contact.search !== 'function') throw new Error('no contact branch');
+        return contact.search({ q: '*', relay: true, keep: true });
       });
     }
     return {

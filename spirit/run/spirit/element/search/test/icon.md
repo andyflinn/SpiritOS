@@ -9,7 +9,7 @@ its field and popup are `icon/list.js`'s dropdown. Asked of a real Chrome on a s
 
 ## Requirements
 
-- It reads `spirit/iconSet.json` through `spirit.fs.loadFile`, and nothing else.
+- It reads `spirit/iconSet.json` through `spirit.required.spirit.fs.api.loadFile`, and nothing else.
 - It offers every icon of that file and nothing else.
 - A glyph it was told to exclude stays off it.
 - A selector and two lists made together on a fresh page read the file once, and the selector has all of it.

@@ -86,7 +86,7 @@
       };
       // One ask, one answer (Andy: no paging): what fits, more saying the search can be narrowed.
       var ask = function (args) {
-        return Promise.resolve(S.testicle['testicle.search'](Object.assign({}, args))).then(function (b) {
+        return Promise.resolve(S.required.spirit.app.testicle.api['testicle.search'](Object.assign({}, args))).then(function (b) {
           data.keep('testicle', rowsOf(b));
           return { items: (b && b.items) || [], more: !!(b && b.more) };
         });

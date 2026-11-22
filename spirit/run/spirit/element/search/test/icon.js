@@ -52,7 +52,7 @@ test.run('the icon selector is made on the page', 0.2, async function () {
     ' window.__root = window.spirit.required.spirit.element.search.icon.create(box, { exclude: [' + JSON.stringify(left) + '] }); return "made"; })').catch(function () { return null; });
   return made === 'made' ? true : false;
 }, test.limit.slow);
-test.run('it reads the icon set file and no other, through spirit.fs.loadFile', 0.2, async function () {
+test.run('it reads the icon set file and no other, through spirit.required.spirit.fs.api.loadFile', 0.2, async function () {
   if (made !== 'made') return false;
   await until(function () { return chrome.evaluate('window.__asks.length > 0'); }, 8000);
   await until(function () { return rows().then(function (r) { return r.length > 0; }); }, 8000);

@@ -341,7 +341,7 @@ test.run('150 more passing tests of beta are set on the node', 0.2, async functi
 test.run('with green alone and words typed, it asks the search with no from, so no answer comes in parts', 0.2, async function () {
   if (!mounted()) return false;
   // Every ask the list makes of testicle.testicle.search, recorded on the page's own interface.
-  const hooked = await c.evaluate('(function () { var T = window.spirit.testicle; var f = T && T["testicle.search"]; if (typeof f !== "function") return false; window.__asks = []; T["testicle.search"] = function (a) { window.__asks.push(a); return f.apply(this, arguments); }; return true; }())');
+  const hooked = await c.evaluate('(function () { var T = window.spirit.required.spirit.app.testicle.api; var f = T && T["testicle.search"]; if (typeof f !== "function") return false; window.__asks = []; T["testicle.search"] = function (a) { window.__asks.push(a); return f.apply(this, arguments); }; return true; }())');
   if (!hooked) return false;
   await T('press("red")');
   await sleep(1500);

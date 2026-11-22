@@ -42,7 +42,7 @@
       if (gone) return;
       var data = S.required.spirit.data.testicle.data;
       var ask = function (text) {
-        return Promise.resolve(S.testicle['suite.search']({ script: script, text: String(text || '') })).then(function (b) {
+        return Promise.resolve(S.required.spirit.app.testicle.api['suite.search']({ script: script, text: String(text || '') })).then(function (b) {
           data.keep('suite', rowsOf(b));
           return b;
         });

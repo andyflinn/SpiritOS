@@ -6,7 +6,7 @@
 //   spirit.required.spirit.element.search.app.changeAppLabel.create(host, { key }) -> { destroy() }
 //
 // Its input holds the row's label in spirit.required.spirit.data.app and follows it while it is not being typed in; Change asks the node,
-// spirit.app.labelApp, and the row the stream then brings redraws it.
+// spirit.required.spirit.app.api.labelApp, and the row the stream then brings redraws it.
 (function () {
   window.spirit.require('spirit/element/rowForm.js');
   window.spirit.require('spirit/element/fieldInput.js');

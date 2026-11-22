@@ -38,7 +38,7 @@ test.run('the row runs on a bare window', 0.2, async function () {
     if (p === 'spirit/app/testicle/api.js' && refuseApi) return Promise.reject(new Error('no testicle on this node'));
     return own.apply(this, arguments);
   };
-  global.window.spirit.testicle = { run: function (a) { runs.push(a); return Promise.resolve({ ok: true }); } };
+  (((((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}).app = global.window.spirit.required.spirit.app || {}).testicle = global.window.spirit.required.spirit.app.testicle || {})).api = { run: function (a) { runs.push(a); return Promise.resolve({ ok: true }); } };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   // The intrinsic elements' place, where its stand-ins go; the row, an app's element since the move to spirit/app/testicle/, no longer

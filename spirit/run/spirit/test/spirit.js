@@ -129,7 +129,7 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     const fams = await Promise.all([s.require(s.branchPath('demo')), s.require(s.branchPath('demo'))]);
     const two = await Promise.all([fams[0].hello({ name: 'bert' }), fams[1].hello({ name: 'carl' })]);
     out.two = two.map(function (r) { return r.said; });
-    out.bound = fams[0] === fams[1] && fams[0] === s.demo && typeof s.demo.hello === 'function';
+    out.bound = fams[0] === fams[1] && fams[0] === s.required.spirit.demo.api && typeof s.demo.hello === 'function';
     // ONE PLACE FOR A BRANCH (goal/G49.6; Andy, of G40.6 beside G43.32/G49.5: "AND WHICH FUCKING RULING DO YOU THINK
     // APPLIES??????", the later: "spirit.require() places the loaded script at the exact same path"): its verbs stand at
     // spirit.required.spirit.<branch-path>.api, the require answers that, and nothing of it stands on spirit.<branch>.
@@ -138,14 +138,14 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     out.hi = (await s.demo.hi('dave')).said;
     out.dotted = typeof s.demo.lineWrite === 'function' && s.demo.lineWrite === s.demo['line.write'] && (await s.demo.lineWrite({ text: 't' })).wrote;
     // No FS set on a family (goal/G43.20): its files are spirit.fs's, by the path its id names.
-    out.fs = !('FS' in s.demo);
+    out.fs = !('FS' in s.required.spirit.demo.api);
     out.noArg = await code(s.demo.hello({ nme: 'x' }));
     out.noVerb = typeof s.demo.nothing === 'undefined';
     out.noFamily = await code(s.require(s.branchPath('gone')));
     try { await s.demo.hello({ name: 'held' }); } catch (e) { out.held = [e.code, e.message, e.status]; }
     try { await s.demo.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
     out.tree = Object.keys(await s.tree()).sort();
-    out.viaRequire = (await s.require(s.branchPath('demo'))) === s.demo;
+    out.viaRequire = (await s.require(s.branchPath('demo'))) === s.required.spirit.demo.api;
     out.outcome = [await s.outcome(s.demo.hello({ name: 'eve' })), await s.outcome(s.demo.hello({ nme: 1 })), await s.outcome(s.demo.hello({ name: 'held' })), await s.outcome(Promise.reject(new Error()))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
     // This process's job, published by event.publish with its own id, the one path.
@@ -176,7 +176,7 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
       return new Promise(function (r) { setTimeout(function () { r(body && body.api ? { interface: '${POISON.replace(/'/g, "\\'")}' } : { said: 'hello from ' + peer }); }, 20); });
     };
     const both = await Promise.all([s.require(s.branchPath('demo'), 'peerKey1', { waitMs: 777 }), s.require(s.branchPath('demo'), 'peerKey1', { waitMs: 777 })]);
-    out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.demo !== both[0]];
+    out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.required.spirit.demo.api !== both[0]];
     out.peerRan = globalThis.peerCodeRan === true;
     out.peerOwn = typeof both[0].hello === 'function' && typeof both[0].peerOnly === 'undefined';
     // THE STREAM'S AUTO-VERBS ON EVERY FAMILY (goal/G47.5; Andy: "both: \"publisher\" and \"listener\" belong in
@@ -392,7 +392,7 @@ test.run('the scratch run root\'s instance is its process\'s one global', 0.2, f
   return o.same || false;
 }, test.limit.quick);
 // goal/G43.32: in node a branch is bound from the api.js on its own disc, so its node is never asked for it.
-test.run('spirit.require of the demo interface binds spirit.demo once for two callers at once, from its own disc, never asking its node', 0.2, function () {
+test.run('spirit.require of the demo interface binds it once for two callers at once, from its own disc, never asking its node', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   return (!!o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && !!o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.branch === 'demo'; }).length === 0) || false;
@@ -564,7 +564,7 @@ test.run('on a page with window.spirit.transport set, every call goes through th
   const linked = [];
   wq.spirit.transport = { ask: function (v) { linked.push(v); return { status: 200, body: { said: 'via link' } }; }, file: function (p) { linked.push('file ' + p); return { status: 200, bytes: new Uint8Array(fs.readFileSync(path.join(RUN, p))) }; } };
   const before = T.linkBefore = wq.fetched.length;
-  const viaLink = await wq.spirit.demo.hello({ name: 'x' });
+  const viaLink = await wq.spirit.required.spirit.demo.api.hello({ name: 'x' });
   return (viaLink.said === 'via link' && linked[0] === 'demo.hello' && wq.fetched.length === before) || false;
 }, test.limit.quick);
 // A face's events come down its link: spirit.event.subscribe hands the handlers to the link's events, fetching nothing.
@@ -706,14 +706,14 @@ test.run('on a page, a component that is not there refuses not-found', 0.2, asyn
 test.run('on a page, an interface answers its member on window.spirit', 0.2, async function () {
   if (!T.wq) return false;
   const pf = await T.wq.spirit.require(T.wq.spirit.branchPath('demo'));
-  return pf === T.wq.spirit.demo || false;
+  return pf === T.wq.spirit.required.spirit.demo.api || false;
 }, test.limit.quick);
 test.run('on a page, a require with a key answers the peer\'s branch through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const pp = await wq.spirit.require(wq.spirit.branchPath('demo'), 'peerKey2');
   const ppa = await pp.hello({ name: 'x' });
-  return (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.demo) || false;
+  return (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.required.spirit.demo.api) || false;
 }, test.limit.quick);
 
 // ── 7a. spirit.require DE-DUPES, AS NODE'S require DOES (goal/G41.3) ──
@@ -903,7 +903,7 @@ test.run('the branch the page has not used yet is bound on the page once it is r
   if (!L.fresh) return false;
   const fresh = L.fresh;
   L.before = calls().length;
-  const reach = "Promise.resolve(window.spirit.require('spirit/" + fresh + "/api.js')).then(function () { return !!window.spirit." + fresh + "; }, function () { return false; })";
+  const reach = "Promise.resolve(window.spirit.require('spirit/" + fresh + "/api.js')).then(function () { return !!window.spirit.required.spirit[" + JSON.stringify(fresh) + "].api; }, function () { return false; })";
   const first = await L.page.evaluate(reach);
   const second = await L.page.evaluate(reach);
   await H.sleep(1000);

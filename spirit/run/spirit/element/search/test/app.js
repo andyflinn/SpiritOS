@@ -43,7 +43,7 @@ test.run('it loads through spirit.require', 0.2, async function () {
 }, test.limit.slow);
 test.run('its create makes a list in the host it is given', 0.2, async function () {
   if (!text) return false;
-  const made = await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; window.list = spirit.required.spirit.element.search.app.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; }())');
+  const made = await chrome.evaluate('(function () { window.asked = []; var real = spirit.required.spirit.app.api.searchApp; spirit.required.spirit.app.api.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; window.list = spirit.required.spirit.element.search.app.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; }())');
   return made === true ? true : false;
 }, test.limit.slow);
 test.run('it draws what app.search finds', 0.2, async function () {

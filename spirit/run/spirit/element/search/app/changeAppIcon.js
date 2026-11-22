@@ -6,7 +6,7 @@
 //
 //   spirit.required.spirit.element.search.app.changeAppIcon.create(host, { key }) -> { destroy() }
 //
-// It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, spirit.app.iconApp,
+// It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, spirit.required.spirit.app.api.iconApp,
 // and the row the stream then brings redraws it.
 (function () {
   window.spirit.require('spirit/element/rowForm.js');

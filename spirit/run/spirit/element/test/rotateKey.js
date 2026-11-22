@@ -136,7 +136,7 @@ test.run('rotateKey.js sets spirit.required.spirit.element.rotateKey to an objec
 test.run('rotateKey.js uses no spirit.shell.activateApp and no dialog of the old shell', 0.2, function () {
   return (!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b|\bcloseDialog\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
-test.run('rotateKey asks the node through the spirit object, by spirit.node.rotateCipher, and never by api.verb', 0.2, function () {
+test.run('rotateKey asks the node through the spirit object, by spirit.required.spirit.node.api.rotateCipher, and never by api.verb', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
   return (!/\.verb\s*\(/.test(CODE) && /\bnode\.rotateCipher\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
@@ -208,7 +208,7 @@ test.run('after a disarm the next press only arms the button again: two presses 
   await settle();
   return (w.calls.length === 0) ? true : false;
 }, test.limit.quick);
-test.run('the second press asks spirit.node.rotateCipher once, with no arguments', 0.2, async function () {
+test.run('the second press asks spirit.required.spirit.node.api.rotateCipher once, with no arguments', 0.2, async function () {
   // the second press: one rotateCipher, the result said
   b.fire('click', { preventDefault: function () {} });
   await settle();

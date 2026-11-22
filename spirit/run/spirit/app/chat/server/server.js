@@ -86,7 +86,8 @@ function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused
 // THE NODE THROUGH THE ONE SPIRIT OBJECT (goal/G32.3, goal/G40.6): the family bound on it, then one call of it,
 // {status, body}, or {status: 0} when the node did not answer at all. The node is this VM's own (spirit.js).
 function onNode(family, call) {
-  return spirit.outcome(spirit.require('spirit/' + family + '/api.js').then(function () { return call(spirit); }));
+  // The branch's api.js, where its functions stand (goal/G49.6: spirit holds no branch), handed to the call.
+  return spirit.outcome(Promise.resolve(spirit.require('spirit/' + family + '/api.js')).then(function (api) { return call(api); }));
 }
 
 const getPeer = db.prepare('SELECT peer, highestSent, highestReceived, bornAt FROM peers WHERE peer = ?');
@@ -242,7 +243,7 @@ appServer.serve({
       // Measured before anything is asked, with the largest number this line could carry.
       const made = packet.encode('api', bodyOf({ seq: Number.MAX_SAFE_INTEGER, at: new Date().toISOString(), text: text, reWriter: re.writer, reSeq: re.seq }));
       if (!made || !made.ok || !limits.fitsSealed(made.text)) throw refused('line-too-large');
-      return onNode('contact', function (s) { return s.contact.get({ key: to }); }).then(function (r) {
+      return onNode('contact', function (contact) { return contact.get({ key: to }); }).then(function (r) {
         // A key the book never saw is nobody's block; a book that does not answer cannot vouch for one.
         if (r.status === 404) return null;
         // A to the node refuses outright (no key at all) is the caller's error, not a node that did not answer
@@ -253,7 +254,7 @@ appServer.serve({
         if (person.blocked === true) throw refused('peer-blocked');
         return null;
       }).then(function () {
-        return onNode('auth', function (s) { return s.auth.grant({ key: to, path: 'chat.line.receive' }); });
+        return onNode('auth', function (auth) { return auth.grant({ key: to, path: 'chat.line.receive' }); });
       }).then(function (g) {
         const already = g.status === 409 && g.body && g.body.code === 'already-granted';
         if (g.status !== 200 && !already) throw refused('store-unavailable');
@@ -290,7 +291,7 @@ appServer.serve({
       // does not answer refuses the search rather than show somebody it may have blocked.
       function offerRow(i) {
         if (i >= rows.length) return Promise.resolve();
-        return onNode('contact', function (s) { return s.contact.get({ key: rows[i].peer }); }).then(function (r) {
+        return onNode('contact', function (contact) { return contact.get({ key: rows[i].peer }); }).then(function (r) {
           if (r.status !== 200 && r.status !== 404) throw refused('no-answer');
           const person = r.body && r.body.person;
           if (person && person.blocked === true) return offerRow(i + 1);

@@ -10,7 +10,7 @@ Asked of a real Chrome on a scratch node's page and on a real face through a rea
 
 - `spirit/iconSet.json` is in git, each glyph with its keywords.
 - The list and the row element do not name the Icons app's file, comments included.
-- The list reads `spirit/iconSet.json` through `spirit.fs.loadFile`, and nothing else: no "own, else system". It finds the file's last icon, and not the Icons app's own.
+- The list reads `spirit/iconSet.json` through `spirit.required.spirit.fs.api.loadFile`, and nothing else: no "own, else system". It finds the file's last icon, and not the Icons app's own.
 - The list watches the file's row in the fs family's cache, and the fs tree for it coming back after a reconnect.
 - The rows stay after the stream connects, and after the node is gone and back with the page open, on the one load.
 - A second list on the page has them, and the page has read the file once; after the node is gone and back it is not

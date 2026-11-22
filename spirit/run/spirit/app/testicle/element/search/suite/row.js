@@ -57,7 +57,7 @@
         var made = Promise.all([S.require('spirit/element/busyButton.js'), S.require('spirit/app/testicle/api.js')]).then(function () {
           if (button !== made) return;
           button = S.required.spirit.element.busyButton.create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
-            run: function () { return S.testicle.run({ script: String(r.script || ''), suite: String(r.suite || '') }); } });
+            run: function () { return S.required.spirit.app.testicle.api.run({ script: String(r.script || ''), suite: String(r.suite || '') }); } });
         }, function () {
           // A node with no testicle refuses its interface: nothing to run the suite with, so no button.
           if (button === made) button = null;

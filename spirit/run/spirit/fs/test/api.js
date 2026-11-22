@@ -63,7 +63,7 @@ test.run('a file verb asked for a plain path inside the run folder passes the pa
 // Andy: "THE REASON that spirit.fs was conceived in the first place was so many modules can live unchanged on both node
 // and browser", "the old kernel.js ... would insert different versions of spirit.fs functions depending on isNode() and
 // isBrowser()", the node versions async "like the are in the browser"; "agreed. fix spirit.fs NOW". In a node process
-// whose run root names no node at all (no spirit/state/environment.json), spirit.fs.stat, load, save and delete still
+// whose run root names no node at all (no spirit/state/environment.json), spirit.required.spirit.fs.api.stat, load, save and delete still
 // answer, from that process's own disc, as promises in the shapes the node's verbs answer: stat {size, mtimeMs,
 // birthtimeMs}, load {path, text}; a file that is not there is refused with status 404, as the node refuses it. The files
 // sit in media/, which the node's write rules let a caller write; spirit/ holds core files, refused alike on both sides.
@@ -84,7 +84,7 @@ test.run('the world: a run root with no node, and a process asking its spirit.fs
     function settle(p) { return Promise.resolve(p).then(function (v) { return { ok: v }; }, function (e) { return { no: { status: e && e.status, code: e && e.code } }; }); }
     (async function () {
       await settle(s.require('spirit/fs/api.js'));
-      const f = s.fs || {};
+      const f = ((s.required.spirit || {}).fs || {}).api || {};
       const st = f.stat ? f.stat({ path: 'media/zzLocal/hello.txt' }) : null;
       out.statIsPromise = !!st && typeof st.then === 'function';
       out.stat = await settle(st);
@@ -100,27 +100,27 @@ test.run('the world: a run root with no node, and a process asking its spirit.fs
   try { LOCAL.o = JSON.parse(r.stdout); } catch (e) { LOCAL.o = null; }
   return !!LOCAL.o && !LOCAL.o.threw;
 }, test.limit.slow);
-test.run('with no node, spirit.fs.stat answers a promise of {size, mtimeMs, birthtimeMs} from the process\'s own disc', 0.2, function () {
+test.run('with no node, spirit.required.spirit.fs.api.stat answers a promise of {size, mtimeMs, birthtimeMs} from the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   const v = o.stat && o.stat.ok;
   return (o.statIsPromise === true && !!v && v.size === Buffer.byteLength('hello local') && typeof v.mtimeMs === 'number' && typeof v.birthtimeMs === 'number') || false;
 }, test.limit.quick);
-test.run('with no node, spirit.fs.load answers {path, text} from the process\'s own disc', 0.2, function () {
+test.run('with no node, spirit.required.spirit.fs.api.load answers {path, text} from the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   const v = o.load && o.load.ok;
   return (!!v && v.text === 'hello local' && v.path === 'media/zzLocal/hello.txt') || false;
 }, test.limit.quick);
-test.run('with no node, spirit.fs.save writes the file on the process\'s own disc', 0.2, function () {
+test.run('with no node, spirit.required.spirit.fs.api.save writes the file on the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   let text = null;
   try { text = fsNode.readFileSync(path.join(LOCAL.root, 'media', 'zzLocal', 'saved.txt'), 'utf8'); } catch (e) { text = null; }
   return (!!o.save && 'ok' in o.save && text === 'saved here') || false;
 }, test.limit.quick);
-test.run('with no node, spirit.fs.delete removes the file from the process\'s own disc', 0.2, function () {
+test.run('with no node, spirit.required.spirit.fs.api.delete removes the file from the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   return (!!o.del && 'ok' in o.del && !fsNode.existsSync(path.join(LOCAL.root, 'media', 'zzLocal', 'hello.txt'))) || false;
 }, test.limit.quick);
-test.run('with no node, spirit.fs.stat of a file that is not there is refused with status 404', 0.2, function () {
+test.run('with no node, spirit.required.spirit.fs.api.stat of a file that is not there is refused with status 404', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   return (!!o.missing && !!o.missing.no && o.missing.no.status === 404) || false;
 }, test.limit.quick);

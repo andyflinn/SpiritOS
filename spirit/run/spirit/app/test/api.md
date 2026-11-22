@@ -13,7 +13,7 @@ judged by `spirit.check`, the check the spirit object runs before a call leaves.
 - `active { key, active }`: active a boolean, both required (goal/G43.9, Andy's yes on Q1).
 - `label { key, label }`, `icon { key, icon }`: texts, required (Q4, Andy: *"yes."*).
 - `functions` maps each verb to its own function, `searchApp`, `activeApp`, `labelApp`, `iconApp`; none is named as a
-  verb (Andy: *"spirit.app.searchApp() which IMPLEMENTS the verb search, but isn't the verb itself."*).
+  verb (Andy: *"spirit.required.spirit.app.api.searchApp() which IMPLEMENTS the verb search, but isn't the verb itself."*).
 
 ## What its test must try to break
 

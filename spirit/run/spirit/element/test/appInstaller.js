@@ -83,7 +83,7 @@ test.run('it requires the app branch\'s interface, spirit/app/api.js, and no dat
 test.run('with its app\'s row inactive, the button says Activate and is off', 0.2, function () {
   return (h.button && h.button.text === 'Activate' && !onOf(h)) ? true : false;
 }, test.limit.quick);
-test.run('a press asks the node through spirit.app.activeApp to make the app with its key active', 0.2, async function () {
+test.run('a press asks the node through spirit.required.spirit.app.api.activeApp to make the app with its key active', 0.2, async function () {
   e1 = h.button.click();
   await settle();
   return (w.asked.length === 1 && w.asked[0].key === 'zz' && w.asked[0].active === true) ? true : false;

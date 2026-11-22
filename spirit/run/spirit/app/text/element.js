@@ -93,7 +93,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
         if (!shown || !shown.view) return null;
         status.textContent = 'saving…';
         saving = true;
-        return Promise.resolve(S.fs.saveFile(shown.path, shown.view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
+        return Promise.resolve(S.required.spirit.fs.api.saveFile(shown.path, shown.view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
           function (e) { saving = false; status.textContent = 'save failed: ' + ((e && e.message) || e); });
       };
 

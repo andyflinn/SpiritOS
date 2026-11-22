@@ -129,14 +129,14 @@ test.run('an op that is no id is refused', 0.2, async function () {
 test.run('an op that is no id is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 
 // "a page binds by" it: spirit.icons.<verb> on a page
-test.run('spirit.icons.icon is a function on a page', 0.2, async function () {
+test.run('spirit.required.spirit.app.icons.api.icon is a function on a page', 0.2, async function () {
   if (!W.up) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
   const bound = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return typeof (s.icons && s.icons[' + JSON.stringify(W.v) + ']); }, function () { return false; })');
   return bound === 'function' || false;
 }, test.limit.quick);
-test.run('spirit.icons.icon on a page answers a search', 0.2, async function () {
+test.run('spirit.required.spirit.app.icons.api.icon on a page answers a search', 0.2, async function () {
   if (!W.up) return false;
   const answered = await W.chrome.evaluate('window.spirit.ready.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", text: "" }); }).then(function (b) { return JSON.stringify({ items: Array.isArray(b && b.items) }); }, function () { return false; })');
   return answered === '{"items":true}' || false;

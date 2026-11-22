@@ -13,7 +13,7 @@ that opens exactly overtop of the calling panel, new-shell-style."*, *"like fsta
   with its container alone. No
   `spirit.shell.activateApp`, no `callDialog` or `closeDialog` of the old shell.
 - **What it needs, it gets itself** (Andy: *"every fucking element gets the interfaces it needs"*): the rotation is the
-  node family's own verb, `spirit.node.rotateCipher({})`, its answer read through `spirit.outcome`; no `api.verb`.
+  node family's own verb, `spirit.required.spirit.node.api.rotateCipher({})`, its answer read through `spirit.outcome`; no `api.verb`.
 - **It loads `spirit/element/armingButton.js` itself**, through `spirit.require` (rule/26).
 - **Its explanation first, as it is**: its title *Rotate this node's cipher key*; *When to use it*, *What it does*, *What
   it costs*, *What it does not do*, each in the dialog's words; and *It is a crisis measure, not a routine one.* Then its
@@ -22,7 +22,7 @@ that opens exactly overtop of the calling panel, new-shell-style."*, *"like fsta
   `Rotate the key: press again`; it is handed no api and hands none on (goal/G43.24): the button hears a click elsewhere
   itself, listening on the document while armed. The first
   press only arms it and asks nothing; disarmed, the next press arms it again; the second press in a row runs.
-- **Its run asks `spirit.node.rotateCipher({})` once.** While the node has not answered, the button is drawn disabled.
+- **Its run asks `spirit.required.spirit.node.api.rotateCipher({})` once.** While the node has not answered, the button is drawn disabled.
   Answered, it says *Rotated* and *This node's card is now number &lt;at&gt;, handed to &lt;relays&gt; relay(s).*, the
   explanation staying and the button gone. A refusal is said in the node's words (its error, else its code), escaped
   with `spirit.escapeHtml`, and the button is back, disarmed; no answer at all is said as *no answer*.

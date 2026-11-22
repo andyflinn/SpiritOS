@@ -51,7 +51,7 @@
         release = S.required.spirit.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
       }, function () {});
       parts.then(function () {
-        return Promise.resolve(S.testicle['script.get']({ name: file }));
+        return Promise.resolve(S.required.spirit.app.testicle.api['script.get']({ name: file }));
       }).then(function () {
         if (gone) return;
         made = S.required.spirit.app.testicle.element.search.suite.create(below, { script: file });

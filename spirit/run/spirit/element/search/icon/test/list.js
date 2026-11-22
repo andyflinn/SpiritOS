@@ -174,7 +174,7 @@ test.run('its file is spirit/iconSet.json', 0.2, async function () {
   atHome = await seen();
   return atHome.SET === SET ? true : false;
 }, test.limit.slow);
-test.run('it reads that file and no other, through spirit.fs.loadFile', 0.2, function () {
+test.run('it reads that file and no other, through spirit.required.spirit.fs.api.loadFile', 0.2, function () {
   if (!atHome) return false;
   return JSON.stringify(atHome.asks) === JSON.stringify([SET]) ? true : false;
 }, test.limit.quick);

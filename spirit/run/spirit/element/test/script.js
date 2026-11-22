@@ -206,7 +206,7 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('a search seated over it does not lose active', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.searchApp({ q: "" }).then(function (got) { spirit.required.spirit.data.seatRows(spirit.required.spirit.data.app.data.branch, got.items); return true; })');
+    await chrome.evaluate('spirit.required.spirit.app.api.searchApp({ q: "" }).then(function (got) { spirit.required.spirit.data.seatRows(spirit.required.spirit.data.app.data.branch, got.items); return true; })');
     return (await chrome.evaluate('(function () { var r = spirit.required.spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())') === true) ? true : false;
   }, test.limit.quick);
 
@@ -270,7 +270,7 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('a changed icon reaches the bar, by the stream', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.iconApp({ key: "hearing", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
+    await chrome.evaluate('spirit.required.spirit.app.api.iconApp({ key: "hearing", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
     newIcon = await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🧪') !== -1; }); }, 5000);
     return (newIcon) ? true : false;
   }, test.limit.slow);
@@ -285,7 +285,7 @@ test.after(stopAll);
   // "row 1: rowForm: [✏️] "Label" [label input box] [Change]"
   test.run('the second form shows the pencil, the word Label, the box holding the label and a Change button', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.iconApp({ key: "hearing", icon: "🦻" }).then(function () { return true; }, function () { return false; })');
+    await chrome.evaluate('spirit.required.spirit.app.api.iconApp({ key: "hearing", icon: "🦻" }).then(function () { return true; }, function () { return false; })');
     await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🦻') !== -1; }); }, 5000);
     r1 = l[2] || none;
     return (r1.icon.indexOf('✏') !== -1 && r1.words.indexOf('Label') !== -1 && r1.input === monitorLabel && r1.button === 'Change') ? true : false;
@@ -404,13 +404,13 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('an app made active appears as a tile without a search being asked', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.activeApp({ key: "starter", active: true })');
+    await chrome.evaluate('spirit.required.spirit.app.api.activeApp({ key: "starter", active: true })');
     const arrives = await until(function () { return chrome.evaluate('!!' + tileOf(serverLabel)); }, 5000);
     return (arrives) ? true : false;
   }, test.limit.slow);
   test.run('an app made inactive leaves', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.evaluate('spirit.app.activeApp({ key: "starter", active: false })');
+    await chrome.evaluate('spirit.required.spirit.app.api.activeApp({ key: "starter", active: false })');
     const leaves = await until(function () { return chrome.evaluate('!' + tileOf(serverLabel)); }, 5000);
     return (leaves) ? true : false;
   }, test.limit.slow);
@@ -480,7 +480,7 @@ test.after(stopAll);
   test.run('every app, planted and the tree\'s, is made active', 0.2, async function () {
     if (!W1.loaded) return false;
     keys = Object.keys(PLANT);
-    await chrome.evaluate('(function () { var a = spirit.app && spirit.app.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
+    await chrome.evaluate('(function () { var a = spirit.app && spirit.required.spirit.app.api.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
     await until(function () { return rows().then(function (r) { return keys.every(function (k) { return r[k] && r[k].active; }); }); }, 10000);
     // A row the node would not make active through the verb is made active on its disc, as a user's earlier press left it.
     r = await rows();
@@ -776,8 +776,8 @@ test.after(stopAll);
     LIVE.push({ c: c4 });
     if (c4.error) return false;
     await c4.send('Page.navigate', { url: N4.base + '/face.html' });
-    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.ready && spirit.app && spirit.app.activeApp)'); }, 20000);
-    await c4.evaluate('spirit.app.activeApp({ key: "testicle", active: true }); spirit.app.activeApp({ key: "starter", active: true }); true');
+    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.ready && spirit.app && spirit.required.spirit.app.api.activeApp)'); }, 20000);
+    await c4.evaluate('spirit.required.spirit.app.api.activeApp({ key: "testicle", active: true }); spirit.required.spirit.app.api.activeApp({ key: "starter", active: true }); true');
     const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body.testicle); }); }, 60000);
     await c4.send('Page.navigate', { url: N4.base + '/face.html' });
     await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);

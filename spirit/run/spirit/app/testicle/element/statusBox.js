@@ -121,7 +121,7 @@
       if (gone) return;
       var D = S.required.spirit.data.testicle.data;
       // The mode it stands at, asked once; the stream keeps it after.
-      Promise.resolve(S.testicle.preferences({})).then(function (p) { if (!gone) D.preferences.keep(p); }, function () {});
+      Promise.resolve(S.required.spirit.app.testicle.api.preferences({})).then(function (p) { if (!gone) D.preferences.keep(p); }, function () {});
       draw();
       release = D.monitor.watch(draw);
       drawMode(D.preferences.get());

@@ -58,7 +58,7 @@ test.run('it loads through spirit.require and is spirit.required.spirit.element.
 // create(host, opts) -> { list, refresh(), destroy() }
 test.run('create, given a host and options, answers an object holding list, refresh and destroy', 0.2, async function () {
   if (loaded !== true) return false;
-  await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; return true; }())');
+  await chrome.evaluate('(function () { window.asked = []; var real = spirit.required.spirit.app.api.searchApp; spirit.required.spirit.app.api.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; return true; }())');
   made = await make('pane', '{ face: "pane", pick: function (row, key) { window.picks.push({ row: row, key: key }); } }');
   return made === true || false;
 }, test.limit.slow);

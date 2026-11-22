@@ -12,9 +12,9 @@
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
 //   - The rest comes from the api.js every branch folder holds (spirit/fs/api.js, spirit/contact/api.js ...; a server's in
 //     its branch folder, branchPath(name)), written to this file's standard: module.exports = { verbs: { <verb>:
-//     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per branch: spirit.fs.load({path}),
-//     spirit.contact.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
-//     there in camel case (spirit.chat.lineWrite for line.write).
+//     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per branch: spirit.required.spirit.fs.api.load({path}),
+//     spirit.required.spirit.contact.api.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
+//     there in camel case (spirit.required.spirit.app.chat.api.lineWrite for line.write).
 //   - WHERE A MEMBER COMES FROM (goal/G32.3). Andy, 2026-10-22: "the api.js files should not assume the namespace they
 //     will occupy in the spirit object, that mapping belongs to the node". The names are the branches the verb api
 //     answers; each branch's interface is api {branch}, the text of its api.js as the node reads it, run here as a
@@ -269,7 +269,7 @@
       var named = def.functions && def.functions[verb];
       if (named) { out[named] = function (args) { return call(verb, args); }; return; }
       out[verb] = function (args) { return call(verb, args); };
-      // line.write is spirit.chat.lineWrite as well.
+      // line.write is spirit.required.spirit.app.chat.api.lineWrite as well.
       var camel = verb.replace(/\.([a-zA-Z0-9])/g, function (m, c) { return c.toUpperCase(); });
       if (camel !== verb && !(camel in out)) out[camel] = out[verb];
     });
@@ -380,22 +380,42 @@
       return member(through, getFile, fam, def);
     });
   }
-  // This VM's node's branch, on the instance as spirit.<branch>. Two callers at once ask once; a refusal is asked
-  // again next time.
-  // A branch whose name is already on the instance (spirit.job, holding this process's job in node; spirit.event, the
-  // one stream) is extended, not replaced, and what it holds stays: a verb of the same name does not overwrite it.
+  // This VM's node's branch. Two callers at once ask once; a refusal is asked again next time.
+  // ONE PLACE FOR A BRANCH (goal/G49.6; Andy: "I WANT THAT FUCKING TRUNK OF THE spirit NAMESPACE FUCKING CLEARED OUT!!!", and of
+  // G40.6 beside G43.32/G49.5, "AND WHICH FUCKING RULING DO YOU THINK APPLIES??????": the later, "spirit.require() places the
+  // loaded script at the exact same path"): the branch's functions are kept here, never on spirit.<branch>, and its api.js
+  // carries them at spirit.required.<its path> (requireOne, below), the one place a caller reaches them.
   var asking = {};
   var bound = {};
+  var members = Object.create(null);
+  // Where a branch's api.js stands, as a require of it named it; else in node its file on disc, and on a page an app of the
+  // page's app list at spirit/app/<name>/api.js, any other at spirit/<name>/api.js.
+  var pathOf = Object.create(null);
+  function apiPathOf(fam) {
+    if (pathOf[fam]) return pathOf[fam];
+    if (isNode()) return branchPath(fam);
+    var apps = (((self.required.spirit.data || {}).app || {}).data || {});
+    var rows = typeof apps.rows === 'function' ? apps.rows() : null;
+    return rows && Object.prototype.hasOwnProperty.call(rows, fam) ? 'spirit/app/' + fam + '/api.js' : 'spirit/' + fam + '/api.js';
+  }
+  // The branch's functions onto its api.js object (the module in node, the interface the node handed over on a page), the
+  // names it holds already kept as they are; it stands at spirit.required.<its path>, and is what a caller is answered.
+  function carried(fam, m) {
+    var p = apiPathOf(fam);
+    var api = (isNode() && nodeOnce[p]) || interfaceDefs[fam] || null;
+    if (!api || typeof api !== 'object') return m;
+    Object.keys(m).forEach(function (k) { if (!(k in api)) api[k] = m[k]; });
+    placeAt(required, p, api);
+    return api;
+  }
   function bindOwn(fam) {
-    if (bound[fam]) return Promise.resolve(self[fam]);
+    if (bound[fam]) return Promise.resolve(members[fam]);
     if (asking[fam]) return asking[fam];
     asking[fam] = bindOn(post, get, fam, true).then(function (m) {
       delete asking[fam];
-      var held = self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam]) ? self[fam] : null;
-      if (held) Object.keys(m).forEach(function (k) { if (!(k in held)) held[k] = m[k]; });
-      self[fam] = held || m;
+      members[fam] = carried(fam, m);
       bound[fam] = true;
-      return self[fam];
+      return members[fam];
     }, function (e) { delete asking[fam]; throw e; });
     return asking[fam];
   }
@@ -465,7 +485,7 @@
   // appServer.js hands out this same function. No other file writes the path.
   // THROUGH spirit.fs's OWN PROCESSOR, NO RAW fs (goal/G49.2; Andy: "why would those two disk calls in processes have to reach
   // for node.js require('fs') when the functions are sitting on spirit.js?", "go on the five!"): in node the two checks are
-  // statFile of spirit/fs/fileSystem.js, the very function spirit.fs.stat runs there, answering at once, with or without a
+  // statFile of spirit/fs/fileSystem.js, the very function spirit.required.spirit.fs.api.stat runs there, answering at once, with or without a
   // node running.
   function branchPath(name) {
     var n = String(name || '');
@@ -567,7 +587,8 @@
     // api.js requires it's companion data.js"): the file's require answers once the branch is bound; a branch that cannot be
     // bound fails no tree.
     if (fam) {
-      var bindsTo = bindOwn(fam).then(function (m) { if (interfaceDefs[fam]) placeAt(required, p, interfaceDefs[fam]); return m; });
+      pathOf[fam] = pathOf[fam] || p;
+      var bindsTo = bindOwn(fam);
       if (collecting) collecting.push(bindsTo.then(null, function () {}));
       return bindsTo;
     }
@@ -1041,15 +1062,20 @@
       },
     });
   }
+  // Kept here, never on the instance (goal/G49.6): the trunk holds no branch.
+  var lazies = Object.create(null);
   function lazyBranch(fam) {
-    if (bound[fam] || typeof Proxy !== 'function') return;
-    var held = self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam]) ? self[fam] : {};
-    self[fam] = new Proxy(held, {
-      get: function (target, prop) {
-        if (typeof prop !== 'string' || prop === 'then' || prop in target || bound[fam]) return target[prop];
-        return lazyCall(fam, [prop]);
-      },
-    });
+    if (typeof Proxy !== 'function') return null;
+    if (!lazies[fam]) {
+      lazies[fam] = new Proxy({}, {
+        get: function (target, prop) {
+          if (typeof prop !== 'string' || prop === 'then') return target[prop];
+          if (bound[fam] && members[fam] && prop in members[fam]) return members[fam][prop];
+          return lazyCall(fam, [prop]);
+        },
+      });
+    }
+    return lazies[fam];
   }
   // WHAT spirit.ready ANSWERS: the one instance, seen so that a branch is there the moment it is named (goal/G43.27, Q1;
   // Andy: "shouldn't it work without making a call, since the elements will trigger the necessary calls?", "Q1: clear").
@@ -1059,7 +1085,7 @@
   var BRANCH_NAME = /^[a-z][A-Za-z0-9]*$/;
   var view = typeof Proxy !== 'function' ? self : new Proxy(self, {
     get: function (target, prop) {
-      if (typeof prop === 'string' && prop !== 'then' && !(prop in target) && BRANCH_NAME.test(prop)) lazyBranch(prop);
+      if (typeof prop === 'string' && prop !== 'then' && !(prop in target) && BRANCH_NAME.test(prop)) return lazyBranch(prop);
       return target[prop];
     },
   });
@@ -1086,7 +1112,7 @@
       return Promise.resolve(view.node.card()).then(function (c) {
         var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
         if (!key) return;
-        self.node.key = key;
+        (self.node = self.node && typeof self.node === 'object' ? self.node : {}).key = key;
         if (self.required.spirit.data && typeof self.required.spirit.data.homeNode === 'function') self.required.spirit.data.homeNode(key);
       }, function () { /* the page files nothing until its node is known */ });
     }).then(function () { return view; });

@@ -176,7 +176,8 @@ function plant(search) {
   const P = { asked: [], kept: [], required: [], calls: [] };
   P.spirit = {
     contact: { search: function (a) { P.asked.push(a); return typeof search === 'function' ? search() : Promise.resolve(search); } },
-    require: function (p) { P.required.push(p); return Promise.resolve({}); },
+    // The contact branch's api.js answers its stand-in, as the real require answers the api.js object (goal/G49.6).
+    require: function (p) { P.required.push(p); return Promise.resolve(p === 'spirit/contact/api.js' ? P.spirit.contact : {}); },
     required: { spirit: { data: { relay: { data: { keep: function (got) { P.kept.push(got); } } } } } },
   };
   return P;

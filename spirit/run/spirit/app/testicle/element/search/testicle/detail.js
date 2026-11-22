@@ -92,7 +92,7 @@
         .sort(function (a, c) { return Number(c.id) - Number(a.id); });
     }
     function ask() {
-      return Promise.resolve(S.testicle['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
+      return Promise.resolve(S.required.spirit.app.testicle.api['testicle.search']({ script: script, suite: suite, test: test, text: '' }))
         .then(function (b) { S.required.spirit.data.testicle.data.keep('testicle', rowsOf(b)); draw(fromBranch()); }, function (e) { if (!gone) body.innerHTML = '<tr><td colspan="3">' + esc((e && e.message) || e) + '</td></tr>'; });
     }
 
@@ -100,7 +100,7 @@
     function forms() {
       var RF = S.required.spirit.element.rowForm;
       var run = RF.create(container.querySelector('[data-history="runForm"]'), { icon: '🏃‍♂️', button: 'run',
-        press: function () { return script && suite ? S.testicle.run({ script: script, suite: suite }) : undefined; } });
+        press: function () { return script && suite ? S.required.spirit.app.testicle.api.run({ script: script, suite: suite }) : undefined; } });
       run.button.title = 'run this suite now';
       run.span.appendChild(titleLine);
       // A FIELD CHANGE'S ROW (Andy: "a row form for a field change should have: ✏️ (pinned to left edge) "text" [INPUT] [change
@@ -116,7 +116,7 @@
       function rename() {
         var to = input.value;
         said('');
-        return Promise.resolve(S.testicle['testicle.title']({ script: script, suite: suite, oldTitle: test, title: to })).then(function () {
+        return Promise.resolve(S.required.spirit.app.testicle.api['testicle.title']({ script: script, suite: suite, oldTitle: test, title: to })).then(function () {
           if (gone) return;
           test = (((S || {}).required || {}).spirit || {}).fieldRules ? (((S || {}).required || {}).spirit || {}).fieldRules.normalize(to) : String(to).trim();
           prefix = script + '|' + suite + '|' + test + '|';

@@ -128,7 +128,7 @@ stream"); Desk and deskClient move onto it.
 - A cache file missing, misnamed, not read back, kept without the switch or for a sender with no family folder, or
   past its limit; a family's own shed passed over, or the default shedding the newest.
 
-## The agentsFile part: AGENTS.md through spirit.fs.loadFile
+## The agentsFile part: AGENTS.md through spirit.required.spirit.fs.api.loadFile
 
 goal/G43.27, requirement 8. Its test, once `./appServer-agentsFile.js`, is a section of `./appServer.js`: appServer.js read as it is.
 
@@ -136,8 +136,8 @@ Andy: "easily changed, no?"
 
 ### Requirements
 
-- **8. AGENTS.md through `spirit.fs.loadFile`.** appServer.js's AGENTS paragraph says AGENTS.md is read with
-  `spirit.fs.loadFile` at its path, not through the family's FS.
+- **8. AGENTS.md through `spirit.required.spirit.fs.api.loadFile`.** appServer.js's AGENTS paragraph says AGENTS.md is read with
+  `spirit.required.spirit.fs.api.loadFile` at its path, not through the family's FS.
 
 ## The mount part: moved
 

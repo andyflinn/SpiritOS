@@ -6,7 +6,7 @@
 //
 //   spirit.required.spirit.element.search.app.rowFormAppActive.create(host, { key }) -> { destroy() }
 //
-// It follows the app's row in spirit.required.spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.app.activeApp, and
+// It follows the app's row in spirit.required.spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.required.spirit.app.api.activeApp, and
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.

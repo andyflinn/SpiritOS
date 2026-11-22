@@ -168,7 +168,7 @@ async function appsPhase(chrome) {
   // Every app with no shell.mount true, and not run only, made active: by the verb, else on its disc in the scratch run.
   const off = want.filter(function (a) { return !a.shell && !a.run; }).map(function (a) { return a.key; });
   const activeRows = function () { return P.evaluate('(function () { var r = (spirit.required.spirit.data.app && spirit.required.spirit.data.app.data) ? spirit.required.spirit.data.app.data.rows() : {}; return JSON.stringify(' + JSON.stringify(off) + '.filter(function (k) { return r[k] && r[k].active === true; })); }())').then(function (x) { try { return JSON.parse(x); } catch (e) { return []; } }); };
-  await P.evaluate('(function () { var a = spirit.app && spirit.app.activeApp; if (!a) return false; ' + JSON.stringify(off) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* its disc below */ } }); return true; }())');
+  await P.evaluate('(function () { var a = spirit.app && spirit.required.spirit.app.api.activeApp; if (!a) return false; ' + JSON.stringify(off) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* its disc below */ } }); return true; }())');
   await until(function () { return activeRows().then(function (on) { return on.length === off.length; }); }, 10000);
   const onNow = await activeRows();
   off.filter(function (k) { return onNow.indexOf(k) === -1; }).forEach(function (k) { const d = path.join(W.node.run, 'spirit', 'state', k); fs.mkdirSync(d, { recursive: true }); fs.writeFileSync(path.join(d, 'node.json'), JSON.stringify({ active: true })); });

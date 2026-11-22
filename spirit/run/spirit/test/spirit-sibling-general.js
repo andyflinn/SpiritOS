@@ -2271,7 +2271,7 @@ function oneFile(P) {
   {
     const own = ownCode;
     // A write in code: an op that changes a row ({ op: 'set' }), a verb named as a string that changes one
-    // ('node.setName', 'chat.add', 'box.write'), or a spirit family's setting verb called (spirit.relay.join(...)).
+    // ('node.setName', 'chat.add', 'box.write'), or a spirit family's setting verb called (spirit.required.spirit.relay.api.join(...)).
     const WRITE = /\bop\s*:\s*['"](add|set|delete|remove|grant|revoke|ask|claim|press)['"]|['"][a-z]\w*(?:\.[a-z]\w*)*\.(?:set[A-Z]\w*|set|add|delete|remove|grant|revoke|join|face|write|press|claim)['"]|\bspirit\.\w+\.(?:set[A-Z]\w*|join|face|grant|revoke)\s*\(|\.relay\.(?:join|face)\s*\(|\.(?:saveFile|grant|revoke)\s*\(\s*\w/;
     const writes = WRITE.exec(own);
     // <address>: what its code changes, it watches in spirit.required.spirit.data

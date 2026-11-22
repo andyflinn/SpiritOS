@@ -207,7 +207,7 @@ function verbCommand(s, verbs, words, line) {
     if (!Object.prototype.hasOwnProperty.call(rules, name)) return Promise.resolve(refused(s, 'no-such-argument', verb + ' has no argument ' + name));
     args[name] = valueOf(rules[name], words[i].slice(eq + 1));
   }
-  // THE FUNCTION THAT IMPLEMENTS THE VERB (goal/G43.7; Andy: "spirit.app.searchApp() which IMPLEMENTS the verb search, but
+  // THE FUNCTION THAT IMPLEMENTS THE VERB (goal/G43.7; Andy: "spirit.required.spirit.app.api.searchApp() which IMPLEMENTS the verb search, but
   // isn't the verb itself."): the name the branch's api.js gives it (functions), else the verb itself, as spirit.js binds it.
   return apiAt(s.path).then(function (at) {
     const named = at && at.functions && typeof at.functions[verb] === 'string' ? at.functions[verb] : verb;

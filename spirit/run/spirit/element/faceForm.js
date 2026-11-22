@@ -152,7 +152,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       if (!name.value.trim()) { box._faceSaid = { text: 'a face name is needed', bad: true }; say(box._faceSaid.text, true); return Promise.resolve(); }
       busy = true;
       say('asking the relay…', false);
-      // Through the spirit object (goal/G32.2): spirit.relay.face answers the reply's body, or refuses with the node's words.
+      // Through the spirit object (goal/G32.2): spirit.required.spirit.relay.api.face answers the reply's body, or refuses with the node's words.
       return spirit.ready.then(function (s) { return s.relay.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
         box._faceSaid = said.ok
           ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
