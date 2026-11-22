@@ -132,7 +132,7 @@ test.run('it draws two probabilitySearch dropdowns', 0.2, async function () {
   await settle();
   return w.lists.length === 2 && w.lists.every(function (l) { return l.opts.face === 'dropdown'; }) ? true : false;
 }, test.limit.quick);
-test.run('it has a family half and a verb half', 0.2, function () {
+test.run('it has BRANCH half and a verb half', 0.2, function () {
   if (!fam) return false;
   vl = w.lists.filter(function (l) { return l.opts.all === 'All Verbs'; })[0];
   fl = w.lists.filter(function (l) { return l !== vl; })[0];
