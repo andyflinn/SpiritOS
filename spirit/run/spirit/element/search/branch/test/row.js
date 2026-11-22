@@ -100,7 +100,7 @@ test.run('its fields are family, verb and delete, in that order', 0.2, function 
   cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
   return JSON.stringify(Object.keys(cells)) === '["family","verb","delete"]' ? true : false;
 }, test.limit.quick);
-test.run('family and verb are drawn escaped', 0.2, function () {
+test.run('BRANCH and verb are drawn escaped', 0.2, function () {
   if (!cells) return false;
   return cells.family === 'de&lt;sk>' && /chat&lt;add>/.test(cells.verb || '') && !/<add>/.test(cells.verb || '') ? true : false;
 }, test.limit.quick);
