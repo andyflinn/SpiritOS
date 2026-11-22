@@ -104,7 +104,7 @@ test.run('it declares no verb: the family is kept empty for later use', 0.2, fun
   if (!W.api) return false;
   return (isPlain(W.verbs) && W.names.length === 0) || false;
 }, test.limit.quick);
-test.run('the node mounts no verb for the config family', 0.2, function () {
+test.run('the node mounts no verb for the config BRANCH', 0.2, function () {
   if (!W.mounted) return false;
   return Object.keys(W.mounted).length === 0 || false;
 }, test.limit.quick);
