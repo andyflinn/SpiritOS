@@ -3026,3 +3026,26 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     } finally { await letGoST(); }
   }, test.limit.long);
 }
+
+// ── testicle reads the common file/folder cache (goal/G49.2) ──
+// Andy: "go on the five!"; G49.1's box: "testicle's and backup's watchers go as each moves" onto spirit/fs.js, and "each
+// disc scan goes in the same commit that moves its client onto spirit/fs.js". The server's code, comments left out, keeps
+// no chokidar watcher of its own and reaches the tree through spirit/fs.js; treeScripts, its listing of the tree's scripts
+// at start, walks no folder on the disc. Its reads of /proc and of its own lab folders stay: they are no part of the tree.
+const TESTICLE_CODE = (function () {
+  try { return fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'server', 'server.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { return ''; }
+})();
+test.run('testicle\'s server keeps no chokidar watcher of its own', 0.2, function () {
+  return (TESTICLE_CODE.length > 0 && !/chokidar/.test(TESTICLE_CODE)) || false;
+}, test.limit.quick);
+test.run('testicle\'s server reaches the tree through spirit/fs.js', 0.2, function () {
+  return /require\(\s*['"][^'"]*spirit\/fs\.js['"]\s*\)/.test(TESTICLE_CODE) || false;
+}, test.limit.quick);
+test.run('testicle\'s treeScripts walks no folder on the disc', 0.2, function () {
+  const at = TESTICLE_CODE.indexOf('function treeScripts(');
+  if (at === -1) return false;
+  const open = TESTICLE_CODE.indexOf('{', at);
+  let depth = 0, end = open;
+  for (let i = open; i < TESTICLE_CODE.length; i++) { if (TESTICLE_CODE[i] === '{') depth++; else if (TESTICLE_CODE[i] === '}') { depth--; if (depth === 0) { end = i; break; } } }
+  return !/\breaddirSync\b|\breaddir\(|\bstatSync\b/.test(TESTICLE_CODE.slice(open, end + 1)) || false;
+}, test.limit.quick);

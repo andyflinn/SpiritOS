@@ -141,3 +141,12 @@ test.run('the door answers {api: {branch}} with {branch, interface}, the text of
   fs.rmSync(dir, { recursive: true, force: true });
   return (r.status === 200 && !!r.body && r.body.branch === 'zz' && typeof r.body.interface === 'string' && r.body.interface.indexOf('ping') !== -1) || false;
 }, test.limit.quick);
+
+// ── verbTable.js reads the common file/folder cache (goal/G49.2; Andy: "go on the five!") ──
+// G49.1's box: "verbTable.js's api.js check" moves onto spirit/fs.js. Its code, comments left out, asks the disc for no file.
+// Its read of an api.js's text for the interface answer stays: the cache holds rows, not contents.
+test.run('spirit/verbTable.js asks the disc whether a file is there for none: no existsSync', 0.2, function () {
+  let c = '';
+  try { c = require('fs').readFileSync(path.join(RUN, 'spirit', 'verbTable.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { c = ''; }
+  return (c.length > 0 && !/\bexistsSync\b/.test(c)) || false;
+}, test.limit.quick);

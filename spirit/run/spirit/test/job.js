@@ -1520,3 +1520,20 @@ test.run('spirit/job.js lists no folder on disc: no readdirSync', 0.2, function 
 test.run('spirit/job.js asks the disc for no file: no existsSync', 0.2, function () {
   return (JOB_CODE.length > 0 && !/\bexistsSync\b/.test(JOB_CODE)) || false;
 }, test.limit.quick);
+
+// ── job.js keeps no file tree of its own for others (goal/G49.2; Andy: "go on the five!") ──
+// G49.1's box: "Once every client reads spirit/fs.js, job.js's fsTreeCommands and fsTreeEntries go, and event.js,
+// faceHome.js and nodeSearches.js read spirit.data.fs". job.js's code holds neither, and each of the three reaches the
+// dataset through spirit/fs.js, naming neither. The two names are written in pieces, so this check does not count itself.
+const TREE_NAMES = ['fsTree' + 'Commands', 'fsTree' + 'Entries'];
+function codeOf(rel) { try { return code(fs.readFileSync(path.join(RUN, rel), 'utf8')); } catch (e) { return ''; } }
+test.run('spirit/job.js holds neither of its old tree reads', 0.2, function () {
+  const c = codeOf('spirit/job.js');
+  return (c.length > 0 && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
+}, test.limit.quick);
+['spirit/event/event.js', 'spirit/faceHome.js', 'spirit/nodeSearches.js'].forEach(function (rel) {
+  test.run(rel + ' reads the tree through spirit/fs.js, not through job.js', 0.2, function () {
+    const c = codeOf(rel);
+    return (c.length > 0 && /require\(\s*['"][^'"]*spirit\/fs\.js['"]\s*\)/.test(c) && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
+  }, test.limit.quick);
+});
