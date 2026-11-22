@@ -293,6 +293,17 @@ test.run('the instance holds branchPath, in node and on a page', 0.2, function (
   if (!T.w || !T.w.spirit) return false;
   return (typeof s.branchPath === 'function' && typeof T.w.spirit.branchPath === 'function') || false;
 }, test.limit.quick);
+// goal/G49.2 (Andy: "decision, cw's approach to \"ask the node\". verb modification approved."): branchPath learns where a
+// branch lives from its node's answer, never from the disc: its body, comments left out, holds no fs and no existsSync.
+test.run('branchPath asks the disc for nothing', 0.2, function () {
+  const at = SOURCE.indexOf('function branchPath(');
+  if (at === -1) return false;
+  const open = SOURCE.indexOf('{', at);
+  let depth = 0, end = open;
+  for (let i = open; i < SOURCE.length; i++) { if (SOURCE[i] === '{') depth++; else if (SOURCE[i] === '}') { depth--; if (depth === 0) { end = i; break; } } }
+  const body = SOURCE.slice(open, end + 1).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
+  return (body.length > 2 && !/\bexistsSync\b|require\(\s*['"]fs['"]\s*\)|\bstatSync\b|\breaddirSync\b/.test(body)) || false;
+}, test.limit.quick);
 test.run('branchPath names the api.js of a branch in its own folder: spirit/desk/api.js for desk', 0.2, function () {
   return (typeof s.branchPath === 'function' && /^spirit\/(app\/)?desk\/api\.js$/.test(String(s.branchPath('desk')))) || false;
 }, test.limit.quick);

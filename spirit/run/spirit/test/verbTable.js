@@ -141,3 +141,36 @@ test.run('the door answers {api: {branch}} with {branch, interface}, the text of
   fs.rmSync(dir, { recursive: true, force: true });
   return (r.status === 200 && !!r.body && r.body.branch === 'zz' && typeof r.body.interface === 'string' && r.body.interface.indexOf('ping') !== -1) || false;
 }, test.limit.quick);
+
+// ── the interface answer names the branch's path (goal/G49.2) ──
+// Andy: "decision, cw's approach to \"ask the node\". verb modification approved."; cw's approach: api {branch} "answers
+// where the node found that branch", path beside interface, so a process learns where a branch lives by asking its node,
+// never its disc. On a scratch node, api {branch: desk} answers path spirit/app/desk/api.js, and api {branch: node}
+// answers spirit/node/api.js, each beside its interface.
+const { scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const VT = {};
+async function askNode(call, args) {
+  const r = await fetch(VT.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
+  let body = null;
+  try { body = JSON.parse(await r.text()); } catch (e) { body = null; }
+  return { status: r.status, body: body };
+}
+test.run('the scratch node comes up', 0.2, async function () {
+  VT.node = await scratchNode();
+  return (!!VT.node && VT.node.up) || false;
+}, test.limit.slow);
+test.run('api {branch: desk} answers the path spirit/app/desk/api.js beside its interface', 0.2, async function () {
+  if (!VT.node || !VT.node.up) return false;
+  const r = await askNode('api', { branch: 'desk' });
+  return (r.status === 200 && !!r.body && r.body.path === 'spirit/app/desk/api.js' && typeof r.body.interface === 'string') || false;
+}, test.limit.quick);
+test.run('api {branch: node} answers the path spirit/node/api.js beside its interface', 0.2, async function () {
+  if (!VT.node || !VT.node.up) return false;
+  const r = await askNode('api', { branch: 'node' });
+  return (r.status === 200 && !!r.body && r.body.path === 'spirit/node/api.js' && typeof r.body.interface === 'string') || false;
+}, test.limit.quick);
+test.after(function () {
+  const node = VT.node || {};
+  try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
+  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
+});
