@@ -61,8 +61,8 @@ test.run('the contacts list runs on a window of its own, with its row element an
       });
     },
   });
-  // goal/G43.32: what the list draws with stands where an element now finds it, spirit.element.spirit.element.
-  (((window.spirit.element = window.spirit.element || {}).spirit = window.spirit.element.spirit || {})).element = nestSearch({
+  // goal/G43.32: what the list draws with stands where an element now finds it, spirit.required.spirit.element.
+  (((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {})).element = nestSearch({
     'search': { create: function (host, opts) {
       made = { host: host, opts: opts, refreshes: 0, destroyed: false };
       return { refresh: function () { made.refreshes += 1; }, destroy: function () { made.destroyed = true; } };
@@ -99,7 +99,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
   load(path.join(JS, 'search', 'contact', 'list.js'));
   // What the list and its parts required as they loaded, before the suite's own report to testicle requires anything.
   atLoad = required.slice();
-  L = window.spirit.element.spirit.element.search.contact.list;
+  L = window.spirit.required.spirit.element.search.contact.list;
   F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
   return true;
 }, test.limit.quick);

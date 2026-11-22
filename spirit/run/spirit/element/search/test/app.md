@@ -2,7 +2,7 @@
 
 The app list (goal/G43.2), as `spirit/element/search/bundle/list.js` is the bundle list: the probabilitySearch the selector draws. Its test is `./app.js`.
 
-    spirit.element.search.app.create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers, opts.shells
+    spirit.required.search.app.create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers, opts.shells
 
 - It draws what `app.search` finds, asking with a search string and nothing more: grants, an app every node has, among them.
 - What a list draws is read from the rows that show: a row the list hides stays in the page (goal/G47.1, the search keeps its rows).

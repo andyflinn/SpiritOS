@@ -14,13 +14,13 @@ their data set"*).
 
 - It loads what it uses itself (rule/26): `spirit/element/search.js` and `spirit/element/search/bundle/row.js`,
   and the auth branch's interface (`spirit/auth/api.js`), which brings its data.js; no data script itself.
-- It registers `spirit.element.search.bundle.list.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
+- It registers `spirit.required.search.bundle.list.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
 - It draws one probabilitySearch into `host`, and fills it as soon as it is drawn.
 - `opts.face`, `opts.placeholder`, `opts.all` and `opts.pick(row, key)` are handed on, as probabilitySearch's.
 - Its search asks `auth.bundle { op: 'search', text }` through the spirit object, the text trimmed, and answers as a
   reply, `{ items, more }`. An empty answer is an empty list.
 - It hands its search no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.required.spirit.data."*).
-- Each row is a `spirit.element.search.bundle.row` of that bundle, `{ id, label, owner }`.
+- Each row is a `spirit.required.search.bundle.row` of that bundle, `{ id, label, owner }`.
 - By default its columns are the label, then the owner (goal/G41.25, Andy: *"the bundleSelector's list will gain a
   new column \"owner\", displayed right after the bundles label"*). `opts.columns` names the row's fields it shows, in order (the bundle editor:
   `label`, `owner`). No row edits its label: `editable` is no option (goal/G41.26, Andy: *"the Label should now just be an output"*), so a list asked for it hands its rows none.

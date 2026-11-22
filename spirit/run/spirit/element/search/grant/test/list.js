@@ -38,10 +38,10 @@ test.run('the grant list runs on a bare window', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   global.document = { createElement: function () { return {}; } };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   return true;
 }, test.limit.quick);
 
@@ -55,7 +55,7 @@ test.run('it names no table and no branch of its own: no auth verb, no agent gra
   const names = /auth\.|agent\.grant|job_id|'grants'|"grants"/.test(SRC);
   return !names ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.grant.list.create', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.search.grant.list.create', 0.2, function () {
   if (!E) return false;
   return !noList() ? true : false;
 }, test.limit.quick);

@@ -2,13 +2,13 @@
 
 goal/G47.1, the box, the monitor tiles: spirit/element/monitor/value.js is a value, mounted with an icon, a label, a value and a mode; its value can be set again later. The mode defaults to tile; row comes later.
 
-`spirit.element.spirit.element.monitor.value.create(container, { icon, label, value, mode })` answers `{ set(value), destroy() }`.
+`spirit.required.spirit.element.monitor.value.create(container, { icon, label, value, mode })` answers `{ set(value), destroy() }`.
 
 Its test is `./value.js`: a real Chrome on a scratch node's face page.
 
 ## Requirements
 
-- It loads through `spirit.require` and places itself at `spirit.element.spirit.element.monitor.value`, with a `create`.
+- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.value`, with a `create`.
 - Mounted with an icon, a label and a value, it is a tile (`.stat-tile`) showing all three, the icon drawn by the icon element.
 - Handed no mode, it is shown as a tile; handed a mode it does not know yet (row, until row is built), it is shown as a tile.
 - Handed no value, it shows a dash.

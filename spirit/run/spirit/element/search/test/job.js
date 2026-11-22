@@ -47,11 +47,11 @@ test.run('the selector runs on a bare window', 0.2, async function () {
   };
   vm.runInThisContext(SRC, { filename: FILE });
   await settle();
-  const E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  const E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   made = E.search && E.search.job;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.element.spirit.element.search.job, with a create', 0.2, function () {
+test.run('it places itself at spirit.required.spirit.element.search.job, with a create', 0.2, function () {
   if (!lists) return false;
   return made && typeof made.create === 'function' ? true : false;
 }, test.limit.quick);

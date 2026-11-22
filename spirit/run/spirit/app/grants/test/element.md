@@ -14,7 +14,7 @@ panel's `grantsPanel.nodeGrants` since goal/G43.24, and what the panel draws and
 ## Requirements
 
 - **Mounted the new shell's way** (Andy: *"box that these apps must mount in the new format of the new shell."*), as
-  `spirit/app/file/element.js` is: it sets `spirit.element.spirit.app.grants.element = { create(container, opts) -> { destroy() } }`. No
+  `spirit/app/file/element.js` is: it sets `spirit.required.spirit.app.grants.element = { create(container, opts) -> { destroy() } }`. No
   `spirit.shell.activateApp`; nothing of the old shell (no `shellCreateListSearch`, no `api.ui.elements`, no
   `apiBranchSelector`).
 - **A wrapper**: it loads `spirit/element/search/grant/grantsPanel.js`, `spirit/element/tabContainer.js` and
@@ -85,4 +85,4 @@ Done: its test runs from its new place, and `shell/` is gone. Their checks are d
 #### 7. The new shell's way
 
 - No `spirit.shell.activateApp` in `grants.js`.
-- On the page, `spirit.require('spirit/app/grants/element.js')` sets `spirit.element.spirit.app.grants.element`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.
+- On the page, `spirit.require('spirit/app/grants/element.js')` sets `spirit.required.spirit.app.grants.element`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.

@@ -3,7 +3,7 @@
 // ONE SHELL ELEMENT: the family selector, a factory apps build their screens with.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
-//   so one file per element, each adding itself to window.spirit.element,
+//   so one file per element, each adding itself to window.spirit.required,
 //   which the shell hands to apps at mount as api.ui.element.
 //
 // On the globals every shell script has (spirit, document, window.spirit.required.spirit.client.apiTreeIndex)
@@ -56,7 +56,7 @@
     var gone = false;
     parts.then(function () {
       if (gone) return;
-      families = window.spirit.element.spirit.element.search.api.list.create(root, { face: 'pane', tree: options.tree, party: options.party });
+      families = window.spirit.required.spirit.element.search.api.list.create(root, { face: 'pane', tree: options.tree, party: options.party });
       families.addEventListener('change', function (event) {
         if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
         root.family = root.value = families.value || '';
@@ -94,7 +94,7 @@
     }
     function quiet(event) { if (event && typeof event.stopPropagation === 'function') event.stopPropagation(); }
     var made = parts.then(function () {
-      var E = window.spirit.element;
+      var E = window.spirit.required;
       families = E.spirit.element.search.api.list.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree, party: options.party });
       verbs = E.spirit.element.search.api.verb.create(root, { party: families.party });
       families.addEventListener('change', function (event) {
@@ -129,7 +129,6 @@
     return root;
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.

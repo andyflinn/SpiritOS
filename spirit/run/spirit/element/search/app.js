@@ -6,7 +6,7 @@
 // detail.js"; Andy: "cw, we certainly want, in this item, uniformity, in the search elements and their folders,
 // contain list, row an detail elements."). Its test: ./test/app.js, the list judged through it.
 //
-//   spirit.element.spirit.element.search.app.create(container, options) -> the list's { list, refresh(), destroy() }
+//   spirit.required.spirit.element.search.app.create(container, options) -> the list's { list, refresh(), destroy() }
 //     options        handed to the list as they are (face, toggle, onFace, visible, pick, servers, shells); the list is drawn in the container itself, so a
 //                    pane fills the box it is given
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -16,7 +16,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.
   window.spirit.require('spirit/element/search/app/list.js');
   function create(container, options) {
-    return window.spirit.element.spirit.element.search.app.list.create(container, options);
+    return window.spirit.required.spirit.element.search.app.list.create(container, options);
   }
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app.js', { create: create }); });
 }());

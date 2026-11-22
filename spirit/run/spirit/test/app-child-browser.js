@@ -181,17 +181,17 @@ async function appsPhase(chrome) {
   const settled = async function (expr) { let last = ''; let same = 0; await until(async function () { const d = JSON.stringify(await drawnIn(expr)); same = d === last ? same + 1 : 0; last = d; return same >= 3; }, SETTLE_LIMIT_MS * 3); return drawnIn(expr); };
   // The selector as boot.js mounts a shell: no options.
   await box('zz-tiles');
-  await P.evaluate('(function () { window.zzTiles = spirit.element.spirit.app.app.element.create(document.getElementById("zz-tiles")); var c = document.getElementById("zz-tiles"); if (window.zzTiles && window.zzTiles.parentNode !== c && window.zzTiles.nodeType) c.appendChild(window.zzTiles); return true; }())');
+  await P.evaluate('(function () { window.zzTiles = spirit.required.spirit.app.app.element.create(document.getElementById("zz-tiles")); var c = document.getElementById("zz-tiles"); if (window.zzTiles && window.zzTiles.parentNode !== c && window.zzTiles.nodeType) c.appendChild(window.zzTiles); return true; }())');
   W.tiles = await settled('document.getElementById("zz-tiles")');
   await gone('zz-tiles', 'zzTiles');
   // The app search as a pane.
   await box('zz-pane');
-  await P.evaluate('(function () { window.zzPane = spirit.element.spirit.element.search.app.create(document.getElementById("zz-pane"), { face: "pane" }); return true; }())');
+  await P.evaluate('(function () { window.zzPane = spirit.required.spirit.element.search.app.create(document.getElementById("zz-pane"), { face: "pane" }); return true; }())');
   W.pane = await settled('document.getElementById("zz-pane")');
   await gone('zz-pane', 'zzPane');
   // The app search as a dropdown, pressed open: its list floats, so the page is read.
   await box('zz-drop');
-  await P.evaluate('(function () { window.zzDrop = spirit.element.spirit.element.search.app.create(document.getElementById("zz-drop"), { face: "dropdown" }); return true; }())');
+  await P.evaluate('(function () { window.zzDrop = spirit.required.spirit.element.search.app.create(document.getElementById("zz-drop"), { face: "dropdown" }); return true; }())');
   await until(function () { return P.evaluate('(function () { var d = window.zzDrop, f = (d && d.list && d.list.field) || document.querySelector("#zz-drop input, #zz-drop [tabindex], #zz-drop button"); if (f) f.click(); return !!f; }())'); }, SETTLE_LIMIT_MS);
   W.drop = await settled('document.body');
   await gone('zz-drop', 'zzDrop');
@@ -199,7 +199,7 @@ async function appsPhase(chrome) {
   W.detail = {};
   for (const a of want.filter(function (x) { return x.run; })) {
     await box('zz-detail');
-    await P.evaluate('(function () { window.zzDetail = spirit.element.spirit.element.search.app.detail.create(document.getElementById("zz-detail"), { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())');
+    await P.evaluate('(function () { window.zzDetail = spirit.required.spirit.element.search.app.detail.create(document.getElementById("zz-detail"), { row: ' + JSON.stringify({ key: a.key, label: a.label, icon: a.icon }) + ', panel: true }); return true; }())');
     const RUN_BTN = 'Array.prototype.filter.call(document.querySelectorAll("#zz-detail button"), function (b) { return /\\bRun\\b/.test(String(b.textContent || "")); })[0]';
     const hasRun = !!(await until(function () { return P.evaluate('!!(' + RUN_BTN + ')'); }, SETTLE_LIMIT_MS * 3));
     const activates = await P.evaluate('Array.prototype.filter.call(document.querySelectorAll("#zz-detail *"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length');

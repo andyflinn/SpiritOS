@@ -9,7 +9,7 @@ require('../spirit.js');
 // spirit.shell.activateApp) is mounted into the box with an api as the face
 // gives one (shell/boot.js apiFor). An element
 // is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled
-// by the elements own test script"): the element that stands at spirit.element.<the file's path> once it is required,
+// by the elements own test script"): the element that stands at spirit.required.<the file's path> once it is required,
 // put there by its own installSpiritElement call (goal/G43.32; Andy: "element scripts installed by the above logic place
 // their element-factory at spirit.element.<path-of-fucking-element-script>"); none there fails and says where it looked.
 // /shell.css is the shell's one sheet, a link and not a script. What happened is on
@@ -23,7 +23,7 @@ function mountScript(file) {
     'var report = window.spiritMount = { state: "loading", error: "", box: box, destroy: null };\n' +
     'function failed(e) { report.state = "failed"; report.error = String((e && e.message) || e || "failed"); }\n' +
     'var file = ' + JSON.stringify(file) + ';\n' +
-    'function placed() { return file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.element); }\n' +
+    'function placed() { return file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required); }\n' +
     'function ask(verb, args) {\n' +
     '  var name = String(verb); var dot = name.indexOf(".");\n' +
     '  var fam = dot > 0 ? spirit[name.slice(0, dot)] : null;\n' +
@@ -37,7 +37,7 @@ function mountScript(file) {
     '  setScreenTitle: function () {}, setScreenMark: function () {}, addTitlebarLink: function () {},\n' +
     '  armUntilElsewhere: function () {}, isVisible: function () { return true; }, refresh: function () {},\n' +
     '  onJobs: function () { return function () {}; }, onFiles: function () { return function () {}; }, onRelayEvent: function () { return function () {}; },\n' +
-    '  ui: { element: window.spirit.element }\n' +
+    '  ui: { element: window.spirit.required }\n' +
     '};\n' +
     'var app = null;\n' +
     '(spirit.shell = spirit.shell || {}).activateApp = function (behavior) { app = behavior; };\n' +
@@ -49,7 +49,7 @@ function mountScript(file) {
     '    return;\n' +
     '  }\n' +
     '  var el = placed();\n' +
-    '  if (!el || typeof el.create !== "function") throw new Error(file + " places no element with a create at spirit.element." + file.replace(/\\.js$/, "").split("/").join("."));\n' +
+    '  if (!el || typeof el.create !== "function") throw new Error(file + " places no element with a create at spirit.required." + file.replace(/\\.js$/, "").split("/").join("."));\n' +
     '  return Promise.resolve(el.create(box)).then(function (m) {\n' +
     '    if (m && typeof m.destroy === "function") report.destroy = function () { return m.destroy(); };\n' +
     '    report.state = "mounted";\n' +

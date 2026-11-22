@@ -15,13 +15,13 @@
 // auth family's cache manager (below) puts it into spirit.required.spirit.data.auth.data.bundles, and every bundle row on the page repaints from there through its
 // kind's index. A row asks and draws nothing of its own (rule/19): what it shows is what the stream said.
 //
-//   spirit.element.spirit.element.search.bundle.row.create(row) -> a row of kind bundle
+//   spirit.required.spirit.element.search.bundle.row.create(row) -> a row of kind bundle
 //     row            { id, label, owner }, as auth.bundle answers it
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   if (window.spirit.require) window.spirit.require('spirit/element/row.js');
 

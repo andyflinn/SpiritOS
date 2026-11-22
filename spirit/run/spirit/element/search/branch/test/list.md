@@ -17,8 +17,8 @@ their data set"*).
 - It loads what it uses itself (rule/26): `spirit/element/search.js`, `spirit/element/search/branch/row.js`,
   `spirit/element/search/api.js` and `spirit/element/search/api/verb.js`, and the auth family's interface, `spirit/auth/api.js`, which brings its data.js; it requires no
   data script itself (goal/G47.1: only an api.js requires its companion data.js).
-- It registers `spirit.element.search.branch.list.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
-- It makes one family selector, `spirit.element.search.api.create(…)` (the shell's element shape, goal/G41.19), and hands it
+- It registers `spirit.required.search.branch.list.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
+- It makes one family selector, `spirit.required.search.api.create(…)` (the shell's element shape, goal/G41.19), and hands it
   to its one probabilitySearch in `host` as a selector, for the search's 🪣 row, with a name and a test narrowing by
   the family and verb chosen; no filter row of its own (goal/G41.26; Andy: *"any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the user-can see, which elements belong to the search."*). It fills the search as soon as
   it is drawn.
@@ -26,7 +26,7 @@ their data set"*).
   trimmed, `bundle` from `opts.bundle`, and answers as a reply, `{ items, more }`.
 - `opts.columns` names the row's fields it shows, in order (the branch editor: `family`, `verb`, `delete`).
   `opts.face`, `opts.placeholder`, `opts.all` and `opts.pick(row, key)` are handed on.
-- Each row is a `spirit.element.search.branch.row` of that branch. Its search is handed no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.required.spirit.data."*).
+- Each row is a `spirit.required.search.branch.row` of that branch. Its search is handed no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.required.spirit.data."*).
 - The filter, the family selector's `family` and `verb`:
   - nothing chosen: the search narrows by neither;
   - a family chosen searches again, narrowed by the family;

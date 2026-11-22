@@ -9,7 +9,7 @@ and *"A branch row with an empty verb shows as \"(ALL)\", as the filter does."*
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/row.js` and `spirit/element/armingButton.js`.
-- It registers `spirit.element.search.branch.row.create(row, opts)`: a row element of kind `branch`, keyed by the branch's id.
+- It registers `spirit.required.search.branch.row.create(row, opts)`: a row element of kind `branch`, keyed by the branch's id.
   Its row is the branch as `auth.branch` answers it, `{ id, bundle, family, verb }`.
 - Its fields are `family`, `verb` and `delete`, in that order. Family and verb are drawn escaped; an empty verb shows as
   `(ALL)`. Delete is a button naming its action.

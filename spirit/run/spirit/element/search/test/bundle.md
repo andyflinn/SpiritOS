@@ -8,7 +8,7 @@ selecting bundle rows."*
 
 ## Requirements
 
-- It registers `spirit.element.search.bundle.create(container, options)`, and `createBundleSelector` no more. Its root is
+- It registers `spirit.required.search.bundle.create(container, options)`, and `createBundleSelector` no more. Its root is
   appended to the container and answered (box v23: *"every element gets a container and appends itself"*).
 - It answers its root at once, class `bundle-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
 - It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search/bundle/list.js` and draws

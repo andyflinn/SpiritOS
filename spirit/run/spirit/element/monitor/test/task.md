@@ -2,13 +2,13 @@
 
 goal/G47.1. Andy: *"new element spirit/element/monitor/task.js (to replace the run-job rowForm in app:detail) rowForm: <app-icon> "<app-name> + <status-message-while-running>" [run|cancel|delete]"*; *"yes make it an improvement on the current run-rowForm in app and isolate it as spirit/element/monitor/task.js"*; *"run-apps usually self-delete if they're successful, if they fail, they stay and offer "delete""* (spirit/job.js removes a run that ends well or is cancelled, and keeps a failed one).
 
-`spirit.element.spirit.element.monitor.task.create(container, { id })`, `id` the app's job id, `spirit.app.<name>`; answers `{ destroy() }`.
+`spirit.required.spirit.element.monitor.task.create(container, { id })`, `id` the app's job id, `spirit.app.<name>`; answers `{ destroy() }`.
 
 Its test is `./task.js`: a real Chrome on a scratch node's face page, with three apps planted in the scratch tree: `zztask`, a run app that publishes its progress (`{job: {state, name, done, total, text}}`, the convention of goal/G29.14) and runs on until cancelled; `zzfail`, a run app that fails at once; `zznorun`, an app with no `node.run`.
 
 ## Requirements
 
-- It loads through `spirit.require` and places itself at `spirit.element.spirit.element.monitor.task`, with a `create`.
+- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.task`, with a `create`.
 - For a run app it shows a row form: the app's icon and its label from its `<name>.json`, and a Run button.
 - For an app that is no run app, or one with no `<name>.json`, it shows nothing.
 - Pressed, Run is busy while the node is asked: disabled, with its turning mark (goal/G47.1, Q20).

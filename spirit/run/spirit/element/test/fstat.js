@@ -82,7 +82,7 @@ function world(o) {
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   try { vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE }); } catch (e) { w.error = e; }
-  w.E = (((win.spirit.element || {}).spirit || {}).element || {}).fstat;
+  w.E = (((win.spirit.required || {}).spirit || {}).element || {}).fstat;
   return w;
 }
 
@@ -114,7 +114,7 @@ test.run('its code names neither the old shell, the owner app nor Open with', 0.
   own = code(FILE);
   return (!!own && !/\.shell\b|renderAppOfFile|renderOpenWith|launcherId|open-with|owner-app/.test(own)) ? true : false;
 }, test.limit.quick);
-test.run('it puts fstat on window.spirit.element, with create, read, mimeOf and kindOf, as fileViewer had them', 0.2, function () {
+test.run('it puts fstat on window.spirit.required, with create, read, mimeOf and kindOf, as fileViewer had them', 0.2, function () {
   w = world();
   V = w.E;
   return (!w.error && !!V && ['create', 'read', 'mimeOf', 'kindOf'].every(function (k) { return typeof V[k] === 'function'; })) ? true : false;

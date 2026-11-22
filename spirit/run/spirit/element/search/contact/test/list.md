@@ -6,7 +6,7 @@ goal/G41.28), drawn by `probabilitySearch`, each row a contact row element (`spi
 
 ## API
 
-`spirit.element.search.contact.list = { create(host, opts) -> { list, refresh(), destroy() }, filters }`; opts `open` (the mounter's panel stack, handed to each row), `face`, `placeholder`, `all`, `pick(row, key)`, `say(text)`, `onAdded(row)`, `empty`. It is
+`spirit.required.search.contact.list = { create(host, opts) -> { list, refresh(), destroy() }, filters }`; opts `open` (the mounter's panel stack, handed to each row), `face`, `placeholder`, `all`, `pick(row, key)`, `say(text)`, `onAdded(row)`, `empty`. It is
 handed no api (goal/G43.24; Andy: *"every element that accesses ANY api must require them themselves"*): its search is
 the probabilitySearch's own data source (`options.search`), and what it asks a peer goes through the spirit object.
 

@@ -14,7 +14,7 @@ opens. So the editor names no description and no api-branch selector.
 - It loads what it uses itself (rule/26): `spirit/element/fieldInput.js` and `spirit/element/search/bundle.js`, and the auth
   branch's interface (`spirit.require('spirit/auth/api.js')`, which brings its data.js; goal/G41.28), whose bundles it
   adds to; it requires no data.js itself.
-- It registers `spirit.element.bundleEditor.create(container, opts)`, which answers `{ destroy }`. Drawn, it asks the
+- It registers `spirit.required.bundleEditor.create(container, opts)`, which answers `{ destroy }`. Drawn, it asks the
   node nothing.
 - At the top, one row, a rowForm (goal/G41.27; Andy: *"bundleEditor:\n[➕] [label] [Add]"*): it loads
   `spirit/element/rowForm.js` itself and makes one rowForm in its own box (a `fill` box put into its container, overflow
@@ -32,7 +32,7 @@ opens. So the editor names no description and no api-branch selector.
   - refused, the node's words are said in the panel and the label stays in the input.
   - it is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer
     comes"*): the press settles only once the node has answered, so Add is busy until then.
-- Below it, filling the space left (a `fill` box, shell.css): the bundleSelector, `spirit.element.search.bundle.create(its own box, …)` (the shell's element
+- Below it, filling the space left (a `fill` box, shell.css): the bundleSelector, `spirit.required.search.bundle.create(its own box, …)` (the shell's element
   shape, goal/G41.19), a pane, columns `label` and `owner` (goal/G41.25: the owner *"right after the bundles label"*), its labels shown only (goal/G41.26: *"the Label should now just be an output"*; no `editable`). What a row does is the row element's
   (`spirit/element/search/bundle/row.js`).
 - `destroy()` empties its box, lets its watch on `spirit.required.spirit.data.auth.data.bundles` go and lets its bundle pane go.

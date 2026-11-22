@@ -141,7 +141,7 @@ function useScript(a) {
 // (goal/G41.28) and each table's list and editor live in spirit/app/agent/table/ since goal/G43.12, which no pattern below
 // matches; there they are neither, and are not mounted. spirit/app/agent/agent.js is an element by the new-folder rule.
 // WHAT IS A PAGE MODULE (goal/G43.32; Andy: "helpers with no create are no fucking elements. they live in require.
-// element scripts place their factories in spirit.element.<their path>"): a file is mounted when its own code places its
+// element scripts place their factories in spirit.required.<their path>"): a file is mounted when its own code places its
 // factory by installSpiritElement; a switch (agent.js), a server or a helper is not. Read from the file, not guessed from
 // its path.
 function kindOf(file) {
@@ -289,7 +289,7 @@ const WATCH = String.raw`(function () {
   function searches(els) {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
-    // The search element stands at its path since goal/G43.32, spirit.element.spirit.element.search: every step of the path
+    // The search element stands at its path since goal/G43.32, spirit.required.spirit.element.search: every step of the path
     // is followed as it is made, and the element wrapped when it is placed or read.
     function along(o, keys, done) {
       if (!o || typeof o !== 'object') return;
@@ -621,11 +621,11 @@ function productScripts() {
 // EVERY PRODUCT SCRIPT, PLACED WHERE IT IS REQUIRED (goal/G43.32, the box, testing point 3; Andy: "a general test for
 // any scriptFile.js is to spirit.require() it.", Q5: "doesn't spirit.require() only load a script, store it at
 // spirit.required.<path>  and run it once.", "element scripts themselves are who installs the element factory at
-// spirit.element.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
+// spirit.required.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
 // demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
 // spirit.require()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
 // the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
-// judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.element.<its
+// judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.required.<its
 // path> once required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
@@ -655,7 +655,7 @@ function requireOnNode(run, rel) {
   });
 }
 // THE ONE HELPER (goal/G43.32; Andy: "this can be done with ONE single helper function
-// spirit/element/installSpiritElement(spirit,elementPath)"): no element script puts itself on spirit.element or
+// spirit/element/installSpiritElement(spirit,elementPath)"): no element script puts itself on spirit.required or
 // spirit.elements by hand.
 function placedByHand() {
   return productScripts().filter(function (f) {
@@ -704,7 +704,7 @@ function every() {
       const keys = JSON.stringify(placeKeys(f));
       const got = await page.evaluate('window.spirit.ready.then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); return spirit.require(' + JSON.stringify(f) + '); })' +
         '.then(function () { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
-        ' var el = at(spirit.element); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function" }); },' +
+        ' var el = at(spirit.required); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function" }); },' +
         ' function () { return JSON.stringify({ err: true, placed: false, factory: false }); })');
       let r = null; try { r = JSON.parse(got); } catch (e) { r = { err: true, placed: false, factory: false }; }
       if (r.err) { if (E.elements.indexOf(f) !== -1) E.noFactory.push(f); continue; }
@@ -720,7 +720,7 @@ function every() {
     if (!E.pageLoaded) return false;
     return (E.pageLoaded.length > 0 && !E.pageBad.length) || false;
   }, test.limit.quick);
-  test.run('every element script puts its factory in spirit.element under its own path, through its own installSpiritElement', 0.4, function () {
+  test.run('every element script puts its factory in spirit.required under its own path, through its own installSpiritElement', 0.4, function () {
     if (!E.pageLoaded) return false;
     return (E.elements.length > 0 && !E.noFactory.length) || false;
   }, test.limit.quick);
@@ -849,7 +849,7 @@ async function session() {
     return JSON.parse(own).concat(lexAfter.filter(function (k) { return lexBefore.indexOf(k) === -1; }));
   }());
   // NO ELEMENT INSTALLED, KNOWN BY THE PAGE, NOT BY READING ITS CODE (goal/G47.1, box v121: "no code reading: after
-  // loading, the page looks at window.spirit.element at the script's own path, where installSpiritElement puts an element
+  // loading, the page looks at window.spirit.required at the script's own path, where installSpiritElement puts an element
   // with its create (a helper goes to spirit.required)"; "with no element installed these are skipped, never counted
   // green"): the bare page says so when nothing with a create stands there (spirit/DEBUG/headLessBrowser.js).
   if (report && report.state === 'failed' && /places no element with a create at spirit\.element\./.test(report.error)) { P.noElement = true; P.stage = 'no element'; return P; }
@@ -938,7 +938,7 @@ async function session() {
     '  if (!el || el.textContent.replace(/[\\p{Extended_Pictographic}\\uFE0F\\u200D\\u{1F3FB}-\\u{1F3FF}\\s]/gu, "") !== "") continue;' +
     '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
     '  out.push(true); } return out; }())';
-  await page.evaluate('Promise.resolve().then(function () { return spirit.require("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.element.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
+  await page.evaluate('Promise.resolve().then(function () { return spirit.require("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.required.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
   P.iconMark = await page.evaluate('window.spiritIconMark || ""');
   const loose = {};
   const iconProbe = async function () { const s = await page.evaluate('JSON.stringify(' + ICONS + ')'); (s ? JSON.parse(s) : []).forEach(function (x) { loose[x] = true; }); };
@@ -1028,7 +1028,7 @@ async function session() {
     // the page holds before, and after the element was created there, left a second to draw, and destroyed; the box taken
     // away. All it made is gone again: no listener on window or document, no interval, no element anywhere on the page.
     P.cycle = JSON.parse(await page.evaluate('(function () { var W = window.spiritWatch; var file = ' + JSON.stringify(rel) + ';' +
-      ' var el = file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.element);' +
+      ' var el = file.replace(/\\.js$/, "").split("/").reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required);' +
       ' if (!W || !W.held || !el || typeof el.create !== "function") return JSON.stringify(null);' +
       ' var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
       ' var box = document.createElement("div"); box.setAttribute("data-spirit-cycle", ""); document.body.appendChild(box); var before = W.held(); box.remove();' +

@@ -551,7 +551,7 @@ async function chromePage(chrome) {
 // (vm) hands that world's spirit object here. It gets spirit.required, the real installSpiritElement resident at
 // spirit.required.spirit.element.installSpiritElement, and a spirit.require that answers what is already loaded at once,
 // as spirit.require does a second time: the helper, or any path the test hands in loaded. So an element script run there
-// places its factory at spirit.element.<its path> by its own call, as it runs. Answers the spirit object.
+// places its factory at spirit.required.<its path> by its own call, as it runs. Answers the spirit object.
 function pageSpirit(s, loaded) {
   const sp = s || {};
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));

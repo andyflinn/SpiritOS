@@ -96,12 +96,12 @@ test.run('spirit/element/codeMirror.js exists', 0.2, function () {
   S.src = S.there ? fs.readFileSync(FILE, 'utf8') : '';
   return S.there || false;
 }, test.limit.quick);
-test.run('it puts itself on window.spirit.element as codeMirror, with create', 0.2, async function () {
+test.run('it puts itself on window.spirit.required as codeMirror, with create', 0.2, async function () {
   const made = world();
   S.w = made.w; S.win = made.win;
   if (S.there) vm.runInContext(S.src, S.win, { filename: FILE });
   await settle();
-  S.E = ((S.win.spirit.element.spirit || {}).element || {}).codeMirror;
+  S.E = ((S.win.spirit.required.spirit || {}).element || {}).codeMirror;
   return (!!S.E && typeof S.E.create === 'function') || false;
 }, test.limit.quick);
 
@@ -283,7 +283,7 @@ test.run('the page starts with no CodeMirror on it, since the only access to the
 test.run('the element draws from that folder, with its sheet, its marks and its search keys', 0.2, async function () {
   if (!L.page || L.page.error) return false;
   await L.page.evaluate('Promise.resolve(window.spirit.require("spirit/element/codeMirror.js")).then(function () { return true; }, function () { return false; })');
-  try { L.cm = JSON.parse(await L.page.evaluate('(function () { var d = document.body.appendChild(document.createElement("div")); return window.spirit.element.spirit.element.codeMirror.create(d, { mode: "edit", text: "one needle", words: "needle" }).then(function () { return JSON.stringify({ drawn: !!d.querySelector(".CodeMirror"), marks: d.querySelectorAll(".text-view-match").length, cssLoaded: getComputedStyle(d.querySelector(".CodeMirror")).position === "relative", search: !!(window.CodeMirror.commands && window.CodeMirror.commands.find) }); }); })()')); } catch (e) { L.cm = {}; }
+  try { L.cm = JSON.parse(await L.page.evaluate('(function () { var d = document.body.appendChild(document.createElement("div")); return window.spirit.required.spirit.element.codeMirror.create(d, { mode: "edit", text: "one needle", words: "needle" }).then(function () { return JSON.stringify({ drawn: !!d.querySelector(".CodeMirror"), marks: d.querySelectorAll(".text-view-match").length, cssLoaded: getComputedStyle(d.querySelector(".CodeMirror")).position === "relative", search: !!(window.CodeMirror.commands && window.CodeMirror.commands.find) }); }); })()')); } catch (e) { L.cm = {}; }
   L.fromHere = await L.page.evaluate('performance.getEntriesByType("resource").map(function (r) { return r.name; }).filter(function (u) { return /codemirror/i.test(u); }).join(" ")').catch(function () { return ''; });
   return (L.cm.drawn === true && L.cm.marks === 1 && L.cm.cssLoaded === true && L.cm.search === true) || false;
 }, test.limit.slow);

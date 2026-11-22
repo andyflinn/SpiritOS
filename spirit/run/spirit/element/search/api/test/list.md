@@ -10,7 +10,7 @@ test is `./list.js`.
 
 - **Built on probabilitySearch**, as a dropdown (`face: 'dropdown'`); nothing of `shellCreateListSearch` (goal/G40.8).
 - **It loads probabilitySearch itself**, through `spirit.require` (goal/G41.3).
-- `spirit.element.spirit.element.search.api.list.create(container, { face, placeholder, all, tree })` appends its root element to the container and
+- `spirit.required.spirit.element.search.api.list.create(container, { face, placeholder, all, tree })` appends its root element to the container and
   answers it (box v23: *"every element gets a container and appends itself"*); `createAppServerSelector` no more.
   `root.value` the chosen family, `''` for none; `root.tree` the tree it was drawn from.
 - Its rows are `apiTreeIndex.servers(tree)`: sorted, a family that did not answer (`{ ok: false }`) left out.

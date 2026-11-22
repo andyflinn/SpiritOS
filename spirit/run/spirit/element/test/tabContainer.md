@@ -1,7 +1,7 @@
 # spirit/element/tabContainer.js
 
 An element with one row of tabs at the top, showing the selected tab's content in the vertical space left below it
-(goal/G41.1). Other apps with tabs catch up with it later. It loads on `window.spirit.element.tabContainer`.
+(goal/G41.1). Other apps with tabs catch up with it later. It loads on `window.spirit.required.tabContainer`.
 
 ## API
 

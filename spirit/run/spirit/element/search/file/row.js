@@ -15,7 +15,7 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   // goal/G41.23: a file's icon is the icon element (spirit/element/icon.js), loaded here too.
   // goal/G43.17: a file's icon is its kind's, which fstat says.

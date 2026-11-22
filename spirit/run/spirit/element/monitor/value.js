@@ -5,7 +5,7 @@
 // figure is an element of its own (./job/*.js) and later families' tiles take the same shape. Its contract and its test:
 // ./test/value.md and ./test/value.js.
 //
-//   spirit.element.spirit.element.monitor.value.create(container, { icon, label, value, mode }) -> { set(value), destroy() }
+//   spirit.required.spirit.element.monitor.value.create(container, { icon, label, value, mode }) -> { set(value), destroy() }
 //     mode         how it is shown: tile, the default. Row comes later (the box); until it does, a mode it does not know is
 //                  drawn as a tile
 //     set(value)   writes the value again, as text, every time, a value the same as before too: a tile that fills itself from
@@ -37,7 +37,7 @@
     parts.then(function () {
       if (gone) return;
       var holder = document.createElement('span');
-      S.element.spirit.element.icon.create(holder, { glyph: o.icon == null ? '' : String(o.icon), size: 1.5 });
+      S.required.spirit.element.icon.create(holder, { glyph: o.icon == null ? '' : String(o.icon), size: 1.5 });
       while (holder.firstChild) tile.insertBefore(holder.firstChild, value);
     });
     return {

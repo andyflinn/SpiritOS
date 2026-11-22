@@ -5,9 +5,9 @@
 // the job as kept. row.js does the shared work; this file says what a job is. Its contract and its test:
 // ./test/row.md and ./test/row.js.
 //
-//   spirit.element.spirit.element.search.job.row.create(job, { latest }) -> the row element
+//   spirit.required.spirit.element.search.job.row.create(job, { latest }) -> the row element
 //     latest()   the id of the job that changed last: its row carries the one green dot
-//   spirit.element.spirit.element.search.job.row.mark(id) repaints the dot of every row of that job: the list marks the job
+//   spirit.required.spirit.element.search.job.row.mark(id) repaints the dot of every row of that job: the list marks the job
 //     that was last and the one that is now, as the dot hops (a row repaints only what changed in its own job, so the row the dot
 //     leaves would keep it)
 //   .kindOf(job)    node, server or transient
@@ -57,7 +57,7 @@
   // progress) draws it, an ended one or a terminal job none.
   function progressOf(job) {
     var c = job && job.app && typeof job.app === 'object' ? job.app.job : null;
-    var bar = S.element && S.element.spirit.element.progressBar;
+    var bar = S.required && S.required.spirit.element.progressBar;
     if (!c || typeof c !== 'object' || TERMINAL.indexOf(job.status) !== -1 || typeof bar !== 'function') return '';
     if (c.state === 'start') return bar(0, 0, String(c.name || ''));
     if (c.state === 'progress') return bar(Number(c.done) || 0, Number(c.total) || 0, String(c.text || ''));
@@ -67,7 +67,7 @@
   // THE STATUS MARK IS THE ICON ELEMENT (goal/G41.23): made by icon.create and handed on as its markup, since a cell is
   // painted as text. Its word beside it stays text.
   function glyphOf(glyph) {
-    var I = S.element && S.element.spirit.element.icon;
+    var I = S.required && S.required.spirit.element.icon;
     if (!I || typeof I.create !== 'function') return esc(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
@@ -82,7 +82,7 @@
   }
   function create(row, options) {
     var o = options || {};
-    var R = S.element.spirit.element.row;
+    var R = S.required.spirit.element.row;
     var job = row || {};
     var latest = typeof o.latest === 'function' ? o.latest : function () { return ''; };
     index = index || R.index(function () {});

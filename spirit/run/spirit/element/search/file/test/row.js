@@ -62,7 +62,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   global.window.spirit.require = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   F = ((global.window.spirit.required.spirit.data || {}).fs || {}).data;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
@@ -78,7 +78,7 @@ test.run('it requires the fs branch\'s interface, spirit/fs/api.js, whose data.j
   if (!loaded) return false;
   return loaded.indexOf('spirit/fs/api.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it registers its create on spirit.element at its own path', 0.2, function () {
+test.run('it registers its create on spirit.required at its own path', 0.2, function () {
   if (!F || typeof F.file !== 'function') return false;
   return E.search.file.row && typeof E.search.file.row.create === 'function' ? true : false;
 }, test.limit.quick);

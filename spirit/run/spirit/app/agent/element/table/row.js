@@ -3,9 +3,9 @@
 // ONE ROW OF THE AGENT'S TABLES, EDITED IN THE PAGE (goal/G41.4), an element of its own (goal/G41.28; the general test:
 // a file registers one element). Each table's elementRow.js names its fields and builds on this one; the title row, the
 // field line, the table's searches and the one way to its server are the tables' shared element's (./tableElement.js,
-// spirit.element.spirit.app.agent.element.table.tableElement), which this file loads as part of its tree.
+// spirit.required.spirit.app.agent.element.table.tableElement), which this file loads as part of its tree.
 //
-//   spirit.element.spirit.app.agent.element.table.row.create(container, { table, id, added, look, fields, required }) -> { destroy }
+//   spirit.required.spirit.app.agent.element.table.row.create(container, { table, id, added, look, fields, required }) -> { destroy }
 //     one row's fields as inputs, under a title row; added says the row was just made by Add; fields
 //     [{ field, label, kind }], the row's icon always the first before them; the kinds are listed in ./tableElement.js.
 //
@@ -22,7 +22,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
   // And fieldInput, which holds a name or a description field to its rule (goal/G47.1: without it the label took 4096 bytes).
   spirit.require('spirit/element/fieldInput.js');
   var made = 0;
-  function A() { return window.spirit.element.spirit.app.agent.element.table.tableElement; }
+  function A() { return window.spirit.required.spirit.app.agent.element.table.tableElement; }
   function esc(s) { return A().esc(s); }
   function call(table, args) { return A().call(table, args); }
   function needs(paths) { return A().needs(paths); }
@@ -161,13 +161,13 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
         if (f.kind === 'icon') {
           needs(['spirit/element/search/icon.js']).then(function () {
             if (gone || !el.isConnected) return;
-            icons[f.field] = window.spirit.element.spirit.element.search.icon.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
+            icons[f.field] = window.spirit.required.spirit.element.search.icon.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
             if (icons[f.field] && typeof icons[f.field].addEventListener === 'function') icons[f.field].addEventListener('change', save);
           });
         }
         if (f.kind === 'code') {
           needs(['spirit/element/codeMirror.js']).then(function () {
-            return window.spirit.element.spirit.element.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
+            return window.spirit.required.spirit.element.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
           }).then(function (cm) { editors[f.field] = cm; });
         }
         // The field shows the row picked now, by its label from the other table's branch, until another is picked; only a
@@ -213,11 +213,11 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
         // selector, loaded here (rule/26); only a new pick is saved, as for a pick field.
         if (f.kind === 'bundle') {
           needs(['spirit/element/search/bundle.js']).then(function () {
-            if (gone || !(window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.bundle && window.spirit.element.spirit.element.search.bundle.create)) return;
+            if (gone || !(window.spirit.required.spirit.element.search && window.spirit.required.spirit.element.search.bundle && window.spirit.required.spirit.element.search.bundle.create)) return;
             // The bundle by its label, as the node has it (Andy: "why would the bundle picker show \"bundle 2\" for it's
             // selection instead of the fucking label?"); its number only once the node has no such bundle.
             var says = !row[f.field] ? 'Pick a bundle' : bundleLabel[row[f.field]] !== undefined ? bundleLabel[row[f.field]] : bundleHeld[row[f.field]] === false ? 'bundle ' + row[f.field] : '…';
-            bundles[f.field] = window.spirit.element.spirit.element.search.bundle.create(el, { placeholder: says });
+            bundles[f.field] = window.spirit.required.spirit.element.search.bundle.create(el, { placeholder: says });
             if (bundles[f.field] && typeof bundles[f.field].addEventListener === 'function') bundles[f.field].addEventListener('change', save);
           });
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
@@ -242,8 +242,8 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
       if (adding) { container.querySelector('#' + pre + 'addnew').addEventListener('click', addNew); return; }
       var del = container.querySelector('#' + pre + 'delete');
       needs(['spirit/element/armingButton.js']).then(function () {
-        if (gone || !del.isConnected || !window.spirit.element.spirit.element.armingButton) return;
-        window.spirit.element.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove });
+        if (gone || !del.isConnected || !window.spirit.required.spirit.element.armingButton) return;
+        window.spirit.required.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove });
       });
     }
     // THE WHOLE ROW, as the verb takes it (Andy, Q2: "yes, send the whole row for update"): every field as the editor shows

@@ -8,7 +8,7 @@ TextEditor app are gone. It replaces `spirit/element/textView.js`, which is gone
 
 ## API
 
-`window.spirit.element.codeMirror.create(host, { mode, text, words, line, path })` → a Promise of the view
+`window.spirit.required.codeMirror.create(host, { mode, text, words, line, path })` → a Promise of the view
 `{ mode, value(), mark(words), cm }`.
 
 - `mode` `'read'` (the text shown, not editable) or `'edit'` (the text editable). Anything but `'edit'` is read.

@@ -1,6 +1,6 @@
 # spirit/element/contactLabel.js
 
-The contact label: a contact's name by key, as a shell element (`spirit.element.contactLabel`). What it shows
+The contact label: a contact's name by key, as a shell element (`spirit.required.contactLabel`). What it shows
 is the node's caption for the key, never a rule of its own.
 
 ## API

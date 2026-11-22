@@ -6,7 +6,7 @@
 // row an detail elements."), spirit/element/job.js before; its row is ./row.js and its detail ./detail.js.
 // Its contract and its test: ./test/list.md and ./test/list.js.
 //
-//   spirit.element.spirit.element.search.job.list.create(container, { open }) -> { destroy() }
+//   spirit.required.spirit.element.search.job.list.create(container, { open }) -> { destroy() }
 //     open   the mounter's panel stack's open (the app selector's); with none, a stack of its own over its page
 //     face   'dropdown' a closed field opening to the same list (box v123: "every search supports both pane and dropdown");
 //            anything else, the pane it always was. placeholder and pick(row, key), the dropdown's, as probabilitySearch's
@@ -31,7 +31,7 @@
     'spirit/element/search/job/detail.js']
     .map(function (p) { return S.require(p); }).concat([S.require('spirit/job/api.js')]));
 
-  function J() { return S.element.spirit.element.search.job; }
+  function J() { return S.required.spirit.element.search.job; }
 
   function create(container, options) {
     var o = options || {};
@@ -66,10 +66,10 @@
       if (gone) return;
       var box = container.firstElementChild;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
-      if (typeof o.open !== 'function') stack = S.element.spirit.element.panel.create(container, box);
+      if (typeof o.open !== 'function') stack = S.required.spirit.element.panel.create(container, box);
       var data = S.required.spirit.data.job.data;
       var kindOf = J().row.kindOf;
-      list = S.element.spirit.element.search.create(box, {
+      list = S.required.spirit.element.search.create(box, {
         data: data.branch,
         columns: [
           { field: 'latest', label: '' },

@@ -8,7 +8,7 @@ NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it i
 ## Requirements
 
 - `spirit/element/search/api.js` is there and `spirit/element/apiBranchSelector.js` is not; the rename leaves no copy.
-- It registers `spirit.element.spirit.element.search.api.create(container, options)`, and `createApiFamilySelector` and
+- It registers `spirit.required.spirit.element.search.api.create(container, options)`, and `createApiFamilySelector` and
   `createApiBranchSelector` no more. The control is appended to the container and answered (box v23: *"every element
   gets a container and appends itself"*).
 - Nothing of `shellCreateListSearch` (goal/G40.8).

@@ -45,9 +45,9 @@ function under(n) { const out = []; (function walk(x) { x.nodes.concat(x.kids).f
 function world(answer) {
   const w = { calls: [], attached: [], required: [], saved: [], forms: [] };
   const win = {
-    // goal/G43.32: the rowForm stands where an element now finds it, spirit.element.spirit.element; fieldInput, a helper
+    // goal/G43.32: the rowForm stands where an element now finds it, spirit.required.spirit.element; fieldInput, a helper
     // with no create, at spirit.required.spirit.element (below).
-    spirit: { element: { spirit: { element: {
+    spirit: { required: { spirit: { element: {
       // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the
       // real one does, its root appended to the container it is given, its button saying the words it was handed.
       rowForm: { create: function (c, o) {
@@ -96,7 +96,7 @@ function world(answer) {
   };
   win.spirit.ready = Promise.resolve(win.spirit);
   // goal/G43.32: it stands at its path.
-  w.E = win.spirit.element.spirit.element; w.win = win;
+  w.E = win.spirit.required.spirit.element; w.win = win;
   return w;
 }
 const stored = function (name, args) { return { status: 200, body: { ok: true, description: String(args.description).trim() } }; };
@@ -106,7 +106,7 @@ let w, host, el, input, rf, save, said, inSpan, spanText, c, N, r, h2, i2, s2;
 test.run('spirit/element/changeMyDescription.js exists', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
-test.run('it adds changeMyDescription.create to window.spirit.element', 0.2, function () {
+test.run('it adds changeMyDescription.create to window.spirit.required', 0.2, function () {
   w = world(stored);
   return (!!w.E.changeMyDescription && typeof w.E.changeMyDescription.create === 'function') ? true : false;
 }, test.limit.quick);

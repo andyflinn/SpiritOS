@@ -4,7 +4,7 @@ One icon as a row element (goal/G30.21; Andy: *"it's the icon we store or use"*)
 is found by. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The browser file runs
 in node on a bare window; the shared row element and the icon element are stand-ins.
 
-- It stands at `spirit.element.spirit.element.search.icon.row` with a `create`, and loads the shared row element
+- It stands at `spirit.required.spirit.element.search.icon.row` with a `create`, and loads the shared row element
   and the icon element itself (goal/G41.3, G41.23).
 - `create(row)`: kind `icon`, keyed by its glyph (its key when it has no glyph), no actions; fields `glyph` and
   `keywords`; no keywords is none; rows share one index.

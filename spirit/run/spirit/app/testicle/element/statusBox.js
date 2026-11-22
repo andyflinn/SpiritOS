@@ -4,7 +4,7 @@
 // just spirit/app/testicle/element/<element-name>.js", "element/statusBox.js (the monitor row with its status box)"). It was
 // monitorRow in ../element.js. Its test: ./test/statusBox.js.
 //
-//   spirit.element.spirit.app.testicle.element.statusBox.create(container) -> { destroy() }
+//   spirit.required.spirit.app.testicle.element.statusBox.create(container) -> { destroy() }
 //
 // THE MONITOR ROW (goal/G47.1, the box: "testicle's face has a monitor row above the workbench. It shows first the busy status
 // in icon form, 🛌 idle (sleeping), 🚶‍➡️ working, as the server streams it ...; then the last change", "The row has a constant
@@ -82,7 +82,7 @@
     var rows = container.querySelectorAll('.testicle-row');
     // Through the icon element, as every pictograph is drawn (spirit/element/icon.js; the general rules).
     function paint(box, glyph) {
-      var I = S.element && S.element.spirit && S.element.spirit.element.icon;
+      var I = S.required && S.required.spirit && S.required.spirit.element.icon;
       if (!I) return false;
       box.innerHTML = '';
       I.create(box, { glyph: glyph });

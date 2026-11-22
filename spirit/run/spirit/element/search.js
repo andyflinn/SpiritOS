@@ -16,7 +16,7 @@
 //   - Rows drawn by rowElements (goal/G30.18) when the app gives element(row): each row's element paints its own cells
 //     and repaints a field that changes on the stream; destroy drops them all.
 //
-// spirit.element.spirit.element.search.create(container, {   (the probabilitySearch)
+// spirit.required.spirit.element.search.create(container, {   (the probabilitySearch)
 //   server, verb               the family searched and its search verb: the list asks server.verb itself, through the spirit
 //                              object (goal/G43.24; Andy: "every element that accesses ANY api must require them
 //                              themselves"), a family on spirit.ready or one spirit.require(spirit.branchPath(server))
@@ -62,7 +62,7 @@
 //   press(key): what a press on that row does (its fold, its details, else its pick), for a tile part that hands its press on
 //   (goal/G47.4: a tile part decides what a press does; the file search's folder tile opens its folder).
 //
-// spirit.element.spirit.element.search.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
+// spirit.required.spirit.element.search.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, score }.
 (function () {
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
@@ -236,7 +236,7 @@
     // Every spacing of it is shell.css's, the ps-* classes (goal/G47.1, box v109: "style issues like margin, padding and gap do NOT belong in UI scripts").
     var ROW = 'display:flex;flex-wrap:wrap;align-items:center;';
     function iconHtml(glyph) {
-      var I = window.spirit.element && window.spirit.element.spirit.element.icon;
+      var I = window.spirit.required && window.spirit.required.spirit.element.icon;
       if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return '<span>' + esc(glyph) + '</span>';
       var hold = document.createElement('span');
       I.create(hold, { glyph: glyph });
@@ -885,7 +885,6 @@
     }
     return out;
   }
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search.js', { create: create, order: order }); });
   window.spirit.matchRanges = matchRanges;

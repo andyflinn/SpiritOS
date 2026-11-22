@@ -7,7 +7,7 @@ in most attributes."*, and *"the glyph IS the glyph, no key-abstraction."* Its t
 
 ## API
 
-`window.spirit.element.icon.create(container, { glyph, size })` makes the icon, appends it to the container and answers
+`window.spirit.required.icon.create(container, { glyph, size })` makes the icon, appends it to the container and answers
 it (goal/G41.19: *"every element gets a container and appends itself"*).
 
 - `glyph` the glyph itself, shown as it is given.

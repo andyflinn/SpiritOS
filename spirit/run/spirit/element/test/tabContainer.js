@@ -79,13 +79,13 @@ let loadError, T, mounted, tab, c1, tc, ids, iTabs, iContent, c1b, m0, firstMoun
   boxTwo, rowNow, m1, threw, gone, cd, tcd, c4, tc4, contentTag, cls, boxU, RUN_DIR, sheet, face, rule, hexOf, light,
   greens, fw, c5, buttons, rules, weight, tabRules, off, appButton, squared, appRadius, c6, made6, tab6, tc6, rowOf,
   row, mounts, press, content;
-test.run('it loads on window.spirit.element.spirit.element.tabContainer with create', 0.2, function () {
+test.run('it loads on window.spirit.required.spirit.element.tabContainer with create', 0.2, function () {
   global.window = { spirit: { element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   loadError = null;
   try { vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE }); } catch (e) { loadError = e; }
-  T = window.spirit.element.spirit.element.tabContainer;
+  T = window.spirit.required.spirit.element.tabContainer;
   return (!loadError && T && typeof T.create === 'function') ? true : false;
 }, test.limit.quick);
 test.run('it draws the row of tabs, then the content area', 0.2, function () {

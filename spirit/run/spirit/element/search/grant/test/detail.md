@@ -12,7 +12,7 @@ table of the test's own, so nothing of a node is revoked.
 ## Requirements
 
 - `create(host, { row, grants, serves })` answers `{ destroy() }`, placed at
-  `spirit.element.spirit.element.search.grant.detail`.
+  `spirit.required.spirit.element.search.grant.detail`.
 - It says whose grant it is (the row's field the table names as its label) and its path; no path is
   marked deprecated, not even one no server serves (goal/G47.4), and detail.js names no deprecated and takes no `serves`.
 - Revoke is an armingButton: the first press arms it, the second asks the table's `revoke(id, path)` and says what came of

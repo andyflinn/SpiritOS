@@ -44,8 +44,8 @@ test.run('the contact row runs on a window of its own, with the data set and the
   ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); window.spirit.required.spirit.fieldRules = { normalize: function (t) { return String(t || '').trim(); },
     problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
   // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
-  // goal/G43.32: what the row opens stands where an element now finds it, spirit.element.spirit.element.
-  (((window.spirit.element = window.spirit.element || {}).spirit = window.spirit.element.spirit || {})).element = { search: { contact: { detail: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } } } } };
+  // goal/G43.32: what the row opens stands where an element now finds it, spirit.required.spirit.element.
+  (((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {})).element = { search: { contact: { detail: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } } } } };
   // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
   // goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
@@ -65,7 +65,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
   window.spirit.required.spirit.data.homeNode(NODE_KEY);
   load(path.join(JS, 'row.js'));
   load(path.join(JS, 'search', 'contact', 'row.js'));
-  C = window.spirit.element.spirit.element.search.contact.row;
+  C = window.spirit.required.spirit.element.search.contact.row;
   D = window.spirit.required.spirit.data;
   CD = ((window.spirit.required.spirit.data || {}).contact || {}).data;
   // What the row asked as it loaded; the runner's own asks after this test are not the row's.
@@ -230,9 +230,9 @@ test.run('a destroyed row leaves the dispatch; the others stay', 0.2, function (
 // the label's editor checks the rule before it asks
 test.run('a name the rule refuses is refused here, and not asked', 0.2, async function () {
   if (!C) return false;
-  labelField = (function () { let f = null; const p = window.spirit.element.spirit.element.row.create;
-    window.spirit.element.spirit.element.row.create = function (parts) { f = parts.fields.filter(function (x) { return x.name === 'label'; })[0]; return p(parts); };
-    C.create({ key: 'K13', keep: true }); window.spirit.element.spirit.element.row.create = p; return f; }());
+  labelField = (function () { let f = null; const p = window.spirit.required.spirit.element.row.create;
+    window.spirit.required.spirit.element.row.create = function (parts) { f = parts.fields.filter(function (x) { return x.name === 'label'; })[0]; return p(parts); };
+    C.create({ key: 'K13', keep: true }); window.spirit.required.spirit.element.row.create = p; return f; }());
   const n = asked.length;
   const bad = await labelField.edit({ key: 'K13' }, '   ');
   return bad.ok === false && bad.error === 'a name is needed' && asked.length === n ? true : false;

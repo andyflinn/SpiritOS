@@ -16,7 +16,7 @@
 // checks spirit/fieldRules.js (spirit.required.spirit.fieldRules, the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
 // once.
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   if (window.spirit.require) window.spirit.require('spirit/element/row.js');
   // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -114,7 +114,7 @@
           close: function () { if (layer) layer.hide(); },
           setTitle: function (text) { if (layer) layer.set({ label: String(text || '') }); },
         };
-        return window.spirit.element.spirit.element.search.contact.detail.create(pane, { key: key, layer: here, relay: kind === 'relay' });
+        return window.spirit.required.spirit.element.search.contact.detail.create(pane, { key: key, layer: here, relay: kind === 'relay' });
       });
     } })).then(function (l) { layer = l; return l; });
   }

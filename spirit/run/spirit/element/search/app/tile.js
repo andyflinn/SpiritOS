@@ -4,13 +4,13 @@
 // tile mode. Its tile.js draws its tile and decides what a press does"). The app search hands it to the shared search as its
 // tile part (./list.js). Its contract and its test: ./test/tile.md and ./test/tile.js.
 //
-//   spirit.element.spirit.element.search.app.tile.create(row, { press(row, key) }) -> the tile's node; row { key, label, icon }
+//   spirit.required.spirit.element.search.app.tile.create(row, { press(row, key) }) -> the tile's node; row { key, label, icon }
 //
 // The tile as the app search always drew it (goal/G43.6, Andy: "A tile: its image, the relevance, its label."): the app's icon
 // through the icon element, a tile-bar the shared search draws the relevance into, and the app's label. A press on it is
 // press(row, key): the app search picks the app, as a press on its row does.
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   window.spirit.require('spirit/element/icon.js');
 

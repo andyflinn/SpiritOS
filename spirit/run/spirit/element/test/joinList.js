@@ -45,8 +45,7 @@ function world(join) {
   };
   w.publish = function (id, j) { w.fns.slice().forEach(function (fn) { fn(id, j); }); };
   win.spirit = {
-    element: { spirit: { element: {}, app: {} } },
-    required: { spirit: { data: { job: { data: jobs } } } },
+    required: { spirit: { element: {}, app: {}, data: { job: { data: jobs } } } },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
     ready: Promise.resolve({
       fs: { loadFile: function () { return Promise.resolve(fs.readFileSync(STEPS, 'utf8')); } },
@@ -62,7 +61,7 @@ function world(join) {
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
-  w.L = win.spirit.element.spirit.element.joinList;
+  w.L = win.spirit.required.spirit.element.joinList;
   return w;
 }
 
@@ -76,7 +75,7 @@ test.run('join.json has its steps', 0.2, function () {
   try { steps = JSON.parse(fs.readFileSync(STEPS, 'utf8')).steps || []; } catch (e) { steps = []; }
   return (steps.length > 1) ? true : false;
 }, test.limit.quick);
-test.run('it stands at spirit.element.spirit.element.joinList with create', 0.2, function () {
+test.run('it stands at spirit.required.spirit.element.joinList with create', 0.2, function () {
   // it places itself, and draws the steps the spirit job says
   w = world({ seated: false, contact: false });
   return (!!w.L && typeof w.L.create === 'function') ? true : false;

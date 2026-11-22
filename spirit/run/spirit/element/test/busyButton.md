@@ -9,10 +9,10 @@ have no progress bar ability..."*. Its test is `./busyButton.js`.
 
 Made the way armingButton is (`spirit/element/armingButton.js`):
 
-`window.spirit.element.busyButton.attach(button, { run })` makes a button already in the page a busy one, and answers
+`window.spirit.required.busyButton.attach(button, { run })` makes a button already in the page a busy one, and answers
 it. Its label is its own text.
 
-`window.spirit.element.busyButton.create(container, { label, run, title, className })` is `attach` on a new
+`window.spirit.required.busyButton.create(container, { label, run, title, className })` is `attach` on a new
 `<button type="button">`, its label, title and class put on it, appended to the container (goal/G41.19: *"every element
 gets a container and appends itself"*).
 

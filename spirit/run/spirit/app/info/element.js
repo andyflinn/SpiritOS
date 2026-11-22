@@ -7,7 +7,7 @@
 //   and on G43.24: "no i want those apps to basically be wrappers for spirit/element/ things....", "box that these apps must
 //   mount in the new format of the new shell."
 //
-//   spirit.element.spirit.app.info.element.create(container, { open }) -> { destroy() }
+//   spirit.required.spirit.app.info.element.create(container, { open }) -> { destroy() }
 //
 // A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/file/element.js is: it loads nodeInfo (spirit/element/nodeInfo.js),
 // which holds all of Info, and mounts it, handing on the stack its mounter opens layers in.
@@ -23,7 +23,7 @@
     container.innerHTML = '';
     parts.then(function () {
       if (gone) return;
-      made = S.element.spirit.element.nodeInfo.create(container, { open: o.open });
+      made = S.required.spirit.element.nodeInfo.create(container, { open: o.open });
     }, function () { if (!gone) container.textContent = 'Info could not be loaded.'; });
     return {
       destroy: function () {

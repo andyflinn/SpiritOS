@@ -27,12 +27,12 @@ test.run('the row runs on a bare window, with a stand-in for the shared row elem
   global.window.spirit.require = function (p) { required.push(String(p)); return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  const E = global.window.spirit.element.spirit.element;
+  const E = global.window.spirit.required.spirit.element;
   E.row = { index: function () { indexes += 1; return { n: indexes }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
   R = E.search && E.search.api && E.search.api.row;
   return true;
 }, test.limit.quick);
-test.run('it places itself on spirit.element at its path, with a create', 0.2, function () {
+test.run('it places itself on spirit.required at its path, with a create', 0.2, function () {
   return R && typeof R.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it loads the shared row element itself', 0.2, function () {

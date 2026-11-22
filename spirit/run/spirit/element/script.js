@@ -7,7 +7,7 @@
 //
 // A THIN SELECTOR OVER THE APP LIST, spirit/element/search/app.js, WHICH IT LOADS ITSELF (rule/26).
 //
-//   spirit.element.spirit.element.script.create(container, options) -> root
+//   spirit.required.spirit.element.script.create(container, options) -> root
 //     root.value   the chosen app's key, '' while none is
 //     root.row     the chosen app, null while none is
 //     one bubbling `change` on a pick, which shows that app's detail under the list; refresh() asks again
@@ -31,9 +31,9 @@
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
   // AN APP'S MAIN ELEMENT BY THE APP'S NAME (goal/G43.32, rule 4): spirit/app/<name>/element.js, placed at
-  // spirit.element.spirit.app.<name>.element.
+  // spirit.required.spirit.app.<name>.element.
   function appElementOf(name) {
-    var app = window.spirit && window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app;
+    var app = window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.app;
     var e = app && app[String(name)] && app[String(name)].element;
     return e && typeof e.create === 'function' ? e : null;
   }
@@ -112,7 +112,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     function detailReady() { return window.spirit.require('spirit/element/search/app/detail.js'); }
     function panel(row) {
       open('detail', row, function (pane, closed) {
-        return detailReady().then(function () { return closed() ? null : window.spirit.element.spirit.element.search.app.detail.create(pane, { row: row, panel: true }); });
+        return detailReady().then(function () { return closed() ? null : window.spirit.required.spirit.element.search.app.detail.create(pane, { row: row, panel: true }); });
       });
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
@@ -128,7 +128,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       detailReady().then(function () {
         if (gone || root.row !== asked) return;
         clearDetail();
-        detail = window.spirit.element.spirit.element.search.app.detail.create(detailBox, { row: row });
+        detail = window.spirit.required.spirit.element.search.app.detail.create(detailBox, { row: row });
       });
     }
     function onFace(now) {
@@ -140,8 +140,8 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     Promise.all([window.spirit.require('spirit/element/search/app.js'), window.spirit.require('spirit/element/panel.js')]).then(function () {
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
-      stack = window.spirit.element.spirit.element.panel.create(root, listBox);
-      made = window.spirit.element.spirit.element.search.app.create(listBox, { face: face, onFace: onFace, pick: pick,
+      stack = window.spirit.required.spirit.element.panel.create(root, listBox);
+      made = window.spirit.required.spirit.element.search.app.create(listBox, { face: face, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
         // The keys left out of every face, app itself always (goal/G43.18; Andy: "the shell should exclude itself completely
         // from the app-list").

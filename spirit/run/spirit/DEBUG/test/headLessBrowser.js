@@ -21,7 +21,6 @@ async function mountIn(page, place) {
   const box = { id: 'mount-box' };
   const calls = { required: [], started: 0, created: [], mounted: [], rendered: 0, destroyed: 0 };
   const sp = {
-    element: {},
     start: function () { calls.started += 1; return Promise.resolve(); },
     require: function (p) { calls.required.push(p); place(sp, calls); return Promise.resolve(); },
     outcome: function (v) { return Promise.resolve(v).then(function (b) { return { status: 200, body: b }; }); },
@@ -75,11 +74,11 @@ test.run('/spirit.js comes before the inline script', 0.2, function () {
   return page.body.indexOf('src="/spirit.js"') < page.body.indexOf('<script>\n') || false;
 }, test.limit.quick);
 
-// an element (goal/G43.32): spirit.element.<its path>.create(box), no options
+// an element (goal/G43.32): spirit.required.<its path>.create(box), no options
 test.run('an element placed at its path is mounted', 0.2, async function () {
   if (!page) return false;
   el = await mountIn(page.body, function (sp, calls) {
-    sp.element.spirit = { element: { zzThing: { create: function () { calls.created.push(Array.prototype.slice.call(arguments)); return { destroy: function () { calls.destroyed += 1; } }; } } } };
+    sp.required = { spirit: { element: { zzThing: { create: function () { calls.created.push(Array.prototype.slice.call(arguments)); return { destroy: function () { calls.destroyed += 1; } }; } } } } };
   });
   return !!el.report || false;
 }, test.limit.quick);
@@ -126,5 +125,5 @@ test.run('a file that places no element fails, and says where it looked', 0.2, a
   if (!page) return false;
   none = await mountIn(page.body, function () {});
   const r = none.report || {};
-  return (r.state === 'failed' && /spirit\.element\.spirit\.element\.zzThing/.test(r.error)) || false;
+  return (r.state === 'failed' && /spirit\.required\.spirit\.element\.zzThing/.test(r.error)) || false;
 }, test.limit.quick);

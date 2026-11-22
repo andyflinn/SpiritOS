@@ -2,7 +2,7 @@
 // spirit/run/spirit/element/search/app/detail.js
 // ONE APP'S DETAIL (goal/G43.2). Its contract and its test: ./test/detail.md and ./test/detail.js.
 //
-//   spirit.element.spirit.element.search.app.detail.create(host, { row, panel }) -> { destroy() }
+//   spirit.required.spirit.element.search.app.detail.create(host, { row, panel }) -> { destroy() }
 //     panel true: the form under a title bar, which says the icon and label already.
 //
 // Its icon and label, the same row element a list row is, so nothing has to keep the two in sync (G30.18), and its
@@ -42,16 +42,16 @@
     box.appendChild(runBox);
     host.appendChild(box);
     // THE ICON AND THE LABEL (goal/G43.15, Q4): elements of their own, so an app's own face can show them too.
-    var icon = S.element.spirit.element.search.app.changeAppIcon.create(iconBox, { key: key });
-    var label = S.element.spirit.element.search.app.changeAppLabel.create(labelBox, { key: key });
+    var icon = S.required.spirit.element.search.app.changeAppIcon.create(iconBox, { key: key });
+    var label = S.required.spirit.element.search.app.changeAppLabel.create(labelBox, { key: key });
     // THE SWITCHES (goal/G43.15): Activate/Deactivate, DEBUG right after it (Q1); each hides itself. The allow-as-shell row went
     // (goal/G43.18, box v29: its element is deleted, <name>.json alone says whether an app may be a shell).
-    var active = S.element.spirit.element.search.app.rowFormAppActive.create(activeBox, { key: key });
-    var debug = S.element.spirit.element.search.app.serverDEBUG.create(debugBox, { key: key });
+    var active = S.required.spirit.element.search.app.rowFormAppActive.create(activeBox, { key: key });
+    var debug = S.required.spirit.element.search.app.serverDEBUG.create(debugBox, { key: key });
     // RUN IS THE TASK ROW (goal/G43.21; Andy, the box: "the app detail will show a run button."; goal/G47.1: "yes make it an
     // improvement on the current run-rowForm in app and isolate it as spirit/element/monitor/task.js"): it shows only for an app
     // whose <name>.json says node.run, and offers Run, Cancel or Delete as its job stands.
-    var task = S.element.spirit.element.monitor.task.create(runBox, { id: 'spirit.app.' + key });
+    var task = S.required.spirit.element.monitor.task.create(runBox, { id: 'spirit.app.' + key });
     return { destroy: function () { task.destroy(); icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); host.innerHTML = ''; } };
   }
 
@@ -59,7 +59,7 @@
     // No app, no detail, and nothing to listen for.
     if (!opts || !opts.row) return { destroy: function () { host.innerHTML = ''; } };
     if (opts.panel) return createPanel(host, opts.row);
-    var row = window.spirit.element.spirit.element.search.app.row.create(opts.row);
+    var row = window.spirit.required.spirit.element.search.app.row.create(opts.row);
     var box = document.createElement('div');
     box.className = 'app-detail';
     var hosts = {};
@@ -74,7 +74,7 @@
     var button = document.createElement('span');
     button.style.marginLeft = '0.5em';
     box.appendChild(button);
-    var installer = window.spirit.element.spirit.element.appInstaller.create(button, { path: 'spirit/app/' + key + '/' + key + '.js' });
+    var installer = window.spirit.required.spirit.element.appInstaller.create(button, { path: 'spirit/app/' + key + '/' + key + '.js' });
     host.appendChild(box);
     return {
       destroy: function () { installer.destroy(); row.destroy(); host.innerHTML = ''; },

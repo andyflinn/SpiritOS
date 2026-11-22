@@ -22,7 +22,7 @@ const ROW = 'spirit/app/agent/element/table/job/elementRow.js';
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.element); };
+const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
 
 // ── the world: a window of its own, the shared element and the row editor stand-ins ──
 // W.tables: each shared table made, { container, o, refreshed, destroyed }. W.rows: each row editor made. W.held: while
@@ -32,7 +32,7 @@ function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, branchPath: branchPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
-  // As their own files place themselves: by the one helper, at spirit.element.<their path>.
+  // As their own files place themselves: by the one helper, at spirit.required.<their path>.
   helper(global.window.spirit, SHARED, { create: function (container, o) {
     const t = { container: container, o: o, refreshed: 0, destroyed: false, refresh: function () { t.refreshed += 1; }, destroy: function () { t.destroyed = true; } };
     W.tables.push(t); return t;
@@ -59,7 +59,7 @@ test.run('before it runs, the page has no job table element', 0.2, function () {
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.job.elementTable') === undefined || false;
 }, test.limit.quick);
-test.run('it places the job table\'s elementTable on spirit.element by its path, with create', 0.2, async function () {
+test.run('it places the job table\'s elementTable on spirit.required by its path, with create', 0.2, async function () {
   if (!W.up) return false;
   load(FILE);
   await settle();

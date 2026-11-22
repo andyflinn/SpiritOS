@@ -7,7 +7,7 @@ rows by a column sort or in arrival order.
 - One call on the wire at a time.
 - The server's answers only feed the cache.
 - It draws a pane, or a dropdown that opens to the same pane.
-- It loads on `window.spirit.element.search` (the probabilitySearch; goal/G43.18, Q5). It also sets `window.spirit.matchRanges`, the one marking rule.
+- It loads on `window.spirit.required.search` (the probabilitySearch; goal/G43.18, Q5). It also sets `window.spirit.matchRanges`, the one marking rule.
 
 It reads `spirit.required.spirit.search.object` (`probabilityStringObjectMatch`, `measureObject`) and `spirit.required.spirit.listLimiter` (`createProbabilityBucket`), and nothing else of
 the spirit.

@@ -65,7 +65,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       '<div class="job-start-error sp-face-out"></div>';
     // ITS ASK IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, the mount's save, so Ask is busy until the relay answers.
-    var f = window.spirit.element.spirit.element.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask', press: function () {
+    var f = window.spirit.required.spirit.element.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask', press: function () {
       var go = box._spFace && box._spFace.press;
       return typeof go === 'function' ? go() : null;
     } });
@@ -173,7 +173,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     });
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19; goal/G41.27, the general UI test): create(container, options) mounts the form
   // and answers its destroy, which lets the stream go and leaves the container empty.
   function create(container, options) {

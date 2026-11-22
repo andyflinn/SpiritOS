@@ -48,7 +48,7 @@ test.after(function () {
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
 });
-test.run('it adds icon, with a create taking a container and options, to window.spirit.element', 0.2, function () {
+test.run('it adds icon, with a create taking a container and options, to window.spirit.required', 0.2, function () {
   if (!m) return false;
   return (m.made) ? true : false;
 }, test.limit.quick);

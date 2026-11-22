@@ -39,10 +39,10 @@ test.run('the detail runs on a bare window, the real api tree reader beside it',
   ((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}); (global.window.spirit.required.spirit.client = global.window.spirit.required.spirit.client || {}); global.window.spirit.required.spirit.client.apiTreeIndex = require(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'));
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  D = global.window.spirit.element.spirit.element.search && global.window.spirit.element.spirit.element.search.api && global.window.spirit.element.spirit.element.search.api.detail;
+  D = global.window.spirit.required.spirit.element.search && global.window.spirit.required.spirit.element.search.api && global.window.spirit.required.spirit.element.search.api.detail;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.element.spirit.element.search.api.detail, with a create', 0.2, function () {
+test.run('it places itself at spirit.required.spirit.element.search.api.detail, with a create', 0.2, function () {
   return D && typeof D.create === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it loads the api tree reader itself', 0.2, function () {

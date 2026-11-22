@@ -78,7 +78,7 @@ const view = function (id) {
     ' rows: Array.prototype.map.call(b.querySelectorAll("tbody tr"), function (r) { return { key: r.getAttribute("data-key"), cells: Array.prototype.map.call(r.querySelectorAll("td"), function (td) { return String(td.innerText || "").trim(); }) }; }) }; }())');
 };
 const mount = function (id, opts) {
-  return c.evaluate('(function () { var E = ((((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle || {}).detail); if (!E || typeof E.create !== "function") return false;' +
+  return c.evaluate('(function () { var E = ((((((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle || {}).detail); if (!E || typeof E.create !== "function") return false;' +
     ' var b = document.createElement("div"); b.id = ' + JSON.stringify(id) + '; document.body.appendChild(b); window[' + JSON.stringify(id) + '] = E.create(b, ' + JSON.stringify(opts) + ');' +
     ' return window[' + JSON.stringify(id) + '] && typeof window[' + JSON.stringify(id) + '].destroy === "function" ? "made" : false; }())');
 };

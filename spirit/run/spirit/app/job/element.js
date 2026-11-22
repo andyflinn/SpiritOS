@@ -3,7 +3,7 @@
 // THE JOB MONITOR, AN APP OF spirit/app/ (goal/G43.29; Andy: "fill in the box, same icons, shell:mount only."), moved here
 // from shell/job/. Its contract and its test: ./test/element.md and ./test/element.js.
 //
-//   spirit.element.spirit.app.job.element.create(container, { open }) -> { destroy() }
+//   spirit.required.spirit.app.job.element.create(container, { open }) -> { destroy() }
 //
 // A WRAPPER (Andy: "a wrapper for separate spirit/element/ files"): it only mounts. What it draws is the job search,
 // spirit/element/search/job.js (goal/G43.32), whose list's rows open the job's detail over it; it loads that and draws it
@@ -16,7 +16,7 @@
     create: function (container, options) {
       var made = null;
       var gone = false;
-      Promise.resolve(face).then(function () { if (!gone) made = S.element.spirit.element.search.job.create(container, { open: (options || {}).open }); });
+      Promise.resolve(face).then(function () { if (!gone) made = S.required.spirit.element.search.job.create(container, { open: (options || {}).open }); });
       return { destroy: function () { gone = true; if (made) made.destroy(); made = null; } };
     },
   }); });

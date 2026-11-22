@@ -3,7 +3,7 @@
 // THE SUITE LIST, AN ELEMENT (goal/G47.1, the UI cycle): the suites of one production file, what testicle's file detail
 // draws through the suite selector (../suite.js). Its row is ./row.js; no row opens a detail.
 //
-//   spirit.element.spirit.app.testicle.element.search.suite.list.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
+//   spirit.required.spirit.app.testicle.element.search.suite.list.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
 //     script   the production script whose suite rows it lists, scoped to run://; '' for every suite, each once (goal/G47.1,
 //              the box: "with the script selector blank (all scripts), the suite selector lists every suite, each once")
 //     face, placeholder, all, pick   handed to the search as they are: the testicle search's suite selector draws it as a
@@ -47,7 +47,7 @@
           return b;
         });
       };
-      list = S.element.spirit.element.search.create(container.firstElementChild, {
+      list = S.required.spirit.element.search.create(container.firstElementChild, {
         data: data.branch('suite'),
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): testicle.suite.search for this file.
         search: function (args) {
@@ -66,7 +66,7 @@
         // deleted, leaves the list by itself (goal/G47.1, the box: "Every element of testicle's face updates itself in
         // response to the server stream").
         filters: [{ name: 'script', when: function () { return false; }, test: function (row) { return row && row.script === script && !row.deleted ? 1 : 0; } }],
-        element: function (row) { return S.element.spirit.app.testicle.element.search.suite.row.create(row); },
+        element: function (row) { return S.required.spirit.app.testicle.element.search.suite.row.create(row); },
         face: o.face,
         placeholder: o.placeholder,
         all: o.all,

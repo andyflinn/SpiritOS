@@ -6,7 +6,7 @@ Andy: *"i thought you'd make the changeAppLabel and changeAppIcon form elements 
 
 ## Requirements
 
-- `spirit.element.spirit.element.search.app.changeAppLabel.create(host, { key })`, loaded through `spirit.require`, answers `{ destroy }`.
+- `spirit.required.spirit.element.search.app.changeAppLabel.create(host, { key })`, loaded through `spirit.require`, answers `{ destroy }`.
 - One rowForm, as the detail draws it: ✏️, the word Label, a box holding the app's label, and a Change button.
 - Change writes the box's label through the app family's `labelApp`, and the app's row says it. Change is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): pressed, it stays busy, disabled with its turning mark, while the node is asked.
 - A label changed elsewhere shows in the box, with no reload.

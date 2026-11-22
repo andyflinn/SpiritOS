@@ -3,7 +3,7 @@
 // ONE SHELL ELEMENT: the contact label, a contact's name by key.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
-//   so one file per element, each adding itself to window.spirit.element,
+//   so one file per element, each adding itself to window.spirit.required,
 //   which the shell hands to apps at mount: boot.js (spirit/shell/boot.js) as api.ui.element.
 //
 // ── WHAT IT SHOWS IS THE NODE'S, NOT ITS OWN (goal/G4.13) ─────────────
@@ -159,7 +159,6 @@
     return root;
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/contactLabel.js', { create: function (container, options) { var root = createContactLabel(options); container.appendChild(root); return root; } }); });

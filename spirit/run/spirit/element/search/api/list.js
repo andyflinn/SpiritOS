@@ -12,7 +12,7 @@
 //   (fs, job, relay ...) beside the apps', so the list holds every family the grant system sees (Andy, 2026-10-20: "the grant
 //   system looks at apiDoors whole damn table of families and verbs").
 //
-//   spirit.element.spirit.element.search.api.list.create(container, options) -> root
+//   spirit.required.spirit.element.search.api.list.create(container, options) -> root
 //     root.value   the chosen family's name; root.tree the api answer it was painted from, so the verb half can read one
 //                  family's verbs without asking again. One bubbling `change` once value is set; `tree` once a tree is in.
 //     root.load(fn, party)  lists another party's tree, fn() a promise of it, kept under party (a peer's key or a relay's
@@ -87,7 +87,7 @@
     // THE LIST IS MADE FOR ITS SOURCE (goal/G47.1, wsl's red: a party's tree loaded later still drew the node's own branch):
     // the shared search takes its branch as it is made, so a load for another party makes the list again, on that party's.
     function makeList() {
-      var E = window.spirit.element.spirit.element;
+      var E = window.spirit.required.spirit.element;
       list = E.search.create(host, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a server…'),

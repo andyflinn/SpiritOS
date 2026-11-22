@@ -8,7 +8,7 @@
 // "a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it." Its contract and
 // its test: ./test/rowForm.md and ./test/rowForm.js.
 //
-//   spirit.element.spirit.element.rowForm.create(container, { icon, button, press }) -> { root, span, button }
+//   spirit.required.spirit.element.rowForm.create(container, { icon, button, press }) -> { root, span, button }
 //     icon the glyph, button the button's words. The mounter drops its form elements into span. The form sends nothing.
 //     ITS BUTTON IS ITS OWN TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
 //     comes"): it is a busyButton (./busyButton.js), so a press marks it busy and calls press(), the mounter's request, and
@@ -20,7 +20,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the icon element, asked as this file runs, so whoever requires the
   // form is answered once it is in.
   if (window.spirit && typeof window.spirit.require === 'function') { window.spirit.require('spirit/element/icon.js'); window.spirit.require('spirit/element/busyButton.js'); }
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
 
   function create(container, options) {
     var o = options || {};

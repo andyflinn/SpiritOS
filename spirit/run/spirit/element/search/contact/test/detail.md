@@ -1,6 +1,6 @@
 # spirit/element/search/contact/detail.js
 
-One contact, as a panel (goal/G43.18; it was a page on the navigation, goal/G40.8): `window.spirit.element.search.contact.detail.create(box, { key, layer })` draws it, with no `open` of its own,
+One contact, as a panel (goal/G43.18; it was a page on the navigation, goal/G40.8): `window.spirit.required.search.contact.detail.create(box, { key, layer })` draws it, with no `open` of its own,
 and it reads that row by `contact.get`. What it shows: the person's facts, My Label, and the buttons that decide about
 them, Accept for a row not kept, Unblock for a blocked one, Block otherwise, and Forget for everybody.
 
@@ -60,7 +60,7 @@ Andy: *"KILL those fields in shadow-roll, KILL the functionality, KILL it!"*
 
 One relay (goal/G41.32), drawn by the one contact detail since goal/G43.32 (Andy: *"the contact list already knows the difference
 between contact types. so should the detail panel."*); `spirit/element/search/contact/relayPanel.js` until then. Its test is
-the relay part of `./detail.js` (once `./detail-relay.js`). `spirit.element.spirit.element.search.contact.detail.create(container, { key, layer, relay: true })`, a panel with no `open`
+the relay part of `./detail.js` (once `./detail-relay.js`). `spirit.required.spirit.element.search.contact.detail.create(container, { key, layer, relay: true })`, a panel with no `open`
 of its own (goal/G43.18; it was a page on the navigation, goal/G40.8). It reads that relay's row by `spirit.relay.status` as it is drawn, and listens after
 that: the relayRowStream section below. Its panels fold; the owner's panels (Memory and disc, Invites)
 sit in one more fold, "Managing my relay".

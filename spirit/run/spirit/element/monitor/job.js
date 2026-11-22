@@ -4,7 +4,7 @@
 // replaces spirit/element/monitor/spirit.js: it lays out the six job tiles. The monitor app's wrapper mounts it, and the old
 // file goes."). Its contract and its test: ./test/job.md and ./test/job.js.
 //
-//   spirit.element.spirit.element.monitor.job.create(container) -> { destroy() }
+//   spirit.required.spirit.element.monitor.job.create(container) -> { destroy() }
 //
 // The six, in this order, each an element of its own in ./job/ that fills itself from the node's spirit job: memory, CPU,
 // uptime, event loop delay (p99), connections, jobs running. It reads nothing itself; each tile watches what it shows.
@@ -24,7 +24,7 @@
     container.appendChild(root);
     parts.then(function () {
       if (gone) return;
-      var J = S.element.spirit.element.monitor.job;
+      var J = S.required.spirit.element.monitor.job;
       made = TILES.map(function (n) { return J[n].create(root); });
     });
     return {

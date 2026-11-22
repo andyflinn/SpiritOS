@@ -6,5 +6,5 @@ Its test is `./introSpector.js`. The box (goal/G43.29, v3): *"spirit/app/introSp
 
 - `introSpector.json`: an icon, today 👓 (an icon; which one is Andy's and not tested, goal/G47.1), its name introSpector; intrinsic; shell mount true, tile true; node mount false, nothing run. Its folder holds `introSpector.js`, no `api.js` and no `data.js`.
 - `introSpector.js` brings `spirit/element/introSpector.js` and draws nothing itself: no innerHTML, no old shell helper (activateApp, callDialog, factRow).
-- It registers `spirit.element.spirit.app.introSpector.element.create(container, { open })`, which draws its element and answers `{ destroy }`; destroy empties its container.
+- It registers `spirit.required.spirit.app.introSpector.element.create(container, { open })`, which draws its element and answers `{ destroy }`; destroy empties its container.
 - Its tile is there, intrinsic and on, and opens it.

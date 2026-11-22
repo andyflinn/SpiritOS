@@ -184,8 +184,8 @@ function personWorld(person, relayRows) {
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     ready: Promise.resolve(families),
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
-    // goal/G43.32: the armingButton stands where an element now finds it, spirit.element.spirit.element.
-    element: { spirit: { element: {
+    // goal/G43.32: the armingButton stands where an element now finds it, spirit.required.spirit.element.
+    required: { spirit: { element: {
       armingButton: {
         attach: function (button, opts) { return record('attach', button, opts); },
         create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
@@ -200,7 +200,7 @@ function personWorld(person, relayRows) {
   win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.spirit.element.search.contact.detail.create(box, { key: key, layer: layer }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.required.spirit.element.search.contact.detail.create(box, { key: key, layer: layer }); };
   vm.createContext(win);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -258,7 +258,6 @@ function relayWorld(rows, relayStatus) {
     // The stream, for its report on the relay event (goal/G41.32).
     event: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
     // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
-    required: { spirit: { ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P }, data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } } } },
     // The contact family's cache (goal/G41.28): the contact api.js brings its data.js, as the real one does (goal/G47.1:
     // "every api.js requires it's companion data.js"); here that data stands in as spirit.required.spirit.data.contact.data, whose rows
     // the page watches. A data.js asked for directly is only recorded.
@@ -282,8 +281,8 @@ function relayWorld(rows, relayStatus) {
         return got;
       });
     },
-    // goal/G43.32: the armingButton stands where an element now finds it, spirit.element.spirit.element.
-    element: { spirit: { element: {
+    // goal/G43.32: the armingButton stands where an element now finds it, spirit.required.spirit.element.
+    required: { spirit: { ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P }, data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } }, element: {
       armingButton: {
         attach: function (button, opts) { return record('attach', button, opts); },
         create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
@@ -298,7 +297,7 @@ function relayWorld(rows, relayStatus) {
   win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.spirit.element.search.contact.detail.create(box, { key: key, layer: layer, relay: true }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.required.spirit.element.search.contact.detail.create(box, { key: key, layer: layer, relay: true }); };
   vm.createContext(win);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -379,7 +378,7 @@ test.run('The contact detail loads the arming button element itself through the 
 }, test.limit.quick);
 test.run('The contact detail is an element made by create, with no open of its own, so it opens as a panel', 0.2, function () {
   if (!P.w) return false;
-  const E = P.w.win.spirit.element.spirit.element.search.contact.detail;
+  const E = P.w.win.spirit.required.spirit.element.search.contact.detail;
   if (E && typeof E.create === 'function') P.E = E;
   return (!!E && typeof E.create === 'function' && E.open === undefined) || false;
 }, test.limit.quick);
@@ -571,7 +570,7 @@ test.run('A person\'s detail sends its title to the layer it is drawn in', 0.2, 
 test.run('mounted with its key alone, no layer, it reads the row and draws it', 0.2, async function () {
   const w8 = personWorld({ key: 'K8', publicLabel: 'carol' }, []);
   const box8 = w8.document.createElement('div'); w8.document.body.appendChild(box8); w8.box = box8;
-  w8.win.spirit.element.spirit.element.search.contact.detail.create(box8, { key: 'K8' });
+  w8.win.spirit.required.spirit.element.search.contact.detail.create(box8, { key: 'K8' });
   await settle();
   P.w8 = w8;
   return (w8.calls.some(function (c) { return c.name === 'contact.get' && c.body.key === 'K8'; }) && /carol/.test(box8.innerHTML)) || false;
@@ -617,7 +616,7 @@ test.run('For a relay, the detail loads the arming button element itself through
 }, test.limit.quick);
 test.run('For a relay, the detail is the same element made by create, told it is a relay, with no open of its own, so it opens as a panel', 0.2, function () {
   if (!L.w) return false;
-  const E = L.w.win.spirit.element.spirit.element.search.contact.detail;
+  const E = L.w.win.spirit.required.spirit.element.search.contact.detail;
   if (E && typeof E.create === 'function') L.E = E;
   return (!!E && typeof E.create === 'function' && E.open === undefined) || false;
 }, test.limit.quick);
@@ -855,7 +854,7 @@ test.run('Holding a relay\'s row in the cache, the detail draws the relay\'s det
   const wr = relayWorld(OWNED, OWNED_SAID);
   held(wr, true);
   const boxR = wr.document.createElement('div'); wr.document.body.appendChild(boxR);
-  wr.win.spirit.element.spirit.element.search.contact.detail.create(boxR, { key: 'RK', layer: wr.layer });
+  wr.win.spirit.required.spirit.element.search.contact.detail.create(boxR, { key: 'RK', layer: wr.layer });
   await settle();
   return (/nd-/.test(boxR.innerHTML) && !wr.calls.some(function (c) { return c.name === 'contact.get'; })) || false;
 }, test.limit.quick);
@@ -863,7 +862,7 @@ test.run('Holding a person\'s row in the cache, the detail draws a person\'s det
   const wp = relayWorld(OWNED, OWNED_SAID);
   held(wp, false);
   const boxP = wp.document.createElement('div'); wp.document.body.appendChild(boxP);
-  wp.win.spirit.element.spirit.element.search.contact.detail.create(boxP, { key: 'KP', layer: wp.layer });
+  wp.win.spirit.required.spirit.element.search.contact.detail.create(boxP, { key: 'KP', layer: wp.layer });
   await settle();
   return wp.calls.some(function (c) { return c.name === 'contact.get' && c.body && c.body.key === 'KP'; }) || false;
 }, test.limit.quick);
@@ -1023,7 +1022,7 @@ test.run('In Chrome the contact detail is mounted for the relay\'s key, told it 
   await chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
   await sleep(3000);
-  const mounted = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detail.js")).then(function () { var E = window.spirit.element.spirit.element.search.contact.detail; if (!E || typeof E.create !== "function") return false; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function () { return false; })');
+  const mounted = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detail.js")).then(function () { var E = window.spirit.required.spirit.element.search.contact.detail; if (!E || typeof E.create !== "function") return false; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function () { return false; })');
   if (mounted !== 'ok') return false;
   S.chrome = chrome;
   return true;
@@ -1178,7 +1177,7 @@ test.run('The face form has a function saying whether it has relays to offer', 0
   await S.chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
   await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
   await sleep(3000);
-  S.check = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/faceForm.js")).then(function () { var F = window.spirit.element.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
+  S.check = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/faceForm.js")).then(function () { var F = window.spirit.required.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
   return !!S.check || false;
 }, test.limit.slow);
 test.run('The face form offers a faceable relay, alone or beside one without 😏', 0.2, function () {
@@ -1271,7 +1270,7 @@ test.run('taking away a 😏 it does not have changes nothing', 0.2, async funct
 test.run('the panel draws for it', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Far) return false;
-  const farPanel = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detail.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.element.spirit.element.search.contact.detail.create(h, { key: ' + JSON.stringify(S.Far.relayKey) + ', relay: true }); return "ok"; })');
+  const farPanel = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detail.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.required.spirit.element.search.contact.detail.create(h, { key: ' + JSON.stringify(S.Far.relayKey) + ', relay: true }); return "ok"; })');
   await until(function () { return S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0'); }, 8000);
   S.farStar = await S.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzFar .nd-fold")).filter(function (h) { return h.textContent.indexOf("Give this relay full face capability") !== -1; }).length');
   return (farPanel === 'ok' && await S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0')) || false;

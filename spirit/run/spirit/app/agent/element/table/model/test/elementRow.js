@@ -20,7 +20,7 @@ const ROW = 'spirit/app/agent/element/table/row.js';
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.element); };
+const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
 
 // ── the world: a window of its own, the row element a stand-in ──
 // W.made: each row element made, { container, o, destroyed }. W.held: while set, the row element's file has not loaded yet.
@@ -29,7 +29,7 @@ function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, branchPath: branchPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
-  // The tables' row element, as its own file places itself: by the one helper, at spirit.element.<its path>.
+  // The tables' row element, as its own file places itself: by the one helper, at spirit.required.<its path>.
   helper(global.window.spirit, ROW, { create: function (container, o) { const m = { container: container, o: o, destroyed: false, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });
   global.window.spirit.require = function (p) {
     W.required.push(String(p));
@@ -55,7 +55,7 @@ test.run('before it runs, the page has no model row element', 0.2, function () {
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.model.elementRow') === undefined || false;
 }, test.limit.quick);
-test.run('it places spirit.element.spirit.app.agent.element.table.model.elementRow, with create', 0.2, async function () {
+test.run('it places spirit.required.spirit.app.agent.element.table.model.elementRow, with create', 0.2, async function () {
   if (!W.up) return false;
   // What the element requires is what is asked from here on: the runner's own requires before it are not the element's.
   W.from = W.required.length;

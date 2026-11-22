@@ -5,7 +5,7 @@
 // files."). An image, a sound or a video, filling its box. It took
 // over what the old media viewer element did, which is gone (Q7). Its contract and its test: ./test/media.md and ./test/media.js.
 //
-//   spirit.element.spirit.app.media.element.create(container, { path, title }) -> { destroy() }
+//   spirit.required.spirit.app.media.element.create(container, { path, title }) -> { destroy() }
 //     title({ file, icon }): told the file shown and its kind's icon, for the title bar of whoever mounts it (Andy: "the medias
 //     own icon or the media viewer's icon if no file is selcted yet").
 //
@@ -27,7 +27,7 @@
 
   // ONE FILE, FILLING ITS BOX.
   function view(host, path) {
-    var FS = S.element.spirit.element.fstat;
+    var FS = S.required.spirit.element.fstat;
     var body = host;
     var mime = FS.mimeOf(path);
     var tag = tagFor(FS.kindOf(mime));
@@ -99,7 +99,7 @@
     container.appendChild(box);
     parts.then(function () {
       if (gone) return;
-      var FS = S.element.spirit.element.fstat;
+      var FS = S.required.spirit.element.fstat;
       // THE FILE PICKER, the files list as a dropdown showing only what it plays, and under it the file
       // picked; a pick drops the one shown before. The picker sits in a row of rowForm's bubble (the box: "That row is a bubble
       // of the same kind as rowForm uses"), the viewer's icon first; it has nothing to press, so no button, and it folds as
@@ -107,7 +107,7 @@
       // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var row = document.createElement('div');
       row.className = 'shell-bubble shell-row-form';
-      S.element.spirit.element.icon.create(row, { glyph: '🎬' });
+      S.required.spirit.element.icon.create(row, { glyph: '🎬' });
       var pick = document.createElement('span');
       pick.className = 'shell-row-form-span';
       row.appendChild(pick);
@@ -115,7 +115,7 @@
       area.className = 'fill';
       box.appendChild(row);
       box.appendChild(area);
-      picker = S.element.spirit.element.search.file.create(pick, {
+      picker = S.required.spirit.element.search.file.create(pick, {
         face: 'dropdown',
         placeholder: 'choose a picture, song or video…',
         // Its field names no file: the title bar does.

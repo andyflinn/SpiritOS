@@ -5,11 +5,11 @@ detail elements."*): one family of an api tree in the family list (`../list.js`)
 the name column that list drew before. Its test is `./row.js`: the browser file run in node on a bare window, the
 shared row element a stand-in that keeps the spec it is handed.
 
-`spirit.element.spirit.element.search.api.row.create({ name })`.
+`spirit.required.spirit.element.search.api.row.create({ name })`.
 
 ## Requirements
 
-- It places itself at `spirit.element.spirit.element.search.api.row`, with a create, and loads the shared row
+- It places itself at `spirit.required.spirit.element.search.api.row`, with a create, and loads the shared row
   element itself.
 - A row is of kind `family`, keyed and named by the family (by its key when handed only that), with no actions.
 - Its one field is `name`; what it paints is escaped.

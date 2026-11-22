@@ -220,7 +220,7 @@
   // Its element is loaded and made in the page's area, at home and on a face alike; one that does not load is said in the banner.
   function loadShell() {
     return Promise.resolve(spirit.require('spirit/element/script.js')).then(function () {
-      var E = window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.element && window.spirit.element.spirit.element.script;
+      var E = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.script;
       desktop.innerHTML = '';
       // THE SHELL'S AREA IS NO DESKTOP GRID (Andy, of his face.html: "all icons of the app.search are in a thin strip in the left
       // of my browser window"): a fill column the shell lays itself out in (face.css, #desktop.shell-area).
@@ -300,7 +300,7 @@
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
     Promise.all([window.spirit.require('spirit/element/joinSteps.js'), Promise.resolve(spirit.ready).then(function (sp) { return sp.contact.search({ q: '*', relay: true }); })]).then(function (got) {
-      var S = window.spirit.element && window.spirit.required.spirit.element.joinSteps;
+      var S = window.spirit.required && window.spirit.required.spirit.element.joinSteps;
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
       if (!url) throw new Error('this node lists no relay that sent this link');

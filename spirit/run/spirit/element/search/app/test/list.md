@@ -5,7 +5,7 @@ cache, asked of `app.search`. Owed since the rule *"every production script has 
 until now judged only through its selector (`../../test/app.js`). Mounted alone in a real Chrome on a scratch node's face
 page; what each face must list is read from each `spirit/app/<name>/<name>.json`.
 
-- It loads through `spirit.require` and stands at `spirit.element.spirit.element.search.app.list`.
+- It loads through `spirit.require` and stands at `spirit.required.spirit.element.search.app.list`.
 - `create(host, opts)` answers `{ list, refresh, destroy }`; as a pane it lists every app of the tree, the apps that only
   run among them; it asks `app.search` with a search string and nothing more (Andy, box: *"no filters, just a search
   string"*).

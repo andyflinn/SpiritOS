@@ -10,7 +10,7 @@
 // row an detail elements."), spirit/element/branchEditor.js before; the bundle selector (../bundle.js) opens it in a pane's
 // tab. Its contract and its test: ./test/detail.md and ./test/detail.js.
 //
-//   spirit.element.spirit.element.search.bundle.detail.create(container, { bundle, label, owner, gone }) -> { destroy() }
+//   spirit.required.spirit.element.search.bundle.detail.create(container, { bundle, label, owner, gone }) -> { destroy() }
 //     bundle  the bundle's id; label its label; owner its owner (its Delete is an armingButton, which hears a click elsewhere itself)
 //     gone    called when this bundle's deletion is heard (Andy: "a bundle that hears its deletion, closes its branchEditor tab.")
 // A BUNDLE NOT THE NODE'S IS SHOWN ONLY (Andy: "A user can only create, change and delete node-owned bundles and branches, and
@@ -27,7 +27,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
   }).concat([window.spirit.require ? window.spirit.require('spirit/element/armingButton.js') : null, window.spirit.require('spirit/auth/api.js')]));
 
   function mount(box, o) {
-    var E = window.spirit.element;
+    var E = window.spirit.required;
     box.innerHTML = '';
     var A = ((window.spirit.required.spirit.data || {}).auth || {}).data;
     // ITS DELETION HEARD, FROM THIS SCREEN OR ANY OTHER: the mounter closes it.
@@ -94,7 +94,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     return { destroy: function () { if (typeof off === 'function') off(); if (typeof offBundle === 'function') offBundle(); family.destroy(); branches.destroy(); } };
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // And the shell's element shape (goal/G41.19, box v23): create(container, options) draws the editor into the
   // container, once its parts are in.
   function create(container, options) {

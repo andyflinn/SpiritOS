@@ -6,7 +6,7 @@ this node may.
 
 ## Requirements
 
-- A shell element of its own: it adds `changeMyLabel.create(host)` to `window.spirit.element`, and
+- A shell element of its own: it adds `changeMyLabel.create(host)` to `window.spirit.required`, and
   answers `{ set(value), destroy() }`.
 - **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
 - **Its form is a rowForm** (goal/G41.27; Andy: *"Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the

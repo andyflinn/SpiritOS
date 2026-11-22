@@ -5,7 +5,7 @@ shows indeterminate. It knows nothing of processes."* Owed since the rule *"ever
 (goal/G47.1, box v72). The browser file runs in node on a window of its own and places itself by the real
 installSpiritElement; its markup is read as text.
 
-- It stands at `spirit.element.spirit.element.progressBar`, a function answering markup (still no create and no container:
+- It stands at `spirit.required.spirit.element.progressBar`, a function answering markup (still no create and no container:
   the discrepancy with goal/G41.19's box its header names).
 - Done of total: a progress tag, max the total, value the done; the words `done/total text`, or `done/total` with no text.
 - Total 0: a progress tag with no value (the browser's indeterminate bar) and the text alone; no text, no words.

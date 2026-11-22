@@ -161,7 +161,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     // A ROW OF AN ID TABLE: its label and the caller's mark, no contact's actions.
     var idIndex = null;
     function idElement(row, key) {
-      var R = window.spirit.element.spirit.element.row;
+      var R = window.spirit.required.spirit.element.row;
       idIndex = idIndex || R.index(function () {});
       var el = R.create({ kind: 'id', key: String(key), index: idIndex, row: Object.assign({ mark: 0 }, row, { key: String(key) }),
         fields: [
@@ -173,7 +173,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       return el;
     }
     function contactElement(row, key) {
-      var el = window.spirit.element.spirit.element.search.contact.row.create(Object.assign({ key: key }, row), { open: o.open, mark: markOf });
+      var el = window.spirit.required.spirit.element.search.contact.row.create(Object.assign({ key: key }, row), { open: o.open, mark: markOf });
       els[key] = el;
       return el;
     }
@@ -192,7 +192,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       el.act('open', {});
     };
 
-    list = window.spirit.element.spirit.element.search.create(host, {
+    list = window.spirit.required.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's contacts, the branch the contact family's manager keeps (spirit.required.spirit.data.contact.data.branch); an
@@ -249,7 +249,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     };
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/list.js', { create: create, filters: FILTERS }); });
 }());

@@ -59,11 +59,11 @@ const rename = function (detail) { doc.fire('contact.rename', { detail: detail }
 
 // What the tests make, shared by the tests after them.
 let box, boxed, plain, edit, b1, b2, b3, a2, unknown, failed, placed, waiting, listening, input, n, lab;
-test.run('it registers spirit.element.spirit.element.contactLabel with a create, and createContactLabel no more', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.contactLabel with a create, and createContactLabel no more', 0.2, function () {
   // the element
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-  made = window.spirit.element.spirit.element.contactLabel;
-  return (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.element)) ? true : false;
+  made = window.spirit.required.spirit.element.contactLabel;
+  return (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.required)) ? true : false;
 }, test.limit.quick);
 test.run('create appends the label to the container it is given and answers it', 0.2, function () {
   box = node('div');

@@ -6,7 +6,7 @@
 // folders, contain list, row an detail elements."), spirit/element/jobDetail.js before. Its contract and its test:
 // ./test/detail.md and ./test/detail.js.
 //
-//   spirit.element.spirit.element.search.job.detail.create(host, { id, title, close }) -> { destroy() }
+//   spirit.required.spirit.element.search.job.detail.create(host, { id, title, close }) -> { destroy() }
 //     id     the job it shows, and nothing else
 //     title  called with { icon, label } as the job's status changes (the layer's bar)
 //     close  called once the job is deleted: there is nobody left to show
@@ -58,7 +58,7 @@
   // CANCEL OR DELETE, decided by the job row element's actionOf (goal/G47.1, one rule for this detail and the task row,
   // spirit/element/monitor/task.js): Cancel for a one-shot process and a user-operated server, Delete once the job is terminal.
   function buttonsHtml(job) {
-    var a = S.element.spirit.element.search.job.row.actionOf(job);
+    var a = S.required.spirit.element.search.job.row.actionOf(job);
     if (a === 'cancel') return '<button type="button" class="cancel-btn" data-job="cancel">Cancel</button>';
     if (a === 'delete') return '<button type="button" class="cancel-btn" data-job="delete">Delete</button>';
     return '';
@@ -162,7 +162,7 @@
       var win = part('window');
       if (win) win.textContent = 'Events (the last ' + ((J && J.eventWindow) || 256) + ')';
       // THE EXTRACT BOX ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7).
-      Promise.resolve(S.element.spirit.element.codeMirror.create(part('extract'), { mode: 'read', text: '', path: 'event.json' })).then(function (v) {
+      Promise.resolve(S.required.spirit.element.codeMirror.create(part('extract'), { mode: 'read', text: '', path: 'event.json' })).then(function (v) {
         if (gone) return;
         view = v;
         if (view && view.cm && typeof view.cm.setSize === 'function') view.cm.setSize('100%', '100%');

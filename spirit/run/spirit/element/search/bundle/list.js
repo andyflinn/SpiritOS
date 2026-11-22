@@ -44,7 +44,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       });
     }
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['label', 'owner'];
-    list = window.spirit.element.spirit.element.search.create(host, {
+    list = window.spirit.required.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's bundles, the branch the auth family's manager keeps (spirit.required.spirit.data.auth.data.bundles.branch).
@@ -60,7 +60,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
       filters: family ? [{ name: 'owner', when: function () { return false; }, test: function (r) { return r && (r.owner || 'node') === family ? 1 : 0; } }] : [],
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
       element: function (row, key) {
-        return window.spirit.element.spirit.element.search.bundle.row.create(row);
+        return window.spirit.required.spirit.element.search.bundle.row.create(row);
       },
       // A pick shows the bundle's label, never its number (Andy: "the bundleSelector shows a fucking number is selected
       // instead of the fucking label"); the number is hidden (box: "a hidden numeric key").
@@ -76,7 +76,6 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     };
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/list.js', { create: create }); });
 }());

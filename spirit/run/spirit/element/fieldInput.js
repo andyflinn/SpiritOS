@@ -12,7 +12,7 @@
 //   spirit.required.spirit.element.fieldInput.attach(input, type) -> the input, its maxlength the type's bytes and the bytes
 //                                                     held as typed; type: a spirit.type.<...> path
 (function (root) {
-  var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
+  var E = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
   // A TYPE'S FILE, ITS PATH (goal/G48.4): spirit.type.string.label is spirit/type/string/label.js, loaded through
   // spirit.require (rule/26) and held where spirit.required puts it.
   function fileOf(type) { return /^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(String(type)) ? String(type).split('.').join('/') + '.js' : ''; }

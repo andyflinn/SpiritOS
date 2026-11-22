@@ -3,7 +3,7 @@
 // THE ICONS FACE (goal/G43.19, box v16; Q6: icons gets icons/server/server.js and browserIcons.js, as desk has them). Its contract and
 // its test: ./test/icons.md and ./test/icons.js.
 //
-//   spirit.element.spirit.app.icons.icons.create(container, { open }) -> { destroy() }; also spirit.elements.iconsFace, which icons.js's
+//   spirit.required.spirit.app.icons.icons.create(container, { open }) -> { destroy() }; also spirit.elements.iconsFace, which icons.js's
 //   stand-in calls while it waited for this file
 //
 // The app's own icon set (the box: "the page asks icons through its api branch; only ./server/server.js writes the table, the
@@ -75,7 +75,7 @@
         });
         // REMOVE ARMS FIRST (Andy: "icon detail, delete should be an armingButton."): the first press arms it and writes
         // nothing, the second removes the icon, a click elsewhere disarms it (spirit/element/armingButton.js).
-        S.element.spirit.element.armingButton.attach(host.querySelector('[data-icons="remove"]'), { label: 'Remove this icon', run: function () {
+        S.required.spirit.element.armingButton.attach(host.querySelector('[data-icons="remove"]'), { label: 'Remove this icon', run: function () {
           icon({ op: 'delete', glyph: glyph }).then(function (r) { if (r && r.deleted) close(); else said.textContent = 'not removed'; },
             function (e) { said.textContent = 'not removed: ' + ((e && e.message) || e); });
         } });
@@ -85,9 +85,9 @@
 
     parts.then(function () {
       if (gone) return;
-      var E = S.element;
+      var E = S.required;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
-      if (typeof o.open !== 'function') stack = S.element.spirit.element.panel.create(container, container.firstElementChild);
+      if (typeof o.open !== 'function') stack = S.required.spirit.element.panel.create(container, container.firstElementChild);
       // THE ADD ROW IS A ROWFORM (goal/G41.27; Andy: "icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]").
       // ITS PRESS IS ROWFORM'S (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer comes"):
       // add is handed as press, so Add is busy until the node answers; a listener of its own met a disabled button.
@@ -148,7 +148,7 @@
     };
   }
 
-  // Under both names: icons.js stands spirit.element.spirit.app.icons.icons up at once and waits for this file; once here, the face itself.
+  // Under both names: icons.js stands spirit.required.spirit.app.icons.icons up at once and waits for this file; once here, the face itself.
   // At its own path (goal/G43.32): icons.js, the app's element, draws through it from there.
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/icons/element.js', { create: create }); });
 }());

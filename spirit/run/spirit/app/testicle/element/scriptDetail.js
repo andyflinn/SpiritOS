@@ -5,7 +5,7 @@
 // you're doing with this monolith style of coding, your avoiding precise quality control"). It was fileDetail in
 // ../element.js. Its test: ./test/scriptDetail.js.
 //
-//   spirit.element.spirit.app.testicle.element.scriptDetail.create(container, { script }) -> { destroy() }
+//   spirit.required.spirit.app.testicle.element.scriptDetail.create(container, { script }) -> { destroy() }
 //
 // THE FILE DETAIL (goal/G47.1, the UI cycle). The box: "The detail shows as title row the full file name, and below it a
 // standard testicle.suite.search", "The tab opens first, with its title line; then file.get runs, and below the title line it
@@ -54,7 +54,7 @@
         return Promise.resolve(S.testicle['script.get']({ name: file }));
       }).then(function () {
         if (gone) return;
-        made = S.element.spirit.app.testicle.element.search.suite.create(below, { script: file });
+        made = S.required.spirit.app.testicle.element.search.suite.create(below, { script: file });
       }, function (e) {
         if (gone) return;
         below.textContent = String((e && e.message) || e || 'script.get failed');

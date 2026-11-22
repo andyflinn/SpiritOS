@@ -4,7 +4,7 @@ The ⚙ settings panel of testicle's face, an element of its own (goal/G47.1, bo
 an element of its own"*, *"element/settingsPanel.js (the ⚙ settings panel)"*). It was `configPanel` in `../element.js`. Its
 test: `./settingsPanel.js`.
 
-    spirit.element.spirit.app.testicle.element.settingsPanel.create(container) -> { destroy() }
+    spirit.required.spirit.app.testicle.element.settingsPanel.create(container) -> { destroy() }
 
 ## What it does
 

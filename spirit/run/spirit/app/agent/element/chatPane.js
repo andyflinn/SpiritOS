@@ -12,7 +12,7 @@
 // have the same font size as all other pane-titles in the agent UI"): agentDetail.titleRow, from the agent tables' element
 // (spirit/app/agent/element/table/tableElement.js), loaded here with the icon element it paints with (rule/26).
 //
-//   spirit.element.spirit.app.agent.element.chatPane.create(container, { persona }) -> { destroy() }   persona: the row picked, { id, label }
+//   spirit.required.spirit.app.agent.element.chatPane.create(container, { persona }) -> { destroy() }   persona: the row picked, { id, label }
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
 if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
@@ -41,7 +41,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     var gone = false;
     Promise.all([spirit.require('spirit/app/agent/element/table/tableElement.js'), spirit.require('spirit/element/icon.js')]).then(function () {
       if (gone) return;
-      root.querySelector('#' + pre + 'title').innerHTML = window.spirit.element.spirit.app.agent.element.table.tableElement.titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
+      root.querySelector('#' + pre + 'title').innerHTML = window.spirit.required.spirit.app.agent.element.table.tableElement.titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
     });
     var line = root.querySelector('#' + pre + 'line');
     var sendButton = root.querySelector('#' + pre + 'send');

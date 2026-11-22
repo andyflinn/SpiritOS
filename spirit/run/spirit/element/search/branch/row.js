@@ -6,7 +6,7 @@
 // drawn "(ALL)" as the filter draws it ("A branch row with an empty verb shows as "(ALL)", as the filter does").
 // row.js does the shared work; this file says what a branch is.
 //
-//   spirit.element.spirit.element.search.branch.row.create(row, opts) -> a row of kind branch
+//   spirit.required.spirit.element.search.branch.row.create(row, opts) -> a row of kind branch
 //     row            { id, bundle, family, verb }, as auth.branch answers it
 // THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything
 // that changes their data set", "NO FUCKING DATA SCRIPT"): the node publishes each changed branch row on its permanent
@@ -17,7 +17,7 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   var parts = Promise.all(['spirit/element/row.js', 'spirit/element/armingButton.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;

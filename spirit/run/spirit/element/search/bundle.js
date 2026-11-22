@@ -9,7 +9,7 @@
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
 // the node's bundles (auth.bundle search) and each row (bundle/row.js).
 //
-//   spirit.element.spirit.element.search.bundle.create(container, options) -> root
+//   spirit.required.spirit.element.search.bundle.create(container, options) -> root
 //     root.value   the chosen bundle's id, a number, '' while none is
 //     root.row     the chosen bundle, { id, label }, null while none is
 //     one bubbling `change` on a pick; refresh() asks again
@@ -51,7 +51,7 @@
         var said = typeof options.tabLabel === 'function' ? options.tabLabel(row) : String(row.label || '');
         var header = said && typeof said === 'object' ? said : { label: String(said || '') };
         tabs.add({ name: name, label: String(header.label || ''), italic: header.italic === true, closable: true, mount: function (box) {
-          return window.spirit.element.spirit.element.search.bundle.detail.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
+          return window.spirit.required.spirit.element.search.bundle.detail.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
         } });
       });
     }
@@ -59,7 +59,7 @@
     var gone = false;
     Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/search/bundle/list.js') : null).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.bundle.list.create(root, {
+      made = window.spirit.required.spirit.element.search.bundle.list.create(root, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a bundle…'),
         all: isPane ? undefined : options.all,
@@ -82,7 +82,6 @@
     return root;
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.

@@ -5,7 +5,7 @@ own folder), which edits them, saves each as it changes and deletes the row. Owe
 own; the row element is a stand-in placed by the real `installSpiritElement` as its own file places it, keeping what it
 was handed. The same world as the other tables' `elementRow` tests.
 
-- Before it runs there is no `spirit.element.spirit.app.agent.element.table.provider.elementRow`; once it has, it stands
+- Before it runs there is no `spirit.required.spirit.app.agent.element.table.provider.elementRow`; once it has, it stands
   there with `create`.
 - As it loads it requires the agent family's interface, `spirit.require('spirit/app/agent/api.js')`, which brings
   the family's data.js with it (goal/G41.28: its table's rows are the agent family's cache); it requires no data.js

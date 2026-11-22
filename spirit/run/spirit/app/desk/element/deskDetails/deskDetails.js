@@ -80,8 +80,8 @@ var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
   ? Promise.all([spirit.require('spirit/element/armingButton.js'), spirit.require('spirit/element/fieldInput.js')]) : null);
 function ddArming() {
   return ddParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.spirit.element.armingButton;
-    var F = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.required.spirit.element.fieldInput;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.armingButton;
+    var F = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.fieldInput;
     var say = document.getElementById('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'spirit.type.string.paragraph'); say.setAttribute('data-held', 'paragraph'); }
     // Your name for the item, a label (goal/G48.4, box v22).
@@ -187,7 +187,7 @@ var ddAddParts = typeof spirit !== 'undefined' && spirit.require
   ? Promise.all([spirit.require('spirit/element/rowForm.js'), spirit.require('spirit/element/fieldInput.js')])
   : Promise.resolve(null);
 function ddMakeAdd(n) {
-  var R = window.spirit && window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.element.rowForm;
+  var R = window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element.rowForm;
   var F = window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element.fieldInput;
   var row = document.getElementById('dd-add-row');
   if (n !== ddFrameN || !R || typeof R.create !== 'function' || !row || row.firstChild) return;
@@ -219,7 +219,7 @@ function ddShowLeft(name) {
   if (left && box && left.parentNode !== box) box.appendChild(left);
 }
 function ddMakeBench(n) {
-  var W = window.spirit && window.spirit.element && window.spirit.element.spirit.element.workBench;
+  var W = window.spirit && window.spirit.required && window.spirit.required.spirit.element.workBench;
   var host = document.getElementById('dd-bench');
   var hold = document.getElementById('dd-hold');
   var centre = document.getElementById('dd-centre');
@@ -414,7 +414,7 @@ function ddBoxMount() {
       el.innerHTML = '<div style="display:flex;gap:1em;align-items:center;margin-bottom:0.25em"><span class="job-manifest-note" data-box-version></span>' +
         // No find field over the box (goal/G43.22; Andy: "the codeMirror search works better for editing purposes.").
         '</div><div data-box-editor style="flex:1 1 0;min-height:0;position:relative"></div>';
-      return window.spirit.element.spirit.element.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
+      return window.spirit.required.spirit.element.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
         // He went into the textarea meanwhile, or left the item: it stays as it is, and the next item asks anew.
         if (ddId !== id || ddBoxFocused) { ddBoxViewAsked = ''; return; }
         // It fills what the version row leaves, and scrolls inside it (goal/G40.8: only a list or a viewer scrolls).
@@ -779,7 +779,7 @@ function ddLoad() {
   });
 }
 
-// AN ELEMENT OF THE DESK APP (goal/G43.27, requirement 23): spirit.element.spirit.app.desk.element.deskDetails.deskDetails, made in a layer over the Desk page,
+// AN ELEMENT OF THE DESK APP (goal/G43.27, requirement 23): spirit.required.spirit.app.desk.element.deskDetails.deskDetails, made in a layer over the Desk page,
 // which hands it the page's own way to the node (opts.via: verb, escapeHtml, onPublished, closeDialog, setScreenTitle).
 var ddApp = {
   mount: function (container, api) {

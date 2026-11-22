@@ -121,6 +121,5 @@
     return idx;
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/row.js', { create: create, index: index }); });
 }());

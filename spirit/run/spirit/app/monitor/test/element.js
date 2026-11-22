@@ -88,10 +88,10 @@ test.run('monitor.js loads on a page', 0.2, async function () {
 }, test.limit.quick);
 
 // goal/G43.32, the box: "Monitor too: its createApp becomes its element.js, and appSelector's createApp path goes."
-// the box (goal/G43.32): "its createApp becomes its element.js": spirit.element.spirit.app.monitor.element.create(container) -> { destroy() }
-test.run('the page has spirit.element.spirit.app.monitor.element.create', 0.2, async function () {
+// the box (goal/G43.32): "its createApp becomes its element.js": spirit.required.spirit.app.monitor.element.create(container) -> { destroy() }
+test.run('the page has spirit.required.spirit.app.monitor.element.create', 0.2, async function () {
   if (!W.page) return false;
-  const home = await js('(function () { var a = ((window.spirit.element || {}).spirit || {}).app || {}; return JSON.stringify({ create: typeof ((a.monitor || {}).element || {}).create, createApp: typeof ((window.spirit.app || {}).monitor || {}).createApp, old: typeof (window.spirit.elements || {}).monitor }); })()');
+  const home = await js('(function () { var a = ((window.spirit.required || {}).spirit || {}).app || {}; return JSON.stringify({ create: typeof ((a.monitor || {}).element || {}).create, createApp: typeof ((window.spirit.app || {}).monitor || {}).createApp, old: typeof (window.spirit.elements || {}).monitor }); })()');
   let h = {}; try { h = JSON.parse(home); } catch (e) { h = {}; }
   W.h = h;
   W.create = h.create === 'function';
@@ -105,7 +105,7 @@ test.run('the page has no spirit.app.monitor.createApp, nor any monitor on spiri
 // Its tiles are the element's, tested in spirit/element/monitor/test/spirit.js; here, that the app shows them.
 test.run('opened, it shows the six tiles', 0.2, async function () {
   if (!W.create) return false;
-  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.element.spirit.app.monitor.element.create(d); return true; })()');
+  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.required.spirit.app.monitor.element.create(d); return true; })()');
   W.made = true;
   const n = await until(function () { return js('window.__box.querySelectorAll("[data-tile]").length === 6'); }, 20000);
   return n ? true : false;

@@ -64,10 +64,10 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: f }); } };
   // The direct writes below are the auth family's own view of the home node, as its data.js files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // What the file required as it ran, kept apart from what the runner asks of the page later.
   loaded = required.slice();
@@ -83,7 +83,7 @@ test.run('it requires the auth branch\'s interface, spirit/auth/api.js, and no d
   if (!loaded) return false;
   return loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && hasA() ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.branch.row.create', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.search.branch.row.create', 0.2, function () {
   if (!hasA()) return false;
   return hasRow() ? true : false;
 }, test.limit.quick);

@@ -5,11 +5,11 @@ detail elements."*): what a family is, read from the api tree its list was paint
 itself in a pane when a row is pressed. Its test is `./detail.js`: the browser file run in node on a bare window,
 the real api tree reader (`spirit/client/apiTreeIndex.js`) beside it.
 
-`spirit.element.spirit.element.search.api.detail.create(host, { family, tree })` -> `{ destroy() }`.
+`spirit.required.spirit.element.search.api.detail.create(host, { family, tree })` -> `{ destroy() }`.
 
 ## Requirements
 
-- It places itself at `spirit.element.spirit.element.search.api.detail`, with a create, and loads the api tree
+- It places itself at `spirit.required.spirit.element.search.api.detail`, with a create, and loads the api tree
   reader itself.
 - It lists each verb the family serves, as its path (`family.verb`), sorted, each with the fields its request takes.
 - The owner's DEBUG is not shown: `apiTreeIndex.verbs` never offers it (Andy: *"DEBUG/... are owner only and will never

@@ -6,7 +6,7 @@
 // and a movable border between each side pane and the centre. Its contract and its test: ./test/workBench.md and
 // ./test/workBench.js.
 //
-//   window.spirit.element.spirit.element.workBench.create(container, { left, right, changed }) -> { center, press, shown, width, destroy }
+//   window.spirit.required.spirit.element.workBench.create(container, { left, right, changed }) -> { center, press, shown, width, destroy }
 //     left, right    [{ name, icon, title, mount(box) }]: a tool's mount is called once, the first time it shows, with a
 //                    box of its own inside its side's pane; the box is kept, so a tool shown again keeps what it drew
 //     changed(side, name)  optional: called each time the tool shown on a side changes, name '' when the side collapses
@@ -72,7 +72,7 @@
     // Each strip button's glyph, through the icon element once it is there; as plain text until then, or if it never
     // comes, so a button is never empty.
     function paintIcons() {
-      var I = window.spirit && window.spirit.element && window.spirit.element.spirit.element.icon;
+      var I = window.spirit && window.spirit.required && window.spirit.required.spirit.element.icon;
       ['left', 'right'].forEach(function (side) {
         var s = part('strip-' + side);
         if (!s) return;

@@ -3,7 +3,7 @@
 // FILES, AN ELEMENT (goal/G43.17; Andy: "file should be the same as files is. i don't want to loose all the nice stuff files
 // has..."). The old shell's Files app, moved. Its contract and its test: ./test/file.md and ./test/file.js.
 //
-//   spirit.element.spirit.app.file.element.create(container, { open }) -> { destroy() }
+//   spirit.required.spirit.app.file.element.create(container, { open }) -> { destroy() }
 //     open(key, spec): the stack file was opened in, handed by its mounter, so a file covers ALL of file, its bar too (Andy:
 //     "when a file is clicked on on "file", then the file viewer pops up overtop of ALL the "file" app...."). Without one,
 //     file keeps a stack over its own list.
@@ -42,7 +42,7 @@
       return { icon: (t && t.icon) || app.icon || '', label: (app.label ? app.label + ': ' : '') + name };
     }
     function open(key, words, line) {
-      var FS = S.element.spirit.element.fstat;
+      var FS = S.required.spirit.element.fstat;
       var name = String(key).split('/').pop();
       var opener = OPENERS[FS.kindOf(FS.mimeOf(key))];
       var layer = null;
@@ -53,11 +53,11 @@
       Promise.resolve(into(key, { icon: look.icon, label: look.label, fill: function (pane, closed) {
         // fstat only for a file neither opener takes (Andy: "let fstat pop up for unknows file types (❔) only"), through the
         // file search's detail, which draws it (goal/G43.32).
-        if (!opener) return S.element.spirit.element.search.file.detail.create(pane, { path: key });
+        if (!opener) return S.required.spirit.element.search.file.detail.create(pane, { path: key });
         return S.require('spirit/app/' + opener + '/element.js').then(function () {
           if (closed()) return null;
           // The opener's main element at the place of the file just loaded (goal/G43.32, rule 4).
-          return S.element.spirit.app[opener].element.create(pane, { path: key, words: words, line: line, title: title });
+          return S.required.spirit.app[opener].element.create(pane, { path: key, words: words, line: line, title: title });
         });
       } })).then(function (l) {
         layer = l;
@@ -69,8 +69,8 @@
 
     parts.then(function () {
       if (gone) return;
-      stack = S.element.spirit.element.panel.create(box, listBox);
-      list = S.element.spirit.element.search.file.create(listBox, {
+      stack = S.required.spirit.element.panel.create(box, listBox);
+      list = S.required.spirit.element.search.file.create(listBox, {
         face: 'pane',
         pick: function (row, key) {
           if (!row || row.kind !== 'file') return;

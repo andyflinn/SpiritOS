@@ -2,7 +2,7 @@
 
 Its test is `./list.js`. The job search's list since goal/G43.32, `spirit/element/job.js` before; its rows are `./row.js`, its detail `./detail.js`. The box (goal/G43.29, v3): *"Each works exactly as the old one, merely placed where it now belongs"*, *"What it draws is in separate files of spirit/element/, and the old apps' code moves there"*; Q1: *"a job row opens detail panel overtop of jobs."* Written from reading the old `shell/job/job.js`.
 
-`spirit.element.spirit.element.search.job.list.create(container, { open })`, mounted alone in a box of a real Chrome on a scratch node's face page. A failed job and a running one come from two planted `node.run` apps, started through `job.create` as Run starts one.
+`spirit.required.spirit.element.search.job.list.create(container, { open })`, mounted alone in a box of a real Chrome on a scratch node's face page. A failed job and a running one come from two planted `node.run` apps, started through `job.create` as Run starts one.
 
 ## Requirements
 

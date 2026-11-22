@@ -2,7 +2,7 @@
 
 What every row element shares: one element per subject, which paints its fields into the cells it is given, repaints
 only the fields a change touches, runs its actions, fetches its expansion once, and registers in its kind's index until
-it is destroyed. A list row and a details panel show the same element. It loads on `window.spirit.element.row`.
+it is destroyed. A list row and a details panel show the same element. It loads on `window.spirit.required.row`.
 
 ## API
 

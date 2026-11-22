@@ -10,7 +10,7 @@ dropdown. Its test is `./file.js`.
 - It loads what it uses itself (rule/26): `spirit/element/search/file/row.js`, `spirit/element/search.js` and
   `spirit/element/fstat.js`, and the fs family's interface (`spirit.require('spirit/fs/api.js')`), and no data script (goal/G41.16; goal/G47.1: only an
   api.js requires its companion data.js): the file tree's stream is the fs data.js's, which that api.js brings.
-- It registers `spirit.element.search.file.create(host, opts)`, drawing one probabilitySearch into a `fill` box of its host.
+- It registers `spirit.required.search.file.create(host, opts)`, drawing one probabilitySearch into a `fill` box of its host.
 - It is a view of the file tree (`spirit.required.spirit.data.fs.data.branch`), in path order (`sort('name', 'asc')`), filled as it is drawn. Its columns are `name`,
   `size` and `changed`; each row a file row element of its path; a picked file is shown by its path, and reaches
   `opts.pick`.

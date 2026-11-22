@@ -55,12 +55,12 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   // The auth branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself to
   // the data set.
   let authData = false;
-  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   // What the list asked as it loaded; the runner's own asks after this test are not the list's.
   loaded = required.slice();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   return true;
 }, test.limit.quick);
 
@@ -69,7 +69,7 @@ test.run('it requires the search element, its row element and spirit/auth/api.js
   if (!loaded) return false;
   return ['spirit/element/search.js', 'spirit/element/search/bundle/row.js', 'spirit/auth/api.js'].every(function (p) { return loaded.indexOf(p) !== -1; }) && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.bundle.list.create', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.search.bundle.list.create', 0.2, function () {
   if (!E) return false;
   return listed() ? true : false;
 }, test.limit.quick);
@@ -204,7 +204,7 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
     ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'].forEach(function (rel) {
       vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
     });
-    return ((win.spirit.element.spirit || {}).element || {}).search;
+    return ((win.spirit.required.spirit || {}).element || {}).search;
   }());
   V.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
   V.set('bundles/22', { id: 22, label: 'Node files', owner: 'node' });

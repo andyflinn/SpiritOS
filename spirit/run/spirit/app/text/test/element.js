@@ -85,7 +85,7 @@ test.run('the face shell has its spirit', 0.2, async function () {
 // the box: "without one they show it"
 test.run('its element\'s create, handed a container, answers an object with a destroy', 0.2, async function () {
   if (!W.page) return false;
-  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/' + NAME + '/element.js").then(function () { var E = ((spirit.element.spirit.app || {})[' + JSON.stringify(NAME) + '] || {}).element; if (!E || typeof E.create !== "function") return false; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : false; }, function () { return false; }); }())');
+  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/' + NAME + '/element.js").then(function () { var E = ((spirit.required.spirit.app || {})[' + JSON.stringify(NAME) + '] || {}).element; if (!E || typeof E.create !== "function") return false; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : false; }, function () { return false; }); }())');
   return made === 'ok' || false;
 }, test.limit.quick);
 // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search.js).
@@ -117,7 +117,7 @@ test.run('destroy leaves its container empty', 0.2, async function () {
 // plain again once the answer comes.
 test.run('mounted with a file, it shows that file loaded', 0.2, async function () {
   if (!W.page) return false;
-  await W.c.evaluate('(function () { var b = document.getElementById("zzBox"); return spirit.require("spirit/app/' + NAME + '/element.js").then(function () { window.__m = spirit.element.spirit.app[' + JSON.stringify(NAME) + '].element.create(b, { path: "spirit/app/text/text.json" }); return "made"; }); }())');
+  await W.c.evaluate('(function () { var b = document.getElementById("zzBox"); return spirit.require("spirit/app/' + NAME + '/element.js").then(function () { window.__m = spirit.required.spirit.app[' + JSON.stringify(NAME) + '].element.create(b, { path: "spirit/app/text/text.json" }); return "made"; }); }())');
   W.loaded = !!(await until(function () { return W.c.evaluate('(document.querySelector("#zzBox [data-text=status]") || {}).textContent === "loaded"'); }, 15000));
   return W.loaded || false;
 }, test.limit.quick);
@@ -142,7 +142,7 @@ test.run('app.active switches the app on', 0.2, async function () {
 }, test.limit.quick);
 test.run('its tile is there and is pressed', 0.2, async function () {
   if (!W.page) return false;
-  await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzSel"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:10000;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.element.spirit.element.script.create(b, { face: "tiles" }); return "made"; }); }())');
+  await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzSel"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:10000;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: "tiles" }); return "made"; }); }())');
   const pressed = await until(function () { return W.c.evaluate('(function () { var t = document.querySelector("#zzSel .app-icon[data-key=' + NAME + ']"); if (!t) return false; t.click(); return true; }())'); }, 15000);
   return !!pressed || false;
 }, test.limit.quick);

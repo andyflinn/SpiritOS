@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/chat/test/element.js
 // The tests of spirit/app/chat/element.js, and of no other module (spec: ./element.md; goal/G43.31). The box: "The app's
 // element is spirit/app/chat/element.js (Andy: "the app-element must be spirit/app/chat/element.js"):
-// spirit.element.spirit.app.chat.element.create(container, { open }). It is today's chatter.js, working as it does, made an element: no
+// spirit.required.spirit.app.chat.element.create(container, { open }). It is today's chatter.js, working as it does, made an element: no
 // activateApp and no handed api, the server through spirit itself, node.card through spirit.ready." Written from reading
 // chatter.js: the contacts pane on the left (the contact search), one chat in the centre with its input (Enter sends,
 // Shift+Enter a new line), the chats asked of the server at mount. Mounted alone in a box of a real Chrome on a scratch
@@ -59,7 +59,7 @@ test.run('a scratch node comes up with chat switched on and its face page open i
   return X.ready ? true : false;
 }, test.limit.slow);
 
-// ── spirit.element.spirit.app.chat.element.create(container, { open }) -> { destroy }, mounted alone ──
+// ── spirit.required.spirit.app.chat.element.create(container, { open }) -> { destroy }, mounted alone ──
 test.run('it loads through spirit.require and mounts, answering an object with a destroy', 0.2, async function () {
   const page = X.page;
   if (!page || !X.ready) return false;
@@ -69,7 +69,7 @@ test.run('it loads through spirit.require and mounts, answering an object with a
     ' var f = window.fetch; window.fetch = function (u, o) { try { window.sent.push(String(o && o.body || "")); } catch (e) {} return f.apply(this, arguments); };' +
     ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { try { window.sent.push(String(b || "")); } catch (e) {} return x.apply(this, arguments); };' +
     ' return spirit.require(' + JSON.stringify(PLACE) + '); }).then(function () {' +
-    ' var E = spirit.element && spirit.element.spirit.app.chat.element; if (!E || typeof E.create !== "function") return false;' +
+    ' var E = spirit.required && spirit.required.spirit.app.chat.element; if (!E || typeof E.create !== "function") return false;' +
     ' var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;background:#111;z-index:9"; document.body.appendChild(c);' +
     ' window.made = E.create(c, {}); return window.made && typeof window.made.destroy === "function" ? "made" : false; }, function () { return false; })');
   return X.made === 'made' ? true : false;
@@ -85,7 +85,7 @@ test.run('the chat\'s input says Enter sends, Shift+Enter a new line', 0.2, asyn
 test.run('it draws its contacts pane, the contact search', 0.2, async function () {
   const page = X.page;
   if (X.made !== 'made') return false;
-  return await H.until(function () { return page.evaluate('!!(spirit.element && spirit.element.spirit.element.search && spirit.element.spirit.element.search.contact) && document.querySelectorAll("#box *").length > 10'); }, 10000)
+  return await H.until(function () { return page.evaluate('!!(spirit.required && spirit.required.spirit.element.search && spirit.required.spirit.element.search.contact) && document.querySelectorAll("#box *").length > 10'); }, 10000)
     ? true : false;
 }, test.limit.quick);
 

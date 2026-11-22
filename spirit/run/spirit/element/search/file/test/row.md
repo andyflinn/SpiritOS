@@ -18,7 +18,7 @@ a subject needs), and is since goal/G41.28 the fs family's data.js's, which the 
 - It loads what it uses itself (rule/26): `spirit/element/row.js`, `spirit/element/icon.js`, `spirit/word/script.js`,
   `spirit/element/fstat.js` and the fs family's interface, `spirit/fs/api.js`; no data script, since only an api.js
   requires its data.js.
-- It registers `spirit.element.search.file.row.create(row)`.
+- It registers `spirit.required.search.file.row.create(row)`.
 - **What the stream means for the file tree** (`spirit.required.spirit.data.fs.data`) (fs-watcher jobs, `data.command { op, path, size, modified, core }`):
   - before `treeComplete` the branch fills unready; `treeComplete` makes the tree ready (`spirit.required.spirit.data.fs.data.ready()`);
   - `createDirectory` is a folder at its path (`spirit.required.spirit.data.fs.data.file(path)`); any other create or change sets a file with its size, its time and

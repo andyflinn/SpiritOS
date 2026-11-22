@@ -4,7 +4,7 @@
 // mounted"; Andy, since: "please show the full media viewer or text editor (including the file picker) even when launched from
 // files."). A text file, edited on the codeMirror element's edit mode, and saved. Its contract and its test: ./test/text.md and ./test/text.js.
 //
-//   spirit.element.spirit.app.text.element.create(container, { path, words, line, title }) -> { destroy() }
+//   spirit.required.spirit.app.text.element.create(container, { path, words, line, title }) -> { destroy() }
 //     words, line: a file found by its contents opens with the words marked, at that line.
 //     title({ file }): told the name of the file shown, for the title bar of whoever mounts it ("[✏️] "Text Editor:" +
 //     file-name").
@@ -42,7 +42,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
 
     parts.then(function () {
       if (gone) return;
-      var E = S.element;
+      var E = S.required;
       // The row's icon is the editor's, until Andy names another.
       // Its press is set below, once the file it saves is known.
       var press = null;
@@ -101,7 +101,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       // ALWAYS WHOLE (Andy: "i changed my mind. please show the full media viewer or text editor (including the file picker) even when
       // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var placeholder = 'open a file…';
-      picker = S.element.spirit.element.search.file.create(row.span, {
+      picker = S.required.spirit.element.search.file.create(row.span, {
         face: 'dropdown',
         placeholder: placeholder,
         name: function () { return placeholder; },

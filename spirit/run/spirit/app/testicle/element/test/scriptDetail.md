@@ -4,14 +4,14 @@ The script tab's file detail of testicle's face, an element of its own (goal/G47
 face is an element of its own, just spirit/app/testicle/element/<element-name>.js"*, *"element/scriptDetail.js (the script
 tab's file detail)"*). It was `fileDetail` in `../element.js`. Its test: `./scriptDetail.js`.
 
-    spirit.element.spirit.app.testicle.element.scriptDetail.create(container, { script }) -> { destroy() }
+    spirit.required.spirit.app.testicle.element.scriptDetail.create(container, { script }) -> { destroy() }
 
 ## What it does
 
 - **It loads its own parts** (box v142: *"all of testicle's elements must subscribe to the data they display"*; rule/26):
   testicle's `api.js` and its cache manager (`data.js`, which the page's one stream feeds), the suite search
   `spirit/app/testicle/element/search/suite.js` it draws with, and `installSpiritElement`, by which it places itself at
-  `spirit.element.spirit.app.testicle.element.scriptDetail`. Mounted alone, on a page nothing else loaded them on, it has
+  `spirit.required.spirit.app.testicle.element.scriptDetail`. Mounted alone, on a page nothing else loaded them on, it has
   them. A node with no testicle refuses the interface; that refusal is never left unhandled.
 - **Its box:** one `.testicle-detail` into its container, with a title line, a line for the own test, and the part below.
   It keeps what it holds inside: its overflow is not visible (the box: *"an element container always must constrain its

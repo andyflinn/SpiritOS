@@ -1,6 +1,6 @@
 # spirit/element/search/contact/row.js
 
-One contact as a row element: `spirit.element.search.contact.row.create(row, options)` builds it through the shared
+One contact as a row element: `spirit.required.search.contact.row.create(row, options)` builds it through the shared
 `row.create` (`spirit/element/row.js`). Its subject is a public key; it reads the node's contacts as the contact
 family's cache manager keeps them (`spirit/run/spirit/contact/data.js`, `spirit.required.spirit.data.contact.data`; goal/G41.28:
 in `spirit.required.spirit.data` under the serving node, `<node>/contact/contacts/<key>`), requires the contact interface, which brings that data script

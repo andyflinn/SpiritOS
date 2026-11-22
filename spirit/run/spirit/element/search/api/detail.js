@@ -6,7 +6,7 @@
 // offered (spirit/client/apiTreeIndex.js verbs), so it is not shown. Its contract and its test: ./test/detail.md
 // and ./test/detail.js.
 //
-//   spirit.element.spirit.element.search.api.detail.create(host, { family, tree }) -> { destroy() }
+//   spirit.required.spirit.element.search.api.detail.create(host, { family, tree }) -> { destroy() }
 //     family   the family's name
 //     tree     the api tree the list holds (root.tree): { <family>: { <verb>: { request, ... } } }
 (function () {

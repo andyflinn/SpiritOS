@@ -4,7 +4,7 @@
 // "activate/deacivate" should be an element, too, that self-hides if the app is intrinsic, that way nobody that uses that element
 // can forget to hide it....". Its contract and its test: ./test/rowFormAppActive.md and ./test/rowFormAppActive.js.
 //
-//   spirit.element.spirit.element.search.app.rowFormAppActive.create(host, { key }) -> { destroy() }
+//   spirit.required.spirit.element.search.app.rowFormAppActive.create(host, { key }) -> { destroy() }
 //
 // It follows the app's row in spirit.required.spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.app.activeApp, and
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.
@@ -27,7 +27,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
       return S.ready.then(function (s) { return s.app.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
     }
-    var t = S.element.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
+    var t = S.required.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
     // SHOWN OR HIDDEN ONLY WHEN THAT CHANGES (the -browser test's write watch: hidden set again to what it was is still a change of
     // the attribute, and it paints on every row change).

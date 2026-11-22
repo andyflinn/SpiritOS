@@ -6,7 +6,7 @@
 //   including test folders." The family half is the family list (./list.js, the app-server selector until
 //   goal/G43.32); this is the verb half, and the family selector (spirit/element/search/api.js) holds the two side by side.
 //
-// spirit.element.spirit.element.search.api.verb.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
+// spirit.required.spirit.element.search.api.verb.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
 // Verbs, every verb (goal/G41.14; Andy: "the apiVerbSelector element MUST offer a (valid) All option at the top, which
 // results in an empty string as value"); a pick fires one bubbling `change`. root.show(tree, server) lists that family's verbs,
 // apiTreeIndex.verbs, so DEBUG is never offered (Andy: "DEBUG/... are owner only and will never be offered to peerPost
@@ -40,7 +40,7 @@
     // A PROBABILITYSEARCH DROPDOWN (the old shell's list search is forbidden on the face, goal/G40.8), made on its party's branch.
     var made = parts.then(makeList);
     function makeList() {
-      list = window.spirit.element.spirit.element.search.create(root, {
+      list = window.spirit.required.spirit.element.search.create(root, {
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
@@ -73,7 +73,6 @@
     return root;
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.

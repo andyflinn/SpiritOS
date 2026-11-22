@@ -2,7 +2,7 @@
 
 One app's detail (goal/G43.2). Its test is `./detail.js`.
 
-    spirit.element.spirit.element.search.app.detail.create(host, { row, panel }) -> { destroy() }
+    spirit.required.spirit.element.search.app.detail.create(host, { row, panel }) -> { destroy() }
 
 - Without `panel`, it shows the app's icon and label, the row element a list row is, and the appInstaller's
   activate/deactivate button for `spirit/app/<name>/<name>.js`.

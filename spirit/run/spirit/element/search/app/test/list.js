@@ -31,7 +31,7 @@ let node, chrome, loaded, made;
 // The keys a list in #<id> shows: its visible rows or tiles (a row the list hides stays in the page), never its selector rows.
 const shown = function (id) { return chrome.evaluate('(function () { var b = document.getElementById(' + JSON.stringify(id) + '); if (!b) return []; var out = []; Array.prototype.forEach.call(b.querySelectorAll("[data-key]"), function (r) { if (!r.getClientRects().length) return; var k = r.getAttribute("data-key"); if (out.indexOf(k) === -1) out.push(k); }); return out.sort(); }())'); };
 const fieldsOf = function (id) { return chrome.evaluate('(function () { var r = Array.prototype.filter.call(document.getElementById(' + JSON.stringify(id) + ').querySelectorAll("tr[data-key]"), function (x) { return x.getClientRects().length; })[0]; return r ? Array.prototype.map.call(r.querySelectorAll("td[data-field]"), function (td) { return td.getAttribute("data-field"); }) : null; }())'); };
-const make = function (id, opts) { return chrome.evaluate('(function () { var c = document.createElement("div"); c.id = ' + JSON.stringify(id) + '; c.style.cssText = "position:relative;width:900px;height:700px;display:flex;"; document.body.appendChild(c); window[' + JSON.stringify(id) + '] = spirit.element.spirit.element.search.app.list.create(c, ' + opts + '); var m = window[' + JSON.stringify(id) + ']; return !!m && !!m.list && typeof m.refresh === "function" && typeof m.destroy === "function"; }())'); };
+const make = function (id, opts) { return chrome.evaluate('(function () { var c = document.createElement("div"); c.id = ' + JSON.stringify(id) + '; c.style.cssText = "position:relative;width:900px;height:700px;display:flex;"; document.body.appendChild(c); window[' + JSON.stringify(id) + '] = spirit.required.spirit.element.search.app.list.create(c, ' + opts + '); var m = window[' + JSON.stringify(id) + ']; return !!m && !!m.list && typeof m.refresh === "function" && typeof m.destroy === "function"; }())'); };
 const openDropdown = function (id) { return chrome.evaluate('(function () { var f = document.getElementById(' + JSON.stringify(id) + ').querySelector("button[id$=\\"field\\"]"); if (!f) return false; f.click(); return true; }())'); };
 
 test.after(function () {
@@ -49,9 +49,9 @@ test.run('a scratch node comes up, with Chrome on its face page', 0.2, async fun
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and is spirit.element.spirit.element.search.app.list', 0.2, async function () {
+test.run('it loads through spirit.require and is spirit.required.spirit.element.search.app.list', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/list.js"); }).then(function () { var L = spirit.element.spirit.element.search.app.list; return !!(L && typeof L.create === "function"); }, function () { return false; })');
+  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/list.js"); }).then(function () { var L = spirit.required.spirit.element.search.app.list; return !!(L && typeof L.create === "function"); }, function () { return false; })');
   return loaded === true || false;
 }, test.limit.slow);
 

@@ -4,7 +4,7 @@ A test row of testicle's test table (goal/G47.1, the search cycle), as the testi
 shared row element. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The browser
 file runs in node on a bare window; the shared row element is a stand-in keeping the spec it is handed.
 
-- It stands at `spirit.element.spirit.app.testicle.element.search.testicle.row` with a `create`, and loads
+- It stands at `spirit.required.spirit.app.testicle.element.search.testicle.row` with a `create`, and loads
   `spirit/element/row.js` itself.
 - `create(row)`: kind `testicle`, keyed by the row's full key, no actions; rows share one index.
 - The box: *"The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity second;

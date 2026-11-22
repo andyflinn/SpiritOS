@@ -89,12 +89,12 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   };
   // A bundle row on the node's own job spirit.auth, as the auth family's data.js takes it (goal/G43.20).
   arrive = function (id, label) { global.window.spirit.required.spirit.data.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); };
-  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js') family(); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js') family(); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   // What the editor asked as it loaded; the runner's own asks after this test are not the editor's.
   loaded = required.slice();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   // it loads what it uses itself (rule/26)
   return (['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js'].every(function (p) { return required.indexOf(p) !== -1; })) ? true : false;
 }, test.limit.quick);
@@ -102,7 +102,7 @@ test.run('the bundle editor requires spirit/auth/api.js and no data.js, and the 
   if (!loaded) return false;
   return (loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && !!(((global.window.spirit.required.spirit.data || {}).auth || {}).data)) ? true : false;
 }, test.limit.quick);
-test.run('the bundle editor registers spirit.element.spirit.element.bundleEditor.create', 0.2, function () {
+test.run('the bundle editor registers spirit.required.spirit.element.bundleEditor.create', 0.2, function () {
   return (E.bundleEditor && typeof E.bundleEditor.create === 'function') ? true : false;
 }, test.limit.quick);
 test.run('the bundle editor draws a label input and an Add button', 0.2, async function () {

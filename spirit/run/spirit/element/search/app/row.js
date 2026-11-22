@@ -3,7 +3,7 @@
 // ONE APP, AS A ROW ELEMENT (goal/G43.2), as spirit/element/search/bundle/row.js is one bundle. row.js does the
 // shared work; this file says what an app is. Its contract and its test: ./test/row.md and ./test/row.js.
 //
-//   spirit.element.spirit.element.search.app.row.create(row) -> a row of kind app; row { key, label, icon }
+//   spirit.required.spirit.element.search.app.row.create(row) -> a row of kind app; row { key, label, icon }
 //
 // WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.required.spirit.data.app.data for every app row on the page, each change to the rows
 // of that key. A row asks nothing of its own; what it shows is what the stream said.
@@ -11,8 +11,8 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function () {
-  // On spirit.element since goal/G43.18, as its file is in spirit/element/search/app/.
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  // On spirit.required since goal/G43.18, as its file is in spirit/element/search/app/.
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/element/search/app/rowFormAppActive.js'].forEach(function (p) { window.spirit.require(p); });
   var appReady = Promise.resolve(window.spirit.require('spirit/app/api.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
@@ -33,22 +33,22 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
-    apps = apps || window.spirit.element.spirit.element.row.index(dispatch);
+    apps = apps || window.spirit.required.spirit.element.row.index(dispatch);
     return apps;
   }
 
   function esc(s) { return window.spirit.escapeHtml(s); }
   // THE ICON IS THE ICON ELEMENT (goal/G41.23), handed on as its markup, since a cell is painted as text.
   function iconHtml(glyph) {
-    if (!window.spirit.element.spirit.element.icon) return esc(glyph);
+    if (!window.spirit.required.spirit.element.icon) return esc(glyph);
     var hold = document.createElement('span');
-    window.spirit.element.spirit.element.icon.create(hold, { glyph: glyph });
+    window.spirit.required.spirit.element.icon.create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
 
   function create(row) {
     var r = row || {};
-    var el = window.spirit.element.spirit.element.row.create({
+    var el = window.spirit.required.spirit.element.row.create({
       kind: 'app',
       key: String(r.key || ''),
       index: index(),
@@ -76,7 +76,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
         var made = Promise.resolve(window.spirit.require('spirit/element/search/app/rowFormAppActive.js')).then(function () {
           if (installer !== made) return;
-          installer = window.spirit.element.spirit.element.search.app.rowFormAppActive.create(cell, { key: key });
+          installer = window.spirit.required.spirit.element.search.app.rowFormAppActive.create(cell, { key: key });
         });
         installer = made;
       }

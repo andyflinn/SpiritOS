@@ -110,7 +110,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
     return Promise.resolve({ items: [], more: false });
   } } });
-  const PE = function () { const e = global.window.spirit.element; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
+  const PE = function () { const e = global.window.spirit.required; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
     // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once.
@@ -134,7 +134,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   };
   // goal/G43.32: the page's own spirit.require answers the helper, so the element places itself by installSpiritElement,
   // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
-  // spirit.element.<their path>.
+  // spirit.required.<their path>.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   PE().search = Object.assign(PE().search || {}, { create: function (host, o) {
     const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
@@ -146,7 +146,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   load(FILE);
   // The element requires the agent family's api.js as it runs, and with it its data.js, once the element's tree has loaded.
   await settle();
-  AT = (((((global.window.spirit.element.spirit || {}).app || {}).agent || {}).element || {}).table || {});
+  AT = (((((global.window.spirit.required.spirit || {}).app || {}).agent || {}).element || {}).table || {});
   E.agentTable = AT.tableElement;
   AD = AT.tableElement || {};
   // What it asked as it loaded, kept apart from what this process asks later (the runner's own reports to testicle go
@@ -155,7 +155,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   return true;
 }, test.limit.quick);
 // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor is
-// ./row.js's. goal/G43.32: it stands at its path, spirit.element.spirit.app.agent.element.table.tableElement, its shared
+// ./row.js's. goal/G43.32: it stands at its path, spirit.required.spirit.app.agent.element.table.tableElement, its shared
 // pieces (once an element of their own, agentDetail) with its create.
 test.run('the file registers one element, the table editor with its create; the row editor lives in row.js', 0.2, function () {
   if (!AT) return false;

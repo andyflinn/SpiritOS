@@ -4,7 +4,7 @@ The monitor row of testicle's face with its status box, an element of its own (g
 testicle's face is an element of its own"*, *"element/statusBox.js (the monitor row with its status box)"*). It was
 `monitorRow` in `../element.js`. Its test: `./statusBox.js`.
 
-    spirit.element.spirit.app.testicle.element.statusBox.create(container) -> { destroy() }
+    spirit.required.spirit.app.testicle.element.statusBox.create(container) -> { destroy() }
 
 ## What it does
 

@@ -4,7 +4,7 @@
 // resides in spirit.app.monitor, in the new format of app plugins, under one namespace." Its contract and its test:
 // ./test/element.md and ./test/element.js. Since goal/G43.32 it is the app's main element (rule 4).
 //
-//   spirit.element.spirit.app.monitor.element.create(container) -> { destroy() }
+//   spirit.required.spirit.app.monitor.element.create(container) -> { destroy() }
 //
 // It shows one element, the spirit job's monitor, spirit/element/monitor/job.js (it was ./spirit.js; goal/G47.1, the box, the
 // monitor tiles): six tiles, each an element of its own (goal/G47.1, Q24; Andy: "one
@@ -20,7 +20,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/eleme
     var shown = null;
     parts.then(function () {
       if (gone) return;
-      shown = S.element.spirit.element.monitor.job.create(container);
+      shown = S.required.spirit.element.monitor.job.create(container);
     });
     return {
       destroy: function () {

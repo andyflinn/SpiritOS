@@ -48,14 +48,14 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.ready)'); }, 20000));
   return W.page || false;
 }, test.limit.slow);
-test.run('it loads through spirit.require, at spirit.element.spirit.element.monitor.job, with a create, the six tiles beside it', 0.2, async function () {
+test.run('it loads through spirit.require, at spirit.required.spirit.element.monitor.job, with a create, the six tiles beside it', 0.2, async function () {
   if (!W.page) return false;
-  W.loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/monitor/job.js"); }).then(function () { var j = window.spirit.element.spirit.element.monitor.job; return !!(j && typeof j.create === "function") && ' + JSON.stringify(NAMES) + '.every(function (n) { return j[n] && typeof j[n].create === "function"; }); }, function () { return false; })');
+  W.loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/monitor/job.js"); }).then(function () { var j = window.spirit.required.spirit.element.monitor.job; return !!(j && typeof j.create === "function") && ' + JSON.stringify(NAMES) + '.every(function (n) { return j[n] && typeof j[n].create === "function"; }); }, function () { return false; })');
   return W.loaded === true || false;
 }, test.limit.quick);
 test.run('mounted, it lays out the six tiles in one grid, in order: memory, CPU, uptime, event loop delay, connections, jobs running', 0.4, async function () {
   if (!W.loaded) return false;
-  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.element.spirit.element.monitor.job.create(d); return true; })()');
+  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.required.spirit.element.monitor.job.create(d); return true; })()');
   W.made = !!(await until(function () { return read().then(function (r) { return (r.tiles || []).length === TILES.length; }); }, 10000));
   const r = W.shown = await read();
   return W.made && r.grid && JSON.stringify((r.tiles || []).map(function (t) { return t.name; })) === JSON.stringify(TILES) ? true : false;

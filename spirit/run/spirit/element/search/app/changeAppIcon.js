@@ -4,7 +4,7 @@
 // well, in spirit/app/ then i can re-use them as is in the config right side panel of agent", Q4: "yes."). Its row as Andy drew
 // it for the detail: "row 0: rowForm: [✏️] "Icon" [iconSelector:dropdown] [Change]".
 //
-//   spirit.element.spirit.element.search.app.changeAppIcon.create(host, { key }) -> { destroy() }
+//   spirit.required.spirit.element.search.app.changeAppIcon.create(host, { key }) -> { destroy() }
 //
 // It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, spirit.app.iconApp,
 // and the row the stream then brings redraws it.
@@ -16,7 +16,7 @@
 
   function create(host, options) {
     var S = window.spirit;
-    var E = S.element;
+    var E = S.required;
     var key = String((options && options.key) || '');
     var gone = false;
     var picked = '';

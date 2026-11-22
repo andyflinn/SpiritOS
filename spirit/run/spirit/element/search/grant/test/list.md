@@ -7,7 +7,7 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./grant.js`.
 
 - It loads what it uses itself (rule/26): `spirit/element/search.js` and `spirit/element/search/grant/row.js`; no
   data script.
-- It names no table and no branch of its own. `spirit.element.search.grant.create(host, { grants, filters, selectors, serves })`: `grants` the
+- It names no table and no branch of its own. `spirit.required.search.grant.create(host, { grants, filters, selectors, serves })`: `grants` the
   caller's grants table, as the row element takes it, with `search(text)` beside it, answering `{ items, more }`. Made
   with no grants table, it throws nothing and draws only a note that it is not configured.
 - It draws one probabilitySearch pane into `host`, and fills it as soon as it is drawn; given `face: 'dropdown'`, a closed

@@ -6,7 +6,7 @@ its test folder"): one shell element, the Description field and its Save. Info d
 ## Requirements
 
 - A shell element of its own: it adds `changeMyDescription.create(host)` to
-  `window.spirit.element`, and answers `{ set(value), destroy() }`.
+  `window.spirit.required`, and answers `{ set(value), destroy() }`.
 - **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
 - **Its form is a rowForm** (goal/G41.27; Andy: *"changeMyDescription:\n\n[✏️][Description-input][Save]"*): it loads
   `spirit/element/rowForm.js` itself and makes one rowForm in its host, its icon ✏️ and its button Save; its span holds the

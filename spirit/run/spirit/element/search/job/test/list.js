@@ -54,12 +54,12 @@ test.run('zzFail is started', 0.2, async function () {
   const failed = await call('job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzFail/zzFail.js']) });
   return failed.status >= 200 && failed.status < 300 ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and mounts with spirit.element.spirit.element.search.job.list.create, given container and open', 0.2, async function () {
+test.run('it loads through spirit.require and mounts with spirit.required.spirit.element.search.job.list.create, given container and open', 0.2, async function () {
   if (!call) return false;
   await until(function () { return call('job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-  made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/job/list.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(1); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.opened = []; var J = spirit.element.spirit.element.search.job.list; if (!J || typeof J.create !== "function") return ""; window.made = J.create(c, { open: function (k, spec) { window.opened.push({ key: String(k), spec: spec ? Object.keys(spec) : [], fill: !!(spec && typeof spec.fill === "function") }); return Promise.resolve(null); } }); return "made"; }, function () { return ""; })');
+  made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/job/list.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(1); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.opened = []; var J = spirit.required.spirit.element.search.job.list; if (!J || typeof J.create !== "function") return ""; window.made = J.create(c, { open: function (k, spec) { window.opened.push({ key: String(k), spec: spec ? Object.keys(spec) : [], fill: !!(spec && typeof spec.fill === "function") }); return Promise.resolve(null); } }); return "made"; }, function () { return ""; })');
   // The job rows: a header row (th, or under thead) is no job and is never judged as one.
   rows = function () { return chrome.evaluate('Array.prototype.map.call(document.querySelectorAll("#box tr, #box .list-row"), function (r) { return r.getClientRects().length && !r.querySelector("th") && !r.closest("thead") ? String(r.innerText || r.textContent || "") : ""; }).filter(Boolean)').then(function (x) { return Array.isArray(x) ? x : []; }); };
   text = function () { return chrome.evaluate('String((document.getElementById("box") || {}).innerText || "")'); };
@@ -161,7 +161,7 @@ test.run('a press on spirit.fs calls open with its key and a fill', 0.2, async f
 const OVER = '(function () { var box = document.getElementById("box"); var b = box.getBoundingClientRect(); var l = Array.prototype.filter.call(box.querySelectorAll(".app-container"), function (c) { return c.offsetParent !== null; }).pop(); if (!l) return false; var r = l.getBoundingClientRect(); if (r.width < b.width - 4 || r.height < b.height - 4) return false; return String(l.textContent).indexOf("spirit.fs") !== -1; }())';
 test.run('a press opens a panel over the whole list, spirit.fs on it', 0.2, async function () {
   if (made !== 'made') return false;
-  await chrome.evaluate('(function () { window.made.destroy(); var c = document.getElementById("box"); c.innerHTML = ""; window.made = spirit.element.spirit.element.search.job.list.create(c, {}); return true; }())');
+  await chrome.evaluate('(function () { window.made.destroy(); var c = document.getElementById("box"); c.innerHTML = ""; window.made = spirit.required.spirit.element.search.job.list.create(c, {}); return true; }())');
   await until(function () { return rows().then(function (r) { return r.some(function (t) { return t.indexOf('spirit.fs') !== -1; }); }); }, 10000);
   await chrome.evaluate(PRESS_FS);
   return (await until(function () { return chrome.evaluate(OVER).then(function (v) { return v === true; }); }, 5000)) ? true : false;

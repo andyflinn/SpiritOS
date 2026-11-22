@@ -9,7 +9,7 @@ the table)"*.
 
 ## Requirements
 
-- It registers `spirit.element.spirit.app.agent.element.table.tableElement` and the shared `spirit.element.spirit.app.agent.element.table.tableElement`, and no other element: one file,
+- It registers `spirit.required.spirit.app.agent.element.table.tableElement` and the shared `spirit.required.spirit.app.agent.element.table.tableElement`, and no other element: one file,
   one element (goal/G41.28). The row's editor, `agentRow`, is `./row.js`'s, which builds on `agentDetail`, and
   is tested in its own suite (`./row.md`).
 - **Every pane's look is in one place** (Andy: *"is it possible to organize the code so that my changes so far are only

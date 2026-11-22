@@ -8,7 +8,7 @@ selecting branch rows."*
 
 ## Requirements
 
-- It registers `spirit.element.search.branch.create(container, options)`, and `createBranchSelector` no more. Its root is
+- It registers `spirit.required.search.branch.create(container, options)`, and `createBranchSelector` no more. Its root is
   appended to the container and answered (box v23: *"every element gets a container and appends itself"*).
 - It answers its root at once, class `branch-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
 - It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search/branch/list.js` and draws

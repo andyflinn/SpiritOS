@@ -41,15 +41,15 @@ function world() {
   const w = { lists: [], required: [] };
   const real = function (file) { return function (win) { vm.runInContext(fs.readFileSync(path.join(JS, file), 'utf8'), win, { filename: file }); }; };
   const STANDS = {
-    'spirit/element/search.js': function (win) { const at = win.spirit.element.spirit.element; at.search = Object.assign(at.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
+    'spirit/element/search.js': function (win) { const at = win.spirit.required.spirit.element; at.search = Object.assign(at.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
       redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); },
     // Its two halves (goal/G43.32): the family list, search/api/list.js, and the verb half, search/api/verb.js.
     'spirit/element/search/api/list.js': real('search/api/list.js'),
     'spirit/element/search/api/verb.js': real('search/api/verb.js'),
   };
   const win = {
-    // goal/G43.32: an element stands at spirit.element.<its path>.
-    spirit: { element: { spirit: { element: {} } }, escapeHtml: function (s) { return String(s); },
+    // goal/G43.32: an element stands at spirit.required.<its path>.
+    spirit: { required: { spirit: { element: {} } }, escapeHtml: function (s) { return String(s); },
       ready: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }) },
     document: { createElement: function (t) { return node(t); } },
     Event: function (type) { this.type = type; },
@@ -73,7 +73,7 @@ function world() {
   pageData.homeNode('nOdE+key/one==');
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  w.E = win.spirit.element.spirit.element;
+  w.E = win.spirit.required.spirit.element;
   return w;
 }
 // What a list offers, as the search element would draw it: the rows of its spirit.required.spirit.data branch (goal/G41.28), or for

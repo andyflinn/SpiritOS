@@ -19,8 +19,8 @@ window.laid = function () {
   // the agent tables' element waits on it.
   spirit.start();
   return Promise.resolve().then(function () { return Promise.all([spirit.require('spirit/app/agent/element/chatPane.js'), spirit.require('spirit/app/agent/element/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function () {
-    // Where the elements stand (goal/G43.32): spirit.element.<their path>.
-    var AG = ((((spirit.element || {}).spirit || {}).app || {}).agent || {}).element || {};
+    // Where the elements stand (goal/G43.32): spirit.required.<their path>.
+    var AG = ((((spirit.required || {}).spirit || {}).app || {}).agent || {}).element || {};
     var E = AG.chatPane;
     var out = { made: !!E && typeof E.create === 'function' };
     if (!out.made) return JSON.stringify(out);

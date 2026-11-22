@@ -7,11 +7,11 @@ it drew a list of its own. What that list alone did (any ID table, goal/G41.13; 
 the contact list does now, tested in its folder. Its test is `./contact.js`: the browser file run in node on a bare window,
 the list a stand-in that keeps what it was handed.
 
-`spirit.element.spirit.element.search.contact.create(container, options)` -> root.
+`spirit.required.spirit.element.search.contact.create(container, options)` -> root.
 
 ## Requirements
 
-- It places itself at `spirit.element.spirit.element.search.contact`, with a create.
+- It places itself at `spirit.required.spirit.element.search.contact`, with a create.
 - It makes no list of its own: no probabilitySearch, nothing of the old shell's list search (goal/G40.8).
 - `create(container, options)` appends its root to its container and answers it; on a bare page it requires the contact
   list and the contact family's interface (`spirit/contact/api.js`, which brings its data.js), and no data.js, then draws the list into its root.

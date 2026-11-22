@@ -168,7 +168,7 @@ test.run('the provider\'s icon is shown, not kept: the model table has no provid
 // ── the page: elementTable.js and elementRow.js ──
 const opened = [];
 const detail = { open: function (make) { opened.push(make); }, look: function (t2) { return { icon: '🧠', name: 'Model', title: 'Models', table: t2 }; } };
-test.run('elementTable.js and elementRow.js place the agent app\'s model list and model row elements on spirit.element', 0.2, function () {
+test.run('elementTable.js and elementRow.js place the agent app\'s model list and model row elements on spirit.required', 0.2, function () {
   const made = X.made = { tables: [], rows: [], required: [], searches: [], busy: [], calls: [], answer: null, forms: [] };
   made.family = new Proxy({}, { get: function (o, table) {
     if (table === 'then') return undefined;
@@ -193,13 +193,13 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
     // branch's data.js names it (spirit.required.spirit.data.agent.data.branch, goal/G41.28).
-    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element.spirit.element; const AD2 = ((global.window.spirit.required.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
+    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.required.spirit.element; const AD2 = ((global.window.spirit.required.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   });
-  // goal/G43.32: the stand-ins stand where the page files read them, at spirit.element.<their path>; the shared table
+  // goal/G43.32: the stand-ins stand where the page files read them, at spirit.required.<their path>; the shared table
   // element's pieces (once agentDetail) with its create.
-  global.window = { spirit: { branchPath: branchPath, element: { spirit: {
+  global.window = { spirit: { branchPath: branchPath, required: { spirit: {
     element: { search: STAND.search, rowForm: STAND.rowForm, busyButton: STAND.busyButton },
     app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), row: STAND.agentRow } } } } } } } };
   global.spirit = global.window.spirit;
@@ -223,7 +223,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
-  const T = global.window.spirit.element.spirit.app.agent.element.table.model || {};
+  const T = global.window.spirit.required.spirit.app.agent.element.table.model || {};
   X.E = { modelTable: T.elementTable, modelRow: T.elementRow };
   return X.E.modelTable && typeof X.E.modelTable.create === 'function' && X.E.modelRow && typeof X.E.modelRow.create === 'function' ? true : false;
 }, test.limit.quick);

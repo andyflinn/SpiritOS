@@ -5,7 +5,7 @@
 // row.js does the shared work; this file says what an icon is. The set is one file, not a stream, so there is no
 // dispatch: a list built again from a changed set makes its rows again.
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   // goal/G41.23: the glyph is the icon element (spirit/element/icon.js), loaded here too.
   if (window.spirit.require) ['spirit/element/row.js', 'spirit/element/icon.js'].forEach(function (p) { window.spirit.require(p); });

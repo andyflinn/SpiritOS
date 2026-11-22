@@ -10,7 +10,7 @@ only"*, *"testicle's face calls no verbs in this round: it shows a file pane in 
 else"*, *"A face-only app is its manifest and its element.js, as contact and starter are"*, *"The file viewer is the
 existing file list with a filter for production *.js files: no new list."*
 
-`spirit.element.spirit.app.testicle.element.create(container, options)` -> `{ destroy() }`.
+`spirit.required.spirit.app.testicle.element.create(container, options)` -> `{ destroy() }`.
 
 ## Requirements
 
@@ -30,7 +30,7 @@ existing file list with a filter for production *.js files: no new list."*
 **On the page.**
 - Before any run is pressed, the world waits for testicle to go idle: its first start brings its tables up to date with
   the scratch tree and classifies it before any run (goal/G47.1, box v95, 5; box v94, 1).
-- It loads through `spirit.require` and stands at `spirit.element.spirit.app.testicle.element`; `create(container)`
+- It loads through `spirit.require` and stands at `spirit.required.spirit.app.testicle.element`; `create(container)`
   answers `{ destroy }`.
 - A workBench whose left strip holds two icons, 📁 then ⚙ (goal/G47.1, box v79, 2: *"the second icon below the existing one"*), and whose right strip holds none.
 - ⚙ opens the panel *"⚙ Configuration"* in the left pane: one switch, the toggle form the app list uses (rowFormToggle), on interactive, off auto, drawn from the preference interactive (asked of testicle.preferences once, then followed in testicle's branch, which the stream keeps); no Save: a press sends the other mode at once, and the switch moves only when the stream brings it back (goal/G47.1, box v80, 2). A refusal is said below the form.

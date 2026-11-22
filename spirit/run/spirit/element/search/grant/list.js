@@ -41,7 +41,7 @@
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.element.spirit.element.search.create(host, {
+    var list = window.spirit.required.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       data: String(g.branch),
@@ -58,7 +58,7 @@
         // edge so the button doesn't jump out my way when i try to revoke haiku's grants?"): a row going away moves no Revoke.
         { field: 'revoke', label: '', width: '6em', align: 'right' },
       ],
-      element: function (row) { return window.spirit.element.spirit.element.search.grant.row.create(row, { grants: g }); },
+      element: function (row) { return window.spirit.required.spirit.element.search.grant.row.create(row, { grants: g }); },
       filters: o.filters,
       selectors: o.selectors,
       empty: o.empty || 'No grant matches.',
@@ -71,7 +71,6 @@
     };
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/list.js', { create: create }); });
 }());

@@ -4,7 +4,7 @@
 // testicle search (../testicle.js) draws in the first, non-closable tab of testicle's face. Its row is ./row.js; a
 // row clicked is handed to pick, and testicle's face opens its detail (./detail.js) in a closable tab.
 //
-//   spirit.element.spirit.app.testicle.element.search.testicle.list.create(container, { pick }) -> { destroy() }
+//   spirit.required.spirit.app.testicle.element.search.testicle.list.create(container, { pick }) -> { destroy() }
 //
 // The box: "The search has a script selector, unselected (all) the default", "The script selector: the file search as a
 // dropdown, production scripts only", "The search has a suite selector, unselected (all) the default", "The testicle
@@ -63,7 +63,7 @@
       suiteList = null;
       suiteSel.innerHTML = '';
       suiteSel.value = '';
-      suiteList = S.element.spirit.app.testicle.element.search.suite.create(suiteSel, {
+      suiteList = S.required.spirit.app.testicle.element.search.suite.create(suiteSel, {
         script: scriptSel.value, face: 'dropdown', placeholder: 'all suites', all: 'all suites',
         pick: function (row) { suiteSel.value = row && row.suite ? String(row.suite) : ''; changed(suiteSel); },
       });
@@ -91,12 +91,12 @@
           return { items: (b && b.items) || [], more: !!(b && b.more) };
         });
       };
-      scriptList = S.element.spirit.element.search.file.create(scriptSel, {
+      scriptList = S.required.spirit.element.search.file.create(scriptSel, {
         face: 'dropdown', accept: production, flat: true, placeholder: 'all scripts', all: 'all scripts',
         pick: function (row, key) { scriptSel.value = row && key ? String(key) : ''; drawSuites(); changed(scriptSel); },
       });
       drawSuites();
-      list = S.element.spirit.element.search.create(container.firstElementChild, {
+      list = S.required.spirit.element.search.create(container.firstElementChild, {
         data: data.branch('testicle'),
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): testicle.testicle.search, every script.
         search: function (args) {
@@ -132,7 +132,7 @@
         // holds more than the answers did (each answer's rows, and every row the stream brings), so what is shown is cut there.
         order: function (a, b) { return (a.verified ? 1 : 0) - (b.verified ? 1 : 0) || Number(b.severity || 0) - Number(a.severity || 0); },
         most: HELD_MAX,
-        element: function (row) { return S.element.spirit.app.testicle.element.search.testicle.row.create(row); },
+        element: function (row) { return S.required.spirit.app.testicle.element.search.testicle.row.create(row); },
         pick: function (row, key) { if (row && typeof o.pick === 'function') o.pick(row, key); },
         empty: 'No test matches.',
       });

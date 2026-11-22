@@ -4,7 +4,7 @@
 // variants of the value tile ... Each requires the jobs family's interface and fills itself from the stats the node's spirit
 // job publishes."). Its contract and its test: ./test/uptime.md and ./test/uptime.js.
 //
-//   spirit.element.spirit.element.monitor.job.uptime.create(container, { mode }) -> { destroy() }
+//   spirit.required.spirit.element.monitor.job.uptime.create(container, { mode }) -> { destroy() }
 //     mode   handed on to the value tile (../value.js): tile, the default
 //
 // Its value: how long the node has run (stats.uptimeSeconds): days and hours, hours and minutes, or minutes and seconds. Until the first reading, a dash. It watches the one row it reads, the spirit job of the
@@ -34,7 +34,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/job/a
     }
     parts.then(function () {
       if (gone) return;
-      tile = S.element.spirit.element.monitor.value.create(container, { icon: '⏱️', label: 'Uptime', mode: o.mode });
+      tile = S.required.spirit.element.monitor.value.create(container, { icon: '⏱️', label: 'Uptime', mode: o.mode });
       paint();
       off = S.required.spirit.data.job.data.watch('spirit', paint);
     });

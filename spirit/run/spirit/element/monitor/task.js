@@ -5,7 +5,7 @@
 // it an improvement on the current run-rowForm in app and isolate it as spirit/element/monitor/task.js". Its contract and
 // its test: ./test/task.md and ./test/task.js.
 //
-//   spirit.element.spirit.element.monitor.task.create(container, { id }) -> { destroy() }
+//   spirit.required.spirit.element.monitor.task.create(container, { id }) -> { destroy() }
 //     id   the app's job id, spirit.app.<name>: a run's job id is its app's route (spirit/job.js, goal/G43.20)
 //
 // IT SHOWS ONLY FOR A RUN APP: an app whose spirit/app/<name>/<name>.json says node.run; for any other it draws nothing, as
@@ -40,7 +40,7 @@
 
     function cache() { return S.required.spirit.data && S.required.spirit.data.job && S.required.spirit.data.job.data ? S.required.spirit.data.job.data : null; }
     function job() { var J = cache(); return J && typeof J.job === 'function' ? J.job(id) : null; }
-    function actionOf(j) { return j ? S.element.spirit.element.search.job.row.actionOf(j) : 'run'; }
+    function actionOf(j) { return j ? S.required.spirit.element.search.job.row.actionOf(j) : 'run'; }
     function messageOf(j) {
       if (!j) return '';
       var a = actionOf(j);
@@ -80,7 +80,7 @@
         if (gone || !(j.node && j.node.run === true)) return;
         var identity = j.identity || {};
         label = String(identity.label || name);
-        form = S.element.spirit.element.rowForm.create(box, { icon: identity.icon || '▶️', button: 'Run', press: press });
+        form = S.required.spirit.element.rowForm.create(box, { icon: identity.icon || '▶️', button: 'Run', press: press });
         said = document.createElement('div');
         box.appendChild(said);
         var J = cache();

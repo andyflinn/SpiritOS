@@ -42,9 +42,9 @@ test.run('as it runs it requires its own list first', 0.2, function () {
   if (!W.ran) return false;
   return W.required[0] === LIST ? true : false;
 }, test.limit.quick);
-test.run('it places spirit.element.spirit.element.search.grant.create, by its path', 0.2, function () {
+test.run('it places spirit.required.spirit.element.search.grant.create, by its path', 0.2, function () {
   if (!W.ran) return false;
-  const S = (((((global.window.spirit.element || {}).spirit || {}).element || {}).search || {}).grant);
+  const S = (((((global.window.spirit.required || {}).spirit || {}).element || {}).search || {}).grant);
   W.S = S;
   return !!S && typeof S.create === 'function' ? true : false;
 }, test.limit.quick);

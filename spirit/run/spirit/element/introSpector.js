@@ -4,8 +4,8 @@
 // (spirit/app/introSpector/element.js) draws, moved here from shell/introSpector/introSpector.js (goal/G30.5) and
 // working as it did. Its contract and its test: ./test/introSpector.md and ./test/introSpector.js.
 //
-//   spirit.element.spirit.element.introSpector.create(container) -> { destroy() }
-//   spirit.element.spirit.element.introSpector.fieldsOf(request), .argsOf(fields, texts)   the form, without a page
+//   spirit.required.spirit.element.introSpector.create(container) -> { destroy() }
+//   spirit.required.spirit.element.introSpector.fieldsOf(request), .argsOf(fields, texts)   the form, without a page
 //
 //   Andy, 2026-10-20: "I want an intrinsic app: introSpector", and why: "this all happens because i want to SEE", and "it's
 //   also another way i can check on your work."
@@ -163,10 +163,10 @@
       var line = part('line');
       var hold = document.createElement('span');
       line.appendChild(hold);
-      var branch = apiPick = S.element.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…' });
+      var branch = apiPick = S.required.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…' });
       // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/list.js), the book and
       // this node's relays; no pick is self, this node.
-      picker = S.element.spirit.element.search.contact.list.create(hold, {
+      picker = S.required.spirit.element.search.contact.list.create(hold, {
         face: 'dropdown',
         placeholder: 'self (this node)',
         all: 'self (this node)',
@@ -182,7 +182,7 @@
         },
       });
       // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7), loaded with its parts.
-      Promise.resolve(S.element.spirit.element.codeMirror.create(part('reply'), { mode: 'read', text: '', path: 'reply.json' }))
+      Promise.resolve(S.required.spirit.element.codeMirror.create(part('reply'), { mode: 'read', text: '', path: 'reply.json' }))
         .then(function (view) { if (!gone) reply = view; }, function () { /* the reply stays unshown */ });
       // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.
       branch.addEventListener('tree', function () {

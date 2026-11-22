@@ -11,7 +11,7 @@ list.js and a row.js script to fit within the probabilitySearch framework."*
 
 - It loads what it uses itself (rule/26): `spirit/element/row.js`, through `spirit.require`; no arming button
   (Delete is the branchEditor's, goal/G41.32).
-- It registers `spirit.element.search.bundle.row.create(row)`: a row element (`spirit/element/row.js`) of kind
+- It registers `spirit.required.search.bundle.row.create(row)`: a row element (`spirit/element/row.js`) of kind
   `bundle`, keyed by the bundle's id. Its row is the bundle as `auth.bundle` answers it, `{ id, label, owner }`.
 - Its fields are `label` and `owner`, in that order (goal/G41.25: the owner *"displayed right after
   the bundles label"*). The owner is drawn escaped, as the bundle names it, and never as an input: *"the owner field

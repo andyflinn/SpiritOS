@@ -164,7 +164,7 @@ function world() {
   const branchPath = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
     // The page knows its node: spirit.required.spirit.data files nothing before it does (goal/G41.28, Q10).
-    spirit: { element: page, node: { key: 'KEY+GRANTS/PANEL==' },
+    spirit: { required: page, node: { key: 'KEY+GRANTS/PANEL==' },
       require: function (p) {
         w.required.push(String(p));
         const server = Object.keys(servers).filter(function (k) { return branchPath(k) === p; })[0];
@@ -175,7 +175,7 @@ function world() {
         const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
         if (companion && !w.ran[companion] && fs.existsSync(path.join(RUN, companion))) { w.ran[companion] = true; vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion }); }
-        // goal/G43.32: what the panel draws with stands where an element now finds it, spirit.element.spirit.element.
+        // goal/G43.32: what the panel draws with stands where an element now finds it, spirit.required.spirit.element.
         (FILES[p] || []).forEach(function (k) { const at = ((page.spirit = page.spirit || {}).element = page.spirit.element || {}); at[k] = E[k]; });
         return Promise.resolve(true);
       },
@@ -222,9 +222,9 @@ test.run('the grants panel runs on a bare window', 0.2, async function () {
   code = SRC.replace(/\/\/.*$/gm, '');
   w = world();
   await settle();
-  // goal/G43.32: the elements stand at their paths, spirit.element.spirit.element.
+  // goal/G43.32: the elements stand at their paths, spirit.required.spirit.element.
   E = ((w.page.spirit || {}).element || {});
-  // Since goal/G43.32 the panel stands in the grant search: spirit.element.spirit.element.search.grant.grantsPanel.
+  // Since goal/G43.32 the panel stands in the grant search: spirit.required.spirit.element.search.grant.grantsPanel.
   GP = ((E.search || {}).grant || {}).grantsPanel;
   return true;
 }, test.limit.quick);
@@ -269,7 +269,7 @@ test.run('it requires the auth branch\'s interface, spirit/auth/api.js, with its
   if (!w) return false;
   return w.required.indexOf('spirit/auth/api.js') !== -1 && w.required.indexOf('spirit/job/api.js') === -1 ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.grant.grantsPanel.create', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.search.grant.grantsPanel.create', 0.2, function () {
   if (!w) return false;
   return GP && typeof GP.create === 'function' ? true : false;
 }, test.limit.quick);

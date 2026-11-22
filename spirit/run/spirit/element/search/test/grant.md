@@ -8,7 +8,7 @@ its list a recorder in its place. What the list does is judged by `../grant/test
 ## Requirements
 
 - It requires its own list as it runs.
-- It places `spirit.element.spirit.element.search.grant.create`, by its path.
+- It places `spirit.required.spirit.element.search.grant.create`, by its path.
 - `create(container, options)` draws its list in that container, with the options as they are, and answers what the list
   answers.
 

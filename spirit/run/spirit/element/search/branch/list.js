@@ -30,7 +30,7 @@
 
   function create(host, opts) {
     var o = opts || {};
-    var E = window.spirit.element;
+    var E = window.spirit.required;
     var list = null;
     // THE FILTER: the family selector, made here and mounted by the search in its 🪣 row.
     var family = E.spirit.element.search.api.create(document.createElement('span'), { all: 'every family' });
@@ -94,7 +94,6 @@
     };
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // Its parts are loaded first, so a caller that requires this file and waits finds them all on the page.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/branch/list.js', { create: create, ready: parts }); });

@@ -38,8 +38,8 @@ function world() {
     shellCreateListSearch: function (host, opts) { w.old = true; return { redraw: function () {}, refresh: function () {} }; },
   });
   const win = {
-    // goal/G43.32: an element stands at spirit.element.<its path>, its parts there too.
-    spirit: { element: { spirit: { element: E } }, escapeHtml: function (s) { return String(s); },
+    // goal/G43.32: an element stands at spirit.required.<its path>, its parts there too.
+    spirit: { required: { spirit: { element: E } }, escapeHtml: function (s) { return String(s); },
       ready: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }),
       // A branch's api.js, as a page's: its real companion data.js run on this window, attaching itself to the data set, as
       // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.required.spirit.data.node.data).
@@ -67,7 +67,7 @@ function world() {
   pageData.homeNode('nOdE+key/one==');
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(SERVER_SRC, win, { filename: SERVER_FILE });
-  w.E = win.spirit.element.spirit.element;
+  w.E = win.spirit.required.spirit.element;
   return w;
 }
 // What a list offers, as the search element would draw it: the rows of its spirit.required.spirit.data branch (goal/G41.28), or for
@@ -93,7 +93,7 @@ test.run('it loads probabilitySearch itself', 0.2, function () {
 }, test.limit.quick);
 
 // the server half: a probabilitySearch dropdown of the node's families
-test.run('it places itself at spirit.element.spirit.element.search.api.list, with a create, and createAppServerSelector no more', 0.2, function () {
+test.run('it places itself at spirit.required.spirit.element.search.api.list, with a create, and createAppServerSelector no more', 0.2, function () {
   if (!w) return false;
   made = w.E.search.api.list;
   return made && typeof made.create === 'function' && !('createAppServerSelector' in w.E) ? true : false;

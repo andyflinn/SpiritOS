@@ -5,11 +5,11 @@ detail elements."*): the row the job list drew itself before (`spirit/element/jo
 `./row.js`: the browser file run in node on a bare window, the shared row element, the icon element and the
 progress bar stand-ins, so what is judged is what this file says a job is.
 
-`spirit.element.spirit.element.search.job.row.create(job, { latest })`; also `.kindOf(job)`, `.STATUS_ICON`, `.mark(id)` and `.actionOf(job)`.
+`spirit.required.spirit.element.search.job.row.create(job, { latest })`; also `.kindOf(job)`, `.STATUS_ICON`, `.mark(id)` and `.actionOf(job)`.
 
 ## Requirements
 
-- It places itself at `spirit.element.spirit.element.search.job.row`, with a create, and loads what it draws with:
+- It places itself at `spirit.required.spirit.element.search.job.row`, with a create, and loads what it draws with:
   the shared row element, the icon element and the progress bar.
 - A row is of kind `job`, keyed by the job's id, with no actions: a press opens its detail (the list's).
 - Its fields, in order: latest, status, name, kind, progress, updated.

@@ -22,7 +22,7 @@ const ROW = 'spirit/app/agent/element/table/persona/elementRow.js';
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.element); };
+const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
 
 // ── the world: a window of its own, the shared element and the row editor stand-ins ──
 // W.tables: each shared table made, { container, o, refreshed, destroyed }. W.rows: each row editor made. W.held: while
@@ -32,7 +32,7 @@ function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, branchPath: branchPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
-  // As their own files place themselves: by the one helper, at spirit.element.<their path>.
+  // As their own files place themselves: by the one helper, at spirit.required.<their path>.
   helper(global.window.spirit, SHARED, { create: function (container, o) {
     const t = { container: container, o: o, refreshed: 0, destroyed: false, refresh: function () { t.refreshed += 1; }, destroy: function () { t.destroyed = true; } };
     W.tables.push(t); return t;
@@ -59,14 +59,14 @@ test.run('before it runs, the page has no persona table element', 0.2, function 
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.persona.elementTable') === undefined || false;
 }, test.limit.quick);
-test.run('it places spirit.element.spirit.app.agent.element.table.persona.elementTable, with create', 0.2, async function () {
+test.run('it places spirit.required.spirit.app.agent.element.table.persona.elementTable, with create', 0.2, async function () {
   if (!W.up) return false;
   load(FILE);
   await settle();
   E.table = at('spirit.app.agent.element.table.persona.elementTable');
   return (!!E.table && typeof E.table.create === 'function') || false;
 }, test.limit.quick);
-test.run('the row editor keeps its own place beside it, at spirit.element.spirit.app.agent.element.table.persona.elementRow', 0.2, function () {
+test.run('the row editor keeps its own place beside it, at spirit.required.spirit.app.agent.element.table.persona.elementRow', 0.2, function () {
   if (!E.table) return false;
   const r = at('spirit.app.agent.element.table.persona.elementRow');
   return (!!r && typeof r.create === 'function') || false;

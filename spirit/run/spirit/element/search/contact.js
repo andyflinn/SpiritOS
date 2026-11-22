@@ -3,7 +3,7 @@
 // ONE SHELL ELEMENT: the contact selector, the peer picker apps build their screens with.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
-//   so one file per element, each adding itself to window.spirit.element,
+//   so one file per element, each adding itself to window.spirit.required,
 //   which the shell hands to apps at mount as api.ui.element.
 //
 // A THIN SELECTOR OVER THE ONE CONTACT LIST, spirit/element/search/contact/list.js, WHICH IT LOADS ITSELF (rule/26),
@@ -12,7 +12,7 @@
 // that list alone did (any ID table, the caller's hidden filters, a mark column) the contact list does now. Its contract and
 // its test: ./test/contact.md and ./test/contact.js.
 //
-//   spirit.element.spirit.element.search.contact.create(container, options) -> root
+//   spirit.required.spirit.element.search.contact.create(container, options) -> root
 //     root.value   the chosen key, '' while none is; root.row the chosen row, null while none is; one bubbling `change` on
 //                  a pick; refresh() asks again; mark(key, status) repaints that row's mark from what the list holds, never
 //                  asking the node
@@ -51,7 +51,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     Promise.all(['spirit/element/search/contact/list.js', 'spirit/element/search.js', 'spirit/element/row.js',
       'spirit/element/search/contact/row.js'].map(function (p) { return window.spirit.require(p); }).concat([window.spirit.require('spirit/contact/api.js')])).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.element.search.contact.list.create(root, {
+      made = window.spirit.required.spirit.element.search.contact.list.create(root, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (o.placeholder || 'choose a contact…'),
         all: isPane ? undefined : o.all,

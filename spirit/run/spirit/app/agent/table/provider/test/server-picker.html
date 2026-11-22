@@ -46,7 +46,7 @@ window.picker = function (answers) {
   // Model dropdown's own search went to the scratch node, which runs no agent server, and drew none of its answer.
   return Promise.resolve(spirit.start()).then(function () { return spirit.ready; }).then(function (s) { if (s) s.agent = family; }).then(function () { return spirit.require('spirit/app/agent/element/table/provider/elementRow.js'); }).then(function () {
     // goal/G43.32: the row element stands at its path.
-    spirit.element.spirit.app.agent.element.table.provider.elementRow.create(pane, answers.provider, false, detail);
+    spirit.required.spirit.app.agent.element.table.provider.elementRow.create(pane, answers.provider, false, detail);
     return wait(1500);
   }).then(function () {
     var label = Array.prototype.filter.call(pane.querySelectorAll('label'), function (l) { return /^\s*Model\s*$/.test(l.textContent); })[0] || null;

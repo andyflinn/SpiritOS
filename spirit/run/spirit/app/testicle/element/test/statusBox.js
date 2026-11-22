@@ -43,7 +43,7 @@ const idle = function (ms) {
 // own em, its alignment, its text and whether it can be seen; each way it was drawn kept once, however often it shows.
 const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false, nums: [], numsSeen: {},' +
   ' mount: function () { var b = document.createElement("div"); b.id = "zzA"; b.style.cssText = "width:500px;height:60px"; document.body.appendChild(b);' +
-  '   window.m_zzA = window.spirit.element.spirit.app.testicle.element.statusBox.create(b);' +
+  '   window.m_zzA = window.spirit.required.spirit.app.testicle.element.statusBox.create(b);' +
   '   var note = function () { var r = document.querySelectorAll("#zzA .testicle-rows > .testicle-row"), i = document.querySelector("#zzA .testicle-busy"), m = document.querySelector("#zzA .testicle-mode");' +
   '     var pair = Array.prototype.map.call(r, function (x) { return String(x.textContent || "").trim(); }); var last = window.zz.rows[window.zz.rows.length - 1];' +
   '     if (pair.length === 2 && (!last || last[0] !== pair[0] || last[1] !== pair[1])) window.zz.rows.push(pair);' +
@@ -86,7 +86,7 @@ test.run('a page loads the box by itself and mounts it alone', 0.2, async functi
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
   await W.page.send('Page.navigate', { url: W.node.base + '/DEBUG/' + REL.replace(/\.js$/, '') + '/headLessBrowser.html' });
-  W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app && window.spirit.element.spirit.app.testicle && window.spirit.element.spirit.app.testicle.element.statusBox)').then(function (v) { return v === true; }); }, H.WAIT);
+  W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.app && window.spirit.required.spirit.app.testicle && window.spirit.required.spirit.app.testicle.element.statusBox)').then(function (v) { return v === true; }); }, H.WAIT);
   if (W.ok) { await ev(HANDS); W.ok = (await ev('window.zz.mount()')) === true; }
   return !!W.ok || false;
 }, test.limit.slow);
@@ -422,7 +422,7 @@ test.run('a page loaded anew while nothing changes is sent suites owed and class
   if (!W.ok) return false;
   await idle(240000);
   await W.page.send('Page.navigate', { url: W.node.base + '/DEBUG/' + REL.replace(/\.js$/, '') + '/headLessBrowser.html' });
-  const up = await H.until(function () { return ev('!!(window.spirit && window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app && window.spirit.element.spirit.app.testicle && window.spirit.element.spirit.app.testicle.element.statusBox)').then(function (v) { return v === true; }); }, H.WAIT);
+  const up = await H.until(function () { return ev('!!(window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.app && window.spirit.required.spirit.app.testicle && window.spirit.required.spirit.app.testicle.element.statusBox)').then(function (v) { return v === true; }); }, H.WAIT);
   if (!up) return false;
   await ev(HANDS); await ev('window.zz.mount()');
   let got = null;

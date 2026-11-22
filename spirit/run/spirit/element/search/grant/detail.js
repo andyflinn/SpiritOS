@@ -7,7 +7,7 @@
 // armingButton [Revoke], which must revoke/delete that grant in the database"), in one rowForm. Its test:
 // ./test/detail.js.
 //
-//   spirit.element.spirit.element.search.grant.detail.create(host, { row, grants }) -> { destroy() }
+//   spirit.required.spirit.element.search.grant.detail.create(host, { row, grants }) -> { destroy() }
 //     row      the grant row, its id and whose grant it is in the fields its table names
 //     grants   the grants table, as the list takes it: { key, label, revoke(id, path), watch(fn(id + newline + path, row)) }
 // What a press did is said below the bubble, the mounter's line (rowForm). Unconfigured, it draws a note and throws nothing.
@@ -51,7 +51,7 @@
     }) : null;
     parts.then(function () {
       if (gone) return;
-      var E = window.spirit.element.spirit.element;
+      var E = window.spirit.required.spirit.element;
       // ONE ROW, as every rowForm: the icon, whose grant and its path, and Revoke the last.
       form = E.rowForm.create(box, { icon: '🔒', button: 'Revoke' });
       paint();

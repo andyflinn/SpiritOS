@@ -48,13 +48,13 @@ test.run('the selector runs on a bare window', 0.2, async function () {
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) {
     required.push(String(p));
-    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); }
+    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); }
     return Promise.resolve(true);
   };
   vm.runInThisContext(SRC, { filename: FILE });
   // goal/G43.32: it places itself once installSpiritElement is in hand.
   await settle();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   made = E.search.bundle;
   return true;
 }, test.limit.quick);
@@ -64,7 +64,7 @@ test.run('it names nothing of the old shell\'s list search', 0.2, function () {
   const names = /shellCreateListSearch|listSearch\.js/.test(code);
   return !names ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.bundle with a create, beside the other selectors; createBundleSelector gone', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.search.bundle with a create, beside the other selectors; createBundleSelector gone', 0.2, function () {
   if (!E) return false;
   return made && typeof made.create === 'function' && !('createBundleSelector' in E) ? true : false;
 }, test.limit.quick);

@@ -6,7 +6,7 @@
 // read again replaces the list's rows whole, so there is no dispatch. Its contract and its test: ./test/row.md and
 // ./test/row.js.
 //
-//   spirit.element.spirit.element.search.api.row.create({ name }) -> the row element
+//   spirit.required.spirit.element.search.api.row.create({ name }) -> the row element
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the shared row element.
@@ -17,7 +17,7 @@
   var index = null;
   function create(row) {
     var r = row || {};
-    var R = S.element.spirit.element.row;
+    var R = S.required.spirit.element.row;
     var name = String(r.name || r.key || '');
     index = index || R.index(function () {});
     return R.create({

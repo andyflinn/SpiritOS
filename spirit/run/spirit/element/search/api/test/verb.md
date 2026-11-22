@@ -6,7 +6,7 @@ it is the verb half of the family selector, `spirit/element/search/api.js`.
 
 ## Requirements
 
-- A shell element of its own: it adds `create(container, options)` at `window.spirit.element.search.api.verb`, and
+- A shell element of its own: it adds `create(container, options)` at `window.spirit.required.search.api.verb`, and
   `createApiVerbSelector` no more. The control is appended to the container and answered (box v23: *"every element gets
   a container and appends itself"*).
 - **Built on probabilitySearch**, as a dropdown (`face: 'dropdown'`); nothing of `shellCreateListSearch` (goal/G40.8).

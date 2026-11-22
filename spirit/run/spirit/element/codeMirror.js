@@ -20,7 +20,7 @@
 //   path    the file's path, which picks the syntax colours by its extension
 (function () {
   var CM = 'spirit/element/codeMirror/';
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // The syntax by extension, and the mode files each needs, in the order they load (a mode it builds on first).
   var MODES = {
     js: 'javascript', mjs: 'javascript', json: { name: 'javascript', json: true },

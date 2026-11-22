@@ -33,7 +33,7 @@ test.run('the row runs on a bare window', 0.2, async function () {
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve({}), element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  const E = function () { return global.window.spirit.element.spirit.element; };
+  const E = function () { return global.window.spirit.required.spirit.element; };
   global.window.spirit.require = function (p) { required.push(String(p)); return Promise.resolve(true); };
   vm.runInThisContext(SRC, { filename: FILE });
   await settle();
@@ -43,7 +43,7 @@ test.run('the row runs on a bare window', 0.2, async function () {
   R = E().search && E().search.job && E().search.job.row;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.element.spirit.element.search.job.row, with a create', 0.2, function () {
+test.run('it places itself at spirit.required.spirit.element.search.job.row, with a create', 0.2, function () {
   if (!required) return false;
   return R && typeof R.create === 'function' ? true : false;
 }, test.limit.quick);

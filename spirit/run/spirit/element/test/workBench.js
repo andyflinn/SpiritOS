@@ -71,13 +71,13 @@ const hiddenNow = function (n) { return !!n && (n.hidden === true || n.hiddenAtt
 // What the tests make, shared by the tests after them.
 let loadError, W, mounted, tool, c1, wb, ids, want, at, prefixes, c1b, tagOf, boxA, left, c2, mountsA, boxB, c3, told,
   wb3, w0, settled, r0, threw;
-test.run('it loads onto window.spirit.element at its own path, with a create', 0.2, function () {
+test.run('it loads onto window.spirit.required at its own path, with a create', 0.2, function () {
   global.window = { spirit: { element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   loadError = null;
   try { vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE }); } catch (e) { loadError = e; }
-  W = window.spirit.element.spirit.element.workBench;
+  W = window.spirit.required.spirit.element.workBench;
   return (!loadError && W && typeof W.create === 'function') ? true : false;
 }, test.limit.quick);
 test.run('it draws the strips, panes, borders and centre, in order', 0.2, function () {

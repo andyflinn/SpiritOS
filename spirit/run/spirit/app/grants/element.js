@@ -8,7 +8,7 @@
 //   want those apps to basically be wrappers for spirit/element/ things....", "box that these apps must mount in the new
 //   format of the new shell."
 //
-//   spirit.element.spirit.app.grants.element.create(container, opts) -> { destroy() }
+//   spirit.required.spirit.app.grants.element.create(container, opts) -> { destroy() }
 //
 // A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/file/element.js is: it loads its elements and mounts them, nothing of
 // its own. Two tabs (goal/G41.13), in the tab container: Grants, the grants panel (spirit/element/search/grant/grantsPanel.js) configured
@@ -29,7 +29,7 @@
     container.innerHTML = '';
     parts.then(function () {
       if (gone) return;
-      var E = S.element;
+      var E = S.required;
       tabs = E.spirit.element.tabContainer.create(container, {
         tabs: [
           { name: 'grants', label: 'Grants', mount: function (box) {

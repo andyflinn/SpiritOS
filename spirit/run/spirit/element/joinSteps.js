@@ -51,6 +51,5 @@
     return row && row.relay === true ? String(row.url || '') : '';
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   window.spirit.required && ['spirit', 'element', 'joinSteps'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = { fromJob: fromJob, done: done, current: current, linkRelay: linkRelay }; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, window.spirit.required);
 }());

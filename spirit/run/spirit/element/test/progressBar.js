@@ -21,7 +21,7 @@ let P = null;
 const tagOf = function (html) { return (/<progress[^>]*>/.exec(html) || [''])[0]; };
 const wordsOf = function (html) { return ((/<span class="job-manifest-note">([^<]*)<\/span>/.exec(html)) || [null, null])[1]; };
 
-test.run('it runs on a window of its own and places itself at spirit.element.spirit.element.progressBar', 0.2, async function () {
+test.run('it runs on a window of its own and places itself at spirit.required.spirit.element.progressBar', 0.2, async function () {
   const win = { Math: Math, Number: Number, String: String, Promise: Promise };
   win.window = win;
   win.spirit = { element: {} };
@@ -29,7 +29,7 @@ test.run('it runs on a window of its own and places itself at spirit.element.spi
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   await settle();
-  P = ((win.spirit.element.spirit || {}).element || {}).progressBar;
+  P = ((win.spirit.required.spirit || {}).element || {}).progressBar;
   return typeof P === 'function' || false;
 }, test.limit.quick);
 

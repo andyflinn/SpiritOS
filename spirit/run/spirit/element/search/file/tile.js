@@ -4,14 +4,14 @@
 // tile mode. Its tile.js draws its tile and decides what a press does"). The file search hands it to the shared search as its
 // tile part (./list.js). Its contract and its test: ./test/tile.md and ./test/tile.js.
 //
-//   spirit.element.spirit.element.search.file.tile.create(row, { icon, press(row, key) }) -> the tile's node;
+//   spirit.required.spirit.element.search.file.tile.create(row, { icon, press(row, key) }) -> the tile's node;
 //     row { key or path, kind }, icon the glyph the file search chose for it
 //
 // The tile as the file search drew it (goal/G43.17, Q14: "a file's tile shows its kind's icon and its name"): the icon through
 // the icon element, a tile-bar the shared search draws the relevance into (goal/G43.6), and the file's name, the last part of
 // its path. A press on it is press(row, key): the file search does what a press on its row does, a folder opening or shutting.
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   window.spirit.require('spirit/element/icon.js');
 

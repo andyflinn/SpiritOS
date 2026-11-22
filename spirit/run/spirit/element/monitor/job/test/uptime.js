@@ -38,9 +38,9 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.ready)'); }, 20000));
   return W.page || false;
 }, test.limit.slow);
-test.run('it loads through spirit.require, at spirit.element.spirit.element.monitor.job.uptime, with a create', 0.2, async function () {
+test.run('it loads through spirit.require, at spirit.required.spirit.element.monitor.job.uptime, with a create', 0.2, async function () {
   if (!W.page) return false;
-  W.loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/monitor/job/uptime.js"); }).then(function () { var m = window.spirit.element.spirit.element.monitor.job; return !!(m && m.uptime && typeof m.uptime.create === "function"); }, function () { return false; })');
+  W.loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/monitor/job/uptime.js"); }).then(function () { var m = window.spirit.required.spirit.element.monitor.job; return !!(m && m.uptime && typeof m.uptime.create === "function"); }, function () { return false; })');
   return W.loaded === true || false;
 }, test.limit.quick);
 // The box: "Each requires the jobs family's interface".
@@ -50,7 +50,7 @@ test.run('it requires the jobs branch\'s interface and the value tile itself', 0
 }, test.limit.quick);
 test.run('mounted, it is a value tile: its icon ⏱️ drawn by the icon element, and its label Uptime', 0.4, async function () {
   if (!W.loaded) return false;
-  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:300px;height:200px"; window.__box = d; window.__made = window.spirit.element.spirit.element.monitor.job.uptime.create(d); return true; })()');
+  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:300px;height:200px"; window.__box = d; window.__made = window.spirit.required.spirit.element.monitor.job.uptime.create(d); return true; })()');
   W.made = !!(await until(function () { return read().then(function (r) { return r.icon; }); }, 8000));
   const r = await read();
   return W.made && r.glyph && r.label === "Uptime" && r.mode === 'tile' ? true : false;

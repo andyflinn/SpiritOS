@@ -1247,7 +1247,7 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 // (goal/G41.28) and each table's list and editor live in spirit/app/agent/table/ since goal/G43.12, which no pattern below
 // matches; there they are neither, and are not mounted. spirit/app/agent/agent.js is an element by the new-folder rule.
 // WHAT IS A PAGE MODULE (goal/G43.32; Andy: "helpers with no create are no fucking elements. they live in require.
-// element scripts place their factories in spirit.element.<their path>"): a file is mounted when its own code places its
+// element scripts place their factories in spirit.required.<their path>"): a file is mounted when its own code places its
 // factory by installSpiritElement; a switch (agent.js), a server or a helper is not. Read from the file, not guessed from
 // its path.
 function kindOf(file) {
@@ -1356,7 +1356,7 @@ const WATCH = String.raw`(function () {
   function searches(els) {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
-    // The search element stands at its path since goal/G43.32, spirit.element.spirit.element.search: every step of the path
+    // The search element stands at its path since goal/G43.32, spirit.required.spirit.element.search: every step of the path
     // is followed as it is made, and the element wrapped when it is placed or read.
     function along(o, keys, done) {
       if (!o || typeof o !== 'object') return;
@@ -1658,9 +1658,9 @@ function productScripts() {
 // 3 Belong in spirit/test/spirit.js", "the rest belong in motherfucking spirit-sibling-general/browser/node respectively").
 // The move's box: "We are ONLY moving the contents of "run://shell/js/" to "run://spirit/element/"", "all UI code in the
 // product tree that references the moved element files, must be changed to correct those references. both file-location
-// AND the home in spirit.element (singular)": "uncluding tests". And the other way round, found live (Andy: "contact detail
-// don't load in contacts"): nothing reaches through spirit.element for an element spirit/element/ does not define. Since
-// goal/G43.32 every element stands at spirit.element.<its path>, so that is a path to a script or folder of the tree.
+// AND the home in spirit.required (singular)": "uncluding tests". And the other way round, found live (Andy: "contact detail
+// don't load in contacts"): nothing reaches through spirit.required for an element spirit/element/ does not define. Since
+// goal/G43.32 every element stands at spirit.required.<its path>, so that is a path to a script or folder of the tree.
 const OLD_ELEMENT_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
 // spirit.elements, and ui.elements, the old shell's hand-out of it to an app (api.ui.elements.<name>).
 const OLD_ELEMENT_HOME = /\b(?:spirit|ui)\s*\.\s*elements\b/;
@@ -1769,7 +1769,7 @@ function linesMatching(rel, re) {
   unquoted(rel, src).split('\n').forEach(function (line, i) { if (re.test(line)) hits.push(i + 1); });
   return hits;
 }
-// Where the code (comments and the insides of strings left out) reaches through spirit.element for what the tree does not hold: spirit.element.<keys>
+// Where the code (comments and the insides of strings left out) reaches through spirit.required for what the tree does not hold: spirit.required.<keys>
 // stands for a script <keys>.js or a folder <keys>/ of the run tree, its members after it. No element is named here: the
 // tree answers. spirit.required.<path> is another tree, not judged by this rule.
 function strayElementReaches(rel) {
@@ -1795,11 +1795,11 @@ function strayElementReaches(rel) {
 // EVERY PRODUCT SCRIPT, PLACED WHERE IT IS REQUIRED (goal/G43.32, the box, testing point 3; Andy: "a general test for
 // any scriptFile.js is to spirit.require() it.", Q5: "doesn't spirit.require() only load a script, store it at
 // spirit.required.<path>  and run it once.", "element scripts themselves are who installs the element factory at
-// spirit.element.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
+// spirit.required.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
 // demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
 // spirit.require()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
 // the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
-// judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.element.<its
+// judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.required.<its
 // path> once required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
@@ -1858,7 +1858,7 @@ function nodeGlobalsIn(run, rel, full) {
   return { err: r.err, leaks: leaks };
 }
 // THE ONE HELPER (goal/G43.32; Andy: "this can be done with ONE single helper function
-// spirit/element/installSpiritElement(spirit,elementPath)"): no element script puts itself on spirit.element or
+// spirit/element/installSpiritElement(spirit,elementPath)"): no element script puts itself on spirit.required or
 // spirit.elements by hand.
 function placedByHand() {
   return productScripts().filter(function (f) {
@@ -1885,17 +1885,17 @@ function every() {
   test.run('spirit/element/installSpiritElement.js is there', 0.4, function () {
     return fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js')) || false;
   }, test.limit.quick);
-  test.run('no product script puts an element on spirit.element or spirit.elements by hand', 0.4, function () {
+  test.run('no product script puts an element on spirit.required or spirit.elements by hand', 0.4, function () {
     const hand = placedByHand();
     return !hand.length || false;
   }, test.limit.quick);
   // Decided 6: an app's element is placed like every element, "the shell, the app selector, the file opener and the desk
   // find it there"; so nothing reads an element at the old place, spirit.elements.<name>, any more.
-  test.run('no product script reads or writes the old spirit.elements: every element is found at spirit.element.<its path>', 0.4, function () {
+  test.run('no product script reads or writes the old spirit.elements: every element is found at spirit.required.<its path>', 0.4, function () {
     const old = productScripts().filter(function (f) { return /\.elements\b/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)); });
     return !old.length || false;
   }, test.limit.quick);
-  // the element move: no file names an element's old homes, none reaches through spirit.element for what the tree lacks
+  // the element move: no file names an element's old homes, none reaches through spirit.required for what the tree lacks
   test.run('the files are read for the elements\' old homes, tests and documents included', 0.2, function () {
     E.elementFiles = elementRuleFiles();
     return E.elementFiles.length > 100 || false;
@@ -1962,7 +1962,7 @@ function every() {
     const odd = top.filter(function (d) { return d.isDirectory() ? !/^[a-z]+$/.test(d.name) || !fs.existsSync(path.join(at, d.name + '.js')) : !/^[a-z]+\.(js|md)$/.test(d.name); }).map(function (d) { return d.name; });
     return (top.length > 0 && !odd.length) || false;
   }, test.limit.quick);
-  test.run('no code reaches through spirit.element for an element the tree does not hold', 0.4, function () {
+  test.run('no code reaches through spirit.required for an element the tree does not hold', 0.4, function () {
     const all = E.elementFiles || [];
     const stray = [].concat.apply([], all.map(strayElementReaches));
     return (all.length > 100 && !stray.length) || false;
@@ -2121,7 +2121,7 @@ function oneFile(P) {
   test.run('it names neither spirit/run/process nor run://process, in code or comment', 0.4, function () {
     return !namesProcess(rel) || false;
   }, test.limit.quick);
-  // the element move (elementRuleFiles above): its old homes, and spirit.element only for what the tree holds
+  // the element move (elementRuleFiles above): its old homes, and spirit.required only for what the tree holds
   if (SELF.indexOf(path.basename(rel)) === -1) {
     test.run('it names no shell/js', 0.4, function () {
       const hits = linesMatching(rel, OLD_ELEMENT_PATH);
@@ -2156,7 +2156,7 @@ function oneFile(P) {
         return dataRequiresOf(rel).every(function (d) { return d === ownData; });
       }, test.limit.quick);
     }
-    if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.element only for elements the tree holds', 0.4, function () {
+    if (/\.(js|html)$/.test(rel)) test.run('it reaches through spirit.required only for elements the tree holds', 0.4, function () {
       const stray = strayElementReaches(rel);
       return !stray.length || false;
     }, test.limit.quick);

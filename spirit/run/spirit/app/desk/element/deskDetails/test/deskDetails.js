@@ -219,14 +219,13 @@ function ddWorld(facts, checks, o) {
     require: function (p) {
       const q = String(p).replace(/^\/+/, '');
       required.push(q);
-      if (q === 'spirit/element/workBench.js') win.spirit.element.spirit.element.workBench = workBenchStub(document, benches);
+      if (q === 'spirit/element/workBench.js') win.spirit.required.spirit.element.workBench = workBenchStub(document, benches);
       return Promise.resolve({});
     },
-    // goal/G43.32: the parts stand where the dialog reads them, the elements at spirit.element.<their path>, a helper at
+    // goal/G43.32: the parts stand where the dialog reads them, the elements at spirit.required.<their path>, a helper at
     // spirit.required.<its path>.
-    element: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
+    required: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
       'search': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
-    required: { spirit: { element: {} } },
   };
   // THE ROWS THE PAGE HOLDS (goal/G48.8: a goal's Close counts its open items "from the page's own rows"), when a case
   // hands some: the desk family's kept data, as spirit/app/desk/data.js gives it a page.
@@ -238,7 +237,7 @@ function ddWorld(facts, checks, o) {
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
     // THE ELEMENT (goal/G43.27, requirement 23): made in a layer over the Desk page, handed the page's way to the node.
-    win.spirit.element.spirit.app.desk.element.deskDetails.deskDetails.create(document.body.appendChild(document.createElement('div')), { id: facts.id, via: api });
+    win.spirit.required.spirit.app.desk.element.deskDetails.deskDetails.create(document.body.appendChild(document.createElement('div')), { id: facts.id, via: api });
     await settle();
   };
   w.writes = function () { return asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set)$/.test(a.name); }); };
@@ -448,9 +447,9 @@ const ruleWorld = function () {
   const r = ddWorld(RULED, []);
   r.searches = [];
   const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
-  delete r.win.spirit.element.spirit.element.search;
+  delete r.win.spirit.required.spirit.element.search;
   const req = r.win.spirit.require;
-  r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.element.spirit.element.search = make; return req(p); };
+  r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.required.spirit.element.search = make; return req(p); };
   return r;
 };
 // RULES GO OUT OF DESK (goal/G47.4, box v36: "The rules list on each goal and item goes"; Andy: "go!"): the details panel
@@ -739,7 +738,7 @@ test.run('there is an item done, and an item in design mode offering Delete', 0.
   const design = S.design = await call('desk.item.add', { goal: g.id, title: 'A design item to delete' });
   await call('desk.press', { id: design.id, what: 'start-design' });
   const before = S.beforePress = { done: await state(done.id), design: await state(design.id) };
-  await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()");
+  await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()");
   S.ready = true;
   return (before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1) || false;
 }, test.limit.long);

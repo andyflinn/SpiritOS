@@ -4,7 +4,7 @@
 // hides itself", "configured text: "turn on|off DEBUG <app-label>"", "it will use the OWNER-ONLYE VERB DEBUG in the appServer",
 // Q1: it hides while its server is not running. Its contract and its test: ./test/serverDEBUG.md and ./test/serverDEBUG.js.
 //
-//   spirit.element.spirit.element.search.app.serverDEBUG.create(host, { key }) -> { destroy() }
+//   spirit.required.spirit.element.search.app.serverDEBUG.create(host, { key }) -> { destroy() }
 //
 // The state is the server's job's, data.debug, as the node streams it (appServer.js puts it there on every change), read from
 // the jobs family's cache; a press asks the server's DEBUG {on}, and the job's next change redraws it.
@@ -39,7 +39,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
       return Promise.resolve(S.require(S.branchPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
     }
-    var t = S.element.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
+    var t = S.required.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
     // SHOWN OR HIDDEN ONLY WHEN THAT CHANGES (the -browser test's write watch: hidden set again to what it was is still a change of
     // the attribute, and it paints on every row change).

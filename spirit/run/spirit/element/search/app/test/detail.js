@@ -49,9 +49,9 @@ test.run('it loads through spirit.require', 0.2, async function () {
   loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/app/detail.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return ""; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.quick);
-test.run('spirit.element.spirit.element.search.app.detail.create, given a host and a row, makes a detail', 0.2, async function () {
+test.run('spirit.required.spirit.element.search.app.detail.create, given a host and a row, makes a detail', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  made = await chrome.evaluate('(function () { window.detail = spirit.element.spirit.element.search.app.detail.create(document.getElementById("under-test"), { row: ' + R + ' }); return !!window.detail; }())');
+  made = await chrome.evaluate('(function () { window.detail = spirit.required.spirit.element.search.app.detail.create(document.getElementById("under-test"), { row: ' + R + ' }); return !!window.detail; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 test.run('the detail shows the label', 0.2, async function () {
@@ -75,13 +75,13 @@ test.run('destroy empties its host', 0.2, async function () {
 let runMade, pressed;
 test.run('in the panel, an app whose json says node.run shows its task row: its label and a Run button', 0.2, async function () {
   if (loaded !== 'loaded') return false;
-  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "under-run"; document.body.appendChild(c); window.runDetail = spirit.element.spirit.element.search.app.detail.create(c, { row: ' + JSON.stringify(RUN_ROW) + ', panel: true }); return true; }())');
+  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "under-run"; document.body.appendChild(c); window.runDetail = spirit.required.spirit.element.search.app.detail.create(c, { row: ' + JSON.stringify(RUN_ROW) + ', panel: true }); return true; }())');
   runMade = !!(await until(function () { return chrome.evaluate('[].some.call(document.querySelectorAll("#under-run button"), function (b) { return b.textContent.trim() === "Run"; })'); }, 8000));
   return runMade && String(await runText()).indexOf(RUN_ROW.label) !== -1 ? true : false;
 }, test.limit.quick);
 test.run('in the panel, an app with no node.run shows no Run button', 0.2, async function () {
   if (!runMade) return false;
-  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "under-norun"; document.body.appendChild(c); window.noRunDetail = spirit.element.spirit.element.search.app.detail.create(c, { row: ' + R + ', panel: true }); return true; }())');
+  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "under-norun"; document.body.appendChild(c); window.noRunDetail = spirit.required.spirit.element.search.app.detail.create(c, { row: ' + R + ', panel: true }); return true; }())');
   await new Promise(function (r) { setTimeout(r, 1500); });
   const any = await chrome.evaluate('[].some.call(document.querySelectorAll("#under-norun button"), function (b) { return b.textContent.trim() === "Run"; })');
   return any === false ? true : false;

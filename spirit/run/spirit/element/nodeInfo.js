@@ -5,7 +5,7 @@
 //
 //   Andy: "i want an intrinsic app info, in which, for now the user can maintain both fields in this file, more to come."
 //
-//   spirit.element.spirit.element.nodeInfo.create(container, { open }) -> { destroy() }
+//   spirit.required.spirit.element.nodeInfo.create(container, { open }) -> { destroy() }
 //     open(key, spec)  the stack its mounter opens layers in (the shell's, appSelector.js): the rotate key dialog opens over
 //                      all of Info there. Without one, nodeInfo keeps a stack over itself (panel.js), as file does.
 //
@@ -76,7 +76,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
     // only handed the relays again after.
     var forms = {};
     function drawForm(key, name, slotName, opts) {
-      var F = S.element.spirit.element[name];
+      var F = S.required.spirit.element[name];
       if (!F) return;
       if (forms[key]) F.mount(slot(slotName), opts);
       else { forms[key] = F.create(slot(slotName), opts); made.push(forms[key]); }
@@ -100,15 +100,15 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
       return into('rotateKey', { icon: '🆘', label: 'Rotate this node\'s cipher key', fill: function (pane, closed) {
         return S.require('spirit/element/rotateKey.js').then(function () {
           if (closed()) return null;
-          return S.element.spirit.element.rotateKey.create(pane, {});
+          return S.required.spirit.element.rotateKey.create(pane, {});
         });
       } });
     }
 
     var fields = parts.then(function () {
       if (gone) return null;
-      var E = S.element;
-      if (typeof o.open !== 'function') stack = S.element.spirit.element.panel.create(box, page);
+      var E = S.required;
+      if (typeof o.open !== 'function') stack = S.required.spirit.element.panel.create(box, page);
       made.push(E.spirit.element.changeMyLabel.create(slot('name')));
       made.push(E.spirit.element.changeMyDescription.create(slot('description')));
       var rotate = E.spirit.element.rowForm.create(slot('rotate'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });

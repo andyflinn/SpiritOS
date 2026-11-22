@@ -335,14 +335,14 @@ contract, page parts included, is in `spirit-sibling-browser.md`.
 
 The element move's rules (goal/G43.5), here since goal/G47.1 (Andy: *"1, 2 and 3 Belong in spirit/test/spirit.js"*, *"the rest belong in motherfucking spirit-sibling-general/browser/node respectively"*). They judge files, so a red lands on the file at fault. Handed a file, that file; handed nothing, every file git tracks under `spirit/`, code, tests and documents, vendored code and the general tests' own files left out.
 
-Andy, the move's box: *"We are ONLY moving the contents of "run://shell/js/" to "run://spirit/element/""*, *"both file-location AND the home in spirit.element (singular)"*, *"uncluding tests"*.
+Andy, the move's box: *"We are ONLY moving the contents of "run://shell/js/" to "run://spirit/element/""*, *"both file-location AND the home in spirit.required (singular)"*, *"uncluding tests"*.
 
 - No file names `shell/js`.
 - No file reaches an element through `spirit.elements`.
-- No code reaches through `spirit.element` for an element the tree does not hold: since goal/G43.32 every element stands at `spirit.element.<its path>`, so `spirit.element.<keys>` is a script `<keys>.js` or a folder `<keys>/` of the tree, its members after it. No element is named in the test; the tree answers. Found live: *"contact detail don't load in contacts"*.
+- No code reaches through `spirit.required` for an element the tree does not hold: since goal/G43.32 every element stands at `spirit.required.<its path>`, so `spirit.required.<keys>` is a script `<keys>.js` or a folder `<keys>/` of the tree, its members after it. No element is named in the test; the tree answers. Found live: *"contact detail don't load in contacts"*.
 - Andy's own words are never rewritten: a double-quoted part of a comment or a document is left out, a quote over several lines too.
 
-That every element loads on a page and stands at `spirit.element.<its path>` is `./spirit-sibling-browser.js`'s, over every element script of the tree. The old move's fixed lists of files and names are dropped: they went stale when the files moved again.
+That every element loads on a page and stands at `spirit.required.<its path>` is `./spirit-sibling-browser.js`'s, over every element script of the tree. The old move's fixed lists of files and names are dropped: they went stale when the files moved again.
 
 
 ## Moved from the scripts' own tests (goal/G47.1)

@@ -59,10 +59,10 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   // The fs family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
   // itself to the data set.
   let ran = false;
-  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/fs/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'data.js'), 'utf8'), { filename: 'spirit/fs/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/fs/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'data.js'), 'utf8'), { filename: 'spirit/fs/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   F = ((global.window.spirit.required.spirit.data || {}).fs || {}).data;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.require).
@@ -85,7 +85,7 @@ test.run('it requires the fs branch\'s interface, spirit/fs/api.js, which puts t
   if (!loaded) return false;
   return loaded.indexOf('spirit/fs/api.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.file.list.create', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.search.file.list.create', 0.2, function () {
   if (!F || typeof F.file !== 'function') return false;
   return E.search.file && E.search.file.list && typeof E.search.file.list.create === 'function' ? true : false;
 }, test.limit.quick);

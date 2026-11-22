@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/agent/element/table/test/row.js
 // The tests of spirit/app/agent/element/table/row.js, and of no other module (spec: ./row.md; goal/G41.4, goal/G41.28).
-// Its tables' shared element (../tableElement.js, spirit.element.spirit.app.agent.element.table.tableElement) is part of its tree and runs real beside it.
+// Its tables' shared element (../tableElement.js, spirit.required.spirit.app.agent.element.table.tableElement) is part of its tree and runs real beside it.
 // The browser file runs in node on a window of its own, over the real spirit.required.spirit.data (spirit/data.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
@@ -134,7 +134,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
     return Promise.resolve({ items: [], more: false });
   } } });
-  PE = function () { const e = global.window.spirit.element; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
+  PE = function () { const e = global.window.spirit.required; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
   global.window.spirit.require = function (p) {
     w.required.push(String(p));
     // The agent branch's interface brings its data.js, as the real api.js does: run once, as the page runs it, into
@@ -159,7 +159,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   };
   // goal/G43.32: the page's own spirit.require answers the helper, so each element places itself by installSpiritElement,
   // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
-  // spirit.element.<their path>.
+  // spirit.required.<their path>.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   PE().search = Object.assign(PE().search || {}, { create: function (host, o) {
     const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
@@ -171,19 +171,19 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // Its tree as the page loads it: the shared element first, then this file.
   load(SHARED);
   await settle();
-  AT = function () { return (((((global.window.spirit.element.spirit || {}).app || {}).agent || {}).element || {}).table || {}); };
+  AT = function () { return (((((global.window.spirit.required.spirit || {}).app || {}).agent || {}).element || {}).table || {}); };
   return true;
 }, test.limit.quick);
 test.run('before row.js runs, the page has no row element', 0.2, function () {
   if (!AT) return false;
   return !AT().row ? true : false;
 }, test.limit.quick);
-test.run('row.js places spirit.element.spirit.app.agent.element.table.row, with create', 0.2, async function () {
+test.run('row.js places spirit.required.spirit.app.agent.element.table.row, with create', 0.2, async function () {
   if (!AT) return false;
   load(FILE);
   await settle();
   // One file, one element (goal/G41.28; the general test: a file registers one element). goal/G43.32: at its path,
-  // spirit.element.spirit.app.agent.element.table.row.
+  // spirit.required.spirit.app.agent.element.table.row.
   E.agentRow = AT().row;
   return E.agentRow && typeof E.agentRow.create === 'function' ? true : false;
 }, test.limit.quick);
@@ -481,14 +481,14 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
   // models from that provider"): the list is a view of its rows (its data branch, or rows()), filtered and ranked by the
   // real list's own heart, probabilitySearch.order, the state it is made with.
   N.LIST = (function () {
-    // goal/G43.32: a page's spirit, so the list places itself at spirit.element.spirit.element.search as it runs.
+    // goal/G43.32: a page's spirit, so the list places itself at spirit.required.spirit.element.search as it runs.
     const win = { window: null, spirit: require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit({ element: {} }), console: console };
     win.window = win;
     vm.createContext(win);
     ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'].forEach(function (rel) {
       vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
     });
-    return ((win.spirit.element.spirit || {}).element || {}).search;
+    return ((win.spirit.required.spirit || {}).element || {}).search;
   }());
   // The page holds two models in its branch, one of this provider's and one of another's.
   // THE ROWS AS THE MODEL TABLE ITSELF ANSWERS THEM: the real provider and model servers (../provider/server.js,

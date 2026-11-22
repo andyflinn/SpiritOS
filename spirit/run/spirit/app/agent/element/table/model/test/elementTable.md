@@ -7,7 +7,7 @@ of nodes, since it moves its form in under the shared table's title row; the sha
 rowForm, the busyButton and the agent family are stand-ins that keep what they were handed. The same world as the other
 tables' `elementTable` tests, with the Ask form's parts.
 
-- Before it runs there is no `spirit.element.spirit.app.agent.element.table.model.elementTable`; once it has, it stands
+- Before it runs there is no `spirit.required.spirit.app.agent.element.table.model.elementTable`; once it has, it stands
   there with `create`.
 - `create(container, detail)` loads what it uses itself (rule/26): the shared element, its row editor, the search and
   the rowForm. It makes the shared element in its list, told its table, `model`, and the detail pane.

@@ -37,7 +37,7 @@ test.after(function () {
 });
 
 // Mounted in a container of its own, #task-<app>; what it shows, read from the page.
-const mount = function (app) { return chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "task-' + app + '"; document.body.appendChild(c); window["t_' + app + '"] = spirit.element.spirit.element.monitor.task.create(c, { id: "spirit.app.' + app + '" }); return true; }())'); };
+const mount = function (app) { return chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "task-' + app + '"; document.body.appendChild(c); window["t_' + app + '"] = spirit.required.spirit.element.monitor.task.create(c, { id: "spirit.app.' + app + '" }); return true; }())'); };
 const look = function (app) { return chrome.evaluate('(function () { var c = document.getElementById("task-' + app + '"); var b = c && c.querySelector("button"); var s = c && c.querySelector(".shell-row-form-span"); return JSON.stringify({ button: b && b.style.display !== "none" ? b.textContent.trim() : "", line: s ? s.textContent : "", form: !!(c && c.querySelector(".shell-row-form")), text: c ? c.innerText.trim() : "", html: c ? c.innerHTML : "" }); }())').then(JSON.parse); };
 const press = function (app) { return chrome.evaluate('(function () { var b = document.querySelector("#task-' + app + ' button"); b.click(); return new Promise(function (r) { setTimeout(r, 0); }).then(function () { return JSON.stringify({ disabled: b.disabled, mark: !!b.querySelector(".shell-busy") }); }); }())').then(JSON.parse); };
 const waitFor = function (app, fn, ms) { return until(function () { return look(app).then(fn); }, ms || 10000); };
@@ -54,7 +54,7 @@ test.run('a scratch node comes up with three apps planted, and Chrome opens its 
 }, test.limit.slow);
 test.run('it loads through spirit.require', 0.2, async function () {
   if (!chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.require("spirit/element/monitor/task.js").then(function () { return spirit.element.spirit.element.monitor.task && typeof spirit.element.spirit.element.monitor.task.create === "function" ? "loaded" : "no create"; })');
+  loaded = await chrome.evaluate('spirit.require("spirit/element/monitor/task.js").then(function () { return spirit.required.spirit.element.monitor.task && typeof spirit.required.spirit.element.monitor.task.create === "function" ? "loaded" : "no create"; })');
   return loaded === 'loaded' || false;
 }, test.limit.quick);
 

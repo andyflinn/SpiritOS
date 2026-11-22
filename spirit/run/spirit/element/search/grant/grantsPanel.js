@@ -27,7 +27,7 @@
 // made from, so the bundle's branches (auth.branch) are read here, and each becomes one grant through the grants table,
 // family.verb or the family alone for (ALL), a path already granted counted done.
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.require, each element bringing its own.
   // And the auth family's cache manager, which nodeGrants (below) reads.
   var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
@@ -296,7 +296,7 @@
 
     parts.then(function () {
       if (gone) return;
-      var P = window.spirit.element;
+      var P = window.spirit.required;
       // THE GRANT FORM, ONE ROW (goal/G41.13, Andy: "the grants tab should have one-row grant form: \"grant\"
       // [idSelector] [bundleSelector] [grantButton]"). Both ID selectors search the ID table it was handed.
       var idTable = { table: ids.table, key: ids.key, label: ids.label };

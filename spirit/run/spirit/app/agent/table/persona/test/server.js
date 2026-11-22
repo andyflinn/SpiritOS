@@ -149,7 +149,7 @@ test.run('a search answers the id, the icon and the label of a row, nothing else
 // ── the page: elementTable.js and elementRow.js ──
 const detail = { open: function () {}, look: function (t2) { return { icon: '🎭', name: 'Persona', title: 'Personas', table: t2 }; } };
 const box = { innerHTML: '' };
-test.run('the page files place spirit.element.spirit.app.agent.element.table.persona.elementTable and elementRow', 0.2, function () {
+test.run('the page files place spirit.required.spirit.app.agent.element.table.persona.elementTable and elementRow', 0.2, function () {
   const made = X.made = { tables: [], rows: [], required: [] };
   const STAND = {
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
@@ -157,8 +157,8 @@ test.run('the page files place spirit.element.spirit.app.agent.element.table.per
   };
   global.window = { spirit: {} };
   global.spirit = global.window.spirit;
-  // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
-  global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
+  // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.required.<their path>.
+  global.window.spirit.required = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
   // The agent branch's interface brings its data.js, as the real api.js does: given spirit/app/agent/api.js, its data.js
   // runs once, as the page runs it, into this page's spirit.required.spirit.data.
   global.window.spirit.require = function (p) {
@@ -179,7 +179,7 @@ test.run('the page files place spirit.element.spirit.app.agent.element.table.per
   // What the page files require is what is asked from here on; the runner's own asks come before it.
   made.from = made.required.length;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
-  const T = global.window.spirit.element.spirit.app.agent.element.table.persona || {};
+  const T = global.window.spirit.required.spirit.app.agent.element.table.persona || {};
   X.E = { personaTable: T.elementTable, personaRow: T.elementRow };
   return X.E.personaTable && typeof X.E.personaTable.create === 'function' && X.E.personaRow && typeof X.E.personaRow.create === 'function' ? true : false;
 }, test.limit.quick);

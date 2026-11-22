@@ -37,14 +37,14 @@ test.run('the testicle row element runs on a bare window', 0.2, async function (
   await settle();
   // The intrinsic elements' place, where its stand-ins go; the row, an app's element since the move to spirit/app/testicle/, no longer
   // makes it by placing itself under it.
-  const SE = global.window.spirit.element.spirit;
+  const SE = global.window.spirit.required.spirit;
   const E = SE.element = SE.element || {};
   E.row = { index: function (sub) { indexes.push(sub); return { id: indexes.length }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
-  const TE = (((global.window.spirit.element.spirit.app || {}).testicle || {}).element || {});
+  const TE = (((global.window.spirit.required.spirit.app || {}).testicle || {}).element || {});
   R = TE.search && TE.search.testicle && TE.search.testicle.row;
   return true;
 }, test.limit.quick);
-test.run('it places itself at spirit.element.spirit.app.testicle.element.search.testicle.row, with a create', 0.2, function () {
+test.run('it places itself at spirit.required.spirit.app.testicle.element.search.testicle.row, with a create', 0.2, function () {
   if (!required) return false;
   return (R && typeof R.create === 'function') || false;
 }, test.limit.quick);

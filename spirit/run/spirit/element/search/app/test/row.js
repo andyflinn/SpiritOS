@@ -41,7 +41,7 @@ test.run('it loads through spirit.require', 0.2, async function () {
 }, test.limit.quick);
 test.run('its create makes a row element from the row it is given', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  made = await chrome.evaluate('(function () { window.row = spirit.element.spirit.element.search.app.row.create(' + R + '); var c = document.getElementById("under-test"); var hosts = {}; window.row.cells().forEach(function (x) { var s = document.createElement("span"); c.appendChild(s); hosts[x.name] = s; }); window.row.mount(hosts); return true; }())');
+  made = await chrome.evaluate('(function () { window.row = spirit.required.spirit.element.search.app.row.create(' + R + '); var c = document.getElementById("under-test"); var hosts = {}; window.row.cells().forEach(function (x) { var s = document.createElement("span"); c.appendChild(s); hosts[x.name] = s; }); window.row.mount(hosts); return true; }())');
   return made === true ? true : false;
 }, test.limit.quick);
 test.run('the row shows the label', 0.2, async function () {

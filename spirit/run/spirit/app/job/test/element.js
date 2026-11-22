@@ -79,10 +79,10 @@ test.run('a scratch node of its own comes up with a Chrome page on its face', 0.
   return true;
 }, test.limit.slow);
 
-// spirit.element.spirit.app.job.element.create(container, { open }) -> { destroy }
-test.run('it registers its element on spirit.element at its path, and its create answers destroy', 0.2, async function () {
+// spirit.required.spirit.app.job.element.create(container, { open }) -> { destroy }
+test.run('it registers its element on spirit.required at its path, and its create answers destroy', 0.2, async function () {
   if (!W.page) return false;
-  const made = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/job/element.js"); }).then(function () { var J = spirit.element && spirit.element.spirit.app.job.element; if (!J || typeof J.create !== "function") return false; var c = document.createElement("div"); c.id = "alone"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column"; document.body.appendChild(c); window.alone = J.create(c, {}); return window.alone && typeof window.alone.destroy === "function" ? "made" : false; }, function () { return false; })');
+  const made = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/job/element.js"); }).then(function () { var J = spirit.required && spirit.required.spirit.app.job.element; if (!J || typeof J.create !== "function") return false; var c = document.createElement("div"); c.id = "alone"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column"; document.body.appendChild(c); window.alone = J.create(c, {}); return window.alone && typeof window.alone.destroy === "function" ? "made" : false; }, function () { return false; })');
   W.made = made === 'made';
   return W.made || false;
 }, test.limit.quick);
@@ -107,7 +107,7 @@ const LAYERS = 'Array.prototype.filter.call(document.querySelectorAll("#faces .a
 const OVER = '(function () { var all = Array.prototype.slice.call(document.querySelectorAll("#faces .app-container")); var shown = all.filter(function (c) { return c.offsetParent !== null; }); if (all.length < 2) return false; var top = shown.pop(); if (!top) return false; var t = String(top.innerText); if (t.indexOf("spirit.fs") === -1 || !/Status/.test(t)) return false; var b = document.getElementById("faces").getBoundingClientRect(); var r = top.getBoundingClientRect(); return r.width >= b.width - 4 && r.height >= b.height - 4 ? "over" : false; }())';
 test.run('the app selector draws its tiles', 0.2, async function () {
   if (!W.page) return false;
-  const tiles = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () { var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.element.spirit.element.script.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return false; })');
+  const tiles = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () { var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.required.spirit.element.script.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return false; })');
   W.tiles = tiles === 'made';
   return W.tiles || false;
 }, test.limit.quick);

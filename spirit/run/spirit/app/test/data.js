@@ -37,7 +37,7 @@ const rowsOf = function (K) {
 };
 // The app detail, made now: its Activate row reads the app cache as the job left it (no list on the page to ask again).
 const activateUnder = function (expr) { return W.chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return null; return Array.prototype.filter.call(root.querySelectorAll("*"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length; }())'); };
-const detailOf = function (key, label) { return W.chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.element.spirit.element.search.app.detail.create(c, { row: ' + JSON.stringify({ key: key, label: label }) + ', panel: true }); return true; }())'); };
+const detailOf = function (key, label) { return W.chrome.evaluate('(function () { var old = document.getElementById("detail"); if (window.det) { window.det.destroy(); } if (old) old.remove(); var c = document.createElement("div"); c.id = "detail"; document.body.appendChild(c); window.det = spirit.required.spirit.element.search.app.detail.create(c, { row: ' + JSON.stringify({ key: key, label: label }) + ', panel: true }); return true; }())'); };
 const noActivate = async function (key, label) {
   await detailOf(key, label);
   await sleep(1500);
@@ -103,7 +103,7 @@ test.run('before the job the tiles draw apps, no run-only one among them', 0.2, 
   if (!W.loaded) return false;
   const chrome = W.chrome, only = W.only, plain = W.plain;
   // The app list in tiles mode, drawn, so the cache holds every row app.search answered, and kept on the page while the job comes.
-  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "tiles"; document.body.appendChild(c); window.tiles = spirit.element.spirit.element.search.app.create(c, { face: "tiles" }); return true; }())');
+  await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "tiles"; document.body.appendChild(c); window.tiles = spirit.required.spirit.element.search.app.create(c, { face: "tiles" }); return true; }())');
   await until(function () { return held().then(function (r) { return only.every(function (a) { return !!r[a.key]; }) && !!r[plain.key]; }); }, 8000);
   await until(function () { return chrome.evaluate('document.querySelectorAll("#tiles *").length > 5'); }, 8000);
   await sleep(1000);

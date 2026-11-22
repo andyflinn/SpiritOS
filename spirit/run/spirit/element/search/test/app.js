@@ -43,7 +43,7 @@ test.run('it loads through spirit.require', 0.2, async function () {
 }, test.limit.slow);
 test.run('its create makes a list in the host it is given', 0.2, async function () {
   if (!text) return false;
-  const made = await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; window.list = spirit.element.spirit.element.search.app.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; }())');
+  const made = await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; window.list = spirit.required.spirit.element.search.app.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; }())');
   return made === true ? true : false;
 }, test.limit.slow);
 test.run('it draws what app.search finds', 0.2, async function () {
@@ -98,7 +98,7 @@ test.run('without the servers option it shows no filter', 0.2, async function ()
   // goal/G47.1, the search keeps its rows).
   drawnIn = function (id) { return chrome.evaluate('(function () { var want = ' + JSON.stringify(own.map(function (a) { return a.label; })) + '; var out = []; var all = document.getElementById(' + JSON.stringify(id) + ').querySelectorAll("*"); for (var i = 0; i < all.length; i++) { if (!all[i].getClientRects().length) continue; var t = String(all[i].innerText || "").trim(); if (!all[i].children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return out.sort(); }())'); };
   const filterButtons = function (id) { return chrome.evaluate('document.getElementById(' + JSON.stringify(id) + ').querySelectorAll("button[data-filter]").length'); };
-  const makeList = function (id, servers) { return chrome.evaluate('(function () { var c = document.createElement("div"); c.id = ' + JSON.stringify(id) + '; document.body.appendChild(c); window[' + JSON.stringify(id) + '] = spirit.element.spirit.element.search.app.create(c, ' + (servers ? '{ face: "pane", servers: true }' : '{ face: "pane" }') + '); return true; }())'); };
+  const makeList = function (id, servers) { return chrome.evaluate('(function () { var c = document.createElement("div"); c.id = ' + JSON.stringify(id) + '; document.body.appendChild(c); window[' + JSON.stringify(id) + '] = spirit.required.spirit.element.search.app.create(c, ' + (servers ? '{ face: "pane", servers: true }' : '{ face: "pane" }') + '); return true; }())'); };
   await makeList('plain', false);
   await makeList('servers', true);
   await until(function () { return Promise.all([drawnIn('plain'), drawnIn('servers')]).then(function (d) { return d[0].length > 1 && d[1].length > 1; }); }, 8000);

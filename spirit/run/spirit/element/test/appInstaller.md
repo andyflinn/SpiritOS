@@ -6,7 +6,7 @@ come later.
 
 ## API
 
-- `spirit.element.appInstaller.create(host, { path })` draws into `host` and returns `{ destroy() }`. `path` is the
+- `spirit.required.appInstaller.create(host, { path })` draws into `host` and returns `{ destroy() }`. `path` is the
   app's script, `spirit/app/<name>/<name>.js`.
 
 ## Requirements

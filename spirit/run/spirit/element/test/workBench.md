@@ -3,7 +3,7 @@
 The top-level visual container of an app (goal/G41.1): three panes side by side, left, centre and right, with a
 vertical icon strip along the window's left edge and another along its right edge, after goal/G7's vision: clicking the
 icon of the pane shown collapses it, another icon shows that tool's content. It loads on
-`window.spirit.element.workBench`.
+`window.spirit.required.workBench`.
 
 ## API
 

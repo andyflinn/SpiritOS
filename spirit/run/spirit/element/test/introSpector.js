@@ -6,7 +6,7 @@
 // old apps' code moves there". Written from reading the old module (Andy, of it: "this all happens because i want to SEE"):
 // one line, [party, self by default] [family] [verb]; the chosen verb's form, one field per key of its request typed by the
 // prototype's value, and a call button; the reply, read-only, in CodeMirror. JSON that does not parse is refused with the
-// field's name. spirit.element.spirit.element.introSpector.create(container) mounted alone in a box of a real Chrome on a scratch node's
+// field's name. spirit.required.spirit.element.introSpector.create(container) mounted alone in a box of a real Chrome on a scratch node's
 // face page, the party self. The family and the verb are picked by setting each half's value and saying change, as a
 // pick in its dropdown does, so what introSpector does with a choice is judged, not the dropdowns' own drawing.
 
@@ -36,11 +36,11 @@ test.after(function () {
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
-test.run('it loads through spirit.require and mounts with the create of spirit.element.spirit.element.introSpector, handed a container', 0.2, async function () {
+test.run('it loads through spirit.require and mounts with the create of spirit.required.spirit.element.introSpector, handed a container', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-  made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/introSpector.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;overflow:auto;background:#111;z-index:9"; document.body.appendChild(c); var I = spirit.element.spirit.element.introSpector; if (!I || typeof I.create !== "function") return false; window.made = I.create(c); return "made"; }, function () { return false; })');
+  made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/introSpector.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;overflow:auto;background:#111;z-index:9"; document.body.appendChild(c); var I = spirit.required.spirit.element.introSpector; if (!I || typeof I.create !== "function") return false; window.made = I.create(c); return "made"; }, function () { return false; })');
   return (made === 'made') ? true : false;
 }, test.limit.quick);
 test.run('the party is self (this node) until a pick', 0.2, async function () {

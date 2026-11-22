@@ -4,7 +4,7 @@
 // own, just spirit/app/testicle/element/<element-name>.js", "element/settingsPanel.js (the ⚙ settings panel)"). It was
 // configPanel in ../element.js. Its test: ./test/settingsPanel.js.
 //
-//   spirit.element.spirit.app.testicle.element.settingsPanel.create(container) -> { destroy() }
+//   spirit.required.spirit.app.testicle.element.settingsPanel.create(container) -> { destroy() }
 //
 // THE CONFIGURATION PANEL (goal/G47.1, box v79, 2): "this icon will open a panel in the left workbech pane, titled: \"⚙
 // Configuration\"", "the one switch it maintains in a rowForm is: interactive | auto where the default will be
@@ -37,7 +37,7 @@
     }
     parts.then(function () {
       if (gone) return;
-      toggle = S.element.spirit.element.search.app.rowFormToggle.create(container.querySelector('.testicle-config-form'), { on: true, words: '',
+      toggle = S.required.spirit.element.search.app.rowFormToggle.create(container.querySelector('.testicle-config-form'), { on: true, words: '',
         press: function () {
           if (gone || typeof shown !== 'boolean') return;
           said.textContent = '';

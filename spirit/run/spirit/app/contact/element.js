@@ -3,7 +3,7 @@
 // CONTACTS, AN ELEMENT (goal/G43.14; Andy: "the new contact app will be exactly the same as the old, merely placed where it
 // now belongs."). Its contract and its test: ./test/contact.md and ./test/contact.js.
 //
-//   spirit.element.spirit.app.contact.element.create(container, { open }) -> { destroy() }; open, the mounter's panel stack's (goal/G43.18)
+//   spirit.required.spirit.app.contact.element.create(container, { open }) -> { destroy() }; open, the mounter's panel stack's (goal/G43.18)
 //
 // What it draws: the one contact list (spirit/element/search/contact/list.js, below), which does its own asking
 // and whose rows open a person's or a relay's details, and the Add a relay fold, whose one call is relay.add. Nothing
@@ -118,8 +118,8 @@ function contactCreate(container, options) {
     var book = document.getElementById('contacts-book');
     contactsParts.then(function () {
       if (gone) return;
-      if (typeof o.open !== 'function') stack = window.spirit.element.spirit.element.panel.create(container, container.firstElementChild);
-      contactsList = window.spirit.element.spirit.element.search.contact.list.create(book, {
+      if (typeof o.open !== 'function') stack = window.spirit.required.spirit.element.panel.create(container, container.firstElementChild);
+      contactsList = window.spirit.required.spirit.element.search.contact.list.create(book, {
         open: openOver,
         say: contactsStatus,
         empty: 'Nobody matches: the network is searched as you type.',

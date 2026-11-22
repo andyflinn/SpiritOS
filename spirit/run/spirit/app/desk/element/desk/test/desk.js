@@ -46,7 +46,7 @@ function caller(page) {
       .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
   };
 }
-const MOUNT_DESK = "(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {}); return true; }); })()";
+const MOUNT_DESK = "(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()";
 
 // no icon table, no lookup into one
 const readCode = function () { if (W.code === undefined) W.code = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, ''); return W.code; };
@@ -227,8 +227,8 @@ function deskWorld(goal, items) {
       if (run && !ran[run]) { ran[run] = true; vm.runInContext(fs.readFileSync(path.join(RUN, run), 'utf8'), win, { filename: run }); }
       return Promise.resolve({});
     },
-    // goal/G43.32: the parts stand where the page reads them, at spirit.element.<their path>.
-    element: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
+    // goal/G43.32: the parts stand where the page reads them, at spirit.required.<their path>.
+    required: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
       'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
     // THE PAGE GETS WHAT IT NEEDS ITSELF (goal/G43.27, requirement 23): no api is handed to it. A family's verb is asked
     // through spirit.ready (every desk.<verb> reaches the recorder), its answer through outcome, and the desk's publishes
@@ -252,7 +252,7 @@ function deskWorld(goal, items) {
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
   w.mount = async function () {
-    win.spirit.element.spirit.app.desk.element.desk.desk.create(document.body.appendChild(document.createElement('div')), {});
+    win.spirit.required.spirit.app.desk.element.desk.desk.create(document.body.appendChild(document.createElement('div')), {});
     await settle();
     // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, the one its last
     // goal.whole named; the page reads it from there, never from a search answer.
@@ -573,8 +573,8 @@ const fillOf = function (verb) {
 test.run('the List stands in a fill box, and every box up to the app is fill too', 0.2, async function () {
   const wf = deskWorld(goal, [item]);
   const panes = W.panes = [];
-  const realCreate = wf.win.spirit.element.spirit.element.search.create;
-  wf.win.spirit.element.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
+  const realCreate = wf.win.spirit.required.spirit.element.search.create;
+  wf.win.spirit.required.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
   await wf.mount();
   W.mountBox = wf.document.body.children[wf.document.body.children.length - 1];
   W.deskDoc = wf.document;

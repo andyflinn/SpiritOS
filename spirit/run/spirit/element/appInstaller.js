@@ -11,7 +11,7 @@
 //   development team's, by hand. Any other path gets nothing: the old shell's face parts, which switched a shell app,
 //   are gone (goal/G43.20; Andy: "drop the old shells face parts altogether.").
 (function () {
-  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   var APP = /^spirit\/app\/([^/]+)\/\1\.js$/;
 
   function sp() { return window.spirit || {}; }

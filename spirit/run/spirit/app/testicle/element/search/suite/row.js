@@ -9,7 +9,7 @@
 // each row's button running its own suite", "The button is the busy button exactly as it is"): the first field, a busy button
 // in its cell asking testicle.run {script, suite} for the row's own script and suite; busy until run answers, nothing after.
 //
-//   spirit.element.spirit.app.testicle.element.search.suite.row.create(row) -> the row element
+//   spirit.required.spirit.app.testicle.element.search.suite.row.create(row) -> the row element
 (function () {
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
@@ -26,7 +26,7 @@
 
   var index = null;
   function create(row) {
-    var R = S.element.spirit.element.row;
+    var R = S.required.spirit.element.row;
     var r = row || {};
     index = index || R.index(function () {});
     var el = R.create({
@@ -56,7 +56,7 @@
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
         var made = Promise.all([S.require('spirit/element/busyButton.js'), S.require('spirit/app/testicle/api.js')]).then(function () {
           if (button !== made) return;
-          button = S.element.spirit.element.busyButton.create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
+          button = S.required.spirit.element.busyButton.create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
             run: function () { return S.testicle.run({ script: String(r.script || ''), suite: String(r.suite || '') }); } });
         }, function () {
           // A node with no testicle refuses its interface: nothing to run the suite with, so no button.

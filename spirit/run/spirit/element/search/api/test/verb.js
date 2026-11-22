@@ -42,18 +42,18 @@ test.run('it names no shellCreateListSearch', 0.2, function () {
 }, test.limit.quick);
 
 // a shell element of its own, on probabilitySearch
-test.run('it adds apiVerbSelector with a create to window.spirit.element, and createApiVerbSelector no more', 0.2, function () {
+test.run('it adds apiVerbSelector with a create to window.spirit.required, and createApiVerbSelector no more', 0.2, function () {
   if (!SRC) return false;
   // A BARE WINDOW (rule/26): probabilitySearch is on the page only once the selector requires it.
   w = { lists: [], required: [] };
-  // goal/G43.32: the stand-in search stands where an element now finds it, spirit.element.spirit.element.search.
+  // goal/G43.32: the stand-in search stands where an element now finds it, spirit.required.spirit.element.search.
   const STAND = function (E) { E.search = Object.assign(E.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
     redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); };
   win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
       require: function (p) {
         w.required.push(String(p));
-        if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.element.spirit = win.spirit.element.spirit || {}).element = win.spirit.element.spirit.element || {})); }
+        if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.required.spirit = win.spirit.required.spirit || {}).element = win.spirit.required.spirit.element || {})); }
         // A family's cache (goal/G41.28): the node branch's interface brings its data.js, as the real api.js does; it runs
         // on this window over the real data set, from its path.
         if (p === 'spirit/node/api.js') vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'node', 'data.js'), 'utf8'), win, { filename: 'spirit/node/data.js' });
@@ -78,8 +78,8 @@ test.run('it adds apiVerbSelector with a create to window.spirit.element, and cr
   win.spirit.node = { key: 'KEY+VERB/SELECTOR==' };
   win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
-  // goal/G43.32: it stands at its path, spirit.element.spirit.element.search.api.verb.
-  E = ((win.spirit.element.spirit || {}).element || {});
+  // goal/G43.32: it stands at its path, spirit.required.spirit.element.search.api.verb.
+  E = ((win.spirit.required.spirit || {}).element || {});
   made = E.search && E.search.api && E.search.api.verb;
   return made && typeof made.create === 'function' && !('createApiVerbSelector' in E) ? true : false;
 }, test.limit.quick);

@@ -19,7 +19,7 @@ const DESK = 'spirit/app/desk/element/desk/desk.js';
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.element); };
+const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
 
 const W = { required: [], made: [] };
 
@@ -30,7 +30,7 @@ test.run('a window of its own is made for the file to run on, with a stand-in De
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
   global.window.spirit.require = function (p) {
     W.required.push(String(p));
-    // The Desk page, as its own file places itself: by the one helper, at spirit.element.<its path>.
+    // The Desk page, as its own file places itself: by the one helper, at spirit.required.<its path>.
     if (p === DESK) helper(global.window.spirit, DESK, { create: function (container, opts) { const m = { container: container, opts: opts, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });
     return Promise.resolve(true);
   };
@@ -42,7 +42,7 @@ test.run('before the file runs, the page has no desk element', 0.2, function () 
   if (!W.up) return false;
   return at('spirit.app.desk.element') === undefined || false;
 }, test.limit.quick);
-test.run('the file places the desk element on spirit.element, with a create', 0.2, async function () {
+test.run('the file places the desk element on spirit.required, with a create', 0.2, async function () {
   if (!W.up) return false;
   load(FILE);
   await settle();
@@ -54,7 +54,7 @@ test.run('the file asks for the Desk page itself, spirit/app/desk/element/desk/d
   if (!W.up) return false;
   return W.required.indexOf(DESK) !== -1 || false;
 }, test.limit.quick);
-test.run('the Desk page keeps its own place on spirit.element beside the desk element', 0.2, function () {
+test.run('the Desk page keeps its own place on spirit.required beside the desk element', 0.2, function () {
   if (!W.E) return false;
   const d = at('spirit.app.desk.element.desk.desk');
   return (!!d && typeof d.create === 'function') || false;

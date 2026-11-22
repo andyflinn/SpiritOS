@@ -95,7 +95,7 @@ function world(o) {
   const rotateKey = { create: function (pane, x) { const r = { pane: pane, opts: x, destroy: function () {} }; w.rotateKeys.push(r); return r; } };
   const FILES = { 'spirit/element/changeMyLabel.js': ['changeMyLabel'], 'spirit/element/changeMyDescription.js': ['changeMyDescription'],
     'spirit/element/joinForm.js': ['joinForm'], 'spirit/element/faceForm.js': ['faceForm'], 'spirit/element/rowForm.js': ['rowForm'] };
-  // goal/G43.32: one place for every element, spirit.element.spirit.element, the parts it requires and itself.
+  // goal/G43.32: one place for every element, spirit.required.spirit.element, the parts it requires and itself.
   const page = { spirit: { element: {} } };
   const els = page.spirit.element;
   const win = {
@@ -108,7 +108,7 @@ function world(o) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   const S = win.spirit;
-  S.element = page;
+  Object.assign(S.required.spirit, page.spirit);
   S.node = { key: 'NODEKEY+INFO==',
     card: function (args) { w.calls.push({ name: 'node.card', args: args });
       if (opt.cardHeld) return opt.cardHeld;
@@ -155,7 +155,7 @@ let w, NI, host, made, said, label, desc, card, N, all, refused, h2, m2, N2, sil
 test.run('spirit/element/nodeInfo.js is there', 0.2, function () {
   return (!!SRC) ? true : false;
 }, test.limit.quick);
-test.run('it places nodeInfo at spirit.element.spirit.element.nodeInfo, with a create', 0.2, function () {
+test.run('it places nodeInfo at spirit.required.spirit.element.nodeInfo, with a create', 0.2, function () {
   // an element mounted the new shell's way, that loads what it uses itself (rule/26)
   w = world();
   NI = w.els.nodeInfo;
@@ -352,7 +352,7 @@ test.run('the rotate button opens rotateKey in that stack as 🆘 Rotate this no
 test.run('pressing the rotate button rotates nothing, since the dialog does that on its own two presses', 0.2, function () {
   return (w.calls.filter(function (c) { return /rotate/i.test(c.name); }).length === 0) ? true : false;
 }, test.limit.quick);
-test.run('its fill loads spirit/element/rotateKey.js and makes spirit.element.spirit.element.rotateKey in the layer\'s pane, to destroy', 0.2, async function () {
+test.run('its fill loads spirit/element/rotateKey.js and makes spirit.required.spirit.element.rotateKey in the layer\'s pane, to destroy', 0.2, async function () {
   pane = node('<pane>');
   filled = await op.spec.fill(pane, function () { return false; });
   return (w.required.indexOf('spirit/element/rotateKey.js') !== -1 && w.rotateKeys.length === 1 && w.rotateKeys[0].pane === pane && filled === w.rotateKeys[0]) ? true : false;
@@ -492,9 +492,9 @@ function formsPart() {
     vm.createContext(win);
     vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
     const S = win.spirit;
-    // goal/G43.32: every element stands at its path, spirit.element.spirit.element.<name>, the stand-ins with them.
-    S.element = { spirit: { element: {} } };
-    const at = S.element.spirit.element;
+    // goal/G43.32: every element stands at its path, spirit.required.spirit.element.<name>, the stand-ins with them.
+    Object.assign(S.required.spirit, { element: {} });
+    const at = S.required.spirit.element;
     const field = { create: function () { return { destroy: function () {} }; } };
     at.changeMyLabel = field; at.changeMyDescription = field;
     at.rowForm = { create: function (c, x) {
@@ -548,7 +548,7 @@ function formsPart() {
   }, test.limit.quick);
   test.run('the real joinForm.js and faceForm.js ran on the page', 0.2, function () {
     // goal/G43.32: they stand at their paths.
-    placed = plain.S.element.spirit.element;
+    placed = plain.S.required.spirit.element;
     return (!!placed.joinForm && !!placed.faceForm) ? true : false;
   }, test.limit.quick);
   test.run('with seats on A and O and none starred, the email form shows', 0.2, function () {
@@ -739,7 +739,7 @@ function rotatePart() {
     await c.evaluate(HANDS);
     await c.evaluate('window.__in = "zzBox"');
     // the box, 8: "nodeInfo's rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"
-    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__shell = spirit.element.spirit.element.script.create(b); return "made"; }, function () { return false; }); }())');
+    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__shell = spirit.required.spirit.element.script.create(b); return "made"; }, function () { return false; }); }())');
     return (shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : false;
   }, test.limit.quick);
   test.run('Info opens from its tile, showing its name field and its rotate button', 0.2, async function () {

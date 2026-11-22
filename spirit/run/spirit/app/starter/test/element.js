@@ -52,10 +52,9 @@ function world(card, hold) {
         function (e) { return { status: 500, body: { ok: false, error: e.message } }; });
     },
     require: function (p) { w.required.push(String(p)); return Promise.resolve({}); },
-    element: {},
   };
   // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js places itself by
-  // installSpiritElement at spirit.element.spirit.app.starter.element as it runs.
+  // installSpiritElement at spirit.required.spirit.app.starter.element as it runs.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -67,9 +66,9 @@ function world(card, hold) {
 const W = {};
 
 // 1. one element
-test.run('the starter element\'s create is on spirit.element at its path', 0.2, function () {
+test.run('the starter element\'s create is on spirit.required at its path', 0.2, function () {
   W.w = world({ name: 'probe-node', description: 'a node for the test' });
-  const E = ((((W.w.win.spirit.element || {}).spirit || {}).app || {}).starter || {}).element;
+  const E = ((((W.w.win.spirit.required || {}).spirit || {}).app || {}).starter || {}).element;
   W.E = E;
   return !!E && typeof E.create === 'function' ? true : false;
 }, test.limit.quick);
@@ -109,7 +108,7 @@ test.run('its description is drawn', 0.2, function () {
 test.run('a refused card draws a refused row with its error', 0.2, async function () {
   const r = world(new Error('no such verb'));
   const rbox = node('<div>');
-  r.win.spirit.element.spirit.app.starter.element.create(rbox, {});
+  r.win.spirit.required.spirit.app.starter.element.create(rbox, {});
   await settle();
   return /refused: no such verb/.test(rbox.textContent) || false;
 }, test.limit.quick);
@@ -124,7 +123,7 @@ test.run('an answer after destroy draws nothing', 0.2, async function () {
   let release = null;
   const late = world({ name: 'late', description: 'late' }, new Promise(function (r2) { release = r2; }));
   const lbox = node('<div>');
-  late.win.spirit.element.spirit.app.starter.element.create(lbox, {}).destroy();
+  late.win.spirit.required.spirit.app.starter.element.create(lbox, {}).destroy();
   release();
   await settle();
   return !/late/.test(lbox.textContent) || false;

@@ -514,13 +514,9 @@
   required.spirit = holder();
   required.spirit.element = holder();
   required.spirit.app = holder();
-  // THE ELEMENTS' TREE (goal/G43.32): every element stands at spirit.element.<its path>, put there by
-  // spirit/element/installSpiritElement.js; this file makes the tree, so no element script assigns spirit.element itself.
-  self.element = self.element && typeof self.element === 'object' ? self.element : {};
-  // Its first levels made here, so a reader asking spirit.element.spirit.element.<x> or .spirit.app.<x> before any element
-  // loaded reads undefined instead of throwing.
-  self.element.spirit = self.element.spirit && typeof self.element.spirit === 'object' ? self.element.spirit : {};
-  ['element', 'app'].forEach(function (k) { if (!self.element.spirit[k] || typeof self.element.spirit[k] !== 'object') self.element.spirit[k] = {}; });
+  // THE ELEMENTS STAND HERE TOO (goal/G49.5; Andy, of his G43.32 Q5: "that ruling is reversed, since the element factory is
+  // fine where it is loaded"): an element's factory is at spirit.required.<its path>, put there by
+  // spirit/element/installSpiritElement.js as the script runs; there is no spirit.element.
   function placeAt(rootObj, p, value) {
     var keys = String(p).replace(/\.js$/, '').split('/').filter(Boolean);
     var o = rootObj;

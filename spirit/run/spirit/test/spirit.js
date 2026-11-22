@@ -903,7 +903,7 @@ test.run('on a real page, the Desk element opens on the page that loaded before 
   if (L.up !== '200') return false;
   const mark = L.page.heard.length;
   const drawn = await L.page.evaluate("(function () { var d = document.createElement('div'); document.body.appendChild(d);" +
-    " return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.element.spirit.app.desk.element.create(d, {});" +
+    " return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {});" +
     " return new Promise(function (r) { setTimeout(function () { r(JSON.stringify({ text: d.innerText, nodes: d.querySelectorAll('*').length })); }, 8000); }); }," +
     " function () { return JSON.stringify({ refused: true }); }); })()");
   let got = {};
@@ -957,8 +957,8 @@ test.run('after its node restarts on the same port, the page\'s stream comes bac
 }, test.limit.slow);
 
 // The element move's checks (goal/G43.5) judge the tree, not spirit.js: they are the general tests' now, spirit-sibling-general.js
-// (no file names the old shell folder of the elements, none reaches an element through spirit.elements, none through spirit.element for one spirit/element/
-// does not define) and spirit-sibling-browser.js (every element module loads on a page, its factory at spirit.element.<its path>).
+// (no file names the old shell folder of the elements, none reaches an element through spirit.elements, none through spirit.required for one spirit/element/
+// does not define) and spirit-sibling-browser.js (every element module loads on a page, its factory at spirit.required.<its path>).
 // Andy, goal/G47.1: "1, 2 and 3 Belong in spirit/test/spirit.js", "the rest belong in motherfucking spirit-sibling-general/browser/node respectively".
 const { execSync } = require('child_process');
 const REPO = path.resolve(RUN, '../..');

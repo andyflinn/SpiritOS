@@ -52,7 +52,7 @@ test.run('a scratch node comes up with its DEBUG on, and chatPane-laid.html is m
   return m ? true : false;
 // A scratch node comes up inside this one: the long limit, as every world that boots one has (it hung at the slow one).
 }, test.limit.long);
-test.run('chatPane.js adds chatPane.create, taking a container and a persona, at window.spirit.element.spirit.app.agent.element.chatPane', 0.2, function () {
+test.run('chatPane.js adds chatPane.create, taking a container and a persona, at window.spirit.required.spirit.app.agent.element.chatPane', 0.2, function () {
   if (!X.m) return false;
   return X.m.made ? true : false;
 }, test.limit.quick);

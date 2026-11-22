@@ -109,8 +109,8 @@ function world() {
 }
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
-  // goal/G43.32: the parts stand where the app reads them, at spirit.element.<their path>.
-  global.window = { spirit: { element: { spirit: { element: { workBench: w.workBench, tabContainer: w.tabContainer, search: { app: {} } }, app: { agent: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, branchPath: branchPath, isBrowser: function () { return true; },
+  // goal/G43.32: the parts stand where the app reads them, at spirit.required.<their path>.
+  global.window = { spirit: { required: { spirit: { element: { workBench: w.workBench, tabContainer: w.tabContainer, search: { app: {} } }, app: { agent: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, branchPath: branchPath, isBrowser: function () { return true; },
     // A branch's api.js: its real companion data.js run on this window over the real data set, as the real api.js
     // requires it (goal/G47.1).
     require: function (p) {
@@ -132,7 +132,7 @@ function load(w) {
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   // Its tables' elements stand under it, in spirit/app/agent/element/table/ (goal/G43.32, rule 5); the test hands its own there.
-  const placed = global.window.spirit.element.spirit.app.agent.element;
+  const placed = global.window.spirit.required.spirit.app.agent.element;
   if (placed && !placed.table) placed.table = {};
   return placed;
 }
@@ -218,7 +218,7 @@ async function mountTable(name) {
   const t = L.filter(function (x) { return x.name === name; })[0];
   const before = w.required.length;
   const made = [];
-  global.window.spirit.element.spirit.app.agent.element.table[name] = { elementTable: { create: function (into, detail) { made.push({ into: into, detail: detail, handed: arguments.length }); return { refresh: function () {}, destroy: function () {} }; } } };
+  global.window.spirit.required.spirit.app.agent.element.table[name] = { elementTable: { create: function (into, detail) { made.push({ into: into, detail: detail, handed: arguments.length }); return { refresh: function () {}, destroy: function () {} }; } } };
   const tb = box('table-' + name); t.mount(tb); await settle();
   const asked = w.required.slice(before);
   const d = made[0] && made[0].detail;
@@ -272,12 +272,12 @@ test.run('the Select Persona tool\'s mount loads the agent tables\' element itse
   if (X.R.length !== 2) return false;
   if (X.CHAT_TOOL.length !== 1) return false;
   const w = X.w;
-  C.prevDetail = global.window.spirit.element.spirit.app.agent.element.table.tableElement;
-  global.window.spirit.element.spirit.app.agent.element.table.tableElement = Object.assign({}, C.prevDetail || {}, { branchOf: function (table) { return 'agent/' + table; },
+  C.prevDetail = global.window.spirit.required.spirit.app.agent.element.table.tableElement;
+  global.window.spirit.required.spirit.app.agent.element.table.tableElement = Object.assign({}, C.prevDetail || {}, { branchOf: function (table) { return 'agent/' + table; },
     titleRow: function (look, names) { return '<div class="agent-title"><span>' + (look && look.icon || '') + '</span> ' + (names || []).join(' ') + '</div>'; },
     search: function (host, o, more) { const s2 = { host: host, o: o, more: more || {}, refresh: function () {}, destroy: function () {} }; C.sels.push(s2); return s2; },
   });
-  global.window.spirit.element.spirit.app.agent.element.chatPane = { create: function (into, opts) { const c = { into: into, opts: opts || {}, destroy: function () { c.destroyed = true; } }; C.chats.push(c); return c; } };
+  global.window.spirit.required.spirit.app.agent.element.chatPane = { create: function (into, opts) { const c = { into: into, opts: opts || {}, destroy: function () { c.destroyed = true; } }; C.chats.push(c); return c; } };
   const before = w.required.length;
   C.cb = box('chat'); X.CHAT_TOOL[0].mount(C.cb); await settle();
   C.asked = w.required.slice(before);
@@ -325,8 +325,8 @@ test.run('another persona picked opens its own chat in a tab beside the first', 
   const chats = C.chats;
   C.sel.more.pick({ id: 'KB', label: 'Bea' }, 'KB'); await settle();
   const verdict = chats.length === 2 && chats[0].destroyed !== true && chats[1].opts.persona.id === 'KB' ? true : false;
-  global.window.spirit.element.spirit.app.agent.element.table.tableElement = C.prevDetail;
-  delete global.window.spirit.element.spirit.app.agent.element.chatPane;
+  global.window.spirit.required.spirit.app.agent.element.table.tableElement = C.prevDetail;
+  delete global.window.spirit.required.spirit.app.agent.element.chatPane;
   return verdict;
 }, test.limit.quick);
 
@@ -338,10 +338,10 @@ test.run('its mount requires spirit/element/bundleEditor.js', 0.2, async functio
   if (!X.BUNDLE_TOOL) return false;
   const w = X.w;
   const before = w.required.length;
-  global.window.spirit.element.spirit.element.bundleEditor = { create: function (into, cfg) { BE.editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
+  global.window.spirit.required.spirit.element.bundleEditor = { create: function (into, cfg) { BE.editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
   BE.bb = box('bundles'); X.BUNDLE_TOOL.mount(BE.bb); await settle();
   BE.asked = w.required.slice(before);
-  delete global.window.spirit.element.spirit.element.bundleEditor;
+  delete global.window.spirit.required.spirit.element.bundleEditor;
   return BE.asked.indexOf('spirit/element/bundleEditor.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('the bundle tool makes the bundle editor in the box it is handed, handed no api', 0.2, function () {
@@ -377,14 +377,14 @@ test.run('the server\'s tool on the right strip takes ⚙', 0.2, function () {
 test.run('its mount loads spirit/element/search/app/serverDEBUG.js through spirit.require', 0.2, async function () {
   if (!X.SERVER_TOOL) return false;
   const w = X.w;
-  global.window.spirit.element.spirit.element.search.app.serverDEBUG = { create: function (into, o) { SD.debugs.push({ into: into, o: o || {} }); SD.made.push('serverDEBUG'); return { destroy: function () {} }; } };
+  global.window.spirit.required.spirit.element.search.app.serverDEBUG = { create: function (into, o) { SD.debugs.push({ into: into, o: o || {} }); SD.made.push('serverDEBUG'); return { destroy: function () {} }; } };
   // goal/G43.15, the box: "the agent's ⚙ panel shows both above serverDEBUG".
-  ['changeAppIcon', 'changeAppLabel'].forEach(function (n) { global.window.spirit.element.spirit.element.search.app[n] = { create: function (into, o) { SD.made.push(n + ':' + ((o || {}).key || '')); return { destroy: function () {} }; } }; });
+  ['changeAppIcon', 'changeAppLabel'].forEach(function (n) { global.window.spirit.required.spirit.element.search.app[n] = { create: function (into, o) { SD.made.push(n + ':' + ((o || {}).key || '')); return { destroy: function () {} }; } }; });
   SD.callsBefore = w.calls.length;
   SD.rb = box('right'); X.SERVER_TOOL.mount(SD.rb); await settle();
-  delete global.window.spirit.element.spirit.element.search.app.serverDEBUG;
-  delete global.window.spirit.element.spirit.element.search.app.changeAppIcon;
-  delete global.window.spirit.element.spirit.element.search.app.changeAppLabel;
+  delete global.window.spirit.required.spirit.element.search.app.serverDEBUG;
+  delete global.window.spirit.required.spirit.element.search.app.changeAppIcon;
+  delete global.window.spirit.required.spirit.element.search.app.changeAppLabel;
   return w.required.indexOf('spirit/element/search/app/serverDEBUG.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('the server tool makes serverDEBUG for the agent', 0.2, function () {
@@ -419,9 +419,9 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
   const w3 = world();
   const required = [];
   const def3 = load(w3);
-  // No workBench on the page (goal/G43.32: an element stands at spirit.element.<its path>).
-  global.window.spirit.element.spirit.element = {};
-  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.element.spirit.element.workBench = w3.workBench; global.window.spirit.element.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
+  // No workBench on the page (goal/G43.32: an element stands at spirit.required.<its path>).
+  global.window.spirit.required.spirit.element = {};
+  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.required.spirit.element.workBench = w3.workBench; global.window.spirit.required.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
   def3.create(box('app3')); await settle();
   return required.indexOf('spirit/element/workBench.js') !== -1 && w3.created.length === 1 ? true : false;
 }, test.limit.quick);
@@ -518,7 +518,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     LEAF = 'function leaf(w, within) { var root = within ? document.querySelector(within) : document; if (!root) return null; return Array.prototype.slice.call(root.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === w && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === w; }); })[0] || null; }';
     press = function (words, within) { return c.evaluate('(function () { ' + LEAF + ' var e = leaf(' + JSON.stringify(words) + ', ' + JSON.stringify(within || '') + '); if (!e) return false; e.click(); return true; }())'); };
     // The Agent opens from the appSelector's tiles, as the shell app makes them (goal/G43.13).
-    await c.evaluate('(function () { var b = document.createElement("div"); b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { spirit.element.spirit.element.script.create(b, { face: "tiles" }); return 1; }); }())');
+    await c.evaluate('(function () { var b = document.createElement("div"); b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { spirit.required.spirit.element.script.create(b, { face: "tiles" }); return 1; }); }())');
     await until(function () { return press('Agent'); }, 20000);
     await until(function () { return c.evaluate('!!document.querySelector("[data-tool=provider]")'); }, 10000);
     appOpen = await c.evaluate('!!document.querySelector("[data-tool=provider]")');
@@ -906,8 +906,8 @@ async function tabOpens(kind, row) {
       branchPath: branchPath, isBrowser: function () { return true; },
       fs: { loadFile: function () { return Promise.reject(new Error('none')); }, saveFile: function () { return Promise.resolve(); } },
       tree: function () { return Promise.resolve({}); },
-      // goal/G43.32: the stand-ins stand where the elements read them, at spirit.element.<their path>.
-      element: { spirit: { app: {}, element: nestSearch({
+      // goal/G43.32: the stand-ins stand where the elements read them, at spirit.required.<their path>.
+      required: { spirit: { app: {}, element: nestSearch({
         // The recorder: the box each list is made in, and whether it is a dropdown.
         'search': { create: function (host, o) { panes.push({ host: host, o: o || {} }); return { refresh: function () {}, redraw: function () {}, destroy: function () {}, value: '' }; } },
         'search.contact': selector, 'search.bundle': selector, 'search.api': selector,
@@ -988,7 +988,7 @@ async function paneFills(t) {
       app = w.document.body.appendChild(w.document.createElement('div'));
       app.className = 'fill';
       // A tile hands it only its container (goal/G43.13).
-      w.win.spirit.element.spirit.app.agent.element.create(app);
+      w.win.spirit.required.spirit.app.agent.element.create(app);
       await settle();
       modelOrder = null;
       // Where, in the app's order of elements, the Models title rows, the Ask row (its providerSelector:dropdown, since

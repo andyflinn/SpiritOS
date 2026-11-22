@@ -13,7 +13,7 @@
 // id (goal/G<n> or goal/G<n>.<m>) and opens the item's dialog (spirit/app/desk/element/deskDetails).
 
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9; goal/G43.27, requirement 23): the page is an element of the new
-// shell, spirit.element.spirit.app.desk.element.desk.desk, mounted by the Desk app (spirit/app/desk/deskBrowser.js). It is handed no api: deskVia is
+// shell, spirit.required.spirit.app.desk.element.desk.desk, mounted by the Desk app (spirit/app/desk/deskBrowser.js). It is handed no api: deskVia is
 // built here from the one spirit object, a family's verb asked through it, its escape, the desk server's publishes heard on
 // the stream through the data set's translator (the desk family's cache manager keeps them first), and a dialog opened as a
 // layer over the page through panel.js (the mounter's open, or the page's own stack).
@@ -68,9 +68,9 @@ function deskHear(fn) {
 // first one's hidden parts and showed only its title bar. So every item opens in the one 'item' layer, and opening
 // another row fills that layer again with it.
 var deskPanes = {};
-// An element by its place, spirit.element.<its path> (goal/G43.32): undefined while any part of the path is not there yet.
+// An element by its place, spirit.required.<its path> (goal/G43.32): undefined while any part of the path is not there yet.
 function deskElementAt(place) {
-  return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.element : undefined);
+  return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.required : undefined);
 }
 // A helper by its place, spirit.required.<its path> (Andy: helpers with no create "live in require"): undefined till it ran.
 function deskRequiredAt(place) {
@@ -368,7 +368,7 @@ function deskGlyph(glyph, title) {
 }
 var deskIconReady = null;
 function deskPaintIcons(root) {
-  var I = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.spirit.element.icon;
+  var I = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.icon;
   if (!I || !root || typeof root.querySelectorAll !== 'function') return;
   Array.prototype.forEach.call(root.querySelectorAll('[data-icon]'), function (p) {
     if (p.querySelector('.shell-icon')) return;
@@ -519,7 +519,7 @@ function deskAddGoal() {
 var deskList = null;
 var deskListIndex = null;
 function deskListElement(row, key) {
-  var E = window.spirit.element;
+  var E = window.spirit.required;
   deskListIndex = deskListIndex || E.spirit.element.row.index(function () { /* a publish redraws the list; each element applies its row */ });
   var el = E.spirit.element.row.create({
     kind: 'deskRow', key: key, index: deskListIndex, row: row,
@@ -567,7 +567,7 @@ function deskMountList() {
   deskLoadSearch(function () {
     // The List is drawn once the cache manager is there, its branch the List's (goal/G41.28).
     deskNeed(DESK_DATA).then(function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.spirit.element.search && window.spirit.element.spirit.element.search.create ? window.spirit.element.spirit.element.search : null;
+    var P = window.spirit && window.spirit.required && window.spirit.required.spirit.element.search && window.spirit.required.spirit.element.search.create ? window.spirit.required.spirit.element.search : null;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskList || !K) return;
     deskList = P.create(el, {
@@ -630,7 +630,7 @@ var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.spirit.element.armingButton;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.armingButton;
     if (!A || typeof button.armed === 'function') return;
     A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run });
   }, function () { /* no armingButton, no second press */ });
@@ -744,7 +744,7 @@ function deskHeader() {
 }
 function deskHeaderMove() {
   var old = document.getElementById('desk-bars');
-  var AH = ((window.spirit.element.spirit.element.appHeader || {}).appHeader);
+  var AH = ((window.spirit.required.spirit.element.appHeader || {}).appHeader);
   if (!old || !old.parentNode || !AH) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
   var head = AH.create(old.parentNode);
@@ -871,7 +871,7 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
     deskLoad();
     }
     // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
-    if (typeof deskOpts.open !== 'function') window.spirit.require('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = window.spirit.element.spirit.element.panel.create(container, container.firstElementChild); });
+    if (typeof deskOpts.open !== 'function') window.spirit.require('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = window.spirit.required.spirit.element.panel.create(container, container.firstElementChild); });
     return { destroy: function () {
       deskHeard = [];
       // Its watch let go (rule/8): the backup line's.

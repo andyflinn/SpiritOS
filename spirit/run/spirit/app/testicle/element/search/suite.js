@@ -4,7 +4,7 @@
 // over job/list.js. testicle's (goal/G47.1, the UI cycle, the box: "Since testicle is intrinsic, its elements go into
 // spirit/element/ in the standard way: the suite search is spirit/app/testicle/element/search/suite.js and its folder").
 //
-//   spirit.element.spirit.app.testicle.element.search.suite.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
+//   spirit.required.spirit.app.testicle.element.search.suite.create(container, { script, face, placeholder, all, pick }) -> { destroy() }
 //     script   the production script whose suites it lists, scoped to run://
 //     face, placeholder, all, pick   handed to its list as they are (./suite/list.js)
 (function () {
@@ -25,7 +25,7 @@
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     Promise.resolve(window.spirit.require('spirit/app/testicle/element/search/suite/list.js')).then(function () {
       if (gone) return;
-      made = window.spirit.element.spirit.app.testicle.element.search.suite.list.create(root, { script: o.script, face: o.face, placeholder: o.placeholder, all: o.all, pick: o.pick });
+      made = window.spirit.required.spirit.app.testicle.element.search.suite.list.create(root, { script: o.script, face: o.face, placeholder: o.placeholder, all: o.all, pick: o.pick });
     });
     root.destroy = function () {
       gone = true;

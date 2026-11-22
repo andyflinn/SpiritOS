@@ -3,7 +3,7 @@
 // WHAT MOUNTS COVERS ITS MOUNTER (goal/G43.17; Q12, Andy: "yes." to panel, in spirit/element/panel.js). Its contract and its
 // test: ./test/panel.md and ./test/panel.js.
 //
-//   spirit.element.spirit.element.panel.create(host, under) -> stack
+//   spirit.required.spirit.element.panel.create(host, under) -> stack
 //     host    the pane the mounter draws in; its layers go into it
 //     under   what the mounter shows there, covered while a layer is open
 //   stack.open(key, { icon, label, fill(pane, closed), remote }) -> layer
@@ -32,7 +32,7 @@
     function cover(on) { if (under) under.style.display = on ? 'none' : ''; }
 
     function make(key, spec) {
-      var E = S.element;
+      var E = S.required;
       // THE ONE IT COVERS, shown again by its ✕ while that one is still in the stack.
       var back = open;
       var box = document.createElement('div');
@@ -112,7 +112,7 @@
             },
             empty: 'No remote.',
           };
-          remoteList = S.element.spirit.element.search.create(mid, opts);
+          remoteList = S.required.spirit.element.search.create(mid, opts);
           mid.appendChild(said);
           // Its first ask now, as every list's (grant/list.js): the rows are there when the field opens. And again each time
           // the field is pressed: the server checks its peers in the background after an empty call (box v12), so a later

@@ -87,9 +87,9 @@ function world(answer) {
       if (p === 'spirit/element/armingButton.js') {
         vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'armingButton.js'), 'utf8'), win, { filename: 'armingButton.js' });
         // Every attach recorded, so what the button was handed is judged; the real attach does the arming.
-        // goal/G43.32: it places itself at its path, spirit.element.spirit.element.armingButton.
-        const real = win.spirit.element.spirit.element.armingButton.attach;
-        win.spirit.element.spirit.element.armingButton.attach = function (b, o) { w.attached.push({ button: b, opts: o || {} }); return real(b, o); };
+        // goal/G43.32: it places itself at its path, spirit.required.spirit.element.armingButton.
+        const real = win.spirit.required.spirit.element.armingButton.attach;
+        win.spirit.required.spirit.element.armingButton.attach = function (b, o) { w.attached.push({ button: b, opts: o || {} }); return real(b, o); };
       }
       return w.hold ? w.hold : Promise.resolve({});
     },
@@ -125,11 +125,11 @@ let w, at, E, host, made, said, missing, b, a, rot, after, slow, h2, b2, busy, n
 test.run('spirit/element/rotateKey.js is there', 0.2, function () {
   return (!!SRC) ? true : false;
 }, test.limit.quick);
-test.run('rotateKey.js sets spirit.element.spirit.element.rotateKey to an object with create', 0.2, function () {
+test.run('rotateKey.js sets spirit.required.spirit.element.rotateKey to an object with create', 0.2, function () {
   // an element mounted the new shell's way (goal/G43.24, requirements 7 and 8)
   w = world(rotated);
   // goal/G43.32: it stands at its path.
-  at = ((w.win.spirit.element || {}).spirit || {}).element || {};
+  at = ((w.win.spirit.required || {}).spirit || {}).element || {};
   E = at.rotateKey;
   return (!!E && typeof E.create === 'function') ? true : false;
 }, test.limit.quick);
@@ -229,7 +229,7 @@ test.run('once the node is asked, the button is drawn disabled until the answer 
   // while the node has not answered, the button waits
   slow = world(function () { return { wait: true, body: { ok: true, at: 3, relays: 2 } }; });
   h2 = node('<div>');
-  slow.win.spirit.element.spirit.element.rotateKey.create(h2, {});
+  slow.win.spirit.required.spirit.element.rotateKey.create(h2, {});
   await settle();
   b2 = slow.button(h2);
   b2.fire('click', { preventDefault: function () {} });
@@ -250,7 +250,7 @@ test.run('the node\'s refusal is said, escaped, and nothing claims a rotation', 
   // a refusal is said, and the button stays to try again
   no = world(function () { return { status: 403, body: { ok: false, code: 'owner-only', error: 'owner <only>' } }; });
   h3 = node('<div>');
-  no.win.spirit.element.spirit.element.rotateKey.create(h3, {});
+  no.win.spirit.required.spirit.element.rotateKey.create(h3, {});
   await settle();
   b3 = no.button(h3);
   b3.fire('click', { preventDefault: function () {} });
@@ -265,7 +265,7 @@ test.run('after a refusal the button is back, disarmed', 0.2, function () {
 test.run('a node that does not answer is said as no answer', 0.2, async function () {
   none = world(function () { return { status: 0, body: null }; });
   h4 = node('<div>');
-  none.win.spirit.element.spirit.element.rotateKey.create(h4, {});
+  none.win.spirit.required.spirit.element.rotateKey.create(h4, {});
   await settle();
   b4 = none.button(h4);
   b4.fire('click', { preventDefault: function () {} });
@@ -293,10 +293,10 @@ test.run('destroyed before its arming button loads, rotateKey draws and attaches
   letGo = null;
   late.hold = new Promise(function (r) { letGo = r; });
   // goal/G43.32: installSpiritElement overwrites no element that stands; the run again takes the place of a fresh page's.
-  delete late.win.spirit.element.spirit.element.rotateKey;
+  delete late.win.spirit.required.spirit.element.rotateKey;
   vm.runInContext(SRC, late.win, { filename: FILE });
   h6 = node('<div>');
-  m6 = late.win.spirit.element.spirit.element.rotateKey.create(h6, {});
+  m6 = late.win.spirit.required.spirit.element.rotateKey.create(h6, {});
   m6.destroy();
   letGo({});
   await settle();

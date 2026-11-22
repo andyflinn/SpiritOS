@@ -78,12 +78,12 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   // What the row asked as it loaded; the runner's own asks after this test are not the row's.
   loaded = required.slice();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   return true;
 }, test.limit.quick);
 
@@ -104,7 +104,7 @@ test.run('the grant row names no table: no auth verb, no agent grant, and no str
   const names = /auth\.|agent\.grant|'bundles'|"bundles"|job_id/.test(SRC);
   return !names ? true : false;
 }, test.limit.quick);
-test.run('the grant row registers spirit.element.spirit.element.search.grant.row.create', 0.2, function () {
+test.run('the grant row registers spirit.required.spirit.element.search.grant.row.create', 0.2, function () {
   if (!A || !A.grants) return false;
   return E.search.grant.row && typeof E.search.grant.row.create === 'function' ? true : false;
 }, test.limit.quick);

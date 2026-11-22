@@ -28,7 +28,7 @@ let given, a, bare, b, cells, hn, ret, hName, hAge, hStatus, c, threw, unmounted
 test.run('kind and key are text', 0.2, function () {
   // create: what the element says of itself
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-  R = window.spirit.element.spirit.element.row;
+  R = window.spirit.required.spirit.element.row;
   given = { name: 'ann', age: 3 };
   a = R.create({ kind: 7, key: 42, row: given, fields: [{ name: 'name' }, { name: 'age' }],
     actions: [{ name: 'block', label: 'Block', run: function () {} }, { name: 'open', run: function () {} }] });

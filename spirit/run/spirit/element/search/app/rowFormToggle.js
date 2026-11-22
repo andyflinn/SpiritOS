@@ -4,7 +4,7 @@
 // appSelector:detail", "it is configurable with a description of what is being toggled." Its contract and its test:
 // ./test/rowFormToggle.md and ./test/rowFormToggle.js.
 //
-//   spirit.element.spirit.element.search.app.rowFormToggle.create(host, { on, words, press }) -> { root, set(on, words), destroy() }
+//   spirit.required.spirit.element.search.app.rowFormToggle.create(host, { on, words, press }) -> { root, set(on, words), destroy() }
 //
 // It draws the state it is handed, 🟢 with a 🔴 button when on, 🔴 with a 🟢 button when off, and the words beside. A press only
 // calls press, and the button is busy until what press answers settles: the state changes when its owner says so, by set
@@ -26,10 +26,10 @@
       root.innerHTML = '';
       // ITS PRESS IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
       // comes"): what the owner's press answers, the rowForm's button waits on, busy.
-      var f = window.spirit.element.spirit.element.rowForm.create(root, { icon: on ? '🟢' : '🔴', button: '', press: function () { return typeof o.press === 'function' ? o.press() : undefined; } });
+      var f = window.spirit.required.spirit.element.rowForm.create(root, { icon: on ? '🟢' : '🔴', button: '', press: function () { return typeof o.press === 'function' ? o.press() : undefined; } });
       // THE BUTTON'S GLYPH IS AN ICON TOO (goal/G43.32; Andy: "fix the fucking elements/pages."): painted through the icon
       // element, which rowForm.js has loaded, as every pictograph the shell draws.
-      window.spirit.element.spirit.element.icon.create(f.button, { glyph: on ? '🔴' : '🟢' });
+      window.spirit.required.spirit.element.icon.create(f.button, { glyph: on ? '🔴' : '🟢' });
       f.span.textContent = words;
     }
     draw();

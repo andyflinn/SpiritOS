@@ -59,14 +59,14 @@ function world(rows) {
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  w.E = ((win.spirit.element || {}).spirit || {}).element || {};
+  w.E = ((win.spirit.required || {}).spirit || {}).element || {};
   w.put = function (key, row) { w.rows[key] = row; (w.watchers[key] || []).slice().forEach(function (fn) { fn(row); }); };
   return w;
 }
 
 // What the tests make, shared by the tests after them.
 let w0, PATH, w, h, inst, e1, wi, hi, ws, hs, hx;
-test.run('it registers spirit.element.spirit.element.appInstaller.create', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.appInstaller.create', 0.2, function () {
   // it is a standard shell element
   w0 = world({});
   return (w0.E.appInstaller && typeof w0.E.appInstaller.create === 'function') ? true : false;

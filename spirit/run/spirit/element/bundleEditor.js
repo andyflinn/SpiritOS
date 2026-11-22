@@ -8,7 +8,7 @@
 // its branch editor as a closable tab (goal/G41.32). The grants app draws it in its Bundles tab ("the Grant app must use
 // the bundleEditor in its "Bundle" tab"). A bundle is a label; its branches are the branch editor's.
 //
-//   spirit.element.spirit.element.bundleEditor.create(box, { tabs, tabLabel }) -> { destroy() }
+//   spirit.required.spirit.element.bundleEditor.create(box, { tabs, tabLabel }) -> { destroy() }
 //     box  the space it fills; tabs the tabContainer the pane opens tabs in;
 //     tabLabel(row) what names those tabs, its mounter's (the agent app's browserAgent.js), handed on to ./search/bundle.js
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -35,7 +35,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     var bundles = null;
     parts.then(function () {
       if (gone) return;
-      var E = window.spirit.element;
+      var E = window.spirit.required;
       box.innerHTML = '';
       // ITS OWN BOX, WHICH KEEPS WHAT IT HOLDS INSIDE (the general rules: the box an element puts into its container declares a
       // constraint, overflow not visible): the form, the line and the bundles go into it, not loose into the container.
@@ -88,6 +88,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     };
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/bundleEditor.js', { create: create }); });
 }());

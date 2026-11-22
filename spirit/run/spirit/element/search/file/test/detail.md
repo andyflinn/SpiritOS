@@ -10,7 +10,7 @@ Its test is `./detail.js`: a real Chrome on a scratch node's face page, the deta
 
 ## Requirements
 
-- `create(host, { path })` answers `{ destroy() }`, placed at `spirit.element.spirit.element.search.file.detail`.
+- `create(host, { path })` answers `{ destroy() }`, placed at `spirit.required.spirit.element.search.file.detail`.
 - It loads fstat itself and draws the file with it: its MIME type, then its size.
 - `destroy()` leaves its host empty.
 - It fills its host and scrolls its own body, so the panel's title bar above it stays (Q21: the panel itself never scrolls); judged by

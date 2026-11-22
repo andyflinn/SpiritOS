@@ -204,13 +204,13 @@ test.run('the face page has its spirit', 0.2, async function () {
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
 }, test.limit.long);
 
-// its place: spirit.element.spirit.app.testicle.element.search.testicle, with a create
+// its place: spirit.required.spirit.app.testicle.element.search.testicle, with a create
 test.run('it loads through spirit.require and mounts with create(container), answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
   await c.evaluate(HANDS);
   made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle.js"); }).then(function () {' +
-    ' var E = (((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle); if (!E || typeof E.create !== "function") return false;' +
+    ' var E = (((((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle); if (!E || typeof E.create !== "function") return false;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : false; }, function () { return false; })');
   return made === 'made' || false;
@@ -586,7 +586,7 @@ test.run('a fresh page opens the search again with no words and no selector', 0.
   if (!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000))) return false;
   await c.evaluate(HANDS);
   opened = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/testicle.js"); }).then(function () {' +
-    ' var E = window.spirit.element.spirit.app.testicle.element.search.testicle;' +
+    ' var E = window.spirit.required.spirit.app.testicle.element.search.testicle;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1400px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : false; }, function () { return false; })');
   if (opened !== 'made') return false;

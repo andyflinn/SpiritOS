@@ -91,10 +91,10 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   let ran = false;
   // The direct writes below are the auth family's own view of the home node, as its data.js files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; load('spirit/auth/data.js'); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.element.spirit = global.window.spirit.element.spirit || {}).element = global.window.spirit.element.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; load('spirit/auth/data.js'); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
-  E = ((global.window.spirit.element || {}).spirit || {}).element || {};
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
   // same window.spirit.require).
@@ -116,7 +116,7 @@ test.run('as it loads, it requires no data script, as only an api.js requires it
   if (!loaded) return false;
   return !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it registers spirit.element.spirit.element.search.bundle.row.create', 0.2, function () {
+test.run('it registers spirit.required.spirit.element.search.bundle.row.create', 0.2, function () {
   if (!hasA()) return false;
   return hasRow() ? true : false;
 }, test.limit.quick);

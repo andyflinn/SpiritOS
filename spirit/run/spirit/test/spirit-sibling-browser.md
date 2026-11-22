@@ -3,7 +3,7 @@
 The -browser general test beside spirit.js (goal/G47.1, box v94, 2: *"there will be, from now on only 3 types of general
 tests"*, *"existing general tests fold into the appropriate of the 3 new general test name-formats"*). It holds the page
 checks of generalRules, every title kept: every product script required on a page and placed at spirit.required.<path>,
-every element script's factory at spirit.element.<path>, every page module's own page green, and for a file its page:
+every element script's factory at spirit.required.<path>, every page module's own page green, and for a file its page:
 mounted by itself, nothing thrown, nothing missing, no console error, its box kept, its pictographs in the icon element,
 its fields stopping at their limits, its calls through spirit, its redraws, its writes, its searches, its destroy.
 The file-reading checks of generalRules are `spirit-sibling-general.js's`, its node checks `spirit-sibling-node.js's`.
@@ -116,7 +116,7 @@ cheapest catch-all making sure the container constraints, instead of trying to m
   folder holds its server `spirit/app/<name>/<name>.js`, is judged on a scratch node with that server turned on, the page
   opened only once the server answers its interface (Andy: *"a server MUST be mounted if a mountable server exists in that
   app folder before a test is conducted"*); one that does not come up in 30 s fails the world, never the element.
-- **No code reading:** whether a script installs an element, the page says: it looks at `window.spirit.element` at the
+- **No code reading:** whether a script installs an element, the page says: it looks at `window.spirit.required` at the
   script's own path, where `installSpiritElement` puts an element with its `create`. With none there, the page reports
   "places no element with a create", what it runs is still judged (nothing thrown, no missing file, no console error), and
   the element rules are skipped, said as a comment, never counted green.
@@ -376,9 +376,9 @@ vendored code left out; with no file, all of them in one check; with a file, tha
   page, a fresh page each). Where it loads, it stands at `spirit.required.<its path>`, and on the node the answer came
   at once, not a promise; a branch's `api.js` binds its branch (decided 8), so it is waited on and judged by its place. Where it does not load nothing is judged; that some load on each side is itself checked.
 - **An element script**, one that calls `installSpiritElement`, has a factory with a `create` at
-  `spirit.element.<its path>` once required on a page.
+  `spirit.required.<its path>` once required on a page.
 - **One helper places elements**: `spirit/element/installSpiritElement.js` is there, and no other product script puts
-  an element on `spirit.element` or `spirit.elements` by hand (an assignment, or an `Object.assign` into them);
+  an element on `spirit.required` or `spirit.elements` by hand (an assignment, or an `Object.assign` into them);
   `spirit/spirit.js`, which makes the spirit object, excepted.
 - **The old place is gone** (decided 6: an app's element is placed like every element, and *"the shell, the app selector,
   the file opener and the desk find it there"*): no product script names `spirit.elements` (or any `.elements`) any more.
@@ -391,7 +391,7 @@ vendored code left out; with no file, all of them in one check; with a file, tha
 - Too few scripts found (fewer than 100): nothing judged is red, never green.
 - A script that loads but stands nowhere in `spirit.required`, or answers a promise on the node.
 - An element script that loads on a page with no factory at its place, or one that does not load there at all.
-- `spirit.element.x = ...` or `spirit.elements.x = ...` written by hand outside the helper.
+- `spirit.required.x = ...` or `spirit.elements.x = ...` written by hand outside the helper.
 
 - **Cleaned up, checked by doing it again** (goal/G48.4; Andy: *"please use an effective test in spirit-sibling-browser to make
   sure that elements get cleaned up."*): an element with a destroy is created once more in a box of its own, left a second,

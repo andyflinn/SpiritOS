@@ -50,7 +50,7 @@ test.after(function () {
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
 });
-test.run('it adds rowForm.create, taking a container, an icon and a button, to window.spirit.element', 0.2, function () {
+test.run('it adds rowForm.create, taking a container, an icon and a button, to window.spirit.required', 0.2, function () {
   if (!m) return false;
   // Andy, box: "spirit.element.spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }: icon is the glyph, button the button's words."
   return (m.made) ? true : false;
@@ -180,7 +180,7 @@ test.run('its root carries 1em above it, its own margin', 0.2, async function ()
   // goal/G43.15, Andy: "rowForms should carry their own upper 1em spacing, so when they're invisible, they space disappears with
   // them, especially since we're starting to have elements that self-hide if they're not applicable."
   // the box: "A rowForm carries its own 1em above it, so when it is hidden its space goes with it"
-  sp = await W.page.evaluate('(function () { var c = document.createElement("div"); c.style.cssText = "width:400px;padding:0;border:0"; document.body.appendChild(c); var top = document.createElement("div"); top.style.height = "10px"; c.appendChild(top); var a = window.spirit.element.spirit.element.rowForm.create(c, { icon: "", button: "a" }); var b = window.spirit.element.spirit.element.rowForm.create(c, { icon: "", button: "b" }); var em = parseFloat(getComputedStyle(c).fontSize); var gap = function () { return b.root.getBoundingClientRect().top - a.root.getBoundingClientRect().bottom; }; var shown = { margin: parseFloat(getComputedStyle(a.root).marginTop), gap: gap(), height: c.getBoundingClientRect().height }; a.root.hidden = true; var gone = { height: c.getBoundingClientRect().height, bTop: b.root.getBoundingClientRect().top - top.getBoundingClientRect().bottom }; return JSON.stringify({ em: em, shown: shown, gone: gone, aHeight: shown.height }); }())').then(JSON.parse).catch(function () { return null; });
+  sp = await W.page.evaluate('(function () { var c = document.createElement("div"); c.style.cssText = "width:400px;padding:0;border:0"; document.body.appendChild(c); var top = document.createElement("div"); top.style.height = "10px"; c.appendChild(top); var a = window.spirit.required.spirit.element.rowForm.create(c, { icon: "", button: "a" }); var b = window.spirit.required.spirit.element.rowForm.create(c, { icon: "", button: "b" }); var em = parseFloat(getComputedStyle(c).fontSize); var gap = function () { return b.root.getBoundingClientRect().top - a.root.getBoundingClientRect().bottom; }; var shown = { margin: parseFloat(getComputedStyle(a.root).marginTop), gap: gap(), height: c.getBoundingClientRect().height }; a.root.hidden = true; var gone = { height: c.getBoundingClientRect().height, bTop: b.root.getBoundingClientRect().top - top.getBoundingClientRect().bottom }; return JSON.stringify({ em: em, shown: shown, gone: gone, aHeight: shown.height }); }())').then(JSON.parse).catch(function () { return null; });
   return (!!sp && near(sp.shown.margin, sp.em)) ? true : false;
 }, test.limit.quick);
 test.run('two forms one under the other stand 1em apart', 0.2, function () {
@@ -196,7 +196,7 @@ test.run('a hidden form takes its 1em with it, so the next one stands 1em below 
 // from the words to the button, one gap from each.
 test.run('in a field row the text input takes the spare space between its words and the button', 0.2, async function () {
   if (!m) return false;
-  const f = await W.page.evaluate('(function () { var c = document.createElement("div"); c.style.cssText = "width:600px;padding:0;border:0"; document.body.appendChild(c); var r = window.spirit.element.spirit.element.rowForm.create(c, { icon: "✏️", button: "Change" }); var w = document.createElement("span"); w.textContent = "Title"; var i = document.createElement("input"); i.type = "text"; r.span.appendChild(w); r.span.appendChild(i); var em = parseFloat(getComputedStyle(r.span).fontSize); var g = function (e) { return e.getBoundingClientRect(); }; return JSON.stringify({ em: em, words: g(w), input: g(i), span: g(r.span), button: g(r.button) }); }())').then(JSON.parse).catch(function () { return null; });
+  const f = await W.page.evaluate('(function () { var c = document.createElement("div"); c.style.cssText = "width:600px;padding:0;border:0"; document.body.appendChild(c); var r = window.spirit.required.spirit.element.rowForm.create(c, { icon: "✏️", button: "Change" }); var w = document.createElement("span"); w.textContent = "Title"; var i = document.createElement("input"); i.type = "text"; r.span.appendChild(w); r.span.appendChild(i); var em = parseFloat(getComputedStyle(r.span).fontSize); var g = function (e) { return e.getBoundingClientRect(); }; return JSON.stringify({ em: em, words: g(w), input: g(i), span: g(r.span), button: g(r.button) }); }())').then(JSON.parse).catch(function () { return null; });
   if (!f) return false;
   return (near(f.input.right, f.span.right) && near(f.input.left - f.words.right, f.em) && f.input.top < f.words.bottom && f.input.width > 300) ? true : false;
 }, test.limit.quick);

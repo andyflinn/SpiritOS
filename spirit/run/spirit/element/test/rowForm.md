@@ -12,7 +12,7 @@ refusal, a result) is the mounter's, below the bubble, not in it."*
 
 ## API
 
-`window.spirit.element.rowForm.create(container, { icon, button, press })` draws the form into the container and answers
+`window.spirit.required.rowForm.create(container, { icon, button, press })` draws the form into the container and answers
 `{ root, span, button }`. `icon` is the glyph, `button` the button's words. The mounter drops its form elements into
 `span`. Its button is its own to hear, a busyButton (goal/G47.1, Q20; Andy: *"mark the button busy from press until the
 mounter's answer comes"*): given `press`, a press calls it and the button is busy until its answer comes, then plain again;

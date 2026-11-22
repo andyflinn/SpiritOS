@@ -5,7 +5,7 @@
 // "elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using the probablility-group of elements in shell/js/)" and "elementRow.js (a
 // panel element, to maintain and edit one row of the table)".
 //
-//   spirit.element.spirit.app.agent.element.table.tableElement.create(container, { table, detail, row, add }) -> { refresh, destroy }
+//   spirit.required.spirit.app.agent.element.table.tableElement.create(container, { table, detail, row, add }) -> { refresh, destroy }
 //     a title row, an Add button and a probabilitySearch pane over the table's branch of spirit.required.spirit.data, shown at once,
 //     each row by its icon and its label alone (LIST_COLUMNS); Add gives the new row its table's icon;
 //     picking a row, or adding one, opens row(box, key, added, row) in the detail pane; add(open), when given, is what
@@ -14,7 +14,7 @@
 //     { icon, name, title }. Andy, on G41.4:
 //     "make the detail-panel take over the middle pane of the workBench UI please", so the agent page hands its
 //     workBench's centre.
-//   spirit.element.spirit.app.agent.element.table.row.create(container, { table, id, added, look, fields, required }) -> { destroy }, an element
+//   spirit.required.spirit.app.agent.element.table.row.create(container, { table, id, added, look, fields, required }) -> { destroy }, an element
 //   of its own (./row.js), which builds on agentDetail, below:
 //     one row's fields as inputs, each saved as it changes (no Save), and Delete, under a title row; added says the row was
 //     just made by Add; fields
@@ -81,7 +81,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
   // apps."): made by icon.create and written as the markup it made, since the row is text; the glyph as text only while
   // spirit/element/icon.js has not loaded (every pane that draws a title row loads it first, below).
   function iconHtml(glyph, size) {
-    var I = window.spirit.element && window.spirit.element.spirit.element.icon;
+    var I = window.spirit.required && window.spirit.required.spirit.element.icon;
     if (!I || typeof I.create !== 'function') return '<span style="font-size:' + size + 'em">' + esc(glyph) + '</span>';
     var hold = document.createElement('span');
     I.create(hold, { glyph: String(glyph || ''), size: size });
@@ -123,7 +123,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
   }
   function search(host, o, more) {
     var columns = o.columns || columnsOf(o.table);
-    var s = window.spirit.element.spirit.element.search.create(host, Object.assign({
+    var s = window.spirit.required.spirit.element.search.create(host, Object.assign({
       // WHAT IT NEEDS, THE SEARCH REQUIRES ITSELF (goal/G43.24): it asks agent.<table> through the spirit object; no api.
       server: 'agent', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },

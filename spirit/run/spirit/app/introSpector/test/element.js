@@ -78,10 +78,10 @@ test.run('a scratch node comes up with a Chrome page open on its face', 0.2, asy
   return true;
 }, test.limit.slow);
 
-// spirit.element.spirit.app.introSpector.element.create(container, { open }) -> { destroy }
-test.run('the element registers itself on spirit.element, and its create answers an object with a destroy', 0.2, async function () {
+// spirit.required.spirit.app.introSpector.element.create(container, { open }) -> { destroy }
+test.run('the element registers itself on spirit.required, and its create answers an object with a destroy', 0.2, async function () {
   if (!W.page) return false;
-  const made = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/introSpector/element.js"); }).then(function () { var J = spirit.element && spirit.element.spirit.app.introSpector.element; if (!J || typeof J.create !== "function") return false; var c = document.createElement("div"); c.id = "alone"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;overflow:auto"; document.body.appendChild(c); window.alone = J.create(c, {}); return window.alone && typeof window.alone.destroy === "function" ? "made" : false; }, function () { return false; })');
+  const made = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/introSpector/element.js"); }).then(function () { var J = spirit.required && spirit.required.spirit.app.introSpector.element; if (!J || typeof J.create !== "function") return false; var c = document.createElement("div"); c.id = "alone"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;overflow:auto"; document.body.appendChild(c); window.alone = J.create(c, {}); return window.alone && typeof window.alone.destroy === "function" ? "made" : false; }, function () { return false; })');
   W.made = made === 'made';
   return W.made || false;
 }, test.limit.quick);
@@ -99,7 +99,7 @@ test.run('destroying the element empties its container', 0.2, async function () 
 const TILE = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf("introSpector") !== -1; })[0]';
 test.run('the app selector is drawn as tiles on the page', 0.2, async function () {
   if (!W.page) return false;
-  const tiles = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () { var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.element.spirit.element.script.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return false; })');
+  const tiles = await W.chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () { var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.required.spirit.element.script.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return false; })');
   W.tiles = tiles === 'made';
   return W.tiles || false;
 }, test.limit.quick);

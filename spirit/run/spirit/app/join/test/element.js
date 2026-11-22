@@ -30,8 +30,8 @@ function world(o) {
   win.window = win;
   vm.createContext(win);
   // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so join.js places itself by
-  // installSpiritElement at spirit.element.spirit.app.join.element; joinList stands where it reads it.
-  win.spirit = { element: { spirit: { element: els, app: {} } },
+  // installSpiritElement at spirit.required.spirit.app.join.element; joinList stands where it reads it.
+  win.spirit = { required: { spirit: { element: els, app: {} } },
     require: function (p) {
       w.required.push(String(p));
       if (opt.refuse) return Promise.reject(new Error('not-found ' + p));
@@ -40,7 +40,7 @@ function world(o) {
     } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
-  w.J = (win.spirit.element.spirit.app.join || {}).element;
+  w.J = (win.spirit.required.spirit.app.join || {}).element;
   return w;
 }
 function container() { return { innerHTML: '<p>left over</p>', textContent: '' }; }
@@ -70,7 +70,7 @@ test.run('the app\'s own icon, identity.icon, is a glyph too', 0.2, function () 
 }, test.limit.quick);
 
 // mounted the new shell's way, a wrapper that loads joinList and nothing of its own
-test.run('element.js sets spirit.element.spirit.app.join.element to an object with create', 0.2, function () {
+test.run('element.js sets spirit.required.spirit.app.join.element to an object with create', 0.2, function () {
   if (!SRC) return false;
   W.w = world();
   return !!W.w.J && typeof W.w.J.create === 'function' ? true : false;

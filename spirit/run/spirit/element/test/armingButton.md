@@ -8,11 +8,11 @@ procedure must be done from scratch").
 
 ## API
 
-`window.spirit.element.armingButton.attach(button, { label, armedLabel, run })` makes a button already in the
+`window.spirit.required.armingButton.attach(button, { label, armedLabel, run })` makes a button already in the
 page an arming one, and answers it, carrying `disarm()` and `armed()`. Most apps draw their buttons as markup and draw
 them again on every change; they attach after each draw. A button drawn again is a new button, unarmed.
 
-`window.spirit.element.armingButton.create(container, { label, armedLabel, run, title, className })` is `attach`
+`window.spirit.required.armingButton.create(container, { label, armedLabel, run, title, className })` is `attach`
 on a new `<button type="button">`, its title and class put on it, appended to the container (box v23: *"every element
 gets a container and appends itself"*).
 

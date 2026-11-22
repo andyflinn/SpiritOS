@@ -10,12 +10,12 @@ its wrapper part (below).
 ## Requirements
 
 - **Mounted the new shell's way** (Andy: *"box that these apps must mount in the new format of the new shell."*), as
-  `spirit/app/file/element.js` is: it sets `spirit.element.spirit.app.info.element = { create(container, { open }) -> { destroy() } }`. No
+  `spirit/app/file/element.js` is: it sets `spirit.required.spirit.app.info.element = { create(container, { open }) -> { destroy() } }`. No
   `spirit.shell.activateApp`.
 - **A wrapper**: it loads `spirit/element/nodeInfo.js` through `spirit.require` (rule/26), and only that. It asks nothing
   itself (no verb, no api, no data.js, no relay, no card) and draws no markup of its own.
 - `create(container, opts)` empties the container and, once nodeInfo is loaded, makes
-  `spirit.element.spirit.element.nodeInfo.create(container, { open })`, handing on `opts.open`, the stack its mounter opens layers in,
+  `spirit.required.spirit.element.nodeInfo.create(container, { open })`, handing on `opts.open`, the stack its mounter opens layers in,
   and nothing else; made with no opts, nodeInfo gets no `open` and keeps its own stack.
 - nodeInfo refused, the container says *Info could not be loaded.*
 - `destroy()` destroys nodeInfo and empties the container; destroyed before nodeInfo loads, nothing is made.
@@ -62,4 +62,4 @@ Done: its test runs from its new place, and `shell/` is gone. Their checks are d
 #### 7. The new shell's way
 
 - No `spirit.shell.activateApp` in `info.js`.
-- On the page, `spirit.require('spirit/app/info/element.js')` sets `spirit.element.spirit.app.info.element`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.
+- On the page, `spirit.require('spirit/app/info/element.js')` sets `spirit.required.spirit.app.info.element`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.

@@ -26,7 +26,7 @@ const PARTS = ['spirit/element/search.js', 'spirit/element/rowForm.js'];
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.element); };
+const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
 
 // ── a small tree of nodes: markup, ids and classes, children in order, insertBefore, querySelector('#id' or '#id .class') ──
 function node(tag, attrs) {
@@ -75,7 +75,7 @@ function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, branchPath: branchPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
-  // As their own files place themselves: by the one helper, at spirit.element.<their path>.
+  // As their own files place themselves: by the one helper, at spirit.required.<their path>.
   helper(global.window.spirit, SHARED, {
     // The shared table draws its title row first in its container (../tableElement.js), then its list.
     create: function (container, o) {
@@ -116,7 +116,7 @@ test.run('before it runs, the page has no model table element', 0.2, function ()
   if (!W.up) return false;
   return at('spirit.app.agent.element.table.model.elementTable') === undefined || false;
 }, test.limit.quick);
-test.run('it places spirit.element.spirit.app.agent.element.table.model.elementTable, with create', 0.2, async function () {
+test.run('it places spirit.required.spirit.app.agent.element.table.model.elementTable, with create', 0.2, async function () {
   if (!W.up) return false;
   load(FILE);
   await settle();

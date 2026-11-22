@@ -2,7 +2,7 @@
 
 Its test is `./introSpector.js`. The box (goal/G43.29, v3): *"Each works exactly as the old one"*, *"the old apps' code moves there"*. Written from reading the old `shell/introSpector/introSpector.js` (Andy, of it: *"this all happens because i want to SEE"*).
 
-`spirit.element.introSpector.create(container)`, mounted alone in a box of a real Chrome on a scratch node's face page, the party self. The family and the verb are picked by setting each half's value and saying change, as a pick in its dropdown does.
+`spirit.required.introSpector.create(container)`, mounted alone in a box of a real Chrome on a scratch node's face page, the party self. The family and the verb are picked by setting each half's value and saying change, as a pick in its dropdown does.
 
 ## Requirements
 

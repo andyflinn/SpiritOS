@@ -245,22 +245,22 @@ test.run('the node\'s face page opens in Chrome and has its spirit', 0.2, async 
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
 }, test.limit.long);
 
-// its place: spirit.element.spirit.app.testicle.element, with a create
+// its place: spirit.required.spirit.app.testicle.element, with a create
 test.run('it loads through spirit.require and mounts with create(container), answering { destroy }', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
   await c.evaluate(HANDS);
   made = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element.js"); }).then(function () {' +
-    ' var E = ((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element; if (!E || typeof E.create !== "function") return null;' +
+    ' var E = ((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element; if (!E || typeof E.create !== "function") return null;' +
     ' var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:1200px;height:800px;display:flex;"; document.body.appendChild(b);' +
     ' window.__made = E.create(b, {}); return window.__made && typeof window.__made.destroy === "function" ? "made" : null; }, function () { return null; })');
   return made === 'made' || false;
 }, test.limit.slow);
 
 // Box v134: each part loads its own and stands as an element of its own, so any app can mount it.
-test.run('once the face is mounted, each part stands at spirit.element.spirit.app.testicle.element.<name> with a create', 0.4, async function () {
+test.run('once the face is mounted, each part stands at spirit.required.spirit.app.testicle.element.<name> with a create', 0.4, async function () {
   if (!face()) return false;
-  const got = await c.evaluate('(function () { var n = ' + JSON.stringify(PART_NAMES) + '; var at = (((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}); return n.filter(function (k) { return !(at[k] && typeof at[k].create === "function"); }); }())');
+  const got = await c.evaluate('(function () { var n = ' + JSON.stringify(PART_NAMES) + '; var at = (((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}); return n.filter(function (k) { return !(at[k] && typeof at[k].create === "function"); }); }())');
   return (Array.isArray(got) && !got.length) || false;
 }, test.limit.slow);
 
@@ -298,7 +298,7 @@ test.run('at the start the centre holds one tab, the testicle search, and it is 
 test.run('its tab shows the testicle search, spirit/app/testicle/element/search/testicle.js, which the face loads', 0.2, async function () {
   if (!face()) return false;
   const loaded = /['"]spirit\/app\/testicle\/element\/search\/testicle\.js['"]/.test(code(FACE));
-  const there = await c.evaluate('!!(((((((window.spirit.element || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle)');
+  const there = await c.evaluate('!!(((((((window.spirit.required || {}).spirit || {}).app || {}).testicle || {}).element || {}).search || {}).testicle)');
   return (loaded && there && !!(await waitFor('shown() !== null && inCenter("input[id$=text]") > 0', 10000))) || false;
 }, test.limit.slow);
 

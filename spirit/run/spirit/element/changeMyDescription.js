@@ -13,7 +13,7 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
 (function (root) {
-  var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
+  var E = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput and its type, through spirit.require (goal/G48.4, the box:
   // "fieldRules.js dies").
   var parts = root.spirit.require ? Promise.all([root.spirit.require('spirit/element/fieldInput.js'), root.spirit.require('spirit/type/string/description.js')]) : Promise.resolve();

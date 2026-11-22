@@ -2,7 +2,7 @@
 
 Its test is `./detail.js`. The job search's detail since goal/G43.32, `spirit/element/jobDetail.js` before. The box (goal/G43.29, v3): *"The detail is today's shell/jobsDetails dialog, drawn by a spirit/element/ file of its own"*, and *"Each works exactly as the old one"*. Written from reading the old `shell/jobsDetails/jobsDetails.js`.
 
-`spirit.element.spirit.element.search.job.detail.create(host, { id, close })`, mounted alone in a box of a real Chrome on a scratch node's face page; a running process from a planted `node.run` app.
+`spirit.required.spirit.element.search.job.detail.create(host, { id, close })`, mounted alone in a box of a real Chrome on a scratch node's face page; a running process from a planted `node.run` app.
 
 ## Requirements
 

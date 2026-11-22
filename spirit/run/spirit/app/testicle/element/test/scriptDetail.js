@@ -15,7 +15,7 @@ const W = {};
 const ev = function (expr) { return W.page.evaluate(expr).catch(function () { return false; }); };
 const HANDS = '(function () { window.zz = {' +
   ' mount: function (id, o) { var b = document.createElement("div"); b.id = id; b.style.cssText = "width:500px;height:300px;display:flex;flex-direction:column"; document.body.appendChild(b);' +
-  '   try { window["m_" + id] = window.spirit.element.spirit.app.testicle.element.scriptDetail.create(b, o); return true; } catch (e) { return false; } },' +
+  '   try { window["m_" + id] = window.spirit.required.spirit.app.testicle.element.scriptDetail.create(b, o); return true; } catch (e) { return false; } },' +
   ' title: function (id) { var t = document.querySelector("#" + id + " .testicle-title"); return t ? t.textContent : null; },' +
   ' below: function (id) { var t = document.querySelector("#" + id + " .testicle-below"); return t ? String(t.innerText || "").trim() : null; },' +
   ' list: function (id) { var t = document.querySelector("#" + id + " .testicle-below"); return t ? t.querySelectorAll("[id$=\\"list\\"]").length : -1; },' +
@@ -37,7 +37,7 @@ test.run('a page loads the element by itself', 0.2, async function () {
   W.page = await H.chromePage(W.chrome);
   if (W.page.error) return false;
   await W.page.send('Page.navigate', { url: W.node.base + '/DEBUG/' + REL.replace(/\.js$/, '') + '/headLessBrowser.html' });
-  W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.element && window.spirit.element.spirit && window.spirit.element.spirit.app && window.spirit.element.spirit.app.testicle && window.spirit.element.spirit.app.testicle.element.scriptDetail)').then(function (v) { return v === true; }); }, H.WAIT);
+  W.ok = await H.until(function () { return ev('!!(window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.app && window.spirit.required.spirit.app.testicle && window.spirit.required.spirit.app.testicle.element.scriptDetail)').then(function (v) { return v === true; }); }, H.WAIT);
   if (W.ok) await ev(HANDS);
   return !!W.ok || false;
 }, test.limit.slow);

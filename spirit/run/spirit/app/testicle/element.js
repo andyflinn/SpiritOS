@@ -8,7 +8,7 @@
 // only", "testicle's face calls no verbs in this round: it shows a file pane in the leftmost workBench pane, and nothing
 // else", "The file viewer is the existing file list with a filter for production *.js files: no new list."
 //
-//   spirit.element.spirit.app.testicle.element.create(container, options) -> { destroy() }
+//   spirit.required.spirit.app.testicle.element.create(container, options) -> { destroy() }
 //
 // The left pane's file list draws the fs family's mirror of the tree, which the list loads.
 //
@@ -63,8 +63,8 @@
     var benchBox = container.querySelector('.testicle-bench');
     parts.then(function () {
       if (gone) return;
-      var E = window.spirit.element.spirit.element;
-      var T = window.spirit.element.spirit.app.testicle.element;
+      var E = window.spirit.required.spirit.element;
+      var T = window.spirit.required.spirit.app.testicle.element;
       monitor = T.statusBox.create(container.querySelector('.testicle-monitor'));
       bench = E.workBench.create(benchBox, {
         // The left strip: the files, shown at start, then the configuration (box v79, 2); no right strip.
@@ -82,7 +82,7 @@
     // A CLICK ON A PRODUCTION FILE: its tab opened and made active, at once; its detail asks script.get from there.
     function open(file) {
       if (gone || !tabs) return;
-      tabs.add({ name: file, label: file.slice(file.lastIndexOf('/') + 1), closable: true, mount: function (box) { return window.spirit.element.spirit.app.testicle.element.scriptDetail.create(box, { script: file }); } });
+      tabs.add({ name: file, label: file.slice(file.lastIndexOf('/') + 1), closable: true, mount: function (box) { return window.spirit.required.spirit.app.testicle.element.scriptDetail.create(box, { script: file }); } });
     }
     // A CLICK ON A TEST ROW: its history in a closable tab, opened and made active.
     function openTest(row) {
@@ -90,7 +90,7 @@
       var name = row.script + '|' + row.suite + '|' + row.test;
       tabs.add({ name: name, label: String(row.test || ''), closable: true, mount: function (box) {
         box.className = 'fill';
-        return window.spirit.element.spirit.app.testicle.element.search.testicle.detail.create(box, { script: row.script, suite: row.suite, test: row.test });
+        return window.spirit.required.spirit.app.testicle.element.search.testicle.detail.create(box, { script: row.script, suite: row.suite, test: row.test });
       } });
     }
     return {

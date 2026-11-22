@@ -187,7 +187,7 @@ const keys = function (list) { return list.map(function (x) { return x.key; }).j
 test.run('without words or sort the rows come in arrival order', 0.2, function () {
   // order: viewed, no words
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-  PS = window.spirit.element.spirit.element.search;
+  PS = window.spirit.required.spirit.element.search;
   E = [{ key: 'c', row: { name: 'cy' }, at: 2 }, { key: 'a', row: { name: 'Al' }, at: 0 }, { key: 'b', row: { name: 'bo' }, at: 1 }];
   r = PS.order(E, {});
   return (keys(r) === 'a,b,c') ? true : false;
@@ -1099,7 +1099,7 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
   return (NEED.every(function (n) { return asked10.indexOf(n) !== -1; })) ? true : false;
 }, test.limit.quick);
 test.run('once loaded, with nothing preloaded, it draws and ranks: typing ze puts zed first', 0.2, function () {
-  P2 = window.spirit.element.spirit.element.search;
+  P2 = window.spirit.required.spirit.element.search;
   made10 = null;
   threw = null;
   c10 = container();
@@ -1191,7 +1191,7 @@ async function keptPart() {
       HANDS + '; ' + PAGE_DATA +
       'K.rows = ' + JSON.stringify(FIVE) + '; K.b = window.__branchOf(K.rows); ' +
       'K.who = document.createElement("span"); K.who.value = ""; ' +
-      'K.list = spirit.element.spirit.element.search.create(b, { data: K.b, columns: [{ field: "name", label: "Name", sort: "text" }, { field: "n", label: "N", sort: "number" }], ' +
+      'K.list = spirit.required.spirit.element.search.create(b, { data: K.b, columns: [{ field: "name", label: "Name", sort: "text" }, { field: "n", label: "N", sort: "number" }], ' +
       '  filters: [{ name: "kind", multi: true, keepOne: true, choices: [{ value: "red", word: "red" }, { value: "green", word: "green" }], test: function (row, off) { var o = off || {}; return row && !o[row.kind] ? 1 : 0; } }], ' +
       '  selectors: [{ name: "who", element: K.who, test: function (row) { return !K.who.value || row.who === K.who.value ? 1 : 0; } }] }); ' +
       'return new Promise(function (r) { setTimeout(r, 300); }).then(function () { K.mark(); K.watch(); K.firstTable = K.table(); return K.trs().length === 5 ? "made" : null; }); }, function () { return null; })');
@@ -1530,7 +1530,7 @@ async function popupPart() {
       PAGE_DATA + 'var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, name: "row " + i }); window.__z = {}; ' +
       '[["a", 40, 100], ["b", 500, 100], ["low", 40, window.innerHeight - 70]].forEach(function (x) { var b = document.createElement("div"); b.id = "zz-" + x[0]; ' +
       'b.style.cssText = "position:absolute;left:" + x[1] + "px;top:" + x[2] + "px;width:320px;height:48px;overflow:hidden;border:1px solid"; document.body.appendChild(b); ' +
-      'spirit.element.spirit.element.search.create(b, { face: "dropdown", data: window.__branchOf(rows), columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
+      'spirit.required.spirit.element.search.create(b, { face: "dropdown", data: window.__branchOf(rows), columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, pick: function () {} }); ' +
       'window.__z[x[0]] = { box: b, list: b.querySelector("[id$=list]"), field: b.querySelector("[id$=field]") }; }); ' +
       'var cover = document.createElement("div"); cover.id = "zz-cover"; cover.style.cssText = "position:absolute;left:0;top:160px;width:900px;height:200px;background:#333;z-index:20"; document.body.appendChild(cover); ' +
       'return Object.keys(window.__z).every(function (k) { return !!window.__z[k].list && !!window.__z[k].field; }) ? "made" : null; }, function () { return null; })');
@@ -1681,7 +1681,7 @@ async function tilesPart() {
   const type = async function (w) { await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.value = ' + JSON.stringify(w) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()'); await sleep(500); };
   test.run('the tiles face draws one tile per row', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
-    await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; ' + PAGE_DATA + ' window.__rowsB = window.__branchOf(window.__rows); window.__plainTile = function (row, key) { var n = document.createElement("div"); n.className = "app-icon"; var ic = document.createElement("span"); ic.className = "icon"; ic.textContent = row.icon || ""; var bar = document.createElement("div"); bar.className = "tile-bar"; var lb = document.createElement("span"); lb.className = "label"; lb.textContent = row.label || ""; n.appendChild(ic); n.appendChild(bar); n.appendChild(lb); n.addEventListener("click", function () { (window.__picked = window.__picked || []).push(key); }); return n; }; window.__made = window.spirit.element.spirit.element.search.create(d, { face: "tiles", tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
+    await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__box = d; window.__picked = []; window.__rows = [{ key: "alpha", label: "Alpha", icon: "🅰️" }, { key: "nest", label: "Nest", icon: "🧩", stats: { cpu: 12 }, files: [{ name: "a.txt" }] }, { key: "gamma", label: "Gamma", icon: "🍀" }]; ' + PAGE_DATA + ' window.__rowsB = window.__branchOf(window.__rows); window.__plainTile = function (row, key) { var n = document.createElement("div"); n.className = "app-icon"; var ic = document.createElement("span"); ic.className = "icon"; ic.textContent = row.icon || ""; var bar = document.createElement("div"); bar.className = "tile-bar"; var lb = document.createElement("span"); lb.className = "label"; lb.textContent = row.label || ""; n.appendChild(ic); n.appendChild(bar); n.appendChild(lb); n.addEventListener("click", function () { (window.__picked = window.__picked || []).push(key); }); return n; }; window.__made = window.spirit.required.spirit.element.search.create(d, { face: "tiles", tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__picked.push(key); } }); if (window.__made.refresh) window.__made.refresh(); return true; })()');
     await until(function () { return js('window.__box.querySelectorAll(".app-icon").length > 0'); }, 3000);
     plain = await read();
     // "the same ranked rows, drawn as tiles", "No column headers or sorting"
@@ -1710,7 +1710,7 @@ async function tilesPart() {
   // SUPPOSED TO, GID OR NO GRID!!!!!!!!!!!!!!"). Forty rows in a 400 by 240 px box, once as tiles, once as the list: nothing
   // of it is drawn below the box, and the rows that do not fit are reached by scrolling inside it.
   const contained = async function (face) {
-    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); ' + PAGE_DATA + ' var rowsB = window.__branchOf(rows); var made = window.spirit.element.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', tile: window.__plainTile, data: rowsB, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
+    return JSON.parse(await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:820px;top:0;width:400px;height:240px;display:flex;flex-direction:column;background:#111"; var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, label: "Row " + i, icon: "🅰️" }); ' + PAGE_DATA + ' var rowsB = window.__branchOf(rows); var made = window.spirit.required.spirit.element.search.create(d, { face: ' + JSON.stringify(face) + ', tile: window.__plainTile, data: rowsB, columns: [{ field: "label", label: "Label" }] }); if (made.refresh) made.refresh();' +
       ' return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var box = d.getBoundingClientRect(); var lowest = 0; [].forEach.call(d.querySelectorAll("*"), function (e) { var b = e.getBoundingClientRect(); if (!b.width || !b.height) return; var cut = false; for (var p = e.parentElement; p && p !== d; p = p.parentElement) { var o = getComputedStyle(p).overflowY; if ((o === "auto" || o === "scroll" || o === "hidden") && b.bottom > p.getBoundingClientRect().bottom + 1) { cut = true; break; } } if (!cut) lowest = Math.max(lowest, Math.round(b.bottom)); });' +
       ' var scrolls = [].some.call([d].concat([].slice.call(d.querySelectorAll("*"))), function (e) { var o = getComputedStyle(e).overflowY; return (o === "auto" || o === "scroll") && e.scrollHeight > e.clientHeight + 1; }); var out = { boxBottom: Math.round(box.bottom), lowest: lowest, scrolls: scrolls }; made.destroy(); d.remove(); return JSON.stringify(out); }); })()'));
   };
@@ -1875,11 +1875,11 @@ async function tilesPart() {
   test.run('a pane stays a table with headers', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     // "Any list can use it": the other two faces stay
-    pane = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:500px;height:200px"; window.spirit.element.spirit.element.search.create(d, { data: window.__rowsB, columns: [{ field: "label", label: "Label" }] }); return new Promise(function (r) { setTimeout(function () { var n = JSON.stringify({ tiles: d.querySelectorAll(".app-icon").length, headers: d.querySelectorAll("th").length }); d.remove(); r(n); }, 300); }); })()');
+    pane = await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:500px;height:200px"; window.spirit.required.spirit.element.search.create(d, { data: window.__rowsB, columns: [{ field: "label", label: "Label" }] }); return new Promise(function (r) { setTimeout(function () { var n = JSON.stringify({ tiles: d.querySelectorAll(".app-icon").length, headers: d.querySelectorAll("th").length }); d.remove(); r(n); }, 300); }); })()');
     pn = JSON.parse(pane);
     return (pn.tiles === 0 && pn.headers > 0) ? true : false;
   }, test.limit.quick);
-  const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.element.spirit.element.search.create(d, Object.assign({ tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
+  const make = function (opts) { return js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__faces = []; window.__tl = window.spirit.required.spirit.element.search.create(d, Object.assign({ tile: window.__plainTile, data: window.__rowsB, columns: [{ field: "label", label: "Label" }], onFace: function (f) { window.__faces.push(f); } }, ' + JSON.stringify(opts) + ')); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()'); };
   const drop = function () { return js('(function () { if (window.__t) window.__t.remove(); return true; })()'); };
   const toggles = function () { return js('window.__t.querySelectorAll(".list-toggle").length'); };
   test.run('a dropdown has no toggle, even with a tile part', 0.2, async function () {
@@ -1947,7 +1947,7 @@ async function tilesPart() {
     return js('(function () { if (window.__t) window.__t.remove(); var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:500px;display:flex;flex-direction:column;background:#111"; window.__t = d; window.__tilePressed = []; window.__tPicked = []; ' +
       'var o = Object.assign({ data: window.__rowsB, columns: [{ field: "label", label: "Label" }], pick: function (row, key) { window.__tPicked.push(key); } }, ' + JSON.stringify(o) + '); ' +
       (o.withTile ? 'o.tile = function (row, key) { var n = document.createElement("div"); n.className = "zz-tile"; n.setAttribute("data-key", key); n.textContent = "tile " + key; n.addEventListener("click", function () { window.__tilePressed.push(key); }); return n; }; ' : '') +
-      'delete o.withTile; window.__tl = window.spirit.element.spirit.element.search.create(d, o); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()');
+      'delete o.withTile; window.__tl = window.spirit.required.spirit.element.search.create(d, o); if (window.__tl.refresh) window.__tl.refresh(); return new Promise(function (r) { setTimeout(function () { r(true); }, 300); }); })()');
   };
   const own = function () { return js('JSON.stringify({ toggles: window.__t.querySelectorAll(".list-toggle").length, plain: window.__t.querySelectorAll(".app-icon").length, mine: window.__t.querySelectorAll(".zz-tile").length, headers: window.__t.querySelectorAll("th").length })'); };
   let tp = null, noPart = null, noPartTiles = null;
@@ -2025,7 +2025,7 @@ async function reconnectPart() {
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
       'window.__r = { asked: 0, up: false }; spirit.event.subscribe({ onConnection: function (u) { if (u) window.__r.up = true; } }); var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +
-      'window.__r.h = spirit.element.spirit.element.search.create(b, { verb: "zz.search", columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, ' +
+      'window.__r.h = spirit.required.spirit.element.search.create(b, { verb: "zz.search", columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, ' +
       '  search: function () { window.__r.asked += 1; var n = window.__r.asked; return Promise.resolve({ status: 200, body: { items: [{ key: "k" + n, label: JSON.stringify({ name: "answer " + n }) }], more: false } }); } }); ' +
       'window.__r.h.refresh(); return "made"; }, function () { return null; })');
     if (made !== 'made') return false;

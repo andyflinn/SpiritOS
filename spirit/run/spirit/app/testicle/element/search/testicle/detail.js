@@ -4,7 +4,7 @@
 // tab when a test row of the testicle search is clicked (the box: "The testicle detail is a history of flips, and opens in a
 // closable tab when a test row is clicked").
 //
-//   spirit.element.spirit.app.testicle.element.search.testicle.detail.create(container, { script, suite, test }) -> { destroy() }
+//   spirit.required.spirit.app.testicle.element.search.testicle.detail.create(container, { script, suite, test }) -> { destroy() }
 //
 // The box: "testicle.search answers the current rows by default; given a valid test title, {script, suite, test, text}, it
 // answers every row matching that script, suite and title, current or not, newest first. A test's history in its detail
@@ -68,7 +68,7 @@
       drawn.forEach(function (el) { if (el && typeof el.destroy === 'function') el.destroy(); });
       drawn = [];
       body.innerHTML = rows.map(function (r) {
-        var el = S.element.spirit.app.testicle.element.search.testicle.row.create(r);
+        var el = S.required.spirit.app.testicle.element.search.testicle.row.create(r);
         drawn.push(el);
         // ONE DATE, THE LAST RUN (goal/G48.4, Andy: "a run that doesn't flip needs to update the run date in any event.", then
         // "who the fuck said it need two motherfucking dates?????"): every run sets the row's tested and publishes it, so a test
@@ -98,7 +98,7 @@
 
     function said(text) { var el = container.querySelector('[data-history="said"]'); if (el) el.textContent = text || ''; }
     function forms() {
-      var RF = S.element.spirit.element.rowForm;
+      var RF = S.required.spirit.element.rowForm;
       var run = RF.create(container.querySelector('[data-history="runForm"]'), { icon: '🏃‍♂️', button: 'run',
         press: function () { return script && suite ? S.testicle.run({ script: script, suite: suite }) : undefined; } });
       run.button.title = 'run this suite now';

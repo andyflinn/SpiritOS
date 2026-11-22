@@ -6,7 +6,7 @@
 // Icons app's pane shows. The box: "every branch's search is search/<branch>.js, the selector, and its folder holds
 // list.js, row.js and detail.js". Its test: ./test/icon.js.
 //
-//   spirit.element.spirit.element.search.icon.create(container, options) -> root
+//   spirit.required.spirit.element.search.icon.create(container, options) -> root
 //     root.value     the glyph chosen, the value it was made with until one is (goal/G41.1: a glyph, never a key)
 //     root.row       the icon chosen, { glyph, keywords }, null until one is
 //     one bubbling `change` on a pick; refresh(), redraw(), destroy() as the list's
@@ -26,7 +26,7 @@
     root.value = String(o.value || '');
     root.row = null;
     container.appendChild(root);
-    var list = window.spirit.element.spirit.element.search.icon.list.create(root, {
+    var list = window.spirit.required.spirit.element.search.icon.list.create(root, {
       face: o.face === 'pane' ? 'pane' : 'dropdown',
       // The glyph it holds shows in the closed field until a pick names another.
       placeholder: root.value || o.placeholder,

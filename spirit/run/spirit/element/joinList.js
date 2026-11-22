@@ -5,7 +5,7 @@
 // finding someone, as one to-do list (goal/G30.1, box v39). No face steps (goal/G43.26; Andy: "now remove these two steps
 // from \"join\" - Configure your node's remote control - Open your face"): a face is named in Info.
 //
-//   spirit.element.spirit.element.joinList.create(container, {}) -> { destroy() }
+//   spirit.required.spirit.element.joinList.create(container, {}) -> { destroy() }
 //
 // The steps are the Join app's manifest's (spirit/app/join/join.json, steps), each with its name, icon and the fact that
 // ends it. Where the user stands is the join news on the node's spirit job (spirit/joinStepsJob.js), heard in the jobs family's cache
@@ -51,7 +51,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     // A mark stands alone before its step's name, so it is an icon: a place naming its glyph, the icon element made there.
     function mark(glyph) { return '<span data-icon="' + glyph + '">' + glyph + '</span>'; }
     function icons() {
-      var I = S.element && S.element.spirit.element.icon;
+      var I = S.required && S.required.spirit.element.icon;
       if (!I || typeof I.create !== 'function') return;
       Array.prototype.forEach.call(host.querySelectorAll('[data-icon]'), function (p) {
         if (p.querySelector('.shell-icon')) return;
@@ -60,7 +60,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       });
     }
     function where() {
-      var J = S.element && S.required.spirit.element.joinSteps;
+      var J = S.required && S.required.spirit.element.joinSteps;
       if (!J || !job || !steps) return null;
       var facts = J.fromJob(job, false);
       var open = J.current(steps, facts);
@@ -108,7 +108,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     }
     // The form each step draws, from the shell elements.
     function form(step, box, facts) {
-      var E = S.element || {};
+      var E = S.required || {};
       // Step 1 (box v41): the one join control, its words where the node stands: Join with no seat, Add on a seat taken
       // without a verified email (by invite), Change once verified. THE EMAIL FORM, THE SAME EVERYWHERE (goal/G40.10).
       // Made by its create and kept with what a redraw or destroy lets go (rule/8: the form holds a contact watch); a box a

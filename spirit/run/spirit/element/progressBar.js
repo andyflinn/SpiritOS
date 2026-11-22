@@ -10,7 +10,7 @@
 // total is unknown, and a progress tag with no value is the browser's own indeterminate bar.
 //
 // DISCREPANCY WITH ANDY's RULES: goal/G41.19's box (v26) says "Every element is create(container, options) and appends
-// itself to the container"; progressBar is still a function answering markup (window.spirit.element.spirit.element.progressBar), with
+// itself to the container"; progressBar is still a function answering markup (window.spirit.required.spirit.element.progressBar), with
 // no create and no container.
 
 (function () {
@@ -27,6 +27,5 @@
     return '<span class="progress-bar">' + tag + (words ? ' <span class="job-manifest-note">' + esc(words) + '</span>' : '') + '</span>';
   }
 
-  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/progressBar.js', progressBar); });
 }());

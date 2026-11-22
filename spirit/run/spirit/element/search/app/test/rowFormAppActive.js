@@ -28,14 +28,14 @@ test.run('a scratch node comes up, and Chrome opens its face page', 0.2, async f
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and is placed on spirit.element at its path', 0.2, async function () {
+test.run('it loads through spirit.require and is placed on spirit.required at its path', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormAppActive.js"); }).then(function () { return !!(spirit.element.spirit.element.search.app.rowFormAppActive && spirit.element.spirit.element.search.app.rowFormAppActive.create); }, function () { return false; })');
+  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/rowFormAppActive.js"); }).then(function () { return !!(spirit.required.spirit.element.search.app.rowFormAppActive && spirit.required.spirit.element.search.app.rowFormAppActive.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 const ask = async function (verb, args) { const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
 const activeOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).active : undefined; };
-const make = function (key) { return chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "a-' + key + '"; document.body.appendChild(b); window["a_' + key + '"] = spirit.element.spirit.element.search.app.rowFormAppActive.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["a_' + key + '"] && typeof window["a_' + key + '"].destroy === "function"; }())'); };
+const make = function (key) { return chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "a-' + key + '"; document.body.appendChild(b); window["a_' + key + '"] = spirit.required.spirit.element.search.app.rowFormAppActive.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["a_' + key + '"] && typeof window["a_' + key + '"].destroy === "function"; }())'); };
 const view = function (key) { return chrome.evaluate('(function () { var b = document.getElementById("a-' + key + '"); var r = b.getBoundingClientRect(); return { text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), height: r.height }; }())'); };
 // Each row of the pane, its text and the button it holds.
 const rows = function () { return chrome.evaluate('(function () { var out = {}; Array.prototype.slice.call(document.querySelectorAll("#pane tr, #pane [data-key]")).forEach(function (r) { var t = String(r.innerText || "").replace(/\\s+/g, " ").trim(); ["Contacts", "Agent"].forEach(function (n) { if (t.indexOf(n) !== -1 && !out[n]) out[n] = { text: t, forms: r.querySelectorAll(".shell-row-form").length, installers: r.querySelectorAll("button.app-installer").length, buttons: Array.prototype.map.call(r.querySelectorAll("button"), function (x) { return String(x.textContent || "").trim(); }) }; }); }); return out; }())'); };
@@ -85,7 +85,7 @@ test.run('pressed again, the Agent is no longer active', 0.2, async function () 
 // the box: "The appSelector's detail and its rows use them": no Activate on an intrinsic app's row
 test.run('the appSelector\'s pane is made', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  listed = await chrome.evaluate('spirit.require("spirit/element/script.js").then(function () { var b = document.createElement("div"); b.id = "pane"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); window.__sel = spirit.element.spirit.element.script.create(b, { face: "pane" }); return true; })');
+  listed = await chrome.evaluate('spirit.require("spirit/element/script.js").then(function () { var b = document.createElement("div"); b.id = "pane"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); window.__sel = spirit.required.spirit.element.script.create(b, { face: "pane" }); return true; })');
   return listed === true ? true : false;
 }, test.limit.quick);
 test.run('the pane lists Contacts and the Agent', 0.2, async function () {

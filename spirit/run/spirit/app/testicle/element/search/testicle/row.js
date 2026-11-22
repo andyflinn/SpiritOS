@@ -3,7 +3,7 @@
 // A TEST ROW, AN ELEMENT (goal/G47.1, the search cycle): one row of testicle's test table as ./list.js and
 // ./detail.js draw it, on the shared row element (spirit/element/row.js).
 //
-//   spirit.element.spirit.app.testicle.element.search.testicle.row.create(row) -> the row element
+//   spirit.required.spirit.app.testicle.element.search.testicle.row.create(row) -> the row element
 //
 // The box: "The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity
 // second; the title third; then the script name (no path), then the suite name (no path)", "The test row also shows its
@@ -27,7 +27,7 @@
 
   var index = null;
   function create(row) {
-    var R = S.element.spirit.element.row;
+    var R = S.required.spirit.element.row;
     var r = row || {};
     index = index || R.index(function () {});
     return R.create({

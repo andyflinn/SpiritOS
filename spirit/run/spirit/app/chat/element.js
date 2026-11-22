@@ -4,7 +4,7 @@
 // specific) elements go into spirit/app/chat/element/"), what was chatter.js, the face of this node's chat server
 // (./server/server.js), goal/G4.9 to G4.11. Its contract and its test: ./test/element.md and ./test/element.js.
 //
-//   spirit.element.spirit.app.chat.element.create(container, { open }) -> { destroy() }
+//   spirit.required.spirit.app.chat.element.create(container, { open }) -> { destroy() }
 //
 // The chat server is faceless and knows keys only; this element is everything a person sees. It asks its server through
 // the chat branch spirit.require binds (spirit.chat.<verb>), and hears every kept line through the chat branch's cache
@@ -264,7 +264,7 @@ function chOpen(key) {
   var slot = chEl('ch-title-name');
   if (slot) {
     slot.innerHTML = '';
-    window.spirit.element.spirit.element.contactLabel.create(slot, { key: key, editable: true });
+    window.spirit.required.spirit.element.contactLabel.create(slot, { key: key, editable: true });
   }
   // The count is said once, as the chat opens ("Andy: 35 new messages"), and the chat is then read.
   var row = chData() ? chData().chat(key) : null;
@@ -501,7 +501,7 @@ function chMount(container) {
       // through spirit/element/icon.js once it has loaded (chIconPart), its glyph as text until then.
       function paint() {
         var glyph = paneEl.hidden ? foldedGlyph : openGlyph;
-        var I = window.spirit && window.spirit.element && window.spirit.element.spirit.element.icon;
+        var I = window.spirit && window.spirit.required && window.spirit.required.spirit.element.icon;
         btn.textContent = '';
         if (I && typeof I.create === 'function') I.create(btn, { glyph: glyph }); else btn.textContent = glyph;
       }
@@ -546,7 +546,7 @@ function chMount(container) {
     var left = document.createElement('div');
     left.className = 'fill';
     chEl('ch-left').appendChild(left);
-    chPane = window.spirit.element.spirit.element.search.contact.create(left, {
+    chPane = window.spirit.required.spirit.element.search.contact.create(left, {
       face: 'pane', filters: [CH_OFFERED],
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
       statuses: [{ status: 'none' }, { status: 'unanswered', glyph: '⌛' }],
@@ -566,7 +566,7 @@ function chMount(container) {
     // hurt"), each by its time.
     var chSearchRows = null;
     function chSearchRow(row) {
-      var R = window.spirit.element.spirit.element.row;
+      var R = window.spirit.required.spirit.element.row;
       var l = row || {};
       chSearchRows = chSearchRows || R.index(function () {});
       return R.create({
@@ -582,7 +582,7 @@ function chMount(container) {
     Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/row.js'), spirit.require('spirit/app/chat/api.js')]).then(function () {
       var C = chData();
       if (!C) return;
-      chSearch = window.spirit.element.spirit.element.search.create(chEl('ch-search'), {
+      chSearch = window.spirit.required.spirit.element.search.create(chEl('ch-search'), {
         data: C.branch,
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): chat.search for the open peer.
         search: function (body) {

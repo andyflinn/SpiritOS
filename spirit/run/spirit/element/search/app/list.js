@@ -27,7 +27,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.element.spirit.element.search.create(host, {
+    var list = window.spirit.required.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       data: window.spirit.required.spirit.data.app.data.branch,
@@ -36,7 +36,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       face: o.face,
       // ITS TILE PART (goal/G47.4): an app's tile, ./tile.js; a press on it picks the app, as a press on its row does. With it
       // the shared search shows the list or tiles switch by itself (the toggle option went).
-      tile: function (row, key) { return window.spirit.element.spirit.element.search.app.tile.create(row, { press: function (r, k) { if (typeof o.pick === 'function') o.pick(r, k); } }); },
+      tile: function (row, key) { return window.spirit.required.spirit.element.search.app.tile.create(row, { press: function (r, k) { if (typeof o.pick === 'function') o.pick(r, k); } }); },
       onFace: function (f) { face = f; if (typeof o.onFace === 'function') o.onFace(f); },
       visible: o.visible,
       placeholder: 'choose an app…',
@@ -62,7 +62,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       // Andy, box: "the appSelector will only show icon and label in the list."
       // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
       columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),
-      element: function (row) { return window.spirit.element.spirit.element.search.app.row.create(row); },
+      element: function (row) { return window.spirit.required.spirit.element.search.app.row.create(row); },
       name: function (row) { return String((row && row.label) || ''); },
       empty: 'No app matches.',
     });

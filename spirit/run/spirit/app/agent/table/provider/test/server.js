@@ -380,7 +380,7 @@ test.run('a set of a url and a new key keeps the new key', 0.2, function () {
 const P = { made: null, E: {}, list: null, o: null, r: null, AD: null, BRANCH: '' };
 const detail = { open: function () {}, look: function (t2) { return { icon: '🏢', name: 'Provider', title: 'Model providers', table: t2 }; } };
 const box = { innerHTML: '' };
-test.run('the provider\'s elementTable and elementRow are placed on spirit.element by their path', 0.2, function () {
+test.run('the provider\'s elementTable and elementRow are placed on spirit.required by their path', 0.2, function () {
   const made = P.made = { tables: [], rows: [], required: [] };
   const STAND = {
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
@@ -388,8 +388,8 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.eleme
   };
   global.window = { spirit: {} };
   global.spirit = global.window.spirit;
-  // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.element.<their path>.
-  global.window.spirit.element = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
+  // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.required.<their path>.
+  global.window.spirit.required = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
   // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once; anything
   // else is a stand-in.
   const ran = {};
@@ -408,7 +408,7 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.eleme
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
-  const T = global.window.spirit.element.spirit.app.agent.element.table.provider || {};
+  const T = global.window.spirit.required.spirit.app.agent.element.table.provider || {};
   P.E = { providerTable: T.elementTable, providerRow: T.elementRow };
   return P.E.providerTable && typeof P.E.providerTable.create === 'function' && P.E.providerRow && typeof P.E.providerRow.create === 'function' ? true : false;
 }, test.limit.quick);

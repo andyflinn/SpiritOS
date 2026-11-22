@@ -22,7 +22,7 @@ the code draws no title row (the tab's label, its mounter's, names the bundle), 
 - **Its Delete row** (goal/G41.32): a rowForm below the list, ❌, *"Delete <bundle-name> bundle and branches"*, an armingButton whose
   second press asks `auth.bundle { op: 'delete', id }`; a refusal is said below it, in the node's words. Hearing that bundle's row gone in `spirit.required.spirit.data.auth.data.bundles`, from any screen,
   it calls `options.gone`. A bundle whose `options.owner` is not `node` is shown only: no form, no Delete column.
-- It registers `spirit.element.spirit.element.search.bundle.detail.create(container, options)`, and no page of its own, which draws the same editor into the container
+- It registers `spirit.required.spirit.element.search.bundle.detail.create(container, options)`, and no page of its own, which draws the same editor into the container
   and answers a handle with `destroy` (the shell's element shape, goal/G41.19).
 - Mounted, the page draws, each part made with its container (`<name>.create(container, options)`):
   - the add form, a rowForm (goal/G41.27; Andy: *"branchEditor:\n\n[➕] [choose a family… ▾] [Add]"*, then
@@ -30,7 +30,7 @@ the code draws no title row (the tab's label, its mounter's, names the bundle), 
     family… ▾] [All Verbs ▾] [Add]"*): it loads `spirit/element/rowForm.js` itself and makes one rowForm with ➕ and Add; its
     span holds the one family selector, `choose a family…`, its verb half with it (hidden until a family is chosen, the
     family selector's own), and nothing else; the rowForm's button is the only Add; the word `new` is gone;
-  - the branchSelector, `spirit.element.search.branch.create(its box, …)`, a pane on that bundle, its columns `family`, `verb`, `delete`.
+  - the branchSelector, `spirit.required.search.branch.create(its box, …)`, a pane on that bundle, its columns `family`, `verb`, `delete`.
 - Add:
   - with no family it asks nothing;
   - otherwise it asks `auth.branch { op: 'add', bundle, family, verb }`, the family selector's `family` and `verb`,
