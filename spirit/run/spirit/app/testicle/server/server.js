@@ -1292,6 +1292,88 @@ function mostSevereFirst(rows) {
 }
 function refused(code) { return Object.assign(new Error(code), { refusal: code }); }
 
+// testicle.analyze (goal/G49.6, box v7). The red is named by its script, suite and test; its row is the current one testicle
+// holds (or, when its id is given and still held, that one). Every list is cut to what the answer holds, the longest first.
+const ANALYZE_LIST = 20;
+const ANALYZE_SETUP = /\bready\b|^the world|scratch node|chrome page/i;
+const depsOf = db.prepare('SELECT requires FROM dependency WHERE script = ?');
+const scriptRowOf = db.prepare('SELECT name, hash, changed FROM script WHERE name = ?');
+const flipsGreen = db.prepare('SELECT * FROM testicle WHERE verified = 1 AND tested > ? AND tested <= ? ORDER BY tested DESC');
+function analyzeRed(redJson) {
+  let given = null;
+  try { given = typeof redJson === 'string' ? JSON.parse(redJson) : redJson; } catch (e) { given = null; }
+  if (!given || typeof given !== 'object' || !given.script || !given.suite || !given.test) throw refused('no-such-red');
+  const script = posix(String(given.script)).replace(/^\.?\//, '');
+  const suite = posix(String(given.suite)).replace(/^\.?\//, '');
+  const testTitle = String(given.test);
+  const history = T.history.all(script, suite, testTitle);
+  const byId = Number(given.id) > 0 ? history.filter(function (r) { return Number(r.id) === Number(given.id); })[0] : null;
+  const row = byId || history.filter(function (r) { return r.current; })[0] || history[0];
+  if (!row) throw refused('no-such-red');
+  const suiteRow = Q.suiteRow.get(script, suite) || {};
+  const unknown = [];
+  // 1. the red itself
+  const red = { script: script, suite: suite, test: testTitle, id: Number(row.id), severity: Number(row.severity), verified: !!row.verified,
+    reason: suiteRow.reason || (row.verified ? '' : 'fail'), tested: Number(row.tested), judged: String(row.judged || ''), suiteHash: String(row.suiteHash || '') };
+  if (red.verified) unknown.push('this row is green now: it is no red');
+  // 2. flip or never green
+  const green = history.filter(function (r) { return r.verified && Number(r.tested) < red.tested; })[0] || null;
+  const lastGreen = green ? { id: Number(green.id), tested: Number(green.tested), judged: String(green.judged || ''), suiteHash: String(green.suiteHash || ''),
+    sameHashes: String(green.judged || '') === red.judged && String(green.suiteHash || '') === red.suiteHash } : null;
+  if (!lastGreen) unknown.push('never green: no green of this test in its history');
+  // 5. what to fix first: a red setup check of the same script, then its other current reds
+  const others = T.reds.all().filter(function (r) { return r.script === script && !(r.suite === suite && r.test === testTitle); });
+  const setup = others.filter(function (r) { return ANALYZE_SETUP.test(String(r.test)); });
+  const fixFirst = setup.concat(others.filter(function (r) { return setup.indexOf(r) === -1; })).slice(0, ANALYZE_LIST).map(function (r) {
+    return { script: r.script, suite: r.suite, test: r.test, severity: Number(r.severity), setup: setup.indexOf(r) !== -1 };
+  });
+  // the same test red on other scripts: a rule red on many points at the rule or one shared file
+  const elsewhere = T.reds.all().filter(function (r) { return r.suite === suite && r.test === testTitle && r.script !== script; });
+  const sameTestElsewhere = { count: elsewhere.length, scripts: elsewhere.slice(0, ANALYZE_LIST).map(function (r) { return r.script; }) };
+  // 6. flaky: the same hashes both green and red
+  const sameRuns = history.filter(function (r) { return String(r.judged || '') === red.judged && String(r.suiteHash || '') === red.suiteHash; });
+  const flaky = sameRuns.some(function (r) { return r.verified; }) && sameRuns.some(function (r) { return !r.verified; });
+  // 7. contradictory tests: green from red between the last green and the red, any script (never every test against every other)
+  const contradicts = [];
+  if (lastGreen) {
+    flipsGreen.all(lastGreen.tested, red.tested).forEach(function (r) {
+      if (contradicts.length >= ANALYZE_LIST || (r.script === script && r.suite === suite && r.test === testTitle)) return;
+      const before = T.history.all(r.script, r.suite, r.test).filter(function (h) { return Number(h.tested) < Number(r.tested); })[0];
+      if (before && !before.verified) contradicts.push({ script: r.script, suite: r.suite, test: r.test, turnedGreen: Number(r.tested) });
+    });
+  }
+  // 4. suspects: what it requires, changed after the last green, newest first
+  const deps = depsOf.all(script).map(function (d) { return d.requires; });
+  if (!deps.length) unknown.push('no dependency rows for this script');
+  const since = lastGreen ? lastGreen.tested : 0;
+  const suspects = deps.map(function (p) { return scriptRowOf.get(p); }).filter(function (s) { return !!s && Number(s.changed) > since; })
+    .sort(function (x, y) { return Number(y.changed) - Number(x.changed); }).slice(0, ANALYZE_LIST).map(function (s) { return { script: s.name, changed: Number(s.changed) }; });
+  if (lastGreen) unknown.push('the hash each required script had at the last green is not kept: a file changed and changed back is still a suspect');
+  // 8. where the run came from
+  unknown.push('the commit the run\'s world was copied from is not kept');
+  // 3. blame: the commits since the last green on the script, its suite and what it requires
+  const at = path.relative(REPO_ROOT, RUN).split(path.sep).join('/');
+  const files = [script, suite].concat(deps).map(function (p) { return (at ? at + '/' : '') + p; });
+  const answer = function (blame) {
+    const out = { red: red, lastGreen: lastGreen, fixFirst: fixFirst, sameTestElsewhere: sameTestElsewhere, flaky: flaky, contradicts: contradicts,
+      suspects: suspects, blame: blame, world: null, unknown: unknown };
+    // Cut to its size: the longest list loses its last entry until the answer fits.
+    const lists = ['blame', 'contradicts', 'suspects', 'fixFirst'];
+    while (Buffer.byteLength(JSON.stringify(out), 'utf8') > limits.ANSWER_MAX) {
+      const longest = lists.filter(function (k) { return out[k].length; }).sort(function (x, y) { return out[y].length - out[x].length; })[0];
+      if (!longest) { out.sameTestElsewhere.scripts = []; break; }
+      out[longest].pop();
+      out.cut = true;
+    }
+    return out;
+  };
+  if (!lastGreen) return answer([]);
+  return git(['log', '--since=@' + Math.floor(lastGreen.tested / 1000), '--format=%h%x09%an%x09%cI%x09%s', '-n', String(ANALYZE_LIST), '--'].concat(files))
+    .then(function (log) {
+      return answer(String(log).split('\n').filter(Boolean).map(function (l) { const p = l.split('\t'); return { commit: p[0], author: p[1], at: p[2], subject: p.slice(3).join('\t') }; }));
+    }, function () { unknown.push('git could not be asked for the commits'); return answer([]); });
+}
+
 appServer.serve({
   // goal/G47.1, the run cycle, the box: "A new testicle verb, run {script, suite, testicle}"; the queue cycle: "A press of
   // 🏃‍♂️ puts its suite and script at the head of the queue", "an agent uses the same verb the UI uses". Answered at once. The script a production script, the suite a suite, both on disc; testicle, a test's title, optional.
@@ -1628,6 +1710,13 @@ appServer.serve({
     request: {}, reply: { items: [], more: false },
     handler: function () { return mostSevereFirst(T.reds.all().map(testServed)); },
   },
+  // ONE RED, ITS ANALYSIS IN ONE PAYLOAD (goal/G49.6, box v7; Andy: "provide the most useful analysis possible in one payload,
+  // and accelerate the fix or accurate blame", "i proposed the friggin verb! GO!"): testicle.analyze(red-testicle), from what
+  // testicle holds and git, nothing new collected first.
+  analyze: {
+    request: { red: '' }, reply: {},
+    handler: function (a) { return analyzeRed(a.red); },
+  },
 // No peer user: the owner's own test status (apiAuth/G1.10).
 }, {
   // ITS ROWS ON THE NODE'S JOB STREAM (goal/G47.1, the UI cycle), as the agent's tables publish theirs: { testicle: { table,
@@ -1640,6 +1729,8 @@ appServer.serve({
   'no-such-file': { status: 404, text: 'no such file' },
   // A -browser suite's result for a node-only script, a -node suite's for a browser-only one (testicle.set, above).
   'not-applicable': { status: 409, text: 'this suite does not apply to this script' },
+  // testicle.analyze's refusal (goal/G49.6).
+  'no-such-red': { status: 404, text: 'the red is no testicle row' },
   // testicle.title's refusals (goal/G47.4, the box: "else the request is refused").
   'no-such-test': { status: 404, text: 'no row of that script, suite and title' },
   'bad-title': { status: 400, text: 'the title breaks the description rule' },

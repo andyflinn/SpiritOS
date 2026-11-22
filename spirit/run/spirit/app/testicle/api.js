@@ -35,6 +35,9 @@ module.exports = {
     'testicle.search': { script: 'spirit.type.string.fileSelect?', suite: 'spirit.type.string.fileSelect?', test: 'spirit.type.string.description?', result: 'spirit.type.string.testResult?', text: 'spirit.type.string.descriptionSelect' },
     // goal/G47.1, G45: every failed current test, most severe first. It takes nothing.
     red: {},
+    // goal/G49.6, box v7 (Andy: "i proposed the friggin verb! GO!"; wsl reviewed it): testicle.analyze(red-testicle), one red,
+    // its analysis in one payload; red is the red testicle row itself, as testicle.red hands it, in json.
+    analyze: { red: 'spirit.type.string.json' },
     // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it; answered at once.
     run: { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', testicle: 'spirit.type.string.description?' },
     // appServer's streamPublisher (spirit/server/app.js), as agent's: the caller's key subscribes to testicle's rows, sent to
