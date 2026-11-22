@@ -24,7 +24,7 @@ const call = function (verb, args) { return spirit.check('app.' + verb, W.verbs[
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return ''; const r = call(verb, args); return r ? r.code : ''; };
 
-test.run('the app family\'s api.js loads', 0.2, function () {
+test.run('the app branch\'s api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }
   W.verbs = W.api.verbs || {};
   W.names = Object.keys(W.verbs);
@@ -34,7 +34,7 @@ test.run('the app family\'s api.js loads', 0.2, function () {
 
 // ── its shape ──
 // "It names no family of its own: the node maps it (goal/G32.3)".
-test.run('it exports its verbs and their functions, and nothing else: it names no family of its own', 0.2, function () {
+test.run('it exports its verbs and their functions, and nothing else: it names no branch of its own', 0.2, function () {
   if (!W.api) return false;
   return Object.keys(W.api).sort().join() === 'functions,verbs' || false;
 }, test.limit.quick);

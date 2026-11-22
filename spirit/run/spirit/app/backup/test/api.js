@@ -20,17 +20,17 @@ const isPlain = function (v) { return v !== null && typeof v === 'object' && !Ar
 const W = { api: null, verbs: {}, names: [] };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.check('backup.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 
-test.run('the backup family\'s api.js loads', 0.2, function () {
+test.run('the backup branch\'s api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }
   W.verbs = W.api.verbs || {};
   W.names = Object.keys(W.verbs);
   return true;
 }, test.limit.quick);
-test.run('the spirit object\'s family path for backup finds this api.js', 0.2, function () {
+test.run('the spirit object\'s branch path for backup finds this api.js', 0.2, function () {
   return path.join(RUN, spirit.branchPath('backup')) === FILE || false;
 }, test.limit.quick);
 // "The node answers this text to api {family} without the server hearing of it, and maps it to its name: it names no family of its own."
-test.run('it exports a table of verbs and nothing else: it names no family of its own', 0.2, function () {
+test.run('it exports a table of verbs and nothing else: it names no branch of its own', 0.2, function () {
   if (!W.api) return false;
   return (Object.keys(W.api).join() === 'verbs' && isPlain(W.verbs)) || false;
 }, test.limit.quick);

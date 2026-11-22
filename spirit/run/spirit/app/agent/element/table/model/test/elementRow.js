@@ -65,7 +65,7 @@ test.run('it places spirit.element.spirit.app.agent.element.table.model.elementR
   return (!!E.row && typeof E.row.create === 'function') || false;
 }, test.limit.quick);
 // "Its table's rows are the agent family's cache (goal/G41.28) ... it is loaded here, with this element."
-test.run('as it loads, it requires the agent family\'s interface, spirit/app/agent/api.js, and no data.js', 0.2, function () {
+test.run('as it loads, it requires the agent branch\'s interface, spirit/app/agent/api.js, and no data.js', 0.2, function () {
   if (!W.up) return false;
   const own = W.required.slice(W.from || 0);
   return (own.indexOf('spirit/app/agent/api.js') !== -1 && !own.some(function (p) { return /data\.js$/.test(p); })) || false;

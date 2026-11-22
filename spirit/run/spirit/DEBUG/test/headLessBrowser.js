@@ -112,7 +112,7 @@ test.run('an app is mounted into the box with an api, rendered, and said mounted
   const m = app.calls.mounted[0];
   return (app.calls.mounted.length === 1 && m.box === app.box && !!m.api && app.calls.rendered === 1 && app.report.state === 'mounted') || false;
 }, test.limit.quick);
-test.run('the app\'s api asks a verb of the spirit object\'s family, and refuses a verb that is not there', 0.2, async function () {
+test.run('the app\'s api asks a verb of the spirit object\'s branch, and refuses a verb that is not there', 0.2, async function () {
   if (!app || !app.calls.mounted.length) return false;
   const api = app.calls.mounted[0].api;
   if (typeof api.verb !== 'function') return false;

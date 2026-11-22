@@ -20,7 +20,7 @@ test.run('spirit/type/string/glyph.js exists and loads', 0.2, function () {
   try { require(path.join(RUN, 'spirit', 'spirit.js')); T = require(FILE); } catch (e) { T = null; }
   return (!!T && typeof T === 'object') || false;
 }, test.limit.quick);
-test.run('isValid answers true for one glyph: a bed, a letter, a joined runner of 13 bytes and a joined family of 25 bytes', 0.4, function () {
+test.run('isValid answers true for one glyph: a bed, a letter, a joined runner of 13 bytes and a joined branch of 25 bytes', 0.4, function () {
   if (!T) return false;
   try { return ['🛌', 'a', '🏃‍♂️', '👨‍👩‍👧‍👦'].every(function (v) { return T.isValid(v) === true; }) || false; } catch (e) { return false; }
 }, test.limit.quick);

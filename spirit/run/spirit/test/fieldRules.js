@@ -94,7 +94,7 @@ test.run('emailProblem allows an address of at most 254 bytes', 0.2, function ()
 }, test.limit.quick);
 
 // ── glyph (goal/G41.27: "max 1 char/glyph, 8-bytes maximum.") ──
-test.run('glyphCount counts what the reader sees: a flag or a family emoji is one', 0.2, function () {
+test.run('glyphCount counts what the reader sees: a flag or a branch emoji is one', 0.2, function () {
   const got = [F.glyphCount(''), F.glyphCount('a'), F.glyphCount('ab'), F.glyphCount('\u{1F1E9}\u{1F1EA}'), F.glyphCount('é')];
   return short(got) === short([0, 1, 2, 1, 1]) || false;
 }, test.limit.quick);

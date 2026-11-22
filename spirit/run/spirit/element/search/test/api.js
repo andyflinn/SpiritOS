@@ -100,19 +100,19 @@ test.run('it names no shellCreateListSearch', 0.2, function () {
   const names = /shellCreateListSearch/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, ''));
   return !names ? true : false;
 }, test.limit.quick);
-test.run('it registers apiFamilySelector with a create, and createApiFamilySelector and createApiBranchSelector no more', 0.2, async function () {
+test.run('it registers apiBranchSelector with a create, and createApiBranchSelector and createApiBranchSelector no more', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   w = world();
   await settle();
   made = w.E.search.api;
   return made && typeof made.create === 'function' && !('createApiFamilySelector' in w.E) && !('createApiBranchSelector' in w.E) ? true : false;
 }, test.limit.quick);
-test.run('it loads its two halves itself, the family list search/api/list.js and the verb selector', 0.2, function () {
+test.run('it loads its two halves itself, the branch list search/api/list.js and the verb selector', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   return w.required.indexOf('spirit/element/search/api/list.js') !== -1 && w.required.indexOf('spirit/element/search/api/verb.js') !== -1 ? true : false;
 }, test.limit.quick);
 // goal/G47.1, Andy: "every api.js requires it's companion data.js, and is the only script to require that data.js".
-test.run('its halves require the node family\'s interface, spirit/node/api.js, and no data script', 0.2, function () {
+test.run('its halves require the node branch\'s interface, spirit/node/api.js, and no data script', 0.2, function () {
   if (!made || typeof made.create !== 'function') return false;
   return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
@@ -139,38 +139,38 @@ test.run('it has BRANCH half and a verb half', 0.2, function () {
   if (vl) verbBox = vl.host;
   return w.lists.length >= 2 && vl && fl ? true : false;
 }, test.limit.quick);
-test.run('the option all is what the family half reads when nothing is chosen', 0.2, function () {
+test.run('the option all is what the branch half reads when nothing is chosen', 0.2, function () {
   if (!vl || !fl) return false;
   return fl.opts.all === 'every family' ? true : false;
 }, test.limit.quick);
-test.run('its families are the tree\'s, one that did not answer left out', 0.2, function () {
+test.run('its branches are the tree\'s, one that did not answer left out', 0.2, function () {
   if (!vl || !fl) return false;
   return short(names(fl)) === short(['fs', 'jobs']) ? true : false;
 }, test.limit.quick);
-test.run('with nothing chosen, the verb half is hidden and family, verb and value are empty', 0.2, function () {
+test.run('with nothing chosen, the verb half is hidden and branch, verb and value are empty', 0.2, function () {
   if (!vl || !fl) return false;
   return verbBox.hidden === true && fam.family === '' && fam.verb === '' && fam.value === '' ? true : false;
 }, test.limit.quick);
-test.run('a family pick sets family to it and value to the family alone, with one change', 0.2, function () {
+test.run('a branch pick sets branch to it and value to the branch alone, with one change', 0.2, function () {
   if (!vl || !fl) return false;
   fl.opts.pick({ key: 'fs', name: 'fs' }, 'fs');
   return fam.family === 'fs' && fam.verb === '' && fam.value === 'fs' && seen[seen.length - 1] === 'fs' ? true : false;
 }, test.limit.quick);
-test.run('after a family pick the verb half shows its verbs, and DEBUG is never offered', 0.2, function () {
+test.run('after a branch pick the verb half shows its verbs, and DEBUG is never offered', 0.2, function () {
   if (!vl || !fl) return false;
   return verbBox.hidden === false && short(names(vl)) === short(['loadFile', 'search']) ? true : false;
 }, test.limit.quick);
-test.run('a verb pick sets verb to it and value to family.verb', 0.2, function () {
+test.run('a verb pick sets verb to it and value to branch.verb', 0.2, function () {
   if (!vl || !fl) return false;
   vl.opts.pick({ key: 'search', name: 'search' }, 'search');
   return fam.verb === 'search' && fam.value === 'fs.search' ? true : false;
 }, test.limit.quick);
-test.run('All Verbs picks the empty verb, and value is the family again', 0.2, function () {
+test.run('All Verbs picks the empty verb, and value is the branch again', 0.2, function () {
   if (!vl || !fl) return false;
   vl.opts.pick(null, '');
   return fam.verb === '' && fam.value === 'fs' ? true : false;
 }, test.limit.quick);
-test.run('another family clears the verb and lists its own verbs', 0.2, function () {
+test.run('another branch clears the verb and lists its own verbs', 0.2, function () {
   if (!vl || !fl) return false;
   fl.opts.pick({ key: 'jobs', name: 'jobs' }, 'jobs');
   return fam.family === 'jobs' && fam.verb === '' && short(names(vl)) === short(['list']) ? true : false;

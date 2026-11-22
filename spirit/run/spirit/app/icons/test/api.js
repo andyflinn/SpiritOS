@@ -71,7 +71,7 @@ test.run('a scratch node comes up with Icons switched on, and a Chrome page open
 }, test.limit.slow);
 
 // the node finds it at the app's top: api {family: icons} answers this file
-test.run('the api verb asked for the icons family answers spirit/app/icons/api.js, word for word', 0.2, async function () {
+test.run('the api verb asked for the icons branch answers spirit/app/icons/api.js, word for word', 0.2, async function () {
   if (!W.up) return false;
   const fam = await call('api', { branch: 'icons' });
   return fam.status === 200 && fam.body && fam.body.interface === fs.readFileSync(FILE, 'utf8') ? true : false;

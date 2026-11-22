@@ -503,7 +503,7 @@ test.run('the data set is spirit/data.js', 0.2, function () {
   cachesRead();
   return C.tracked.indexOf('spirit/data.js') !== -1 ? true : false;
 }, test.limit.quick);
-test.run('appServer takes a family\'s cache from the family\'s own data.js', 0.2, function () {
+test.run('appServer takes a branch\'s cache from the branch\'s own data.js', 0.2, function () {
   cachesRead();
   return !!/path\.dirname\(\s*spirit\.branchPath\([^;]{0,60}?\)\s*\)\s*,\s*['"]data\.js['"]/.test(C.appServer) ? true
     : false;
@@ -685,7 +685,7 @@ test.run('spirit.required.spirit.data has its helper functions', 0.2, function (
   if (!F.got) return false;
   return Object.keys(F.got.keys).some(function (k) { return F.got.keys[k] === 'function'; }) ? true : false;
 }, test.limit.quick);
-test.run('spirit.required.spirit.data holds nothing but its helper functions and the families', 0.2, function () {
+test.run('spirit.required.spirit.data holds nothing but its helper functions and the branches', 0.2, function () {
   if (!F.got) return false;
   const stray = Object.keys(F.got.keys).filter(function (k) { return F.got.keys[k] !== 'function' && FAMILIES.indexOf(k) === -1; });
   return !stray.length ? true : false;
@@ -726,7 +726,7 @@ test.run('spirit.required.spirit.data.app.data reads the app rows', 0.2, async f
   const reads = F.reads;
   return reads.rows === 'function' && reads.watch === 'function' && reads.count > 0 ? true : false;
 }, test.limit.quick);
-test.run('the files family\'s data on spirit.required.spirit.data has a watch, which word.js follows', 0.2, function () {
+test.run('the files branch\'s data on spirit.required.spirit.data has a watch, which word.js follows', 0.2, function () {
   const reads = F.reads || {};
   return reads.fsWatch === 'function' ? true : false;
 }, test.limit.quick);

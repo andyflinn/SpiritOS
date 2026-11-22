@@ -51,7 +51,7 @@ test.run('it loads the api tree reader itself', 0.2, function () {
 }, test.limit.quick);
 
 // a family's verbs, read from the tree it is handed
-test.run('it lists each verb the family serves, as its path, sorted', 0.2, async function () {
+test.run('it lists each verb the branch serves, as its path, sorted', 0.2, async function () {
   if (!D || typeof D.create !== 'function') return false;
   host = node('div');
   made = D.create(host, { family: 'fs', tree: TREE });
@@ -72,7 +72,7 @@ test.run('it asks nothing: what it shows is the tree it is handed', 0.2, functio
   if (!asked || html === undefined) return false;
   return !asked.length ? true : false;
 }, test.limit.quick);
-test.run('a family that did not answer shows it has no verbs', 0.2, async function () {
+test.run('a branch that did not answer shows it has no verbs', 0.2, async function () {
   if (!D || typeof D.create !== 'function') return false;
   none = node('div');
   D.create(none, { family: 'broken', tree: TREE });

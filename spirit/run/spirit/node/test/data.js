@@ -66,7 +66,7 @@ test.run('in node, requiring its branch\'s api.js, spirit/node/api.js, puts it a
   const X = S.required.spirit.data && S.required.spirit.data['node'] && S.required.spirit.data['node'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.required.spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.required.spirit.data, it makes its branch there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -111,7 +111,7 @@ test.run('a name saved alone keeps the description', 0.2, function () {
   if (!w) return false;
   return same(w.X.card.get(), { name: 'Drew', description: 'his new box' }) || false;
 }, test.limit.quick);
-test.run('keepTree keeps each family the index reads, and each of its verbs as family.verb', 0.2, function () {
+test.run('keepTree keeps each branch the index reads, and each of its verbs as branch.verb', 0.2, function () {
   if (!w) return false;
   w.X.keepTree(TREE, INDEX);
   return (same(Object.keys(w.X.families()).sort(), ['fs', 'node']) && same(w.X.families().fs, { name: 'fs' }) && same(Object.keys(w.X.verbs()).sort(), ['fs.load', 'fs.save', 'node.card']) && same(w.X.verbs()['fs.load'], { family: 'fs', name: 'load' })) || false;
@@ -126,7 +126,7 @@ test.run('with no index it keeps nothing', 0.2, function () {
   w.X.keepTree(TREE);
   return same(Object.keys(w.X.verbs()), ['fs.load']) || false;
 }, test.limit.quick);
-test.run('no tree is a tree with no families', 0.2, function () {
+test.run('no tree is a tree with no branches', 0.2, function () {
   if (!w) return false;
   w.X.keepTree(null, INDEX);
   return (Object.keys(w.X.families()).length === 0 && Object.keys(w.X.verbs()).length === 0) || false;

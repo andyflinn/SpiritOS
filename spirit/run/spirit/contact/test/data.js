@@ -57,7 +57,7 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, requiring spirit/contact/api.js brings the contact family\'s data.js, at spirit.required.spirit.data.contact.data', 0.2, async function () {
+test.run('in node, requiring spirit/contact/api.js brings the contact branch\'s data.js, at spirit.required.spirit.data.contact.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
@@ -65,7 +65,7 @@ test.run('in node, requiring spirit/contact/api.js brings the contact family\'s 
   const X = S.required.spirit.data && S.required.spirit.data['contact'] && S.required.spirit.data['contact'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.required.spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.required.spirit.data, it makes its branch there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);

@@ -94,7 +94,7 @@ test.run('each step is drawn with its name and its icon as join.json gives it', 
 test.run('with nothing done, every step is marked ⬜', 0.2, function () {
   return (first.indexOf('⬜') !== -1 && first.indexOf('☑️') === -1) ? true : false;
 }, test.limit.quick);
-test.run('it watches the jobs family\'s cache once', 0.2, function () {
+test.run('it watches the jobs branch\'s cache once', 0.2, function () {
   return (w.watches === 1) ? true : false;
 }, test.limit.quick);
 test.run('a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps', 0.2, async function () {

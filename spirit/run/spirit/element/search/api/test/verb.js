@@ -138,7 +138,7 @@ test.run('show with no server hides it and clears the choice', 0.2, function () 
 
 // this node's own verbs are the node family's cache (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors
 // draw from it")
-test.run('it requires spirit/node/api.js and no data.js, and its list is a view of the node family\'s verbs, no rows of its own', 0.2, async function () {
+test.run('it requires spirit/node/api.js and no data.js, and its list is a view of the node branch\'s verbs, no rows of its own', 0.2, async function () {
   if (!made || typeof made.create !== 'function') return false;
   mine = made.create(node('div'), {});
   await settle();
@@ -146,7 +146,7 @@ test.run('it requires spirit/node/api.js and no data.js, and its list is a view 
   N = ((win.spirit.required.spirit.data || {}).node || {}).data;
   return w.required.indexOf('spirit/node/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); }) && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined ? true : false;
 }, test.limit.quick);
-test.run('show, given the tree and a server, narrows the kept verbs to that family\'s and never DEBUG', 0.2, function () {
+test.run('show, given the tree and a server, narrows the kept verbs to that branch\'s and never DEBUG', 0.2, function () {
   if (!N || !m) return false;
   N.keepTree(TREE, win.spirit.required.spirit.client.apiTreeIndex);
   mine.show(TREE, 'fs');

@@ -29,7 +29,7 @@ const relay = { kind: 'relay', api: function () { return TREE; } };
 // What the world makes, for the tests after it.
 let N = null, L = null, Rl = null, put = [], ping = [];
 
-test.run('make is asked for the planted node\'s family, spirit/app/thing/thing, and for the same as a relay', 0.2, async function () {
+test.run('make is asked for the planted node\'s branch, spirit/app/thing/thing, and for the same as a relay', 0.2, async function () {
   N = await G.make({ module: 'spirit/app/thing/thing', ext: 'json', server: node });
   const R = await G.make({ module: 'spirit/app/thing/thing', ext: 'json', server: relay });
   try { L = JSON.parse(N.body); } catch (e) { L = null; }
@@ -54,14 +54,14 @@ test.run('make answers null for a server that says nothing about itself', 0.2, a
   const b = await G.make({ module: 'spirit/app/thing/thing', ext: 'json' });
   return (a === null && b === null) || false;
 }, test.limit.quick);
-test.run('the family is the module\'s name, so a module of another name, with no verbs of its own in the tree, gets null', 0.2, async function () {
+test.run('the branch is the module\'s name, so a module of another name, with no verbs of its own in the tree, gets null', 0.2, async function () {
   const got = await G.make({ module: 'spirit/app/thing/other', ext: 'json', server: node });
   const none = await G.make({ module: 'spirit/app/x/thing', ext: 'json', server: { kind: 'node', api: function () { return { thing: {} }; } } });
   return (got === null && none === null) || false;
 }, test.limit.quick);
 
 // the door as it is: on a node { call, args }, on a relay { body: { <verb>: args } }
-test.run('on a node each entry is a call naming <family>.<verb>, with its args', 0.2, function () {
+test.run('on a node each entry is a call naming <branch>.<verb>, with its args', 0.2, function () {
   if (!L) return false;
   const bad = L.filter(function (e) { return !/^thing\.(put|ping)$/.test(e.call) || !('args' in e); });
   return !bad.length || false;

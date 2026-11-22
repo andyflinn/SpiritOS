@@ -66,7 +66,7 @@ test.run('in node, requiring its branch\'s api.js, spirit/relay/api.js, puts it 
   const X = S.required.spirit.data && S.required.spirit.data['relay'] && S.required.spirit.data['relay'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.required.spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.required.spirit.data, it makes its branch there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -121,7 +121,7 @@ test.run('a watch hears the relay\'s key and what was kept, and nothing once rel
   w.X.keep({ ok: true, key: A, relay: { url: A } });
   return same(heard, [[B, B]]) || false;
 }, test.limit.quick);
-test.run('branch is the rows\' whole path, in the relay family', 0.2, function () {
+test.run('branch is the rows\' whole path, in the relay branch', 0.2, function () {
   if (!w) return false;
   return (typeof w.X.branch === 'string' && w.X.branch.indexOf('/relay/') !== -1) || false;
 }, test.limit.quick);

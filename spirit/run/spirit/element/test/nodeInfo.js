@@ -185,7 +185,7 @@ test.run('it requires the rotate key dialog only when the dialog is opened', 0.2
 test.run('it uses neither spirit.shell.activateApp nor a dialog of the old shell', 0.2, function () {
   return (!/\bactivateApp\b|\bspirit\.shell\b|\bcallDialog\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
-test.run('it asks through the spirit object\'s families, never through an api, an api verb or peerPost', 0.2, function () {
+test.run('it asks through the spirit object\'s branches, never through an api, an api verb or peerPost', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the spirit object's families, no api handed.
   // A branch's interface asked by its path (spirit/node/api.js) is the spirit object's family, no api object.
   return (!/\bapi\s*\.(?!js\b)|\.verb\s*\(|\bpeerPost\b/.test(CODE)) ? true : false;

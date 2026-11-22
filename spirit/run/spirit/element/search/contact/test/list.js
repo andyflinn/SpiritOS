@@ -304,7 +304,7 @@ test.run('marking a row with a status gives it that status\'s glyph, and the fir
 // any ID table of the shadow roll's shape (goal/G41.13, Andy, Q2)
 const tableAsked = [];
 let realReady = null;
-test.run('a table names its family and verb, has no contact filters, nothing to open, and one column, the label', 0.2, function () {
+test.run('a table names its branch and verb, has no contact filters, nothing to open, and one column, the label', 0.2, function () {
   if (!L) return false;
   realReady = window.spirit.ready;
   window.spirit.ready = Promise.resolve({ agent: { job: function (b) { tableAsked.push(b); return Promise.resolve({ items: [{ key: 'row1', label: JSON.stringify({ id: 'KJ', title: 'Night job' }) }] }); } },
@@ -315,7 +315,7 @@ test.run('a table names its family and verb, has no contact filters, nothing to 
   return to.server === 'agent' && to.verb === 'job' && to.filters.length === 0 && to.details === undefined && to.columns.map(function (c) { return c.field; }).join(',') === 'label'
     ? true : false;
 }, test.limit.quick);
-test.run('a table of the agent tables\' norm is asked a search with the text trimmed, through the spirit object, at that family and verb', 0.2, async function () {
+test.run('a table of the agent tables\' norm is asked a search with the text trimmed, through the spirit object, at that branch and verb', 0.2, async function () {
   if (!to) return false;
   tg = await to.search({ text: ' night ' });
   trow = tg.body.items[0] ? JSON.parse(tg.body.items[0].label) : null;

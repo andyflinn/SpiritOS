@@ -35,7 +35,7 @@ let asked, required, loaded, armed, DATA, V, E, A, el, cells, allCells, del, liv
 const hasA = function () { return !!(A && A.branches && typeof A.branches.row === 'function'); };
 const hasRow = function () { return hasA() && !!(E.search && E.search.branch && E.search.branch.row && typeof E.search.branch.row.create === 'function'); };
 
-test.run('the branch row runs on a bare window, with the page\'s data set and the auth family\'s data real', 0.2, async function () {
+test.run('the branch row runs on a bare window, with the page\'s data set and the auth branch\'s data real', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   asked = [];
   required = [];
@@ -79,7 +79,7 @@ test.run('it requires the shared row element and the arming button through spiri
   if (!required) return false;
   return ['spirit/element/row.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('it requires the auth family\'s interface, spirit/auth/api.js, and no data.js, and the auth data it brings is on the page', 0.2, function () {
+test.run('it requires the auth branch\'s interface, spirit/auth/api.js, and no data.js, and the auth data it brings is on the page', 0.2, function () {
   if (!loaded) return false;
   return loaded.indexOf('spirit/auth/api.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) && hasA() ? true : false;
 }, test.limit.quick);
@@ -95,7 +95,7 @@ test.run('it is a row element of kind branch, keyed by the branch\'s id, with it
   el = E.search.branch.row.create({ id: 3, bundle: 7, family: 'de<sk>', verb: 'chat<add>' });
   return el.kind === 'branch' && el.key === '3' && el.row.bundle === 7 && el.row.family === 'de<sk>' ? true : false;
 }, test.limit.quick);
-test.run('its fields are family, verb and delete, in that order', 0.2, function () {
+test.run('its fields are branch, verb and delete, in that order', 0.2, function () {
   if (!el) return false;
   cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
   return JSON.stringify(Object.keys(cells)) === '["family","verb","delete"]' ? true : false;
@@ -154,7 +154,7 @@ test.run('another branch\'s row changes nothing here', 0.2, async function () {
 // auth family's data.js, which the api.js it requires brings. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
 // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
 // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-test.run('a branch row published lands in the auth family\'s branches by its id, through the family\'s data.js its api.js brings', 0.2, function () {
+test.run('a branch row published lands in the auth branch\'s branches by its id, through the branch\'s data.js its api.js brings', 0.2, function () {
   if (!hasA()) return false;
   DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
   return JSON.stringify(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }) ? true : false;

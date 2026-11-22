@@ -273,7 +273,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     const strays = named.filter(function (s) { return !/^spirit\/element\/[^]+\.js$/.test(s); });
     return asks > 0 && named.length > 0 && !strays.length ? true : false;
   }, test.limit.quick);
-  test.run('it loads no data family of its own, requiring no data.js', 0.2, function () {
+  test.run('it loads no data branch of its own, requiring no data.js', 0.2, function () {
     if (!R.c0) return false;
     return !/['"][^'"\n]*data\.js['"]/.test(R.c0) || false;
   }, test.limit.quick);

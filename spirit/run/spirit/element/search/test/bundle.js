@@ -103,13 +103,13 @@ test.run('with face pane it is the list itself, its columns handed to it and no 
 // Andy, box: "the bundleSelector can be optionally configured with an <AppServerName> (family) at mount-time", and "if
 // the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that Appserver". The
 // listing is its list's (search/bundle/list.js), so the family is handed to it.
-test.run('create given a family hands the family to its list', 0.2, async function () {
+test.run('create given a branch hands the branch to its list', 0.2, async function () {
   if (!list) return false;
   made.create(element('div'), { family: 'agent' }); await settle();
   const forAgent = lists[2] && lists[2].o;
   return forAgent && forAgent.family === 'agent' ? true : false;
 }, test.limit.quick);
-test.run('mounted for no app server, it hands its list no family', 0.2, function () {
+test.run('mounted for no app server, it hands its list no branch', 0.2, function () {
   if (!list) return false;
   return !('family' in list.o) || list.o.family === undefined || list.o.family === '' ? true : false;
 }, test.limit.quick);

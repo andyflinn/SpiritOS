@@ -65,7 +65,7 @@ test.run('in node, requiring spirit/fs/api.js brings its data.js, which stands a
   const X = S.required.spirit.data && S.required.spirit.data['fs'] && S.required.spirit.data['fs'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.required.spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.required.spirit.data, it makes its branch there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);

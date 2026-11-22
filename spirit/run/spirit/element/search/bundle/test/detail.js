@@ -80,7 +80,7 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the family selector and the branch selector through spirit.require', 0.2, function () {
+test.run('it requires the branch selector and the branch selector through spirit.require', 0.2, function () {
   if (!required) return false;
   return ['spirit/element/search/api.js', 'spirit/element/search/branch.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
@@ -91,7 +91,7 @@ test.run('it registers spirit.element.spirit.element.search.bundle.detail.create
 
 // always on one bundle
 // Andy, box: "the branchEditor page is always configured with a bundle key".
-test.run('its list is a branch selector made in the page as a pane on that bundle, with the columns family, verb and delete', 0.2, async function () {
+test.run('its list is a branch selector made in the page as a pane on that bundle, with the columns branch, verb and delete', 0.2, async function () {
   if (!hasD()) return false;
   box = node('box');
   D().create(box, { bundle: 7, label: 'Reader', gone: function () { closed += 1; } });
@@ -116,7 +116,7 @@ test.run('its add form is one rowForm in the page, its icon ➕ and its button A
   rf = forms[0];
   return forms.filter(function (f) { return f.opts.icon === '➕'; }).length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1 ? true : false;
 }, test.limit.quick);
-test.run('its span holds only the one family selector, which says choose a family… and carries its verb half', 0.2, function () {
+test.run('its span holds only the one branch selector, which says choose a branch… and carries its verb half', 0.2, function () {
   if (!box) return false;
   const inSpan = !!rf && !!fam && rf.span.kids.length === 1 && (rf.span.kids[0] === fam || (rf.span.kids[0].kids || []).indexOf(fam) !== -1 && rf.span.kids[0].kids.length === 1);
   return families.length === 1 && inSpan && fam.o.all === 'choose a family…' ? true : false;
@@ -136,7 +136,7 @@ test.run('Add with no BRANCH asks nothing', 0.2, async function () {
   return asked.length === 0 ? true : false;
 }, test.limit.quick);
 let r0;
-test.run('Add with the verb left at All Verbs asks auth.branch to add the family to the bundle with an empty verb', 0.2, async function () {
+test.run('Add with the verb left at All Verbs asks auth.branch to add the branch to the bundle with an empty verb', 0.2, async function () {
   if (!fam || !add) return false;
   fam.family = 'desk'; fam.value = 'desk'; fam.dispatchEvent(new Event('change', { bubbles: true }));
   await settle();

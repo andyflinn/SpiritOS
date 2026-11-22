@@ -74,7 +74,7 @@ test.run('it requires the shared row element, and no data script', 0.2, function
   if (!loaded) return false;
   return loaded.indexOf('spirit/element/row.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it requires the fs family\'s interface, spirit/fs/api.js, whose data.js puts the fs family\'s data on the page', 0.2, function () {
+test.run('it requires the fs branch\'s interface, spirit/fs/api.js, whose data.js puts the fs branch\'s data on the page', 0.2, function () {
   if (!loaded) return false;
   return loaded.indexOf('spirit/fs/api.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);

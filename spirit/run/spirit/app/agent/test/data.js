@@ -28,7 +28,7 @@ let n = 0;
 const job = function (app, module, from) { W.D.takeJob({ id: 'j' + (++n), module: module || 'spirit.app.agent', data: {}, app: app }, from || HOME_KEY); };
 const at = function (table, id, from) { return W.D.getPath(W.D.nodeId(from || HOME_KEY) + '/agent/' + table + '/' + id); };
 
-test.run('loaded in a window beside the real data set, the agent family\'s cache stands at spirit.required.spirit.data.agent.data', 0.2, function () {
+test.run('loaded in a window beside the real data set, the agent branch\'s cache stands at spirit.required.spirit.data.agent.data', 0.2, function () {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   // A page's window: the data set knows it is on a page, so its home is the page's node, whatever node a row came from.

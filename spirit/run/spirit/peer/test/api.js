@@ -91,13 +91,13 @@ test.run('it asks for its companion data.js, spirit/peer/data.js, and for nothin
   if (!W.asked) return false;
   return W.asked.length === 1 && W.asked[0] === 'spirit/peer/data.js' ? true : false;
 }, test.limit.quick);
-test.run('server.js mounts the peer family', 0.2, function () {
+test.run('server.js mounts the peer branch', 0.2, function () {
   try { W.mounted = mounted('peer'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
 
 // its shape: verbs, each argument with its rule, no family name of its own (goal/G32.3: the node maps it)
-test.run('it exports its table of verbs and nothing else: it names no family of its own', 0.2, function () {
+test.run('it exports its table of verbs and nothing else: it names no branch of its own', 0.2, function () {
   if (!W.api) return false;
   return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
@@ -118,7 +118,7 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
 }, test.limit.quick);
 
 // "every verb the node mounts for this family, each argument with its rule": the declaration and the table are one
-test.run('it declares every verb the node mounts for the family, and no other', 0.2, function () {
+test.run('it declares every verb the node mounts for the branch, and no other', 0.2, function () {
   if (!W.api) return false;
   if (!W.mounted) return false;
   const node = Object.keys(W.mounted).sort();

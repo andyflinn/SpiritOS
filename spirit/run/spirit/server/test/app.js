@@ -704,7 +704,7 @@ function ownPart() {
   }, test.limit.quick);
   // Apps of spirit/app/ since goal/G43.27: the family's interface at the top of the app folder, no family/ left. Every
   // app folder of the tree, read from the folder, so a new one is judged the day it lands.
-  test.run('no app folder of spirit/app/ holds a family/ folder', 0.2, function () {
+  test.run('no app folder of spirit/app/ holds a branch/ folder', 0.2, function () {
     const apps = path.join(RUN, 'spirit', 'app');
     let names = [];
     try { names = fs.readdirSync(apps, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; }); } catch (e) { names = []; }
@@ -721,7 +721,7 @@ function ownPart() {
   // A join onto 'family' is a path; a bare 'family' is no path since goal/G41.14, where it names a column and a field
   // (Andy: "these four following NAMES will be used in SpiritOS: bundle > branch > family > verb").
   const FAMILY_PATH_WRITTEN = [/\.family(?=['"`\/\\]|$)/m, /(^|[^\\])\/?family\/api\.js/, /join\([^)]*['"`]family['"`]\s*[),]/];
-  test.run('no file outside appServer\'s branchPath writes a family path', 0.2, function () {
+  test.run('no file outside appServer\'s branchPath writes a branch path', 0.2, function () {
     const SPIRIT_JS = path.join(RUN, 'spirit', 'spirit.js');
     const writers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && f !== SPIRIT_JS; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
@@ -767,7 +767,7 @@ function ownPart() {
   }, test.limit.quick);
 
   // the first subscribe: a full push
-  test.run('a subscribe follows the publisher\'s key and asks its family to subscribe it', 0.2, async function () {
+  test.run('a subscribe follows the publisher\'s key and asks its branch to subscribe it', 0.2, async function () {
     if (noServer()) return false;
     bootstrap = [row(GOAL), row(item(1)), row(item(2))];
     const first = await O.s.subscribe(PUBLISHER, NAME);
@@ -1169,7 +1169,7 @@ function ownPart() {
     const one = C.one || {};
     return (!!one.byNode && one.byNode.length === 1 && !!one.top && one.top.length === 1) || false;
   }, test.limit.quick);
-  test.run('under the sender\'s key its spirit.required.spirit.data holds the family, as <key>.<family>', 0.2, function () {
+  test.run('under the sender\'s key its spirit.required.spirit.data holds the branch, as <key>.<branch>', 0.2, function () {
     const one = C.one || {};
     return (Array.isArray(one.family) && one.family.indexOf(FAMILY) !== -1) || false;
   }, test.limit.quick);
@@ -1208,11 +1208,11 @@ function ownPart() {
   // A family with none: the oldest rows go first (appServer's shedOldest). The rows kept are the newest, in order, and
   // the last row sent is among them.
   const tail = function (kept, last) { return kept.length > 1 && kept.length < 21 && kept[kept.length - 1] === last && kept.indexOf('head') === -1; };
-  test.run('past the limit, a family with no cache rules of its own loses its oldest rows first, and the newest stay', 0.2, function () {
+  test.run('past the limit, a branch with no cache rules of its own loses its oldest rows first, and the newest stay', 0.2, function () {
     const kept = Array.isArray((C.full || {}).kept) ? C.full.kept : [];
     return (tail(kept, 'b10') && kept.indexOf('b1') !== -1) || false;
   }, test.limit.quick);
-  test.run('past the limit, a family with a shed of its own is shed by it, never by the app server\'s default', 0.2, function () {
+  test.run('past the limit, a branch with a shed of its own is shed by it, never by the app server\'s default', 0.2, function () {
     clearCache('cacheShed');
     const shed = runChild('limit', 'cacheShed', SHED_FAMILY);
     const kept = Array.isArray(shed.kept) ? shed.kept : [];

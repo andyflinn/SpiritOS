@@ -36,7 +36,7 @@ function world() {
 // data.js: what a page knows of the icon set, following the one job spirit.app.icons (goal/G43.19).
 // One test.run per test (goal/G47.2). What the world made, for the tests after it.
 let w = null;
-test.run('the icons family\'s data answers rows, row and watch', 0.2, function () {
+test.run('the icons branch\'s data answers rows, row and watch', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   const made = world();
   if (!made.I) return false;

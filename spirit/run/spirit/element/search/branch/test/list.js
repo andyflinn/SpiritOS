@@ -78,11 +78,11 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the search element, its row element and the family selector through spirit.require', 0.2, function () {
+test.run('it requires the search element, its row element and the branch selector through spirit.require', 0.2, function () {
   if (!required) return false;
   return ['spirit/element/search.js', 'spirit/element/search/branch/row.js', 'spirit/element/search/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
-test.run('it requires the auth family\'s interface, spirit/auth/api.js', 0.2, function () {
+test.run('it requires the auth branch\'s interface, spirit/auth/api.js', 0.2, function () {
   if (!loaded) return false;
   return loaded.indexOf('spirit/auth/api.js') !== -1 || false;
 }, test.limit.quick);
@@ -111,7 +111,7 @@ test.run('it fills as soon as it is drawn', 0.2, function () {
 }, test.limit.quick);
 // goal/G41.14: a view of the node's branches, kept current by the node's stream, so every branch list on a page agrees;
 // goal/G41.28: the branch the auth family's data.js keeps.
-test.run('it is a view of the auth family\'s branches as kept in the spirit object\'s cache', 0.2, function () {
+test.run('it is a view of the auth branch\'s branches as kept in the spirit object\'s cache', 0.2, function () {
   if (!l) return false;
   const B = ((global.window.spirit.required.spirit.data || {}).auth || {}).data && global.window.spirit.required.spirit.data.auth.data.branches;
   return !!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch ? true : false;
@@ -143,7 +143,7 @@ test.run('it hands its search no matched function of its own, so the whole row i
 }, test.limit.quick);
 // goal/G41.14: a picked branch is shown by what it reaches, never its number (Andy: "the bundleSelector shows a
 // fucking number is selected instead of the fucking label").
-test.run('a picked branch is shown as its family and verb, or as its family with (ALL), and never as its number', 0.2, function () {
+test.run('a picked branch is shown as its branch and verb, or as its branch with (ALL), and never as its number', 0.2, function () {
   if (!l) return false;
   const nm = typeof o.name === 'function' ? [o.name({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }, '3'), o.name({ id: 4, bundle: 7, family: 'files', verb: '' }, '4')] : null;
   return nm && nm[0] === 'desk.chat.add' && nm[1] === 'files (ALL)' ? true : false;
@@ -157,7 +157,7 @@ test.run('a picked branch is shown as its family and verb, or as its family with
 // goal/G41.26, Andy: "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
 // user-can see, which elements belong to the search." The shape (cw, under his go): the branch list's family selector
 // moves into the 🪣 row, handed to the search; no filter row of its own above the list.
-test.run('it makes one family selector and hands it to the search, for its 🪣 row', 0.2, function () {
+test.run('it makes one branch selector and hands it to the search, for its 🪣 row', 0.2, function () {
   if (!l) return false;
   fam = families[0];
   sel = Array.isArray(l.o.selectors) ? l.o.selectors : [];
@@ -167,17 +167,17 @@ test.run('the list draws no filter row of its own above itself', 0.2, function (
   if (!fam) return false;
   return !host.kids.some(function (k) { return k !== l.host && !within(k, l.host) && (k === fam.container || within(k, fam)); }) ? true : false;
 }, test.limit.quick);
-test.run('the family selector\'s test narrows by the family and verb chosen, and passes every row when none is chosen', 0.2, function () {
+test.run('the branch selector\'s test narrows by the branch and verb chosen, and passes every row when none is chosen', 0.2, function () {
   if (!fam) return false;
   return sel[0] && (fam.family = 'desk', fam.verb = '', sel[0].test({ family: 'files', verb: '' }) === 0 && sel[0].test({ family: 'desk', verb: 'chat.add' }) === 1) && (fam.family = '', sel[0].test({ family: 'files' }) === 1) ? true : false;
 }, test.limit.quick);
-test.run('with nothing chosen, the search narrows by neither family nor verb', 0.2, async function () {
+test.run('with nothing chosen, the search narrows by neither branch nor verb', 0.2, async function () {
   if (!fam) return false;
   asked.length = 0;
   await o.search(o.args('', {}), 'branch');
   return asked[0] && !asked[0].family && !asked[0].verb ? true : false;
 }, test.limit.quick);
-test.run('a family chosen searches again, narrowed by the family', 0.2, async function () {
+test.run('a branch chosen searches again, narrowed by the branch', 0.2, async function () {
   if (!fam) return false;
   const r0 = l.refreshes;
   fam.family = 'desk'; fam.verb = ''; fam.value = 'desk'; fam.dispatchEvent(new Event('change', { bubbles: true }));
@@ -186,7 +186,7 @@ test.run('a family chosen searches again, narrowed by the family', 0.2, async fu
   await o.search(o.args('', {}), 'branch');
   return l.refreshes > r0 && asked[0] && asked[0].family === 'desk' && !asked[0].verb ? true : false;
 }, test.limit.quick);
-test.run('a verb chosen searches again, narrowed by the family and the verb', 0.2, async function () {
+test.run('a verb chosen searches again, narrowed by the branch and the verb', 0.2, async function () {
   if (!fam) return false;
   const r1 = l.refreshes;
   fam.verb = 'chat.add'; fam.value = 'desk.chat.add'; fam.dispatchEvent(new Event('change', { bubbles: true }));

@@ -94,13 +94,13 @@ test.run('server.js mounts the config BRANCH', 0.2, function () {
 }, test.limit.quick);
 
 // its shape: verbs, each argument with its rule, no family name of its own (goal/G32.3: the node maps it)
-test.run('it exports its table of verbs and nothing else: it names no family of its own', 0.2, function () {
+test.run('it exports its table of verbs and nothing else: it names no branch of its own', 0.2, function () {
   if (!W.api) return false;
   return Object.keys(W.api).join() === 'verbs' || false;
 }, test.limit.quick);
 
 // goal/G30.20, Andy: "keep the config family for later use."
-test.run('it declares no verb: the family is kept empty for later use', 0.2, function () {
+test.run('it declares no verb: the branch is kept empty for later use', 0.2, function () {
   if (!W.api) return false;
   return (isPlain(W.verbs) && W.names.length === 0) || false;
 }, test.limit.quick);

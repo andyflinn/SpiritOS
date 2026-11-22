@@ -87,7 +87,7 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   return true;
 }, test.limit.quick);
 
-test.run('the auth family\'s data is on the page, and each table names a branch of its own', 0.2, function () {
+test.run('the auth branch\'s data is on the page, and each table names a branch of its own', 0.2, function () {
   if (!DATA) return false;
   return !!A && !!A.grants && typeof A.grants.row === 'function' && typeof NODE.branch === 'string' && NODE.branch !== '' && typeof AGENT.branch === 'string' && AGENT.branch !== '' && NODE.branch !== AGENT.branch ? true
     : false;

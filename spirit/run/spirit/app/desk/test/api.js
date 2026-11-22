@@ -36,7 +36,7 @@ test.run('the desk\'s api.js loads', 0.2, function () {
 test.run('api.js exports a table of verbs, with at least one verb in it', 0.2, function () {
   return (!!W.api && isPlain(W.verbs) && W.names.length > 0) || false;
 }, test.limit.quick);
-test.run('api.js exports nothing but verbs: it names no family of its own', 0.2, function () {
+test.run('api.js exports nothing but verbs: it names no branch of its own', 0.2, function () {
   return (!!W.api && Object.keys(W.api).join() === 'verbs') || false;
 }, test.limit.quick);
 test.run('every verb\'s arguments are a plain object', 0.2, function () {

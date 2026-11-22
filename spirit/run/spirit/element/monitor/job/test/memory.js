@@ -44,7 +44,7 @@ test.run('it loads through spirit.require, at spirit.element.spirit.element.moni
   return W.loaded === true || false;
 }, test.limit.quick);
 // The box: "Each requires the jobs family's interface".
-test.run('it requires the jobs family\'s interface and the value tile itself', 0.2, function () {
+test.run('it requires the jobs branch\'s interface and the value tile itself', 0.2, function () {
   const code = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
   return code.indexOf("S.require('spirit/job/api.js')") !== -1 && code.indexOf("S.require('spirit/element/monitor/value.js')") !== -1 ? true : false;
 }, test.limit.quick);

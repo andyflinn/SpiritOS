@@ -56,7 +56,7 @@ test.run('its node mount is off: no server, nothing run', 0.2, function () {
   const own = OWN();
   return !!own && !(own.node && own.node.mount === true) && !(own.node && own.node.run === true) ? true : false;
 }, test.limit.quick);
-test.run('no api.js and no data.js in its folder: the jobs family stays spirit/job/', 0.2, function () {
+test.run('no api.js and no data.js in its folder: the jobs branch stays spirit/job/', 0.2, function () {
   return fs.existsSync(path.join(APP, 'element.js')) && !fs.existsSync(path.join(APP, 'api.js')) && !fs.existsSync(path.join(APP, 'data.js')) ? true : false;
 }, test.limit.quick);
 

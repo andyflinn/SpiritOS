@@ -26,7 +26,7 @@ test.run('fileServable refuses spirit/fs/fileSystem.js at its new place, in any 
   const p = 'spirit/fs/fileSystem.js';
   return (typeof FS.fileServable === 'function' && FS.fileServable(p) === false && FS.fileServable(p.toUpperCase()) === false) || false;
 }, test.limit.quick);
-test.run('fileServable still serves the fs family\'s api.js and data.js beside it, which pages load', 0.8, function () {
+test.run('fileServable still serves the fs branch\'s api.js and data.js beside it, which pages load', 0.8, function () {
   return (typeof FS.fileServable === 'function' && FS.fileServable('spirit/fs/api.js') === true && FS.fileServable('spirit/fs/data.js') === true) || false;
 }, test.limit.quick);
 

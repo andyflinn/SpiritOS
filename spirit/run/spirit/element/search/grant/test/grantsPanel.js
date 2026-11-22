@@ -383,7 +383,7 @@ test.run('nothing above the list fills: the heading, the form and the filters ta
   const fills = box.nodes.filter(function (n) { return /\bfill\b/.test(n.className || ''); }).length + box.kids.filter(function (k) { return k !== gl.host && /\bfill\b/.test(k.className || ''); }).length;
   return fills === 0 ? true : false;
 }, test.limit.quick);
-test.run('it hands the grant list its selectors: the ID filter, then the family selector, each named with its test', 0.2, function () {
+test.run('it hands the grant list its selectors: the ID filter, then the branch selector, each named with its test', 0.2, function () {
   if (!gl) return false;
   return sels.length === 2 && sels[0].element === filterId && sels[1].element === filterApi && sels.every(function (x) { return typeof x.test === 'function' && !!x.name; }) ? true
     : false;
@@ -402,7 +402,7 @@ test.run('the ID filter narrows to that ID\'s grants, read from the table\'s key
   filterId.value = ''; filterId.fire('change', { target: filterId });
   return r;
 }, test.limit.quick);
-test.run('the family filter narrows to that family\'s paths', 0.2, function () {
+test.run('the branch filter narrows to that branch\'s paths', 0.2, function () {
   if (!gl) return false;
   const fam = filterApi;
   if (!fam) return false;
@@ -454,7 +454,7 @@ test.run('grantsPanel.js names no deprecated', 0.2, function () {
 // will be cached i'll be able to zero in on things i can delete.. if i delete the first few of your grants invisible ones
 // will become visible, right now i cant even fucking find ANYTHING." The verb half showing only once a branch is chosen is
 // the api selector's, tested in its own folder.
-test.run('its branch filter says every branch when none is chosen, and never family', 0.2, function () {
+test.run('its branch filter says every branch when none is chosen, and never branch', 0.2, function () {
   const fam = filterApi;
   if (!fam) return false;
   const words = Object.keys(fam.opts || {}).map(function (k) { return fam.opts[k]; }).filter(function (v) { return typeof v === 'string'; });
@@ -616,7 +616,7 @@ test.run('Grant reads the chosen bundle\'s branches by asking auth.branch to sea
   const read = w.calls.slice(at0).filter(function (c) { return c.name === 'auth.branch'; })[0];
   return read && read.args.op === 'search' && read.args.bundle === 7 ? true : false;
 }, test.limit.quick);
-test.run('Grant grants each branch through the grants table it was handed, by id and path: family.verb, or the family alone for (ALL)', 0.2, function () {
+test.run('Grant grants each branch through the grants table it was handed, by id and path: branch.verb, or the branch alone for (ALL)', 0.2, function () {
   if (!press) return false;
   const grants = w.calls.slice(at0).filter(function (c) { return c.name === 'grants.grant'; });
   return grants.length === 3 && grants.every(function (c) { return c.args.id === 'J3'; }) && JSON.stringify(grants.map(function (c) { return c.args.path; }).sort()) === '["desk","fs.search","jobs.list"]' ? true

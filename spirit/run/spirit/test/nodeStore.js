@@ -449,7 +449,7 @@ test.run('branches are added, read, changed and deleted by id', 0.4, function ()
   return (g.bundle === W.b1 && g.family === 'desk' && g.verb === 'post' && set === true && W.a.branches.get(W.r2).verb === 'take' &&
     del === true && W.a.branches.get(W.r3) === null && W.a.branches.del(W.r3) === false && W.a.branches.all().length === 2) || false;
 }, test.limit.quick);
-test.run('same finds another branch of the bundle naming the same family and verb, the branch itself left out', 0.4, function () {
+test.run('same finds another branch of the bundle naming the same branch and verb, the branch itself left out', 0.4, function () {
   return (W.a.branches.same(W.b1, 'fs', '', 0) === true && W.a.branches.same(W.b1, 'fs', '', W.r1) === false &&
     W.a.branches.same(W.b2, 'fs', '', 0) === false) || false;
 }, test.limit.quick);

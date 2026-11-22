@@ -58,7 +58,7 @@ const cellsOf = function (r) { const out = {}; (r.cells() || []).forEach(functio
 // What the cell shows as text: its markup, and the text of what it holds that is no input.
 const labelText = function () { return String(hosts.label.innerHTML || '') + hosts.label.kids.filter(function (k) { return !/input|textarea/i.test(k.tag || ''); }).map(function (k) { return String(k.textContent || ''); }).join(''); };
 
-test.run('the row runs on a bare window, with the page\'s data set and the auth family\'s data real', 0.2, async function () {
+test.run('the row runs on a bare window, with the page\'s data set and the auth branch\'s data real', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   asked = [];
   required = [];
@@ -108,7 +108,7 @@ test.run('it requires the shared row element through spirit.require, and no armi
   if (!required) return false;
   return required.indexOf('spirit/element/row.js') !== -1 && required.indexOf('spirit/element/armingButton.js') === -1 ? true : false;
 }, test.limit.quick);
-test.run('it requires the auth family\'s interface, spirit/auth/api.js, which puts the auth family\'s data on the page', 0.2, function () {
+test.run('it requires the auth branch\'s interface, spirit/auth/api.js, which puts the auth branch\'s data on the page', 0.2, function () {
   if (!loaded) return false;
   return loaded.indexOf('spirit/auth/api.js') !== -1 && hasA() ? true : false;
 }, test.limit.quick);

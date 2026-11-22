@@ -66,7 +66,7 @@ test.run('in node, loaded by requiring its api.js, spirit/job/api.js, it stands 
   const X = S.required.spirit.data && S.required.spirit.data['job'] && S.required.spirit.data['job'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.required.spirit.data, it makes its family there', 0.2, function () {
+test.run('run beside spirit.required.spirit.data, it makes its branch there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);

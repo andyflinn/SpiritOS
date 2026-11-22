@@ -238,7 +238,7 @@ if (apps.length) {
       return !!j && !j.threw && !('kind' in j) && !('operated' in j);
     });
   }, test.limit.quick);
-  test.run('its name is no verb of the app family', 0.4, function () {
+  test.run('its name is no verb of the app branch', 0.4, function () {
     let familyVerbs = [];
     try { familyVerbs = Object.keys(require(path.join(RUN, 'spirit', 'app', 'api.js')).verbs || {}); } catch (e) { familyVerbs = []; }
     return overAll(apps, function (b) {

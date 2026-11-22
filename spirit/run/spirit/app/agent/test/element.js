@@ -1056,7 +1056,7 @@ async function paneFills(t) {
     return (all.length >= 4 && !bad.length) ? true : false;
   }, test.limit.quick);
   // ── each list pane is a view of its table in the agent family's cache (goal/G41.28) ──
-  test.run('every list pane is handed its table\'s branch of the agent family\'s cache', 0.2, async function () {
+  test.run('every list pane is handed its table\'s branch of the agent branch\'s cache', 0.2, async function () {
     if (STOP) return false;
 
     AD = ((w.win.spirit.required.spirit.data || {}).agent || {}).data;

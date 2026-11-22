@@ -55,7 +55,7 @@ test.run('spirit/auth/api.js declares the bundle verb with an op, a numeric id, 
   return (b && b.op === 'spirit.type.string.tableOp' && /^spirit\.type\.number\.[A-Za-z]+\?$/.test(b.id) && b.label === 'spirit.type.string.label?' && b.text === 'spirit.type.string.descriptionSelect?' && typeof b.owner === 'string' && /^spirit\.type\.[A-Za-z.]+\?$/.test(b.owner) && Object.keys(b).length === 5) ? true : false;
 }, test.limit.quick);
 
-test.run('spirit/auth/api.js declares the branch verb with an op, an id, a bundle, a family, a verb and a search text, all flat', 0.2, async function () {
+test.run('spirit/auth/api.js declares the branch verb with an op, an id, a bundle, a branch, a verb and a search text, all flat', 0.2, async function () {
   r = verbs.branch;
   const num = /^spirit\.type\.number\.[A-Za-z]+\?$/;
   const word = /^spirit\.type\.string\.word(Select)?\?$/;
@@ -135,7 +135,7 @@ test.run('a search of words ranks the bundle that has them first', 0.2, async fu
 }, test.limit.quick);
 
 // A branch: a bundle, a family of the tree, a verb of it or all.
-test.run('a branch add naming a bundle, a family and a verb answers an id, a number', 0.2, async function () {
+test.run('a branch add naming a bundle, a branch and a verb answers an id, a number', 0.2, async function () {
   if (!auth) return false;
   whole = await call(auth, 'branch', { op: 'add', bundle: reader.id, family: 'files', verb: '' });
   return (isNum(whole.id)) ? true : false;
@@ -147,13 +147,13 @@ test.run('a branch may name a single verb', 0.2, async function () {
   return (isNum(one.id) && one.id !== whole.id) ? true : false;
 }, test.limit.quick);
 
-test.run('a verb left out is the empty verb, all of the family', 0.2, async function () {
+test.run('a verb left out is the empty verb, all of the branch', 0.2, async function () {
   if (!auth) return false;
   noVerb = await call(auth, 'branch', { op: 'add', bundle: desk.id, family: 'files' });
   return (isNum(noVerb.id) && (await call(auth, 'branch', { op: 'get', id: noVerb.id })).verb === '') ? true : false;
 }, test.limit.quick);
 
-test.run('a branch get by id answers its id, bundle, family and verb, and nothing more', 0.2, async function () {
+test.run('a branch get by id answers its id, bundle, branch and verb, and nothing more', 0.2, async function () {
   if (!auth) return false;
   g = await call(auth, 'branch', { op: 'get', id: one.id });
   return (g.id === one.id && g.bundle === desk.id && g.family === 'desk' && g.verb === 'chat.add' && Object.keys(g).length === 4) ? true : false;
@@ -174,22 +174,22 @@ test.run('no BRANCH is refused bad-request', 0.2, async function () {
   return ((await call(auth, 'branch', { op: 'add', bundle: reader.id, verb: 'read' })).refusal === 'bad-request') ? true : false;
 }, test.limit.quick);
 
-test.run('a family the tree does not serve is refused no-such-family', 0.2, async function () {
+test.run('a branch the tree does not serve is refused no-such-branch', 0.2, async function () {
   if (!auth) return false;
   return ((await call(auth, 'branch', { op: 'add', bundle: reader.id, family: 'nowhere', verb: '' })).refusal === 'no-such-family') ? true : false;
 }, test.limit.quick);
 
-test.run('a verb the family does not serve is refused no-such-verb', 0.2, async function () {
+test.run('a verb the branch does not serve is refused no-such-verb', 0.2, async function () {
   if (!auth) return false;
   return ((await call(auth, 'branch', { op: 'add', bundle: reader.id, family: 'files', verb: 'write' })).refusal === 'no-such-verb') ? true : false;
 }, test.limit.quick);
 
-test.run('the same family and verb twice in one bundle is refused already-in-bundle', 0.2, async function () {
+test.run('the same branch and verb twice in one bundle is refused already-in-bundle', 0.2, async function () {
   if (!auth) return false;
   return ((await call(auth, 'branch', { op: 'add', bundle: desk.id, family: 'desk', verb: 'chat.add' })).refusal === 'already-in-bundle') ? true : false;
 }, test.limit.quick);
 
-test.run('the same family and verb in another bundle is a branch of its own', 0.2, async function () {
+test.run('the same branch and verb in another bundle is a branch of its own', 0.2, async function () {
   if (!auth) return false;
   return (isNum((await call(auth, 'branch', { op: 'add', bundle: reader.id, family: 'desk', verb: 'chat.add' })).id)) ? true : false;
 }, test.limit.quick);
@@ -229,7 +229,7 @@ test.run('a branch search filtered by bundle narrows to that bundle\'s branches'
   return (ofDesk.length === 2 && ofDesk.every(function (x) { return x && x.bundle === desk.id; })) ? true : false;
 }, test.limit.quick);
 
-test.run('a branch search filtered by family narrows to that family', 0.2, async function () {
+test.run('a branch search filtered by branch narrows to that branch', 0.2, async function () {
   if (!auth) return false;
   ofFiles = await keysOf({ family: 'files' });
   return (ofFiles.length === 2 && ofFiles.every(function (x) { return x.family === 'files'; })) ? true : false;
@@ -261,7 +261,7 @@ test.run('node.db has a bundle table of an id that is an integer key, a label an
   return (JSON.stringify(names(colsOf('bundle'))) === '["id*","label","owner"]' && /INT/i.test((colsOf('bundle').filter(function (c) { return c.name === 'id'; })[0] || {}).type || '')) ? true : false;
 }, test.limit.quick);
 
-test.run('node.db has a branch table of an id that is the key, a bundle, a family and a verb', 0.2, async function () {
+test.run('node.db has a branch table of an id that is the key, a bundle, a branch and a verb', 0.2, async function () {
   if (!auth) return false;
   return (JSON.stringify(names(colsOf('branch'))) === '["bundle","family","id*","verb"]') ? true : false;
 }, test.limit.quick);
@@ -642,7 +642,7 @@ test.run('a node-owned bundle is deleted', 0.2, async function () {
   return (!ndel.refusal) ? true : false;
 }, test.limit.quick);
 
-test.run('on a scratch node with no FS verb, a branch naming a verb the family serves is made', 0.2, async function () {
+test.run('on a scratch node with no FS verb, a branch naming a verb the branch serves is made', 0.2, async function () {
   if (!auth) return false;
   try { fs.rmSync(bootRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
   // Goal/G43.20: no branch carries an FS set, so none is granted.
@@ -756,7 +756,7 @@ test.run('testicle, another server, gets its own enableRemote, owned by testicle
   if (!b) return false;
   return JSON.stringify(await shapeOf(ownFirst, b)) === JSON.stringify(['testicle/']) || false;
 }, test.limit.quick);
-test.run('files, a node family that serves no remote, gets no bundle', 0.2, async function () {
+test.run('files, a node branch that serves no remote, gets no bundle', 0.2, async function () {
   if (!ownFirst) return false;
   return !(await ownBundles(ownFirst)).some(function (b) { return b.owner === 'files'; }) || false;
 }, test.limit.quick);

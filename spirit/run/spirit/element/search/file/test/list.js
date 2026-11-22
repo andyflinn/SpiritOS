@@ -81,7 +81,7 @@ test.run('as it loads, it requires no data script, as only an api.js requires it
   if (!loaded) return false;
   return !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it requires the fs family\'s interface, spirit/fs/api.js, which puts the fs family\'s data on the page', 0.2, function () {
+test.run('it requires the fs branch\'s interface, spirit/fs/api.js, which puts the fs branch\'s data on the page', 0.2, function () {
   if (!loaded) return false;
   return loaded.indexOf('spirit/fs/api.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
@@ -102,7 +102,7 @@ test.run('it draws one probabilitySearch into a fill box of its host', 0.2, asyn
   if (l) o = l.o;
   return !!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML) ? true : false;
 }, test.limit.quick);
-test.run('it is a view of the fs family\'s file tree in spirit.required.spirit.data.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
+test.run('it is a view of the fs branch\'s file tree in spirit.required.spirit.data.fs.data.branch, in path order, filled as it is drawn', 0.2, function () {
   if (!l) return false;
   return typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]' ? true : false;
 }, test.limit.quick);

@@ -1146,7 +1146,7 @@ function mountPart() {
     N = await boot(s.run); live.push(N.child);
     return N.up || false;
   }, test.limit.slow);
-  test.run('the throwaway app is a row of the app family', 0.2, async function () {
+  test.run('the throwaway app is a row of the app branch', 0.2, async function () {
     return (!noNode() && !!(await rowOf(N.base, NAME))) || false;
   }, test.limit.quick);
 
@@ -1259,17 +1259,17 @@ function mountPart() {
     await stop(kid);
     return readJson(seen);
   };
-  test.run('a client gets back what it kept of a node family', 0.2, async function () {
+  test.run('a client gets back what it kept of a node branch', 0.2, async function () {
     if (!s) return false;
     const keptOld = await kept('contact');
     return (!!keptOld && keptOld.kept === 'contact') || false;
   }, test.limit.quick);
-  test.run('a client gets back nothing of a family with no data.js here', 0.2, async function () {
+  test.run('a client gets back nothing of a branch with no data.js here', 0.2, async function () {
     if (!s) return false;
     const keptNone = await kept('noSuchFamily');
     return !keptNone || false;
   }, test.limit.slow);
-  test.run('a client gets back what it kept of the new family', 0.2, async function () {
+  test.run('a client gets back what it kept of the new branch', 0.2, async function () {
     if (!s) return false;
     const keptNew = await kept(NAME);
     return (!!keptNew && keptNew.kept === NAME) || false;
@@ -1402,12 +1402,12 @@ function mountPart() {
     if (noPage()) return false;
     return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
   }, test.limit.quick);
-  test.run('a page binds the new family by its name, and its verb answers', 0.2, async function () {
+  test.run('a page binds the new branch by its name, and its verb answers', 0.2, async function () {
     if (noPage()) return false;
     const pinged = await onPage("spirit.ready.then(function () { return spirit.require(spirit.branchPath('" + NAME + "')); }).then(function (f) { return f.ping({}); })");
     return (!!pinged && !!pinged.v && Number(pinged.v.pid) > 0) || false;
   }, test.limit.quick);
-  test.run('on a page, binding the family by its api.js loads and runs the data.js beside <name>.js', 0.2, async function () {
+  test.run('on a page, binding the branch by its api.js loads and runs the data.js beside <name>.js', 0.2, async function () {
     if (noPage()) return false;
     const managed = await onPage("spirit.ready.then(function () { return spirit.require(spirit.branchPath('" + NAME + "')); }).then(function () { return window.__appData; })");
     return (!!managed && managed.v === NAME) || false;
@@ -1431,7 +1431,7 @@ function mountPart() {
     if (!one) return false;
     return inNode(one).stands === true || false;
   }, test.limit.quick);
-  test.run('in a process, requiring the new family\'s api.js loads and runs its data.js', 0.2, function () {
+  test.run('in a process, requiring the new branch\'s api.js loads and runs its data.js', 0.2, function () {
     if (!s) return false;
     const found = inNode(NAME);
     return (found.stands === true && found.mark === NAME) || false;

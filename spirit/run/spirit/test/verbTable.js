@@ -114,7 +114,7 @@ test.run('call of a handler whose promise fails says handler-failed', 0.2, async
 }, test.limit.quick);
 
 // ── door: the loopback door over the table and the app servers ──
-test.run('the door\'s api is the app servers\' tree with the table\'s own families in it', 0.2, async function () {
+test.run('the door\'s api is the app servers\' tree with the table\'s own branches in it', 0.2, async function () {
   const t = createVerbTable();
   t.mount('zz', '', { ping: { request: {}, reply: {}, handler: answers({}) } }, { wire: false });
   const apps = { apps: function () { return ['app1']; }, ask: function () { return Promise.resolve({ status: 200, body: { app1: { v: { request: {}, reply: {} } } } }); } };

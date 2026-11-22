@@ -595,7 +595,7 @@ const fam = function (name) {
     return name === 'desk' && verb === 'items' ? { search: function (args) { asked.push({ name: 'desk.items.search', args: args }); return Promise.resolve({ ok: true, items: [] }); } } : at;
   } });
 };
-test.run('typing asks srv.search on the family spirit.ready holds', 0.2, async function () {
+test.run('typing asks srv.search on the branch spirit.ready holds', 0.2, async function () {
   asked = [];
   refuse = null;
   bound = [];
@@ -615,10 +615,10 @@ test.run('typing asks srv.search on the family spirit.ready holds', 0.2, async f
   await tick();
   return (asked.length === 1 && asked[0].name === 'srv.search' && asked[0].args.text === 'ro') ? true : false;
 }, test.limit.quick);
-test.run('the answer of the family spirit.ready holds joins the list', 0.2, function () {
+test.run('the answer of the branch spirit.ready holds joins the list', 0.2, function () {
   return (cs.shown().indexOf('r1') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('ask goes the same way, through the family spirit.ready holds', 0.2, async function () {
+test.run('ask goes the same way, through the branch spirit.ready holds', 0.2, async function () {
   return ((await Ls.ask('count', { a: 1 })).n === 3 && asked[asked.length - 1].name === 'srv.count') ? true : false;
 }, test.limit.quick);
 test.run('a refused call rejects ask with the node\'s words', 0.2, async function () {
@@ -627,7 +627,7 @@ test.run('a refused call rejects ask with the node\'s words', 0.2, async functio
   try { await Ls.ask('count'); } catch (err) { refused = err.message; }
   return (refused === 'not yours') ? true : false;
 }, test.limit.quick);
-test.run('a family not on spirit.ready is bound by requiring its family path through the spirit object', 0.2, async function () {
+test.run('a branch not on spirit.ready is bound by requiring its branch path through the spirit object', 0.2, async function () {
   refuse = null;
   Ls.destroy();
   co = container();
@@ -638,7 +638,7 @@ test.run('a family not on spirit.ready is bound by requiring its family path thr
   await tick();
   return (bound.indexOf('spirit/app/other/api.js') !== -1 && asked[asked.length - 1].name === 'other.find') ? true : false;
 }, test.limit.quick);
-test.run('a dotted verb is a path into the family', 0.2, async function () {
+test.run('a dotted verb is a path into the branch', 0.2, async function () {
   Lo.destroy();
   cd = container();
   Ld = PS.create(cd, { server: 'desk', verb: 'items.search', data: branchOf([]), columns: [{ field: 'name' }] });

@@ -174,7 +174,7 @@ test.run('no row edits its label: an editable asked for is handed to no row', 0.
 // Andy, box: "if the bundleSelector is not configured for an appServer, the bundleSelector will show/search ALL/ANY
 // bundles", and "if the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that
 // Appserver".
-test.run('made for an app server, its search asks auth.bundle to search the trimmed text with that server\'s family as the owner', 0.2, async function () {
+test.run('made for an app server, its search asks auth.bundle to search the trimmed text with that server\'s branch as the owner', 0.2, async function () {
   if (!listed()) return false;
   E.search.bundle.list.create({}, { face: 'dropdown', family: 'agent' });
   await settle();

@@ -463,7 +463,7 @@ test.run('the provider editor\'s fields in order: label, url, API key as a secre
 // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
 // node that served them, and is read through spirit.required.spirit.data.agent.data.
 const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
-test.run('its page files require the agent family\'s interface, spirit/app/agent/api.js', 0.2, function () {
+test.run('its page files require the agent branch\'s interface, spirit/app/agent/api.js', 0.2, function () {
   if (!P.made) return false;
   return P.made.required.indexOf('spirit/app/agent/api.js') !== -1 || false;
 }, test.limit.quick);
@@ -471,7 +471,7 @@ test.run('its page files require no data script, as only an api.js requires its 
   if (!P.made) return false;
   return !P.made.required.some(function (p) { return (/data\.js$/).test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('the agent family\'s data.js is loaded with its api.js, and its provider branch is the home node\'s agent/provider path', 0.2, function () {
+test.run('the agent branch\'s data.js is loaded with its api.js, and its provider branch is the home node\'s agent/provider path', 0.2, function () {
   if (!P.made) return false;
   const DATA = global.window.spirit.required.spirit.data;
   const AD = P.AD = ((global.window.spirit.required.spirit.data || {}).agent || {}).data;

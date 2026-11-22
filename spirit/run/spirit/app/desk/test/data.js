@@ -60,13 +60,13 @@ test.run('in node, required by an appServer that subscribes, it answers a cache 
   CACHE = inNode && inNode.cache;
   return (!!CACHE && ['keep', 'shed', 'answer'].every(function (f) { return typeof CACHE[f] === 'function'; })) ? true : false;
 }, test.limit.quick);
-test.run('the desk family\'s api.js holds its verbs alone, with no cache', 0.2, function () {
+test.run('the desk branch\'s api.js holds its verbs alone, with no cache', 0.2, function () {
   DESK_API = (function () { try { return require(path.join(RUN, 'spirit', 'app', 'desk', 'api.js')); } catch (e) { return {}; } }());
   return (!('cache' in DESK_API)) ? true : false;
 }, test.limit.quick);
 
 // Its translator is tested below, run as the page and the subscribing appServer run it; without the file there is none.
-test.run('with spirit.required.spirit.data it answers the desk family\'s data with published and took', 0.2, function () {
+test.run('with spirit.required.spirit.data it answers the desk branch\'s data with published and took', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
   // it registers on spirit.required.spirit.data
   w = world();

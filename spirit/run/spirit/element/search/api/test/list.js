@@ -116,7 +116,7 @@ test.run('its None reads what the app names', 0.2, function () {
   if (!sl) return false;
   return sl.opts.all === 'all servers' ? true : false;
 }, test.limit.quick);
-test.run('its rows are the families that answered, sorted', 0.2, function () {
+test.run('its rows are the branches that answered, sorted', 0.2, function () {
   if (!sl) return false;
   return short(names(sl)) === short(['fs', 'jobs']) ? true : false;
 }, test.limit.quick);
@@ -131,7 +131,7 @@ test.run('picking None clears its value', 0.2, function () {
   return servers.value === '' ? true : false;
 }, test.limit.quick);
 // introSpector's deferral, the box: "the only exception is introspector, deferred for network-scope design reasons."
-test.run('load lists another party\'s families', 0.2, async function () {
+test.run('load lists another party\'s branches', 0.2, async function () {
   if (!sl) return false;
   await servers.load(function () { return Promise.resolve(OTHER); }); await settle();
   // The list is made again for the party's source (its rows, not the node's branch); the newest one is the one drawn.

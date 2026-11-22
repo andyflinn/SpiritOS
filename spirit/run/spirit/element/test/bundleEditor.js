@@ -170,7 +170,7 @@ test.run('a valid label asks auth.bundle to add it, as the rule writes it, with 
   // read-only": the add names no owner.
   return (asked.length === 1 && asked[0].op === 'add' && asked[0].label === 'Reader' && Object.keys(asked[0]).length === 2) ? true : false;
 }, test.limit.quick);
-test.run('once answered, but before the bundle is in the auth family\'s cache, the label stays and nothing is said added', 0.2, function () {
+test.run('once answered, but before the bundle is in the auth branch\'s cache, the label stays and nothing is said added', 0.2, function () {
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
   // via the spirit object"): what it adds, it listens for, in spirit.required.spirit.data.auth.data.bundles.
   return (input.value === '  Reader ' && !/\badded\b/.test(text(box))) ? true : false;

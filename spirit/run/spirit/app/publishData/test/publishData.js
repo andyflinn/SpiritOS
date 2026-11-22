@@ -239,7 +239,7 @@ test.run('publishData asks testicle busy 3 times, read-only, and asks nothing el
   pg = r.asks.filter(function (a) { return a.verb === 'busy'; });
   return (pg.length === 3 && pg.every(function (a) { return JSON.stringify(a.args) === '{}'; }) && r.asks.length === 3) ? true : false;
 }, test.limit.quick);
-test.run('every ask goes through the testicle family, on the spirit object', 0.2, function () {
+test.run('every ask goes through the testicle branch, on the spirit object', 0.2, function () {
   if (!WR.ready) return false;
   return (r.required.every(function (a) { return a.require === WR.FAMILY; })) ? true : false;
 }, test.limit.quick);

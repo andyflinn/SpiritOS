@@ -284,7 +284,7 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 // data: the cache, spirit.required.spirit.data (goal/G41.3); branchPath: the one family path function (goal/G41.12); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
 const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'branchPath', 'check', 'debug', 'error', 'escapeHtml', 'event', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'job', 'node', 'outcome', 'peerPost', 'readStream', 'require', 'rules', 'tree'];
-test.run('in node the instance holds exactly its members, and the families it binds', 0.2, function () {
+test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'event', 'job', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
 // BRANCH (goal/G49.2; Andy: "assert the \"branch\"", "yes on the two verbs. fix it all."): the instance finds a branch's
@@ -399,11 +399,11 @@ test.run('in node, the api.js required also stands at spirit.required.spirit.dem
   const o = O(); if (!o) return false;
   return (!!o.bound && !!o.apiPlaced) || false;
 }, test.limit.quick);
-test.run('a bound family has its own names, a dotted verb in camel case too (line.write as lineWrite), and no FS set', 0.2, function () {
+test.run('a bound branch has its own names, a dotted verb in camel case too (line.write as lineWrite), and no FS set', 0.2, function () {
   const o = O(); if (!o) return false;
   return (o.hi === 'hello dave' && o.dotted === 't' && o.fs === true) || false;
 }, test.limit.quick);
-test.run('an argument the verb does not name is refused before it leaves; a verb the family lacks is not on it; no interface: no-interface', 0.2, function () {
+test.run('an argument the verb does not name is refused before it leaves; a verb the branch lacks is not on it; no interface: no-interface', 0.2, function () {
   const o = O(); if (!o) return false;
   return (o.noArg === 'no-such-argument' && o.noVerb === true && o.noFamily === 'no-interface') || false;
 }, test.limit.quick);
@@ -455,14 +455,14 @@ test.run('spirit.peerPost makes one post of peer.post and reads the answer off t
   const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
   return (!!o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'peer.post' && b.args && b.args.to === 'peerKey9'; })) || false;
 }, test.limit.quick);
-test.run('spirit.require with a path, a key and how answers the peer\'s family through spirit.peerPost, once for two callers, not its own', 0.2, function () {
+test.run('spirit.require with a path, a key and how answers the peer\'s branch through spirit.peerPost, once for two callers, not its own', 0.2, function () {
   const o = O(); if (!o) return false;
   return (!!o.peer && o.peer[0] === true && o.peer[2] === 'hello from peerKey1' && o.peer[3] === true && o.peerHow === 777) || false;
 }, test.limit.quick);
 // goal/G43.32; Andy: "clients don't run code from afar, they run their own FUCKING copy", "DO IT! WITH CODE FROM THE
 // OWN NODE!": the peer's family is made from this root's own spirit/demo/api.js; what the peer hands back is never run.
 // Code from afar run here is a hole: 0.8.
-test.run('a peer\'s family is made without asking the peer for its api.js', 0.8, function () {
+test.run('a peer\'s branch is made without asking the peer for its api.js', 0.8, function () {
   const o = O(); if (!o) return false;
   return (!!o.peer && o.peer[1] === 0) || false;
 }, test.limit.quick);
@@ -470,7 +470,7 @@ test.run('nothing the peer hands back is run: its code never ran here', 0.8, fun
   const o = O(); if (!o) return false;
   return o.peerRan === false || false;
 }, test.limit.quick);
-test.run('the peer\'s family has the verbs of its own copy, hello, and none the peer named (peerOnly)', 0.8, function () {
+test.run('the peer\'s branch has the verbs of its own copy, hello, and none the peer named (peerOnly)', 0.8, function () {
   const o = O(); if (!o) return false;
   return o.peerOwn === true || false;
 }, test.limit.quick);
@@ -501,7 +501,7 @@ test.run('with no port in its environment.json, require of an interface and tree
 // stands there and binds when first called; one with no interface is refused no-interface when called.
 // The one family start calls is node, for node.card (goal/G41.28, Q10: "yes."): its api is asked as it is called. Never the
 // whole api, and no other family's.
-test.run('spirit.start() asks no api, spirit.ready answers the instance, a family binds when first called; no interface: no-interface', 0.2, async function () {
+test.run('spirit.start() asks no api, spirit.ready answers the instance, a branch binds when first called; no interface: no-interface', 0.2, async function () {
   const wq = T.wq = page();
   const started = wq.spirit.start();
   const again = wq.spirit.start();
@@ -671,7 +671,7 @@ test.run('on a page, an interface answers its member on window.spirit', 0.2, asy
   const pf = await T.wq.spirit.require(T.wq.spirit.branchPath('demo'));
   return pf === T.wq.spirit.demo || false;
 }, test.limit.quick);
-test.run('on a page, a require with a key answers the peer\'s family through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
+test.run('on a page, a require with a key answers the peer\'s branch through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const pp = await wq.spirit.require(wq.spirit.branchPath('demo'), 'peerKey2');
@@ -802,12 +802,12 @@ test.run('the page called verbs as it loaded', 0.2, async function () {
   L.asked = L.atLoad.filter(function (c) { return c.call === 'api' && c.args && c.args.branch; }).map(function (c) { return String(c.args.branch); });
   return L.verbCalls.length > 0 || false;
 }, test.limit.slow);
-test.run('on a real page, the page never asks for the whole api, an api call with no family', 0.2, function () {
+test.run('on a real page, the page never asks for the whole api, an api call with no branch', 0.2, function () {
   if (!L.atLoad) return false;
   const whole = L.atLoad.filter(function (c) { return c.call === 'api' && !(c.args && c.args.branch); });
   return !whole.length || false;
 }, test.limit.quick);
-test.run('on a real page, no family\'s api is asked that the page neither calls nor reads the data of', 0.2, function () {
+test.run('on a real page, no branch\'s api is asked that the page neither calls nor reads the data of', 0.2, function () {
   if (!L.atLoad) return false;
   // A FAMILY WHOSE DATA THE PAGE LOADED IS USED (goal/G47.1, Andy's rule: "every api.js requires it's companion data.js, and is
   // the only script to require that data.js"): requiring a branch's api.js is how a page gets that branch's data, so a family
@@ -849,7 +849,7 @@ test.run('on a real page, no detail is open, and none of an app detail\'s files 
   const detail = L.gets.filter(function (g) { return /^spirit\/element\/search\/app\/detail\.js$|^spirit\/element\/appInstaller\.js$|^spirit\/element\/search\/app\/(serverDEBUG|changeAppIcon|changeAppLabel|rowFormSetShell)\.js$/.test(g.file); });
   return !detail.length || false;
 }, test.limit.quick);
-test.run('on a real page, no family\'s api is asked twice', 0.2, function () {
+test.run('on a real page, no branch\'s api is asked twice', 0.2, function () {
   if (!L.atLoad) return false;
   const twice = Array.from(new Set(L.asked)).filter(function (f) { return L.asked.filter(function (x) { return x === f; }).length > 1; });
   return !twice.length || false;
@@ -857,12 +857,12 @@ test.run('on a real page, no family\'s api is asked twice', 0.2, function () {
 // A node family the page has not touched yet, called now through the spirit object: its api is asked once, at
 // first use, and not again on the second call. Which family that is, the page decides as it loads (event, net, peer,
 // owner or config, the first it has not used): its name is in the answer, never the title.
-test.run('one of event, net, peer, owner and config is a family the page has not used yet', 0.2, function () {
+test.run('one of event, net, peer, owner and config is a branch the page has not used yet', 0.2, function () {
   if (!L.atLoad) return false;
   L.fresh = ['event', 'net', 'peer', 'owner', 'config'].filter(function (f) { return !L.used.has(f) && L.asked.indexOf(f) === -1; })[0] || '';
   return !!L.fresh || false;
 }, test.limit.quick);
-test.run('the family the page has not used yet is bound on the page once it is required', 0.2, async function () {
+test.run('the branch the page has not used yet is bound on the page once it is required', 0.2, async function () {
   if (!L.fresh) return false;
   const fresh = L.fresh;
   L.before = calls().length;
@@ -873,7 +873,7 @@ test.run('the family the page has not used yet is bound on the page once it is r
   L.reached = true;
   return (first === true && second === true) || false;
 }, test.limit.slow);
-test.run('on a real page, using the family the page has not used yet for the first time asks its api once, and using it again asks nothing', 0.2, function () {
+test.run('on a real page, using the branch the page has not used yet for the first time asks its api once, and using it again asks nothing', 0.2, function () {
   if (!L.reached) return false;
   const later = calls().slice(L.before).filter(function (c) { return c.call === 'api' && c.args && c.args.branch === L.fresh; });
   return later.length === 1 || false;
@@ -1161,7 +1161,7 @@ function walk(dir, base, out) {
 // familyFinder: an api.js where a family is, no name twice (goal/G43.27)
 // the world
 const FF = {};
-test.run('ten or more family names have an api.js in the tree, contact and relay among them', 0.2, function () {
+test.run('ten or more branch names have an api.js in the tree, contact and relay among them', 0.2, function () {
   const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); }).map(function (f) { return f.slice('spirit/run/'.length); });
   const by = interfaces(RUN, files);
@@ -1207,14 +1207,14 @@ function branchPaths() {
     { cwd: RUN, encoding: 'utf8' }).stdout || '{}');
   return paths;
 }
-test.run('a system family\'s path is spirit/<name>/api.js, so fs is spirit/fs/api.js', 0.2, function () {
+test.run('a system branch\'s path is spirit/<name>/api.js, so fs is spirit/fs/api.js', 0.2, function () {
   return branchPaths().fs === 'spirit/fs/api.js' || false;
 }, test.limit.quick);
 test.run('an app\'s path is spirit/app/<name>/api.js, as for desk and agent', 0.2, function () {
   const p = branchPaths();
   return (p.desk === 'spirit/app/desk/api.js' && p.agent === 'spirit/app/agent/api.js') || false;
 }, test.limit.quick);
-test.run('no path names process/js, a name of no family\'s included', 0.2, function () {
+test.run('no path names process/js, a name of no branch\'s included', 0.2, function () {
   const p = branchPaths();
   return (Object.keys(p).length === 4 && !/process\/js/.test(JSON.stringify(p))) || false;
 }, test.limit.quick);

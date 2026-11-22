@@ -169,7 +169,7 @@ test.run('beside create it places titleRow, fieldLine, stretch, search, branchOf
 // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts"; goal/G47.1, Andy: "every api.js requires it's companion
 // data.js, and is the only script to require that data.js": the element requires the agent family's api.js, whose
 // data.js (spirit/app/agent/data.js) takes the rows from the stream.
-test.run('as it loads, it requires the agent family\'s interface, spirit/app/agent/api.js', 0.2, function () {
+test.run('as it loads, it requires the agent branch\'s interface, spirit/app/agent/api.js', 0.2, function () {
   if (!w || !w.loaded) return false;
   return w.loaded.indexOf('spirit/app/agent/api.js') !== -1 || false;
 }, test.limit.quick);
@@ -201,13 +201,13 @@ test.run('fieldLine draws the label, a 1em gap, then the input to the right edge
   const rule = (/\.agent-line\s*\{([^}]*)\}/.exec(css) || [])[1] || '';
   return (/display:flex/).test(fl) && /class="agent-line"/.test(fl) && !/gap:/.test(fl) && /gap:\s*1em/.test(rule) && /flex:1 1 0/.test(fl) ? true : false;
 }, test.limit.quick);
-test.run('branchOf a table is the home node\'s <node>/agent/<table>, as the agent family\'s cache names it', 0.2, function () {
+test.run('branchOf a table is the home node\'s <node>/agent/<table>, as the agent branch\'s cache names it', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   return AD.branchOf('job') === BRANCH('job') ? true : false;
 }, test.limit.quick);
 // A page where the agent family's cache could not be loaded (its server not running on the node) is refused, saying
 // why: never a list drawn with no branch.
-test.run('with no agent family\'s cache on the page, branchOf refuses and says why', 0.2, function () {
+test.run('with no agent branch\'s cache on the page, branchOf refuses and says why', 0.2, function () {
   if (!E.agentTable || !AD.titleRow) return false;
   const keptAD = ((global.window.spirit.required.spirit.data || {}).agent || {}).data;
   delete ((global.window.spirit.required.spirit.data || {}).agent || {}).data;

@@ -41,14 +41,14 @@ test.run('it loads the shared row element itself', 0.2, function () {
 }, test.limit.quick);
 
 // a family, its row
-test.run('it makes a row of kind family, keyed and named by the family, with no actions', 0.2, function () {
+test.run('it makes a row of kind branch, keyed and named by the branch, with no actions', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;
   R.create({ name: 'fs' });
   R.create({ key: '<x>' });
   a = specs[0]; b = specs[1];
   return a && a.kind === 'family' && a.key === 'fs' && a.row.name === 'fs' && Array.isArray(a.actions) && !a.actions.length ? true : false;
 }, test.limit.quick);
-test.run('its one field is the family\'s name', 0.2, function () {
+test.run('its one field is the branch\'s name', 0.2, function () {
   if (!a) return false;
   return a.fields.length === 1 && a.fields[0].name === 'name' && a.fields[0].paint(a.row) === 'fs' ? true : false;
 }, test.limit.quick);

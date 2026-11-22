@@ -64,12 +64,12 @@ test.run('on a scratch node with the chat app switched on, the chat server answe
 }, test.limit.slow);
 
 // ── the node finds it as the branch chat, the folder's name ──
-test.run('asked for the interface of the family chat, the node answers spirit/app/chat/api.js word for word', 0.2, async function () {
+test.run('asked for the interface of the branch chat, the node answers spirit/app/chat/api.js word for word', 0.2, async function () {
   if (!X.call) return false;
   const fam = await X.call('api', { branch: 'chat' });
   return fam.status === 200 && !!fam.body && fam.body.interface === fs.readFileSync(FILE, 'utf8') ? true : false;
 }, test.limit.quick);
-test.run('asked for the interface of the old family chatClerver, the node answers none', 0.2, async function () {
+test.run('asked for the interface of the old branch chatClerver, the node answers none', 0.2, async function () {
   if (!X.call) return false;
   const old = await X.call('api', { branch: 'chatClerver' });
   return !(old.status === 200 && old.body && old.body.interface) ? true : false;

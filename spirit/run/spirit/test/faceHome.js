@@ -395,7 +395,7 @@ test.run('the queue\'s levels are as they were', 0.2, function () {
 }, test.limit.quick);
 
 // goal/G41.33: a starred face has no restrictions at all, except changing stars.
-test.run('every verb of every family reaches the door, unsealed and sealed', 0.2, async function () {
+test.run('every verb of every branch reaches the door, unsealed and sealed', 0.2, async function () {
   const free = lazy('free', starredWorld);
   let shut = 0;
   for (const fam of allFamilies()) {

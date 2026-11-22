@@ -43,12 +43,12 @@ const line = function (peer, sent, seq, at, text) { return { peer: peer, sent: s
 const X = { w: null, told: [], off: null };
 
 // ── the branch is chat: spirit.required.spirit.data.chat ──
-test.run('it makes the chat family in spirit.required.spirit.data, its reads on its data', 0.2, function () {
+test.run('it makes the chat branch in spirit.required.spirit.data, its reads on its data', 0.2, function () {
   X.w = world();
   const w = X.w;
   return !!w.C && typeof w.C.lines === 'function' ? true : false;
 }, test.limit.quick);
-test.run('it makes no chatClerver family in spirit.required.spirit.data', 0.2, function () {
+test.run('it makes no chatClerver branch in spirit.required.spirit.data', 0.2, function () {
   if (!X.w) return false;
   return !(X.w.D && X.w.D.chatClerver) ? true : false;
 }, test.limit.quick);

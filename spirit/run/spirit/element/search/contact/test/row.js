@@ -34,7 +34,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
 let C = null, D = null, CD = null, V = null;
 let kept, stranger, relay, blocked, ha, hb, ho, found, hf, labelField, gets = null, m = 0;
 
-test.run('the contact row runs on a window of its own, with the data set and the contact family\'s data real', 0.2, function () {
+test.run('the contact row runs on a window of its own, with the data set and the contact branch\'s data real', 0.2, function () {
   global.window = { spirit: {} };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
@@ -101,7 +101,7 @@ test.run('a row carrying publicKey instead of key is keyed by it', 0.2, function
   const byPublic = C.create({ publicKey: 'K9', keep: true });
   return byPublic.key === 'K9' ? true : false;
 }, test.limit.quick);
-test.run('the row requires spirit/contact/api.js, which puts the contact family\'s data in spirit.required.spirit.data on the page', 0.2, function () {
+test.run('the row requires spirit/contact/api.js, which puts the contact branch\'s data in spirit.required.spirit.data on the page', 0.2, function () {
   return required.indexOf('spirit/contact/api.js') !== -1 && CD && typeof CD.contact === 'function' ? true : false;
 }, test.limit.quick);
 

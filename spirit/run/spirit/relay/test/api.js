@@ -92,13 +92,13 @@ test.run('as it loads on a page, it requires its companion spirit/relay/data.js 
   if (!W.api || !W.asked) return false;
   return JSON.stringify(W.asked) === JSON.stringify(['spirit/relay/data.js']) || false;
 }, test.limit.quick);
-test.run('server.js mounts the relay family', 0.2, function () {
+test.run('server.js mounts the relay branch', 0.2, function () {
   try { W.mounted = mounted('relay'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
 
 // its shape: verbs, each argument with its rule, no family name of its own (goal/G32.3: the node maps it)
-test.run('it exports its table of verbs and its names, and nothing else: it names no family of its own', 0.2, function () {
+test.run('it exports its table of verbs and its names, and nothing else: it names no branch of its own', 0.2, function () {
   if (!W.api) return false;
   return (Object.keys(W.api).sort().join() === 'names,verbs' && typeof W.api.names === 'function') || false;
 }, test.limit.quick);
@@ -120,7 +120,7 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
 }, test.limit.quick);
 
 // "every verb the node mounts for this family, each argument with its rule": the declaration and the table are one
-test.run('it declares every verb the node mounts for the family, and no other', 0.2, function () {
+test.run('it declares every verb the node mounts for the branch, and no other', 0.2, function () {
   if (!W.api) return false;
   if (!W.mounted) return false;
   const node = Object.keys(W.mounted).sort();
@@ -214,14 +214,14 @@ test.run('status lists the relays with contact.search, relay and keep true, aske
   if (!S.out) return false;
   return JSON.stringify(S.P.asked) === JSON.stringify([{ q: '*', relay: true, keep: true }]) || false;
 }, test.limit.quick);
-test.run('status then gets each relay listed by its key, through the family\'s own call, and asks it nothing else', 0.2, function () {
+test.run('status then gets each relay listed by its key, through the branch\'s own call, and asks it nothing else', 0.2, function () {
   if (!S.out) return false;
   const verbs = S.P.calls.map(function (c) { return c[0]; });
   const keys = S.P.calls.map(function (c) { return c[1] && c[1].key; });
   return (verbs.every(function (v) { return v === 'get'; }) && JSON.stringify(keys) === JSON.stringify([A, B, C, 'https://d.relay.example'])) || false;
 }, test.limit.quick);
 // goal/G41.28: each relay got is kept by the family's own data script, spirit/relay/data.js, at spirit.required.spirit.data.relay.data
-test.run('it requires spirit/relay/data.js, and each relay got is handed to the relay family\'s data to keep', 0.2, function () {
+test.run('it requires spirit/relay/data.js, and each relay got is handed to the relay branch\'s data to keep', 0.2, function () {
   if (!S.out) return false;
   return (S.P.required.indexOf('spirit/relay/data.js') !== -1 && S.P.kept.indexOf(GETS[A]) !== -1 && S.P.kept.indexOf(GETS[B]) !== -1) || false;
 }, test.limit.quick);

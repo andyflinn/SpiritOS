@@ -65,7 +65,7 @@ test.run('in node, the owner data, brought by spirit/owner/api.js, stands at spi
   const X = S.required.spirit.data && S.required.spirit.data['owner'] && S.required.spirit.data['owner'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.required.spirit.data, the owner data makes its family there', 0.2, function () {
+test.run('run beside spirit.required.spirit.data, the owner data makes its branch there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -79,7 +79,7 @@ test.run('the owner data translates nothing: it adds no translator to spirit.req
   if (!w) return false;
   return w.translators.length === 0 || false;
 }, test.limit.quick);
-test.run('a job of every kind the node streams, and a rename, leave its family\'s cache empty', 0.2, function () {
+test.run('a job of every kind the node streams, and a rename, leave its branch\'s cache empty', 0.2, function () {
   if (!w) return false;
   w.job({ id: 'spirit.fs', data: { command: { op: 'createFile', path: 'a.txt' } } });
   w.job({ id: 'spirit.auth', data: { table: 'bundle', row: { id: 1, label: 'b' } } });

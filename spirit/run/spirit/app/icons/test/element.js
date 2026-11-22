@@ -125,7 +125,7 @@ test.run('the Add asked icons.icon, the app\'s own branch', 0.2, function () {
   if (!W.p1) return false;
   return W.p1.some(function (p) { return (/"call"\s*:\s*"icons\.icon"/).test(p); }) || false;
 }, test.limit.quick);
-test.run('the Add asked nothing of the fs family', 0.2, function () {
+test.run('the Add asked nothing of the fs branch', 0.2, function () {
   if (!W.p1) return false;
   return !W.p1.some(function (p) { return (/"call"\s*:\s*"fs\./).test(p); }) || false;
 }, test.limit.quick);

@@ -52,11 +52,11 @@ test.run('the party is self (this node) until a pick', 0.2, async function () {
   // one line: [party, self by default] [family] [verb]; the form says what to choose
   return (await until(function () { return html().then(function (h) { return /self \(this node\)/.test(h); }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('the family and verb selector stands on the line', 0.2, async function () {
+test.run('the branch and verb selector stands on the line', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   return (await until(function () { return chrome.evaluate('!!(' + SEL + ' && ' + SEL + '.families)'); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('the form says choose a family', 0.2, async function () {
+test.run('the form says choose a branch', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   return (await until(function () { return text().then(function (t) { return /choose a family/.test(t); }); }, 10000)) ? true : false;
 }, test.limit.quick);
@@ -69,7 +69,7 @@ test.run('self\'s tree is this node\'s, with job.search in it', 0.2, async funct
   tree = JSON.parse(await chrome.evaluate('(function () { var s = ' + SEL + '; return JSON.stringify((s && (s.tree || (s.families && s.families.tree))) || null); }())') || 'null');
   return (!!tree && !!tree.job && !!tree.job.search) ? true : false;
 }, test.limit.quick);
-test.run('once a family is chosen, the form says choose a verb', 0.2, async function () {
+test.run('once a branch is chosen, the form says choose a verb', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   pick = function (family, verb) {
       return chrome.evaluate('(function () { var s = ' + SEL + '; s.families.value = ' + JSON.stringify(family) + '; s.families.dispatchEvent(new Event("change", { bubbles: true })); ' + (verb ? 's.verbs.value = ' + JSON.stringify(verb) + '; s.verbs.dispatchEvent(new Event("change", { bubbles: true })); ' : '') + 'return s.value; }())');

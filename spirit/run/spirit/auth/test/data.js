@@ -66,7 +66,7 @@ test.run('in node, requiring the interface spirit/auth/api.js brings the auth da
   const X = S.required.spirit.data && S.required.spirit.data['auth'] && S.required.spirit.data['auth'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);
-test.run('run beside spirit.required.spirit.data, the auth data makes its family there', 0.2, function () {
+test.run('run beside spirit.required.spirit.data, the auth data makes its branch there', 0.2, function () {
   try { w = world(); } catch (e) { w = null; return false; }
   return (!!w.X && typeof w.X === 'object') || false;
 }, test.limit.quick);
@@ -87,7 +87,7 @@ test.run('a bundle row that names no owner keeps none', 0.2, function () {
   const r = w.X.bundles.row(5);
   return (!!r && !('owner' in r) && r.label === 'work') || false;
 }, test.limit.quick);
-test.run('a branch row is kept by its id, with its bundle, family and verb', 0.2, function () {
+test.run('a branch row is kept by its id, with its bundle, branch and verb', 0.2, function () {
   if (!w) return false;
   w.job(row('branch', { id: '7', bundle: '4', family: 'fs', verb: 'load', extra: 1 }));
   return same(w.X.branches.row(7), { id: 7, bundle: 4, family: 'fs', verb: 'load' }) || false;

@@ -36,14 +36,14 @@ const stateRead = function (k) { try { return JSON.parse(fs.readFileSync(stateFi
 // An intrinsic app is always active (goal/G43.14), so it is no app the user set.
 const intrinsicApp = function (k) { try { return JSON.parse(fs.readFileSync(scratchApp(k, k + '.json'), 'utf8')).identity.intrinsic === true; } catch (e) { return false; } };
 
-test.run('spirit/app/script.js is there, the family\'s core module', 0.2, function () { return fs.existsSync(FILE) || false; }, test.limit.quick);
-test.run('spirit/app/api.js is there, as in every core family', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'api.js')) || false; }, test.limit.quick);
-test.run('spirit/app/AGENTS.md is there, as in every core family', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'AGENTS.md')) || false; }, test.limit.quick);
-test.run('spirit/app/data.js is there, as in every core family', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'data.js')) || false; }, test.limit.quick);
-test.run('spirit/app/search.json is there, as in every core family', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'search.json')) || false; }, test.limit.quick);
+test.run('spirit/app/script.js is there, the branch\'s core module', 0.2, function () { return fs.existsSync(FILE) || false; }, test.limit.quick);
+test.run('spirit/app/api.js is there, as in every core branch', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'api.js')) || false; }, test.limit.quick);
+test.run('spirit/app/AGENTS.md is there, as in every core branch', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'AGENTS.md')) || false; }, test.limit.quick);
+test.run('spirit/app/data.js is there, as in every core branch', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'data.js')) || false; }, test.limit.quick);
+test.run('spirit/app/search.json is there, as in every core branch', 0.2, function () { return fs.existsSync(path.join(FOLDER, 'search.json')) || false; }, test.limit.quick);
 
 // THE ONE VERB (Andy, box: "the first verb of the app api is app.search", "no filters, just a search string").
-test.run('search, active, icon and label are the family\'s verbs, and app.shell is gone', 0.2, function () {
+test.run('search, active, icon and label are the branch\'s verbs, and app.shell is gone', 0.2, function () {
   let api = null;
   try { api = require(path.join(FOLDER, 'api.js')); } catch (e) { api = null; }
   const verbs = W.verbs = api && api.verbs;
@@ -92,7 +92,7 @@ test.run('the node\'s api names jobs, so this question can answer', 0.2, async f
   W.tree = await ask(W.node.base, 'api', {});
   return inTree('job') || false;
 }, test.limit.quick);
-test.run('the node\'s api names the app family beside the others', 0.2, function () {
+test.run('the node\'s api names the app branch beside the others', 0.2, function () {
   if (!W.tree) return false;
   return inTree('app') || false;
 }, test.limit.quick);
@@ -141,7 +141,7 @@ test.run('the plugins are the folders with their own json: appSelector and test 
   return (keys === onDisc && keys.split(',').indexOf('appSelector') === -1 && keys.split(',').indexOf('test') === -1) || false;
 }, test.limit.quick);
 // goal/G43.6; Andy, box: "spirit.app also holds the family's verb, search, so no app may take the name of a verb."
-test.run('a folder named after the family\'s verb is no app', 0.2, async function () {
+test.run('a folder named after the branch\'s verb is no app', 0.2, async function () {
   if (noNode()) return false;
   const verbNamed = scratchApp('search');
   fs.mkdirSync(verbNamed, { recursive: true });

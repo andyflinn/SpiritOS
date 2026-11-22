@@ -108,7 +108,7 @@ test.run('introSpector has a visible tile in the app selector', 0.2, async funct
   return await until(function () { return W.chrome.evaluate('!!' + TILE); }, 10000) ? true
     : false;
 }, test.limit.quick);
-test.run('pressing introSpector\'s tile opens it, showing the party self, this node, and the family selector', 0.2, async function () {
+test.run('pressing introSpector\'s tile opens it, showing the party self, this node, and the branch selector', 0.2, async function () {
   if (!W.tiles) return false;
   await W.chrome.evaluate('(function () { var t = ' + TILE + '; if (t) t.click(); return !!t; }())');
   return await until(function () { return W.chrome.evaluate('(function () { var l = Array.prototype.filter.call(document.querySelectorAll("#faces .app-container"), function (c) { return c.offsetParent !== null; }).pop(); return !!l && /self \\(this node\\)/.test(l.innerHTML) && !!l.querySelector(".api-family-selector"); }())'); }, 10000) ? true
