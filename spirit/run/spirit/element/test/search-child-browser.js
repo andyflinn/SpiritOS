@@ -353,7 +353,7 @@ function judgeAll() {
     const n = nameOf(f);
     const red = !!world || !REPORTS[n] || !!REPORTS[n].fail || !!redIn[n];
     test.forScript(f, function () {
-      test.run('its search, ' + n + ', keeps the search rules', 0.4, function () { return !red; }, test.limit.quick);
+      test.run('its search keeps the search rules', 0.4, function () { return !red; }, test.limit.quick);
     });
   });
 }

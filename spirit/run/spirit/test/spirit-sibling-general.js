@@ -112,7 +112,8 @@ const out = {};
       const name = f.split('/').slice(-2, -1)[0];
       out[f] = { placed: !!at && typeof at === 'object', verbs: Object.keys(decl).length,
         unbound: Object.keys(decl).filter(function (v) { return !(fam && typeof fam[names[v] || v] === 'function'); }),
-        same: s[name] === fam };
+        // One place (goal/G49.6): the require answers the api.js object at its path, and spirit holds no branch of that name.
+        same: at === fam && !Object.prototype.hasOwnProperty.call(s, name) };
     } catch (e) { out[f] = { threw: true }; }
   }
   console.log(JSON.stringify(out));
@@ -457,7 +458,7 @@ if (served.length) {
   // required on the node
   // Required on the node, in a process of the scratch node's run root, so its spirit.js knows that node (its
   // environment.json): the test stands without a node of the checkout's own.
-  test.run('its api.js, required on the node, stands at its path in spirit.required, and binds its verbs on spirit under its branch', 0.4, async function () {
+  test.run('its api.js, required on the node, stands at its path in spirit.required with its verbs, and spirit holds no branch of it', 0.4, async function () {
     if (!up()) return false;
     await treeOf();
     const sRun = path.join(N.node.root, 'spirit', 'run');
@@ -2213,13 +2214,14 @@ function oneFile(P) {
   // on any file named list.js, row.js or detail.js, and on any code that still names them"). Its name
   // read from its path; its code with its strings kept, so a require path or a place on the spirit object counts, and its
   // comments left out.
-  // The old names are built from their parts, so this check's own titles do not name them in code.
+  // The old names are built from their parts, so this check's own code does not name them; its titles are fixed strings that
+  // describe them without naming them (goal/G49.6; Andy: "NO FUCKING DYNAMICALLY ASSEMBLING MOTHERFUCKING TEST-TITLES").
   const OLD_PARTS = ['list', 'row', 'detail'].map(function (w) { return w + 'Element'; });
   if (/^spirit\/.+\.js$/.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
-    test.run('its file is named by its word: no ' + OLD_PARTS.map(function (n) { return n + '.js'; }).join(', '), 0.4, function () {
+    test.run('its file is named by its word, never by an old search part name', 0.4, function () {
       return !/^(?:list|row|detail)Element\.js$/.test(path.basename(rel)) || false;
     }, test.limit.quick);
-    test.run('its code names no ' + OLD_PARTS.join(', '), 0.4, function () {
+    test.run('its code names no old search part name', 0.4, function () {
       let src = '';
       try { src = codeOf(fs.readFileSync(full, 'utf8'), false); } catch (e) { return false; }
       return !/\b(?:list|row|detail)Element\b/.test(src) || false;
@@ -2234,10 +2236,10 @@ function oneFile(P) {
   const OLD_SEARCH = ['StringMatch', 'StringObjectMatch', 'Bucket'].map(function (w) { return 'probability' + w; });
   const OLD_SEARCH_RE = new RegExp('\\b(?:' + OLD_SEARCH.join('|') + ')\\.js\\b');
   if (/^spirit\/.+\.js$/.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
-    test.run('its file is not one of the old search files: no ' + OLD_SEARCH.map(function (n) { return n + '.js'; }).join(', '), 0.4, function () {
+    test.run('its file is not one of the three old probability files', 0.4, function () {
       return OLD_SEARCH.indexOf(path.basename(rel, '.js')) === -1 || false;
     }, test.limit.quick);
-    test.run('its code names none of the old search files: ' + OLD_SEARCH.map(function (n) { return n + '.js'; }).join(', '), 0.4, function () {
+    test.run('its code names none of the three old probability files', 0.4, function () {
       let src = '';
       try { src = codeOf(fs.readFileSync(full, 'utf8'), false); } catch (e) { return false; }
       return !OLD_SEARCH_RE.test(src) || false;
@@ -2325,7 +2327,15 @@ const PARTS = [generalRules, branchRules, titleRules, noFuckingGarbage, searchRu
 // let it go and every part after it never ran (de889b3e: part 2 threw, and no test on a node ran for a branch with data).
 function runPart(part, given) {
   try { part(given); } catch (e) {
-    test.run('its general part ' + part.name + ' makes its tests without throwing', 0.2, function () { return false; }, test.limit.quick);
+    // One fixed title per part (goal/G49.6: no title assembled at run time).
+    const fail = function () { return false; };
+    if (part === generalRules) test.run('its general rules make their tests without throwing', 0.2, fail, test.limit.quick);
+    else if (part === branchRules) test.run('its branch rules make their tests without throwing', 0.2, fail, test.limit.quick);
+    else if (part === titleRules) test.run('its title rules make their tests without throwing', 0.2, fail, test.limit.quick);
+    else if (part === noFuckingGarbage) test.run('its garbage rules make their tests without throwing', 0.2, fail, test.limit.quick);
+    else if (part === searchRules) test.run('its search rules make their tests without throwing', 0.2, fail, test.limit.quick);
+    else if (part === testReachRules) test.run('its test reach rules make their tests without throwing', 0.2, fail, test.limit.quick);
+    else test.run('a general part of it makes its tests without throwing', 0.2, fail, test.limit.quick);
   }
 }
 if (!GIVEN.length) PARTS.forEach(function (part) { runPart(part, []); });
