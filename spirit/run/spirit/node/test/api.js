@@ -90,7 +90,7 @@ test.run('it asks for its companion data.js, spirit/node/data.js, and for nothin
   if (!W.asked) return false;
   return W.asked.length === 1 && W.asked[0] === 'spirit/node/data.js' ? true : false;
 }, test.limit.quick);
-test.run('server.js mounts the node family', 0.2, function () {
+test.run('server.js mounts the node BRANCH', 0.2, function () {
   try { W.mounted = mounted('node'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);
