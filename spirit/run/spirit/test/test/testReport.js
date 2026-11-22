@@ -356,6 +356,61 @@ test.run('with no node a suite reports nowhere and still prints its lines', 0.2,
   return (markIn(W.quiet.out, 'it passes') === '✅' && /Test completed\./.test(W.quiet.out)) || false;
 }, test.limit.quick);
 
+// EVERY RESULT REACHES TESTICLE THE MOMENT ITS TEST IS DONE (goal/G49.5; Andy: "write the red to ensure that the testicle
+// server gets a report IMMEDIATELY after completion of a test"; box v144: "every result reaches testicle the moment the page
+// knows it"; and "it is supposed to pick up there where it was interrupted", so nothing may wait in a queue). A planted
+// suite of 100 quick tests, each printing when it ended, against a stand-in node that takes 60 ms to answer each report.
+// Reports sent one after the other would land the last at about 6 s; sent as each test ends, each lands well inside a second.
+const FLOOD = [
+  "'use strict';",
+  "const test = " + REPORTER_FROM(2) + ";",
+  "for (let i = 0; i < 100; i++) test.run('flood ' + i, 0.2, function () { process.stdout.write('ENDED ' + i + ' ' + Date.now() + '\\n'); return true; }, 1000);",
+].join('\n') + '\n';
+function slowNode(ms) {
+  const landed = {};
+  const iface = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'api.js'), 'utf8');
+  const server = http.createServer(function (req, res) {
+    let body = '';
+    req.on('data', function (c) { body += c; });
+    req.on('end', function () {
+      let msg = null;
+      try { msg = JSON.parse(body); } catch (e) { msg = null; }
+      const send = function (status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+      if (!msg) return send(404, { ok: false });
+      if (msg.call === 'api' && msg.args && msg.args.branch === 'testicle') return send(200, { branch: 'testicle', interface: iface });
+      if (msg.call === 'testicle.testicle.set' && msg.args && /^flood \d+$/.test(String(msg.args.test))) {
+        if (landed[msg.args.test] === undefined) landed[msg.args.test] = Date.now();
+        return setTimeout(function () { send(200, { ok: true }); }, ms);
+      }
+      return setTimeout(function () { send(200, { ok: true }); }, ms);
+    });
+  });
+  return new Promise(function (resolve) {
+    server.listen(0, '127.0.0.1', function () { resolve({ port: server.address().port, landed: landed, close: function () { server.close(); } }); });
+  });
+}
+const F = {};
+test.run('a planted suite of 100 quick tests runs against a node that takes 60 ms to answer each report', 0.2, async function () {
+  F.node = await slowNode(60);
+  F.tree = scratchTree(F.node.port);
+  fs.mkdirSync(path.join(F.tree.run, 'flood', 'test'), { recursive: true });
+  fs.writeFileSync(path.join(F.tree.run, 'flood', 'flood.js'), "'use strict';\n");
+  fs.writeFileSync(path.join(F.tree.run, 'flood', 'test', 'flood.js'), FLOOD);
+  const r = await runSuite(F.tree.run, 'flood/test/flood.js');
+  F.ended = {};
+  String(r.out).split('\n').forEach(function (l) { const m = /^ENDED (\d+) (\d+)$/.exec(l.trim()); if (m) F.ended['flood ' + m[1]] = Number(m[2]); });
+  return Object.keys(F.ended).length === 100 || false;
+}, test.limit.slow);
+test.run('every one of the 100 reports reaches the node within a second of its test ending', 0.4, function () {
+  if (!F.ended || Object.keys(F.ended).length !== 100) return false;
+  const late = Object.keys(F.ended).filter(function (t) { return !(F.node.landed[t] !== undefined && F.node.landed[t] - F.ended[t] < 1000); });
+  return late.length === 0 || false;
+}, test.limit.quick);
+test.after(function () {
+  try { if (F.node) F.node.close(); } catch (e) { /* closed */ }
+  try { if (F.tree) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree({ root: F.tree.root }); } catch (e) { /* temp */ }
+});
+
 test.after(function () {
   try { if (W.node) W.node.close(); } catch (e) { /* closed */ }
   [W.tree, W.quietTree].forEach(function (t) { try { if (t) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(t); } catch (e) { /* scratch */ } });
