@@ -475,7 +475,7 @@ if (served.length) {
     await treeOf();
     return overAll(served, function (b) { return !!branchIn(b); });
   }, test.limit.quick);
-  // The interface the node serves for it is its own api.js (goal/G43.27, requirement 2: server.js familyDir looks for
+  // The interface the node serves for it is its own api.js (goal/G43.27, requirement 2: server.js branchDir looks for
   // spirit/app/<name>/api.js, appServer.js withAgents takes the app folder itself as the family folder).
   test.run('the interface the node serves is its api.js', 0.4, async function () {
     if (!up()) return false;

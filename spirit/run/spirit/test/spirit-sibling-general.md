@@ -108,7 +108,7 @@ is the appServer serializes the cache to disk."*
 A scratch node; an app branch switched on first (`app.active`), as its server must run to serve it.
 
 - **The node's api tree holds it**, and **the interface it serves for it is its own `api.js`** (goal/G43.27, requirement 2:
-  server.js familyDir looks for `spirit/app/<name>/api.js`; appServer.js takes the app folder itself as the family folder).
+  server.js branchDir looks for `spirit/app/<name>/api.js`; appServer.js takes the app folder itself as the family folder).
 - **It serves exactly the verbs its `api.js` declares** (goal/G43.20; Andy: *"IN THIS ONE, OR WE'LL NEVER GET FUCKING
   DONE."*, *"WSL, NOTE AND ASSERT THIS IN YOUR TESTS, IN THE PROPER PLACE, DILIGENTLY WITHOUT FUCKING CHEATING."*), beyond it
   only what was decided: appServer's `DEBUG` (desk/G2.5: *"DEBUG auto-verb supplied by appServer is approved."*) and its `remote` and `listener` on every server (goal/G47.5). **No FS

@@ -278,13 +278,13 @@ function createVerbTable() {
     var ownerOf = opts && typeof opts.owner === 'function' ? opts.owner : function () { return { owner: true }; };
     // A FAMILY'S INTERFACE (goal/G32.3; the verb change Andy approved, 2026-10-22: "verb change approved."). api {family}
     // answers {family, interface}, the text of the family's api.js, read from the folder the node mounted it with, or for
-    // a served app from the folder opts.familyDir(name) names (its family folder, spirit.branchPath). The node maps the name; the file names
+    // a served app from the folder opts.branchDir(name) names (its family folder, spirit.branchPath). The node maps the name; the file names
     // none, and the server never hears of the read.
-    var familyDirOf = opts && typeof opts.familyDir === 'function' ? opts.familyDir : function () { return ''; };
+    var branchDirOf = opts && typeof opts.branchDir === 'function' ? opts.branchDir : function () { return ''; };
     function interfaceOf(name) {
       var fam = String(name || '');
       var served = apps && typeof apps.apps === 'function' && apps.apps().indexOf(fam) !== -1;
-      var dir = folders[fam] || (served ? familyDirOf(fam) : '');
+      var dir = folders[fam] || (served ? branchDirOf(fam) : '');
       var text = null;
       if (dir) { try { text = require('fs').readFileSync(require('path').join(dir, 'api.js'), 'utf8'); } catch (e) { text = null; } }
       if (text === null) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-interface', error: 'no interface for the branch ' + fam } });
