@@ -97,5 +97,6 @@ node.err
 # goal/G50.1, the aside: everything inside repo://run/ is ignored except repo://run/spirit/
 /run/*
 !/run/spirit/
-# goal/G50.1: a test's last result, rewritten by every run
-/run/spirit/**/test/*/state.json
+# goal/G50.1: a test's last result, rewritten by every run, in test/<id>/state.json and, for a general test, in
+# test/general/<id>/state.json (box v24), so at any depth under test/
+/run/spirit/**/test/**/state.json
