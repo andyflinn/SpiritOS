@@ -224,7 +224,7 @@ test.run('handed a node and a Chrome, scratchNode and chromePage start neither, 
   if (!HANDED.node || !HANDED.node.up || !HANDED.chrome || HANDED.chrome.error) return false;
   const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const n = await H.scratchNode({ shared: true, servers: ["testicle"] });' +
     ' const p = await H.chromePage(H.findChrome());' +
-    ' let served = false; for (let i = 0; i < 120 && !served; i++) { served = await fetch(n.base + "/api/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: { family: "testicle" } }) }).then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; }); if (!served) await H.sleep(250); }' +
+    ' let served = false; for (let i = 0; i < 120 && !served; i++) { served = await fetch(n.base + "/api/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: { branch: "testicle" } }) }).then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; }); if (!served) await H.sleep(250); }' +
     ' const title = p && p.evaluate ? await p.evaluate("1 + 1") : null;' +
     ' console.log("@@" + JSON.stringify({ base: n.base, run: n.run || "", root: n.root || "", served: served, page: title === 2, port: p && p.port })); try { p.kid.kill(); } catch (e) {} process.exit(0); }());';
   const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: HANDED.node.base, SPIRIT_MOUNT_RUN: HANDED.node.run, SPIRIT_CHROME_PORT: String(HANDED.chrome.port) }) });

@@ -71,7 +71,7 @@ async function batch() {
       // Each of its servers answering its interface before any page is drawn, as a script's own run waited for its own.
       await Promise.all(servers.map(function (name) {
         return H.until(function () {
-          return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { family: name } }) })
+          return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: name } }) })
             .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
         }, 30000);
       }));
@@ -767,7 +767,7 @@ async function session() {
   if (!node.debug) { P.fail = true; return P; }
   if (ownServer) {
     const served = await until(function () {
-      return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { family: own } }) })
+      return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: own } }) })
         .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
     }, 30000);
     if (!served) { P.fail = true; return P; }
