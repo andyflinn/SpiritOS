@@ -169,7 +169,7 @@ test.run('a branch add naming a bundle that is not there is refused no-such-bund
   return ((await call(auth, 'branch', { op: 'add', bundle: 99999, family: 'files', verb: '' })).refusal === 'no-such-bundle') ? true : false;
 }, test.limit.quick);
 
-test.run('no family is refused bad-request', 0.2, async function () {
+test.run('no BRANCH is refused bad-request', 0.2, async function () {
   if (!auth) return false;
   return ((await call(auth, 'branch', { op: 'add', bundle: reader.id, verb: 'read' })).refusal === 'bad-request') ? true : false;
 }, test.limit.quick);
