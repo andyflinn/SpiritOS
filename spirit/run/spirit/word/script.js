@@ -29,6 +29,7 @@
     'job', 
     'node',
     'object',
+    'require',
     'row', 
     'script', 
     'search',
