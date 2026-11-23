@@ -129,7 +129,7 @@ test.run('hold takes script, suite and test, all three required, and holder, opt
   if (!W.api) return false;
   const KEY = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title' };
   const missing = ['script', 'suite', 'test'].filter(function (k) { const a = Object.assign({}, KEY); delete a[k]; return refusedAs('hold', a) !== 'bad-request'; });
-  return (passes('hold', KEY) && passes('hold', Object.assign({}, KEY, { holder: 'MCowBQYDK2VwAyEA' })) && missing.length === 0
+  return (passes('hold', KEY) && passes('hold', Object.assign({}, KEY, { holder: 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=' })) && missing.length === 0
     && refusedAs('hold', Object.assign({}, KEY, { other: 'x' })) === 'no-such-argument') || false;
 }, test.limit.quick);
 test.run('testicle.set takes one test only and refuses a list of results', 0.2, function () {
