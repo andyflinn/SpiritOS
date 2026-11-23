@@ -47,7 +47,7 @@ function node(tag) {
 function under(n) { const out = []; (function walk(x) { x.nodes.concat(x.kids).forEach(function (c) { out.push(c); walk(c); }); }(n)); return out; }
 
 function world(answer) {
-  const w = { calls: [], attached: [], required: [], saved: [], forms: [] };
+  const w = { calls: [], attached: [], required: [], saved: [], forms: [], nodeApi: {} };
   const win = {
     // goal/G43.32: the rowForm stands where an element now finds it, spirit.required.spirit.element; fieldInput, a helper
     // with no create, at spirit.required.spirit.element (below).
@@ -71,6 +71,8 @@ function world(answer) {
         const f = b ? path.join(RUN, b, 'data.js') : '';
         // By its path, through the page stand-in, which runs it in this window (goal/G49.6).
         if (f && fs.existsSync(f)) pageRequire(b + '/data.js');
+        // The node branch, required by its api.js's path, answers the stand-in's node verbs (goal/G49.6: one place, no branch by name).
+        if (p === 'spirit/node/api.js') return Promise.resolve(w.nodeApi);
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node('<' + t + '>'); }, createTextNode: function (t) { const x = node('#text'); x.textContent = String(t); return x; } },
@@ -99,7 +101,7 @@ function world(answer) {
   // (its body, or a refusal thrown with its status and body).
   win.spirit.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
   win.spirit.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
-  win.spirit.nodeFacts.setName = function (args) {
+  w.nodeApi.setName = function (args) {
     w.calls.push({ name: 'node.setName', args: args });
     const a = answer('node.setName', args);
     return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
