@@ -2548,6 +2548,15 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   const ACRASH = 'spirit/app/testicle/temp/zzReason/aCrash.js';
   const BHUNG = 'spirit/app/testicle/temp/zzReason/bHung.js';
   const CFALSE = 'spirit/app/testicle/temp/zzReason/cFalse.js';
+  // goal/G49.6; Andy: "that refusal has to be a suite level failure. then you can have a new status for suites \"duplicate
+  // titles\"": dDup.js's general test runs two tests of the same title, both answering true.
+  const DDUP = 'spirit/app/testicle/temp/zzReason/dDup.js';
+  // Andy: "a title over 128 bytes, cut it at the reporter, and only an error if cuts result in duplicates?", "cut before the
+  // character that causes overflow", "i approve of cw cutting scheme": eLong.js's one title is 127 a's, then a ü (two bytes,
+  // past 128), then more; fCut.js's two titles are the same in their first 128 bytes.
+  const ELONG = 'spirit/app/testicle/temp/zzReason/eLong.js';
+  const FCUT = 'spirit/app/testicle/temp/zzReason/fCut.js';
+  const LONG_CUT = 'a'.repeat(127);
   const R = { s: null, N: null, DB: '', ended: false };
   const reasonUp = function () { return !!R.N && R.N.up; };
   const rowOf = function (script) { return suiteRow(tables(R.DB), script, GENERAL); };
@@ -2568,8 +2577,11 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
       " if (/zzReason\\/aCrash\\.js$/.test(rel)) test.run('it crashes', 0.2, function () { throw new Error('zzReason crash'); }, test.limit.quick);" +
       " else if (/zzReason\\/bHung\\.js$/.test(rel)) test.run('it never answers', 0.2, function () { return new Promise(function () {}); }, test.limit.quick);" +
       " else if (/zzReason\\/cFalse\\.js$/.test(rel)) test.run('it answers false', 0.2, function () { return false; }, test.limit.quick);" +
+      " else if (/zzReason\\/dDup\\.js$/.test(rel)) { test.run('it is twice', 0.2, function () { return true; }, test.limit.quick); test.run('it is twice', 0.2, function () { return true; }, test.limit.quick); }" +
+      " else if (/zzReason\\/eLong\\.js$/.test(rel)) test.run('" + LONG_CUT + "ü and the rest of a long title', 0.2, function () { return true; }, test.limit.quick);" +
+      " else if (/zzReason\\/fCut\\.js$/.test(rel)) { test.run('" + 'b'.repeat(130) + " one', 0.2, function () { return true; }, test.limit.quick); test.run('" + 'b'.repeat(130) + " two', 0.2, function () { return true; }, test.limit.quick); }" +
       " else { one(rel); two(rel); } }); });"));
-    [ACRASH, BHUNG, CFALSE].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the reason of a red\n'); });
+    [ACRASH, BHUNG, CFALSE, DDUP, ELONG, FCUT].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the reason of a red\n'); });
     const on = path.join(run, 'spirit', 'state', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
     fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
@@ -2598,6 +2610,26 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     const r = rowOf(BHUNG);
     return (!!r && r.outcome === 'red' && r.reason === 'hung') || false;
   }, test.limit.quick);
+  test.run('a suite with two tests of one title is red with the reason duplicate titles', 0.8, async function () {
+    if (!reasonUp()) return false;
+    const r = await until(function () { const x = rowOf(DDUP); return Promise.resolve(!!x && no(x.test) && x.outcome ? x : null); }, 280000);
+    return (!!r && r.outcome === 'red' && r.reason === 'duplicate titles') || false;
+  }, test.limit.long);
+  test.run('a suite failed as duplicate titles reports none of its tests', 0.6, function () {
+    if (!reasonUp()) return false;
+    const r = rowOf(DDUP);
+    return (!!r && r.reason === 'duplicate titles' && currentOf(tables(R.DB), DDUP, GENERAL, 'it is twice').length === 0) || false;
+  }, test.limit.quick);
+  test.run('a title past 128 bytes is stored cut before the character that overflows, and judged', 0.6, async function () {
+    if (!reasonUp()) return false;
+    const r = await until(function () { const x = currentOf(tables(R.DB), ELONG, GENERAL, LONG_CUT)[0]; return Promise.resolve(x || null); }, 280000);
+    return (!!r && yes(r.verified) && Buffer.byteLength(r.test) === 127) || false;
+  }, test.limit.long);
+  test.run('two titles the same once cut make the suite red with the reason duplicate titles', 0.6, async function () {
+    if (!reasonUp()) return false;
+    const r = await until(function () { const x = rowOf(FCUT); return Promise.resolve(!!x && no(x.test) && x.outcome ? x : null); }, 280000);
+    return (!!r && r.outcome === 'red' && r.reason === 'duplicate titles') || false;
+  }, test.limit.long);
   test.run('a suite whose test answered false is red with no reason: its verdict was reached', 0.8, async function () {
     try {
       if (!R.ended) return false;
