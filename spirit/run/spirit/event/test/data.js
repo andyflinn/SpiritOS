@@ -16,7 +16,9 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'data.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/event/data.js';
+const FILE = path.join(RUN, SUBJECT);
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
 
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
@@ -31,12 +33,13 @@ function world() {
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data.js', SUBJECT] });
+  win.spirit.requireScript('spirit/data.js');
   const D = win.spirit.required.spirit.data;
   const translators = [];
   const add = D.addTranslator;
   D.addTranslator = function (t) { translators.push(t); return add(t); };
-  vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  win.spirit.requireScript(SUBJECT);
   const F = D['event'];
   return { win: win, D: D, F: F, X: F && F.data, translators: translators,
     job: function (job, from) { D.takeJob(job, from || SENDER); },
@@ -50,8 +53,9 @@ function pageWorld() {
   win.window = win;
   win.spirit = { isBrowser: function () { return true; }, nodeFacts: { key: SENDER } };
   vm.createContext(win);
-  vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
-  vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data.js', SUBJECT] });
+  win.spirit.requireScript('spirit/data.js');
+  win.spirit.requireScript(SUBJECT);
   const D = win.spirit.required.spirit.data;
   const F = D['event'];
   return { D: D, X: F && F.data, job: function (job, from) { D.takeJob(job, from || SENDER); }, nodes: function () { return Object.keys((F && F.cache) || {}); } };
