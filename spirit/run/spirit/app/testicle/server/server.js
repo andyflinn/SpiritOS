@@ -1297,6 +1297,8 @@ function refused(code) { return Object.assign(new Error(code), { refusal: code }
 // testicle.analyze (goal/G49.6, box v7). The red is named by its script, suite and test; its row is the current one testicle
 // holds (or, when its id is given and still held, that one). Every list is cut to what the answer holds, the longest first.
 const ANALYZE_LIST = 20;
+// One diff's bytes in the analysis (goal/G49.6, the box: "a short diff"), the changed lines alone.
+const ANALYZE_DIFF_MAX = 1500;
 const ANALYZE_SETUP = /\bready\b|^the world|scratch node|chrome page/i;
 const depsOf = db.prepare('SELECT requires FROM dependency WHERE script = ?');
 const scriptRowOf = db.prepare('SELECT name, hash, changed FROM script WHERE name = ?');
@@ -1370,10 +1372,30 @@ function analyzeRed(redJson) {
     return out;
   };
   if (!lastGreen) return answer([]);
-  return git(['log', '--since=@' + Math.floor(lastGreen.tested / 1000), '--format=%h%x09%an%x09%cI%x09%s', '-n', String(ANALYZE_LIST), '--'].concat(files))
+  // THE DIFFS (goal/G49.6, the box: 3, "each with its author, its message and a short diff of the changed lines"; 4, "each with
+  // the diff of what changed"): the changed lines alone (-U0), each diff cut to ANALYZE_DIFF_MAX bytes at a line, cut said.
+  const sinceArg = '--since=@' + Math.floor(lastGreen.tested / 1000);
+  const shortDiff = function (text) {
+    const s = String(text || '').replace(/\s+$/, '');
+    if (Buffer.byteLength(s, 'utf8') <= ANALYZE_DIFF_MAX) return { diff: s, diffCut: false };
+    const lines = s.split('\n');
+    let out = '';
+    for (const l of lines) { if (Buffer.byteLength(out + l + '\n', 'utf8') > ANALYZE_DIFF_MAX) break; out += l + '\n'; }
+    return { diff: out.replace(/\n$/, ''), diffCut: true };
+  };
+  const noDiff = function () { return { diff: '', diffCut: false }; };
+  const suspectDiffs = Promise.all(suspects.map(function (s) {
+    return git(['log', sinceArg, '-p', '-U0', '--format=', '--', (at ? at + '/' : '') + s.script]).then(shortDiff, noDiff)
+      .then(function (d) { s.diff = d.diff; if (d.diffCut) s.diffCut = true; });
+  }));
+  return git(['log', sinceArg, '--format=%h%x09%an%x09%cI%x09%s', '-n', String(ANALYZE_LIST), '--'].concat(files))
     .then(function (log) {
-      return answer(String(log).split('\n').filter(Boolean).map(function (l) { const p = l.split('\t'); return { commit: p[0], author: p[1], at: p[2], subject: p.slice(3).join('\t') }; }));
-    }, function () { unknown.push('git could not be asked for the commits'); return answer([]); });
+      const blame = String(log).split('\n').filter(Boolean).map(function (l) { const p = l.split('\t'); return { commit: p[0], author: p[1], at: p[2], subject: p.slice(3).join('\t') }; });
+      return Promise.all(blame.map(function (b) {
+        return git(['show', '-U0', '--format=', b.commit, '--'].concat(files)).then(shortDiff, noDiff)
+          .then(function (d) { b.diff = d.diff; if (d.diffCut) b.diffCut = true; });
+      })).then(function () { return suspectDiffs; }).then(function () { return answer(blame); });
+    }, function () { unknown.push('git could not be asked for the commits'); return suspectDiffs.then(function () { return answer([]); }); });
 }
 
 appServer.serve({
