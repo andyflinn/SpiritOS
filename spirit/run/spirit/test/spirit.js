@@ -51,6 +51,9 @@ function answer(b) {
   const c = b.call;
   const a = b.args;
   if (c === 'api' && a.branch === 'demo') return [200, { interface: DEMO }];
+  // An app's branch, zapp, its api.js at spirit/app/zapp/api.js (goal/G49.6, the one place).
+  if (c === 'api' && a.branch === 'zapp') return [200, { interface: DEMO }];
+  if (c === 'zapp.hello') return [200, { ok: true, said: 'zapp ' + a.name }];
   if (c === 'api' && a.branch) return [404, { ok: false, code: 'no-branch', error: 'no branch ' + a.branch }];
   if (c === 'api') return [200, { demo: { hello: {} }, gone: {} }];
   if (c === 'demo.hello' && a.name === 'held') return [409, { ok: false, code: 'held', error: 'held by bert' }];
@@ -532,6 +535,19 @@ test.run('startPage() asks no api, readyPromise answers the instance, a branch b
   const goneSaid = await Promise.resolve(ps.gone && typeof ps.gone.anything === 'function' ? ps.gone.anything({}) : null)
     .then(function () { return null; }, function (e) { return (e && e.code) || null; });
   return (started === again && wq.spirit.readyPromise === started && !askedAtStart.length && ps.isBrowser === wq.spirit.isBrowser && !!ps.demo && goneSaid === 'no-interface') || false;
+}, test.limit.quick);
+// THE API IS ALWAYS AT THE SAME PLACE (goal/G49.6; Andy: "the fucking api should ALWAYS be at the same place........"; his
+// WSL face at 5b3ecc63: "Cannot read properties of undefined (reading 'preferences')"): an app's branch reached first through
+// what readyPromise answers, before the page knows its app list, then required at spirit/app/zapp/api.js, has its verbs at
+// spirit.required.spirit.app.zapp.api, and nothing of it stands at a guessed spirit.required.spirit.zapp.
+test.run('on a page, an app branch called first through readyPromise has its verbs at its api.js path once required', 0.2, async function () {
+  const fq = page();
+  const view = await fq.spirit.startPage();
+  try { await view.zapp.hello({ name: 'early' }); } catch (e) { /* the early call is not the question */ }
+  try { await fq.spirit.requireScript('spirit/app/zapp/api.js'); } catch (e) { return false; }
+  const r = fq.spirit.required.spirit;
+  const placed = r.app && r.app.zapp && r.app.zapp.api;
+  return (!!placed && typeof placed.hello === 'function' && !(r.zapp && r.zapp.api)) || false;
 }, test.limit.quick);
 test.run('on a page with no link, calls go to the page\'s own origin, /api/spirit, as a call with its args', 0.2, async function () {
   if (!T.ps) return false;
