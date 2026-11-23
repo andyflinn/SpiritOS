@@ -756,19 +756,19 @@ test.after(stopAll);
   // ── THE remote PART (goal/G47.5, box v12: "all appServer faces now carry a Remote element in the center of their titlebar",
   // "that title bar is a simple dropdown, that is filled by a \"remote\" request without argument to its appServer", "the
   // Remote element shows only on apps that have a server"; Andy: "i understand that it touches the shared titlebar.") ──
-  // A scratch node of its own; Testicle, an app with a server, switched on; Starter, an app with none. A tile pressed on the
+  // A scratch node of its own; Chat, an app with a server, switched on, and Testicle, whose manifest refuses client mode (goal/G49.8: node.remote false); Starter, an app with none. A tile pressed on the
   // face opens the app as a layer, its title bar the row form naming the app. What the page asks is read from its fetches.
   const W4 = {};
-  let N4 = null, c4 = null, TESTICLE = '', STARTER = '';
+  let N4 = null, c4 = null, CHAT = '', TESTICLE = '', STARTER = '';
   const labelOf = function (n) { const j = readJson(path.join(RUN, 'spirit', 'app', n, n + '.json')); return String((j && j.identity && j.identity.label) || ''); };
   // The title bar of the open layer: the visible row form whose words are the app's label; whether it holds the shared
   // search's dropdown (its field, a button whose id ends in field).
   const barOf = function (label) { return c4.evaluate('(function () { var f = [].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(label) + ') !== -1; })[0]; if (!f) return "none"; return f.querySelector("button[id$=\'field\']") ? "dropdown" : "plain"; }())'); };
   const pressTile = function (label) { return c4.evaluate('(function () { var t = [].filter.call(document.querySelectorAll("*"), function (e) { return !e.children.length && e.offsetParent !== null && String(e.textContent || "").trim() === ' + JSON.stringify(label) + '; })[0]; if (!t) return false; t.click(); return true; }())'); };
   const asked = function () { return c4.evaluate('JSON.stringify(window.__zzAsked || [])').then(function (t) { return parsed(t) || []; }); };
-  test.run('a scratch node comes up with Testicle switched on, and Chrome opens its face page', 0.2, async function () {
+  test.run('a scratch node comes up with Chat and Testicle switched on, and Chrome opens its face page', 0.2, async function () {
     stopAll();
-    TESTICLE = labelOf('testicle'); STARTER = labelOf('starter');
+    CHAT = labelOf('chat'); TESTICLE = labelOf('testicle'); STARTER = labelOf('starter');
     const s4 = LABH.scratchTree();
     LIVE.push({ s: s4 });
     N4 = await boot(path.join(s4.root, 'spirit', 'run'));
@@ -779,53 +779,53 @@ test.after(stopAll);
     if (c4.error) return false;
     await c4.send('Page.navigate', { url: N4.base + '/face.html' });
     await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.app && spirit.required.spirit.app.api.activeApp)'); }, 20000);
-    await c4.evaluate('spirit.required.spirit.app.api.activeApp({ key: "testicle", active: true }); spirit.required.spirit.app.api.activeApp({ key: "starter", active: true }); true');
-    const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body.testicle); }); }, 60000);
+    await c4.evaluate('spirit.required.spirit.app.api.activeApp({ key: "chat", active: true }); spirit.required.spirit.app.api.activeApp({ key: "testicle", active: true }); spirit.required.spirit.app.api.activeApp({ key: "starter", active: true }); true');
+    const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body.chat && r.body.testicle); }); }, 60000);
     await c4.send('Page.navigate', { url: N4.base + '/face.html' });
     await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
     await sleep(3000);
     // Every call the page makes, kept: its fetches to /api/spirit carry { call, args }.
     await c4.evaluate('(function () { window.__zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { if (o && o.body) window.__zzAsked.push(String(o.body)); } catch (e) {} return f.apply(this, arguments); }; return true; }())');
-    W4.up = !!served && !!TESTICLE && !!STARTER;
+    W4.up = !!served && !!CHAT && !!TESTICLE && !!STARTER;
     return W4.up || false;
   }, test.limit.long);
-  test.run('Testicle, an app with a server, opens with the shared search dropdown in its title bar', 0.2, async function () {
+  test.run('Chat, an app with a server, opens with the shared search dropdown in its title bar', 0.2, async function () {
     if (!W4.up) return false;
-    if (!(await pressTile(TESTICLE))) return false;
+    if (!(await pressTile(CHAT))) return false;
     await sleep(3000);
-    W4.bar = await barOf(TESTICLE);
+    W4.bar = await barOf(CHAT);
     return W4.bar === 'dropdown' || false;
   }, test.limit.slow);
-  test.run('the dropdown is filled by remote, asked of testicle\'s server with no argument', 0.2, async function () {
+  test.run('the dropdown is filled by remote, asked of chat\'s server with no argument', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
-    return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && /testicle/.test(String(j.call || '')) && !(j.args && j.args.id); }) || false;
+    return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && /chat/.test(String(j.call || '')) && !(j.args && j.args.id); }) || false;
   }, test.limit.quick);
   // WHAT IT RUNS ON, SHOWN (Andy: "the selector dropdown on andy-wsl's desk finds \"Andy Flinn\" but won't accept the
   // selection, the setting remains on \"WSL ANDY VSCode\""; "nothing returned handles the data"; "all, agreed. spirit/data.js"):
-  // before any pick the field names the server remote answers as current; testicle's published remote row reaches the page's
-  // spirit.required.spirit.data.testicle.remote; and the field follows what lands there.
+  // before any pick the field names the server remote answers as current; chat's published remote row reaches the page's
+  // spirit.required.spirit.data.chat.remote; and the field follows what lands there.
   const barForm = function () { return '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(TESTICLE) + ') !== -1; })[0]'; };
   const fieldText = function () { return c4.evaluate('(function () { var f = ' + barForm() + '; var b = f && f.querySelector("button[id$=\'field\']"); return b ? String(b.textContent || "") : ""; }())'); };
   test.run('before any pick the dropdown\'s field names the server remote answers as current', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
-    W4.real = parsed(await c4.evaluate('spirit.requireScript("spirit/app/testicle/api.js").then(function (f) { return f.remote({}); }).then(function (r) { return JSON.stringify(r); }, function () { return "null"; })')) || {};
+    W4.real = parsed(await c4.evaluate('spirit.requireScript("spirit/app/chat/api.js").then(function (f) { return f.remote({}); }).then(function (r) { return JSON.stringify(r); }, function () { return "null"; })')) || {};
     const c = (W4.real.items || []).filter(function (i) { return String(i.key) === String(W4.real.current); })[0];
     const label = c ? String(c.label || '') : '';
     if (!label) return false;
     return (await fieldText()).indexOf(label) !== -1 || false;
   }, test.limit.slow);
-  test.run('testicle\'s published remote row reaches the page\'s spirit.required.spirit.data.testicle.remote, naming the same current', 0.2, async function () {
+  test.run('chat\'s published remote row reaches the page\'s spirit.required.spirit.data.chat.remote, naming the same current', 0.2, async function () {
     if (W4.bar !== 'dropdown' || !W4.real || !W4.real.current) return false;
-    return (await until(function () { return c4.evaluate('(function () { var t = (window.spirit.required.spirit.data || {}).testicle; return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }())'); }, 15000)) ? true : false;
+    return (await until(function () { return c4.evaluate('(function () { var t = (window.spirit.required.spirit.data || {}).chat; return !!(t && t.remote && String(t.remote.current) === ' + JSON.stringify(String(W4.real.current)) + '); }())'); }, 15000)) ? true : false;
   }, test.limit.slow);
-  test.run('a remote row landing in spirit.required.spirit.data.testicle.remote is what the field then names', 0.2, async function () {
+  test.run('a remote row landing in spirit.required.spirit.data.chat.remote is what the field then names', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
     const fake = { current: 'K-ZZELSEWHERE', items: [{ key: 'K-ZZELSEWHERE', label: 'zz Elsewhere' }], more: false };
-    await c4.evaluate('(function () { window.spirit.required.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.testicle", app: { remote: ' + JSON.stringify(fake) + ' } }); return true; }())');
+    await c4.evaluate('(function () { window.spirit.required.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.chat", app: { remote: ' + JSON.stringify(fake) + ' } }); return true; }())');
     await sleep(1000);
     const shown = await fieldText();
     // The node's own row back, for what follows.
-    if (W4.real && W4.real.current) await c4.evaluate('(function () { window.spirit.required.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.testicle", app: { remote: ' + JSON.stringify(W4.real) + ' } }); return true; }())');
+    if (W4.real && W4.real.current) await c4.evaluate('(function () { window.spirit.required.spirit.data.takeJob({ id: "zz-remote-row", type: "app", module: "spirit.app.chat", app: { remote: ' + JSON.stringify(W4.real) + ' } }); return true; }())');
     return shown.indexOf('zz Elsewhere') !== -1 || false;
   }, test.limit.slow);
   test.run('picking a row of the dropdown sends remote with that row\'s id', 0.2, async function () {
@@ -860,5 +860,16 @@ test.after(stopAll);
     if (!(await pressTile(STARTER))) return false;
     await sleep(3000);
     return (await barOf(STARTER)) === 'plain' || false;
+  }, test.limit.slow);
+  // AN APP THAT REFUSES CLIENT MODE HAS NO REMOTE (goal/G49.8, box v3: "the shell draws no remote in that app's title bar";
+  // testicle's manifest sets node.remote false): Testicle, though it has a server, opens with no dropdown.
+  test.run('Testicle, whose manifest refuses client mode, opens with no dropdown in its title bar', 0.4, async function () {
+    if (!W4.up) return false;
+    await c4.send('Page.navigate', { url: N4.base + '/face.html' });
+    await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
+    await sleep(3000);
+    if (!(await pressTile(TESTICLE))) return false;
+    await sleep(3000);
+    return (await barOf(TESTICLE)) === 'plain' || false;
   }, test.limit.slow);
 }

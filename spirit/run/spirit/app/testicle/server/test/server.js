@@ -3220,3 +3220,20 @@ test.run('a hold older than an hour has expired: holding it again succeeds, with
   await call(N.base, 'testicle.hold', HOLD_RED);
   return r.status === 200 && answers(r, HOLD.me) && !!row && row.heldBy === HOLD.me && Number(row.heldSince) >= before - 1000;
 }, test.limit.quick);
+
+// ── TESTICLE REFUSES CLIENT MODE (goal/G49.8, box v3; Andy: "yes. node:remote is a new manifest entry.") ──
+// The box: "one field in the app's manifest spirit/app/<name>/<name>.json, beside node.mount: node.remote, false to refuse client
+// mode"; "with node.remote false, appServer's remote verb refuses every call with \"no remote support\""; "testicle's manifest
+// sets node.remote false".
+test.run('testicle\'s manifest sets node.remote false', 0.4, function () {
+  let m = null;
+  try { m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'testicle.json'), 'utf8')); } catch (e) { return false; }
+  return !!(m && m.node && m.node.mount === true && m.node.remote === false);
+}, test.limit.quick);
+test.run('testicle\'s remote refuses every call with "no remote support", asked empty or with an id', 0.6, async function () {
+  if (!up()) return false;
+  const empty = await call(N.base, 'testicle.remote', {});
+  const picked = await call(N.base, 'testicle.remote', { id: 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=' });
+  const says = function (r) { return r.status >= 400 && /no remote support/.test(r.text); };
+  return says(empty) && says(picked);
+}, test.limit.quick);

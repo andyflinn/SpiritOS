@@ -420,7 +420,8 @@ test.run('a file deleted before the late loader came is not handed to it', 0.4, 
   return (made.indexOf('spirit/kept.js') !== -1 && made.indexOf('spirit/gone.js') === -1) || false;
 }, test.limit.quick);
 
-// in a process the cache sheds oldest first past a byte cap; a page keeps everything
+// in a process the cache sheds oldest first past a byte cap; a page has the same cap (goal/G49.8, box v3: "spirit/data.js caps a
+// page's cache at 4 MB, as a process's already is"; Andy: "the browser will need a cache limit", "I'd say 9000 rows are more than plenty")
 const CAP = {};
 test.run('in a process the cache has a cap, in bytes', 0.2, function () {
   return typeof D.byteCap === 'function' && D.byteCap() > 0 && isFinite(D.byteCap()) ? true : false;
@@ -448,9 +449,9 @@ test.run('a row written again is newest again', 0.2, function () {
   D.byteCap(CAP.was);
   return fine ? true : false;
 }, test.limit.quick);
-test.run('on a page the cache has no cap', 0.2, function () {
+test.run('on a page the cache has the 4 MB cap, the same as a process', 0.4, function () {
   const { P } = pageCopy();
-  return typeof P.whole.byteCap === 'function' && P.whole.byteCap() === Infinity ? true : false;
+  return typeof P.whole.byteCap === 'function' && P.whole.byteCap() === 4 * 1024 * 1024 && P.whole.byteCap() === CAP.was ? true : false;
 }, test.limit.quick);
 
 // THE CACHES PART, once data-caches.js.
