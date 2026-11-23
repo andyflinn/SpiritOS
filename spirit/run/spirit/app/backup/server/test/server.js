@@ -17,8 +17,32 @@ const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
 const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
-function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/backup/test/backup/' + name + tempAsked); }
-test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/backup/test/backup'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// Its own route, this suite's path (goal/G49.7): it took backup.js's suite's, spirit/app/backup/test/backup, and what it left there
+// was charged to backup.js as "it leaves no temp folder behind".
+const ROUTE = 'spirit/app/backup/server/test/server';
+function ownTemp(name) { tempAsked += 1; return tempFolder(ROUTE + '/' + name + tempAsked); }
+// ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G49.7, as spirit/test/relay.js does it, goal/G48.4; Andy, of the 0.7s: "it leaves no temp folder behind"): on Windows a
+// folder holding an open database cannot be removed, and nodeStore keeps each store it opened open; every one under the
+// suite's folder (a node.db or a relay.db at <root>/spirit/state) is closed first.
+function closeStoresUnder(top) {
+  const NS = SPIRIT.requireScript('spirit/nodeStore.js');
+  (function walk(dir, depth) {
+    let names = [];
+    try { names = fs.readdirSync(dir); } catch (e) { return; }
+    if (names.indexOf('node.db') !== -1 && path.basename(dir) === 'state') { try { NS.open(path.dirname(path.dirname(dir))).close(); } catch (e) { /* closed */ } }
+    // A relay's own store too (relay.db beside it), which relayStore keeps open the same way.
+    // Through every copy of relayStore this process loaded (a relay made on a scratch tree loads that tree's own), so it is
+    // the store that relay holds open.
+    if (names.indexOf('relay.db') !== -1 && path.basename(dir) === 'state') {
+      Object.keys(require.cache).filter(function (k) { return /[\\/]relayStore\.js$/.test(k); }).forEach(function (k) {
+        try { require.cache[k].exports.open(path.dirname(path.dirname(dir))).close(); } catch (e) { /* closed */ }
+      });
+    }
+    if (depth > 6) return;
+    names.forEach(function (n) { const p = path.join(dir, n); try { if (fs.statSync(p).isDirectory()) walk(p, depth + 1); } catch (e) { /* gone */ } });
+  }(top, 0));
+}
+test.after(function () { const top = tempFolder.path(ROUTE); closeStoresUnder(top); try { require('fs').rmSync(top, { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const SCRIPT = path.join(RUN, 'spirit', 'app', 'backup', 'backup.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
