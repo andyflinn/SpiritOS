@@ -43,6 +43,8 @@ const OTHER = { relay: { card: {} } };
 
 function world() {
   const w = { lists: [], required: [] };
+  // The two halves run by this stand-in itself, not through spirit.requireScript (goal/G49.6): it records every path the page
+  // asks, and a check below judges that no data.js is asked; through requireScript it would not see those asks.
   const real = function (file) { return function (win) { vm.runInContext(fs.readFileSync(path.join(JS, file), 'utf8'), win, { filename: file }); }; };
   const STANDS = {
     'spirit/element/search.js': function (win) { const at = win.spirit.required.spirit.element; at.search = Object.assign(at.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,

@@ -299,6 +299,8 @@ test.run('destroyed before its arming button loads, rotateKey draws and attaches
   late.hold = new Promise(function (r) { letGo = r; });
   // goal/G43.32: installSpiritElement overwrites no element that stands; the run again takes the place of a fresh page's.
   delete late.win.spirit.required.spirit.element.rotateKey;
+  // Its text run here, not through spirit.requireScript (goal/G49.6): requireScript loads a file once and hands back the same
+  // one, as a page does, and this check needs it run a second time on a window that ran it already.
   vm.runInContext(SRC, late.win, { filename: FILE });
   h6 = node('<div>');
   m6 = late.win.spirit.required.spirit.element.rotateKey.create(h6, {});
