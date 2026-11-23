@@ -65,7 +65,7 @@ test.after(function () {
 test.run('spirit/app/icons/api.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'api.js')) || false; }, test.limit.quick);
 test.run('spirit/app/icons/data.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'data.js')) || false; }, test.limit.quick);
 test.run('spirit/app/icons/icons.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'icons.js')) || false; }, test.limit.quick);
-test.run('spirit/app/icons/server/server.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'icons/server/server.js')) || false; }, test.limit.quick);
+test.run('spirit/app/icons/server/server.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'server', 'server.js')) || false; }, test.limit.quick);
 test.run('spirit/app/icons/element.js is there', 0.2, function () { return fs.existsSync(path.join(APP, 'element.js')) || false; }, test.limit.quick);
 test.run('api.js sits at the app\'s top, with no api/ folder', 0.2, function () { return !fs.existsSync(path.join(APP, 'api')) || false; }, test.limit.quick);
 test.run('icons.json keeps node mount false and shell mount true', 0.2, function () {
@@ -75,7 +75,7 @@ test.run('icons.json keeps node mount false and shell mount true', 0.2, function
 // goal/G43.32: by spirit.requireScript and its run-root path, as every script loads the tree.
 test.run('icons.js, run in node, loads spirit/app/icons/server/server.js through spirit.requireScript', 0.2, function () {
   const main = code(read(path.join(APP, 'icons.js')) || '');
-  return (/\.require(?:Script)?\(\s*['"]spirit\/app\/icons\/nodeIcons\.js['"]\s*\)/).test(main) || false;
+  return (/\.requireScript\(\s*['"]spirit\/app\/icons\/server\/server\.js['"]\s*\)/).test(main) || false;
 }, test.limit.quick);
 const pageCode = function (f) { return code(read(path.join(APP, f)) || ''); };
 const writes = /\bfs\s*\.\s*(saveFile|save|deleteFile|delete)\b|\.saveFile\s*\(/;
@@ -224,7 +224,7 @@ test.run('after five Adds at once, all five are in the set, none lost to another
   const watching = watchRuns(W.node.root, 'icons', { base: W.node.base });
   // Five calls from the page at once, through spirit: Add itself is busy until its answer (goal/G47.1, Q20), so five presses
   // in a row would be one; the box's "calls" are what must wait their turn.
-  await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { ' + JSON.stringify(five) + '.forEach(function (x, i) { s.icons.icon({ op: "add", glyph: x, keywords: JSON.stringify(["five" + i]) }); }); return true; })');
+  await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/app/icons/api.js"); }).then(function (s) { ' + JSON.stringify(five) + '.forEach(function (x, i) { s.icon({ op: "add", glyph: x, keywords: JSON.stringify(["five" + i]) }); }); return true; })');
   const allFive = await until(function () { const s = json(W.SET) || {}; return Promise.resolve(five.every(function (x) { return x in s; })); }, 12000);
   await sleep(1000);
   W.watched = await watching.stop();
@@ -246,7 +246,7 @@ test.run('two runs of icons.js never happen at once', 0.2, function () {
 }, test.limit.quick);
 test.run('a page writing spirit/state/icons/data/iconSet.json itself is refused, and the set stands', 0.8, async function () {
   if (!W.drew) return false;
-  await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { return s.fs.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
+  await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/api.js"); }).then(function (s) { return s.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
   await sleep(800);
   return W.G1 in (json(W.SET) || {}) ? true : false;
 }, test.limit.slow);
