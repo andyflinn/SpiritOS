@@ -12,9 +12,13 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
-const FILE = path.join(__dirname, '..', 'codeMirror.js');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/codeMirror.js';
+const FILE = path.join(RUN, SUBJECT);
 const CM = 'spirit/element/codeMirror/';
 
 const settle = async function () {
@@ -79,9 +83,9 @@ function world() {
   // goal/G43.32: codeMirror.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit), and writes down only what the element asks for besides.
   const own = win.spirit.requireScript;
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : own(p); };
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || p === SUBJECT ? pageRequire(p) : own(p); };
   vm.createContext(win);
   return { w: w, win: win };
 }
@@ -99,7 +103,8 @@ test.run('spirit/element/codeMirror.js exists', 0.2, function () {
 test.run('it puts itself on window.spirit.required as codeMirror, with create', 0.2, async function () {
   const made = world();
   S.w = made.w; S.win = made.win;
-  if (S.there) vm.runInContext(S.src, S.win, { filename: FILE });
+  // Run in its world by its path, through the page stand-in (goal/G49.6).
+  if (S.there) S.win.spirit.requireScript(SUBJECT);
   await settle();
   S.E = ((S.win.spirit.required.spirit || {}).element || {}).codeMirror;
   return (!!S.E && typeof S.E.create === 'function') || false;
@@ -247,7 +252,7 @@ test.run('shell.css lets CodeMirror in a fill box take the box and scroll inside
 // from there with its sheet, its marks and its search keys, asking no other place. That no file names the library's old
 // place is spirit/test/spirit-sibling-general.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
 const REPO = path.resolve(RUN, '../..');
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 const L = { tracked: [], inRun: [], node: null, page: null, at: {}, cm: {}, fromHere: '' };
 
 test.run('the library\'s 15 files, licence included, stand in spirit/element/codeMirror/', 0.2, function () {
@@ -295,7 +300,7 @@ test.after(function () {
   try { if (L.page && L.page.kid) L.page.kid.kill(); } catch (e) { /* gone */ }
   try { if (L.node && L.node.child) L.node.child.kill(); } catch (e) { /* gone */ }
   try { if (L.page && L.page.profile) fs.rmSync(L.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (L.node && L.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(L.node); } catch (e) { /* left */ }
+  try { if (L.node && L.node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(L.node); } catch (e) { /* left */ }
 });
 
 // REFRESHED WHEN IT BECOMES VISIBLE (goal/G48.5; Andy: "there's something that the codeMirror element does when it is
