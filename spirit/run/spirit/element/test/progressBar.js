@@ -15,7 +15,9 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(RUN, 'spirit', 'element', 'progressBar.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/progressBar.js';
+const FILE = path.join(RUN, SUBJECT);
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -27,9 +29,8 @@ test.run('it runs on a window of its own and places itself at spirit.required.sp
   const win = { Math: Math, Number: Number, String: String, Promise: Promise };
   win.window = win;
   win.spirit = { element: {} };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
-  vm.createContext(win);
-  vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  win.spirit.requireScript(SUBJECT);
   await settle();
   P = ((win.spirit.required.spirit || {}).element || {}).progressBar;
   return typeof P === 'function' || false;

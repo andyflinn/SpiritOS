@@ -12,7 +12,9 @@ const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'armingButton.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/armingButton.js';
+const FILE = path.join(RUN, SUBJECT);
 
 const settle = async function () { for (let i = 0; i < 10; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -53,11 +55,8 @@ function world() {
   win.window = win;
   win.spirit = { element: {} };
   // goal/G43.32: armingButton.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
-  vm.createContext(win);
-  if (fs.existsSync(FILE)) {
-    vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  }
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  if (fs.existsSync(FILE)) win.spirit.requireScript(SUBJECT);
   return win;
 }
 const isArmed = function (b) { return b.hasAttribute('data-armed'); };

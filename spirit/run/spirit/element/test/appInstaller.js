@@ -13,7 +13,9 @@ const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'appInstaller.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/appInstaller.js';
+const FILE = path.join(RUN, SUBJECT);
 
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
@@ -61,9 +63,8 @@ function world(rows) {
   }, setTimeout: setTimeout, Promise: Promise, JSON: JSON, console: { log: function () {}, error: function () {} } };
   win.window = win;
   // goal/G43.32: appInstaller.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit), at its path.
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
-  vm.createContext(win);
-  vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  win.spirit.requireScript(SUBJECT);
   w.E = ((win.spirit.required || {}).spirit || {}).element || {};
   w.put = function (key, row) { w.rows[key] = row; (w.watchers[key] || []).slice().forEach(function (fn) { fn(row); }); };
   return w;

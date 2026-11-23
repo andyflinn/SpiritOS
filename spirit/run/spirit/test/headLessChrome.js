@@ -562,8 +562,11 @@ async function chromePage(chrome) {
 function pageSpirit(s, loaded, o) {
   const sp = s || {};
   const opts = o || {};
-  const real = Object.create(null);
-  (opts.real || []).forEach(function (p) { real[String(p).replace(/^\/+/, '')] = true; });
+  // real: the paths, or a test of a path (a function answering true for one it loads as it is: a companion data.js named as
+  // it is asked, say).
+  const listed = Object.create(null);
+  if (Array.isArray(opts.real)) opts.real.forEach(function (p) { listed[String(p).replace(/^\/+/, '')] = true; });
+  const isReal = function (at) { return typeof opts.real === 'function' ? !!opts.real(at) : !!listed[at]; };
   const ran = Object.create(null);
   const placedAt = function (at) {
     return String(at).replace(/\.js$/, '').split('/').filter(Boolean).reduce(function (x, k) { return x == null ? undefined : x[k]; }, sp.required);
@@ -592,7 +595,7 @@ function pageSpirit(s, loaded, o) {
   sp.requireScript = function (p) {
     const at = String(p || '').replace(/^\/+/, '');
     if (Object.prototype.hasOwnProperty.call(have, at)) { const v = have[at]; return { then: function (f) { return Promise.resolve(f ? f(v) : v); } }; }
-    if (real[at] && opts.window) return runReal(at);
+    if (opts.window && isReal(at) && fs.existsSync(path.join(RUN, at))) return runReal(at);
     return typeof own === 'function' ? own.apply(this, arguments) : Promise.resolve({});
   };
   return sp;
