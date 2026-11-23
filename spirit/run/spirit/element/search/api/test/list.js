@@ -60,15 +60,15 @@ function world() {
   };
   win.window = win;
   // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data.js', 'spirit/client/apiTreeIndex.js'] });
   vm.createContext(win);
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+  win.spirit.requireScript('spirit/data.js');
   pageData = win.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
+  win.spirit.requireScript('spirit/client/apiTreeIndex.js');
   vm.runInContext(SERVER_SRC, win, { filename: SERVER_FILE });
   w.E = win.spirit.required.spirit.element;
   return w;

@@ -203,12 +203,14 @@ function world() {
   // goal/G43.32: grantsPanel.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
+  const REAL = ['spirit/client/apiTreeIndex.js', 'spirit/data.js'];
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+  win.spirit.requireScript('spirit/client/apiTreeIndex.js');
+  win.spirit.requireScript('spirit/data.js');
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.page = page;

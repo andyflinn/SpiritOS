@@ -78,14 +78,16 @@ function world(answer) {
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
+  const REAL = ['spirit/type/string/label.js', 'spirit/data.js'];
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   win.spirit.required.spirit.element.fieldInput = { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } };
   vm.createContext(win);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'type', 'string', 'label.js'), 'utf8'), win, { filename: 'label.js' });
+  win.spirit.requireScript('spirit/type/string/label.js');
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+  win.spirit.requireScript('spirit/data.js');
   win.spirit.nodeFacts = { key: 'KEY+LABEL/NODE==' };
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });

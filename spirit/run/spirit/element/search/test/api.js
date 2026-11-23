@@ -62,19 +62,19 @@ function world() {
   // The node family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
   // itself to the data set; the api tree is the node family's (spirit.required.spirit.data.node.data).
   let ran = false;
-  win.spirit.requireScript = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'node', 'data.js'), 'utf8'), win, { filename: 'spirit/node/data.js' }); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } return Promise.resolve(true); };
+  win.spirit.requireScript = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; win.spirit.requireScript('spirit/node/data.js'); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } return Promise.resolve(true); };
   win.window = win;
   // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/data.js', 'spirit/client/apiTreeIndex.js'] });
   vm.createContext(win);
   // The tree index is one of the spirit object's own, there before any element.
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+  win.spirit.requireScript('spirit/data.js');
   pageData = win.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
+  win.spirit.requireScript('spirit/client/apiTreeIndex.js');
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   w.E = win.spirit.required.spirit.element;
   return w;

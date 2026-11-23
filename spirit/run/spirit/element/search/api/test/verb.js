@@ -58,7 +58,7 @@ test.run('it adds apiVerbSelector with a create to window.spirit.required, and c
         if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.required.spirit = win.spirit.required.spirit || {}).element = win.spirit.required.spirit.element || {})); }
         // A family's cache (goal/G41.28): the node branch's interface brings its data.js, as the real api.js does; it runs
         // on this window over the real data set, from its path.
-        if (p === 'spirit/node/api.js') vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'node', 'data.js'), 'utf8'), win, { filename: 'spirit/node/data.js' });
+        if (p === 'spirit/node/api.js') win.spirit.requireScript('spirit/node/data.js');
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node(t); } },
@@ -70,13 +70,15 @@ test.run('it adds apiVerbSelector with a create to window.spirit.required, and c
   // goal/G43.32: verb.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
+  const REAL = ['spirit/node/data.js', 'spirit/client/apiTreeIndex.js', 'spirit/data.js'];
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   const pageRequire = win.spirit.requireScript;
-  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
+  win.spirit.requireScript('spirit/client/apiTreeIndex.js');
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+  win.spirit.requireScript('spirit/data.js');
   win.spirit.nodeFacts = { key: 'KEY+VERB/SELECTOR==' };
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   vm.runInContext(SRC, win, { filename: FILE });
