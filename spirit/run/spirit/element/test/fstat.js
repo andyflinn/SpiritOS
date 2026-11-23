@@ -9,11 +9,16 @@
 
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
-const FILE = path.join(__dirname, '..', 'fstat.js');
+// EVERY FILE OF THE TREE BY ITS PATH (goal/G49.6; Andy: "make every single test use spirit.requireScript() to load product
+// files"): spirit.js alone by node's require, being the loader; each other file through it, answered at once in node.
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const H = S.requireScript('spirit/test/headLessChrome.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/fstat.js';
+const FILE = path.join(RUN, SUBJECT);
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -79,10 +84,10 @@ function world(o) {
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  // goal/G43.32: fstat.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit), at its path.
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
-  vm.createContext(win);
-  try { vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE }); } catch (e) { w.error = e; }
+  // goal/G43.32: fstat.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit), at its path; it is
+  // loaded by that path through the page's spirit.requireScript (goal/G49.6), run in this world.
+  H.pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  win.spirit.requireScript(SUBJECT).then(null, function (e) { w.error = e; });
   w.E = (((win.spirit.required || {}).spirit || {}).element || {}).fstat;
   return w;
 }

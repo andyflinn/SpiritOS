@@ -45,6 +45,30 @@ const within = function (p, ms) { return Promise.race([p, sleep(ms).then(functio
 const W = { first: null, probe: '', head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: REPO, encoding: 'utf8' }).trim(), branch: execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: REPO, encoding: 'utf8' }).trim() };
 test.after(function () { try { if (W.probe) fs.rmSync(W.probe, { force: true }); } catch (e) { /* gone */ } });
 
+// THE PAGE STAND-IN LOADS A SCRIPT OF THE TREE BY ITS PATH (goal/G49.6; Andy: "make every single test use spirit.requireScript()
+// to load product files"): pageSpirit given a world and the paths it loads as they are runs such a path in that world, once,
+// at once, and answers what the script placed there; any other path goes to the test's own requireScript.
+const PS = { world: null, ran: 0, got: undefined, again: undefined, other: null };
+test.run('pageSpirit runs a path it was told to load in the world, at once, and answers what the script placed: fstat\'s factory', 0.4, function () {
+  PS.world = { console: { log: function () {}, error: function () {} }, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String };
+  PS.world.window = PS.world;
+  PS.world.spirit = { requireScript: function (p) { PS.other = String(p); return Promise.resolve('own'); } };
+  require(HELPER).pageSpirit(PS.world.spirit, null, { window: PS.world, real: ['spirit/element/fstat.js'] });
+  PS.world.spirit.requireScript('spirit/element/fstat.js').then(function (v) { PS.got = v; });
+  return (!!PS.got && typeof PS.got.create === 'function' && PS.got === PS.world.spirit.required.spirit.element.fstat) || false;
+}, test.limit.quick);
+test.run('asked for the same path again, pageSpirit answers the same object and runs the file no second time', 0.4, function () {
+  if (!PS.got) return false;
+  const before = PS.world.spirit.required.spirit.element.fstat;
+  PS.world.spirit.requireScript('spirit/element/fstat.js').then(function (v) { PS.again = v; });
+  return (PS.again === PS.got && PS.world.spirit.required.spirit.element.fstat === before) || false;
+}, test.limit.quick);
+test.run('a path pageSpirit was not told to load goes to the test\'s own requireScript', 0.4, async function () {
+  if (!PS.world) return false;
+  const v = await PS.world.spirit.requireScript('spirit/fs/api.js');
+  return (v === 'own' && PS.other === 'spirit/fs/api.js') || false;
+}, test.limit.quick);
+
 // "headLessChrome.js scratchNode hands out a reset lab node instead of a fresh copy"
 test.run('scratchNode hands out a lab node: its tree lies under repo://lab/node/', 0.4, async function () {
   const before = tempCopies();

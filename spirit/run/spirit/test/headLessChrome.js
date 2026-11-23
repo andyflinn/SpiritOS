@@ -552,8 +552,36 @@ async function chromePage(chrome) {
 // spirit.required.spirit.element.installSpiritElement, and a spirit.requireScript that answers what is already loaded at once,
 // as spirit.requireScript does a second time: the helper, or any path the test hands in loaded. So an element script run there
 // places its factory at spirit.required.<its path> by its own call, as it runs. Answers the spirit object.
-function pageSpirit(s, loaded) {
+// A SCRIPT OF THE TREE BY ITS PATH, RUN IN THAT WORLD (goal/G49.6; Andy: "make every single test use spirit.requireScript() to
+// load product files"): o.window, the world's own object (made a vm context if it is not one yet), and o.real, the run-root
+// paths the test has loaded as they are, its subject and any part it does not stand in for. spirit.requireScript(one of them)
+// runs that file once in the world, by its path, at once, and answers what it placed at spirit.required.<its path>, the
+// script's error when it throws; at once as the loaded ones answer (a then that calls back before it returns), so a test
+// that builds its world without waiting reads what was placed on the next line. Any other path goes to the test's own
+// requireScript, as before.
+function pageSpirit(s, loaded, o) {
   const sp = s || {};
+  const opts = o || {};
+  const real = Object.create(null);
+  (opts.real || []).forEach(function (p) { real[String(p).replace(/^\/+/, '')] = true; });
+  const ran = Object.create(null);
+  const placedAt = function (at) {
+    return String(at).replace(/\.js$/, '').split('/').filter(Boolean).reduce(function (x, k) { return x == null ? undefined : x[k]; }, sp.required);
+  };
+  const runReal = function (at) {
+    if (!ran[at]) {
+      const vm = require('vm');
+      if (!vm.isContext(opts.window)) vm.createContext(opts.window);
+      const file = path.join(RUN, at);
+      try { vm.runInContext(fs.readFileSync(file, 'utf8'), opts.window, { filename: file }); ran[at] = { ok: true }; } catch (e) { ran[at] = { ok: false, error: e }; }
+    }
+    const r = ran[at];
+    return { then: function (f, g) {
+      if (!r.ok) return typeof g === 'function' ? Promise.resolve(g(r.error)) : Promise.reject(r.error);
+      const v = placedAt(at);
+      return Promise.resolve(typeof f === 'function' ? f(v) : v);
+    } };
+  };
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
   sp.required = sp.required || {};
   sp.required.spirit = sp.required.spirit || {};
@@ -564,6 +592,7 @@ function pageSpirit(s, loaded) {
   sp.requireScript = function (p) {
     const at = String(p || '').replace(/^\/+/, '');
     if (Object.prototype.hasOwnProperty.call(have, at)) { const v = have[at]; return { then: function (f) { return Promise.resolve(f ? f(v) : v); } }; }
+    if (real[at] && opts.window) return runReal(at);
     return typeof own === 'function' ? own.apply(this, arguments) : Promise.resolve({});
   };
   return sp;
