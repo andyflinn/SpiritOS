@@ -8,8 +8,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 const ADDRESS = '/DEBUG/spirit/element/appHeader/test/appHeader-pinned.html';
 // A scratch node with its DEBUG on, a Chrome page on it, and what the page measured.
@@ -56,5 +58,5 @@ test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
+  try { if (W.node && W.node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(W.node); } catch (e) { /* left */ }
 });

@@ -9,8 +9,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const { scratchNode, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 // One test.run per test (goal/G47.2). What the world makes, for the tests after it.
 let node, chrome, js, mount, text, press, one;
@@ -19,7 +21,7 @@ test.after(function () {
   if (chrome && chrome.kid) chrome.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
 });
 test.run('spirit/element/search/grant/detail.js is there', 0.2, function () {
   return fs.existsSync(path.join(__dirname, '..', 'detail.js')) ? true : false;

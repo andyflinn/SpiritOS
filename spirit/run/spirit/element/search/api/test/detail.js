@@ -8,7 +8,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const FILE = path.join(__dirname, '..', 'detail.js');
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -32,11 +34,11 @@ test.run('the detail runs on a bare window, the real api tree reader beside it',
   global.document = { createElement: node };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, element: {},
     readyPromise: Promise.resolve({ tree: function () { asked.push('tree'); return Promise.resolve(TREE); } }) } };
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(true); };
   // In node apiTreeIndex.js answers its module; a page has it at spirit.required.spirit.client.apiTreeIndex, as here.
-  ((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}); (global.window.spirit.required.spirit.client = global.window.spirit.required.spirit.client || {}); global.window.spirit.required.spirit.client.apiTreeIndex = require(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'));
+  ((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}); (global.window.spirit.required.spirit.client = global.window.spirit.required.spirit.client || {}); global.window.spirit.required.spirit.client.apiTreeIndex = LOADER.requireScript('spirit/client/apiTreeIndex.js');
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   D = global.window.spirit.required.spirit.element.search && global.window.spirit.required.spirit.element.search.api && global.window.spirit.required.spirit.element.search.api.detail;

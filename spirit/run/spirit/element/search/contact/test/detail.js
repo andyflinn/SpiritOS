@@ -12,11 +12,13 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'detail.js');
 const SRC = fs.readFileSync(FILE, 'utf8');
 
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 const settle = async function () {
   for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); });
@@ -203,7 +205,7 @@ function personWorld(person, relayRows) {
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
@@ -225,7 +227,7 @@ function relayWorld(rows, relayStatus) {
   const w = { required: [], calls: [], posts: [], armings: [], closed: 0, document: document };
   // THE NODE BEHIND THE SPIRIT OBJECT (goal/G43.24): every family.verb the panel asks is recorded (w.calls), and each
   // packet it posts to a relay through peer.post is read out of its envelope (w.posts), the relay's answer put in one.
-  const P = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
+  const P = LOADER.requireScript('spirit/client/packet.js');
   const relayAnswer = function (body) {
     if (body && body.config && !Object.keys(body.config).length) return ALLOC;
     if (body && body.config && body.config.restart) return { ok: true, restarting: true };
@@ -300,7 +302,7 @@ function relayWorld(rows, relayStatus) {
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
@@ -927,7 +929,7 @@ test.after(async function () {
   try { if (S.R) S.R.stop(); } catch (e) { /* gone */ }
   S.others.forEach(function (o) { try { o.stop(); } catch (e) { /* gone */ } });
   try { if (S.N && S.N.child) S.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (S.N && S.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(S.N); } catch (e) { /* scratch */ }
+  try { if (S.N && S.N.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(S.N); } catch (e) { /* scratch */ }
 });
 
 // a seat taken: the row says so, with no one asking
@@ -1268,7 +1270,7 @@ test.run('taking away a 😏 it does not have changes nothing', 0.2, async funct
   await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: false });
   const pass = !(await starred(S.Far.relayKey));
   // A node that is no relay is refused 😏 (box v33: "for a relay this node holds a seat on only").
-  S.person = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('zzPuppet').publicKey;
+  S.person = LOADER.requireScript('spirit/relayAuth.js').generateIdentity('zzPuppet').publicKey;
   await home(S.N.base, 'contact.block', { publicKey: S.person });
   const personAns = await home(S.N.base, 'contact.faceable', { key: S.person, faceable: true });
   return (pass && personAns.status >= 400 && personAns.status < 500) || false;

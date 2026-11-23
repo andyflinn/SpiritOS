@@ -11,7 +11,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'grant.js');
 const LIST = 'spirit/element/search/grant/list.js';
 
@@ -25,11 +27,11 @@ test.run('the grant selector runs on a window of its own', 0.2, async function (
   global.window = { spirit: { element: {}, requireScript: function (p) {
     W.required.push(String(p));
     // Its list, a recorder in its place, placed where the real one places itself.
-    if (p === LIST) require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, LIST, { create: function (host, opts) { W.made.push({ host: host, opts: opts }); return W.ANSWER; } });
+    if (p === LIST) LOADER.requireScript('spirit/element/installSpiritElement.js')(global.window.spirit, LIST, { create: function (host, opts) { W.made.push({ host: host, opts: opts }); return W.ANSWER; } });
     return Promise.resolve({});
   } } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();

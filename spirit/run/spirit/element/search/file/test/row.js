@@ -11,7 +11,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'file', 'row.js');
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -19,7 +21,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await new Promis
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let asked, required, loaded, D, E, F, el, hosts, page, node, put, del, row;
 const cmd = function (c) { return { id: 'spirit.fs', data: { command: c } }; };
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 function cellsOf(x) { const c = {}; (x.cells() || []).forEach(function (k) { c[k.name] = k.html; }); return c; }
 // True when there is no file tree on the page or no row element registered.
 function noRow() { return !F || typeof F.file !== 'function' || !E.search.file.row || typeof E.search.file.row.create !== 'function'; }
@@ -48,7 +50,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // and fills nothing here, so the row fell back to "2048 B".
   (function () { const real = require(path.join(RUN, 'spirit', 'spirit.js')); ['formatBytes', 'escapeHtml'].forEach(function (k) { if (typeof global.window.spirit[k] !== 'function' && typeof real[k] === 'function') global.window.spirit[k] = real[k]; }); }());
   // goal/G43.32: every element places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   D = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
@@ -241,7 +243,7 @@ test.after(function () {
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
 });
 test.run('a scratch node comes up with its DEBUG on, and Chrome opens the words page', 0.2, async function () {
   const chrome = H.findChrome();

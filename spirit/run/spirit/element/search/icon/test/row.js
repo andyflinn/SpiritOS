@@ -12,7 +12,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'row.js');
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -25,7 +27,7 @@ test.run('the icon row element runs on a bare window', 0.2, async function () {
   required = []; specs = []; indexes = [];
   global.document = { createElement: function () { return { innerHTML: '' }; } };
   global.window = { spirit: { element: {} } };
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   const own = global.window.spirit.requireScript;
   global.window.spirit.requireScript = function (p) { required.push(String(p)); return own.apply(this, arguments); };

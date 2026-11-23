@@ -13,7 +13,9 @@ const path = require('path');
 const vm = require('vm');
 // spirit/element/test/ -> the run root, three up.
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'joinList.js');
 const STEPS = path.join(RUN, 'spirit', 'app', 'join', 'join.json');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
@@ -58,7 +60,7 @@ function world(join) {
       return Promise.resolve({});
     },
   };
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
   w.L = win.spirit.required.spirit.element.joinList;

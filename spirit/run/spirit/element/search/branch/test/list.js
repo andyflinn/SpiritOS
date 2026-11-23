@@ -11,7 +11,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'branch', 'list.js');
 
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -47,7 +49,7 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
       lists.push(l); return l;
     } }); },
     // The real row element requires the auth family's api.js as it runs (goal/G41.28, G47.1); its stand-in does the same.
-    'spirit/element/search/branch/row.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/row.js', { create: function (row) { return { kind: 'branch', row: row }; } }); },
+    'spirit/element/search/branch/row.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); LOADER.requireScript('spirit/element/installSpiritElement.js')(global.window.spirit, 'spirit/element/search/branch/row.js', { create: function (row) { return { kind: 'branch', row: row }; } }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'spirit/element/search/api.js': function (E) { (E.search = E.search || {}).api = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };
@@ -55,7 +57,7 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   global.document = { createElement: function (t) { return node(t); } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/data.js), which spirit.js brings with the client.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });

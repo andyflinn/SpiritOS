@@ -10,7 +10,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'bundle', 'list.js');
 
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -36,11 +38,11 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
       lists.push(l); return l;
     } }); },
     // The real row element requires the auth branch's interface as it runs (goal/G41.28); its stand-in does the same.
-    'spirit/element/search/bundle/row.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/bundle/row.js', { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }); },
+    'spirit/element/search/bundle/row.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); LOADER.requireScript('spirit/element/installSpiritElement.js')(global.window.spirit, 'spirit/element/search/bundle/row.js', { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }); },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/data.js), which spirit.js brings with the client.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
@@ -198,7 +200,7 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
   LIST = (function () {
     const win = { window: null, spirit: { element: {} }, console: console };
     // goal/G43.32: search.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
-    require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
     win.window = win;
     vm.createContext(win);
     ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'].forEach(function (rel) {

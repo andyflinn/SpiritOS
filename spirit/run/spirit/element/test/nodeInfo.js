@@ -13,9 +13,11 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'nodeInfo.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
@@ -138,7 +140,7 @@ function world(o) {
   // goal/G43.32: nodeInfo.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = S.requireScript;
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(S);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S);
   const pageRequire = S.requireScript;
   S.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
@@ -440,7 +442,7 @@ function formsPart() {
   const path = require('path');
   const vm = require('vm');
   const RUN = path.resolve(__dirname, '../../..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const test = LOADER.requireScript('spirit/test/testReport.js');
   const EL = path.join(RUN, 'spirit', 'element');
 
   const settle = async function () { for (let i = 0; i < 40; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -517,7 +519,7 @@ function formsPart() {
     const real = { 'spirit/element/joinForm.js': 1, 'spirit/element/faceForm.js': 1 };
     // goal/G43.32: each element places itself by installSpiritElement, handed by the page stand-in
     // (spirit/test/headLessChrome.js pageSpirit).
-    require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(S);
+    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S);
     const pageRequire = S.requireScript;
     S.requireScript = function (p) {
       if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
@@ -587,7 +589,7 @@ function partsPart() {
   const fs = require('fs');
   const path = require('path');
   const RUN = path.resolve(__dirname, '..', '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const test = LOADER.requireScript('spirit/test/testReport.js');
 
   function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 
@@ -624,8 +626,8 @@ function rotatePart() {
   const path = require('path');
   const { spawn } = require('child_process');
   const RUN = path.resolve(__dirname, '..', '..', '..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-  const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  const test = LOADER.requireScript('spirit/test/testReport.js');
+  const { freePort, until, sleep, chromePage, findChrome } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
   function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
