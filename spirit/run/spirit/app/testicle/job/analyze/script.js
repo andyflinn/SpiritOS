@@ -12,7 +12,7 @@
 //           it already reads the testicle database itself it shouldn't ask the server for the leading red.")
 //   --all   lifts the per-list and per-diff bounds
 //
-// Its database is its own node's, spirit/state/testicle/data/testicle.db under the run root this file stands in, opened read
+// Its database is its own node's, spirit/state/testicle/data/testicle.db under the run root it is started in, opened read
 // only; never another node's. Its answer is one JSON object on stdout, nothing else printed there: said, red, lastGreen, blame,
 // suspects, fixFirst, sameTestElsewhere, flaky, contradicts, world, unknown. Nothing red: { "red": null }, exit 0. A failure of
 // the tool itself goes to stderr, exit 1, so a broken tool never looks like a clean answer.
@@ -22,7 +22,9 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 
-const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+// The run root it is started in, its working folder (the box: "under the run root it is started in"), as an agent runs it
+// from its own node's spirit/run.
+const RUN = process.cwd();
 const DB_FILE = path.join(RUN, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
 // THE BOUNDS, PART BY PART, NEVER AS A WHOLE (the box, "Its output"): the tool crosses no wire, so no payload limit holds; the
 // bounds are for the agent reading it. At most 20 per list, each diff cut at a line past about 1,500 bytes, each with the count
