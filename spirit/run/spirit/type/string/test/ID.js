@@ -9,7 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'type', 'string/ID.js');
 
 let T = null;
@@ -44,7 +46,7 @@ test.run('its default is the node\'s own public key, once the node is known', 0.
 // node of its own, contact.label, whose publicKey is a spirit.type.string.ID, takes the node's own key past its argument
 // check, and refuses a well-formed key nobody there has seen, naming publicKey. A lookup is no change (Q16, Andy: "yes." to
 // "Shall contact.get stay a read ... that answers not-known for a stranger"): contact.get takes that key and answers 404.
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 const N = {};
 async function call(verb, args) {
   try {

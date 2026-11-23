@@ -11,7 +11,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'api.js');
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const spirit = globalThis.spirit;
@@ -20,7 +22,7 @@ const isPlain = function (v) { return v !== null && typeof v === 'object' && !Ar
 // A peer's public key as the key rule takes one, and one it does not.
 // A key the node of this tree knows, its own, ID's default (goal/G48.4, Q14: a spirit.type.string.ID is a key the node
 // knows; one made up here would be refused).
-const KEY = require(path.join(RUN, 'spirit', 'type', 'string', 'ID.js')).defaultValue();
+const KEY = LOADER.requireScript('spirit/type/string/ID.js').defaultValue();
 const NOT_KEY = 'not-a-key';
 
 // THE TABLE THE NODE MOUNTS, read from server.js's text: loopbackVerbs.mount('<family>', <folder>, { '<verb>': { request:

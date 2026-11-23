@@ -10,8 +10,10 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const G = require(path.join(RUN, 'spirit', 'sendMail', 'mailgun.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const G = LOADER.requireScript('spirit/sendMail/mailgun.js');
 
 const netFetched = [];
 // The test reporter's own posts to this machine's node pass; anything else is kept and refused.

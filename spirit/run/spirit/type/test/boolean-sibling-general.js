@@ -17,7 +17,9 @@ function typeRules(ARGS) {
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const TYPE = path.join(RUN, 'spirit', 'type');
 
 // Every type file: each script under spirit/type/, at any depth, leaving out the test folders.

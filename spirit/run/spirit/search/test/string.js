@@ -11,8 +11,10 @@ const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const M = require(path.join(RUN, 'spirit', 'search', 'string.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const M = LOADER.requireScript('spirit/search/string.js');
 const p = M.probabilityStringMatch;
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

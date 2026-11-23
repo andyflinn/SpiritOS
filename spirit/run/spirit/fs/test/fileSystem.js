@@ -12,11 +12,13 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 // THE FILE MOVED (goal/G49.1; Andy: "spirit/fileSystem.js moves to spirit/fs/fileSystem.js", "THEN FUCKING MOVE IT!"): read at
 // its new place, and every check below red, never a crash, while it does not stand there.
 let FS = {};
-try { FS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')); } catch (e) { FS = {}; }
+try { FS = LOADER.requireScript('spirit/fs/fileSystem.js'); } catch (e) { FS = {}; }
 test.run('spirit/fs/fileSystem.js stands, and spirit/fileSystem.js is gone', 0.8, function () {
   // The old place written in two pieces, so a sweep of the old path over the tree leaves this check alone.
   const oldPlace = path.join(RUN, 'spirit', 'file' + 'System.js');
@@ -145,7 +147,7 @@ test.run('fileServable keeps spirit/element/icon.js open', 0.2, function () { re
 // fileSystem-noPreferences: the node writes no preferences.json (goal/G43.17).
 // Andy: "i want to remove that information and all the code that references it, gone."
 const fs = require('fs');
-const { scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const { scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
 const P = {};
 test.run('a scratch node comes up', 0.2, async function () {
   P.N = await scratchNode();
@@ -154,7 +156,7 @@ test.run('a scratch node comes up', 0.2, async function () {
 test.after(function () {
   const N = P.N || {};
   try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
-  try { if (N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N); } catch (e) { /* scratch */ }
+  try { if (N.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(N); } catch (e) { /* scratch */ }
 });
 test.run('the node writes no preferences.json', 0.2, function () {
   if (!P.N || !P.N.up || !P.N.root) return false;

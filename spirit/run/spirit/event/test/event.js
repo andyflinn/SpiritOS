@@ -9,8 +9,10 @@ const http = require('http');
 const path = require('path');
 const { EventEmitter } = require('events');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { createEvents } = require(path.join(RUN, 'spirit', 'event', 'event.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const { createEvents } = LOADER.requireScript('spirit/event/event.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 async function until(fn, ms) { for (let i = 0; i < ms / 20; i++) { if (fn()) return true; await sleep(20); } return !!fn(); }
@@ -171,7 +173,7 @@ test.run('when one of two streams closes, the other keeps its heartbeat and goes
 // need a loopback mark, it will reach the app server with the local node's ID", "47.5 WILL NOT HAVE ANY APP-SPECIFIC SHIT IN
 // IT.", "Go on 47.5 fix, part two"). On a scratch node of lab's: a planted app server whose bootstrap writes down every
 // subscriber that is its own node; a page opens the node's event stream, and that subscriber is written down.
-const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
 const fs = require('fs');
 const SELFSUB = 'zzselfsub';
 const N = {};

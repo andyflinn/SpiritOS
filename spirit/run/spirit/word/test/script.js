@@ -11,15 +11,17 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/word/test/script/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/word/test/script'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 
 // THE HARD-CODED WORDS, READ FROM word.js ITSELF, NEVER A COPY HERE (Andy, 2026-11-17, of a copy twelve days behind it:
 // "WHY WOULD A TEST HARD-CODE reserved words?", "IT's like hardcoded apps! IDIOTIC!"). The box: "word.js will have hardcoded
@@ -395,6 +397,6 @@ test.after(function () {
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
   if (W.scratch) { try { fs.rmSync(W.scratch, { recursive: true, force: true }); } catch (e) { /* left */ } }
 });

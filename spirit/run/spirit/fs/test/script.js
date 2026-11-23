@@ -14,8 +14,10 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 // The code of a file, comments left out.
 function code(rel) { let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }

@@ -8,8 +8,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../..');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const FILE = path.join(__dirname, '..', 'boot.js');
 function read(p) { try { return fs.readFileSync(path.join(RUN, p), 'utf8'); } catch (e) { return null; } }
@@ -17,7 +19,7 @@ function code(p) { const t = read(p); return t == null ? null : t.replace(/\/\*[
 
 // THE SERVERS' PAGE TABLE, LOADED BEFORE THE FIRST CHECK: testReport loads spirit.js for its record with the global
 // hidden, so a module that needs the spirit global (serveCommon.js) is required while it still stands.
-const pages = require(path.join(RUN, 'spirit', 'server', 'serveCommon.js'));
+const pages = LOADER.requireScript('spirit/server/serveCommon.js');
 
 // boot.js: the face's boot. One test.run per test (goal/G47.2).
 
@@ -94,7 +96,7 @@ test.run('boot reads no sidecar of Join', 0.2, function () {
   return !(/join[\w.]*\.sidecar\.json/).test(boot) || false;
 }, test.limit.quick);
 test.run('boot, the seal, the sheet, the icon and the Join app whole are core', 0.2, function () {
-  const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
+  const core = LOADER.requireScript('spirit/coreFiles.js');
   const mustCore = ['spirit/shell/boot.js', 'spirit/shell/seal.js', 'spirit/shell/face.css', 'spirit/shell/favicon.svg', 'spirit/app/join/element.js', 'spirit/app/join/join.json'];
   const notCore = mustCore.filter(function (p) { return core.isCore('spirit/run/' + p, REPO) !== true; });
   return !notCore.length || false;

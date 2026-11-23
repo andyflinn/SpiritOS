@@ -8,7 +8,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'type', 'string/fileSelect.js');
 
 let T = null;
@@ -29,6 +31,6 @@ test.run('isValid throws an error for "/abs", "../up", a backslash path, 5, {}',
 }, test.limit.quick);
 test.run('its description says empty for all, then the description of its sibling', 0.2, function () {
   if (!T) return false;
-  const sib = require(path.join(RUN, 'spirit', 'type', 'string', 'file.js'));
+  const sib = LOADER.requireScript('spirit/type/string/file.js');
   return T.ruleDescription() === 'empty for all, else ' + sib.ruleDescription() || false;
 }, test.limit.quick);

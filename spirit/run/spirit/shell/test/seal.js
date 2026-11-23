@@ -10,7 +10,9 @@ const path = require('path');
 const crypto = require('crypto');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const FILE = path.join(__dirname, '..', 'seal.js');
 const FROM = 'MCowBQYDK2VwAyEAsealTestFromAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
@@ -40,7 +42,7 @@ test.run('the browser seal says it is supported where WebCrypto has X25519', 0.2
 // what one seals the other opens
 test.run('what the page seals to a node\'s key, the node\'s seal opens to the same text', 0.2, async function () {
   if (!W.S) return false;
-  const node = require(path.join(RUN, 'spirit', 'seal.js'));
+  const node = LOADER.requireScript('spirit/seal.js');
   W.node = node;
   const pair = crypto.generateKeyPairSync('x25519');
   const nodePub = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');

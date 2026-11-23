@@ -11,12 +11,14 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 const FACE = path.join(RUN, 'spirit', 'shell', 'face.html');
 const net = require('net');
-const limits = require(path.join(RUN, 'spirit', 'limits.js'));
-const { sleep, scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const limits = LOADER.requireScript('spirit/limits.js');
+const { sleep, scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 
 // What the tests share: the scratch node of "/" and its Chrome page, then the garbage's nodes, made by "the world:" tests.
@@ -25,7 +27,7 @@ function letGo(node, page) {
   if (page && page.kid) { try { page.kid.kill(); } catch (e) { /* gone */ } }
   if (node && node.child) { try { node.child.kill(); } catch (e) { /* gone */ } }
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
 }
 
 // "/" answers face.html, byte for byte

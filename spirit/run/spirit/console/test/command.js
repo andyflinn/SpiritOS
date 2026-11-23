@@ -12,8 +12,10 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 const W = {};
 const stateOf = function () { try { return JSON.parse(fs.readFileSync(path.join(W.node.run, 'spirit', 'state', 'console', 'node.json'), 'utf8')); } catch (e) { return null; } };
@@ -197,7 +199,7 @@ test.run('"api" at spirit.app.desk prints the verbs the console offers there, so
   if (!up() || at() !== 'app.desk') return false;
   const p = await go('api');
   let offered = null;
-  try { offered = await require(path.join(RUN, 'spirit', 'console', 'command.js')).verbsAt('app.desk'); } catch (e) { offered = null; }
+  try { offered = await LOADER.requireScript('spirit/console/command.js').verbsAt('app.desk'); } catch (e) { offered = null; }
   const want = offered && typeof offered === 'object' ? Object.keys(offered).sort() : null;
   return (!!want && JSON.stringify(json(p.out)) === JSON.stringify(want)) || false;
 }, test.limit.slow);
@@ -303,10 +305,10 @@ test.run('the command history rolls at 256: after 300 more lines it holds 256, t
 // "wait list shows the configured wait-rows", "wait timeout <seconds> sets the timeout".
 // What arrives is written into the scratch node's log by the log's own writer (trafficLog's note), each payload an envelope
 // made by the node's packet encoder, as a peer's call lands; no app of the tree is named, the branch is a made-up zzwait.
-const packetCodec = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
+const packetCodec = LOADER.requireScript('spirit/client/packet.js');
 let nodeLog = null;
 const arrive = function (body, dir) {
-  if (!nodeLog) nodeLog = require(path.join(RUN, 'spirit', 'trafficLog.js')).createTrafficLog({ rootDir: W.node.run });
+  if (!nodeLog) nodeLog = LOADER.requireScript('spirit/trafficLog.js').createTrafficLog({ rootDir: W.node.run });
   const e = packetCodec.encode('api', body);
   return nodeLog.note({ dir: dir || 'in', kind: 'request', peer: 'KEY-ZZWAITPEER', hash: e.envelope.id, outcome: 'delivered', payload: e.text });
 };

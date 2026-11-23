@@ -10,7 +10,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../tempFolder.js');
@@ -21,11 +23,11 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/contact/test/
 test.after(function () { try { if (W.store) W.store.close(); } catch (e) { /* closed */ } try { fs.rmSync(tempFolder.path('spirit/contact/test/script'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 // A file not there yet is no crash at load: each check below finds nothing and is red (goal/G49.4, the move).
 let contacts = {};
-try { contacts = require(path.join(RUN, 'spirit', 'contact', 'script.js')); } catch (e) { contacts = {}; }
-const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
-const nodeCard = require(path.join(RUN, 'spirit', 'nodeCard.js'));
-const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
-const { scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+try { contacts = LOADER.requireScript('spirit/contact/script.js'); } catch (e) { contacts = {}; }
+const nodeStore = LOADER.requireScript('spirit/nodeStore.js');
+const nodeCard = LOADER.requireScript('spirit/nodeCard.js');
+const auth = LOADER.requireScript('spirit/relayAuth.js');
+const { scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 
 // A card signed by that key, naming an owner.
@@ -88,7 +90,7 @@ test.after(function () {
   try { if (W.home) fs.rmSync(W.home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 const runOf = function () { return W.node.run || path.join(W.node.root, 'spirit', 'run'); };
 // A row of the scratch node's table, its signed card naming that owner.

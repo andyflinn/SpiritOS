@@ -9,11 +9,13 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const http = require('http');
 const net = require('net');
-const { sleep, scratchRelay, scratchFaceRelay } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const limits = require(path.join(RUN, 'spirit', 'limits.js'));
+const { sleep, scratchRelay, scratchFaceRelay } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const limits = LOADER.requireScript('spirit/limits.js');
 
 const FILE = path.join(__dirname, '..', 'relay.js');
 
@@ -21,7 +23,7 @@ const src = fs.readFileSync(FILE, 'utf8');
 const dirSrc = (/^const FACE_DIR = (path\.join\(__dirname, [^;]*\));/m.exec(src) || [])[1];
 const mapSrc = (/^const FACE_FILES = (\{[^;]*\});/m.exec(src) || [])[1];
 // goal/G43.18 (Q25, Andy: "the browser should see them the same."): an address is served from its file, serveCommon.pageFile.
-const common = require(path.join(RUN, 'spirit', 'server', 'serveCommon.js'));
+const common = LOADER.requireScript('spirit/server/serveCommon.js');
 let dir = null; let map = null;
 try { dir = dirSrc ? new Function('path', '__dirname', 'return ' + dirSrc + ';')(path, path.dirname(FILE)) : null; } catch (e) { dir = null; }
 try { map = mapSrc ? new Function('common', 'return ' + mapSrc + ';')(common) : null; } catch (e) { map = null; }
@@ -677,7 +679,7 @@ test.after(function () {
   if (FP.R) { try { FP.R.stop(); } catch (e) { /* gone */ } }
   if (G.relay) {
     try { if (G.relay.child) G.relay.child.kill(); } catch (e) { /* gone */ }
-    if (G.relay.root) try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(G.relay); } catch (e) { /* scratch */ }
+    if (G.relay.root) try { LOADER.requireScript('spirit/test/headLessChrome.js').freeTree(G.relay); } catch (e) { /* scratch */ }
   }
   if (BA.R) { try { BA.R.stop(); } catch (e) { /* gone */ } }
 });

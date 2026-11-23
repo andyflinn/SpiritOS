@@ -7,7 +7,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 const api = require(path.join(RUN, 'spirit', 'fs', 'api.js'));
 
 function refused(status, code, message) { const e = new Error(message); e.status = status; e.code = code; return e; }
@@ -69,7 +71,7 @@ test.run('a file verb asked for a plain path inside the run folder passes the pa
 // sit in media/, which the node's write rules let a caller write; spirit/ holds core files, refused alike on both sides.
 const fsNode = require('fs');
 const { spawnSync } = require('child_process');
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = LOADER.requireScript('spirit/tempFolder.js');
 test.after(function () { try { fsNode.rmSync(tempFolder.path('spirit/fs/test/api'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const LOCAL = {};
 test.run('the world: a run root with no node, and a process asking its spirit.fs', 0.2, function () {

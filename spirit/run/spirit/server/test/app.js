@@ -18,8 +18,10 @@ const http = require('http');
 const Module = require('module');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../..');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
 const FILE = path.join(__dirname, '..', 'app.js');
 const SELF_FILE = __filename;
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
@@ -57,7 +59,7 @@ function plantFamilies() {
   ].join('\n') + '\n');
 }
 function removeFamilies() { [FAMILY, SHED_FAMILY].forEach(function (n) { try { fs.rmSync(path.join(RUN, 'spirit', 'app', n), { recursive: true, force: true }); } catch (e) { /* none */ } }); }
-const test = CHILD ? null : require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = CHILD ? null : LOADER.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends (by the parent; a child is handed its folder).
 const tempFolder = require('../../tempFolder.js');
@@ -169,7 +171,7 @@ Module._load = function (request, parent) {
   return realLoad.apply(this, arguments);
 };
 globalThis.spirit = fake;
-if (process.platform === 'win32') PIPE = require(path.join(RUN, 'spirit', 'appClient.js')).pipePathFor(TMP, NAME, 'win32');
+if (process.platform === 'win32') PIPE = LOADER.requireScript('spirit/appClient.js').pipePathFor(TMP, NAME, 'win32');
 const childArgv = process.argv.slice();
 process.argv = [process.argv[0], path.join(TMP, NAME + '.js'), '--pipe', PIPE];
 
@@ -372,7 +374,7 @@ function jsonFiles(dir, out) {
   return out;
 }
 function codeFiles(dir, out) {
-  const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+  const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
   let names = [];
   try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   names.forEach(function (d) {
@@ -587,7 +589,7 @@ function stateCachePart() {
   const noTree = function () { return !id; };
   test.run('the sender\'s file name is its node id', 0.2, function () {
     putBackTheRealSpirit();
-    ({ until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')));
+    ({ until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js'));
     root = ownTemp('spirit-state-cache-');
     execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
       .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
