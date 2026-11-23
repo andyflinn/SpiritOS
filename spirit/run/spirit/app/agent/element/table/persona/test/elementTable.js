@@ -14,7 +14,6 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 const FILE = path.join(__dirname, '..', 'elementTable.js');
 const SHARED = 'spirit/app/agent/element/table/tableElement.js';
 const ROW = 'spirit/app/agent/element/table/persona/elementRow.js';
@@ -29,7 +28,7 @@ const at = function (place) { return String(place).split('.').reduce(function (o
 // set, the files it asks for have not loaded yet.
 const W = { required: [], tables: [], rows: [], held: null };
 function world() {
-  global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, branchPath: branchPath, isBrowser: function () { return false; } } };
+  global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
   // As their own files place themselves: by the one helper, at spirit.required.<their path>.

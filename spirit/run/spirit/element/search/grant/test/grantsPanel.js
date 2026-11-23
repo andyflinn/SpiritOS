@@ -10,7 +10,7 @@
 // through the spirit object (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"), so no api.verb is
 // handed: the families stand as spirit.js binds them, each verb a function answering its body or throwing its refusal,
 // and every family's FS verbs under FS; the auth family on spirit.readyPromise, a server's family through
-// spirit.requireScript(spirit.branchPath(name)). Then the table it offers by name, grantsPanel.nodeGrants (moved here from the
+// spirit.requireScript of its api.js path. Then the table it offers by name, grantsPanel.nodeGrants (moved here from the
 // Grants app), over the real auth branch's data.js, which its api.js requires.
 // This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the authSource and noWarning parts, once files of
 // their own, are sections at its end, run after the checks above and counted with them. One test.run per test (goal/G47.2).
@@ -154,20 +154,20 @@ function world() {
     grant: function (args) { return args.path === 'fs.search' ? { status: 409, body: { ok: false, code: 'already-granted', error: 'already granted' } } : { status: 200, body: { ok: true } }; },
     revoke: function () { return { status: 200, body: { ok: true } }; },
   });
-  // The node's own families on spirit.readyPromise; a server's family (jobs here) bound through spirit.requireScript(branchPath).
+  // The node's own families on spirit.readyPromise; a server's family (jobs here) bound through spirit.requireScript of spirit/app/<name>/api.js.
   const families = { fs: family(w, 'fs', { search: function () { return { status: 200, body: {} }; } }) };
   const servers = { jobs: family(w, 'jobs', { list: function () { return { status: 200, body: {} }; } }) };
   const FILES = { 'spirit/element/search/bundle.js': ['search'], 'spirit/element/search/contact.js': ['search'],
     'spirit/element/search/api.js': ['search'], 'spirit/element/search/grant.js': ['search'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'],
     'spirit/element/armingButton.js': ['armingButton'] };
   const page = {};
-  const branchPath = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
+  const appApi = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
     // The page knows its node: spirit.required.spirit.data files nothing before it does (goal/G41.28, Q10).
     spirit: { required: page, nodeFacts: { key: 'KEY+GRANTS/PANEL==' },
       requireScript: function (p) {
         w.required.push(String(p));
-        const server = Object.keys(servers).filter(function (k) { return branchPath(k) === p; })[0];
+        const server = Object.keys(servers).filter(function (k) { return appApi(k) === p; })[0];
         if (server) return Promise.resolve(servers[server]);
         // A branch's api.js: its real companion data.js run once on this window over the real data set, as the real api.js
         // requires it (goal/G47.1), so the server jobs the test hands spirit.required.spirit.data reach the panel as the page's would, and
@@ -179,7 +179,7 @@ function world() {
         (FILES[p] || []).forEach(function (k) { const at = ((page.spirit = page.spirit || {}).element = page.spirit.element || {}); at[k] = E[k]; });
         return Promise.resolve(true);
       },
-      branchPath: branchPath,
+     
       apiTree: function () { w.treeAsked += 1; return Promise.resolve(w.tree || TREE); },
       // The spirit object's outcome as spirit.js has it: a call's answer as { status, body }, 0 when nothing answered.
       callOutcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },

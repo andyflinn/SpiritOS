@@ -189,7 +189,7 @@ function classOf(node, page) {
 // The node's testicle, as the reporter finds it: the checkout's own node.
 let testicle = null;
 function tell(row) {
-  testicle = testicle || spirit.requireScript(spirit.branchPath('testicle'));
+  testicle = testicle || spirit.requireScript('spirit/app/testicle/api.js');
   return Promise.resolve(testicle).then(function (f) { return f['script.classify'](row); });
 }
 

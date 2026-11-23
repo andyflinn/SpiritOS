@@ -601,7 +601,6 @@ test.run('typing asks srv.search on the branch spirit.readyPromise holds', 0.2, 
   bound = [];
   SP = window.spirit;
   SP.readyPromise = Promise.resolve({ srv: fam('srv'), desk: fam('desk') });
-  SP.branchPath = function (n) { return 'spirit/app/' + n + '/api.js'; };
   SP.requireScript = function (p) { bound.push(p); return Promise.resolve(fam(/^spirit\/app\/([^/]+)\//.exec(p)[1])); };
   SP.callOutcome = function (c) {
     return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
@@ -662,7 +661,6 @@ test.run('with nothing to show it shows its empty words', 0.2, function () {
   Ln.destroy();
   delete SP.readyPromise;
   delete SP.requireScript;
-  delete SP.branchPath;
   delete SP.callOutcome;
   // create: an empty list, and no rows given
   c2 = container();

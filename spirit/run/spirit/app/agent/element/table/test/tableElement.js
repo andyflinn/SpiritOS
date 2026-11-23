@@ -13,10 +13,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 
 const FILE = path.join(__dirname, '..', 'tableElement.js');
-const AGENT = branchPath('agent');
+const AGENT = 'spirit/app/agent/api.js';
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
 // base64url (spirit.required.spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
@@ -89,7 +88,7 @@ const E = {};
 test.run('the shared element runs on a window of its own, over the real spirit.required.spirit.data', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   w = world();
-  global.window = { spirit: { get element() { return this.elements; }, elements: {}, branchPath: branchPath, isBrowser: function () { return false; } } };
+  global.window = { spirit: { get element() { return this.elements; }, elements: {}, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   load(path.join(RUN, 'spirit', 'data.js'));
   D = global.window.spirit.required.spirit.data;

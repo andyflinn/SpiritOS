@@ -125,11 +125,11 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
   out.keys = Object.keys(s).sort();
   out.same = require(process.argv[2] + '/spirit/spirit.js') === s && globalThis.spirit === s;
   if (process.argv[3] === 'none') {
-    out.require = await code(s.requireScript(s.branchPath('demo')));
+    out.require = await code(s.requireScript('spirit/demo/api.js'));
     out.tree = await code(s.apiTree());
     out.noPort = !('port' in s);
   } else {
-    const fams = await Promise.all([s.requireScript(s.branchPath('demo')), s.requireScript(s.branchPath('demo'))]);
+    const fams = await Promise.all([s.requireScript('spirit/demo/api.js'), s.requireScript('spirit/demo/api.js')]);
     const two = await Promise.all([fams[0].hello({ name: 'bert' }), fams[1].hello({ name: 'carl' })]);
     out.two = two.map(function (r) { return r.said; });
     out.bound = fams[0] === fams[1] && fams[0] === s.required.spirit.demo.api && typeof s.required.spirit.demo.api.hello === 'function';
@@ -144,11 +144,11 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     out.fs = !('FS' in s.required.spirit.demo.api);
     out.noArg = await code(s.required.spirit.demo.api.hello({ nme: 'x' }));
     out.noVerb = typeof s.required.spirit.demo.api.nothing === 'undefined';
-    out.noFamily = await code(s.requireScript(s.branchPath('gone')));
+    out.noFamily = await code(s.requireScript('spirit/gone/api.js'));
     try { await s.required.spirit.demo.api.hello({ name: 'held' }); } catch (e) { out.held = [e.code, e.message, e.status]; }
     try { await s.required.spirit.demo.api.hello({ name: 'slow' }); } catch (e) { out.slow = [e.status, e.message]; }
     out.tree = Object.keys(await s.apiTree()).sort();
-    out.viaRequire = (await s.requireScript(s.branchPath('demo'))) === s.required.spirit.demo.api;
+    out.viaRequire = (await s.requireScript('spirit/demo/api.js')) === s.required.spirit.demo.api;
     out.outcome = [await s.callOutcome(s.required.spirit.demo.api.hello({ name: 'eve' })), await s.callOutcome(s.required.spirit.demo.api.hello({ nme: 1 })), await s.callOutcome(s.required.spirit.demo.api.hello({ name: 'held' })), await s.callOutcome(Promise.reject(new Error()))]
       .map(function (o) { return [o.status, o.body && (o.body.said || o.body.code)]; });
     // This process's job, published by event.publish with its own id, the one path.
@@ -178,7 +178,7 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
       out.peerHow = how && how.waitMs;
       return new Promise(function (r) { setTimeout(function () { r(body && body.api ? { interface: '${POISON.replace(/'/g, "\\'")}' } : { said: 'hello from ' + peer }); }, 20); });
     };
-    const both = await Promise.all([s.requireScript(s.branchPath('demo'), 'peerKey1', { waitMs: 777 }), s.requireScript(s.branchPath('demo'), 'peerKey1', { waitMs: 777 })]);
+    const both = await Promise.all([s.requireScript('spirit/demo/api.js', 'peerKey1', { waitMs: 777 }), s.requireScript('spirit/demo/api.js', 'peerKey1', { waitMs: 777 })]);
     out.peer = [both[0] === both[1], asks, (await both[0].hello({ name: 'x' })).said, s.required.spirit.demo.api !== both[0]];
     out.peerRan = globalThis.peerCodeRan === true;
     out.peerOwn = typeof both[0].hello === 'function' && typeof both[0].peerOnly === 'undefined';
@@ -287,32 +287,14 @@ test.run('the source sets the global before its first require', 0.2, function ()
 test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs', 0.2, function () {
   return !/typeof (window|module|process|require|TextDecoder|Buffer)/.test(code.replace(/function isNode\(\)[^\n]*\n|function isBrowser\(\)[^\n]*\n/g, '')) || false;
 }, test.limit.quick);
-// data: the cache, spirit.required.spirit.data (goal/G41.3); branchPath: the one family path function (goal/G41.12); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
+// data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'branchPath', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'processJob', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
-// BRANCH (goal/G49.2; Andy: "assert the \"branch\"", "yes on the two verbs. fix it all."): the instance finds a branch's
-// path by branchPath, on a page as in node, and a bound branch's subscribe takes {branch, run?, since?}.
-test.run('the instance holds branchPath, in node and on a page', 0.2, function () {
-  if (!T.w || !T.w.spirit) return false;
-  return (typeof s.branchPath === 'function' && typeof T.w.spirit.branchPath === 'function') || false;
-}, test.limit.quick);
-// goal/G49.2 (Andy: "decision, cw's approach to \"ask the node\". verb modification approved."): branchPath learns where a
-// branch lives from its node's answer, never from the disc: its body, comments left out, holds no fs and no existsSync.
-test.run('branchPath asks the disc for nothing', 0.2, function () {
-  const at = SOURCE.indexOf('function branchPath(');
-  if (at === -1) return false;
-  const open = SOURCE.indexOf('{', at);
-  let depth = 0, end = open;
-  for (let i = open; i < SOURCE.length; i++) { if (SOURCE[i] === '{') depth++; else if (SOURCE[i] === '}') { depth--; if (depth === 0) { end = i; break; } } }
-  const body = SOURCE.slice(open, end + 1).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
-  return (body.length > 2 && !/\bexistsSync\b|require(?:Script)?\(\s*['"]fs['"]\s*\)|\bstatSync\b|\breaddirSync\b/.test(body)) || false;
-}, test.limit.quick);
-test.run('branchPath names the api.js of a branch in its own folder: spirit/desk/api.js for desk', 0.2, function () {
-  return (typeof s.branchPath === 'function' && /^spirit\/(app\/)?desk\/api\.js$/.test(String(s.branchPath('desk')))) || false;
-}, test.limit.quick);
+// BRANCH (goal/G49.2; Andy: "assert the \"branch\"", "yes on the two verbs. fix it all."): a bound branch's subscribe takes
+// {branch, run?, since?}.
 test.run('no factory, no transport and no second object is handed out, in node or on a page', 0.2, function () {
   if (!T.w || !T.w.spirit) return false;
   const factories = ['createSpirit', 'assemble', 'forNode', 'forPeer', 'nodeTransport', 'pageTransport', 'peerTransport', 'loadInterface', 'spiritObject', 'call', 'port'];
@@ -437,7 +419,7 @@ test.run('spirit.apiTree() answers its node\'s api as it stands', 0.2, function 
   const o = O(); if (!o) return false;
   return JSON.stringify(o.tree) === JSON.stringify(['demo', 'gone']) || false;
 }, test.limit.quick);
-test.run('spirit.requireScript(spirit.branchPath(\'demo\')) answers the same member, spirit.demo', 0.2, function () {
+test.run('spirit.requireScript of spirit/demo/api.js answers the member at spirit.required.spirit.demo.api', 0.2, function () {
   const o = O(); if (!o) return false;
   return !!o.viaRequire || false;
 }, test.limit.quick);
@@ -564,7 +546,9 @@ test.run('in node, spirit holds no branchPath', 0.2, function () {
 test.run('on a page with no link, calls go to the page\'s own origin, /api/spirit, as a call with its args', 0.2, async function () {
   if (!T.ps) return false;
   const wq = T.wq;
-  const pc = await T.ps.demo.hello({ name: 'hal' });
+  // Asked by its path (goal/G49.6: never by a name).
+  const demo = await wq.spirit.requireScript('spirit/demo/api.js');
+  const pc = await demo.hello({ name: 'hal' });
   const toDoor = wq.fetched.filter(function (f) { return f.url === '/api/spirit'; });
   return (pc.said === 'hello hal' && toDoor.length > 0 && isCall(JSON.parse(toDoor[toDoor.length - 1].body)) && JSON.parse(toDoor[toDoor.length - 1].body).call === 'demo.hello') || false;
 }, test.limit.quick);
@@ -733,13 +717,13 @@ test.run('on a page, a component that is not there refuses not-found', 0.2, asyn
 }, test.limit.quick);
 test.run('on a page, an interface answers its member on window.spirit', 0.2, async function () {
   if (!T.wq) return false;
-  const pf = await T.wq.spirit.requireScript(T.wq.spirit.branchPath('demo'));
+  const pf = await T.wq.spirit.requireScript('spirit/demo/api.js');
   return pf === T.wq.spirit.required.spirit.demo.api || false;
 }, test.limit.quick);
 test.run('on a page, a require with a key answers the peer\'s branch through the home node\'s peer.post, not its own node\'s', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
-  const pp = await wq.spirit.requireScript(wq.spirit.branchPath('demo'), 'peerKey2');
+  const pp = await wq.spirit.requireScript('spirit/demo/api.js', 'peerKey2');
   const ppa = await pp.hello({ name: 'x' });
   return (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.required.spirit.demo.api) || false;
 }, test.limit.quick);
@@ -790,7 +774,7 @@ test.run('on the node, spirit/app/script.js stands at spirit.required.spirit.app
   return (placeOf(s, 'spirit/app/script.js') === appJs && placeOf(s, 'spirit/app/api.js') === require(path.join(RUN, 'spirit/app/api.js'))) || false;
 }, test.limit.quick);
 test.run('on the node, an interface is still bound by asking a node, as a promise', 0.2, function () {
-  const iface = s.requireScript(s.branchPath('demo'));
+  const iface = s.requireScript('spirit/demo/api.js');
   if (iface && typeof iface.then === 'function') { iface.then(null, function () {}); return true; }
   return false;
 }, test.limit.quick);
@@ -950,7 +934,7 @@ test.run('on a real page, using the branch the page has not used yet for the fir
 // it asks desk itself and draws its list, never "the desk server did not answer".
 test.run('desk, off at load, is switched on from the page with app.active', 0.2, async function () {
   if (!L.atLoad) return false;
-  L.on = await L.page.evaluate("window.spirit.readyPromise.then(function (s) { return Promise.resolve(s.requireScript(s.branchPath('app'))).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
+  L.on = await L.page.evaluate("window.spirit.readyPromise.then(function (s) { return Promise.resolve(s.requireScript('spirit/app/api.js')).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
   return L.on === true || false;
 }, test.limit.quick);
 test.run('the desk server answers the page once switched on', 0.2, async function () {
@@ -1258,30 +1242,6 @@ test.run('the check sees the planted second relay/api.js, with both spirit/relay
   const planted = interfaces(FF.sRun, walk(FF.sRun, FF.sRun, []));
   if (FF.node && FF.node.child) FF.node.child.kill();
   return (!!planted.relay && planted.relay.length === 2) || false;
-}, test.limit.quick);
-
-// goal/G43.20, its box: "a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js, a job is named by its
-// route, and nothing falls back to process/js/<name>". In a process: the path spirit.branchPath gives is the family's own
-// api.js, a system family's in spirit/<name>/, an app's in spirit/app/<name>/, and none names process/js.
-// goal/G43.20: in a process, a family's path is its own api.js, and nothing falls back to process/js
-let paths = null;
-function branchPaths() {
-  if (paths) return paths;
-  paths = JSON.parse(require('child_process').spawnSync(process.execPath, ['-e',
-    "require('./spirit/spirit.js'); console.log(JSON.stringify({ fs: spirit.branchPath('fs'), desk: spirit.branchPath('desk'), agent: spirit.branchPath('agent'), none: spirit.branchPath('zzNoSuchFamily') }));"],
-    { cwd: RUN, encoding: 'utf8' }).stdout || '{}');
-  return paths;
-}
-test.run('a system branch\'s path is spirit/<name>/api.js, so fs is spirit/fs/api.js', 0.2, function () {
-  return branchPaths().fs === 'spirit/fs/api.js' || false;
-}, test.limit.quick);
-test.run('an app\'s path is spirit/app/<name>/api.js, as for desk and agent', 0.2, function () {
-  const p = branchPaths();
-  return (p.desk === 'spirit/app/desk/api.js' && p.agent === 'spirit/app/agent/api.js') || false;
-}, test.limit.quick);
-test.run('no path names process/js, a name of no branch\'s included', 0.2, function () {
-  const p = branchPaths();
-  return (Object.keys(p).length === 4 && !/process\/js/.test(JSON.stringify(p))) || false;
 }, test.limit.quick);
 
 // The worlds above, freed once: by the last world before it takes a node of its own (the lab holds five, and these hold

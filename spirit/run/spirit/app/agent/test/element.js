@@ -15,8 +15,7 @@ const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'element.js');
 // The agent server's family, as the one family path function names it (goal/G41.12).
-const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
-const AGENT_FAMILY = branchPath('agent');
+const AGENT_FAMILY = 'spirit/app/agent/api.js';
 // The tables of agent.db, in the order of their left tools (goal/G41.4, box v22).
 // goal/G41.21 (box v17): "agent.grant is removed altogether: its table, its server, and the Grants tool in the left strip".
 const TABLES = ['provider', 'model', 'persona', 'job'];
@@ -110,7 +109,7 @@ function world() {
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
   // goal/G43.32: the parts stand where the app reads them, at spirit.required.<their path>.
-  global.window = { spirit: { required: { spirit: { element: { workBench: w.workBench, tabContainer: w.tabContainer, search: { app: {} } }, app: { agent: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, branchPath: branchPath, isBrowser: function () { return true; },
+  global.window = { spirit: { required: { spirit: { element: { workBench: w.workBench, tabContainer: w.tabContainer, search: { app: {} } }, app: { agent: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, isBrowser: function () { return true; },
     // A branch's api.js: its real companion data.js run on this window over the real data set, as the real api.js
     // requires it (goal/G47.1).
     requireScript: function (p) {
@@ -210,7 +209,8 @@ test.run('the left strip has one more tool, 💬, titled Select Persona', 0.2, f
 const CODE = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
 test.run('it makes no api for its tables: each list asks agent.<table> through the spirit object itself', 0.2, function () {
   if (X.R.length !== 2) return false;
-  return !/\bapi\b/.test(CODE) ? true : false;
+  // An api.js asked by its path (goal/G49.6) is no api it makes.
+  return !/\bapi\b/.test(CODE.replace(/'spirit\/[\w/]*api\.js'/g, "''")) ? true : false;
 }, test.limit.quick);
 // One table at a time, each check its own plain title (goal/G45.6: a title has no value built into it).
 async function mountTable(name) {
@@ -761,7 +761,6 @@ async function tabOpens(kind, row) {
   const vm = require('vm');
   const RUN = path.resolve(__dirname, '../../../..');
   const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-  const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 
   const FILE = path.join(__dirname, '..', 'element.js');
   const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -903,7 +902,7 @@ async function tabOpens(kind, row) {
     const selector = { create: function (c) { const s = document.createElement('span'); c.appendChild(s); return s; } };
     win.spirit = {
       escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
-      branchPath: branchPath, isBrowser: function () { return true; },
+      isBrowser: function () { return true; },
       fs: { loadFile: function () { return Promise.reject(new Error('none')); }, saveFile: function () { return Promise.resolve(); } },
       apiTree: function () { return Promise.resolve({}); },
       // goal/G43.32: the stand-ins stand where the elements read them, at spirit.required.<their path>.
@@ -924,7 +923,7 @@ async function tabOpens(kind, row) {
         const m = /^spirit\/(.+)\/api\.js$/.exec(rel);
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
         if (companion && !loaded[companion] && fs.existsSync(path.join(RUN, companion))) { loaded[companion] = true; vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion }); }
-        if (rel === branchPath('agent')) return Promise.resolve(family);
+        if (rel === 'spirit/app/agent/api.js') return Promise.resolve(family);
         if (REAL.indexOf(rel) !== -1 && !loaded[rel]) { loaded[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
         return Promise.resolve({});
       },

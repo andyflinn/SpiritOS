@@ -32,11 +32,10 @@ test.after(function () {
   OPEN_DBS.forEach(function (d) { try { d.close(); } catch (e) { /* closed */ } });
   try { require('fs').rmSync(tempFolder.path('spirit/app/agent/element/table/test/row'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
 });
-const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 
 const FILE = path.join(__dirname, '..', 'row.js');
 const SHARED = path.join(__dirname, '..', 'tableElement.js');
-const AGENT = branchPath('agent');
+const AGENT = 'spirit/app/agent/api.js';
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
 // base64url (spirit.required.spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
@@ -111,7 +110,7 @@ const E = {};
 test.run('the shared element runs on a window of its own, over the real spirit.required.spirit.data', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
   w = world();
-  global.window = { spirit: { get element() { return this.elements; }, elements: {}, branchPath: branchPath, isBrowser: function () { return false; } } };
+  global.window = { spirit: { get element() { return this.elements; }, elements: {}, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   load(path.join(RUN, 'spirit', 'data.js'));
   D = global.window.spirit.required.spirit.data;
@@ -129,17 +128,20 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // has not; each ask kept.
   w.bundleAsks = [];
   w.bundlesHeld = { 7: 'Reader', 9: 'Writer' };
-  global.window.spirit.readyPromise = Promise.resolve({ auth: { bundle: function (a) {
+  // Asked by its path, spirit/auth/api.js (goal/G49.6: never by a name).
+  w.auth = { bundle: function (a) {
     w.bundleAsks.push(a);
     if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
     return Promise.resolve({ items: [], more: false });
-  } } });
+  } };
+  global.window.spirit.readyPromise = Promise.resolve(global.window.spirit);
   PE = function () { const e = global.window.spirit.required; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
   global.window.spirit.requireScript = function (p) {
     w.required.push(String(p));
     // The agent branch's interface brings its data.js, as the real api.js does: run once, as the page runs it, into
     // this page's spirit.required.spirit.data.
     if (p === AGENT && !w.agentData) { w.agentData = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
+    if (p === 'spirit/auth/api.js') return Promise.resolve(w.auth);
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
     // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and

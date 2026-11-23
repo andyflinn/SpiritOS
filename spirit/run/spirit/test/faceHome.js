@@ -400,7 +400,7 @@ test.run('every verb of every branch reaches the door, unsealed and sealed', 0.2
   let shut = 0;
   for (const fam of allFamilies()) {
     const inSpirit = fs.existsSync(path.join(RUN, 'spirit', fam, 'api.js'));
-    for (const v of verbsOf(inSpirit ? 'spirit/' + fam + '/api.js' : require(path.join(RUN, 'spirit', 'spirit.js')).branchPath(fam))) {
+    for (const v of verbsOf(inSpirit ? 'spirit/' + fam + '/api.js' : 'spirit/app/' + fam + '/api.js')) {
       if (fam + '.' + v === 'contact.faceable') continue;
       const c = { call: fam + '.' + v, args: {} };
       for (const form of [c, sealed(c)]) {

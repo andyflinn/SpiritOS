@@ -96,7 +96,7 @@ function interfaceOf(body) {
   if (!body || !body.api || typeof body.api.branch !== 'string' || !/^[A-Za-z]\w*$/.test(body.api.branch)) return null;
   const f = body.api.branch;
   // A node family's, an app's (spirit/app/<name>/api.js, goal/G43.27), or a server's.
-  const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, 'spirit', 'app', f, 'api.js'), path.join(RUN, require(path.join(RUN, 'spirit', 'spirit.js')).branchPath(f))];
+  const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, 'spirit', 'app', f, 'api.js')];
   for (const file of tried) if (fs.existsSync(file)) return { branch: f, interface: fs.readFileSync(file, 'utf8') };
   return { ok: false, code: 'no-interface' };
 }

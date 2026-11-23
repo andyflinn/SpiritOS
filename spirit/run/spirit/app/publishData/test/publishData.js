@@ -102,7 +102,7 @@ const BARE_CLONE = path.join(TMP, 'nolog');
 // THE PLATFORM, NOT AN AGENT (goal/G47.1; Andy: "publishData needs to work without \"agent\" and with testicle instead of
 // deskVerify."): the reports are named by the machine's platform, as their folder is.
 const PLATFORM = process.platform === 'win32' ? 'windows' : (function () { try { return /microsoft/i.test(fs.readFileSync('/proc/version', 'utf8')) ? 'wsl' : 'ubuntu'; } catch (e) { return 'ubuntu'; } }());
-// The spirit object, whose one family path function names the testicle family (goal/G41.12).
+// The spirit object it runs under, its helpers under their names (goal/G49.6).
 const SPIRIT = path.join(RUN, 'spirit', 'spirit.js');
 function git(cwd, args) { const r = spawnSync('git', args, { cwd: cwd, encoding: 'utf8', windowsHide: true }); return { status: r.status, out: String(r.stdout || '').trim() }; }
 
@@ -115,14 +115,12 @@ const STUB = [
   "  log({ verb: 'busy', args: a });",
   "  return Promise.resolve({ busy: false });",
   "} };",
-  "const branchPath = require(" + JSON.stringify(SPIRIT) + ").branchPath;",
   "globalThis.spirit = {",
-  "  branchPath: branchPath,",
   // goal/G43.32, decided 3: on the node a script comes back at once, by its run-root path; a branch's api.js binds it.
-  "  require: function (p) { if (!/\\/api\\.js$/.test(p)) return require(require('path').join(" + JSON.stringify(RUN) + ", p)); log({ require: p }); return Promise.resolve(family); },",
-  "  outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
+  "  requireScript: function (p) { if (!/\\/api\\.js$/.test(p)) return require(require('path').join(" + JSON.stringify(RUN) + ", p)); log({ require: p }); return Promise.resolve(family); },",
+  "  callOutcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
   // Its job, as spirit.js's spirit.processJob: each progress it publishes is logged, in order.
-  "  job: { progress: function (done, total, text) { log({ progress: { done: done, total: total, text: String(text) } }); return Promise.resolve(true); } },",
+  "  processJob: { progress: function (done, total, text) { log({ progress: { done: done, total: total, text: String(text) } }); return Promise.resolve(true); } },",
   "};",
   "const realLoad = Module._load;",
   "Module._load = function (request, parent) {",
@@ -189,7 +187,7 @@ test.after(function () { try { fs.rmSync(TMP, { recursive: true, force: true });
 // run: one measurement run per platform
 test.run('a scratch clone is made with a bare origin beside it and a traffic log', 0.2, function () {
   // The testicle family as the one family path function names it (goal/G41.12).
-  WR.FAMILY = require(SPIRIT).branchPath('testicle');
+  WR.FAMILY = 'spirit/app/testicle/api.js';
   setup();
   WR.COMMIT = git(__dirname, ['rev-parse', '--short', 'HEAD']).out;
   WR.ready = fs.existsSync(PRELOAD) && fs.existsSync(path.join(CLONE, 'README.md')) && !!WR.COMMIT;
