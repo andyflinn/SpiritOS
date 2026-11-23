@@ -12,11 +12,12 @@ const http = require('http');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = S.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/provider/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -50,7 +51,7 @@ test.run('server.js, handed its context, answers the table, its verb and its has
   X.scratch = ownTemp('spirit-provider');
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
   const ctx = X.ctx = { db: db, dbFile: path.join(X.scratch, 'agent.db'), tables: {}, publish: function (x) { X.published.push(x); } };
-  const t = X.t = ctx.tables.provider = require(path.join(DIR, 'server.js'))(ctx);
+  const t = X.t = ctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js')(ctx);
   X.cols = db.prepare('PRAGMA table_info("provider")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : false;
 }, test.limit.quick);
@@ -175,7 +176,7 @@ const usable = function (id) { try { return X.db.prepare('SELECT unusable FROM "
 test.after(function () { if (A.server && A.server.listening) return new Promise(function (r) { A.server.close(r); }); });
 test.run('ask of a row that is not there is refused no-such-row', 0.2, async function () {
   if (!X.t) return false;
-  X.ctx.tables.model = require(path.join(DIR, '..', 'model', 'server.js'))(X.ctx);
+  X.ctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js')(X.ctx);
   A.server = http.createServer(function (req, res) {
     stand.heard.push({ url: req.url, headers: req.headers });
     const u = new URL(req.url, 'http://x');
@@ -192,7 +193,7 @@ test.run('ask of a row that is not there is refused no-such-row', 0.2, async fun
   A.host = 'http://127.0.0.1:' + A.server.address().port;
   if (X.added && X.added.id) call(X.t.verb, { op: 'delete', id: X.added.id });
   A.anth = call(X.t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: A.host, apiKey: SECRET });
-  return (await ask({ op: 'ask', id: require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey })).refusal === 'no-such-row' ? true : false;
+  return (await ask({ op: 'ask', id: S.requireScript('spirit/relayAuth.js').generateIdentity('').publicKey })).refusal === 'no-such-row' ? true : false;
 }, test.limit.quick);
 test.run('a row labelled Anthropic asks through the Anthropic plugin, with its key', 0.2, async function () {
   if (!A.anth || !A.anth.id) return false;
@@ -400,7 +401,7 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.requi
   };
   // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js comes with its api.js, and the stand-in require above runs the real file for it.
@@ -517,14 +518,14 @@ test.run('another table\'s rows, another module\'s, and a row with no id write n
 // scratch node with its DEBUG on, and opens its Model field.
 // ── /spirit/app/agent/table/provider/test/server-picker.html: the provider's Model field, opened ──
 const ADDRESS = '/DEBUG/spirit/app/agent/table/provider/test/server-picker.html';
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = S.requireScript('spirit/test/headLessChrome.js');
 const PK = { pdir: '', db: null, node: null, page: null, m: null, mine: [], theirs: '' };
 test.after(function () {
   const page = PK.page, node = PK.node;
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
   try { if (PK.pdir) fs.rmSync(PK.pdir, { recursive: true, force: true }); } catch (e) { /* left */ }
 });
 test.run('the page server-picker.html draws the provider\'s detail with the real elements in Chrome, on a scratch node with its DEBUG on', 0.2, async function () {
@@ -534,8 +535,8 @@ test.run('the page server-picker.html draws the provider\'s detail with the real
   global.spirit.checkArgs = require(path.join(RUN, 'spirit', 'spirit.js')).checkArgs;
   const pdir = PK.pdir;
   const pctx = { db: PK.db = new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
-  pctx.tables.provider = require(path.join(DIR, 'server.js'))(pctx);
-  pctx.tables.model = require(path.join(DIR, '..', 'model', 'server.js'))(pctx);
+  pctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js')(pctx);
+  pctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js')(pctx);
   const PV = pctx.tables.provider.verb;
   const M = pctx.tables.model.verb;
   const ANTH = call(PV, { op: 'add', icon: '🅰', label: 'Anthropic', url: 'https://anthropic.example' }).id;

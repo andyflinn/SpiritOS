@@ -14,7 +14,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'deskDetails.js');
 const KEY = /^[A-Z_]+$/;
 
@@ -231,7 +232,7 @@ function ddWorld(facts, checks, o) {
   // hands some: the desk family's kept data, as spirit/app/desk/data.js gives it a page.
   if (o && o.kept) win.spirit.required.spirit.data = { desk: { data: { part: function () { return null; }, items: function () { return o.kept; }, forget: function () {} } } };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the dialog places itself by installSpiritElement as it runs.
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   vm.createContext(win);
   vm.runInContext(S.raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
@@ -605,13 +606,13 @@ test.run('a change that is no chat line (a check) repaints the panel and leaves 
 // ./deskDetails-opened.html, on a scratch node with its DEBUG on, opens the panel in the home page's app area on an item
 // with 200 chat lines and a long box.
 const OPENED = '/DEBUG/spirit/app/desk/element/deskDetails/test/deskDetails-opened.html';
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 // A scratch node and its Chrome page, stopped once their tests are done, and at the end whatever happened.
 function stop(node, page) {
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
 }
 function stopOpened() { stop(S.nodeFacts, S.page); S.nodeFacts = S.page = null; }
 function stopPressing() { stop(S.scratch, S.page2); S.scratch = S.page2 = null; }

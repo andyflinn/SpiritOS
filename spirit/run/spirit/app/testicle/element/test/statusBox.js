@@ -14,8 +14,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REL = 'spirit/app/testicle/element/statusBox.js';
 const { DatabaseSync } = require('node:sqlite');
 
@@ -94,7 +95,7 @@ test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
+  try { if (W.node && W.node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(W.node); } catch (e) { /* left */ }
 });
 
 test.run('when mounted, it puts one box into its container with the mode and the busy icon', 0.2, async function () {

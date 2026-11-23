@@ -12,9 +12,10 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const LABH = S.requireScript('spirit/test/headLessChrome.js');
 
 const TESTALL = 'spirit/app/testicle/testAll.js';
 const GREEN = 'spirit/zzAll/green.js', GREENS = 'spirit/zzAll/test/green.js';

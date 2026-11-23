@@ -16,8 +16,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { scratchNode, chromePage, findChrome, until, appRuns, watchRuns } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const { scratchNode, chromePage, findChrome, until, appRuns, watchRuns } = S.requireScript('spirit/test/headLessChrome.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const APP = path.join(RUN, 'spirit', 'app', 'icons');
@@ -57,7 +58,7 @@ test.after(function () {
   }
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // the box: "a face-only app get's api.js, data.js, node<Name>.js, browser<Name>.js" (Q5, Q6)

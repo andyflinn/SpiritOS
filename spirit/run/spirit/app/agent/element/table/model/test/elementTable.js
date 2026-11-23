@@ -15,7 +15,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'elementTable.js');
 const SHARED = 'spirit/app/agent/element/table/tableElement.js';
 const ROW = 'spirit/app/agent/element/table/model/elementRow.js';
@@ -73,7 +74,7 @@ const W = { required: [], tables: [], rows: [], forms: [], busy: [], drops: [], 
 function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
+  const helper = S.requireScript('spirit/element/installSpiritElement.js');
   // As their own files place themselves: by the one helper, at spirit.required.<their path>.
   helper(global.window.spirit, SHARED, {
     // The shared table draws its title row first in its container (../tableElement.js), then its list.
@@ -98,7 +99,7 @@ function world() {
     if (W.held) return W.held.promise;
     return Promise.resolve(p === AGENT ? W.family : true);
   };
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
 }
 const detail = { look: function (t) { return { icon: '🧠', name: t }; } };
 const E = {};

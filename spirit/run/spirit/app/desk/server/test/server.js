@@ -10,14 +10,15 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../../..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/nodeDesk/' + name + tempAsked); }
-const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
+const appClient = SPIRIT.requireScript('spirit/appClient.js');
 
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 function tracked(dir) { return execSync('git ls-files -- "' + dir + '"', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean); }

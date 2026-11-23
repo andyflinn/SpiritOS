@@ -12,7 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 
 const FILE = path.join(__dirname, '..', 'tableElement.js');
 const AGENT = 'spirit/app/agent/api.js';
@@ -126,7 +127,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // goal/G43.32: the page's own spirit.requireScript answers the helper, so the element places itself by installSpiritElement,
   // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
   // spirit.required.<their path>.
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   PE().search = Object.assign(PE().search || {}, { create: function (host, o) {
     const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
       refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };

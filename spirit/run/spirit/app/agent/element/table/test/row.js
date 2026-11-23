@@ -13,10 +13,11 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = S.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/element/table/test/row/' + name + tempAsked); }
 // THE DATABASES IT OPENS ARE CLOSED BEFORE ITS TEMP FOLDER GOES (goal/G47.1, no pollution; testicle's "it leaves no temp
@@ -162,7 +163,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // goal/G43.32: the page's own spirit.requireScript answers the helper, so each element places itself by installSpiritElement,
   // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
   // spirit.required.<their path>.
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   PE().search = Object.assign(PE().search || {}, { create: function (host, o) {
     const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
       refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
@@ -484,7 +485,7 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
   // real list's own heart, probabilitySearch.order, the state it is made with.
   N.LIST = (function () {
     // goal/G43.32: a page's spirit, so the list places itself at spirit.required.spirit.element.search as it runs.
-    const win = { window: null, spirit: require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit({ element: {} }), console: console };
+    const win = { window: null, spirit: S.requireScript('spirit/test/headLessChrome.js').pageSpirit({ element: {} }), console: console };
     win.window = win;
     vm.createContext(win);
     ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'].forEach(function (rel) {
@@ -506,8 +507,8 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
   const pageSpiritObj = global.spirit;
   global.spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
   try {
-    N.sctx.tables.provider = require(path.join(RUN, 'spirit', 'app', 'agent', 'table', 'provider', 'server.js'))(N.sctx);
-    N.sctx.tables.model = require(path.join(RUN, 'spirit', 'app', 'agent', 'table', 'model', 'server.js'))(N.sctx);
+    N.sctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js')(N.sctx);
+    N.sctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js')(N.sctx);
   } finally { global.spirit = pageSpiritObj; }
   N.PA = N.sctx.tables.provider.verb.handler({ op: 'add', icon: '🏢', label: 'Mine', url: 'https://mine.example' }).id;
   N.PB = N.sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs', url: 'https://theirs.example' }).id;
@@ -601,8 +602,8 @@ test.run('picking a persona, with the provider not picked yet, saves the job wit
   const pageSpiritAgain = global.spirit;
   global.spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
   try {
-    N.sctx.tables.persona = require(path.join(RUN, 'spirit', 'app', 'agent', 'table', 'persona', 'server.js'))(N.sctx);
-    N.sctx.tables.job = require(path.join(RUN, 'spirit', 'app', 'agent', 'table', 'job', 'server.js'))(N.sctx);
+    N.sctx.tables.persona = S.requireScript('spirit/app/agent/table/persona/server.js')(N.sctx);
+    N.sctx.tables.job = S.requireScript('spirit/app/agent/table/job/server.js')(N.sctx);
   } finally { global.spirit = pageSpiritAgain; }
   J.PZ = viaTables('persona', { op: 'add', icon: '🎭', label: 'A reviewer', persona: 'You review.' }).id;
   J.JZ = viaTables('job', { op: 'add', icon: '📋', label: 'A job' }).id;

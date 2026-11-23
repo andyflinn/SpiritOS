@@ -10,11 +10,12 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = S.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/persona/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -46,7 +47,7 @@ test.run('server.js, given its context, answers the table with its verb and its 
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
   const ctx = { db: db, dbFile: path.join(X.scratch, 'agent.db'), tables: {}, publish: function () {} };
   ctx.tables.grant = { dropJob: function (id) { X.dropped.push(id); } };
-  const t = X.t = ctx.tables.persona = require(path.join(DIR, 'server.js'))(ctx);
+  const t = X.t = ctx.tables.persona = S.requireScript('spirit/app/agent/table/persona/server.js')(ctx);
   X.cols = db.prepare('PRAGMA table_info("persona")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : false;
 }, test.limit.quick);
@@ -168,7 +169,7 @@ test.run('the page files place spirit.required.spirit.app.agent.element.table.pe
   };
   // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. The agent
   // family's data.js comes with its interface, spirit/app/agent/api.js, which the stand-in require answers as the real one

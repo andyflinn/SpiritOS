@@ -12,9 +12,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { scratchNode, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const limits = require(path.join(RUN, 'spirit', 'limits.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const { scratchNode, until } = S.requireScript('spirit/test/headLessChrome.js');
+const limits = S.requireScript('spirit/limits.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function read(f) { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return null; } }
@@ -27,7 +28,7 @@ const W = {};
 test.after(function () {
   const node = W.node || {};
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 const icon = async function (args) {
   const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'icons.icon', args: args }) });

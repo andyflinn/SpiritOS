@@ -11,11 +11,12 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/model/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -81,8 +82,8 @@ test.run('server.js, handed a context, answers the model table with its verb and
   X.scratch = ownTemp('spirit-model');
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
   const ctx = X.ctx = { db: db, dbFile: path.join(X.scratch, 'agent.db'), tables: {}, publish: function (x) { X.published.push(x); } };
-  ctx.tables.provider = require(path.join(DIR, '..', 'provider', 'server.js'))(ctx);
-  const t = X.t = ctx.tables.model = require(path.join(DIR, 'server.js'))(ctx);
+  ctx.tables.provider = SPIRIT.requireScript('spirit/app/agent/table/provider/server.js')(ctx);
+  const t = X.t = ctx.tables.model = SPIRIT.requireScript('spirit/app/agent/table/model/server.js')(ctx);
   X.cols = db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : false;
 }, test.limit.quick);
@@ -116,7 +117,7 @@ test.run('an added model\'s capabilities are a list', 0.2, function () {
 }, test.limit.quick);
 test.run('a model naming a provider that is not there is refused, saying so', 0.2, function () {
   if (!X.t) return false;
-  X.gone = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey;
+  X.gone = SPIRIT.requireScript('spirit/relayAuth.js').generateIdentity('').publicKey;
   const noProvider = call(X.t.verb, { op: 'add', label: 'Lost', providerId: X.gone });
   return noProvider.refusal === 'bad-request' && /no provider/.test(noProvider.why) ? true : false;
 }, test.limit.quick);
@@ -214,7 +215,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   };
   // The page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it runs
   // (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js is loaded by its api.js, through the stand-in above.

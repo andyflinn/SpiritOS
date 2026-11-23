@@ -12,17 +12,18 @@ const http = require('http');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/desk/' + name + tempAsked); }
 // Its folder is removed by the last after of this file, once its databases are closed and its servers stopped: on
 // Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
-const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
-const packet = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const appClient = SPIRIT.requireScript('spirit/appClient.js');
+const packet = SPIRIT.requireScript('spirit/client/packet.js');
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 // THE DESK RUNS FROM A COPY OF THE RUN TREE (never this checkout's own): spirit.js finds its node by the run tree's
 // spirit/state/environment.json, so a desk started from this tree would publish to the real node beside it. The copy's
 // environment.json names the pretend node below, and nothing reaches a real one.

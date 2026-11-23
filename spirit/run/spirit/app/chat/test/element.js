@@ -13,8 +13,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const FILE = path.join(__dirname, '..', 'element.js');
 const PLACE = 'spirit/app/chat/element.js';
 
@@ -27,7 +28,7 @@ test.after(function () {
   if (page && page.kid) page.kid.kill();
   if (node && node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+  try { if (node && node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
 });
 
 // ── its code: no old shell, no handed api ──

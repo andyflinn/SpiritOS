@@ -8,8 +8,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const FILE = path.join(RUN, 'spirit', 'app', 'testicle', 'testicle.js');
 const SERVER = 'spirit/app/testicle/server/server.js';
 

@@ -8,7 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const SCOPE = 'spirit/app/testicle/';
 // A path as given, absolute or not, scoped to run://.
 function runRel(a) { const abs = path.isAbsolute(String(a)) ? String(a) : path.resolve(String(a)); const r = path.relative(RUN, abs).split(path.sep).join('/'); return (r && r.indexOf('..') !== 0 && fs.existsSync(abs)) ? r : String(a).split(path.sep).join('/').replace(/^spirit\/run\//, ''); }

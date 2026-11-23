@@ -12,7 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'element.js');
 const DESK = 'spirit/app/desk/element/desk/desk.js';
 
@@ -27,14 +28,14 @@ test.run('a window of its own is made for the file to run on, with a stand-in De
   if (!fs.existsSync(FILE)) return false;
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
+  const helper = S.requireScript('spirit/element/installSpiritElement.js');
   global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
     // The Desk page, as its own file places itself: by the one helper, at spirit.required.<its path>.
     if (p === DESK) helper(global.window.spirit, DESK, { create: function (container, opts) { const m = { container: container, opts: opts, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });
     return Promise.resolve(true);
   };
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   W.up = true;
   return true;
 }, test.limit.quick);

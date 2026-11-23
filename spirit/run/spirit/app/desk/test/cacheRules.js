@@ -10,7 +10,8 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'cacheRules.js');
 
 // Names of this test's own: the rules take whatever data.js hands them.

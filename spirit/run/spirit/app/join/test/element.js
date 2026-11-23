@@ -11,7 +11,8 @@ const path = require('path');
 const vm = require('vm');
 // spirit/app/join/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'element.js');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
@@ -38,7 +39,7 @@ function world(o) {
       const put = function () { if (p === 'spirit/element/joinList.js') els.joinList = joinList; return {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.J = (win.spirit.required.spirit.app.join || {}).element;
   return w;

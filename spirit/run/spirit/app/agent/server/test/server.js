@@ -10,15 +10,16 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/test/nodeAgent/' + name + tempAsked); }
 // Its folder is removed by the last after of this file, once its databases are closed and its servers stopped: on
 // Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
-const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
+const appClient = SPIRIT.requireScript('spirit/appClient.js');
 
 const DIR = path.join(__dirname, '..', '..');
 const SERVER = path.join(DIR, 'agent.js');

@@ -12,7 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'elementRow.js');
 const ROW = 'spirit/app/agent/element/table/row.js';
 
@@ -27,7 +28,7 @@ const W = { required: [], made: [], held: null };
 function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
+  const helper = S.requireScript('spirit/element/installSpiritElement.js');
   // The tables' row element, as its own file places itself: by the one helper, at spirit.required.<its path>.
   helper(global.window.spirit, ROW, { create: function (container, o) { const m = { container: container, o: o, destroyed: false, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });
   global.window.spirit.requireScript = function (p) {
@@ -35,7 +36,7 @@ function world() {
     if (p === ROW && W.held) return W.held.promise;
     return Promise.resolve(true);
   };
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
 }
 // The page's detail pane: look(table) gives the title row its icon and name; each ask kept.
 const looks = [];

@@ -7,8 +7,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const H = S.requireScript('spirit/test/headLessChrome.js');
 const REL = 'spirit/app/testicle/element/settingsPanel.js';
 
 const W = {};
@@ -48,7 +49,7 @@ test.after(function () {
   if (W.page && W.page.kid) W.page.kid.kill();
   if (W.node && W.node.child) W.node.child.kill();
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (W.node && W.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W.node); } catch (e) { /* left */ }
+  try { if (W.node && W.node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(W.node); } catch (e) { /* left */ }
 });
 
 test.run('its title is "⚙ Configuration"', 0.2, async function () {

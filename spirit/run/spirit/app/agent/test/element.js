@@ -10,7 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'element.js');
@@ -128,7 +129,7 @@ function load(w) {
   global.window.spirit.required.spirit.data.homeNode(global.window.spirit.nodeFacts.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app places itself by installSpiritElement as it runs.
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   // Its tables' elements stand under it, in spirit/app/agent/element/table/ (goal/G43.32, rule 5); the test hands its own there.
   const placed = global.window.spirit.required.spirit.app.agent.element;
@@ -431,7 +432,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
 // draws, its centre's tabs and the boxes of its list panes, in a real Chrome on a scratch node. Andy: "THE TEST TEST
 // EVERYTHING!". What they share from that file comes with them, in this block.
 {
-  const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
   const { until, sleep, chromePage, findChrome } = LABH;
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
   function scratch() {
@@ -460,8 +461,8 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
   const fs = require('fs');
   const path = require('path');
   const RUN = path.resolve(__dirname, '..','..','..','..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-  const { scratchNode, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  const test = SPIRIT.requireScript('spirit/test/testReport.js');
+  const { scratchNode, chromePage, findChrome, sleep, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 
   function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
   const ICON = { provider: '🧪', model: '🧬', persona: '🧙', job: '🧰' };
@@ -760,7 +761,7 @@ async function tabOpens(kind, row) {
   const path = require('path');
   const vm = require('vm');
   const RUN = path.resolve(__dirname, '../../../..');
-  const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+  const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
   const FILE = path.join(__dirname, '..', 'element.js');
   const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -930,7 +931,7 @@ async function tabOpens(kind, row) {
     };
     win.spirit.readyPromise = Promise.resolve(win.spirit);
     // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file places itself by installSpiritElement as it runs.
-    require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+    SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
     vm.createContext(win);
     win.spirit.requireScript('spirit/data.js');
     // Its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any app runs.

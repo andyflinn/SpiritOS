@@ -9,8 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const H = S.requireScript('spirit/test/headLessChrome.js');
 const FILE = path.join(__dirname, '..', 'api.js');
 
 // What the tests make, for the tests after them.
@@ -18,7 +19,7 @@ const X = { verbs: null, node: null, call: null };
 test.after(function () {
   const node = X.node;
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node && node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // ── the interface: verbs and their rules, and no code ──

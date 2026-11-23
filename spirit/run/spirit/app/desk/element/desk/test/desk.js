@@ -13,13 +13,14 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'desk.js');
 
 
 // What each step makes, for the tests after it, in order; every scratch node and Chrome page is stopped by test.after.
 const W = {};
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 // A scratch node and its page, stopped; called as a section ends and again by test.after.
 function stop(x) {
   if (!x || x.stopped) return;
@@ -28,7 +29,7 @@ function stop(x) {
   if (page && page.kid) page.kid.kill();
   if (node.child) node.child.kill();
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
+  try { if (node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* left */ }
 }
 // A scratch node with a Chrome page on it (debug: its DEBUG on): x.node, x.page; true when both are there, else false.
 async function bootPage(x, debug) {
@@ -240,7 +241,7 @@ function deskWorld(goal, items) {
     callOutcome: function (p) { return p; } };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit): spirit.required, and the helper answered, so each element
   // places itself by installSpiritElement as it runs.
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
+  SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
   win.spirit.requireScript('spirit/data.js');

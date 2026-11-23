@@ -13,7 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'elementTable.js');
 const SHARED = 'spirit/app/agent/element/table/tableElement.js';
 const ROW = 'spirit/app/agent/element/table/job/elementRow.js';
@@ -30,7 +31,7 @@ const W = { required: [], tables: [], rows: [], held: null };
 function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
+  const helper = S.requireScript('spirit/element/installSpiritElement.js');
   // As their own files place themselves: by the one helper, at spirit.required.<their path>.
   helper(global.window.spirit, SHARED, { create: function (container, o) {
     const t = { container: container, o: o, refreshed: 0, destroyed: false, refresh: function () { t.refreshed += 1; }, destroy: function () { t.destroyed = true; } };
@@ -42,7 +43,7 @@ function world() {
     if (W.held) return W.held.promise;
     return Promise.resolve(true);
   };
-  require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
+  S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
 }
 // The page's detail pane, handed on as it is.
 const detail = { look: function (t) { return { icon: '•', name: t }; } };

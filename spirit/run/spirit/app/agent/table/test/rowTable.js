@@ -8,11 +8,12 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = require(path.join(RUN, 'spirit', 'tempFolder.js'));
+const tempFolder = S.requireScript('spirit/tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/test/rowTable/' + name + tempAsked); }
 // THE DATABASES IT OPENS ARE CLOSED BEFORE ITS TEMP FOLDER GOES (goal/G47.1, no pollution; testicle's "it leaves no temp
@@ -328,7 +329,7 @@ test.run('an add the table\'s own check refuses writes no row', 0.2, function ()
 }, test.limit.quick);
 test.run('get of a row that is not there is refused no-such-row', 0.2, function () {
   if (!X.verb) return false;
-  const missing = call(X.verb, { op: 'get', id: require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey });
+  const missing = call(X.verb, { op: 'get', id: S.requireScript('spirit/relayAuth.js').generateIdentity('').publicKey });
   return missing.refusal === 'no-such-row' ? true : false;
 }, test.limit.quick);
 

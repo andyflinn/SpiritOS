@@ -22,11 +22,12 @@ const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '../../../../..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { freePort, until, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const { freePort, until, sleep } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
@@ -375,7 +376,7 @@ test.run('the node lists the verbs testicle.set and testicle.search', 0.2, async
 
 // goal/G47.1, box v95, 5: "the server on start, before even classifying, must make sure that script, suite and testicle
 // tables reflect the current state" (it replaces "nothing is read at start"). Read once the start has done its work.
-const VENDORED = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 test.run('at start every product script on disc has its row in script', 0.2, async function () {
   if (!start) return false;
   // The scratch tree holds no git of its own: its files are the repo's list, as scratch() copied them, plus the planted.
@@ -973,7 +974,7 @@ test.run('typed words and result together: "wombat" with result red finds theta\
 // is current, of the script, the suite and the result asked, and each typed word is in its title, its script or its suite,
 // in any case. An answer is full when the room one answer has (limits.ANSWER_MAX) left after it cannot hold one more of
 // its rows. For each: not cut, it holds every matching row; cut, it is full and holds matching rows only.
-const limits = require(path.join(RUN, 'spirit', 'limits.js'));
+const limits = SPIRIT.requireScript('spirit/limits.js');
 const ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 const bytes = function (x) { return Buffer.byteLength(JSON.stringify(x), 'utf8'); };
 // next: the item the server held back, the first of the following answer (from), when the search takes from; without it,

@@ -12,10 +12,11 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
-const limits = require(path.join(RUN, 'spirit', 'limits.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const auth = SPIRIT.requireScript('spirit/relayAuth.js');
+const limits = SPIRIT.requireScript('spirit/limits.js');
 const FILE = path.join(__dirname, '..', 'server.js');
 
 // A file's code, comments blanked; '' when it is not there.
@@ -29,7 +30,7 @@ const X = { src: '', node: null, state: '', call: null, up: false, K: '' };
 test.after(function () {
   const node = X.node;
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
-  try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
+  try { if (node && node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 
 // ── its code: no held path and no contact.accept (goal/G43.23, the checks of chatClerver-noHeld.js) ──

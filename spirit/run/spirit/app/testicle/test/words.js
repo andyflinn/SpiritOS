@@ -11,7 +11,8 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const REL = 'spirit/app/testicle/words.js';
 
 // A script's code with its comments left out, so a comment quoting the box is not a phrase built.
