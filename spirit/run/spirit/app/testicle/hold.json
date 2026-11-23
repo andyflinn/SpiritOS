@@ -1,0 +1,9 @@
+{
+  "description": "testicle.hold (goal/G49.7): a red held by the one fixing it, by its testicle key {script, suite, test}, holder optional. The asker is the caller's key, never an argument. Without holder it asks: {holder: \"\"} when the red is not held or its hold has expired (an expired hold is cleared), {holder: <ID>} when someone else holds it, and its holder asking lets it go, answering {holder: \"\"}. With holder, the asker's own ID, it holds a red not held or expired, answering {holder: <the asker's ID>}. A hold stands 60 minutes, or until the test turns green. Refused: \"key argument missing\", \"no current red row for that key\", \"holder must be the asker's own ID\", \"the red is held, and the hold has not expired\" (its heldBy and heldSince beside it, the asker's own hold too: to keep a red past the hour, let it go and hold it again).",
+  "request": {
+    "script": "spirit.type.string.file",
+    "suite": "spirit.type.string.file",
+    "test": "spirit.type.string.description",
+    "holder": "spirit.type.string.IDNew?"
+  }
+}
