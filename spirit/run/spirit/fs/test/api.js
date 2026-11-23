@@ -10,10 +10,17 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const api = require(path.join(RUN, 'spirit', 'fs', 'api.js'));
+// THE BRANCH AS A CLIENT HAS IT (goal/G49.6; Andy: clients load their api.js from their own node's disc): bound by
+// spirit.requireScript from the api.js on this disc, no node asked; it carries the file's own names, names() among them.
+let api = null;
 
 function refused(status, code, message) { const e = new Error(message); e.status = status; e.code = code; return e; }
 const names = function (answer) { return api.names(function () { return answer(); }, {}); };
+
+test.run('spirit/fs/api.js is bound by spirit.requireScript from its own disc, and carries its names()', 0.2, async function () {
+  try { api = await LOADER.requireScript('spirit/fs/api.js'); } catch (e) { api = null; }
+  return (!!api && typeof api.names === 'function') || false;
+}, test.limit.quick);
 
 // spirit/fs/api.js: a refusal is not "nothing there" (goal/G41.30)
 test.run('loadFile, refused by the face\'s gate, rejects with the node\'s own code and words', 0.2, async function () {

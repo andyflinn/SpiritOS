@@ -12,14 +12,16 @@ const RUN = path.resolve(__dirname, '../../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(RUN, 'spirit', 'type', 'string/label.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/type/string/label.js';
+const FILE = path.join(RUN, SUBJECT);
 
 let T = null;
 const throws = function (v) { try { T.isValid(v); return false; } catch (e) { return e instanceof Error; } };
 
 test.run('spirit/type/string/label.js exists and loads', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
-  try { require(path.join(RUN, 'spirit', 'spirit.js')); T = require(FILE); } catch (e) { T = null; }
+  try { require(path.join(RUN, 'spirit', 'spirit.js')); T = LOADER.requireScript(SUBJECT); } catch (e) { T = null; }
   return (!!T && typeof T === 'object') || false;
 }, test.limit.quick);
 test.run('isValid answers true, the boolean, for "Andy", "a".repeat(64)', 0.4, function () {

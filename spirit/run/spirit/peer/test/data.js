@@ -64,7 +64,8 @@ test.run('in node, loaded by requiring its api.js, spirit/peer/api.js, it stands
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
-  try { require(path.join(RUN, 'spirit', 'peer', 'api.js')); } catch (e) { threw = e; }
+  // By its path, as a client loads it (goal/G49.6): bound from the api.js on this disc, its companion data.js with it.
+  try { await S.requireScript('spirit/peer/api.js'); } catch (e) { threw = e; }
   const X = S.required.spirit.data && S.required.spirit.data['peer'] && S.required.spirit.data['peer'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);

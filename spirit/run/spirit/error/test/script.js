@@ -11,11 +11,15 @@
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const FILE = path.join(RUN, 'spirit', 'error', 'script.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/error/script.js';
+const FILE = path.join(RUN, SUBJECT);
 // A file not there yet is no crash at load: each check below finds nothing and is red (goal/G49.4, the move).
 let E = {};
-try { E = require(FILE); } catch (e) { E = {}; }
+try { E = LOADER.requireScript(SUBJECT); } catch (e) { E = {}; }
 
 // ── byCode and all: the catalogue ──
 test.run('byCode answers the entry of a code it knows: peer-unreachable, 503, absent, the target\'s', 0.2, function () {

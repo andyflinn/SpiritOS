@@ -22,7 +22,9 @@ const RUN = path.resolve(__dirname, '../../..');
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
-const FILE = path.join(__dirname, '..', 'app.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/server/app.js';
+const FILE = path.join(RUN, SUBJECT);
 const SELF_FILE = __filename;
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
 // THE FAMILIES IT FOLLOWS ARE ITS OWN, PLANTED IN THE TREE FOR THE RUN AND REMOVED AFTER (goal/G47.4; Andy: "you make
@@ -197,7 +199,7 @@ const cacheFile = function (name) {
 };
 
 function start(streamOpts, publisherOpts) {
-  const A = require(FILE);
+  const A = LOADER.requireScript(SUBJECT);
   // whoami answers what the server was told of its caller (goal/G47.5, Q8: the shared server code tells a server loopback beside owner).
   const s = A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } },
     whoami: { request: {}, reply: { owner: false, loopback: false }, handler: function (a, caller) { return { owner: !!(caller && caller.owner === true), loopback: !!(caller && caller.loopback === true) }; } } }, {
@@ -302,7 +304,7 @@ async function child(mode) {
     // produces the EXACT same cache file as your own desk in client-mode"). A server with a publisher alone, as the desk is,
     // named for a family with a folder here, switched by its owner to the sibling, then sent a push and a row by it.
     globalThis.spirit.nodeFacts = Object.assign({}, globalThis.spirit.nodeFacts || {}, { key: SELF, label: 'this node' });
-    const A = require(FILE);
+    const A = LOADER.requireScript(SUBJECT);
     A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, { publisher: { family: NAME, bootstrap: function () { return []; }, waitMs: 5000 } });
     await tick(300);
     const owner = function (body) {
@@ -328,7 +330,7 @@ async function child(mode) {
   if (mode === 'selfServer') {
     // The same in server mode: its push is its bootstrap.
     globalThis.spirit.nodeFacts = Object.assign({}, globalThis.spirit.nodeFacts || {}, { key: SELF, label: 'this node' });
-    const A = require(FILE);
+    const A = LOADER.requireScript(SUBJECT);
     A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, { publisher: { family: NAME, bootstrap: function () { return [row(GOAL), row(item(1)), row(item(2))]; }, waitMs: 5000 } });
     await tick(300);
     Object.assign(out, await selfSubscribe());
@@ -336,7 +338,7 @@ async function child(mode) {
   if (mode === 'publisherOnly' || mode === 'streamOnly') {
     // A server of one side alone (goal/G47.5): a publisher with no stream, as the desk is, or a stream with no publisher, as
     // deskClient is. It reports the verbs its api tree names.
-    const A = require(FILE);
+    const A = LOADER.requireScript(SUBJECT);
     const one = mode === 'publisherOnly'
       ? { publisher: { family: NAME, bootstrap: function () { return []; }, waitMs: 5000 } }
       : { stream: { module: 'spirit.app.' + FAM, translator: TRANSLATOR } };
@@ -430,7 +432,7 @@ function gateSection() {
   let asks = 0;
   // One shape thrown at the gate: true, or what it got wrong.
   function judge(title) {
-    const A = require(FILE);
+    const A = LOADER.requireScript(SUBJECT);
     const shape = SHAPES[title];
     const keys = Object.keys(shape);
     const wrong = [];
@@ -484,7 +486,7 @@ function gateSection() {
   // its own check is the only one, so the gate's test does not cover it; the deep garbage goes to those verbs.
   const G = { seen: [], r: null };
   test.run('a verb with an accepts() of its own is asked that alone: garbage it lets through reaches its handler', 0.2, async function () {
-    const A = require(FILE);
+    const A = LOADER.requireScript(SUBJECT);
     const s = A.createAppServer({
       own: { request: { id: '' }, reply: {}, accepts: function (a) { G.seen.push(a); return true; }, handler: function () { return {}; } },
       shared: { request: { id: '' }, reply: {}, handler: function () { return {}; } },
@@ -693,11 +695,11 @@ function ownPart() {
   // An app server's api.js by its path (goal/G49.6; Andy: "spirit.branchPath() must die."): appServer asks every server it
   // reaches by its app's api.js path, spirit/app/<name>/api.js.
   test.run('appServer exports appApiPath', 0.2, function () {
-    const A0 = require(FILE);
+    const A0 = LOADER.requireScript(SUBJECT);
     return typeof A0.appApiPath === 'function' || false;
   }, test.limit.quick);
   test.run('the appApiPath of an app named <name> is spirit/app/<name>/api.js', 0.2, function () {
-    const A0 = require(FILE);
+    const A0 = LOADER.requireScript(SUBJECT);
     // The planted family, an app of spirit/app/ for this run (goal/G47.4: no app of the tree named as a fixture).
     const fp = typeof A0.appApiPath === 'function' ? A0.appApiPath(FAMILY) : null;
     return fp === 'spirit/app/' + FAMILY + '/api.js' || false;
