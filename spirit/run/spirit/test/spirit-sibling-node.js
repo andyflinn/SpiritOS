@@ -47,7 +47,7 @@ function requireOnNode(run, rel) {
     // answers at once and stands at its place as that answer.
     const iface = /\/api\.js$/.test(rel);
     const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
-      '(async function () { let at = null, err = false, promise = false; try { at = s.require(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = !!String(e && e.message || e); }' +
+      '(async function () { let at = null, err = false, promise = false; try { at = s.requireScript(' + JSON.stringify(rel) + '); promise = !!(at && typeof at.then === "function"); if (' + iface + ' && promise) at = await at; } catch (e) { err = !!String(e && e.message || e); }' +
       'const keys = ' + JSON.stringify(placeKeys(rel)) + '; const place = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, s.required);' +
       'process.stdout.write("\\n@@" + JSON.stringify({ err: err, promise: ' + iface + ' ? false : promise, placed: ' + iface + ' ? place !== undefined : place !== undefined && place === at }) + "\\n"); process.exit(0); }());';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });

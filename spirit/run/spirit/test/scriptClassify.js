@@ -63,7 +63,7 @@ function loadOnNode(run, rel) {
       'const before = new Set(Object.keys(require.cache));' +
       'const pulled = function () { return Object.keys(require.cache).filter(function (k) { return !before.has(k); }).map(function (k) { return path.relative(process.cwd(), k).split(path.sep).join("/"); })' +
       '.filter(function (r) { return /\\.js$/.test(r) && r.indexOf("..") !== 0 && !path.isAbsolute(r) && !/(^|\\/)test\\//.test(r) && r !== ' + JSON.stringify(rel) + '; }); };' +
-      'try { s.require(' + JSON.stringify(rel) + '); tell({ err: "", requires: pulled() }); } catch (e) { tell({ err: String(e && e.message || e) }); }' +
+      'try { s.requireScript(' + JSON.stringify(rel) + '); tell({ err: "", requires: pulled() }); } catch (e) { tell({ err: String(e && e.message || e) }); }' +
       'setTimeout(function () { process.exit(0); }, 50);';
     const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
     let out = '';
