@@ -10,8 +10,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { createStreamSink } = require(path.join(RUN, 'spirit', 'streamSink.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const { createStreamSink } = S.requireScript('spirit/streamSink.js');
 
 // A held response, as the relay holds one: what was written, its head, whether it was destroyed or ended.
 function res() {
@@ -87,7 +88,7 @@ test.run('a cut sink takes nothing more, so a later write throws and writes noth
 
 // THE CAP BY DEFAULT: limits.STREAM_BACKLOG_MAX
 test.run('with no cap given, the cap is the stream backlog maximum set in limits.js', 0.2, function () {
-  const limits = require(path.join(RUN, 'spirit', 'limits.js'));
+  const limits = S.requireScript('spirit/limits.js');
   const max = limits.STREAM_BACKLOG_MAX;
   if (!(max > 0)) return false;
   const C = res();

@@ -8,8 +8,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const H = S.requireScript('spirit/test/headLessChrome.js');
 
 // ── THE LAUNCHER (goal/G48.5, the box, "completeness, asserted": "spirit/server.js starts a node with no mode and with
 // --node, a relay with --relay, a server process with --app <script>; an unknown mode is refused; every argument after the

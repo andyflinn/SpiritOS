@@ -16,17 +16,18 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execSync, spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/job/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/job'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const { scratchNode, sleep, until } = H;
 
 const WAIT_MS = 1500;
@@ -1137,8 +1138,8 @@ function mountPart() {
   });
 
   test.run('a scratch node comes up for the throwaway app', 0.2, async function () {
-    ({ answer } = require(path.join(RUN, 'spirit', 'apiDoor.js')));
-    ({ freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')));
+    ({ answer } = SPIRIT.requireScript('spirit/apiDoor.js'));
+    ({ freePort, until, sleep, chromePage, findChrome } = SPIRIT.requireScript('spirit/test/headLessChrome.js'));
     s = scratch();
     ranHelper = path.join(s.root, 'helper-ran.txt');
     ranElsewhere = path.join(s.root, 'elsewhere-ran.txt');

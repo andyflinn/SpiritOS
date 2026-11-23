@@ -9,8 +9,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const R = require(path.join(RUN, 'spirit', 'router.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const R = S.requireScript('spirit/router.js');
 
 // A router on a clock the test moves: r.clock.t is now.
 function router(opts) {

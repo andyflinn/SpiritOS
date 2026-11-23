@@ -10,8 +10,9 @@
 const path = require('path');
 const crypto = require('crypto');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const S = require(path.join(RUN, 'spirit', 'seal.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const S = SPIRIT.requireScript('spirit/seal.js');
 
 // A seal keypair as identity.json holds one: spki and pkcs8 DER, base64.
 function sealKeys() {

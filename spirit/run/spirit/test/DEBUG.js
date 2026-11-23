@@ -12,10 +12,11 @@ const http = require('http');
 const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REPO = path.join(RUN, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 async function until(fn, ms) { const end = Date.now() + ms; while (Date.now() < end) { try { if (await fn()) return true; } catch (e) { /* not yet */ } await sleep(250); } return false; }
@@ -135,8 +136,8 @@ async function pairsMet(proto) {
 let gen, PAYLOAD_MAX, args5, plain, pairs0, pairs1, pairs2, pairs3, node, relay, pageR, pageTags, pageLoading, namedIn, wrong, lone, outside, far, STRING_KEYS, badString, badAlone, kindsOf, seen, lacking, strings, lens, big, alone, manifests, loaded, copy, N, off, none, offData, on, upNow, g, list, tree, verbs, unasked, sameShape, kept, keptCount, still, refused, PAGE_FILE, own, served, unfetched, rOff, rNone, R, loginPage, rg, rlist, fwd, ko, rd, uf;
 
 test.run('every entry breaks the shape, or is a bad string alone in the shape kept', 0.2, async function () {
-  gen = require(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments.js'));
-  PAYLOAD_MAX = require(path.join(RUN, 'spirit', 'limits.js')).PAYLOAD_MAX;
+  gen = SPIRIT.requireScript('spirit/DEBUG/garbageArguments.js');
+  PAYLOAD_MAX = SPIRIT.requireScript('spirit/limits.js').PAYLOAD_MAX;
   args5 = await entries(P5);
   plain = args5.filter(function (a) { return a !== null && typeof a === 'object' && !Array.isArray(a); });
   // The garbage itself, for one verb of five arguments (goal/G41.30).

@@ -8,8 +8,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
@@ -307,7 +308,7 @@ test.run('a grant made from a bundle stays when the bundle goes', 0.2, async fun
   db.close();
   // A bundle is not granted by reference.
   // Andy, box: "a bundle is a bundle, and in itself does not constitute an authorization."
-  PEER = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey;
+  PEER = SPIRIT.requireScript('spirit/relayAuth.js').generateIdentity('').publicKey;
   kept = await call(auth, 'bundle', { op: 'add', label: 'Kept' });
   await call(auth, 'branch', { op: 'add', bundle: kept.id, family: 'files', verb: 'read' });
   await auth.grant({ key: PEER, path: 'files.read' });
@@ -394,7 +395,7 @@ test.run('a grant made is told with the grant table and a row of its key, path a
   if (!auth) return false;
   toldG = [];
   auth.onChange(function (c) { if (c && c.table === 'grant') toldG.push(JSON.parse(JSON.stringify(c))); });
-  GPEER = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey;
+  GPEER = SPIRIT.requireScript('spirit/relayAuth.js').generateIdentity('').publicKey;
   await auth.grant({ key: GPEER, path: 'files.list' });
   return (toldG.length === 1 && toldG[0].row.key === GPEER && toldG[0].row.path === 'files.list' && typeof toldG[0].row.label === 'string' && !toldG[0].gone) ? true : false;
 }, test.limit.quick);

@@ -9,8 +9,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const U = require(path.join(RUN, 'spirit', 'relayUrl.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const U = S.requireScript('spirit/relayUrl.js');
 
 // What assertRelayUrl answers: the URL's href, or 'throws: <message>'.
 function asked(url) { try { return U.assertRelayUrl(url).href; } catch (e) { return 'throws: ' + e.message; } }

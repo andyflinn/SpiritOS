@@ -9,8 +9,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const S = require(path.join(RUN, 'spirit', 'relayStatus.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const S = SPIRIT.requireScript('spirit/relayStatus.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const NOW = Date.parse('2026-11-13T09:00:00.000Z');

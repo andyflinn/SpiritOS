@@ -12,14 +12,15 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/sendMail/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/sendMail'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const M = require(path.join(RUN, 'spirit', 'sendMail.js'));
+const M = SPIRIT.requireScript('spirit/sendMail.js');
 
 // The platform fetch never reaches past this machine: a mail that would leave it is a thrown error instead.
 const netFetched = [];

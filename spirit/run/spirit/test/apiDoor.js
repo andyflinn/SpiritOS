@@ -8,9 +8,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { answer } = require(path.join(RUN, 'spirit', 'apiDoor.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const { answer } = S.requireScript('spirit/apiDoor.js');
 
 // The node's tree as a member's api ask would get it unstripped: the desk with a verb of its own. No branch carries an FS
 // set since goal/G43.20.

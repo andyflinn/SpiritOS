@@ -9,10 +9,11 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 // The spirit object first: the reporter loads it for its reports and puts the global back as it found it, so a module
 // that reads the global spirit (arrivals.js) finds it only when the suite loaded it before the reporter.
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
@@ -51,7 +52,7 @@ test.run('hub.js\'s code, with its comments left out, still encodes packets with
 }, test.limit.quick);
 test.run('the one decoder, arrivals.js envelopeOf, is there', 0.2, function () {
   let envelopeOf = null;
-  try { envelopeOf = require(path.join(RUN, 'spirit', 'arrivals.js')).envelopeOf; } catch (e) { envelopeOf = null; }
+  try { envelopeOf = SPIRIT.requireScript('spirit/arrivals.js').envelopeOf; } catch (e) { envelopeOf = null; }
   return typeof envelopeOf === 'function' || false;
 }, test.limit.quick);
 
@@ -77,7 +78,7 @@ test.run('on a scratch node that once heard a route for a peer, chooseRoute for 
   W.routeHome = ownTemp('spirit-hub-route-');
   fs.mkdirSync(path.join(W.routeHome, 'spirit', 'state'), { recursive: true });
   try {
-    const store = require(path.join(RUN, 'spirit', 'nodeStore.js')).open(W.routeHome);
+    const store = SPIRIT.requireScript('spirit/nodeStore.js').open(W.routeHome);
     // Planted only while the store still takes a route: after this cycle there is nothing to plant.
     if (store.seen && typeof store.seen.putRoute === 'function') store.seen.putRoute(PEER_KEY, { via: '', at: 'https://heard.example', url: 'https://heard.example', rank: 1, told: Date.now() });
     const hub = require(HUB).createHub(W.routeHome);
@@ -101,12 +102,12 @@ test.run('on a scratch node, forgetting a contact answers 200, forgotten', 0.2, 
   try {
     W.forgetHome = ownTemp('forget');
     fs.mkdirSync(path.join(W.forgetHome, 'spirit', 'state'), { recursive: true });
-    const relayAuth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
+    const relayAuth = SPIRIT.requireScript('spirit/relayAuth.js');
     relayAuth.saveIdentity(W.forgetHome, relayAuth.generateIdentity());
-    const book = require(path.join(RUN, 'spirit', 'contact', 'script.js'));
+    const book = SPIRIT.requireScript('spirit/contact/script.js');
     book.noteLabel(W.forgetHome, FORGOT_KEY, 'Gone');
     book.accept(W.forgetHome, FORGOT_KEY);
-    W.store = require(path.join(RUN, 'spirit', 'nodeStore.js')).open(W.forgetHome).auth;
+    W.store = SPIRIT.requireScript('spirit/nodeStore.js').open(W.forgetHome).auth;
     W.store.grant(FORGOT_KEY, 'desk.chat', 'Gone');
     W.store.grant(FORGOT_KEY, 'jobs.list', 'Gone');
     W.store.grant(KEPT_KEY, 'desk.chat', 'Kept');
@@ -132,7 +133,7 @@ test.run('forgetting a contact leaves another key\'s grants', 0.2, function () {
 // A node's card, signed by that node, naming its owner (spirit/nodeCard.js, owner): what the star is read from (below).
 const ownCardOf = function (id, owner) {
   const fields = { name: 'a node', description: 'd', publicKey: id.publicKey, sealKey: id.sealPublicKey || 'SEAL', at: 1, owner: owner };
-  return JSON.stringify({ v: 1, body: Object.assign({ ok: true }, fields, { sig: require(path.join(RUN, 'spirit', 'relayAuth.js')).sign(id.privateKey, require(path.join(RUN, 'spirit', 'nodeCard.js')).signable(fields)) }) });
+  return JSON.stringify({ v: 1, body: Object.assign({ ok: true }, fields, { sig: SPIRIT.requireScript('spirit/relayAuth.js').sign(id.privateKey, SPIRIT.requireScript('spirit/nodeCard.js').signable(fields)) }) });
 };
 
 // 😏 FACEABLE, AND THE STAR FROM OWNERSHIP ALONE (goal/G47.4, box v33: "the star is shown as before on nodes and relays and
@@ -151,14 +152,14 @@ test.run('on a scratch node, the hub has a handler for faceable and none for own
   try {
     W.faceHome = ownTemp('faceable');
     fs.mkdirSync(path.join(W.faceHome, 'spirit', 'state'), { recursive: true });
-    const relayAuth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
+    const relayAuth = SPIRIT.requireScript('spirit/relayAuth.js');
     W.faceMe = relayAuth.generateIdentity();
     relayAuth.saveIdentity(W.faceHome, W.faceMe);
-    const seen = require(path.join(RUN, 'spirit', 'seenPeers.js')).createSeenPeers({ rootDir: W.faceHome });
+    const seen = SPIRIT.requireScript('spirit/seenPeers.js').createSeenPeers({ rootDir: W.faceHome });
     W.seatedRelay = relayAuth.generateIdentity().publicKey; W.loneRelay = relayAuth.generateIdentity().publicKey;
     seen.set(W.seatedRelay, { relay: true, seated: true, label: 'seated' });
     seen.set(W.loneRelay, { relay: true, label: 'lone' });
-    const book = require(path.join(RUN, 'spirit', 'contact', 'script.js'));
+    const book = SPIRIT.requireScript('spirit/contact/script.js');
     W.ownedNode = relayAuth.generateIdentity(); W.freeNode = relayAuth.generateIdentity();
     book.setCard(W.faceHome, W.ownedNode.publicKey, ownCardOf(W.ownedNode, W.faceMe.publicKey));
     book.setCard(W.faceHome, W.freeNode.publicKey, ownCardOf(W.freeNode, ''));
@@ -170,7 +171,7 @@ test.run('on a scratch node, the hub has a handler for faceable and none for own
 test.run('a relay this node holds a seat on takes 😏, and its row says faceable', 0.2, async function () {
   if (!W.faceName) return false;
   const a = await faceAsk(W.seatedRelay, true);
-  const row = require(path.join(RUN, 'spirit', 'contact', 'script.js')).byPublicKey(W.faceHome, W.seatedRelay) || {};
+  const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.seatedRelay) || {};
   return (a.status === 200 && row.faceable === true) || false;
 }, test.limit.quick);
 test.run('a relay with no seat is refused 😏', 0.2, async function () {
@@ -186,16 +187,16 @@ test.run('a node is refused 😏, even one whose card names this node', 0.2, asy
 test.run('😏 always comes off', 0.2, async function () {
   if (!W.faceName) return false;
   const off = await faceAsk(W.seatedRelay, false);
-  const row = require(path.join(RUN, 'spirit', 'contact', 'script.js')).byPublicKey(W.faceHome, W.seatedRelay) || {};
+  const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.seatedRelay) || {};
   return (off.status === 200 && row.faceable !== true) || false;
 }, test.limit.quick);
 test.run('the star stands on a node whose card names this node, with no verb asked', 0.2, function () {
   if (!W.faceHome) return false;
-  const row = require(path.join(RUN, 'spirit', 'contact', 'script.js')).byPublicKey(W.faceHome, W.ownedNode.publicKey) || {};
+  const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.ownedNode.publicKey) || {};
   return row.mine === true || false;
 }, test.limit.quick);
 test.run('a node whose card names no owner has no star', 0.2, function () {
   if (!W.faceHome) return false;
-  const row = require(path.join(RUN, 'spirit', 'contact', 'script.js')).byPublicKey(W.faceHome, W.freeNode.publicKey) || {};
+  const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.freeNode.publicKey) || {};
   return row.mine !== true || false;
 }, test.limit.quick);

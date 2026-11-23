@@ -13,6 +13,7 @@ require('../spirit.js');
 const test = require('./testReport.js');
 // A path as given, absolute or not, scoped to run:// (the verifier hands absolute ones).
 const RUN_DIR = require('path').join(__dirname, '..', '..');
+const SPIRIT = require(require('path').join(RUN_DIR, 'spirit', 'spirit.js'));
 // A SCRIPT'S SOURCE WITH LF LINE ENDINGS (goal/G47.1, Andy's red on spirit/app/icons/element.js, 'its code reaches no element
 // through spirit.elements', for a comment): a Windows checkout writes CRLF, a line split at LF keeps its CR, and the pattern
 // dropping a line's comment (.*$, which stops at a CR) left the comment in, read as code. Top level, for every section of this file.
@@ -59,10 +60,10 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const { branchesOf } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
+const { branchesOf } = SPIRIT.requireScript('spirit/test/testModule.js');
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 
 const ASK_MS = 8000;
 const BATCH = 10;
@@ -583,7 +584,7 @@ test.after(async function () {
   else if (N.node) {
     try { if (N.node.child) N.node.child.kill(); } catch (e) { /* gone */ }
     await H.sleep(300);
-    try { if (N.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N.node); } catch (e) { /* scratch */ }
+    try { if (N.node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(N.node); } catch (e) { /* scratch */ }
   }
 });
 }
@@ -619,8 +620,8 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 
 // The tools of spirit/test/ are no suites (spirit/test/testModule.js TOOLS).
 const TOOLS = ['spirit/test/testReport.js', 'spirit/test/testModule.js', 'spirit/test/headLessChrome.js'];
@@ -879,7 +880,7 @@ const { execFileSync } = require('child_process');
 const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 const arg = String(ARGS[0] || '');
 // The tools of spirit/test/ are testModule.js's one list, and TEST_SYSTEM.md is their document.
 // The special general tests (testModule.js's SPECIAL, goal/G47.1, box v94, 1) are kept too, each with its .md.
@@ -1067,7 +1068,7 @@ let reach = null;
 test.run('there is a module to judge', 0.2, function () {
   if (arg && !full) return false;
   if (full) { reach = [path.relative(RUN, full).split(path.sep).join('/')]; return true; }
-  reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-general.js' && t.file; }).map(function (t) { return t.file; });
+  reach = SPIRIT.requireScript('spirit/test/testModule.js').testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-general.js' && t.file; }).map(function (t) { return t.file; });
   return reach.length > 0 || false;
 }, test.limit.quick);
 // <file>: its searches match the whole row.
@@ -1103,7 +1104,7 @@ const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 const arg = String(ARGS[0] || '');
 // WHAT FITS (box v94, 2): a production file; a file in a test folder is no module this rule judges.
 if (/(^|\/)test\//.test(arg.replace(/\\/g, '/'))) return;
@@ -1226,7 +1227,7 @@ const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
 const REPO = path.join(RUN, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 // Its arguments: the file it judges, if any.
 const arg = String(ARGS[0] || '');
 let full = '';
@@ -1272,7 +1273,7 @@ const OWN_PROOF = {
   'spirit/app/join/element.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
 };
 // THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
-const FIELD_RULES = require(path.join(RUN, 'spirit', 'fieldRules.js'));
+const FIELD_RULES = SPIRIT.requireScript('spirit/fieldRules.js');
 const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function (k) { return /MAX_BYTES$/.test(k) && typeof FIELD_RULES[k] === 'number'; }).map(function (k) { return FIELD_RULES[k]; }));
 // THE PAGE WATCHED FROM BEFORE ITS FIRST SCRIPT (goal/G41.27): put on the page ahead of spirit.js, it keeps what the
 // rules below are judged by, each call known by the file whose code made it (a module runs with its path as its
@@ -1474,7 +1475,7 @@ const WATCH = String.raw`(function () {
 // can be: in the code, or on a page that gives it something. So a rule is said (its test.run) only when its page gave it
 // something to judge (goal/G47.2: every test one test.run); the rest are said as comments.
 // The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
-const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const { sleep, until, findChrome, scratchNode, chromePage } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 
 // GIVEN NO FILE, EVERY FILE IN ITS REACH (goal/G41.19): an item's suite row names no file, so a run of this test alone
 // judges every shell module testModule.js gives it, on one scratch node, each file in a run of its own, so each is
@@ -1818,7 +1819,7 @@ const TEMP_DOOR = ['spirit/tempFolder.js', 'spirit/test/tempFolder.js', 'spirit/
 // taken for this one load and freed right after (handed a list, the rule runs this part once a script, so a tree kept here
 // would be one more lab node each script, and the lab's six are gone by the seventh). The script as judged, the working copy,
 // is put there first.
-const NG_LAB = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const NG_LAB = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 // Told from the exit handler, so a script that ends its process while it loads (a server handed no state) is judged on what
 // it added before it ended; written synchronously, as an exit handler must.
 const NODE_GLOBALS_PROBE = 'const path = require("path"); const fs = require("fs"); const g0 = Object.getOwnPropertyNames(globalThis), p0 = Object.getOwnPropertyNames(process); let err = "";' +
@@ -2071,7 +2072,7 @@ function every() {
     if (E.node) {
       try { E.node.child.kill(); } catch (e) { /* gone */ }
       await sleep(300);
-      try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(E.node); } catch (e) { /* scratch */ }
+      try { SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(E.node); } catch (e) { /* scratch */ }
     }
   });
 }

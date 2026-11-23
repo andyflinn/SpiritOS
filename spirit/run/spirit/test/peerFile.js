@@ -9,8 +9,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const P = require(path.join(RUN, 'spirit', 'peerFile.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const P = S.requireScript('spirit/peerFile.js');
 
 // Two Ed25519 keys in base64 SPKI share their whole first 16 characters, and these two differ only in case.
 const K1 = 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=';

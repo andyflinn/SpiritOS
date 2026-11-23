@@ -11,8 +11,9 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const SUBJECT = path.join(RUN, 'spirit', 'test', 'spirit-sibling-browser.js');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 

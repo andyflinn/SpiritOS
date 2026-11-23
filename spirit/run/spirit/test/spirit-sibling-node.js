@@ -22,6 +22,7 @@ const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 
 const RUN = path.join(__dirname, '..', '..');
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 const ARGV = process.argv.slice(2);
 const GIVEN = ARGV.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGV[i - 1] !== '--test'; })
   .map(function (a) { return runRel(a); });
@@ -73,7 +74,7 @@ const E = { run: '', root: '' };
 // "does not load on the node: this VM has no node: spirit/state/environment.json names no port"): an app's api.js binds its
 // family through the node, so the copy is a scratch node's tree, the apps of the scripts handed turned on (every app, handed
 // none), its environment naming that node's port, as on a VM that runs one.
-const { scratchNode } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const { scratchNode } = S.requireScript('spirit/test/headLessChrome.js');
 test.run('a copy of the tree with a node of its own is made to require the scripts in', 0.2, async function () {
   const apps = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n'))
     .map(function (f) { return (/^spirit\/app\/([^/]+)\//.exec(f) || [])[1]; }).filter(function (a, i, all) { return a && all.indexOf(a) === i; });
@@ -124,5 +125,5 @@ if (!GIVEN.length) {
 
 test.after(async function () {
   if (E.node && E.node.child) { try { E.node.child.kill(); } catch (e) { /* gone */ } await new Promise(function (r) { setTimeout(r, 300); }); }
-  if (E.root) try { require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(E); } catch (e) { /* scratch */ }
+  if (E.root) try { S.requireScript('spirit/test/headLessChrome.js').freeTree(E); } catch (e) { /* scratch */ }
 });

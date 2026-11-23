@@ -10,9 +10,10 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const F = require(path.join(RUN, 'spirit', 'faceRoute.js'));
-const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const F = S.requireScript('spirit/faceRoute.js');
+const auth = S.requireScript('spirit/relayAuth.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const OWNER = auth.generateIdentity('owner');

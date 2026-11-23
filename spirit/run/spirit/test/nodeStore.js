@@ -8,7 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
@@ -17,7 +18,7 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/nodeStor
 // Its folder is removed by the last after, once every store in it is closed: on Windows a folder holding an open database
 // cannot be removed, and the suite was red on 'it leaves no temp folder behind' for that alone.
 require(path.join(RUN, 'spirit', 'spirit.js'));
-const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
+const nodeStore = S.requireScript('spirit/nodeStore.js');
 const { DatabaseSync } = require('node:sqlite');
 
 const TMP = ownTemp('spirit-nodestore-');

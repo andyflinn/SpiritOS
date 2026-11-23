@@ -11,8 +11,9 @@ const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const B = require(path.join(RUN, 'spirit', 'listLimiter.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const B = S.requireScript('spirit/listLimiter.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function names(bucket) { return bucket.serialize().items.map(function (o) { return o.n; }); }

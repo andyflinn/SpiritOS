@@ -9,8 +9,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const C = require(path.join(RUN, 'spirit', 'relayConfig.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const C = S.requireScript('spirit/relayConfig.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A box with 1 GB total, 600 MB available (ceiling 575), a disc of 20000 MB with 10000 free (ceiling 8976).

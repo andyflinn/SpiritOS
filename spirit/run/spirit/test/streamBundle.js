@@ -9,12 +9,13 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const limits = require(path.join(RUN, 'spirit', 'limits.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const limits = S.requireScript('spirit/limits.js');
 
 // The module, or null while it does not stand (every check below is then red, never a crash).
 let B = null;
-try { B = require(path.join(RUN, 'spirit', 'streamBundle.js')); } catch (e) { B = null; }
+try { B = S.requireScript('spirit/streamBundle.js'); } catch (e) { B = null; }
 const has = function (name) { return !!B && typeof B[name] === 'function'; };
 
 // One delivery, as the publisher sends it: the bundle's JSON as the json string of a listener request. Its room is the

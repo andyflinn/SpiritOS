@@ -8,8 +8,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const fence = require(path.join(RUN, 'spirit', 'netFence.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const fence = S.requireScript('spirit/netFence.js');
 
 // What the node hands isThisMachine: the target's hostname, lower-cased (server.js:584).
 function hostOf(url) { return new URL(url).hostname.toLowerCase(); }

@@ -10,14 +10,15 @@ require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayStore/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayStore'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const relayStore = require(path.join(RUN, 'spirit', 'relayStore.js'));
+const relayStore = S.requireScript('spirit/relayStore.js');
 
 const W = { roots: [], home: null, store: null, ro: null, roError: null, uniqueError: null, small: null, full: 0 };
 function scratch() {

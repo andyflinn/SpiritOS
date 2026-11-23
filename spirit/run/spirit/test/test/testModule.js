@@ -11,14 +11,15 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testModule/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testModule'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const { testsFor } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
+const { testsFor } = SPIRIT.requireScript('spirit/test/testModule.js');
 
 // The general tests in spirit/test/, beside spirit/spirit.js (goal/G43.32), of the three kinds since goal/G47.1, box v94, 2:
 // "there will be, from now on only 3 types of general tests, at any level of the tree: <file>-<child | sibling>-general.js,
@@ -116,7 +117,7 @@ test.run('spirit/test/spirit-sibling-browser.js judges modules on the whole list
 
 // THE BRANCH RULES JUDGE A SCRIPT'S BRANCH FROM THE SCRIPT (goal/G47.1, box v94, 2: they are a part of
 // spirit-sibling-general.js, which is one entry per module like every general test): no entry is a branch folder.
-const { branchesOf } = require(path.join(RUN, 'spirit', 'test', 'testModule.js'));
+const { branchesOf } = SPIRIT.requireScript('spirit/test/testModule.js');
 test.run('no general test is handed a branch folder, on the whole list', 0.2, function () {
   const dirs = branchesOf(RUN).map(function (b) { return b.dir; });
   const folders = all().filter(function (e) { return e.file && dirs.indexOf(e.file) !== -1; });

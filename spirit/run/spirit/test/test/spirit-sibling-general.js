@@ -17,8 +17,9 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const REPO = path.resolve(RUN, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../tempFolder.js');
@@ -183,7 +184,7 @@ test.run('a script that builds no temp path is green on the temp check', 0.4, fu
 // scripts in two branches: their node worlds come up, and the calls they make reach the handed node.
 {
   const http = require('http');
-  const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+  const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
   const SCRIPTS = ['spirit/app/backup/api.js', 'spirit/app/chat/api.js'];
   const H = { node: null, proxy: null, base: '', reached: 0, out: '', bodies: '' };
   test.after(async function () {

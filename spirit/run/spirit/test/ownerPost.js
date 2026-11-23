@@ -11,8 +11,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { createOwnerPost, DEFAULT_WAIT_MS } = require(path.join(RUN, 'spirit', 'ownerPost.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const { createOwnerPost, DEFAULT_WAIT_MS } = S.requireScript('spirit/ownerPost.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = function () { return new Promise(function (r) { setTimeout(r, 20); }); };

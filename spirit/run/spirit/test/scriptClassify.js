@@ -23,8 +23,9 @@ const test = require('./testReport.js');
 const { until, freePort, findChrome, chromePage, WAIT } = require('./headLessChrome.js');
 
 const RUN = path.join(__dirname, '..', '..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
-const LABH = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 // "a load that is not complete in 3 seconds counts as crash/hang".
 const LOAD_MS = 3000;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
@@ -41,7 +42,7 @@ const LACKS_BROWSER = /\b(window|document|navigator|location|localStorage|sessio
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
 // Every product script, vendored code left out, as testicle leaves it out (it never watches it).
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 function productScripts() {
   return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
     .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)); });

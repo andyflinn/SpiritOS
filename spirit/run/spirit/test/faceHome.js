@@ -16,17 +16,18 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/faceHome/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/faceHome'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
-const seal = require(path.join(RUN, 'spirit', 'seal.js'));
-const { createFaceHome } = require(path.join(RUN, 'spirit', 'faceHome.js'));
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const auth = SPIRIT.requireScript('spirit/relayAuth.js');
+const seal = SPIRIT.requireScript('spirit/seal.js');
+const { createFaceHome } = SPIRIT.requireScript('spirit/faceHome.js');
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 
 const settle = async function () { for (let i = 0; i < 10; i++) await new Promise(function (r) { setImmediate(r); }); };
 
@@ -390,7 +391,7 @@ test.run('after the drain every waiting event has gone out', 0.2, function () {
   return (q.got(STARRED, 'job-deleted', 'job_while_busy') === 1 && q.got(STARRED, 'job-updated', jobEvents[0][2]) === 1 && q.got(STARRED, 'relay-event', jobEvents[9][2]) === 1) || false;
 }, test.limit.quick);
 test.run('the queue\'s levels are as they were', 0.2, function () {
-  const P = require(path.join(RUN, 'spirit', 'faceHome.js')).FACE_PRIORITY;
+  const P = SPIRIT.requireScript('spirit/faceHome.js').FACE_PRIORITY;
   return JSON.stringify(P) === JSON.stringify(PRIORITIES_TODAY) || false;
 }, test.limit.quick);
 
@@ -542,7 +543,7 @@ test.after(function () {
   try { if (S.q) S.q.destroy(); } catch (e) { /* gone */ }
   S.relays.forEach(function (r) { try { r.stop(); } catch (e) { /* gone */ } });
   try { if (S.N && S.N.child) S.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (S.N && S.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(S.N); } catch (e) { /* scratch */ }
+  try { if (S.N && S.N.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(S.N); } catch (e) { /* scratch */ }
   try { if (S.marks) fs.rmSync(S.marks, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
 
@@ -908,7 +909,7 @@ test.after(function () {
   try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   try { if (A.R) A.R.stop(); } catch (e) { /* gone */ }
   try { if (A.N && A.N.child) A.N.child.kill(); } catch (e) { /* gone */ }
-  try { if (A.N && A.N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(A.N); } catch (e) { /* scratch */ }
+  try { if (A.N && A.N.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(A.N); } catch (e) { /* scratch */ }
 });
 
 // faceHome-starApps: a star shows every app on the face (goal/G41.33, Q9).

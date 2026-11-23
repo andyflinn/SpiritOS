@@ -10,10 +10,11 @@ const os = require('os');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const LAB_NODES = path.join(REPO, 'lab', 'node');
 const HELPER = path.join(RUN, 'spirit', 'test', 'headLessChrome.js');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const under = function (p, dir) { const rel = path.relative(dir, String(p || '')); return !!p && !!rel && rel.indexOf('..') !== 0 && !path.isAbsolute(rel); };

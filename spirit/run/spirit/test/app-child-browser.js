@@ -19,8 +19,9 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const H = S.requireScript('spirit/test/headLessChrome.js');
 const { until, findChrome, scratchNode, chromePage } = H;
 
 const ARGV = process.argv.slice(2);

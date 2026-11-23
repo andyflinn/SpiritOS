@@ -9,8 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { scratchNode, sleep } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const { scratchNode, sleep } = S.requireScript('spirit/test/headLessChrome.js');
 
 // A node family's api.js, and an app's own <name>.json, core whatever it says (goal/G43.14). The desk app is turned on.
 const CORE = [
@@ -38,7 +39,7 @@ test.after(async function () {
   const N = W.N || {};
   try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
   await sleep(300);
-  try { if (N.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(N); } catch (e) { /* scratch */ }
+  try { if (N.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(N); } catch (e) { /* scratch */ }
 });
 
 // goal/G43.20: no branch carries an FS set.

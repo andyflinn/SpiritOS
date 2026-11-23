@@ -10,14 +10,15 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/nodeSettings/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/nodeSettings'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const S = require(path.join(RUN, 'spirit', 'nodeSettings.js'));
+const S = SPIRIT.requireScript('spirit/nodeSettings.js');
 
 // A scratch home, holding node.json with the text given (or none).
 function home(text) {

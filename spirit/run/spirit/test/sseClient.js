@@ -11,8 +11,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { connect } = require(path.join(RUN, 'spirit', 'sseClient.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const { connect } = S.requireScript('spirit/sseClient.js');
 
 const settle = function () { return new Promise(function (r) { setTimeout(r, 50); }); };
 // A response whose body is the chunks given, then its end (or none: held open).

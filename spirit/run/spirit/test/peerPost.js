@@ -9,7 +9,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
@@ -52,13 +53,13 @@ test.run('peerPost.js\'s code names no admitted mark', 0.2, function () {
 // so the post goes as handed (opts.sealsPosts false); post() handed hints as a caller of before would hand them.
 let posted = null;
 test.run('a post is handed hints, and the body that leaves for the relay is kept', 0.2, async function () {
-  const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
+  const auth = SPIRIT.requireScript('spirit/relayAuth.js');
   const home = ownTemp('spirit-peerpost-hints-');
   try {
     fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
     auth.saveIdentity(home, auth.generateIdentity('sender'));
     const bodies = [];
-    const pp = require(path.join(RUN, 'spirit', 'peerPost.js')).createPeerPost({ rootDir: home, waitMs: 500, sealsPosts: false,
+    const pp = SPIRIT.requireScript('spirit/peerPost.js').createPeerPost({ rootDir: home, waitMs: 500, sealsPosts: false,
       request: function (url, method, route, body) { bodies.push(body); return Promise.resolve({ status: 200, body: { ok: true } }); } });
     await Promise.race([Promise.resolve(pp.post('https://relay.example', auth.generateIdentity('peer').publicKey, 'hello', ['https://heard.example'])),
       new Promise(function (r) { setTimeout(r, 3000); })]);

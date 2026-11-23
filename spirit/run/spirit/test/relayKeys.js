@@ -10,7 +10,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
@@ -19,8 +20,8 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayKey
 // Its store closed first: on Windows a folder holding an open database cannot be removed, and the suite was red on
 // 'it leaves no temp folder behind' for that alone.
 test.after(function () { try { if (W.home) nodeStore.open(W.home).close(); } catch (e) { /* closed */ } try { fs.rmSync(tempFolder.path('spirit/test/relayKeys'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
-const nodeStore = require(path.join(RUN, 'spirit', 'nodeStore.js'));
+const relayKeys = S.requireScript('spirit/relayKeys.js');
+const nodeStore = S.requireScript('spirit/nodeStore.js');
 
 const URL_A = 'https://says-i-own-it.example';
 const KEY_A = 'MCowBQYDK2VwAyEAKEYAKEYAKEYAKEYAKEYAKEYAKEYAKEYAKEYAKEYAKEYAKEY=';

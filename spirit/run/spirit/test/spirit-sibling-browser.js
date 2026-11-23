@@ -39,8 +39,9 @@ const { spawn } = require('child_process');
 const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..', '..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const REPO = path.join(RUN, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 // Its arguments: the file it judges, if any.
 const ARGS = process.argv.slice(2);
 const arg = String(ARGS[0] || '');
@@ -54,7 +55,7 @@ const GIVEN = ARGS.filter(function (a, i) { return a.indexOf('--') !== 0 && ARGS
 // a Chrome, paid again for every script.
 async function batch() {
   {
-    const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+    const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
     const mounted = function (name) {
       try { const m = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', name, name + '.json'), 'utf8')); return !!(m && m.node && m.node.mount === true) && fs.existsSync(path.join(RUN, 'spirit', 'app', name, name + '.js')); } catch (e) { return false; }
     };
@@ -181,7 +182,7 @@ const OWN_PROOF = {
   'spirit/app/join/element.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
 };
 // THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
-const FIELD_RULES = require(path.join(RUN, 'spirit', 'fieldRules.js'));
+const FIELD_RULES = SPIRIT.requireScript('spirit/fieldRules.js');
 const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function (k) { return /MAX_BYTES$/.test(k) && typeof FIELD_RULES[k] === 'number'; }).map(function (k) { return FIELD_RULES[k]; }));
 // THE PAGE WATCHED FROM BEFORE ITS FIRST SCRIPT (goal/G41.27): put on the page ahead of spirit.js, it keeps what the
 // rules below are judged by, each call known by the file whose code made it (a module runs with its path as its
@@ -444,7 +445,7 @@ const WATCH = String.raw`(function () {
 // can be: in the code, or on a page that gives it something. So a rule is said (its test.run) only when its page gave it
 // something to judge (goal/G47.2: every test one test.run); the rest are said as comments.
 // The scratch node and headless Chrome, shared with any test that opens a page (spirit/test/headLessChrome.js).
-const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const { sleep, until, findChrome, scratchNode, chromePage } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 
 // GIVEN NO FILE, EVERY FILE IN ITS REACH (goal/G41.19): an item's suite row names no file, so a run of this test alone
 // judges every shell module testModule.js gives it, on one scratch node, each file in a run of its own, so each is
@@ -681,7 +682,7 @@ function every() {
 
   // The page modules in its reach, and the one scratch node they are judged on.
   test.run('testModule.js gives it files to judge', 0.2, function () {
-    const reach = require(path.join(RUN, 'spirit', 'test', 'testModule.js')).testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-browser.js' && t.file; }).map(function (t) { return t.file; });
+    const reach = SPIRIT.requireScript('spirit/test/testModule.js').testsFor('').filter(function (t) { return t.test === 'spirit/test/spirit-sibling-browser.js' && t.file; }).map(function (t) { return t.file; });
     // Every page script in its reach, each judged by its own page (goal/G47.1, box v121: no code reading).
     E.files2 = reach.filter(pageScript);
     return E.files2.length > 0 || false;
@@ -1318,7 +1319,7 @@ function pageAfter(P) {
     // ITS OWN NODE FREED, NEVER DELETED (goal/G47.1: a lab node's root removed here was rebuilt by the next test); a shared
     // node and a shared Chrome are their run's, which ends them; a page of the shared Chrome closes alone (kill, above).
     if (node && !node.shared) {
-      try { if (typeof node.release === 'function') await node.release(); else require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* freed when this process ends */ }
+      try { if (typeof node.release === 'function') await node.release(); else SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* freed when this process ends */ }
     }
     // Its own Chrome's profile, once that Chrome has ended (its watcher deletes it too, should a file still be held).
     if (page && page.profile) { if (page.kid && page.kid.exitCode === null && page.kid.signalCode === null && page.kid.once) await new Promise(function (r) { page.kid.once('exit', r); }); try { fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* its watcher takes it */ } }

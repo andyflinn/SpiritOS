@@ -8,14 +8,15 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/coreFiles/' + name + tempAsked); }
 test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/test/coreFiles'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
+const core = SPIRIT.requireScript('spirit/coreFiles.js');
 
 // What was core before goal/G41.29.
 test.run('spirit/run/spirit/shell/face.html is core, as part of the face\'s boot', 0.2, function () { return (core.isCore('spirit/run/spirit/shell/face.html') === true) ? true : false; }, test.limit.quick);
@@ -113,7 +114,7 @@ test.run('spirit/app/grants/grants.json says intrinsic true', 0.2, function () {
 // tags, a script's require of a file beside it, and spirit.requireScript of a literal path. A test folder, a vendored folder
 // (fileSystem.js's list) and a require by package name (node's own) are not files of the run, and are not asked.
 const REPO = path.join(RUN, '..', '..');
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 const D = {};
 const depIsCore = function (rel) { return core.isCore('spirit/run/' + rel, REPO); };
 const exists = function (rel) { return fsx.existsSync(path.join(RUN, rel)) && fsx.statSync(path.join(RUN, rel)).isFile(); };
@@ -180,7 +181,7 @@ test.run('every file a core file loads is core', 0.8, function () {
 // The box, 2: "both are intrinsic by their own <name>.json, as spirit/app apps say it".
 const G = {};
 test.run('coreFiles.js answers appIntrinsic', 0.2, function () {
-  try { G.core = require(path.join(RUN, 'spirit', 'coreFiles.js')); } catch (e) { G.core = null; }
+  try { G.core = SPIRIT.requireScript('spirit/coreFiles.js'); } catch (e) { G.core = null; }
   return (!!G.core && typeof G.core.appIntrinsic === 'function') ? true : false;
 }, test.limit.quick);
 // No coded list names them: since goal/G43.30 there is none at all.

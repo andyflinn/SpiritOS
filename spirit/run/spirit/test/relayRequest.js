@@ -14,16 +14,17 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayRequest/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayRequest'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const limits = require(path.join(RUN, 'spirit', 'limits.js'));
-const pipePathFor = require(path.join(RUN, 'spirit', 'appClient.js')).pipePathFor;
-const R = require(path.join(RUN, 'spirit', 'relayRequest.js'));
+const limits = S.requireScript('spirit/limits.js');
+const pipePathFor = S.requireScript('spirit/appClient.js').pipePathFor;
+const R = S.requireScript('spirit/relayRequest.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function caught(p) { return p.then(function (v) { return { value: v }; }, function (e) { return { error: e }; }); }
@@ -219,6 +220,6 @@ test.run('relayUpload says an address assertRelayUrl refuses on the stream\'s er
 
 test.run('at the end the planted servers close and the scratch root is removed', 0.2, async function () {
   await Promise.all([W.relay, W.pipeServer].filter(Boolean).map(function (s) { if (s.closeAllConnections) s.closeAllConnections(); return new Promise(function (r) { s.close(function () { r(); }); }); }));
-  if (W.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(W);
+  if (W.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(W);
   return !(W.root && fs.existsSync(W.root)) || false;
 }, test.limit.quick);

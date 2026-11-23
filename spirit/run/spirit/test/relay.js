@@ -8,7 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
@@ -18,7 +19,7 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relay/' 
 // folder holding an open database cannot be removed, and nodeStore keeps each store it opened open; every one under the
 // suite's folder (a node.db or a relay.db at <root>/spirit/state) is closed first.
 function closeStoresUnder(top) {
-  const NS = require(path.join(RUN, 'spirit', 'nodeStore.js'));
+  const NS = S.requireScript('spirit/nodeStore.js');
   (function walk(dir, depth) {
     let names = [];
     try { names = fs.readdirSync(dir); } catch (e) { return; }
@@ -56,7 +57,7 @@ function scratchRelay() {
   fs.writeFileSync(path.join(home, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
   const mails = [];
   let now = Date.now();
-  const relay = require(path.join(RUN, 'spirit', 'relay.js')).createRelay(home, {
+  const relay = S.requireScript('spirit/relay.js').createRelay(home, {
     now: function () { return now; },
     sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); },
   });
@@ -65,7 +66,7 @@ function scratchRelay() {
 
 // The scratch relay of the join and login parts, made by the first "the world:" test.
 const W = { R: null };
-const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
+const auth = S.requireScript('spirit/relayAuth.js');
 let n = 0;
 // Each ask by a key and a mail of its own, so no cap of a minute or an hour is what refuses it.
 function ask(link) {
@@ -129,7 +130,7 @@ test.run('asked with the member\'s own email, the relay mails a login', 0.2, fun
     R.relay.join(bert.publicKey, 'bert@example.org', NODE, '');
     const code = ((/[?&]join=([A-Za-z0-9_-]+)/.exec((R.mails[R.mails.length - 1] || {}).text || '')) || [])[1] || '';
     R.relay.joinConfirm(bert.publicKey, code, '');
-    require(path.join(RUN, 'spirit', 'relayStore.js')).open(R.home).members.setFace(bert.publicKey, 'harbour', 'bert@example.org');
+    S.requireScript('spirit/relayStore.js').open(R.home).members.setFace(bert.publicKey, 'harbour', 'bert@example.org');
     R.later(2 * 60 * 1000);
     const before = R.mails.length;
     R.relay.faceLogin('harbour', 'bert@example.org');
@@ -171,7 +172,7 @@ test.run('500 members are seated and connected', 0.2, function () {
   auth.saveIdentity(LS.home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
   auth.writeOwner(LS.home, owner.publicKey);
-  const box = LS.box = require(path.join(RUN, 'spirit', 'relay.js')).createRelay(LS.home);
+  const box = LS.box = S.requireScript('spirit/relay.js').createRelay(LS.home);
   box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);
   // Each member seated by an invite of the owner's and connected by its stream, as a node connects.
   for (let i = 0; i < MEMBERS; i++) {
@@ -191,8 +192,8 @@ test.run('500 members are seated and connected', 0.2, function () {
 }, test.limit.long);
 test.run('the search thrown is at least 12000 characters, near 3/4 of the payload', 0.2, function () {
   if (!LS.box || !LS.asker) return false;
-  const limits = require(path.join(RUN, 'spirit', 'limits.js'));
-  const seal = require(path.join(RUN, 'spirit', 'seal.js'));
+  const limits = S.requireScript('spirit/limits.js');
+  const seal = S.requireScript('spirit/seal.js');
   const box = LS.box;
   const relayKey = box.relayPublicKey();
   // The longest sealed search the wire takes: from 3/4 of the payload down, until the relay takes the post.
@@ -237,7 +238,7 @@ test.run('the long search is answered', 0.2, function () {
 // scratchFaceRelay), a member seated with a face, its node present and its face logged in; the face's stream and the
 // home node's feed over HTTP, as the face and the node send them.
 const http = require('http');
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
+const H = S.requireScript('spirit/test/headLessChrome.js');
 const F = { R: null, M: null, opened: [], face: null, one: null, two: null, again: null, three: null, opensNow: 0 };
 // The face's own stream, as its page opens it: GET /face/stream, its login cookie, on its own host.
 function openFace() {
@@ -334,7 +335,7 @@ test.run('two members are on their streams, and one posts to the other, who answ
   auth.saveIdentity(RX.home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
   auth.writeOwner(RX.home, owner.publicKey);
-  const box = require(path.join(RUN, 'spirit', 'relay.js')).createRelay(RX.home);
+  const box = S.requireScript('spirit/relay.js').createRelay(RX.home);
   box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);
   const heard = { A: [], B: [] };
   const ids = {};

@@ -10,8 +10,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const { createVerbTable } = require(path.join(RUN, 'spirit', 'verbTable.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const { createVerbTable } = SPIRIT.requireScript('spirit/verbTable.js');
 
 // A handler answering body as JSON with status, as the node's handlers end their response.
 function answers(body, status) { return function (req, res) { res.writeHead(status || 200); res.end(JSON.stringify(body)); }; }

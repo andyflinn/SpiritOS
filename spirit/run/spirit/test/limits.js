@@ -11,9 +11,10 @@
 const path = require('path');
 const crypto = require('crypto');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const L = require(path.join(RUN, 'spirit', 'limits.js'));
-const seal = require(path.join(RUN, 'spirit', 'seal.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
+const L = S.requireScript('spirit/limits.js');
+const seal = S.requireScript('spirit/seal.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const K = crypto.generateKeyPairSync('x25519');

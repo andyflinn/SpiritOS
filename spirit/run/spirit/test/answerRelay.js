@@ -11,7 +11,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../tempFolder.js');
@@ -21,7 +22,7 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/answerRe
 // folder holding an open database cannot be removed, and nodeStore keeps each store it opened open; every one under the
 // suite's folder (a node.db at <root>/spirit/state/node.db) is closed first.
 function closeStoresUnder(top) {
-  const NS = require(path.join(RUN, 'spirit', 'nodeStore.js'));
+  const NS = S.requireScript('spirit/nodeStore.js');
   (function walk(dir, depth) {
     let names = [];
     try { names = fs.readdirSync(dir); } catch (e) { return; }
@@ -35,9 +36,9 @@ test.after(function () {
   closeStoresUnder(top);
   try { fs.rmSync(top, { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
 });
-const { createAnswerer } = require(path.join(RUN, 'spirit', 'answerRelay.js'));
-const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
-const relayKeys = require(path.join(RUN, 'spirit', 'relayKeys.js'));
+const { createAnswerer } = S.requireScript('spirit/answerRelay.js');
+const auth = S.requireScript('spirit/relayAuth.js');
+const relayKeys = S.requireScript('spirit/relayKeys.js');
 
 // A relay's key statement, signed by the identity it names, over both keys and the label (cycle 10, R9).
 function statement(id, label) {

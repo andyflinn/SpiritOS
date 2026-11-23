@@ -10,8 +10,9 @@
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
-const S = require(path.join(RUN, 'spirit', 'puppetStream.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+const S = SPIRIT.requireScript('spirit/puppetStream.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = function () { return new Promise(function (r) { setTimeout(r, 20); }); };

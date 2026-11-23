@@ -31,14 +31,15 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testReport/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testReport'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 
 // THE PLANTED SUITES, each a file of the scratch tree, its tests through test.run.
 const REPORTER_FROM = function (depth) { return "require(require('path').join(__dirname, " + new Array(depth + 1).join("'..', ") + "'spirit', 'test', 'testReport.js'))"; };
@@ -412,10 +413,10 @@ test.run('every one of the 100 reports reaches the node within a second of its t
 }, test.limit.quick);
 test.after(function () {
   try { if (F.node) F.node.close(); } catch (e) { /* closed */ }
-  try { if (F.tree) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree({ root: F.tree.root }); } catch (e) { /* temp */ }
+  try { if (F.tree) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree({ root: F.tree.root }); } catch (e) { /* temp */ }
 });
 
 test.after(function () {
   try { if (W.node) W.node.close(); } catch (e) { /* closed */ }
-  [W.tree, W.quietTree].forEach(function (t) { try { if (t) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(t); } catch (e) { /* scratch */ } });
+  [W.tree, W.quietTree].forEach(function (t) { try { if (t) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(t); } catch (e) { /* scratch */ } });
 });

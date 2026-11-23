@@ -23,7 +23,8 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
-const test = require(path.join(RUN, 'spirit', 'test', 'testReport.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 function code(rel) { let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 function isFile(rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } }
@@ -235,7 +236,7 @@ function appRules(all) {
   if (withApi.length) {
     test.run('the console offers at spirit.app.<name> its api.js verbs, and remote and DEBUG when it has a server', 0.4, async function () {
       let console0 = null;
-      try { console0 = require(path.join(RUN, 'spirit', 'console', 'command.js')); } catch (e) { console0 = null; }
+      try { console0 = SPIRIT.requireScript('spirit/console/command.js'); } catch (e) { console0 = null; }
       if (!console0 || typeof console0.verbsAt !== 'function') return false;
       const sorted = function (l) { return JSON.stringify(l.slice().sort()); };
       for (const f of withApi) {

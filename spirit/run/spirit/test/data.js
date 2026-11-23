@@ -470,6 +470,7 @@ test.run('on a page the cache has no cap', 0.2, function () {
 const fs = require('fs');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..');
+const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 // An app of spirit/app/<name>/ keeps its family and its manager at its top (goal/G43.27).
 function managerOf(name) {
   if (fs.existsSync(path.join(RUN, 'spirit', 'app', name, 'api.js'))) return 'spirit/app/' + name + '/data.js';
@@ -619,8 +620,8 @@ test.run('no file in the repo names a replaced way, neither running uncached nor
 // The tests of goal/G43.7 (spec: ./data.md). Andy, the box: "we rename it spirit/data.js and it IS the the spirit.required.spirit.data
 // object", "ALL "clientCacheManager.js" files will be converted to "data.js" files with the SAME pattern." Every check is per
 // family, so the count of what is owed falls as each family moves.
-const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
-const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
+const H = S.requireScript('spirit/test/headLessChrome.js');
+const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
 // EVERY FAMILY OF THE TREE, READ FROM ITS FOLDERS (goal/G47.4; Andy: "you make bloody well sure that such stupid hard-coded
@@ -670,7 +671,7 @@ test.after(function () {
   if (F.page && F.page.kid) F.page.kid.kill();
   if (F.node && F.node.child) F.node.child.kill();
   try { if (F.page && F.page.profile) fs.rmSync(F.page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
-  try { if (F.node && F.node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(F.node); } catch (e) { /* left */ }
+  try { if (F.node && F.node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(F.node); } catch (e) { /* left */ }
 });
 
 // the box: "de-clutter": the first level of spirit holds no <name>Data
