@@ -25,7 +25,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var r = row();
       if (!r) return null;
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
-      return S.readyPromise.then(function (s) { return s.app.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
+      return S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
     }
     var t = S.required.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
@@ -43,14 +43,14 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       shown(true);
     }
     function ask() {
-      S.readyPromise.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
     // WHAT IT MOUNTS, read from <name>.json, again each time the row changes: a closed panel is kept, not made anew (goal/G43.17,
     // the box: "A closed layer is hidden, not destroyed"), so a read made once would show an old file when it is shown again.
     function readParts() {
-      S.readyPromise.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+      S.readyPromise.then(function () { return S.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
         var j = JSON.parse(String(text));
         parts = (j.shell && j.shell.mount === true ? ['face'] : []).concat(j.node && j.node.mount === true ? ['server'] : []);
         paint();

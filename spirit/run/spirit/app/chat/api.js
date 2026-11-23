@@ -1,5 +1,5 @@
 'use strict';
-// spirit/run/spirit/app/chat/: the chat server's branch interface, where spirit.branchPath('chat') finds it (goal/G41.12)
+// spirit/run/spirit/app/chat/: the chat server's branch interface, where 'spirit/app/chat/api.js' finds it (goal/G41.12)
 // THE chat SERVER'S INTERFACE (goal/G32.3; the branch is chat, as its folder, since goal/G43.31): every verb it serves, each argument with its rule (spirit.js's
 // standard, '?' optional). The node answers this text to api {family} without the server hearing of it, and maps it
 // to its name: it names no family of its own. The rules are written by hand from the handlers in chat/server/server.js, not

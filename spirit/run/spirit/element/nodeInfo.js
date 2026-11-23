@@ -27,8 +27,8 @@
 // no api handed.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-// Each by its family's name, its path spirit.branchPath's (the families relay and node).
-if (window.spirit && typeof window.spirit.requireScript === 'function' && typeof window.spirit.branchPath === 'function') ['relay', 'node'].forEach(function (n) { Promise.resolve(window.spirit.requireScript(window.spirit.branchPath(n))).catch(function () {}); });
+// Each by its api.js path, never by a name (goal/G49.6): the relay and node branches.
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/relay/api.js', 'spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
@@ -88,7 +88,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function' && typeof
     }
     // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
     function loadRelays() {
-      return Promise.resolve(S.readyPromise).then(function (s) { return s.relay.status(''); }).then(function (r) {
+      return Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
         var said = (r && r.body) || {};
         relays = Array.isArray(said.rows) ? said.rows : [];
       }, function () { relays = []; }).then(function () { return parts.then(drawForms, function () { /* a form missing is not drawn */ }); });
@@ -116,7 +116,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function' && typeof
       // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.required.spirit.data.node.data, and each of
       // the two fields draws itself from it.
       return S.requireScript('spirit/node/api.js').then(function () {
-        return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s.node.card({}); }));
+        return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/node/api.js'); }).then(function (s) { return s.card({}); }));
       }).then(function (r) {
         if (gone) return;
         var card = r && r.body;

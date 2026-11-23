@@ -11,7 +11,7 @@
 // WHAT IT IS
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
 //   - The rest comes from the api.js every branch folder holds (spirit/fs/api.js, spirit/contact/api.js ...; a server's in
-//     its branch folder, branchPath(name)), written to this file's standard: module.exports = { verbs: { <verb>:
+//     its app folder, spirit/app/<name>/api.js), written to this file's standard: module.exports = { verbs: { <verb>:
 //     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per branch: spirit.required.spirit.fs.api.load({path}),
 //     spirit.required.spirit.contact.api.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
 //     there in camel case (spirit.required.spirit.app.chat.api.lineWrite for line.write).
@@ -340,9 +340,11 @@
   // the calls go where ask sends them, to this node or to a peer; nothing a peer hands over is run here.
   function ownInterface(fam) {
     if (isNode()) {
-      var p = branchPath(fam);
+      // The path it was asked by (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"): never
+      // one made from its name.
+      var p = pathOf[fam];
+      if (!p || !nodeFiles().statFile(p)) return Promise.reject(refusal('no-interface', 'no interface for the branch ' + fam));
       var file = require('path').join(RUN_ROOT, p);
-      if (!nodeFiles().statFile(p)) return Promise.reject(refusal('no-interface', 'no interface for the branch ' + fam));
       if (!Object.prototype.hasOwnProperty.call(nodeOnce, p)) { nodeOnce[p] = require(file); placeAt(required, p, nodeOnce[p]); }
       return Promise.resolve(nodeOnce[p]);
     }
@@ -391,19 +393,14 @@
   // Where a branch's api.js stands, as a require of it named it; else in node its file on disc, and on a page an app of the
   // page's app list at spirit/app/<name>/api.js, any other at spirit/<name>/api.js.
   var pathOf = Object.create(null);
-  function apiPathOf(fam) {
-    if (pathOf[fam]) return pathOf[fam];
-    if (isNode()) return branchPath(fam);
-    var apps = (((self.required.spirit.data || {}).app || {}).data || {});
-    var rows = typeof apps.rows === 'function' ? apps.rows() : null;
-    return rows && Object.prototype.hasOwnProperty.call(rows, fam) ? 'spirit/app/' + fam + '/api.js' : 'spirit/' + fam + '/api.js';
-  }
+  // The api.js path a branch was asked by, the one place it stands (goal/G49.6: a branch is asked by its path alone).
+  function apiPathOf(fam) { return pathOf[fam]; }
   // The branch's functions onto its api.js object (the module in node, the interface the node handed over on a page), the
   // names it holds already kept as they are; it stands at spirit.required.<its path>, and is what a caller is answered.
   function carried(fam, m) {
     var p = apiPathOf(fam);
     var def = (isNode() && nodeOnce[p]) || interfaceDefs[fam] || null;
-    if (!def || typeof def !== 'object') return m;
+    if (!p || !def || typeof def !== 'object') return m;
     // A new object, the api.js's own names and the functions beside them: the module itself stays as its file wrote it, so a
     // plain require of the api.js answers its table alone.
     var api = {};
@@ -486,29 +483,14 @@
   // Andy: "the dynamic loading must be in spirit.js, because it belongs there, and so that any component touched later,
   // can load its needed components there."; "the loaders name should be spirit.requireScript()"; the key "a second argument
   // in spirit.requireScript(), by default it's null (owner node) otherwise it's a peer ID". The one async loader, the same on a
-  // page and in node. path is from the run root. A path in the node's own naming of an interface,
-  // branchPath(name) (a server's) or spirit/<name>/api.js (a node branch's), binds that branch: on the
-  // instance as spirit.<name> from this VM's node, or with a key as that peer's branch (how, in node, is peerPost's
-  // waiting). Any other path is a component: in node required, answering its module.exports; on a page got and run as a
-  // plain script (a stylesheet put on as a style), answering an empty object.
-  // THE ONE BRANCH PATH (goal/G41.12, box v15: "One function finds a branch path ... and every caller uses it"; Andy,
-  // Q3, on holding it here, since this file runs on a page where appServer.js cannot load: "sure"). A branch's path is its
-  // own api.js (goal/G43.20, the box: "a branch is found as spirit/<name>/api.js or spirit/app/<name>/api.js ... nothing
-  // falls back"): a system branch's spirit/<name>/api.js, or in node, when that is not there and the app has one, an app's
-  // spirit/app/<name>/api.js. On a page the path only names the branch (interfaceName); the node finds its folder.
-  // appServer.js hands out this same function. No other file writes the path.
-  // THROUGH spirit.fs's OWN PROCESSOR, NO RAW fs (goal/G49.2; Andy: "why would those two disk calls in processes have to reach
-  // for node.js require('fs') when the functions are sitting on spirit.js?", "go on the five!"): in node the two checks are
-  // statFile of spirit/fs/fileSystem.js, the very function spirit.required.spirit.fs.api.stat runs there, answering at once, with or without a
-  // node running.
-  function branchPath(name) {
-    var n = String(name || '');
-    if (isNode()) {
-      var stat = nodeFiles().statFile;
-      if (!stat('spirit/' + n + '/api.js') && stat('spirit/app/' + n + '/api.js')) return 'spirit/app/' + n + '/api.js';
-    }
-    return 'spirit/' + n + '/api.js';
-  }
+  // page and in node. path is from the run root. A branch's api.js, spirit/<name>/api.js (a node branch's) or
+  // spirit/app/<name>/api.js (an app's), binds that branch and places it at spirit.required.<its path>, from this VM's node,
+  // or with a key as that peer's branch (how, in node, is peerPost's waiting). Any other path is a component: in node
+  // required, answering its module.exports; on a page got and run as a plain script (a stylesheet put on as a style),
+  // answering an empty object.
+  // A BRANCH IS ASKED BY ITS PATH ALONE (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN",
+  // "spirit.branchPath() must die."): no function makes a branch's path from its name; asked by its name, a page placed it at
+  // a guessed place, and the app's own elements, asking by its path, found nothing there.
   // The fs branch's node processor, the one place in node that reads the disc for spirit.fs (goal/G49.2).
   function nodeFiles() { return require(require('path').join(RUN_ROOT, 'spirit', 'fs', 'fileSystem.js')); }
   function interfaceName(p) {
@@ -595,14 +577,16 @@
       var apiFile = require('path').join(RUN_ROOT, p);
       if (nodeFiles().statFile(p)) { nodeOnce[p] = require(apiFile); placeAt(required, p, nodeOnce[p]); }
     }
-    if (fam && key) return bindPeer(key, fam, how);
+    if (fam && key) { pathOf[fam] = pathOf[fam] || p; return bindPeer(key, fam, how); }
     // On a page the api.js the node handed over stands at its place once its branch is bound.
     // Asked while a file runs, it is part of that file's tree, its companion data.js with it (goal/G47.1, Andy's rule: "every
     // api.js requires it's companion data.js"): the file's require answers once the branch is bound; a branch that cannot be
     // bound fails no tree.
     if (fam) {
       pathOf[fam] = pathOf[fam] || p;
-      var bindsTo = bindOwn(fam);
+      // ASKED BY ITS PATH, IT STANDS AT ITS PATH (goal/G49.6; Andy: "the fucking api should ALWAYS be at the same place"),
+      // whatever bound it first.
+      var bindsTo = bindOwn(fam).then(function (m) { if (m && required !== m) standAt(required, p, m); return m; });
       if (collecting) collecting.push(bindsTo.then(null, function () {}));
       return bindsTo;
     }
@@ -682,7 +666,6 @@
   self.callOutcome = outcome;
   self.apiTree = tree;
   self.requireScript = requireOne;
-  self.branchPath = branchPath;
 
   self.MIME_TYPES = MIME_TYPES;
   self.VERSION = VERSION;

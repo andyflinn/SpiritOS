@@ -299,7 +299,7 @@
     var code = joinCode;
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
-    Promise.all([window.spirit.requireScript('spirit/element/joinSteps.js'), Promise.resolve(spirit.readyPromise).then(function (sp) { return sp.contact.search({ q: '*', relay: true }); })]).then(function (got) {
+    Promise.all([window.spirit.requireScript('spirit/element/joinSteps.js'), Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (sp) { return sp.search({ q: '*', relay: true }); })]).then(function (got) {
       var S = window.spirit.required && window.spirit.required.spirit.element.joinSteps;
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';

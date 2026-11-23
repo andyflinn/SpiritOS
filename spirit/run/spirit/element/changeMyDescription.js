@@ -57,7 +57,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var bad = '';
       if (D) { try { D.isValid(input.value); } catch (e) { bad = (e && e.message) || 'not a description'; } }
       if (bad) { say(bad, true); return Promise.resolve(); }
-      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function (s) { return s.node.setDescription({ description: input.value }); })).then(function (r) {
+      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function () { return root.spirit.requireScript('spirit/node/api.js'); }).then(function (s) { return s.setDescription({ description: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
         root.spirit.required.spirit.data.node.data.card.keep({ description: String(body.description == null ? '' : body.description) });

@@ -136,15 +136,15 @@
     var bookActions = [
       { name: 'open', label: 'Open', run: function (el) { return openDetails(co.open, 'contact', el.key); } },
       // Through the spirit object (goal/G32.2): each a checked call answering the reply's body, refusing otherwise.
-      { name: 'block', label: 'Block', run: function (el) { return spirit.readyPromise.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },
-      { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.readyPromise.then(function (s) { return s.contact.unblock({ publicKey: el.key }); }); } },
-      { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function (s) { return s.contact.forget({ publicKey: el.key }); }); } },
+      { name: 'block', label: 'Block', run: function (el) { return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.block({ publicKey: el.key }); }); } },
+      { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.unblock({ publicKey: el.key }); }); } },
+      { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.forget({ publicKey: el.key }); }); } },
     ];
     var strangerActions = [
       // Acquired at the relay that found them, under the name they gave it.
       { name: 'add', label: 'Add', run: function (el) {
         var ask = { publicKey: el.key, publicLabel: String(el.row.publicLabel || '') };
-        return spirit.readyPromise.then(function (s) { return s.peer.acquire(ask); });
+        return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/peer/api.js'); }).then(function (s) { return s.acquire(ask); });
       } },
     ];
     function offered(v) { return v.relay === true ? relayActions : bookOf(v) ? bookActions : strangerActions; }
@@ -181,7 +181,7 @@
             var wanted = typeof R.normalize === 'function' ? R.normalize(text) : String(text || '').trim();
             var bad = typeof R.problem === 'function' ? R.problem(wanted) : '';
             if (bad) return Promise.resolve({ ok: false, error: bad });
-            return spirit.readyPromise.then(function (s) { return s.contact.label({ publicKey: el.key, myLabel: wanted }); })
+            return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.label({ publicKey: el.key, myLabel: wanted }); })
               .then(function (body) { return { ok: true, body: body }; }, function (e) { return { ok: false, error: (e && e.message) || 'not renamed' }; });
           } },
         { name: 'add', from: ['keep', 'mine', 'blocked', 'relay'], paint: function (v) {
@@ -194,7 +194,7 @@
       actions: actions,
       expand: function (el) {
         if (relay || !bookOf(el.row)) return Promise.resolve(null);
-        return spirit.readyPromise.then(function (s) { return s.contact.get({ key: el.key }); });
+        return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.get({ key: el.key }); });
       },
     });
     // Its icons made in each cell it paints: as it is mounted, once icon.js is in, and after each repaint.

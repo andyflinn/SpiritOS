@@ -86,7 +86,7 @@ function cdStatus(text) {
 var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relay.status
 function cdRelayClaim() {
   cdClaim = null;
-  return Promise.resolve(spirit.readyPromise).then(function (s) { return s.relay.status(''); }).then(function (r) {
+  return Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
     ((r.body && r.body.rows) || []).forEach(function (row) {
       if (row && (row.key === cdKey || (row.roll && row.roll.relayKey === cdKey))) cdClaim = { owned: !!row.owned, ownerLabel: String(row.ownerLabel || '') };
     });
@@ -611,7 +611,7 @@ function ndLoad() {
   ndUnlisted = false;
 // relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
   // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
-  return Promise.resolve(spirit.readyPromise).then(function (s) { return s.relay.status(ndLabel || ''); }).then(function (r) { return r && r.body; })
+  return Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.status(ndLabel || ''); }).then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];

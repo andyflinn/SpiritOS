@@ -67,7 +67,7 @@
     function rotate() {
       busy = true;
       draw();
-      S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s.node.rotateCipher({}); })).then(function (r) {
+      S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/node/api.js'); }).then(function (s) { return s.rotateCipher({}); })).then(function (r) {
         busy = false;
         result = r && r.status === 200 && r.body ? r.body : { ok: false, error: (r && r.body && (r.body.error || r.body.code)) || 'no answer' };
         draw();

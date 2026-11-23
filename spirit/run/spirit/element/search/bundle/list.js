@@ -39,7 +39,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     function search(args) {
       var text = String((args && args.text) || '').trim();
       var ask = family ? { op: 'search', text: text, owner: family } : { op: 'search', text: text };
-      return spirit.readyPromise.then(function (s) { return s.auth.bundle(ask); }).then(function (got) {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.bundle(ask); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }

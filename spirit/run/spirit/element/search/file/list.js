@@ -51,7 +51,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   function search(args, found) {
     var a = args || {};
     if (!a.contents || !a.q) { found(Object.create(null), Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
-    return spirit.readyPromise.then(function (s) { return s.fs.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
+    return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
       body = body || {};
       var F = fsReads();
       var next = Object.create(null);

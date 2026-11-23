@@ -117,7 +117,7 @@
   var told = [];
   var unwatch = null;
   var watching = 0;
-  function ask(rel) { return window.spirit.readyPromise.then(function (s) { return s.fs.loadFile(rel); }).then(null, function () { return null; }); }
+  function ask(rel) { return window.spirit.readyPromise.then(function () { return window.spirit.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile(rel); }).then(null, function () { return null; }); }
   // A word.json IS ASKED ONLY WHEN THE PAGE'S FILE LIST HOLDS IT (goal/G43.32; Andy: "it there WAS a word.json anywhere, it
   // would already be in the damn file list?", and "yes cw, change it so"): the fs family's mirror, spirit.required.spirit.data.fs.data, is the
   // node's whole tree; a word.json it does not list is not there, and is not asked for. Until the whole tree has come, a

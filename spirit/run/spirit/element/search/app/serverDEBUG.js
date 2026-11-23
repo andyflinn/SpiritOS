@@ -37,7 +37,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     function press() {
       var want = !on();
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
-      return Promise.resolve(S.requireScript(S.branchPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
+      return Promise.resolve(S.requireScript('spirit/app/' + key + '/api.js')).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
     }
     var t = S.required.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
@@ -57,11 +57,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       paint();
     }, function () { /* no jobs, no server to show */ });
     var offRow = S.required.spirit.data.app.data.watch(key, paint);
-    S.readyPromise.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+    S.readyPromise.then(function () { return S.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
       var j = JSON.parse(String(text));
       serves = !!(j.node && j.node.mount === true);
       paint();
-      if (serves) return Promise.resolve(S.requireScript(S.branchPath(key))).then(function (fam) { return fam.DEBUG({}); }).then(function (r) {
+      if (serves) return Promise.resolve(S.requireScript('spirit/app/' + key + '/api.js')).then(function (fam) { return fam.DEBUG({}); }).then(function (r) {
         if (!job()) asked = !!(r && r.debug === true);
         paint();
       }, function () { /* not running: it stays hidden */ });

@@ -98,7 +98,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var joinLink = shell && typeof shell.joinLink === 'function' ? String(shell.joinLink() || '') : '';
     var args = { url: url, email: email, code: '' };
     if (joinLink) args.link = joinLink;
-    return spirit.readyPromise.then(function (s) { return s.relay.join(args); }).then(function (said) {
+    return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.join(args); }).then(function (said) {
       said = said || {};
       // Andy (goal/G30.1): "an email in your inbox contains a confirmation link for the entered email".
       if (said.ok) return { ok: true, text: 'An email in your inbox at ' + email + ' holds a confirmation link. Open it on this computer within 10 minutes.' };

@@ -153,7 +153,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       busy = true;
       say('asking the relay…', false);
       // Through the spirit object (goal/G32.2): spirit.required.spirit.relay.api.face answers the reply's body, or refuses with the node's words.
-      return spirit.readyPromise.then(function (s) { return s.relay.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
         box._faceSaid = said.ok
           ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
           : { text: said.error || 'the relay did not answer', bad: true };

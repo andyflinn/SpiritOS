@@ -1269,15 +1269,14 @@ catch (e) {
       if (me.name) own.label = String(me.name);
       return own;
     },
-    // A served app's family folder, where its api.js is (goal/G32.3), as the one family path function names it
-    // (spirit.branchPath, goal/G41.12).
+    // A served app's folder, where its api.js is (goal/G32.3).
     // An app of spirit/app/ has it at its top, beside <name>.js, as spirit/<family>/ has it (goal/G43.27); the node finds the
     // folder, so a page binds by the name alone.
     // FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2; Andy: "go on node.js"): whether spirit/app/<name>/api.js is
     // there is asked of spirit/fs/script.js, whole in this, the node's main process, since its watcher started at boot.
     branchDir: function (name) {
       const app = path.join(ROOT_DIR, 'spirit', 'app', String(name));
-      return spirit.requireScript('spirit/fs/script.js').file('spirit/app/' + String(name) + '/api.js') ? app : path.join(ROOT_DIR, path.dirname(spirit.branchPath(name)));
+      return spirit.requireScript('spirit/fs/script.js').file('spirit/app/' + String(name) + '/api.js') ? app : path.join(ROOT_DIR, 'spirit', String(name));
     },
   });
   jobs.startNodeServers(ROOT_DIR, appClient);

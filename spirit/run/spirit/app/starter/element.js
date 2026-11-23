@@ -35,7 +35,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     box.textContent = 'asking this node what it is…';
     container.innerHTML = '';
     container.appendChild(box);
-    S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s.node.card({}); })).then(function (r) {
+    S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/node/api.js'); }).then(function (s) { return s.card({}); })).then(function (r) {
       if (gone) return;
       box.textContent = '';
       var card = r && r.status === 200 ? r.body : null;

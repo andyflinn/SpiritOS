@@ -145,7 +145,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           return null;
         } },
         // Through the spirit object (goal/G32.2): checked calls answering the reply's body.
-        { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function (s) { return s.fs.delete({ path: el.row.path }); }); } },
+        { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.delete({ path: el.row.path }); }); } },
       ],
       expand: function (el) {
         return spirit.readyPromise.then(function (s) {

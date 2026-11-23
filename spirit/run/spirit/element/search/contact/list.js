@@ -143,7 +143,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           return { status: 200, body: { ok: true, items: items, more: !!(got && got.more) } };
         });
       }
-      return spirit.readyPromise.then(function (s) { return s.contact.search({ q: q }); }).then(function (got) {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.search({ q: q }); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }

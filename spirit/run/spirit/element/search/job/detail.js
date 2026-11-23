@@ -145,12 +145,12 @@
       function failed(word) { return function (e) { console.error(word + ' failed', e); }; }
       if (what === 'cancel') {
         // It stays open: the next event shows the job stop.
-        Promise.all([S.readyPromise, parts]).then(function (r) { return r[0].job.cancel({ id: id }); }).then(null, failed('cancel'));
+        Promise.all([S.readyPromise, parts]).then(function () { return S.requireScript('spirit/job/api.js'); }).then(function (j) { return j.cancel({ id: id }); }).then(null, failed('cancel'));
         return;
       }
       if (what === 'delete') {
         // IT GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the list.
-        Promise.all([S.readyPromise, parts]).then(function (r) { return r[0].job.delete({ id: id }); }).then(function () {
+        Promise.all([S.readyPromise, parts]).then(function () { return S.requireScript('spirit/job/api.js'); }).then(function (j) { return j.delete({ id: id }); }).then(function () {
           if (typeof o.close === 'function') o.close();
         }, failed('delete'));
       }

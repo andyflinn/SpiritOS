@@ -59,12 +59,12 @@
   // What a peer answered, or a refusal ({ok: false, ...}) passed through for the input pane to say.
   function bodyOf(got) { return got !== undefined && got !== null ? got : { ok: false, error: 'no answer' }; }
   function refusalOf(e) { return { ok: false, error: String((e && e.message) || e) }; }
-  // A family of this node, bound by the one loader (goal/G43.27: bound on first call).
-  function family(name) { return S.requireScript(S.branchPath(name)); }
+  // A branch of this node, bound by the one loader by its api.js path (goal/G49.6: never by a name).
+  function family(p) { return S.requireScript(p); }
   // A relay row's key is its url; its key on the wire is the one its roll names (as Contacts reads it).
   function relayKey(party) {
     if (party.relayKey) return Promise.resolve(party.relayKey);
-    return family('relay').then(function (r) { return r.get({ key: party.key }); }).then(function (b) {
+    return family('spirit/relay/api.js').then(function (r) { return r.get({ key: party.key }); }).then(function (b) {
       var r = (b && b.relay) || {};
       party.relayKey = (r.roll && r.roll.relayKey) || (b && b.report && b.report.key) || '';
       return party.relayKey;
@@ -80,7 +80,7 @@
   }
   function call(party, fam, verb, args) {
     // Self: the answer's body, a refusal's own body when the node sent one.
-    if (party.kind === 'self') return S.callOutcome(family(fam).then(function (f) { return f[verb](args); })).then(function (o) {
+    if (party.kind === 'self') return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s[fam][verb](args); })).then(function (o) {
       return o.body !== undefined && o.body !== null ? o.body : o;
     });
     var body = {};

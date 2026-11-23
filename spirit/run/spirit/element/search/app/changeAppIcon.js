@@ -28,7 +28,7 @@
     // comes"): handed as press, so Change is busy until the node answers.
     var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change', press: function () {
       if (!picked) return null;
-      return S.readyPromise.then(function (s) { return s.app.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
+      return S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
     } });
     form.span.appendChild(document.createTextNode('Icon '));
     var shown = document.createElement('span');
@@ -43,7 +43,7 @@
       if (r) E.spirit.element.icon.create(shown, { glyph: r.icon });
     }
     function ask() {
-      S.readyPromise.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }

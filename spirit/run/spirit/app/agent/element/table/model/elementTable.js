@@ -38,7 +38,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           var id = drop && drop.value ? String(drop.value) : '';
           if (!id) return null;
           said.textContent = '';
-          return Promise.resolve(spirit.requireScript(spirit.branchPath('agent'))).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
+          return Promise.resolve(spirit.requireScript('spirit/app/agent/api.js')).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
             if (!gone) said.textContent = window.spirit.required.spirit.app.agent.element.table.tableElement.whyOf(e);
           });
         } });

@@ -102,7 +102,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // this node lists, its seat, email and face.
     function withRelays(then) {
       // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
-      Promise.resolve(S.readyPromise).then(function (s) { return s.relay.status(''); }).then(function (r) {
+      Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
         relays = (r && r.body && Array.isArray(r.body.rows)) ? r.body.rows : [];
       }, function () { relays = []; }).then(function () { if (!gone) then(); });
     }
@@ -130,7 +130,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
 
     // The steps, read once from the Join app's manifest; the job, from the jobs family's cache, watched.
-    Promise.resolve(S.readyPromise).then(function (s) { return s.fs.loadFile(STEPS); }).then(function (text) {
+    Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile(STEPS); }).then(function (text) {
       try { steps = (JSON.parse(text) || {}).steps || []; } catch (e) { steps = []; }
     }, function () { steps = []; }).then(function () { return parts; }).then(function () {
       return S.requireScript('spirit/job/api.js');

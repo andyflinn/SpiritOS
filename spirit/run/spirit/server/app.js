@@ -444,8 +444,8 @@ function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '
 // data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
   if (!family || !/^[A-Za-z]\w*$/.test(String(family))) return null;
-  // Beside the family's api.js (spirit.branchPath): an app's in spirit/app/<name>/, a system family's in spirit/<name>/.
-  const file = path.join(RUN_ROOT, path.dirname(spirit.branchPath(String(family))), 'data.js');
+  // Beside the app's api.js, in spirit/app/<name>/ (appApiPath).
+  const file = path.join(RUN_ROOT, path.dirname(appApiPath(String(family))), 'data.js');
   if (!fs.existsSync(file)) return null;
   try { return spirit.requireScript(path.relative(RUN_ROOT, file).split(path.sep).join('/')); } catch (e) { return null; }
 }
@@ -673,11 +673,13 @@ const LOG_MAX = 1000;
 const RUN_ID = crypto.randomBytes(8).toString('hex');
 let published = 0;
 const log = [];                  // { run, n, row }, oldest first, bounded by publisher.logMax
-// A server family's interface: the one family path function (spirit.js, goal/G41.12), handed out by this file too.
-function branchPath(name) { return spirit.branchPath(name); }
+// AN APP SERVER'S api.js, BY ITS PATH (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN",
+// "spirit.branchPath() must die."): every server this file runs is an app's, its api.js at spirit/app/<name>/api.js; the name
+// is what the wire carries (a subscriber's, a remote's), and the server is asked by that path.
+function appApiPath(name) { return 'spirit/app/' + String(name) + '/api.js'; }
 function deliver(key, q, bundle) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), with the publisher's own wait.
-  return spirit.requireScript(branchPath(q.family), key, { waitMs: publisher.waitMs }).then(function (branch) {
+  return spirit.requireScript(appApiPath(q.family), key, { waitMs: publisher.waitMs }).then(function (branch) {
     if (!branch || typeof branch.listener !== 'function') return 'away';
     return spirit.callOutcome(branch.listener({ json: JSON.stringify(bundle) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
@@ -943,7 +945,7 @@ function refreshRemote() {
       let named = null;
       try { named = typeof p.label === 'string' ? JSON.parse(p.label) : null; } catch (e) { named = null; }
       const row = { key: String(p.key), label: String((named && (named.myLabel || named.name || named.publicLabel)) || p.name || '') };
-      return spirit.callOutcome(Promise.resolve(spirit.requireScript(branchPath(remote.name), row.key, { waitMs: 5000 })).then(function (branch) {
+      return spirit.callOutcome(Promise.resolve(spirit.requireScript(appApiPath(remote.name), row.key, { waitMs: 5000 })).then(function (branch) {
         if (!branch || typeof branch.remote !== 'function') throw Object.assign(new Error('no remote'), { status: 0 });
         return branch.remote({});
       })).then(function (r) {
@@ -1063,7 +1065,7 @@ function listenToSibling() {
   } else {
     const position = sibling.run ? { branch: remote.name, run: sibling.run, since: sibling.n } : { branch: remote.name };
     asked = spirit.callOutcome(Promise.resolve(spirit.requireScript('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.listener' }); })).then(function () {
-      return spirit.callOutcome(Promise.resolve(spirit.requireScript(branchPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
+      return spirit.callOutcome(Promise.resolve(spirit.requireScript(appApiPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') throw Object.assign(new Error('the sibling takes no subscribe'), { status: 0 });
         return p.subscribe(position);
       }));
@@ -1111,7 +1113,7 @@ function gateRemote(verb, args, caller) {
   if (!clientMode() || verb === 'remote' || verb === 'DEBUG') return null;
   const key = String((caller && caller.key) || '');
   if (caller && caller.owner === true) {
-    return spirit.callOutcome(Promise.resolve(spirit.requireScript(branchPath(remote.name), remote.current, { waitMs: 10000 })).then(function (p) {
+    return spirit.callOutcome(Promise.resolve(spirit.requireScript(appApiPath(remote.name), remote.current, { waitMs: 10000 })).then(function (p) {
       if (!p || typeof p[verb] !== 'function') throw Object.assign(new Error('the sibling serves no verb ' + verb), { code: 'no-such-verb' });
       return p[verb](args);
     })).then(function (r) { return { status: r.status, body: r.body }; });
@@ -1197,7 +1199,7 @@ function serve(verbs, opts) {
     // binding's wait, it answers false, and the caller asks again later.
     return s.follow(k).catch(function () { return false; }).then(function () {
       // The publisher's family, bound by the one spirit object under its key (goal/G40.6), with its own wait.
-      return spirit.callOutcome(spirit.requireScript(branchPath(fam), k, { waitMs: 10000 }).then(function (p) {
+      return spirit.callOutcome(spirit.requireScript(appApiPath(fam), k, { waitMs: 10000 }).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') return { ok: false };
         return p.subscribe(position);
       }));
@@ -1232,7 +1234,7 @@ function serve(verbs, opts) {
     const st = senders.get(k);
     if (!st || !st.family) return Promise.resolve(null);
     const v = String(verb);
-    return spirit.callOutcome(spirit.requireScript(branchPath(st.family), k, { waitMs: 10000 }).then(function (p) {
+    return spirit.callOutcome(spirit.requireScript(appApiPath(st.family), k, { waitMs: 10000 }).then(function (p) {
       if (!p || typeof p[v] !== 'function') throw Object.assign(new Error('the sender serves no verb ' + v), { code: 'no-such-verb' });
       return p[v](args || {});
     })).then(function (r) {
@@ -1268,7 +1270,7 @@ module.exports = {
   // goal/G33.8: the one publish, to the pages and to the subscribers.
   publish: publish,
   // goal/G41.12: the one family path function, spirit.js's own (Q3), handed out here too.
-  branchPath: branchPath,
+  appApiPath: appApiPath,
   // goal/G41.12: the client's cache, saved now (deskClient's cache.dump).
   saveCaches: saveCaches,
   createAppServer: createAppServer,

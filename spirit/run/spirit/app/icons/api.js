@@ -1,6 +1,6 @@
 'use strict';
 // spirit/run/spirit/app/icons/api.js: the icons family's interface, at the top of the app folder (goal/G43.19, Q5), where the
-// node and a page find it (spirit.branchPath). Every verb icons/server/server.js serves, each argument with its rule (spirit.js's
+// node and a page ask it by this path. Every verb icons/server/server.js serves, each argument with its rule (spirit.js's
 // standard); a verb added there is added here, in the same commit. DEBUG is appServer's, not listed here.
 // ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
 // data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page

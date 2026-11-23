@@ -58,7 +58,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var bad = '';
       if (L) { try { L.isValid(input.value); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { say(bad, true); return Promise.resolve(); }
-      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function (s) { return s.node.setName({ name: input.value }); })).then(function (r) {
+      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function () { return root.spirit.requireScript('spirit/node/api.js'); }).then(function (s) { return s.setName({ name: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
         root.spirit.required.spirit.data.node.data.card.keep({ name: String(body.name == null ? '' : body.name) });

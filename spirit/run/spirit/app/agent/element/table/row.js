@@ -223,7 +223,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
             bundleHeld[row[f.field]] = true;
             var named = row[f.field];
-            Promise.resolve(spirit.readyPromise).then(function (s) { return s.auth.bundle({ op: 'get', id: Number(named) }); }).then(function (got) {
+            Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'get', id: Number(named) }); }).then(function (got) {
               if (gone || String(row[f.field]) !== String(named)) return;
               bundleLabel[named] = String((got && got.label) || named);
               paint();

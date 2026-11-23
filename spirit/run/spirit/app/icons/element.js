@@ -29,7 +29,7 @@
   function esc(s) { return S.escapeHtml ? S.escapeHtml(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function words(text) { return String(text || '').split(',').map(function (w) { return w.trim(); }).filter(Boolean); }
   // THE ONE VERB (./api.js): the icons branch, bound by its name on what spirit.readyPromise answers (the node finds the folder).
-  function icon(args) { return Promise.resolve(S.readyPromise).then(function (s) { return s.icons.icon(args); }); }
+  function icon(args) { return Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/app/icons/api.js'); }).then(function (s) { return s.icon(args); }); }
 
   function create(container, options) {
     var gone = false;

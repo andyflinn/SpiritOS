@@ -82,7 +82,7 @@
         S.requireScript('spirit/element/search.js').then(function () {
           if (dropped) return;
           take(S.required.spirit.data && S.required.spirit.data[server] && S.required.spirit.data[server].remote);
-          var fam = function () { return Promise.resolve(S.requireScript(S.branchPath(server))); };
+          var fam = function () { return Promise.resolve(S.requireScript('spirit/app/' + server + '/api.js')); };
           opts = {
             face: 'dropdown', placeholder: 'remote…',
             // ITS OWN SOURCE: remote's rows are { key, label } with the label a name, while a list's rows ride as a label

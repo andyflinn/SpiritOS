@@ -108,7 +108,7 @@ function contactCreate(container, options) {
       } catch (e) { ok = false; }
       if (!ok) { out.textContent = 'a relay must be https — http is allowed only to 127.0.0.1'; return; }
       out.textContent = 'adding ' + url + '…';
-      spirit.readyPromise.then(function (s) { return s.relay.add({ url: url, label: label }); }).then(function (said) {
+      spirit.readyPromise.then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.add({ url: url, label: label }); }).then(function (said) {
         out.textContent = said && said.ok ? 'added ' + url : 'not added: ' + ((said && said.error) || 'no answer');
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });

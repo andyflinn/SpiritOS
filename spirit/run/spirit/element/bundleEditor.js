@@ -77,7 +77,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         if (got.why) { say(got.why); return null; }
         say('');
         waitingFor = got.value;
-        return spirit.readyPromise.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value }); }).then(null, function (e) {
+        return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'add', label: got.value }); }).then(null, function (e) {
           waitingFor = '';
           say((e && (e.message || e.refusal)) || 'not added');
         });

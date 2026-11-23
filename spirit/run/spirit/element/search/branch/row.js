@@ -71,7 +71,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       ],
       actions: [
         { name: 'delete', label: 'Delete', run: function (it) {
-          return spirit.readyPromise.then(function (s) { return s.auth.branch({ op: 'delete', id: it.row.id }); });
+          return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.branch({ op: 'delete', id: it.row.id }); });
         } },
       ],
     });

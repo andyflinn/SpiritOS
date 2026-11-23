@@ -70,7 +70,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       say('');
       var ask = { op: 'add', bundle: Number(o.bundle), family: family.family, verb: family.verb || '' };
       waiting = { bundle: ask.bundle, family: ask.family, verb: ask.verb };
-      return spirit.readyPromise.then(function (s) { return s.auth.branch(ask); }).then(function () {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.branch(ask); }).then(function () {
         branches.refresh();
       }, function (e) { waiting = null; say((e && (e.message || e.refusal)) || 'not added'); });
     }
@@ -86,7 +86,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     box.appendChild(delSaid);
     E.spirit.element.armingButton.attach(del.button, { label: 'Delete', run: function () {
       delSaid.textContent = '';
-      return spirit.readyPromise.then(function (s) { return s.auth.bundle({ op: 'delete', id: Number(o.bundle) }); }).then(null, function (e) {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'delete', id: Number(o.bundle) }); }).then(null, function (e) {
         delSaid.textContent = (e && (e.message || e.refusal)) || 'not deleted';
       });
     } });

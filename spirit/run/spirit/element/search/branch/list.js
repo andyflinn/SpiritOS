@@ -46,7 +46,7 @@
       if (o.bundle) ask.bundle = Number(o.bundle);
       if (family.family) ask.family = family.family;
       if (family.family && family.verb) ask.verb = family.verb;
-      return spirit.readyPromise.then(function (s) { return s.auth.branch(ask); }).then(function (got) {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.branch(ask); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }

@@ -75,7 +75,7 @@
     }
 
     if (name) {
-      Promise.all([parts, S.readyPromise.then(function (s) { return s.fs.loadFile('spirit/app/' + name + '/' + name + '.json'); })]).then(function (r) {
+      Promise.all([parts, S.readyPromise.then(function () { return S.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile('spirit/app/' + name + '/' + name + '.json'); })]).then(function (r) {
         var j = JSON.parse(String(r[1]));
         if (gone || !(j.node && j.node.run === true)) return;
         var identity = j.identity || {};

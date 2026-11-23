@@ -42,7 +42,7 @@
   function nameFor(key) {
     if (!asking[key]) {
       // Through the spirit object (goal/G32.2): a checked call answering the reply's body.
-      asking[key] = spirit.readyPromise.then(function (s) { return s.contact.get({ key: key }); }).then(function (body) {
+      asking[key] = spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.get({ key: key }); }).then(function (body) {
         var person = body && body.person;
         if (person && typeof person.caption === 'string') known[key] = person.caption;
         return known[key] || '';
@@ -96,7 +96,7 @@
       var bad = '';
       if (L) { try { L.isValid(name); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { why.textContent = bad; return; }
-      spirit.readyPromise.then(function (s) { return s.contact.label({ publicKey: key, myLabel: name }); }).then(function (body) {
+      spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.label({ publicKey: key, myLabel: name }); }).then(function (body) {
         caption = (body && typeof body.caption === 'string') ? body.caption : name;
         known[key] = caption;
         close();
