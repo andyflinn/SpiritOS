@@ -101,7 +101,14 @@ async function batch() {
       d.P = d.full && pageScript(d.rel) ? await bounded(session()) : null;
       // Its page closed at once: its checks read only what the drawing kept, and twenty pages left open slowed the later ones
       // past their mount (seen: three never mounted, two read as hung).
-      if (d.P && d.P.page) { try { if (d.P.page.sock) d.P.page.sock.close(); } catch (e) { /* gone */ } try { if (d.P.page.kid) d.P.page.kid.kill(); } catch (e) { /* gone */ } }
+      // EVERY PAGE ITS SESSION OPENED, WHATEVER CAME OF IT (goal/G49.6; Andy: "FIX THE FUCKING BROWSER TOOL"): a session that
+      // stalled or timed out answers without its page, and that page stayed open. Chrome holds six connections to one host,
+      // and each page left open keeps its stream to the node: from the sixth on, no page of the node loaded, and every later
+      // script of the run was charged red (Andy's WSL, 2026-11-23: 4408 reds on 177 scripts).
+      OPENED.splice(0).concat(d.P && d.P.page ? [d.P.page] : []).forEach(function (pg) {
+        try { if (pg.sock) pg.sock.close(); } catch (e) { /* gone */ }
+        try { if (pg.kid) pg.kid.kill(); } catch (e) { /* gone */ }
+      });
       useScript(d.full || d.rel);
       test.forScript(d.rel, function () {
         if (!d.full) test.run('the file it was handed is there', 0.2, function () { return false; }, test.limit.quick);
@@ -786,6 +793,7 @@ async function session() {
     if (!served) { P.fail = true; return P; }
   }
   const page = P.page = await chromePage(chrome);
+  OPENED.push(page);
   drawing = P;
   if (page.error) { P.fail = true; return P; }
   // SETTLED, NOT SLEPT (goal/G47.1, box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled"):
@@ -1012,7 +1020,10 @@ async function session() {
   for (let i = 0; i < closed; i++) {
     await page.evaluate('(function () { var b = ' + DROPDOWNS + '[' + i + ']; if (b) b.click(); }())');
     await quiet();
-    const again = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch.probe()).then(function (x) { return JSON.stringify(x); })'));
+    // Asked as the first probe is (above): a page whose answer comes back empty is one with nothing redrawn, never a session
+    // thrown away (goal/G49.6: JSON.parse(undefined) here threw, and every check of agent's table elements went red).
+    let again = [];
+    try { again = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x || []); })') || '[]'); } catch (e) { again = []; }
     probed = probed.map(function (x) { const y = again.filter(function (z) { return z.path === x.path; })[0]; return y && y.redrew ? Object.assign({}, x, { redrew: true, hidden: false }) : x; });
     await page.evaluate('document.body.click()');
     await quiet();
@@ -1055,6 +1066,8 @@ const KILL_LIMIT_MS = 20000;
 const HANG_MS = 1000;
 let drawing = null;
 let drawingGen = 0;
+// The pages a script's session opened, closed together once the script is drawn (the batch loop, above).
+const OPENED = [];
 function hungPage(gen) {
   return new Promise(function (resolve) {
     const tick = async function () {
