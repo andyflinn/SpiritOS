@@ -57,8 +57,13 @@ const WORLD = [
 ].concat(OTHERS.map(function (n) { return [n, GEN, RED, 1, 0, T2, 'h', 0.5, 's1']; }));
 
 const W = {};
+// The tool stands in the scratch run root, a copy of it at its own path, and is started there: its run root is that root,
+// whether read from where it stands or where it is started, and its database the planted one, never this node's.
+const REL = 'spirit/app/testicle/job/analyze/script.js';
 function run(root, args) {
-  const r = spawnSync(process.execPath, [SUBJECT].concat(args || []), { cwd: root, encoding: 'utf8', timeout: 60000 });
+  const copy = path.join(root, REL);
+  if (!fs.existsSync(copy) && fs.existsSync(SUBJECT)) { fs.mkdirSync(path.dirname(copy), { recursive: true }); fs.copyFileSync(SUBJECT, copy); }
+  const r = spawnSync(process.execPath, [copy].concat(args || []), { cwd: root, encoding: 'utf8', timeout: 60000 });
   let json = null;
   try { json = JSON.parse(r.stdout); } catch (e) { json = null; }
   return { code: r.status, out: r.stdout || '', err: r.stderr || '', json: json };
