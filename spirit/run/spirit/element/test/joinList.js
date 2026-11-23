@@ -16,7 +16,9 @@ const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(RUN, 'spirit', 'element', 'joinList.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/joinList.js';
+const FILE = path.join(RUN, SUBJECT);
 const STEPS = path.join(RUN, 'spirit', 'app', 'join', 'join.json');
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 
@@ -55,13 +57,11 @@ function world(join) {
     }),
     // The parts it draws with: joinSteps the real one, run in this window; the forms and the icon are not judged here, nor
     // the job branch's api.js, whose data.js's reads stand above as spirit.required.spirit.data.job.data.
-    requireScript: function (p) {
-      if (p === 'spirit/element/joinSteps.js') vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p });
-      return Promise.resolve({});
-    },
+    requireScript: function () { return Promise.resolve({}); },
   };
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
-  if (SRC) vm.runInContext(SRC, win, { filename: FILE });
+  // joinSteps, the real one, and the subject: run in this window by their paths, through the page stand-in (goal/G49.6).
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/joinSteps.js', SUBJECT] });
+  if (SRC) win.spirit.requireScript(SUBJECT);
   w.win = win;
   w.L = win.spirit.required.spirit.element.joinList;
   return w;

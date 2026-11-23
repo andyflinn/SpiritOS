@@ -19,7 +19,9 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const JS = path.join(__dirname, '..', '..');
-const FILE = path.join(JS, 'search', 'api.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/search/api.js';
+const FILE = path.join(RUN, SUBJECT);
 const OLD = path.join(JS, 'apiBranchSelector.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -65,7 +67,7 @@ function world() {
   win.spirit.requireScript = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; win.spirit.requireScript('spirit/node/data.js'); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } return Promise.resolve(true); };
   win.window = win;
   // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/data.js', 'spirit/client/apiTreeIndex.js'] });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/data.js', 'spirit/client/apiTreeIndex.js', SUBJECT] });
   vm.createContext(win);
   // The tree index is one of the spirit object's own, there before any element.
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
@@ -75,7 +77,7 @@ function world() {
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
   win.spirit.requireScript('spirit/client/apiTreeIndex.js');
-  vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  win.spirit.requireScript(SUBJECT);
   w.E = win.spirit.required.spirit.element;
   return w;
 }

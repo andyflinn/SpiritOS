@@ -42,13 +42,14 @@ test.run('fieldInput runs on a window of its own', 0.2, function () {
     document: { createElement: function () { made += 1; return {}; } } };
   win.window = win;
   win.globalThis = win;
-  win.spirit = { required: {}, requireScript: function (p) {
-    required.push(p);
-    if (p.indexOf('spirit/type/') === 0 && /\.js$/.test(p)) vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p });
-    return Promise.resolve();
-  } };
+  win.spirit = { required: {}, requireScript: function () { return Promise.resolve(); } };
   vm.createContext(win);
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  // The subject and the type rules it asks for, run in this world by their paths through the page stand-in (goal/G49.6);
+  // every path it asks is kept.
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win,
+    real: function (p) { return p === SUBJECT || (p.indexOf('spirit/type/') === 0 && /\.js$/.test(p)); } });
+  const pageRequire = win.spirit.requireScript;
+  win.spirit.requireScript = function (p) { required.push(p); return pageRequire(p); };
   win.spirit.requireScript(SUBJECT);
   F = ((win.spirit.required.spirit || {}).element || {}).fieldInput;
   return (!!F && typeof F.fits === 'function' && typeof F.attach === 'function') || false;

@@ -87,7 +87,8 @@ function world(answer) {
     requireScript: function (p) {
       w.required.push(String(p));
       if (p === 'spirit/element/armingButton.js') {
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'armingButton.js'), 'utf8'), win, { filename: 'armingButton.js' });
+        // Loaded as it is, by its path, through the page stand-in (goal/G49.6), which runs it in this world at once.
+        pageRequire('spirit/element/armingButton.js');
         // Every attach recorded, so what the button was handed is judged; the real attach does the arming.
         // goal/G43.32: it places itself at its path, spirit.required.spirit.element.armingButton.
         const real = win.spirit.required.spirit.element.armingButton.attach;
@@ -111,7 +112,7 @@ function world(answer) {
   // goal/G43.32: every element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit), at once, held or not.
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/armingButton.js'] });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });

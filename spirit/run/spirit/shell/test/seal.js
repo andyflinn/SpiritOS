@@ -14,7 +14,9 @@ const RUN = path.resolve(__dirname, '../../..');
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 
-const FILE = path.join(__dirname, '..', 'seal.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/shell/seal.js';
+const FILE = path.join(RUN, SUBJECT);
 const FROM = 'MCowBQYDK2VwAyEAsealTestFromAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
 const TO = 'MCowBQYDK2VwAyEAsealTestToAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
 
@@ -29,7 +31,10 @@ test.run('the browser seal loads on spirit.required.shell.seal with supported, n
   if (!fs.existsSync(FILE)) return false;
   const win = { crypto: globalThis.crypto, TextEncoder: TextEncoder, TextDecoder: TextDecoder, btoa: btoa, atob: atob, Uint8Array: Uint8Array, Promise: Promise, JSON: JSON, Buffer: Buffer };
   win.window = win;
-  vm.runInContext(fs.readFileSync(FILE, 'utf8'), vm.createContext(win), { filename: FILE });
+  // Run in this world by its path, through the page stand-in (goal/G49.6).
+  win.spirit = {};
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  win.spirit.requireScript(SUBJECT);
   const S = win.spirit && win.spirit.required.shell.seal;
   W.S = S;
   return S && ['supported', 'newKey', 'seal', 'open'].every(function (f) { return typeof S[f] === 'function'; }) ? true : false;

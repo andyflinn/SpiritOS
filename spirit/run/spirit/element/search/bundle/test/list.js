@@ -200,12 +200,11 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
   LIST = (function () {
     const win = { window: null, spirit: { element: {} }, console: console };
     // goal/G43.32: search.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
-    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+    // The search and what it ranks with, run in this world by their paths through the page stand-in (goal/G49.6).
+    const REAL = ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'];
     win.window = win;
-    vm.createContext(win);
-    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'].forEach(function (rel) {
-      vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
-    });
+    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
+    REAL.forEach(function (rel) { win.spirit.requireScript(rel); });
     return ((win.spirit.required.spirit || {}).element || {}).search;
   }());
   V.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
