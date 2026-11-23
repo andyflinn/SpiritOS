@@ -19,13 +19,14 @@ const SUBJECT = path.join(RUN, 'spirit', 'app', 'testicle', 'job', 'analyze', 's
 // red at T2 against h2; x.js's other current reds are a plain one and the setup check; the same test is red on 25 other
 // scripts; z.js's test went from red to green in the same run as the red's flip; f.js's test is green and red with the same
 // hashes, nothing changed.
-const T0 = 1000000000000, T1 = T0 + 60000, T2 = T0 + 120000;
+const TM = 1000000000000 - 60000, T0 = 1000000000000, T1 = T0 + 60000, T2 = T0 + 120000;
 const GEN = 'spirit/test/zzRule.js';
 const X = 'spirit/zz/x.js';
 const RED = 'it holds';
 const SETUP = 'a scratch node with its DEBUG on and a Chrome page are ready';
 const NEIGHBOUR = 'it says no error';
 const Z = 'spirit/zz/z.js', ZS = 'spirit/zz/test/z.js', ZT = 'z works';
+const WS = 'spirit/zz/w.js', WSS = 'spirit/zz/test/w.js', WT = 'w turns green once';
 const F = 'spirit/zz/f.js', FS_ = 'spirit/zz/test/f.js', FT = 'f wobbles';
 const OTHERS = Array.from({ length: 25 }, function (v, i) { return 'spirit/zz/y' + i + '.js'; });
 const SCHEMA = [
@@ -41,17 +42,21 @@ function plant(root, rows) {
   SCHEMA.forEach(function (s) { db.exec(s); });
   const put = db.prepare('INSERT INTO testicle (script, suite, test, current, verified, tested, judged, severity, suiteHash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
   rows.forEach(function (r) { put.run(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]); });
-  [X, Z, F].concat(OTHERS).forEach(function (n) { db.prepare('INSERT INTO script (name, hash, changed) VALUES (?, ?, ?)').run(n, n === X ? 'h2' : 'h', T0); });
+  [X, Z, WS, F].concat(OTHERS).forEach(function (n) { db.prepare('INSERT INTO script (name, hash, changed) VALUES (?, ?, ?)').run(n, n === X ? 'h2' : 'h', T0); });
   db.prepare('INSERT INTO suite (script, suite, outcome, changed) VALUES (?, ?, ?, ?)').run(X, GEN, 'red', T2);
   db.close();
 }
 const WORLD = [
+  [X, GEN, RED, 0, 0, TM, 'h0', 0.6, 's1'],
   [X, GEN, RED, 0, 1, T0, 'h1', 0.6, 's1'],
   [X, GEN, RED, 1, 0, T2, 'h2', 0.6, 's1'],
   [X, GEN, NEIGHBOUR, 1, 0, T2, 'h2', 0.3, 's1'],
   [X, GEN, SETUP, 1, 0, T2, 'h2', 0.2, 's1'],
+  [Z, ZS, ZT, 0, 1, TM, 'hz', 0.4, 'sz'],
   [Z, ZS, ZT, 0, 0, T1, 'hz', 0.4, 'sz'],
   [Z, ZS, ZT, 1, 1, T2, 'hz', 0.4, 'sz'],
+  [WS, WSS, WT, 0, 0, T1, 'hw', 0.4, 'sw'],
+  [WS, WSS, WT, 1, 1, T2, 'hw', 0.4, 'sw'],
   [F, FS_, FT, 0, 1, T0, 'hf', 0.4, 'sf'],
   [F, FS_, FT, 1, 0, T2, 'hf', 0.4, 'sf']
 ].concat(OTHERS.map(function (n) { return [n, GEN, RED, 1, 0, T2, 'h', 0.5, 's1']; }));
@@ -114,15 +119,17 @@ test.run('what to fix first starts with the setup check of the same run, then th
   const titles = f.map(function (x) { return x && x.test; });
   return titles[0] === SETUP && titles.indexOf(NEIGHBOUR) > 0;
 }, test.limit.quick);
-// "and the same test red on other scripts"; "every list ... at most 20 ..., with a count of what was left out beside it"
-test.run('the same test red on 25 other scripts is listed 20, with 5 counted as left out', 0.4, function () {
+// "and the same test red on other scripts"; box v17: "every list at most 5 by default, --all for the rest", with a count of what was left out beside it
+test.run('the same test red on 25 other scripts is listed 5, with 20 counted as left out', 0.4, function () {
   const j = W.a && W.a.json;
-  return !!j && Array.isArray(j.sameTestElsewhere) && j.sameTestElsewhere.length === 20 && Number(j.sameTestElsewhereMore) === 5;
+  return !!j && Array.isArray(j.sameTestElsewhere) && j.sameTestElsewhere.length === 5 && Number(j.sameTestElsewhereMore) === 20;
 }, test.limit.quick);
-// "7. contradictory tests: ... only the tests that flipped from red to green in that run or the one just before can contradict it"
-test.run('z.js\'s test, gone from red to green as the red flipped, is named as contradicting it', 0.4, function () {
+// "7. contradictory tests: ... that take turns, one green whenever the other is red"; box v17: they count only when they took turns
+// at least twice. z.js was green while x.js was red (TM), red while x.js was green (T0, T1), and green again as x.js turned red
+// (T2): it took turns twice. w.js only turned green at T2, once: a fix, never a contradiction.
+test.run('z.js\'s test, which took turns with the red twice, contradicts it; w.js\'s, green once, does not', 0.4, function () {
   const c = W.a && W.a.json && W.a.json.contradicts;
-  return Array.isArray(c) && c.some(function (x) { return x && x.script === Z && x.test === ZT; });
+  return Array.isArray(c) && c.some(function (x) { return x && x.script === Z && x.test === ZT; }) && !c.some(function (x) { return x && x.script === WS; });
 }, test.limit.quick);
 // "6. flaky: the same test, with the same script hash and suite hash, has both green and red in its history"
 test.run('the red, whose script hash changed, is not flaky', 0.4, function () {
