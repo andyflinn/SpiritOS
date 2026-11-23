@@ -1035,57 +1035,8 @@
     });
   };
   var started = null;
-  // A BRANCH THAT BINDS WHEN FIRST CALLED (goal/G43.27). spirit.<branch> stands as an object at once: what it already holds
-  // (spirit.eventStream' stream, spirit.processJob in node) answers as it is, and any other name is a call waiting for the branch: called,
-  // it binds the branch once (bindOwn: one api call), then calls the bound function of that name, a dotted path included
-  // (spirit.<branch>.a.b). Once bound, the bound functions are on the object itself. Nothing is then-able, so a
-  // branch handed to Promise.resolve stays a branch.
-  function lazyCall(fam, path) {
-    var fn = function () {
-      var args = arguments;
-      return bindOwn(fam).then(function (m) {
-        var at = m;
-        var owner = m;
-        for (var i = 0; i < path.length; i++) { owner = at; at = at ? at[path[i]] : undefined; }
-        if (typeof at !== 'function') throw refusal('no-such-verb', 'the ' + fam + ' branch has no ' + path.join('.'));
-        return at.apply(owner, args);
-      });
-    };
-    if (typeof Proxy !== 'function') return fn;
-    return new Proxy(fn, {
-      get: function (target, prop) {
-        if (typeof prop !== 'string' || prop === 'then' || prop in target) return target[prop];
-        return lazyCall(fam, path.concat(prop));
-      },
-    });
-  }
-  // Kept here, never on the instance (goal/G49.6): the trunk holds no branch.
-  var lazies = Object.create(null);
-  function lazyBranch(fam) {
-    if (typeof Proxy !== 'function') return null;
-    if (!lazies[fam]) {
-      lazies[fam] = new Proxy({}, {
-        get: function (target, prop) {
-          if (typeof prop !== 'string' || prop === 'then') return target[prop];
-          if (bound[fam] && members[fam] && prop in members[fam]) return members[fam][prop];
-          return lazyCall(fam, [prop]);
-        },
-      });
-    }
-    return lazies[fam];
-  }
-  // WHAT spirit.readyPromise ANSWERS: the one instance, seen so that a branch is there the moment it is named (goal/G43.27, Q1;
-  // Andy: "shouldn't it work without making a call, since the elements will trigger the necessary calls?", "Q1: clear").
-  // A name the instance does not hold, read off it, stands there as a branch waiting for its first call (lazyBranch), so an
-  // app switched on after the page loaded is reached with no reload. The cost wsl named: a misspelt branch fails when it is
-  // called, not at load. Everything the instance holds answers as it is; window.spirit itself stays the plain instance.
-  var BRANCH_NAME = /^[a-z][A-Za-z0-9]*$/;
-  var view = typeof Proxy !== 'function' ? self : new Proxy(self, {
-    get: function (target, prop) {
-      if (typeof prop === 'string' && prop !== 'then' && !(prop in target) && BRANCH_NAME.test(prop)) return lazyBranch(prop);
-      return target[prop];
-    },
-  });
+  // WHAT spirit.readyPromise ANSWERS: the one instance, as it is (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE
+  // FUCKING FORBIDDEN", "all, finish it!"): it hands out no branch by a name; a branch is required by its api.js path.
   // ON A PAGE, ready IS THERE FROM THE START: an element that runs before start() (one required as face.html loads) waits on
   // it, and it answers once start() has. In node there is no start, and no ready.
   var readyNow = null;
@@ -1094,7 +1045,7 @@
     if (started) return started;
     // NO API CALL AT LOAD (goal/G43.27, Q1, above; before it, "lazy-load, is a tree....", G41.3, and "AGAIN, when i say
     // lazy-load you found a way to fuck it up"): the node's api is never asked whole. A branch binds the first time
-    // something calls it (lazyBranch), as a file loads the first time it is required: one api call, for that branch only.
+    // its api.js is required by its path, as a file loads the first time it is required: one api call, for that branch only.
     started = Promise.resolve().then(function () {
       // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each branch through its own
       // data.js (goal/G41.28). Asked once the page is parsed, so a page that loads it by tag keeps the one
@@ -1106,13 +1057,13 @@
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.nodeFacts as a
       // process has it, and handed to the data set, which files the page's stream under it from then on.
-      return Promise.resolve(view.node.card()).then(function (c) {
+      return Promise.resolve(requireOne('spirit/node/api.js')).then(function (n) { return n.card(); }).then(function (c) {
         var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
         if (!key) return;
         (self.nodeFacts = self.nodeFacts && typeof self.nodeFacts === 'object' ? self.nodeFacts : {}).key = key;
         if (self.required.spirit.data && typeof self.required.spirit.data.homeNode === 'function') self.required.spirit.data.homeNode(key);
       }, function () { /* the page files nothing until its node is known */ });
-    }).then(function () { return view; });
+    }).then(function () { return self; });
     if (readyNow) readyNow(started);
     self.readyPromise = started;
     return started;

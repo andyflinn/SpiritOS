@@ -53,7 +53,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (reading) return reading;
     // Through the spirit object (goal/G32.2).
     var stamp = '';
-    reading = Promise.resolve(cache).then(function () { stamp = F() ? stampOf(F().file(SET)) : ''; return spirit.readyPromise; }).then(function (s) { return s.fs.loadFile(SET); }).then(function (text) {
+    reading = Promise.resolve(cache).then(function () { stamp = F() ? stampOf(F().file(SET)) : ''; return spirit.readyPromise; }).then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (f) { return f.loadFile(SET); }).then(function (text) {
       reading = null;
       readStamp = stamp;
       var set = JSON.parse(text);
@@ -92,7 +92,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     list = E.spirit.element.search.create(host, {
       // Its own data source (goal/G43.24), which finds nothing: the rows are the fs cache's icons branch.
       search: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
-      server: 'fs',
+      api: 'spirit/fs/api.js',
       verb: 'search',
       data: F().icons.branch,
       face: o.face,

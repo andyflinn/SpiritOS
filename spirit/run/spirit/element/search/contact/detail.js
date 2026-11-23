@@ -36,12 +36,10 @@ var cdKey = '';        // whose row this screen is
 var cdPerson = null;   // the row itself, as contact.get answers it
 var cdChanged = false; // has anything happened? Nothing reads it now: the list repaints from the stream
 
-// THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb on spirit.readyPromise, answered { status, text, body } as this screen
-// reads it; a refusal is the node's status and words. The verb is the argument; this app knows no address.
-function cdPost(verb, body) {
-  var n = String(verb);
-  var at = n.indexOf('.');
-  return Promise.resolve(spirit.readyPromise).then(function (s) { return s[n.slice(0, at)][n.slice(at + 1)](body || {}); }).then(function (b) {
+// THROUGH THE SPIRIT OBJECT (goal/G43.24): verb on the branch at its api.js path (goal/G49.6: never by a name), once the page is
+// ready, answered { status, text, body } as this screen reads it; a refusal is the node's status and words.
+function cdPost(apiPath, verb, body) {
+  return Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript(apiPath); }).then(function (s) { return s[verb](body || {}); }).then(function (b) {
     return { status: 200, text: JSON.stringify(b), body: b };
   }, function (e) {
     var b = (e && e.body) || { ok: false, error: String((e && e.message) || e) };
@@ -112,13 +110,13 @@ function cdFaceBlock() {
     '<div class="start-job-form card"><button type="button" class="cancel-btn" id="cd-faceable">' + (cdPerson.faceable ? 'Take 😏 away' : 'Give it 😏') + '</button></div></div>';
 }
 function cdFaceable() {
-  return cdPost('contact.faceable', { key: cdKey, faceable: !cdPerson.faceable }).then(function () { return cdLoad(); });
+  return cdPost('spirit/contact/api.js', 'faceable', { key: cdKey, faceable: !cdPerson.faceable }).then(function () { return cdLoad(); });
 }
 
 function cdLoad() {
   // ONE PERSON, BY KEY (puppets/G2): contact.get, where this used to read
   // the whole book to keep one row of it.
-  return cdPost('contact.get', { key: cdKey })
+  return cdPost('spirit/contact/api.js', 'get', { key: cdKey })
     .then(function (r) { return JSON.parse(r.text); })
     .then(function (data) {
       cdPerson = (data && data.ok && data.person) || null;
@@ -289,7 +287,7 @@ function cdRender() {
 function cdPeerAction(action, extra) {
   var body = { publicKey: cdKey };
   Object.keys(extra || {}).forEach(function (k) { body[k] = extra[k]; });
-  return cdPost('contact.' + action, body).then(function (r) {
+  return cdPost('spirit/contact/api.js', action, body).then(function (r) {
     if (r.status !== 200) {
       cdStatus(action + ' failed: ' + r.status + ' ' + r.text);
       return false;
@@ -552,11 +550,10 @@ var ndUnlisted = false;
 // A verb that moves from hub.js to somewhere else changes nothing here,
 // and there is no longer a way to get the address right and the request
 // wrong.
-// THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb on spirit.readyPromise, answered { status, text, body } as this screen
-// reads it; a refusal is the node's status and body.
-function ndPost(verb, body) {
-  var at = String(verb).indexOf('.');
-  return Promise.resolve(spirit.readyPromise).then(function (s) { return s[String(verb).slice(0, at)][String(verb).slice(at + 1)](body || {}); }).then(function (b) {
+// THROUGH THE SPIRIT OBJECT (goal/G43.24): verb on the branch at its api.js path (goal/G49.6: never by a name), once the page is
+// ready, answered { status, text, body } as this screen reads it; a refusal is the node's status and body.
+function ndPost(apiPath, verb, body) {
+  return Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript(apiPath); }).then(function (s) { return s[verb](body || {}); }).then(function (b) {
     return { status: 200, text: JSON.stringify(b), body: b };
   }, function (e) {
     var b = (e && e.body) || { ok: false, error: String((e && e.message) || e) };
@@ -571,13 +568,6 @@ function ndPeerPost(app, key, body) {
   return spirit.peerPost(String(key), app, body, { answer: true });
 }
 
-// The same call when the answer is JSON and a failure is simply "the
-// panel could not ask" — which is most of the reads on this screen.
-function ndAsk(verb, body) {
-  return ndPost(verb, body).then(function (r) {
-    try { return JSON.parse(r.text); } catch (e) { return null; }
-  });
-}
 
 // Inside this panel's own box (goal/G43.18: one panel per row, two relays side by side never share a screen).
 function ndBody() { return ndContainer.querySelector('[id="nd-body"]'); }
@@ -793,7 +783,7 @@ function ndFaceableHtml() {
 }
 // What it changes comes back on its row.
 function ndFaceable() {
-  return ndPost('contact.faceable', { key: ndRelayKey(), faceable: !ndBadge.faceable });
+  return ndPost('spirit/contact/api.js', 'faceable', { key: ndRelayKey(), faceable: !ndBadge.faceable });
 }
 
 function ndRemoveHtml() {
@@ -811,7 +801,7 @@ function ndLeaveHtml() {
 }
 function ndLeave(button) {
   button.disabled = true;
-  return ndPost('relay.leave', { key: ndUrl }).then(function (r) {
+  return ndPost('spirit/relay/api.js', 'leave', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
     var out = ndContainer.querySelector('.nd-leave-out');
     if (said.ok) { if (out) out.textContent = 'You left this relay.'; return; }
@@ -824,7 +814,7 @@ function ndLeave(button) {
 // asks the same rule.
 function ndRemove() {
   if (ndRemoveRefusal()) return;
-  return ndPost('relay.remove', { key: ndUrl }).then(function (r) {
+  return ndPost('spirit/relay/api.js', 'remove', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
     if (said.ok) { if (typeof ndLayer.close === 'function') ndLayer.close(); return; }
     var out = ndContainer.querySelector('.nd-remove-out');
@@ -1749,7 +1739,7 @@ function ndClaim(button) {
   if (token) body.invite = token;
   if (onInvite) body.inviteLabel = onInvite;
 
-  ndPost('relay.claim', body).then(function (r) {
+  ndPost('spirit/relay/api.js', 'claim', body).then(function (r) {
     // 201 is a new seat. 409 is only us when the peer already on the
     // relay carries OUR key — the node sets `mine` for exactly that. Any
     // other 409 is somebody else's label, and claiming it would fail the

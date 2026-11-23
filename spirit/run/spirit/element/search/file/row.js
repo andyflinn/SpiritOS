@@ -148,8 +148,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.delete({ path: el.row.path }); }); } },
       ],
       expand: function (el) {
-        return spirit.readyPromise.then(function (s) {
-          return s.fs.stat({ path: el.row.path });
+        return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (f) {
+          return f.stat({ path: el.row.path });
         }).then(function (stat) { return { stat: stat }; });
       },
     });

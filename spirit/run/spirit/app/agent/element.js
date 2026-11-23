@@ -35,7 +35,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
   // ITS TABLES ASK FOR THEMSELVES (goal/G43.24; Andy: "every element that accesses ANY api must require them themselves"):
   // each table's list is a probabilitySearch that asks agent.<table> through the spirit object, the agent's own family
-  // bound by spirit.requireScript when it is not on spirit.readyPromise. So the app hands its tables no api: their box and its detail pane.
+  // bound by spirit.requireScript by its api.js path. So the app hands its tables no api: their box and its detail pane.
 
   // An element by its place, spirit.required.<its path> (goal/G43.32): undefined while any part of the path is not there yet.
   function agentAt(place) {

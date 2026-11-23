@@ -84,6 +84,10 @@ test.run('the contacts list runs on a window of its own, with its row element an
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
     const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
     if (companion && !ran[companion] && fs.existsSync(path.join(JS, '..', '..', companion))) { ran[companion] = true; load(path.join(JS, '..', '..', companion)); }
+    // A branch by its api.js path (goal/G49.6: never by a name): the stand-in node's branch of that name, refused when it has
+    // none.
+    const b = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(String(p));
+    if (b) return Promise.resolve(window.spirit.readyPromise).then(function (f) { if (!f || !f[b[1]]) throw new Error('not-found ' + p); return f[b[1]]; });
     return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
   };
   // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.required.spirit.data takes it itself).
@@ -312,7 +316,7 @@ test.run('a table names its branch and verb, has no contact filters, nothing to 
   global.spirit = window.spirit;
   L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/agent/job', key: 'id', label: 'title', face: 'dropdown' });
   to = made.opts;
-  return to.server === 'agent' && to.verb === 'job' && to.filters.length === 0 && to.details === undefined && to.columns.map(function (c) { return c.field; }).join(',') === 'label'
+  return typeof to.search === 'function' && to.filters.length === 0 && to.details === undefined && to.columns.map(function (c) { return c.field; }).join(',') === 'label'
     ? true : false;
 }, test.limit.quick);
 test.run('a table of the agent tables\' norm is asked a search with the text trimmed, through the spirit object, at that branch and verb', 0.2, async function () {
@@ -333,7 +337,7 @@ test.run('a table\'s row is a plain row of its label, no contact', 0.2, function
 test.run('naming the contacts\' own table is the same as naming none', 0.2, function () {
   if (!L) return false;
   L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/contact/search' });
-  const res = made.opts.server === 'contact' && made.opts.filters.length === L.filters.length ? true : false;
+  const res = made.opts.data === window.spirit.required.spirit.data.contact.data.branch && made.opts.filters.length === L.filters.length ? true : false;
   window.spirit.readyPromise = realReady;
   global.spirit = window.spirit;
   return res;

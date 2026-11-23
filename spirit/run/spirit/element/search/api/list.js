@@ -42,7 +42,7 @@
   }
   var reading = null;
   function readOwnTree() {
-    reading = reading || parts.then(function () { return spirit.readyPromise; }).then(function (s) { return s.tree(); }).then(function (tree) {
+    reading = reading || parts.then(function () { return spirit.readyPromise; }).then(function (s) { return s.apiTree(); }).then(function (tree) {
       reading = null;
       var t = tree && typeof tree === 'object' ? tree : null;
       keepTree(t);

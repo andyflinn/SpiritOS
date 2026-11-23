@@ -95,7 +95,7 @@
                 return { status: 200, body: { ok: true, items: items, more: !!(r && r.more) } };
               });
             },
-            server: server, verb: 'remote',
+            api: 'spirit/app/' + server + '/api.js', verb: 'remote',
             args: function () { return {}; },
             name: function (row) { return String((row && (row.label || row.key)) || ''); },
             columns: [{ field: 'label', label: 'Remote', sort: 'text' }],

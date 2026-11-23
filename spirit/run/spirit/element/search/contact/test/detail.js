@@ -24,6 +24,14 @@ const settle = async function () {
 };
 
 // ── A SMALL DOM ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A branch of the stand-in node by its api.js path (goal/G49.6: never by a name), or null for any other path; never then-able,
+// so a promise hands it on as the branch it is.
+function branchAt(families, p) {
+  const m = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(String(p).replace(/^\/+/, ''));
+  if (!m) return null;
+  const b = families[m[1]];
+  return new Proxy({}, { get: function (t, k) { return k === 'then' ? undefined : b[k]; } });
+}
 function makeDom() {
   const VOID = { input: 1, br: 1, img: 1, hr: 1, meta: 1, link: 1 };
   const decode = function (s) { return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&amp;/g, '&'); };
@@ -181,8 +189,8 @@ function personWorld(person, relayRows) {
     formatBytes: function (n) { return String(n) + ' B'; },
     // The shell's fact rows, drawn as the shell draws them: each name with its value, so what the detail shows can be read.
     shell: { factRow: function (rows) { return '<div class="facts">' + (rows || []).map(function (r) { return '<div>' + String(r[0]) + ' ' + String(r[1]) + '</div>'; }).join('') + '</div>'; } },
-    requireScript: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
-    readyPromise: Promise.resolve(families),
+    requireScript: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve(branchAt(families, p) || {}); },
+    readyPromise: Promise.resolve({}),
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
     // goal/G43.32: the armingButton stands where an element now finds it, spirit.required.spirit.element.
     required: { spirit: { element: {
@@ -264,10 +272,10 @@ function relayWorld(rows, relayStatus) {
     requireScript: function (p) {
       const at = String(p).replace(/^\/+/, '');
       w.required.push(at);
-      if (at === 'spirit/contact/api.js') ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } };
-      return Promise.resolve({});
+      if (at === 'spirit/contact/api.js' && !(win.spirit.required.spirit.data && win.spirit.required.spirit.data.contact)) ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
+      return Promise.resolve(branchAt(families, at) || {});
     },
-    readyPromise: Promise.resolve(families),
+    readyPromise: Promise.resolve({}),
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
     // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
     peerPost: function (peer, app, body, how) {

@@ -17,10 +17,10 @@
 //     and repaints a field that changes on the stream; destroy drops them all.
 //
 // spirit.required.spirit.element.search.create(container, {   (the probabilitySearch)
-//   server, verb               the family searched and its search verb: the list asks server.verb itself, through the spirit
-//                              object (goal/G43.24; Andy: "every element that accesses ANY api must require them
-//                              themselves"), a family on spirit.readyPromise
-//                              binds, a dotted verb walked as a path into it
+//   api, verb                  the api.js path of the branch searched and its search verb: the list requires that api.js
+//                              itself, by its path (goal/G43.24; Andy: "every element that accesses ANY api must require
+//                              them themselves"; goal/G49.6: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING
+//                              FORBIDDEN"), and calls verb on it, a dotted verb walked as a path into it
 //   search(args, verb)         optional: the list's own data source, asked instead, answering { status, body } (a list
 //                              that shapes its answer itself: contacts, branches, grants); verb is the search's or ask's
 //   published(fn)              optional: fn told when what the list shows changed elsewhere, so it asks again; answers its
@@ -80,16 +80,13 @@
     var o = (q.search || {}).object || {};
     return { probabilityStringObjectMatch: o.probabilityStringObjectMatch, measureObject: o.measureObject, createProbabilityBucket: (q.listLimiter || {}).createProbabilityBucket };
   }
-  // A VERB OF A FAMILY, THROUGH THE SPIRIT OBJECT (goal/G43.24, as grantsPanel asks): family.verb called on that family as
-  // spirit.readyPromise holds it, or as spirit.requireScript binds a server's; a dotted verb is a path into the family (a.b is
-  // f.a.b); answered { status, body } by spirit.callOutcome, as the list reads it.
-  function viaSpirit(name, args) {
+  // A VERB OF A BRANCH, REQUIRED BY ITS api.js PATH (goal/G43.24; goal/G49.6: never by a name): verb called on the branch
+  // spirit.requireScript answers for that path, once the page is ready; a dotted verb is a path into it (a.b is f.a.b);
+  // answered { status, body } by spirit.callOutcome, as the list reads it.
+  function viaSpirit(api, verb, args) {
     var S = window.spirit;
-    var n = String(name || '');
-    var dot = n.indexOf('.');
-    var fam = n.slice(0, dot);
-    return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s && s[fam]; }).then(function (f) {
-      var at = n.slice(dot + 1).split('.');
+    return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript(String(api)); }).then(function (f) {
+      var at = String(verb || '').split('.');
       var owner = f;
       for (var i = 0; i < at.length - 1; i++) owner = owner ? owner[at[i]] : null;
       return owner[at[at.length - 1]](args || {});
@@ -593,11 +590,11 @@
     // ONE CALL ON THE WIRE: the list's search first, with the words as they stand when it goes; then what the app asks
     // through the lent slot, one at a time.
     var lent = [];
-    // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): its own data source if the mounter gave one, else server.verb asked
-    // through the spirit object; it is handed no api.
-    var asks = typeof o.search === 'function' || (!!o.server && !!o.verb);
+    // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): its own data source if the mounter gave one, else verb asked
+    // of the branch at o.api, its api.js path; it is handed no branch.
+    var asks = typeof o.search === 'function' || (!!o.api && !!o.verb);
     function send(verb, args) {
-      var asked = typeof o.search === 'function' ? Promise.resolve(o.search(args, verb)) : viaSpirit(o.server + '.' + verb, args);
+      var asked = typeof o.search === 'function' ? Promise.resolve(o.search(args, verb)) : viaSpirit(o.api, verb, args);
       return asked.then(function (r) {
         var body = r && r.body;
         if (!r || r.status !== 200 || !body || body.ok === false) throw new Error((body && (body.error || body.code)) || 'no answer');

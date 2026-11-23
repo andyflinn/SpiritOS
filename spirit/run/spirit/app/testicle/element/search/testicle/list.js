@@ -102,7 +102,7 @@
         search: function (args) {
           return ask(args || { text: '' }).then(function (b) { return { status: 200, body: { items: b.items, more: b.more } }; });
         },
-        server: 'testicle',
+        api: 'spirit/app/testicle/api.js',
         verb: 'testicle.search',
         args: argsOf,
         columns: [

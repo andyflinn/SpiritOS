@@ -27,7 +27,7 @@
   function ask(verb, args) {
     var name = String(verb).replace(/^fs\./, '');
     return (window.spirit && window.spirit.readyPromise ? window.spirit.readyPromise : Promise.reject(new Error('no spirit object')))
-      .then(function (s) { return s.fs[name](args); }).then(function (body) { return body; }, function () { return null; });
+      .then(function () { return window.spirit.requireScript('spirit/fs/api.js'); }).then(function (f) { return f[name](args); }).then(function (body) { return body; }, function () { return null; });
   }
 
   function mimeOf(path) {

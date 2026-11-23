@@ -31,13 +31,13 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
 if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/element/fieldInput.js')).catch(function () {});
 var deskOpts = {};
 var deskStack = null;
-function deskVerbCall(name, args) {
+// A verb of the branch at its api.js path (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"),
+// once the page is ready; a dotted verb is a path into it.
+function deskVerbCall(api, verb, args) {
   var S = window.spirit;
-  return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) {
-    var n = String(name || '');
-    var dot = n.indexOf('.');
-    var fam = s && s[n.slice(0, dot)];
-    var rest = n.slice(dot + 1);
+  return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript(String(api)); }).then(function (fam) {
+    var n = String(verb || '');
+    var rest = n;
     var fn = fam && fam[rest];
     if (typeof fn !== 'function') fn = rest.split('.').reduce(function (at, k) { return at ? at[k] : undefined; }, fam);
     if (typeof fn !== 'function') throw new Error('no verb ' + n);
@@ -169,7 +169,7 @@ var deskError = '';
 // it shows: the List's search, and each item's own facts and chat in its dialog.
 
 function deskAsk(verb, args) {
-  return Promise.resolve(deskVia.verb('desk.' + verb, args || {})).then(function (r) {
+  return Promise.resolve(deskVia.verb('spirit/app/desk/api.js', verb, args || {})).then(function (r) {
     var body = r && r.body;
     if (!r || r.status !== 200 || !body || body.ok === false) throw new Error(deskRefusalText(body) || 'the desk server did not answer');
     return body;
@@ -574,9 +574,9 @@ function deskMountList() {
       data: K.branch,
       // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api): desk.<verb>, and the desk's
       // publishes, which ask again.
-      search: function (args, verb) { return deskVia.verb('desk.' + verb, args); },
+      search: function (args, verb) { return deskVia.verb('spirit/app/desk/api.js', verb, args); },
       published: function (fn) { return typeof deskVia.onPublished === 'function' ? deskVia.onPublished(fn, 'desk') : function () {}; },
-      server: 'desk', verb: 'items.search',
+      api: 'spirit/app/desk/api.js', verb: 'items.search',
       args: function (text, values) {
         var want = deskListFilter(values);
         var moved = want.currentGoalOnly !== deskFilter.currentGoalOnly || want.goalsOnly !== deskFilter.goalsOnly || want.includeClosed !== deskFilter.includeClosed;
@@ -720,7 +720,7 @@ function deskAskBackup() {
     var B = ((window.spirit.required.spirit.data || {}).backup || {}).data;
     if (!B) return;
     if (!deskBackupWatched) deskBackupWatched = B.watch(deskBackupPaint);
-    return Promise.resolve(deskVia.verb('backup.status.get', {})).then(function (r) {
+    return Promise.resolve(deskVia.verb('spirit/app/backup/api.js', 'status.get', {})).then(function (r) {
       B.keep(r && r.status === 200 ? r.body : null);
     }, function () { B.keep(null); });
   }, function () { /* no backup server on this node: no line */ });

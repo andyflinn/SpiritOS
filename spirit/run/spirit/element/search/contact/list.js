@@ -98,7 +98,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   function tableOf(o) {
     var m = /^loopback:\/\/api\/([^/]+)\/([^/]+)$/.exec(String(o.table || ''));
     if (!m || (m[1] === 'contact' && m[2] === 'search')) return null;
-    return { family: m[1], verb: m[2] };
+    return { name: m[1], verb: m[2] };
   }
   function parseRow(item) {
     var key = String((item && item.key) || '');
@@ -132,13 +132,18 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       return (pair && pair.glyph) || '';
     }
 
+    // THE ID TABLE'S BRANCH BY ITS api.js PATH (goal/G49.6: never by a name): the address names the branch, so it is asked at
+    // the one of its two places that holds it, a node branch's spirit/<name>/api.js, else an app's spirit/app/<name>/api.js.
+    function tableApi(t) {
+      return spirit.requireScript('spirit/' + t.name + '/api.js').then(null, function () { return spirit.requireScript('spirit/app/' + t.name + '/api.js'); });
+    }
     // THE SOURCE: the one table (contact.search, goal/G40.11), people and relays alike; or the ID table it was handed.
     function search(args) {
       var q = String((args && (args.q != null ? args.q : args.text)) || '').trim();
       // Through the spirit object (goal/G32.2): the reply's body.
       if (table) {
         var asked = table.verb === 'search' ? { text: q } : { op: 'search', text: q };
-        return spirit.readyPromise.then(function (s) { return s[table.family][table.verb](asked); }).then(function (got) {
+        return spirit.readyPromise.then(function () { return tableApi(table); }).then(function (s) { return s[table.verb](asked); }).then(function (got) {
           var items = ((got && got.items) || []).filter(function (i) { return i && i.key; }).map(function (i) { var r = idRow(i, o); return { key: String(r.key), label: JSON.stringify(r) }; });
           return { status: 200, body: { ok: true, items: items, more: !!(got && got.more) } };
         });
@@ -198,8 +203,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // A view of the node's contacts, the branch the contact family's manager keeps (spirit.required.spirit.data.contact.data.branch); an
       // ID table of another family is the branch its caller names.
       data: o.data || (table ? undefined : window.spirit.required.spirit.data.contact.data.branch),
-      server: table ? table.family : 'contact',
-      verb: table ? table.verb : 'search',
       face: o.face,
       placeholder: o.placeholder || 'choose a contact…',
       all: o.all,

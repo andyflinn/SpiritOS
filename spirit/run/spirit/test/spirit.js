@@ -505,7 +505,9 @@ test.run('with no port in its environment.json, require of an interface and tree
 // stands there and binds when first called; one with no interface is refused no-interface when called.
 // The one family start calls is node, for node.card (goal/G41.28, Q10: "yes."): its api is asked as it is called. Never the
 // whole api, and no other family's.
-test.run('startPage() asks no api, readyPromise answers the instance, a branch binds when first called; no interface: no-interface', 0.2, async function () {
+// goal/G49.6 (Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"): what ready answers is the instance itself,
+// and a branch is asked by its api.js path, one with no interface refused no-interface.
+test.run('startPage() asks no api but node, readyPromise answers the instance itself, and a branch with no interface refuses no-interface', 0.2, async function () {
   const wq = T.wq = page();
   const started = wq.spirit.startPage();
   const again = wq.spirit.startPage();
@@ -514,9 +516,9 @@ test.run('startPage() asks no api, readyPromise answers the instance, a branch b
     const b = f.url === '/api/spirit' ? JSON.parse(f.body) : null;
     return !!b && b.call === 'api' && !(b.args && b.args.branch === 'node');
   });
-  const goneSaid = await Promise.resolve(ps.gone && typeof ps.gone.anything === 'function' ? ps.gone.anything({}) : null)
+  const goneSaid = await Promise.resolve(wq.spirit.requireScript('spirit/gone/api.js'))
     .then(function () { return null; }, function (e) { return (e && e.code) || null; });
-  return (started === again && wq.spirit.readyPromise === started && !askedAtStart.length && ps.isBrowser === wq.spirit.isBrowser && !!ps.demo && goneSaid === 'no-interface') || false;
+  return (started === again && wq.spirit.readyPromise === started && !askedAtStart.length && ps === wq.spirit && goneSaid === 'no-interface') || false;
 }, test.limit.quick);
 // THE API IS ALWAYS AT THE SAME PLACE (goal/G49.6; Andy: "the fucking api should ALWAYS be at the same place........"; his
 // WSL face at 5b3ecc63: "Cannot read properties of undefined (reading 'preferences')"): an app's branch reached first through
@@ -934,7 +936,7 @@ test.run('on a real page, using the branch the page has not used yet for the fir
 // it asks desk itself and draws its list, never "the desk server did not answer".
 test.run('desk, off at load, is switched on from the page with app.active', 0.2, async function () {
   if (!L.atLoad) return false;
-  L.on = await L.page.evaluate("window.spirit.readyPromise.then(function (s) { return Promise.resolve(s.requireScript('spirit/app/api.js')).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
+  L.on = await L.page.evaluate("window.spirit.readyPromise.then(function (s) { return Promise.resolve(s.requireScript('spirit/app/api.js')).then(function (app) { return app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
   return L.on === true || false;
 }, test.limit.quick);
 test.run('the desk server answers the page once switched on', 0.2, async function () {

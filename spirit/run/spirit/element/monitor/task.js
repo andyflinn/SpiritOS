@@ -66,10 +66,10 @@
     function press() {
       var a = actionOf(job());
       said.textContent = '';
-      return S.readyPromise.then(function (s) {
-        if (a === 'run') return s.job.create({ command: 'node', args: JSON.stringify(['spirit/app/' + name + '/' + name + '.js']) });
-        if (a === 'cancel') return s.job.cancel({ id: id });
-        if (a === 'delete') return s.job['delete']({ id: id });
+      return S.readyPromise.then(function () { return S.requireScript('spirit/job/api.js'); }).then(function (j) {
+        if (a === 'run') return j.create({ command: 'node', args: JSON.stringify(['spirit/app/' + name + '/' + name + '.js']) });
+        if (a === 'cancel') return j.cancel({ id: id });
+        if (a === 'delete') return j['delete']({ id: id });
         return null;
       }).then(function () { paint(); }, function (e) { if (!gone) said.textContent = String((e && e.message) || e); });
     }

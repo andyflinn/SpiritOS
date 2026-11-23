@@ -28,7 +28,7 @@
 
   function esc(s) { return S.escapeHtml ? S.escapeHtml(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function words(text) { return String(text || '').split(',').map(function (w) { return w.trim(); }).filter(Boolean); }
-  // THE ONE VERB (./api.js): the icons branch, bound by its name on what spirit.readyPromise answers (the node finds the folder).
+  // THE ONE VERB (./api.js): the icons branch, required by its api.js path.
   function icon(args) { return Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/app/icons/api.js'); }).then(function (s) { return s.icon(args); }); }
 
   function create(container, options) {
@@ -108,7 +108,7 @@
           }, function (e) { return { status: (e && e.status) || 500, body: { ok: false, error: String((e && e.message) || e) } }; });
         },
         data: S.required.spirit.data.icons.data.branch,
-        server: 'icons',
+        api: 'spirit/app/icons/api.js',
         verb: 'icon',
         face: 'pane',
         placeholder: 'choose an icon…',

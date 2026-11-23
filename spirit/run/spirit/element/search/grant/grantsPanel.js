@@ -34,16 +34,13 @@
     'spirit/element/search/grant.js', 'spirit/element/rowForm.js', 'spirit/element/armingButton.js'].map(function (p) { return window.spirit.requireScript ? window.spirit.requireScript(p) : null; })
     .concat([window.spirit.requireScript('spirit/auth/api.js')]));
 
-  // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.readyPromise holds it,
-  // or as spirit.requireScript binds a server's family, answering { status, body } as a list reads it.
-  function ask(name, args) {
+  // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): verb called on the branch at its api.js path (goal/G49.6: never
+  // by a name), once the page is ready, answering { status, body } as a list reads it.
+  function ask(api, verb, args) {
     var S = window.spirit;
-    var n = String(name || '');
-    var dot = n.indexOf('.');
-    var fam = n.slice(0, dot);
-    return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s[fam]; }).then(function (f) {
-      // A dotted verb is a path into the family, as spirit.js builds it: a.b is f.a.b.
-      var at = n.slice(dot + 1).split('.');
+    return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript(api); }).then(function (f) {
+      // A dotted verb is a path into the branch, as spirit.js builds it: a.b is f.a.b.
+      var at = String(verb || '').split('.');
       var owner = f;
       for (var i = 0; i < at.length - 1; i++) owner = owner ? owner[at[i]] : null;
       return owner[at[at.length - 1]](args || {});
@@ -70,7 +67,7 @@
     // auth.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
     // panel reads one field.
     search: function (text) {
-      return ask('auth.search', { text: String(text || '') }).then(function (a) {
+      return ask('spirit/auth/api.js', 'search', { text: String(text || '') }).then(function (a) {
         var b = (a && a.body) || {};
         var items = (b.items || []).map(function (i) {
           var r = null;
@@ -80,8 +77,8 @@
         return { items: items, more: !!b.more };
       });
     },
-    grant: function (id, path) { return ask('auth.grant', { key: id, path: path }).then(answered); },
-    revoke: function (id, path) { return ask('auth.revoke', { key: id, path: path }).then(answered); },
+    grant: function (id, path) { return ask('spirit/auth/api.js', 'grant', { key: id, path: path }).then(answered); },
+    revoke: function (id, path) { return ask('spirit/auth/api.js', 'revoke', { key: id, path: path }).then(answered); },
   };
 
   function create(host, config) {
@@ -202,7 +199,7 @@
     // A BUNDLE'S PATHS, from its branches (goal/G41.14): auth.branch's search on that bundle, each branch family.verb, or
     // the family alone for the empty verb.
     function bundlePaths(bundle) {
-      return ask('auth.branch', { op: 'search', text: '', bundle: Number(bundle.id) }).then(function (a) {
+      return ask('spirit/auth/api.js', 'branch', { op: 'search', text: '', bundle: Number(bundle.id) }).then(function (a) {
         if (a.status !== 200) throw new Error(refusal(a.body));
         if (a.body && a.body.more) say('more branches than fit one answer: only the first are granted');
         return ((a.body && a.body.items) || []).map(function (i) {

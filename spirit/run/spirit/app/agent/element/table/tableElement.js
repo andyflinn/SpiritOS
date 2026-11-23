@@ -125,7 +125,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     var columns = o.columns || columnsOf(o.table);
     var s = window.spirit.required.spirit.element.search.create(host, Object.assign({
       // WHAT IT NEEDS, THE SEARCH REQUIRES ITSELF (goal/G43.24): it asks agent.<table> through the spirit object; no api.
-      server: 'agent', verb: o.table, data: branchOf(o.table),
+      api: 'spirit/app/agent/api.js', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },
       columns: columns,
       name: function (r) { return nameOf(r, columns); },

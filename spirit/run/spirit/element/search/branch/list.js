@@ -56,7 +56,7 @@
       search: search,
       // A view of the node's branches, the branch the auth family's manager keeps (spirit.required.spirit.data.auth.data.branches.branch).
       data: window.spirit.required.spirit.data.auth.data.branches.branch,
-      server: 'auth',
+      api: 'spirit/auth/api.js',
       verb: 'branch',
       face: o.face,
       placeholder: o.placeholder || 'choose a branch…',

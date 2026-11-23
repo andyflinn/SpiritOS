@@ -161,6 +161,11 @@ function world() {
     'spirit/element/search/api.js': ['search'], 'spirit/element/search/grant.js': ['search'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'],
     'spirit/element/armingButton.js': ['armingButton'] };
   const page = {};
+  const companionOf = function (p) {
+    const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
+    const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
+    if (companion && !w.ran[companion] && fs.existsSync(path.join(RUN, companion))) { w.ran[companion] = true; vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion }); }
+  };
   const appApi = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
     // The page knows its node: spirit.required.spirit.data files nothing before it does (goal/G41.28, Q10).
@@ -169,12 +174,13 @@ function world() {
         w.required.push(String(p));
         const server = Object.keys(servers).filter(function (k) { return appApi(k) === p; })[0];
         if (server) return Promise.resolve(servers[server]);
+        // The node's own branches by their api.js paths (goal/G49.6: never by a name): auth, and fs.
+        if (p === 'spirit/fs/api.js') return Promise.resolve(families.fs);
+        if (p === 'spirit/auth/api.js') { companionOf(p); return Promise.resolve(auth); }
         // A branch's api.js: its real companion data.js run once on this window over the real data set, as the real api.js
         // requires it (goal/G47.1), so the server jobs the test hands spirit.required.spirit.data reach the panel as the page's would, and
         // the auth tables' grants reach nodeGrants.
-        const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
-        const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
-        if (companion && !w.ran[companion] && fs.existsSync(path.join(RUN, companion))) { w.ran[companion] = true; vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion }); }
+        companionOf(p);
         // goal/G43.32: what the panel draws with stands where an element now finds it, spirit.required.spirit.element.
         (FILES[p] || []).forEach(function (k) { const at = ((page.spirit = page.spirit || {}).element = page.spirit.element || {}); at[k] = E[k]; });
         return Promise.resolve(true);
@@ -191,7 +197,7 @@ function world() {
     confirm: function (t) { w.confirms.push(String(t)); return w.confirmAnswer; },
   };
   win.window = win;
-  win.spirit.readyPromise = Promise.resolve(Object.assign({ auth: auth }, families));
+  win.spirit.readyPromise = Promise.resolve(win.spirit);
   // goal/G43.32: grantsPanel.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
@@ -826,13 +832,13 @@ test.run('spirit/element/search/grant/grantsPanel.js is there', 0.2, function ()
   return panel.length > 0 ? true : false;
 }, test.limit.quick);
 test.run('Grants\' data source has moved into grantsPanel, which asks auth.search', 0.2, function () {
-  return /\bauth\W{1,4}search\b/.test(panel) ? true : false;
+  return /'spirit\/auth\/api\.js',\s*'search'/.test(panel) ? true : false;
 }, test.limit.quick);
 test.run('Grants\' data source has moved into grantsPanel, which asks auth.grant', 0.2, function () {
-  return /\bauth\W{1,4}grant\b/.test(panel) ? true : false;
+  return /'spirit\/auth\/api\.js',\s*'grant'/.test(panel) ? true : false;
 }, test.limit.quick);
 test.run('Grants\' data source has moved into grantsPanel, which asks auth.revoke', 0.2, function () {
-  return /\bauth\W{1,4}revoke\b/.test(panel) ? true : false;
+  return /'spirit\/auth\/api\.js',\s*'revoke'/.test(panel) ? true : false;
 }, test.limit.quick);
 test.run('grantsPanel holds the auth cache it reads, spirit.required.spirit.data.auth', 0.2, function () {
   const holds = /\bdata\.auth\b|require(?:Script)?\s*\(\s*['"]spirit\/auth\/api\.js['"]/.test(panel);

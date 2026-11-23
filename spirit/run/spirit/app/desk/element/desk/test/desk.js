@@ -225,17 +225,18 @@ function deskWorld(goal, items) {
       required.push(rel);
       const run = Object.prototype.hasOwnProperty.call(REAL, rel) ? REAL[rel] : '';
       if (run && !ran[run]) { ran[run] = true; vm.runInContext(fs.readFileSync(path.join(RUN, run), 'utf8'), win, { filename: run }); }
+      // A branch by its api.js path (goal/G49.6: never by a name): every verb of it reaches the recorder as <branch>.<verb>.
+      const b = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(String(rel));
+      if (b) return Promise.resolve(new Proxy({}, { get: function (t2, rest) { return rest === 'then' ? undefined : function (args) { return api.verb(b[1] + '.' + String(rest), args); }; } }));
       return Promise.resolve({});
     },
     // goal/G43.32: the parts stand where the page reads them, at spirit.required.<their path>.
     required: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
       'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
-    // THE PAGE GETS WHAT IT NEEDS ITSELF (goal/G43.27, requirement 23): no api is handed to it. A family's verb is asked
-    // through spirit.readyPromise (every desk.<verb> reaches the recorder), its answer through outcome, and the desk's publishes
-    // through its family's data.js, the real spirit/app/desk/data.js, which comes with its api.js.
-    readyPromise: Promise.resolve(new Proxy({}, { get: function (t, fam) {
-      return new Proxy({}, { get: function (t2, rest) { return function (args) { return api.verb(String(fam) + '.' + String(rest), args); }; } });
-    } })),
+    // THE PAGE GETS WHAT IT NEEDS ITSELF (goal/G43.27, requirement 23): no api is handed to it. A branch's verb is asked of the
+    // branch its api.js path binds (requireScript above: every desk.<verb> reaches the recorder), its answer through outcome, and
+    // the desk's publishes through its family's data.js, the real spirit/app/desk/data.js, which comes with its api.js.
+    readyPromise: Promise.resolve({}),
     callOutcome: function (p) { return p; } };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit): spirit.required, and the helper answered, so each element
   // places itself by installSpiritElement as it runs.

@@ -53,7 +53,7 @@
         search: function (args) {
           return ask((args && args.text) || '').then(function (b) { return { status: 200, body: { items: (b && b.items) || [], more: !!(b && b.more) } }; });
         },
-        server: 'testicle',
+        api: 'spirit/app/testicle/api.js',
         verb: 'suite.search',
         args: function (text) { return { script: script, text: text }; },
         columns: [

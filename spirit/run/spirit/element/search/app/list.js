@@ -31,7 +31,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       data: window.spirit.required.spirit.data.app.data.branch,
-      server: 'app',
+      api: 'spirit/app/api.js',
       verb: 'search',
       face: o.face,
       // ITS TILE PART (goal/G47.4): an app's tile, ./tile.js; a press on it picks the app, as a press on its row does. With it

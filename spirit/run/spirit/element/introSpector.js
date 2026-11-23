@@ -80,7 +80,7 @@
   }
   function call(party, fam, verb, args) {
     // Self: the answer's body, a refusal's own body when the node sent one.
-    if (party.kind === 'self') return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s[fam][verb](args); })).then(function (o) {
+    if (party.kind === 'self') return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/' + fam + '/api.js').then(null, function () { return S.requireScript('spirit/app/' + fam + '/api.js'); }); }).then(function (f) { return f[verb](args); })).then(function (o) {
       return o.body !== undefined && o.body !== null ? o.body : o;
     });
     var body = {};

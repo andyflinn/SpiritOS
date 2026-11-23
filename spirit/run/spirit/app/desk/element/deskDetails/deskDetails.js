@@ -43,7 +43,7 @@ function ddEsc(s) { return ddApi.escapeHtml(String(s == null ? '' : s)); }
 
 // The one way to the desk server: its verb by name on the flat apiDoor (desk.<verb>, goal/G30.6).
 function ddAsk(verb, args) {
-  return Promise.resolve(ddApi.verb('desk.' + verb, args)).then(function (r) {
+  return Promise.resolve(ddApi.verb('spirit/app/desk/api.js', verb, args)).then(function (r) {
     var body = (r && r.body) || {};
     if (body.ok === false) { var e = new Error(ddRefusalText(body)); e.refused = true; throw e; }
     return body;

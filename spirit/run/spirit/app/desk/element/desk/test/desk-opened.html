@@ -52,9 +52,11 @@ function state() {
 window.opened = function () {
   // The page's one data set, as the shell starts it before any app runs.
   return Promise.resolve(spirit.startPage()).then(function () {
-    // The node's desk is the stand-in: the page asks spirit.desk.<verb> itself (goal/G43.27, requirement 23), and each
-    // verb answers its body, as a family's does.
-    spirit.desk = new Proxy({}, { get: function (t, verb) { return function (args) { return api.verb('desk.' + String(verb), args).then(function (r) { return r.body; }); }; } });
+    // The node's desk is the stand-in: the page requires spirit/app/desk/api.js itself (goal/G43.27, requirement 23; goal/G49.6:
+    // by its path, never by a name), and each verb answers its body, as a branch's does.
+    var desk = new Proxy({}, { get: function (t, verb) { return verb === 'then' ? undefined : function (args) { return api.verb('desk.' + String(verb), args).then(function (r) { return r.body; }); }; } });
+    var real = spirit.requireScript;
+    spirit.requireScript = function (p) { return p === 'spirit/app/desk/api.js' ? Promise.resolve(desk) : real.apply(this, arguments); };
     return spirit.requireScript('spirit/app/desk/element/desk/desk.js');
   }).then(function () {
     spirit.required.spirit.app.desk.element.desk.desk.create(document.getElementById('app-content'), {});

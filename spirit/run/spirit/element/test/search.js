@@ -582,11 +582,11 @@ test.run('after destroy nothing draws and nothing is asked', 0.2, async function
 }, test.limit.quick);
 test.run('its code reads no api off its options', 0.2, function () {
   // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "every element that accesses ANY api must require them
-  // themselves"): handed no source, the list asks server.verb through the spirit object, a family on spirit.readyPromise or one
-  // spirit.requireScript binds, a dotted verb walked as a path; it takes no api from its options.
+  // themselves"): handed no source, the list requires the api.js its api option names, by that path (goal/G49.6), and asks
+  // verb on it, a dotted verb walked as a path; the option is a path, never an api it reaches into.
   // create: handed no source, it asks through the spirit object
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-  return (!/\b(?:o|opts|options)\s*\.\s*api\b|\bapi\s*\.\s*verb\b/.test(SRC)) ? true : false;
+  return (!/\b(?:o|opts|options)\s*\.\s*api\s*[.[(]|\bapi\s*\.\s*verb\b/.test(SRC)) ? true : false;
 }, test.limit.quick);
 const fam = function (name) {
   return new Proxy({}, { get: function (t, verb) {
@@ -595,29 +595,29 @@ const fam = function (name) {
     return name === 'desk' && verb === 'items' ? { search: function (args) { asked.push({ name: 'desk.items.search', args: args }); return Promise.resolve({ ok: true, items: [] }); } } : at;
   } });
 };
-test.run('typing asks srv.search on the branch spirit.readyPromise holds', 0.2, async function () {
+test.run('typing asks search of the branch at its api path', 0.2, async function () {
   asked = [];
   refuse = null;
   bound = [];
   SP = window.spirit;
-  SP.readyPromise = Promise.resolve({ srv: fam('srv'), desk: fam('desk') });
+  SP.readyPromise = Promise.resolve(SP);
   SP.requireScript = function (p) { bound.push(p); return Promise.resolve(fam(/^spirit\/app\/([^/]+)\//.exec(p)[1])); };
   SP.callOutcome = function (c) {
     return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
       function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; });
   };
   cs = container();
-  Ls = PS.create(cs, { server: 'srv', verb: 'search', data: branchOf([]), columns: [{ field: 'name' }] });
+  Ls = PS.create(cs, { api: 'spirit/app/srv/api.js', verb: 'search', data: branchOf([]), columns: [{ field: 'name' }] });
   cs.type('ro');
   await tick();
   await tick();
   await tick();
   return (asked.length === 1 && asked[0].name === 'srv.search' && asked[0].args.text === 'ro') ? true : false;
 }, test.limit.quick);
-test.run('the answer of the branch spirit.readyPromise holds joins the list', 0.2, function () {
+test.run('the answer of that branch joins the list', 0.2, function () {
   return (cs.shown().indexOf('r1') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('ask goes the same way, through the branch spirit.readyPromise holds', 0.2, async function () {
+test.run('ask goes the same way, through the branch at its api path', 0.2, async function () {
   return ((await Ls.ask('count', { a: 1 })).n === 3 && asked[asked.length - 1].name === 'srv.count') ? true : false;
 }, test.limit.quick);
 test.run('a refused call rejects ask with the node\'s words', 0.2, async function () {
@@ -626,11 +626,11 @@ test.run('a refused call rejects ask with the node\'s words', 0.2, async functio
   try { await Ls.ask('count'); } catch (err) { refused = err.message; }
   return (refused === 'not yours') ? true : false;
 }, test.limit.quick);
-test.run('a branch not on spirit.readyPromise is bound by requiring its branch path through the spirit object', 0.2, async function () {
+test.run('the branch is bound by requiring its api.js path through the spirit object', 0.2, async function () {
   refuse = null;
   Ls.destroy();
   co = container();
-  Lo = PS.create(co, { server: 'other', verb: 'find', data: branchOf([]), columns: [{ field: 'name' }] });
+  Lo = PS.create(co, { api: 'spirit/app/other/api.js', verb: 'find', data: branchOf([]), columns: [{ field: 'name' }] });
   co.type('x');
   await tick();
   await tick();
@@ -640,14 +640,14 @@ test.run('a branch not on spirit.readyPromise is bound by requiring its branch p
 test.run('a dotted verb is a path into the branch', 0.2, async function () {
   Lo.destroy();
   cd = container();
-  Ld = PS.create(cd, { server: 'desk', verb: 'items.search', data: branchOf([]), columns: [{ field: 'name' }] });
+  Ld = PS.create(cd, { api: 'spirit/app/desk/api.js', verb: 'items.search', data: branchOf([]), columns: [{ field: 'name' }] });
   cd.type('g');
   await tick();
   await tick();
   await tick();
   return (asked[asked.length - 1].name === 'desk.items.search') ? true : false;
 }, test.limit.quick);
-test.run('with neither a source nor a server and verb it asks nobody', 0.2, async function () {
+test.run('with neither a source nor an api and verb it asks nobody', 0.2, async function () {
   Ld.destroy();
   cn = container();
   n2 = asked.length;

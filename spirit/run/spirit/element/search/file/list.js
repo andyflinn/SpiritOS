@@ -99,7 +99,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       search: function (args) { return search(args, function (next, at) { scores = next; lines = at; }); },
       // A view of the node's file tree, the branch the fs family's manager keeps (spirit.required.spirit.data.fs.data.branch).
       data: fsReads().branch,
-      server: 'fs',
+      api: 'spirit/fs/api.js',
       verb: 'search',
       face: o.face,
       placeholder: o.placeholder || 'choose a file…',

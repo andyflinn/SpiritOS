@@ -597,7 +597,7 @@ function chMount(container) {
             return { status: 200, body: { items: items, more: !!(b && b.more) } };
           });
         },
-        server: 'chat',
+        api: 'spirit/app/chat/api.js',
         verb: 'chat.search',
         args: function (text, filters) { return { text: text, who: filters.who === 'both' ? '' : filters.who }; },
         columns: [{ field: 'at', label: 'When', sort: 'date' }, { field: 'who', label: '' }, { field: 'text', label: 'Line' }],
