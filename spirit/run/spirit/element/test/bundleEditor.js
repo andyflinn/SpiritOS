@@ -64,7 +64,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, required: { spirit: { fieldRules: require(path.join(RUN, 'spirit', 'fieldRules.js')) } },
-    readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+    readyPromise: Promise.resolve({}), element: {} } };
   global.spirit = global.window.spirit;
   // goal/G43.32: the element places itself by installSpiritElement, and fieldInput, a helper, stands in spirit.required
   // (spirit/test/headLessChrome.js pageSpirit).
@@ -89,7 +89,8 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   };
   // A bundle row on the node's own job spirit.auth, as the auth family's data.js takes it (goal/G43.20).
   arrive = function (id, label) { global.window.spirit.required.spirit.data.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js') family(); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js') family(); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : true); };
+  // The auth branch is answered by its api.js path (goal/G49.6: never by a name).
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   // What the editor asked as it loaded; the runner's own asks after this test are not the editor's.

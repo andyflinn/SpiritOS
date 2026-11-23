@@ -38,7 +38,7 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
     // The real row element requires the auth branch's interface as it runs (goal/G41.28); its stand-in does the same.
     'spirit/element/search/bundle/row.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/bundle/row.js', { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }); },
   };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
@@ -53,9 +53,9 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   V = DATA.viewAt(null, 'auth');
   global.document = { createElement: function () { return {}; } };
   // The auth branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself to
-  // the data set.
+  // the data set. It answers the auth branch by that path (goal/G49.6: never by a name).
   let authData = false;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   // What the list asked as it loaded; the runner's own asks after this test are not the list's.
@@ -108,7 +108,7 @@ test.run('it is a view of the auth bundles at spirit.required.spirit.data.auth.d
 test.run('its search asks auth.bundle to search the trimmed text, through the spirit object', 0.2, async function () {
   if (!l) return false;
   got = await o.search(o.args('  rea ', {}));
-  return o.server === 'auth' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea' ? true : false;
+  return o.api === 'spirit/auth/api.js' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea' ? true : false;
 }, test.limit.quick);
 test.run('its search answers as a reply, with items and more', 0.2, function () {
   if (!l) return false;

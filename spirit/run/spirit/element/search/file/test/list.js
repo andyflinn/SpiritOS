@@ -46,7 +46,7 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
     'spirit/element/search/file/row.js': function (E) { require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/file/row.js', { create: function (row) { return { kind: 'file', row: row }; } }); },
     'spirit/element/fstat.js': function (E) { E.fstat = { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
@@ -57,9 +57,9 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   global.window.spirit.nodeFacts = { key: NODE_KEY };
   D.homeNode(NODE_KEY);
   // The fs family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
-  // itself to the data set.
+  // itself to the data set. It answers the fs branch by that path (goal/G49.6: never by a name).
   let ran = false;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'data.js'), 'utf8'), { filename: 'spirit/fs/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'data.js'), 'utf8'), { filename: 'spirit/fs/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/fs/api.js' ? fsFamily : true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};

@@ -43,11 +43,14 @@ function world(rows) {
     getAnnotations: function () { w.fsAsked += 1; return Promise.resolve({}); },
     annotate: function () { w.fsAsked += 1; return Promise.resolve({ ok: true }); },
   };
+  const BRANCHES = { 'spirit/fs/api.js': fsApi,
+    'spirit/app/api.js': { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } };
   const win = { spirit: {
-    readyPromise: Promise.resolve({ fs: fsApi, app: { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } }), fs: fsApi,
+    // What readyPromise answers holds no branch (goal/G49.6); a branch is answered by its api.js path.
+    readyPromise: Promise.resolve({}),
     // The one loader, a recorder: every path it is asked for; what the app branch's api.js loads, its data.js, stands
     // below as spirit.required.spirit.data.app.
-    requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
+    requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(BRANCHES[String(p)] || true); },
     required: { spirit: { data: { app: { data: {
       rows: function () { return w.rows; },
       watch: function (key, fn) { (w.watchers[key] = w.watchers[key] || []).push(fn); return function () { w.released += 1; w.watchers[key] = w.watchers[key].filter(function (x) { return x !== fn; }); }; },

@@ -38,7 +38,8 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
     'spirit/element/fstat.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat.js'); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: 'fstat.js' }); } };
   // escapeHtml and formatBytes are the spirit object's own: spirit.js fills this object with them as the element helper
   // loads it, as on a page.
-  global.window = { spirit: { readyPromise: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {},
+  // What readyPromise answers holds no branch (goal/G49.6); the fs branch is answered by its api.js path, below.
+  global.window = { spirit: { readyPromise: Promise.resolve({}), element: {},
     // The page's table of types, as spirit.js puts it on the spirit object.
     MIME_TYPES: { '.html': 'text/html; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' } } };
   global.spirit = global.window.spirit;
@@ -59,7 +60,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // directly is only recorded.
   const ran = {};
   const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: f }); } };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(p === 'spirit/fs/api.js' ? fsFamily : true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};

@@ -50,7 +50,8 @@ function world() {
   const win = {
     // goal/G43.32: an element stands at spirit.required.<its path>.
     spirit: { required: { spirit: { element: {} } }, escapeHtml: function (s) { return String(s); },
-      readyPromise: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }) },
+      // What readyPromise answers is the spirit instance itself (goal/G49.6), whose apiTree reads the node's tree.
+      readyPromise: Promise.resolve({ apiTree: function () { return Promise.resolve(TREE); } }) },
     document: { createElement: function (t) { return node(t); } },
     Event: function (type) { this.type = type; },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object,

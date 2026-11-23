@@ -53,7 +53,7 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
@@ -65,9 +65,9 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
   global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
   // The auth family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
-  // itself to the data set.
+  // itself to the data set. It answers the auth branch by its api.js path (goal/G49.6: never by a name).
   let ran = false;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
@@ -120,7 +120,7 @@ let got;
 test.run('its search asks auth.branch to search the bundle for the trimmed text through the spirit object', 0.2, async function () {
   if (!l) return false;
   got = await o.search(o.args(' cha ', {}));
-  return o.server === 'auth' && o.verb === 'branch' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'cha' && asked[0].bundle === 7 ? true : false;
+  return o.api === 'spirit/auth/api.js' && o.verb === 'branch' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'cha' && asked[0].bundle === 7 ? true : false;
 }, test.limit.quick);
 test.run('the search answers as a reply carrying its items and whether there are more', 0.2, function () {
   if (!l) return false;

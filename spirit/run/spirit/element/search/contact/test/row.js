@@ -39,8 +39,10 @@ test.run('the contact row runs on a window of its own, with the data set and the
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = window.spirit;
-  window.spirit.readyPromise = Promise.resolve({ contact: { block: verb('contact.block'), unblock: verb('contact.unblock'),
-    forget: verb('contact.forget'), label: verb('contact.label'), get: verb('contact.get') }, peer: { acquire: verb('peer.acquire') } });
+  // What readyPromise answers holds no branch (goal/G49.6); the branches are answered by their api.js paths, below.
+  window.spirit.readyPromise = Promise.resolve({});
+  const BRANCHES = { contact: { block: verb('contact.block'), unblock: verb('contact.unblock'),
+    forget: verb('contact.forget'), label: verb('contact.label'), get: verb('contact.get') }, peer: { acquire: verb('peer.acquire') } };
   ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); window.spirit.required.spirit.fieldRules = { normalize: function (t) { return String(t || '').trim(); },
     problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
   // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
@@ -55,7 +57,8 @@ test.run('the contact row runs on a window of its own, with the data set and the
   let contactData = false;
   window.spirit.requireScript = function (p) {
     required.push(p);
-    if (p === 'spirit/contact/api.js') { if (!contactData) { contactData = true; load(path.join(JS, '..', '..', 'spirit', 'contact', 'data.js')); } return Promise.resolve(true); }
+    if (p === 'spirit/contact/api.js') { if (!contactData) { contactData = true; load(path.join(JS, '..', '..', 'spirit', 'contact', 'data.js')); } return Promise.resolve(BRANCHES.contact); }
+    if (p === 'spirit/peer/api.js') return Promise.resolve(BRANCHES.peer);
     return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
   };
   load(path.join(JS, '..', '..', 'spirit', 'data.js'));

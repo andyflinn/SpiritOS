@@ -40,7 +40,8 @@ function world() {
   const win = {
     // goal/G43.32: an element stands at spirit.required.<its path>, its parts there too.
     spirit: { required: { spirit: { element: E } }, escapeHtml: function (s) { return String(s); },
-      readyPromise: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }),
+      // What readyPromise answers is the spirit instance itself (goal/G49.6), whose apiTree reads the node's tree.
+      readyPromise: Promise.resolve({ apiTree: function () { return Promise.resolve(TREE); } }),
       // A branch's api.js, as a page's: its real companion data.js run on this window, attaching itself to the data set, as
       // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.required.spirit.data.node.data).
       requireScript: function (p) {

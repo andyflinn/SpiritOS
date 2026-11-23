@@ -100,15 +100,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   D.homeNode(HOME_KEY);
   const ran = {};
   BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
-  // The node's bundles (auth.bundle, the one dictionary of bundles): get answers a bundle the node has, refuses one it
-  // has not; each ask kept.
-  w.bundleAsks = [];
-  w.bundlesHeld = { 7: 'Reader', 9: 'Writer' };
-  global.window.spirit.readyPromise = Promise.resolve({ auth: { bundle: function (a) {
-    w.bundleAsks.push(a);
-    if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
-    return Promise.resolve({ items: [], more: false });
-  } } });
+  global.window.spirit.readyPromise = Promise.resolve({});
   const PE = function () { const e = global.window.spirit.required; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
   global.window.spirit.requireScript = function (p) {
     w.required.push(String(p));
@@ -261,7 +253,7 @@ test.run('its list is a probabilitySearch in its own box, searched as it is made
 }, test.limit.quick);
 test.run('it searches the agent server\'s provider verb, seated in the branch <node>/agent/provider of spirit.required.spirit.data', 0.2, function () {
   if (!T.list) return false;
-  return T.list.o.server === 'agent' && T.list.o.verb === 'provider' && T.list.o.data === BRANCH('provider') ? true : false;
+  return T.list.o.api === 'spirit/app/agent/api.js' && T.list.o.verb === 'provider' && T.list.o.data === BRANCH('provider') ? true : false;
 }, test.limit.quick);
 test.run('its search asks for op search with the text', 0.2, function () {
   if (!T.list) return false;

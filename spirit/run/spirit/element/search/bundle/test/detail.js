@@ -65,14 +65,15 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({ auth: auth }), auth: auth,
+  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}),
     element: { navigation: { push: function (page) { const p = { page: page, box: node('box'), nav: { close: function () {}, setTitle: function () {} } }; pages.push(p); return p.nav; } } } } };
   global.spirit = global.window.spirit;
   // goal/G43.32: spirit.required is a plain place, no getter: the branch editor, now strict, sets spirit.required itself.
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   ((global.window.spirit.required.spirit.data = global.window.spirit.required.spirit.data || {}).auth = {}).data = { bundles: { watch: function (fn) { bundleWatches.push(fn); return function () {}; } }, branches: { watch: function () { return function () {}; } } };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  // The auth branch is answered by its api.js path (goal/G49.6: never by a name).
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};

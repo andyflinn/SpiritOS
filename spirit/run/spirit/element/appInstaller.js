@@ -28,7 +28,8 @@
     function press(e) {
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       var want = !isOn();
-      Promise.resolve(sp().ready).then(function (s) { return s.app.activeApp({ key: key, active: want }); }).then(null, function () { /* not written: the button stays as the node last said */ });
+      // The app branch by its api.js path, once the page is ready (goal/G49.6: never by a name).
+      Promise.resolve(sp().readyPromise).then(function () { return sp().requireScript('spirit/app/api.js'); }).then(function (a) { return a.activeApp({ key: key, active: want }); }).then(null, function () { /* not written: the button stays as the node last said */ });
     }
     function render() {
       if (gone || !host) return;

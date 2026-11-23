@@ -36,12 +36,16 @@ global.window = { spirit: {} };
 // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
 require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 global.spirit = window.spirit;
-window.spirit.readyPromise = Promise.resolve({ contact: {
+// What readyPromise answers holds no branch (goal/G49.6); the contact branch is answered by its api.js path.
+window.spirit.readyPromise = Promise.resolve({});
+const contactBranch = {
   get: function (b) { asked.push({ verb: 'contact.get', key: b.key });
     return b.key === 'KX' ? Promise.reject(new Error('no')) : Promise.resolve({ person: captions[b.key] !== undefined ? { caption: captions[b.key] } : null }); },
   label: function (b) { asked.push({ verb: 'contact.label', body: b });
     return labelRefuse ? Promise.reject(new Error(labelRefuse)) : Promise.resolve(labelAnswer); },
-} });
+};
+const pageRequire = window.spirit.requireScript;
+window.spirit.requireScript = function (p) { return String(p) === 'spirit/contact/api.js' ? Promise.resolve(contactBranch) : pageRequire.apply(this, arguments); };
 // The label type as it stands on a page (spirit.required.spirit.type.string.label, goal/G48.4): a stand-in that refuses past 8.
 window.spirit.required = window.spirit.required || {};
 window.spirit.required.spirit = window.spirit.required.spirit || {};

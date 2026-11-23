@@ -46,12 +46,13 @@ function world(card, hold) {
     return hold ? hold.then(function () { return answer; }) : answer;
   } };
   win.spirit = {
-    readyPromise: Promise.resolve({ node: family }),
+    readyPromise: Promise.resolve({}),
     callOutcome: function (c) {
       return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
         function (e) { return { status: 500, body: { ok: false, error: e.message } }; });
     },
-    requireScript: function (p) { w.required.push(String(p)); return Promise.resolve({}); },
+    // The node's branch by its api.js path (goal/G49.6: never by a name).
+    requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(String(p) === 'spirit/node/api.js' ? family : {}); },
   };
   // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js places itself by
   // installSpiritElement at spirit.required.spirit.app.starter.element as it runs.
@@ -86,10 +87,10 @@ test.run('it asks node.card once', 0.2, async function () {
   return W.w.asked.length === 1 && W.w.asked[0].verb === 'node.card' ? true : false;
 }, test.limit.quick);
 // goal/G47.1, Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS": the node's interface for
-// node.card; nothing else.
+// node.card; nothing else. Since goal/G49.6 the call asks the branch by that path again, as it calls it.
 test.run('it requires the node interface, and nothing else', 0.2, function () {
   if (!W.w) return false;
-  return W.w.required.length === 1 && W.w.required[0] === 'spirit/node/api.js' || false;
+  return W.w.required.length >= 1 && W.w.required.every(function (p) { return p === 'spirit/node/api.js'; }) || false;
 }, test.limit.quick);
 
 // 3. it shows what the card says

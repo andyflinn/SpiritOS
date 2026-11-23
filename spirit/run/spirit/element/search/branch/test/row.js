@@ -46,7 +46,7 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
     'spirit/element/armingButton.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
   };
   global.document = { createElement: function () { return {}; } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
@@ -64,7 +64,8 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: f }); } };
   // The direct writes below are the auth family's own view of the home node, as its data.js files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : true); };
+  // The auth branch is answered by its api.js path (goal/G49.6: never by a name).
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
