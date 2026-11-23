@@ -18,7 +18,12 @@ const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'nodeInfo.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/nodeInfo.js';
+const FILE = path.join(RUN, SUBJECT);
+// The files of the tree its worlds load as they are, by their paths, through the page stand-in: the data set, a branch's
+// companion data.js, and the subject.
+const REAL = function (p) { return p === 'spirit/data.js' || p === SUBJECT || /^spirit\/[^/]+\/data\.js$/.test(p); };
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
@@ -107,8 +112,11 @@ function world(o) {
   };
   win.window = win;
   vm.createContext(win);
-  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs; it,
+  // a branch's companion data.js and the subject run in this window by their paths, through the page stand-in (goal/G49.6).
+  win.spirit = win.spirit || {};
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
+  win.spirit.requireScript('spirit/data.js');
   const S = win.spirit;
   Object.assign(S.required.spirit, page.spirit);
   S.nodeFacts = { key: 'NODEKEY+INFO==',
@@ -131,19 +139,22 @@ function world(o) {
     // A family's cache (goal/G41.28): a branch's interface brings its data.js, as the real api.js does; it runs once on
     // this window over the real data set, from its path.
     const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
-    if (fam && !(S.required.spirit.data[fam[1]] && S.required.spirit.data[fam[1]].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', fam[1], 'data.js'), 'utf8'), win, { filename: 'spirit/' + fam[1] + '/data.js' });
+    if (fam && !(S.required.spirit.data[fam[1]] && S.required.spirit.data[fam[1]].data)) pageRequire('spirit/' + fam[1] + '/data.js');
     (FILES[p] || []).forEach(function (k) { els[k] = E[k]; });
     if (p === 'spirit/element/panel.js') els.panel = panel;
     if (p === 'spirit/element/rotateKey.js') els.rotateKey = rotateKey;
+    // The node's branches by their api.js paths (goal/G49.6: never by a name): the relay and the node stand above.
+    if (p === 'spirit/relay/api.js') return Promise.resolve(S.relay);
+    if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
     return Promise.resolve({});
   };
   // goal/G43.32: nodeInfo.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = S.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S, null, { window: win, real: REAL });
   const pageRequire = S.requireScript;
   S.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
-  if (SRC) vm.runInContext(SRC, win, { filename: FILE });
+  if (SRC) pageRequire(SUBJECT);
   w.win = win; w.S = S; w.page = page; w.els = els;
   w.slot = function (host, name) { return host.querySelector('[data-info="' + name + '"]'); };
   w.rotate = function () { return w.rowForms.filter(function (f) { return /Rotate/.test(f.opts.button || ''); })[0] || null; };
@@ -492,7 +503,12 @@ function formsPart() {
     };
     win.window = win;
     vm.createContext(win);
-    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+    // The forms, the data set, a branch's companion data.js and the subject run in this window by their paths, through the
+    // page stand-in (goal/G49.6).
+    const REAL2 = function (p) { return REAL(p) || p === 'spirit/element/joinForm.js' || p === 'spirit/element/faceForm.js'; };
+    win.spirit = win.spirit || {};
+    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL2 });
+    win.spirit.requireScript('spirit/data.js');
     const S = win.spirit;
     // goal/G43.32: every element stands at its path, spirit.required.spirit.element.<name>, the stand-ins with them.
     Object.assign(S.required.spirit, { element: {} });
@@ -519,19 +535,22 @@ function formsPart() {
     const real = { 'spirit/element/joinForm.js': 1, 'spirit/element/faceForm.js': 1 };
     // goal/G43.32: each element places itself by installSpiritElement, handed by the page stand-in
     // (spirit/test/headLessChrome.js pageSpirit).
-    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S);
+    LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(S, null, { window: win, real: REAL2 });
     const pageRequire = S.requireScript;
     S.requireScript = function (p) {
       if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
-      if (real[p]) { vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p }); delete real[p]; }
+      if (real[p]) { delete real[p]; return pageRequire(p); }
       // A branch's interface brings its data.js, as the real api.js does: run once on this window from its path.
       const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
-      if (fam && !(S.required.spirit.data[fam[1]] && S.required.spirit.data[fam[1]].data)) vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', fam[1], 'data.js'), 'utf8'), win, { filename: 'spirit/' + fam[1] + '/data.js' });
+      if (fam && !(S.required.spirit.data[fam[1]] && S.required.spirit.data[fam[1]].data)) pageRequire('spirit/' + fam[1] + '/data.js');
       if (p === 'spirit/element/panel.js') at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } };
       if (p === 'spirit/element/rotateKey.js') at.rotateKey = { create: function () { return { destroy: function () {} }; } };
+      // The node's branches by their api.js paths (goal/G49.6: never by a name): the relay and the node stand above.
+      if (p === 'spirit/relay/api.js') return Promise.resolve(S.relay);
+      if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
       return Promise.resolve({});
     };
-    vm.runInContext(fs.readFileSync(path.join(EL, 'nodeInfo.js'), 'utf8'), win, { filename: 'nodeInfo.js' });
+    pageRequire(SUBJECT);
     const host = node('<div>');
     const made = at.nodeInfo && typeof at.nodeInfo.create === 'function' ? at.nodeInfo.create(host, {}) : null;
     await settle();
@@ -602,7 +621,8 @@ function partsPart() {
     return (nodeInfo.length > 0) ? true : false;
   }, test.limit.quick);
   test.run('nodeInfo asks relay.status, the relays this node holds a seat on', 0.2, function () {
-    return (/\brelay\W{1,4}status\b/.test(nodeInfo)) ? true : false;
+    // The relay branch by its api.js path (goal/G49.6), its status asked of what that answered.
+    return (/'spirit\/relay\/api\.js'\)[\s\S]{0,80}\.status\(/.test(nodeInfo)) ? true : false;
   }, test.limit.quick);
   test.run('nodeInfo puts the card from node.card into the node cache', 0.2, function () {
     return (/\bnode\W{1,4}card\b/.test(nodeInfo)) ? true : false;
