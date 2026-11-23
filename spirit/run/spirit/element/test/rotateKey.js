@@ -15,7 +15,9 @@ const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'rotateKey.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/rotateKey.js';
+const FILE = path.join(RUN, SUBJECT);
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
@@ -112,10 +114,10 @@ function world(answer) {
   // goal/G43.32: every element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit), at once, held or not.
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/element/armingButton.js'] });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT, 'spirit/element/armingButton.js'] });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
-  if (SRC) vm.runInContext(SRC, win, { filename: FILE });
+  if (SRC) pageRequire(SUBJECT);
   w.win = win;
   w.button = function (host) { return host.querySelector('[data-rotate]'); };
   return w;

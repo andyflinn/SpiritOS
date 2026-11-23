@@ -22,7 +22,9 @@ const RUN = path.resolve(__dirname, '../../../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'grantsPanel.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/search/grant/grantsPanel.js';
+const FILE = path.join(RUN, SUBJECT);
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -204,7 +206,7 @@ function world() {
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
-  const REAL = ['spirit/client/apiTreeIndex.js', 'spirit/data.js'];
+  const REAL = [SUBJECT, 'spirit/client/apiTreeIndex.js', 'spirit/data.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
@@ -212,7 +214,7 @@ function world() {
   win.spirit.requireScript('spirit/client/apiTreeIndex.js');
   win.spirit.requireScript('spirit/data.js');
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
-  if (SRC) vm.runInContext(SRC, win, { filename: FILE });
+  if (SRC) pageRequire(SUBJECT);
   w.win = win; w.page = page;
   return w;
 }

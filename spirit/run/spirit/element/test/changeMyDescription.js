@@ -12,7 +12,9 @@ const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'changeMyDescription.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/changeMyDescription.js';
+const FILE = path.join(RUN, SUBJECT);
 
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 20; i++) await tick(); };
@@ -76,7 +78,7 @@ function world(answer) {
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
-  const REAL = ['spirit/node/data.js', 'spirit/type/string/description.js', 'spirit/data.js'];
+  const REAL = [SUBJECT, 'spirit/node/data.js', 'spirit/type/string/description.js', 'spirit/data.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
@@ -87,7 +89,7 @@ function world(answer) {
   win.spirit.requireScript('spirit/data.js');
   win.spirit.nodeFacts = { key: 'KEY+DESCRIPTION/NODE==' };
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
-  if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  if (fs.existsSync(FILE)) pageRequire(SUBJECT);
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24): no api is handed. The page's spirit object stands in: its escapeHtml, its
   // outcome as spirit.js has it, and the node family's setDescription, which records every call and answers as the node would
   // (its body, or a refusal thrown with its status and body).

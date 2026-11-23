@@ -15,7 +15,9 @@ const RUN = path.resolve(__dirname, '../../../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const FILE = path.join(__dirname, '..', 'detail.js');
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/element/search/contact/detail.js';
+const FILE = path.join(RUN, SUBJECT);
 const SRC = fs.readFileSync(FILE, 'utf8');
 
 const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
@@ -205,14 +207,14 @@ function personWorld(person, relayRows) {
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row.js, openDetails).
   w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.required.spirit.element.search.contact.detail.create(box, { key: key, layer: layer }); };
   vm.createContext(win);
-  vm.runInContext(SRC, win, { filename: FILE });
+  pageRequire(SUBJECT);
   w.win = win;
   return w;
 }
@@ -302,14 +304,14 @@ function relayWorld(rows, relayStatus) {
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row.js, openDetails).
   w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.required.spirit.element.search.contact.detail.create(box, { key: key, layer: layer, relay: true }); };
   vm.createContext(win);
-  vm.runInContext(SRC, win, { filename: FILE });
+  pageRequire(SUBJECT);
   w.win = win;
   return w;
 }
