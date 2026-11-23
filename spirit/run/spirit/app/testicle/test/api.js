@@ -24,7 +24,7 @@ const passes = function (verb, args) { return !!W.verbs[verb] && spirit.checkArg
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.checkArgs('testicle.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 // suite.success since box v129-131 (Andy: "the reporter reporting fucking success/failure of the suite through a new verb
 // testicle.suite.success").
-const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'testicle.title', 'suite.success', 'testicle.search', 'red', 'run', 'subscribe', 'unsubscribe'];
+const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'testicle.title', 'suite.success', 'testicle.search', 'red', 'run', 'hold', 'subscribe', 'unsubscribe'];
 // No analyze among them (goal/G49.6, box v15; Andy: "analyze, the verb goes, and analyze becomes a tool script at
 // spirit/app/testicle/job/analyze/script.js"): the list above is the whole interface, judged by its names below.
 const SET = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title', verified: true, severity: 0.2 };
@@ -122,6 +122,15 @@ test.run('testicle.set takes testHash, the hash of the test\'s own block, beside
   if (!W.api) return false;
   const v = W.verbs['testicle.set'] || {};
   return (Object.prototype.hasOwnProperty.call(v, 'testHash') && passes('testicle.set', Object.assign({}, SET, { testHash: 'a1b2c3' }))) || false;
+}, test.limit.quick);
+// goal/G49.7, box v6 (Andy: "green from me. verb approved. GO!"): "one new verb, testicle.hold {script, suite, test, holder?}";
+// "script, suite and test, the testicle key as every testicle verb takes it ..., all three mandatory; and holder, optional".
+test.run('hold takes script, suite and test, all three required, and holder, optional', 0.4, function () {
+  if (!W.api) return false;
+  const KEY = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title' };
+  const missing = ['script', 'suite', 'test'].filter(function (k) { const a = Object.assign({}, KEY); delete a[k]; return refusedAs('hold', a) !== 'bad-request'; });
+  return (passes('hold', KEY) && passes('hold', Object.assign({}, KEY, { holder: 'MCowBQYDK2VwAyEA' })) && missing.length === 0
+    && refusedAs('hold', Object.assign({}, KEY, { other: 'x' })) === 'no-such-argument') || false;
 }, test.limit.quick);
 test.run('testicle.set takes one test only and refuses a list of results', 0.2, function () {
   if (!W.api) return false;

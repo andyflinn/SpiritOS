@@ -3139,3 +3139,33 @@ test.run('testicle.db\'s testicle table has a testHash column', 0.4, function ()
   try { db = new DatabaseSync(DB, { readOnly: true }); return db.prepare('PRAGMA table_info(testicle)').all().some(function (c) { return c.name === 'testHash'; }); }
   catch (e) { return false; } finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
 }, test.limit.quick);
+
+// ── testicle.hold: a red held by the one fixing it (goal/G49.7, box v6; Andy: "green from me. verb approved. GO!") ──
+// On the scratch node: zzRedSuite's test is red from the start, zzCalm's green. The box: "script, suite or test missing: an
+// error"; "no current red row for that key: an error"; "without holder, it asks: not held ...: it returns \"\""; "with holder,
+// it holds; holder must be the asker's own ID, else an error".
+const HOLD_RED = { script: REDS_, suite: REDSS, test: 'zzRedSuite fails' };
+// A refusal of the verb itself, never one for its not being there: no vacuous green before the verb exists.
+const refusedByHold = function (r) { return r.status >= 400 && !(r.body && /no-such-verb|no-interface/.test(String(r.body.code || ''))) && !/no verb/.test(r.text); };
+const heldAnswer = function (r) { return r.body === '' || (!!r.body && typeof r.body === 'object' && r.body.holder === '') || r.text === '""'; };
+test.run('testicle.hold without a test is refused', 0.4, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.hold', { script: REDS_, suite: REDSS });
+  return refusedByHold(r);
+}, test.limit.quick);
+test.run('testicle.hold of a green test is refused: no current red row for that key', 0.4, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.hold', { script: TCALM, suite: TCALMS, test: 'zzCalm answers' });
+  return refusedByHold(r);
+}, test.limit.quick);
+test.run('testicle.hold of a red nobody holds, asked without holder, answers ""', 0.6, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.hold', HOLD_RED);
+  return r.status === 200 && heldAnswer(r);
+}, test.limit.quick);
+test.run('testicle.hold with a holder that is not the asker is refused, and the red stays unheld', 0.6, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.hold', Object.assign({ holder: 'MCowBQYDK2VwAyEAnotTheAsker' }, HOLD_RED));
+  const after = await call(N.base, 'testicle.hold', HOLD_RED);
+  return refusedByHold(r) && after.status === 200 && heldAnswer(after);
+}, test.limit.quick);
