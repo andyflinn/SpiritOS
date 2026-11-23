@@ -50,7 +50,8 @@ function world() {
         w.required.push(String(p));
         const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
-        if (companion && fs.existsSync(path.join(RUN, companion))) vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion });
+        // By its path, through the page stand-in, which runs it in this window once (goal/G49.6).
+        if (companion && fs.existsSync(path.join(RUN, companion))) win.spirit.requireScript(companion);
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node(t); } },
@@ -60,7 +61,7 @@ function world() {
   };
   win.window = win;
   // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data.js', 'spirit/client/apiTreeIndex.js'] });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return p === 'spirit/data.js' || p === 'spirit/client/apiTreeIndex.js' || /^spirit\/.+\/data\.js$/.test(p); } });
   vm.createContext(win);
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   win.spirit.requireScript('spirit/data.js');

@@ -168,7 +168,8 @@ function world() {
   const companionOf = function (p) {
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
     const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
-    if (companion && !w.ran[companion] && fs.existsSync(path.join(RUN, companion))) { w.ran[companion] = true; vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion }); }
+    // By its path, through the page stand-in, which runs it in this window (goal/G49.6).
+    if (companion && !w.ran[companion] && fs.existsSync(path.join(RUN, companion))) { w.ran[companion] = true; pageRequire(companion); }
   };
   const appApi = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
@@ -207,7 +208,7 @@ function world() {
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
   const REAL = [SUBJECT, 'spirit/client/apiTreeIndex.js', 'spirit/data.js'];
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/.+\/data\.js$/.test(p); } });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   vm.createContext(win);

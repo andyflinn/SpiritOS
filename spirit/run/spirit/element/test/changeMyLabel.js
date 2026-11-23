@@ -69,7 +69,8 @@ function world(answer) {
         w.required.push(String(p));
         const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(String(p)) || [])[1];
         const f = b ? path.join(RUN, b, 'data.js') : '';
-        if (f && fs.existsSync(f)) vm.runInContext(fs.readFileSync(f, 'utf8'), win, { filename: f });
+        // By its path, through the page stand-in, which runs it in this window (goal/G49.6).
+        if (f && fs.existsSync(f)) pageRequire(b + '/data.js');
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node('<' + t + '>'); }, createTextNode: function (t) { const x = node('#text'); x.textContent = String(t); return x; } },
@@ -82,7 +83,7 @@ function world(answer) {
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
   const REAL = [SUBJECT, 'spirit/type/string/label.js', 'spirit/data.js'];
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/(?:app\/)?[^/]+\/data\.js$/.test(p); } });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   win.spirit.required.spirit.element.fieldInput = { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } };
