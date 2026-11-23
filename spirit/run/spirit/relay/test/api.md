@@ -1,11 +1,11 @@
 # spirit/relay/api.js — its own test
 
 The relay family: the relays this node is a member of, and his relays as a screen wants them (`names`, puppets/G2). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The file is run as spirit.js runs the text `api {family}` answers (`loadInterface`: its text with
-`module` and `exports` alone), every call checked by spirit.js's own check (`spirit.check`, its rules `spirit.rules`).
+`module` and `exports` alone), every call checked by spirit.js's own check (`spirit.checkArgs`, its rules `spirit.ruleNames`).
 `server.js` is read as text only, for the table `loopbackVerbs.mount('relay', ...)` mounts.
 
 - It runs with nothing but `module` and `exports` beside a page's window (planted while it runs).
-- As it loads on a page it requires its companion `spirit/relay/data.js` through `window.spirit.require`, and nothing
+- As it loads on a page it requires its companion `spirit/relay/data.js` through `window.spirit.requireScript`, and nothing
   else (goal/G47.1, Andy: *"every api.js requires it's companion data.js, and is the only script to require that
   data.js"*).
 - It exports its table of verbs and its `names` and nothing else: it names

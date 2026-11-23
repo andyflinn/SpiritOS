@@ -71,7 +71,7 @@ Every member function checks its arguments and then calls one of the two.
 
 A caller that holds a verb's name in a variable writes `spirit[family][verb](args)`. There is no `spirit.call`.
 
-## The one loader: `spirit.require(path, key, how)`
+## The one loader: `spirit.requireScript(path, key, how)`
 
 The one function that loads every other component: on a page it answers once the file has been fetched and run, on the
 node at once (below).
@@ -86,7 +86,7 @@ node at once (below).
 | an interface: `spirit/app/<name>/api.js` or `spirit/<name>/api.js` (`spirit.branchPath(name)`) | binds `spirit.<name>` from its node and answers it, asked once by any number of callers at once; `no-interface` for a family the node lacks, `no-node` with no port | the same |
 | an interface with `key` | the peer's family, through `spirit.peerPost` with `how`; held under the key, not on the instance | the peer's family, through the home node's `peer.post` |
 
-**`spirit.required.<path>`** (goal/G43.32; Andy: *"spirit.require() both on the node, AND on the browser should simply
+**`spirit.required.<path>`** (goal/G43.32; Andy: *"spirit.requireScript() both on the node, AND on the browser should simply
 install every script required, at the following point: spirit.required.<path.of.fucking.script>. - no name collisions -
 easily checkable if script is already loaded."*): every script required stands at `spirit.required`, its run-root path
 one key per folder and its name without `.js` the last (`spirit/relayUrl.js` at `spirit.required.spirit.relayUrl`), on
@@ -95,11 +95,11 @@ the node and on a page. A script never required has no place there. A file and t
 first level ahead.
 
 **A peer's branch is made from the caller's own copy** (goal/G43.32; Andy: *"clients don't run code from afar, they
-run their own FUCKING copy"*, *"DO IT! WITH CODE FROM THE OWN NODE!"*): `spirit.require(<branch>/api.js, key)` makes the
+run their own FUCKING copy"*, *"DO IT! WITH CODE FROM THE OWN NODE!"*): `spirit.requireScript(<branch>/api.js, key)` makes the
 peer's `spirit.<branch>.<verb>` functions from the caller's own `api.js` of that branch, on its own disc; the peer is
 asked only to answer each call, never for its `api.js`, and nothing a peer hands back is run.
 
-**On the node it answers at once** (Andy: *"box that spirit.require() on the node is just a path-translating
+**On the node it answers at once** (Andy: *"box that spirit.requireScript() on the node is just a path-translating
 wrapper."*): a script's `module.exports`, not a promise, the same answer every time it is asked. An interface is still
 bound by asking a node, so it stays a promise.
 
@@ -121,7 +121,7 @@ Asks another node and waits for its answer.
   `{ ok: false, code: 'no-answer' }` after `waitMs` of silence. It resolves, never rejects.
 - In node: one post of `peer.post`, and the answer read off the node's events (`event.subscribe`, a stream through
   `post`), as a server, so it is handed no backlog and marks nothing taken; on a page, the home node's `peer.post`.
-- In a process, `spirit.event.subscribe` opens the stream as a server too (goal/G43.3), so it takes none of the waiting
+- In a process, `spirit.eventStream.subscribe` opens the stream as a server too (goal/G43.3), so it takes none of the waiting
   lines of its node's owner.
 
 ### `check(name, spec, args)`
@@ -227,7 +227,7 @@ then and none on the next. A check that finds nothing to judge is red.
 **No file it does not need yet** (goal/G43.27; Andy: *"all, spirit.js still seems to be loading all sorts of shit that it
 doesn't need yet."*, *"wsl, I SAID, make sure that spirit.js does NOT load all that shit!!!!!!!!!"*). Every file the page
 fetches as it loads, with what asked for it: no file is fetched twice; every script but `spirit.js` and the shell's
-`boot.js` is loaded by `spirit.require` when something requires it, none from a list fetched up front; and the home
+`boot.js` is loaded by `spirit.requireScript` when something requires it, none from a list fetched up front; and the home
 page opens no app's detail, so none of the detail's files (`appSelector/detail.js`, `appInstaller.js`,
 `serverDEBUG.js`, `changeAppIcon.js`, `changeAppLabel.js`, `rowFormSetShell.js`) is fetched.
 
@@ -240,7 +240,7 @@ is opened: it asks `desk.items.search` itself and draws its list, never *"the de
 
 spirit.js hands out no `spirit.core`: what a server needs is spirit.js's own.
 
-- **`spirit.node`**: `{ port, name, key, ownerKey }`. The port is the one read from `environment.json`; the name, key and
+- **`spirit.nodeFacts`**: `{ port, name, key, ownerKey }`. The port is the one read from `environment.json`; the name, key and
   owner key are what the node hands every server it starts as `--node`, all public, `''` when not given.
 - **This process's own job**, published to the node by `events.publish` with its own id (`SPIRIT_JOB_ID`), one post each,
   the one path; the node changes the job and every subscriber hears it:
@@ -254,7 +254,7 @@ spirit.js hands out no `spirit.core`: what a server needs is spirit.js's own.
 | `spirit.jobs.report(patch)`, `log(text)`, `complete(data)`, `fail(error)` | | the job's own state and its three common forms; `no-job` outside a job |
 
   start, progress and end resolve once the node has them, so awaited calls arrive in order. When the jobs family is
-  bound (`spirit.require('spirit/jobs/api.js')`), its verbs are added to the same `spirit.jobs`.
+  bound (`spirit.requireScript('spirit/jobs/api.js')`), its verbs are added to the same `spirit.jobs`.
 - **How a face gets it** (goal/G41.19; Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!"): `face.html` loads it by one tag,
   `<script src="/spirit.js"></script>`, and no other script. The node and the relay serve `face.html` byte for byte as
   it is on disk; no server pastes spirit.js into a page.
@@ -274,17 +274,17 @@ spirit.js hands out no `spirit.core`: what a server needs is spirit.js's own.
 ## The face page
 
 `face.html` holds spirit.js alone, and spirit.js loads the face shell (goal/G43.18, box v29). The face's link to its
-home node (the login, `spirit.login`; the sealed calls through `shell/seal.js`; the stream; the files) is built in
-spirit.js itself and set as `spirit.link` and `window.spirit.transport`; `spirit.face` says where the page stands,
-`{ home, loggedIn, name }`, and `spirit.booted` answers once `boot.js` runs. The red asserts that every call goes
+home node (the login, `spirit.faceLogin`; the sealed calls through `shell/seal.js`; the stream; the files) is built in
+spirit.js itself and set as `spirit.faceLink` and `window.spirit.transport`; `spirit.faceState` says where the page stands,
+`{ home, loggedIn, name }`, and `spirit.faceBooted` answers once `boot.js` runs. The red asserts that every call goes
 through a `window.spirit.transport` once set, and that on the home node's own page spirit.js gets `shell/boot.js`
-alone and `spirit.booted` answers (sections 6 and 6b); a login and the sealed link themselves are not run.
+alone and `spirit.faceBooted` answers (sections 6 and 6b); a login and the sealed link themselves are not run.
 
 ## spirit.js asks FS.path nowhere
 
 goal/G43.27, requirement 6. Its test is a section of `./spirit.js`: spirit.js read as it is, comments stripped.
 
-A branch file is loaded by its path with `spirit.require`, `data.js` exactly as `api.js` (goal/G47.1, box v182): spirit.js
+A branch file is loaded by its path with `spirit.requireScript`, `data.js` exactly as `api.js` (goal/G47.1, box v182): spirit.js
 holds no finder that looks a branch up by its name, and every caller names the file's full path.
 
 ### Requirements
@@ -295,15 +295,15 @@ holds no finder that looks a branch up by its name, and every caller names the f
 
 goal/G43.18, box v29, *The relay login*. Its test is a section of `./spirit.js`: a real scratch node and relay, a face on a starred relay (box v29: a face only on one), its real login, and a real Chrome on the face at `<name>.localhost`.
 
-Andy's box: *"The relay serves a logged-out face one plain page, the one-field form, with spirit.js and seal.js only, which make the sealed link home. boot.js, shell.css, face.css and every other part of the shell come from the home node over that link."* and *"The login is spirit.login, in spirit.js, no app. It holds the relay's own calls, state, login and logout on /face/api, and draws the one field when logged out. shell/login/ and its login.json go."*
+Andy's box: *"The relay serves a logged-out face one plain page, the one-field form, with spirit.js and seal.js only, which make the sealed link home. boot.js, shell.css, face.css and every other part of the shell come from the home node over that link."* and *"The login is spirit.faceLogin, in spirit.js, no app. It holds the relay's own calls, state, login and logout on /face/api, and draws the one field when logged out. shell/login/ and its login.json go."*
 
 ### Requirements
 
 - `shell/login/` is gone.
 - The relay serves the face its page, `/spirit.js` and `/shell/seal.js`. Logged out or in, it does not itself serve `/shell/boot.js`, `/shell.css`, `/shell/face.css`, `/shell/login/login.js` or `/shell/login/login.json`.
-- On the face, `spirit.login` holds `state`, `login` and `logout`. Logged out, the page shows one field and loads nothing but `spirit.js` and `seal.js` (its favicon and `/face/api` aside).
+- On the face, `spirit.faceLogin` holds `state`, `login` and `logout`. Logged out, the page shows one field and loads nothing but `spirit.js` and `seal.js` (its favicon and `/face/api` aside).
 - Logged in, the face draws the home node's shell (Contacts on its list), and none of `boot.js`, `shell.css` or `face.css` came as the relay's own file.
-- After `spirit.login.logout()`, the page shows the one field again, and the relay holds the login no more.
+- After `spirit.faceLogin.logout()`, the page shows the one field again, and the relay holds the login no more.
 
 ## A family's api.js, and no name twice
 

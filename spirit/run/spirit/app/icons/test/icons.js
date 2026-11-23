@@ -71,10 +71,10 @@ test.run('icons.json keeps node mount false and shell mount true', 0.2, function
   const own = json(path.join(APP, 'icons.json')) || {};
   return !(own.node && own.node.mount === true) && !!(own.shell && own.shell.mount === true) ? true : false;
 }, test.limit.quick);
-// goal/G43.32: by spirit.require and its run-root path, as every script loads the tree.
-test.run('icons.js, run in node, loads spirit/app/icons/server/server.js through spirit.require', 0.2, function () {
+// goal/G43.32: by spirit.requireScript and its run-root path, as every script loads the tree.
+test.run('icons.js, run in node, loads spirit/app/icons/server/server.js through spirit.requireScript', 0.2, function () {
   const main = code(read(path.join(APP, 'icons.js')) || '');
-  return (/\.require\(\s*['"]spirit\/app\/icons\/nodeIcons\.js['"]\s*\)/).test(main) || false;
+  return (/\.require(?:Script)?\(\s*['"]spirit\/app\/icons\/nodeIcons\.js['"]\s*\)/).test(main) || false;
 }, test.limit.quick);
 const pageCode = function (f) { return code(read(path.join(APP, f)) || ''); };
 const writes = /\bfs\s*\.\s*(saveFile|save|deleteFile|delete)\b|\.saveFile\s*\(/;
@@ -168,7 +168,7 @@ test.run('spirit.app.icons is an open job', 0.2, async function () {
 
 // the face, by its tile (the box: "its tile opens no face"), and Andy's add row: "[➕] [an icon:paste] [keywords, comma separated][Add]"
 const open = async function (page) {
-  const made = await page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.required.spirit.element.script.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return false; })');
+  const made = await page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/script.js"); }).then(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.required.spirit.element.script.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return false; })');
   if (made !== 'made') return false;
   const tile = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf("Icons") !== -1; })[0]';
   if (!await until(function () { return page.evaluate('!!' + tile); }, 10000)) return false;
@@ -184,7 +184,7 @@ const add = function (page, glyph, words) { return page.evaluate('(function () {
 test.run('the Icons tile is there and is pressed', 0.2, async function () {
   if (!W.ready) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
-  await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+  await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   const opened = await open(W.chrome);
   W.opened = opened === true;
   return W.opened || false;
@@ -223,7 +223,7 @@ test.run('after five Adds at once, all five are in the set, none lost to another
   const watching = watchRuns(W.node.root, 'icons', { base: W.node.base });
   // Five calls from the page at once, through spirit: Add itself is busy until its answer (goal/G47.1, Q20), so five presses
   // in a row would be one; the box's "calls" are what must wait their turn.
-  await W.chrome.evaluate('window.spirit.ready.then(function (s) { ' + JSON.stringify(five) + '.forEach(function (x, i) { s.icons.icon({ op: "add", glyph: x, keywords: JSON.stringify(["five" + i]) }); }); return true; })');
+  await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { ' + JSON.stringify(five) + '.forEach(function (x, i) { s.icons.icon({ op: "add", glyph: x, keywords: JSON.stringify(["five" + i]) }); }); return true; })');
   const allFive = await until(function () { const s = json(W.SET) || {}; return Promise.resolve(five.every(function (x) { return x in s; })); }, 12000);
   await sleep(1000);
   W.watched = await watching.stop();
@@ -245,7 +245,7 @@ test.run('two runs of icons.js never happen at once', 0.2, function () {
 }, test.limit.quick);
 test.run('a page writing spirit/state/icons/data/iconSet.json itself is refused, and the set stands', 0.8, async function () {
   if (!W.drew) return false;
-  await W.chrome.evaluate('window.spirit.ready.then(function (s) { return s.fs.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
+  await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { return s.fs.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
   await sleep(800);
   return W.G1 in (json(W.SET) || {}) ? true : false;
 }, test.limit.slow);

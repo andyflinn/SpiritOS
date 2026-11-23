@@ -10,7 +10,7 @@ Its test is `./job.js`: a real Chrome on a scratch node's page, the node's own s
 
 - job.js is there, and spirit/element/monitor/spirit.js is gone.
 - It requires each of the six job tiles, and reads no stats itself.
-- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.job`, with a `create`; the six tiles stand beside it, at `spirit.required.spirit.element.monitor.job.<name>`.
+- It loads through `spirit.requireScript` and places itself at `spirit.required.spirit.element.monitor.job`, with a `create`; the six tiles stand beside it, at `spirit.required.spirit.element.monitor.job.<name>`.
 - Mounted, it lays out the six tiles in one grid (`.stats-grid`), in order: Memory, CPU, Uptime, Event loop delay, Connections, Jobs running.
 - Once the stream's reading is in, each tile holds its icon and a value.
 - Destroyed, it leaves its container empty, and a later change of the spirit job draws nothing.

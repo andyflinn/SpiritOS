@@ -26,7 +26,7 @@
 //     options.placeholder, options.all, options.empty, options.className   handed to the list or its root
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   function createContactSelector(options) {
     var o = options || {};
@@ -49,7 +49,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the one contact list, and what that list draws with, before it draws it.
     Promise.all(['spirit/element/search/contact/list.js', 'spirit/element/search.js', 'spirit/element/row.js',
-      'spirit/element/search/contact/row.js'].map(function (p) { return window.spirit.require(p); }).concat([window.spirit.require('spirit/contact/api.js')])).then(function () {
+      'spirit/element/search/contact/row.js'].map(function (p) { return window.spirit.requireScript(p); }).concat([window.spirit.requireScript('spirit/contact/api.js')])).then(function () {
       if (gone) return;
       made = window.spirit.required.spirit.element.search.contact.list.create(root, {
         face: isPane ? 'pane' : 'dropdown',
@@ -84,5 +84,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact.js', { create: function (container, options) { var root = createContactSelector(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact.js', { create: function (container, options) { var root = createContactSelector(options); container.appendChild(root); return root; } }); });
 })();

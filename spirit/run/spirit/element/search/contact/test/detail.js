@@ -181,8 +181,8 @@ function personWorld(person, relayRows) {
     formatBytes: function (n) { return String(n) + ' B'; },
     // The shell's fact rows, drawn as the shell draws them: each name with its value, so what the detail shows can be read.
     shell: { factRow: function (rows) { return '<div class="facts">' + (rows || []).map(function (r) { return '<div>' + String(r[0]) + ' ' + String(r[1]) + '</div>'; }).join('') + '</div>'; } },
-    require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
-    ready: Promise.resolve(families),
+    requireScript: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
+    readyPromise: Promise.resolve(families),
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
     // goal/G43.32: the armingButton stands where an element now finds it, spirit.required.spirit.element.
     required: { spirit: { element: {
@@ -194,10 +194,10 @@ function personWorld(person, relayRows) {
   };
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
-  const recorder = win.spirit.require;
+  const recorder = win.spirit.requireScript;
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
-  const pageRequire = win.spirit.require;
-  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  const pageRequire = win.spirit.requireScript;
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row.js, openDetails).
   w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.required.spirit.element.search.contact.detail.create(box, { key: key, layer: layer }); };
@@ -226,7 +226,7 @@ function relayWorld(rows, relayStatus) {
   };
   const families = new Proxy({}, { get: function (t, fam) {
     if (fam === 'then') return undefined;
-    // relay.status, reached through spirit.ready as the page reaches every family (goal/G43.27, Q1: no api at load).
+    // relay.status, reached through spirit.readyPromise as the page reaches every family (goal/G43.27, Q1: no api at load).
     // Its other verbs recorded, as every family's are below.
     if (fam === 'relay') return new Proxy({}, { get: function (t2, verb) {
       if (verb === 'status') return function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); };
@@ -256,18 +256,18 @@ function relayWorld(rows, relayStatus) {
     formatBytes: function (n) { return String(n) + ' B'; },
     shell: { factRow: function () { return '<div class="facts"></div>'; } },
     // The stream, for its report on the relay event (goal/G41.32).
-    event: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
+    eventStream: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
     // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
     // The contact family's cache (goal/G41.28): the contact api.js brings its data.js, as the real one does (goal/G47.1:
     // "every api.js requires it's companion data.js"); here that data stands in as spirit.required.spirit.data.contact.data, whose rows
     // the page watches. A data.js asked for directly is only recorded.
-    require: function (p) {
+    requireScript: function (p) {
       const at = String(p).replace(/^\/+/, '');
       w.required.push(at);
       if (at === 'spirit/contact/api.js') ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } };
       return Promise.resolve({});
     },
-    ready: Promise.resolve(families),
+    readyPromise: Promise.resolve(families),
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
     // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
     peerPost: function (peer, app, body, how) {
@@ -291,10 +291,10 @@ function relayWorld(rows, relayStatus) {
   };
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
-  const recorder = win.spirit.require;
+  const recorder = win.spirit.requireScript;
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
-  const pageRequire = win.spirit.require;
-  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  const pageRequire = win.spirit.requireScript;
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row.js, openDetails).
   w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.required.spirit.element.search.contact.detail.create(box, { key: key, layer: layer, relay: true }); };
@@ -1020,9 +1020,9 @@ test.run('In Chrome the contact detail is mounted for the relay\'s key, told it 
   // The shell Andy uses, at home as on a relay: boot.js. The older page at / loads every element up front and would hide a
   // panel that forgets to load its own.
   await chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
-  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
+  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);
-  const mounted = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detail.js")).then(function () { var E = window.spirit.required.spirit.element.search.contact.detail; if (!E || typeof E.create !== "function") return false; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function () { return false; })');
+  const mounted = await chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/search/contact/detail.js")).then(function () { var E = window.spirit.required.spirit.element.search.contact.detail; if (!E || typeof E.create !== "function") return false; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function () { return false; })');
   if (mounted !== 'ok') return false;
   S.chrome = chrome;
   return true;
@@ -1175,18 +1175,18 @@ test.run('a later change neither throws nor paints', 0.2, async function () {
 test.run('The face form has a function saying whether it has relays to offer', 0.2, async function () {
   if (!S.chrome) return false;
   await S.chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
-  await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
+  await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);
-  S.check = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/faceForm.js")).then(function () { var F = window.spirit.required.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
-  return !!S.check || false;
+  S.checkArgs = await S.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/faceForm.js")).then(function () { var F = window.spirit.required.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
+  return !!S.checkArgs || false;
 }, test.limit.slow);
 test.run('The face form offers a faceable relay, alone or beside one without 😏', 0.2, function () {
-  if (!S.check) return false;
-  return (S.check.starred === true && S.check.one === true) || false;
+  if (!S.checkArgs) return false;
+  return (S.checkArgs.starred === true && S.checkArgs.one === true) || false;
 }, test.limit.quick);
 test.run('The face form offers nothing for a relay without 😏, a member\'s or an owner\'s, for one with no seat held, or for no relays', 0.2, function () {
-  if (!S.check) return false;
-  return (S.check.member === false && S.check.owner === false && S.check.stranger === false && S.check.none === false) || false;
+  if (!S.checkArgs) return false;
+  return (S.checkArgs.member === false && S.checkArgs.owner === false && S.checkArgs.stranger === false && S.checkArgs.none === false) || false;
 }, test.limit.quick);
 
 // Info: the form offers the starred relays, and follows the star with no reload
@@ -1270,7 +1270,7 @@ test.run('taking away a 😏 it does not have changes nothing', 0.2, async funct
 test.run('the panel draws for it', 0.2, async function () {
   if (!S.chrome) return false;
   if (!S.Far) return false;
-  const farPanel = await S.chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/detail.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.required.spirit.element.search.contact.detail.create(h, { key: ' + JSON.stringify(S.Far.relayKey) + ', relay: true }); return "ok"; })');
+  const farPanel = await S.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/search/contact/detail.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.required.spirit.element.search.contact.detail.create(h, { key: ' + JSON.stringify(S.Far.relayKey) + ', relay: true }); return "ok"; })');
   await until(function () { return S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0'); }, 8000);
   S.farStar = await S.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzFar .nd-fold")).filter(function (h) { return h.textContent.indexOf("Give this relay full face capability") !== -1; }).length');
   return (farPanel === 'ok' && await S.chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0')) || false;
@@ -1347,7 +1347,7 @@ test.run('a relay\'s label is bold and italic, under 📡 Relays', 0.2, async fu
   await home(S.N.base, 'contact.unblock', { publicKey: S.person });
   await home(S.N.base, 'contact.accept', { publicKey: S.person });
   await S.chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
-  await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
+  await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);
   await S.chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Contacts"; })[0]; if (e) e.click(); }())');
   // The app opens on People, which shows no relay (goal/G47.4, box v29): the relay is under 📡 Relays.

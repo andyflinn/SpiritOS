@@ -29,11 +29,11 @@ test.run('a scratch node comes up, with a Chrome on its face page', 0.2, async f
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
+  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and is spirit.required.spirit.element.search.app.changeAppLabel', 0.2, async function () {
+test.run('it loads through spirit.requireScript and is spirit.required.spirit.element.search.app.changeAppLabel', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/changeAppLabel.js"); }).then(function () { return !!(spirit.required.spirit.element.search.app.changeAppLabel && spirit.required.spirit.element.search.app.changeAppLabel.create); }, function () { return false; })');
+  loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/changeAppLabel.js"); }).then(function () { return !!(spirit.required.spirit.element.search.app.changeAppLabel && spirit.required.spirit.element.search.app.changeAppLabel.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 test.run('create, given a host and an app\'s key, answers an object with destroy', 0.2, async function () {

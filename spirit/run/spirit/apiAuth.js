@@ -19,11 +19,11 @@ require('./spirit.js');
 
 const fs = require('fs');
 const path = require('path');
-const nodeStore = spirit.require('spirit/nodeStore.js');
-const contacts = spirit.require('spirit/contact/script.js');
-const limits = spirit.require('spirit/limits.js');
-const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
-const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
+const nodeStore = spirit.requireScript('spirit/nodeStore.js');
+const contacts = spirit.requireScript('spirit/contact/script.js');
+const limits = spirit.requireScript('spirit/limits.js');
+const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.requireScript('spirit/listLimiter.js').createProbabilityBucket;
 // What one search answer may hold: the plaintext room, less its own frame.
 const SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 

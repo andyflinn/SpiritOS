@@ -49,10 +49,10 @@ require('./spirit.js');
 // always had. Adding a second question here is a decision about what a
 // node is, and deserves the argument this one got.
 
-const auth = spirit.require('spirit/relayAuth.js');
-const fieldRules = spirit.require('spirit/fieldRules.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
+const fieldRules = spirit.requireScript('spirit/fieldRules.js');
 // The node layer's one reading of what arrived (N1, goal/G16.5).
-const arrivals = spirit.require('spirit/arrivals.js');
+const arrivals = spirit.requireScript('spirit/arrivals.js');
 
 // ── ONE NAME FOR ONE THING (cycle 10, R1) ────────────────────────────
 //

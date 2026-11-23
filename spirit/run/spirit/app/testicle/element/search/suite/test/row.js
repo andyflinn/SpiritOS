@@ -32,8 +32,8 @@ test.run('the row runs on a bare window', 0.2, async function () {
   global.window = { spirit: { escapeHtml: function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }, element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  const own = global.window.spirit.require;
-  global.window.spirit.require = function (p) {
+  const own = global.window.spirit.requireScript;
+  global.window.spirit.requireScript = function (p) {
     required.push(String(p));
     if (p === 'spirit/app/testicle/api.js' && refuseApi) return Promise.reject(new Error('no testicle on this node'));
     return own.apply(this, arguments);

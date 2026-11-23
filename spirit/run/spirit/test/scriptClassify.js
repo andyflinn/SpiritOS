@@ -160,10 +160,10 @@ async function loadOnPage(rel) {
     if (!w.page || w.page.error) { w.page = null; return { err: true, tool: true }; }
   }
   await w.page.send('Page.navigate', { url: w.node.base + '/DEBUG/spirit/test/' + BARE });
-  const ready = await until(function () { return w.page.evaluate('!!(window.spirit && typeof window.spirit.require === "function")').then(Boolean); }, WAIT);
+  const ready = await until(function () { return w.page.evaluate('!!(window.spirit && typeof window.spirit.requireScript === "function")').then(Boolean); }, WAIT);
   if (!ready) return { err: true, tool: true };
-  const ask = w.page.evaluate('Promise.resolve(window.spirit.start()).then(function () { window.pageErrors = [];' +
-    ' return spirit.require(' + JSON.stringify(rel) + '); }).then(function () { return JSON.stringify({ err: (window.pageErrors || []).join("; ") }); },' +
+  const ask = w.page.evaluate('Promise.resolve(window.spirit.startPage()).then(function () { window.pageErrors = [];' +
+    ' return spirit.requireScript(' + JSON.stringify(rel) + '); }).then(function () { return JSON.stringify({ err: (window.pageErrors || []).join("; ") }); },' +
     ' function (e) { return JSON.stringify({ err: String(e && e.message || e) }); })');
   const late = new Promise(function (r) { setTimeout(function () { r(null); }, LOAD_MS); });
   const got = await Promise.race([ask, late]);
@@ -189,7 +189,7 @@ function classOf(node, page) {
 // The node's testicle, as the reporter finds it: the checkout's own node.
 let testicle = null;
 function tell(row) {
-  testicle = testicle || spirit.require(spirit.branchPath('testicle'));
+  testicle = testicle || spirit.requireScript(spirit.branchPath('testicle'));
   return Promise.resolve(testicle).then(function (f) { return f['script.classify'](row); });
 }
 

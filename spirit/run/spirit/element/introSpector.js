@@ -13,7 +13,7 @@
 // One line at the top: [party, self by default] [family] [verb]. Pane 1 is the chosen verb's form with a call button; pane 2
 // the reply, read-only, in CodeMirror. Picking a party asks it for api, and what comes back is all it shows: grants alone
 // decide (Andy: "the user sees what he's allowed to use/call").
-//   - self: the node's api answer (spirit.tree), and a call through the family spirit.require binds;
+//   - self: the node's api answer (spirit.apiTree), and a call through the family spirit.requireScript binds;
 //   - a peer node: api by spirit.peerPost, which that node answers cut to the grants it gave this node;
 //   - a relay: api by spirit.peerPost to its key, which the relay answers for every member, cut to the caller's verbs.
 // No families back: the dropdowns hide and the input pane says so. The party is the contacts list as a dropdown.
@@ -22,7 +22,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically through the fucking
   // apirit.require functionality"): the family selector, the contacts list as its party, and the reply's codeMirror.
   var parts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/contact/list.js', 'spirit/element/codeMirror.js', 'spirit/element/fieldInput.js']
-    .map(function (p) { return S.require(p); }));
+    .map(function (p) { return S.requireScript(p); }));
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -60,7 +60,7 @@
   function bodyOf(got) { return got !== undefined && got !== null ? got : { ok: false, error: 'no answer' }; }
   function refusalOf(e) { return { ok: false, error: String((e && e.message) || e) }; }
   // A family of this node, bound by the one loader (goal/G43.27: bound on first call).
-  function family(name) { return S.require(S.branchPath(name)); }
+  function family(name) { return S.requireScript(S.branchPath(name)); }
   // A relay row's key is its url; its key on the wire is the one its roll names (as Contacts reads it).
   function relayKey(party) {
     if (party.relayKey) return Promise.resolve(party.relayKey);
@@ -80,7 +80,7 @@
   }
   function call(party, fam, verb, args) {
     // Self: the answer's body, a refusal's own body when the node sent one.
-    if (party.kind === 'self') return S.outcome(family(fam).then(function (f) { return f[verb](args); })).then(function (o) {
+    if (party.kind === 'self') return S.callOutcome(family(fam).then(function (f) { return f[verb](args); })).then(function (o) {
       return o.body !== undefined && o.body !== null ? o.body : o;
     });
     var body = {};
@@ -210,5 +210,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/introSpector.js', { create: create, fieldsOf: fieldsOf, argsOf: argsOf }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/introSpector.js', { create: create, fieldsOf: fieldsOf, argsOf: argsOf }); });
 }());

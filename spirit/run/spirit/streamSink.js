@@ -24,7 +24,7 @@ require('./spirit.js');
 // Moved out of relayServer.js so it can be tested against a real socket
 // without booting a relay.
 
-const limits = spirit.require('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits.js');
 
 // `res` is the held response. `onStall(backlog)` is called once, on the
 // next turn after the socket is destroyed, with the backlog that tripped

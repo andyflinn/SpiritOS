@@ -101,8 +101,8 @@ test.run('the app selector\'s tiles are drawn on a page', 0.2, async function ()
   const page = X.page = await H.chromePage(chrome);
   if (!page || page.error) { X.page = page && page.kid ? page : null; return false; }
   await page.send('Page.navigate', { url: X.node.base + '/face.html' });
-  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
-  const tiles = await page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(true); }); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.required.spirit.element.script.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return null; })');
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
+  const tiles = await page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/script.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(true); }); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.fsel = spirit.required.spirit.element.script.create(c, { face: "tiles" }); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return "made"; }, function () { return null; })');
   X.TILE = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf("Chat") !== -1; })[0]';
   return tiles === 'made' ? true : false;
 }, test.limit.slow);

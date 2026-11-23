@@ -6,7 +6,7 @@
 // What a client knows of the owner family (goal/G41.28): nothing yet, no page reading his boxes.
 // It runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data.js), which it writes into, the
 // stream's events handed in as spirit.required.spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
-// it comes with the family's api.js (spirit.require('spirit/owner/api.js')), the one script that requires it. The reads alone are read, never a branch.
+// it comes with the family's api.js (spirit.requireScript('spirit/owner/api.js')), the one script that requires it. The reads alone are read, never a branch.
 
 const fs = require('fs');
 const path = require('path');
@@ -40,12 +40,12 @@ function world() {
     nodes: function () { return Object.keys((F && F.cache) || {}); } };
 }
 
-// The same on a page: spirit.isBrowser() true and the page's node known (spirit.node.key, as node.card answered it), so
+// The same on a page: spirit.isBrowser() true and the page's node known (spirit.nodeFacts.key, as node.card answered it), so
 // a row another node served is filed under the node that served it while the reads stay the page's own node's.
 function pageWorld() {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
-  win.spirit = { isBrowser: function () { return true; }, node: { key: SENDER } };
+  win.spirit = { isBrowser: function () { return true; }, nodeFacts: { key: SENDER } };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
@@ -61,7 +61,7 @@ test.run('in node, the owner data, brought by spirit/owner/api.js, stands at spi
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const S = globalThis.spirit;
   let threw = null;
-  try { await Promise.resolve(S.require('spirit/owner/api.js')); } catch (e) { threw = e; }
+  try { await Promise.resolve(S.requireScript('spirit/owner/api.js')); } catch (e) { threw = e; }
   const X = S.required.spirit.data && S.required.spirit.data['owner'] && S.required.spirit.data['owner'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);

@@ -38,7 +38,7 @@ test.run('fieldInput runs on a window of its own', 0.2, function () {
     document: { createElement: function () { made += 1; return {}; } } };
   win.window = win;
   win.globalThis = win;
-  win.spirit = { required: {}, require: function (p) {
+  win.spirit = { required: {}, requireScript: function (p) {
     required.push(p);
     if (p.indexOf('spirit/type/') === 0 && /\.js$/.test(p)) vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p });
     return Promise.resolve();

@@ -8,9 +8,9 @@
 // Its input holds the row's label in spirit.required.spirit.data.app and follows it while it is not being typed in; Change asks the node,
 // spirit.required.spirit.app.api.labelApp, and the row the stream then brings redraws it.
 (function () {
-  window.spirit.require('spirit/element/rowForm.js');
-  window.spirit.require('spirit/element/fieldInput.js');
-  window.spirit.require('spirit/app/api.js');
+  window.spirit.requireScript('spirit/element/rowForm.js');
+  window.spirit.requireScript('spirit/element/fieldInput.js');
+  window.spirit.requireScript('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -25,7 +25,7 @@
     // comes"): handed as press, so Change is busy until the node answers.
     var input = null;
     var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change', press: function () {
-      return S.ready.then(function (s) { return s.app.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
+      return S.readyPromise.then(function (s) { return s.app.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
     } });
     input = document.createElement('input');
     input.type = 'text';
@@ -38,7 +38,7 @@
       if (r && document.activeElement !== input) input.value = String(r.label || '');
     }
     function ask() {
-      S.ready.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
@@ -49,5 +49,5 @@
     return { destroy: function () { gone = true; offRow(); offAll(); host.innerHTML = ''; } };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/changeAppLabel.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/changeAppLabel.js', { create: create }); });
 }());

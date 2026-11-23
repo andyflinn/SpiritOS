@@ -2,7 +2,7 @@
 
 The backup server's family interface (goal/G32.3), where `spirit.branchPath('backup')` finds it (goal/G41.12). Owed
 since the rule *"every production script has its own test"* (goal/G47.1, box v72). Required as the node reads it; its
-verb is judged by `spirit.check`.
+verb is judged by `spirit.checkArgs`.
 
 - `spirit.branchPath('backup')` is this file.
 - It exports `{ verbs }` and nothing else: it names no family of its own.

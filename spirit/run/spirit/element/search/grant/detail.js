@@ -12,7 +12,7 @@
 //     grants   the grants table, as the list takes it: { key, label, revoke(id, path), watch(fn(id + newline + path, row)) }
 // What a press did is said below the bubble, the mounter's line (rowForm). Unconfigured, it draws a note and throws nothing.
 (function () {
-  var parts = Promise.all(['spirit/element/rowForm.js', 'spirit/element/armingButton.js'].map(function (p) { return window.spirit.require(p); }));
+  var parts = Promise.all(['spirit/element/rowForm.js', 'spirit/element/armingButton.js'].map(function (p) { return window.spirit.requireScript(p); }));
   function create(host, opts) {
     var o = opts || {};
     var g = o.grants;
@@ -66,5 +66,5 @@
     // Destroy leaves its host empty, as every element.
     return { destroy: function () { gone = true; if (typeof off === 'function') off(); host.innerHTML = ''; } };
   }
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/detail.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/detail.js', { create: create }); });
 }());

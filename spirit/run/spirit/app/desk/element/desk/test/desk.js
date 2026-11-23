@@ -46,7 +46,7 @@ function caller(page) {
       .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
   };
 }
-const MOUNT_DESK = "(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()";
+const MOUNT_DESK = "(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()";
 
 // no icon table, no lookup into one
 const readCode = function () { if (W.code === undefined) W.code = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, ''); return W.code; };
@@ -220,7 +220,7 @@ function deskWorld(goal, items) {
   const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,
-    require: function (p) {
+    requireScript: function (p) {
       const rel = String(p).replace(/^\/+/, '');
       required.push(rel);
       const run = Object.prototype.hasOwnProperty.call(REAL, rel) ? REAL[rel] : '';
@@ -231,22 +231,22 @@ function deskWorld(goal, items) {
     required: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
       'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
     // THE PAGE GETS WHAT IT NEEDS ITSELF (goal/G43.27, requirement 23): no api is handed to it. A family's verb is asked
-    // through spirit.ready (every desk.<verb> reaches the recorder), its answer through outcome, and the desk's publishes
+    // through spirit.readyPromise (every desk.<verb> reaches the recorder), its answer through outcome, and the desk's publishes
     // through its family's data.js, the real spirit/app/desk/data.js, which comes with its api.js.
-    ready: Promise.resolve(new Proxy({}, { get: function (t, fam) {
+    readyPromise: Promise.resolve(new Proxy({}, { get: function (t, fam) {
       return new Proxy({}, { get: function (t2, rest) { return function (args) { return api.verb(String(fam) + '.' + String(rest), args); }; } });
     } })),
-    outcome: function (p) { return p; } };
+    callOutcome: function (p) { return p; } };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit): spirit.required, and the helper answered, so each element
   // places itself by installSpiritElement as it runs.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
-  win.spirit.require('spirit/data.js');
+  win.spirit.requireScript('spirit/data.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the key as
-  // spirit.node.key, so a page files its own node's rows under it?" "yes."): as spirit.start does once node.card answers,
-  // the key kept on spirit.node and handed to the data set, so the cache files the page's rows under its node.
-  win.spirit.node = { key: PAGE_NODE_KEY };
+  // spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): as spirit.startPage does once node.card answers,
+  // the key kept on spirit.nodeFacts and handed to the data set, so the cache files the page's rows under its node.
+  win.spirit.nodeFacts = { key: PAGE_NODE_KEY };
   win.spirit.required.spirit.data.homeNode(PAGE_NODE_KEY);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'row.js'), 'utf8'), win, { filename: 'row.js' });
   vm.runInContext(raw, win, { filename: FILE });
@@ -295,7 +295,7 @@ async function twoPress(w, find, armedSays, wantPress) {
 }
 
 // goal/G41.9: it loads armingButton and keeps no arming of its own
-test.run('it requires spirit/element/armingButton.js through spirit.require', 0.2, async function () {
+test.run('it requires spirit/element/armingButton.js through spirit.requireScript', 0.2, async function () {
   const w0 = deskWorld({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], design: false }, []);
   await w0.mount();
   return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || false;
@@ -467,7 +467,7 @@ test.run('a goal and two items are put on the scratch desk', 0.2, async function
   if (!(await bootPage(F2, false))) return false;
   const page = F2.page;
   await page.send('Page.navigate', { url: F2.node.base + '/face.html' });
-  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   const call = caller(page);
   await call('app.active', { key: 'desk', active: true });
   await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
@@ -521,7 +521,7 @@ test.run('a goal and its item, pressed done, are put on the scratch desk', 0.2, 
   if (!(await bootPage(F3, false))) return false;
   const page = F3.page;
   await page.send('Page.navigate', { url: F3.node.base + '/face.html' });
-  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   const call = F3.call = caller(page);
   await call('app.active', { key: 'desk', active: true });
   await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);

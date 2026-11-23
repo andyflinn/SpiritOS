@@ -7,10 +7,10 @@
 // On the node the spirit object first, as every file of the tree takes it (the general rules).
 if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../spirit.js');
 (function (root) {
-  // The node's own limit, read where it is defined, through spirit.require: on the node its module, on a page what
+  // The node's own limit, read where it is defined, through spirit.requireScript: on the node its module, on a page what
   // spirit.required holds once it is in.
   var S0 = root && root.spirit;
-  var L = S0 && typeof S0.require === 'function' ? S0.require('spirit/limits.js') : null;
+  var L = S0 && typeof S0.requireScript === 'function' ? S0.requireScript('spirit/limits.js') : null;
   function limit() {
     var at = (L && typeof L.PAYLOAD_MAX === 'number') ? L : (S0 && S0.required && S0.required.spirit && S0.required.spirit.limits);
     return at && typeof at.PAYLOAD_MAX === 'number' ? at.PAYLOAD_MAX : 22528;

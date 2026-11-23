@@ -18,8 +18,8 @@ boody well know how to configure the damn grantsPanel element"*.
   `watch(fn(id + newline + path, row))`, its cache manager's, answering its release (goal/G41.28);
 
 **What it needs, it gets itself** (goal/G43.24; Andy: *"every fucking element gets the interfaces it needs"*): it asks its
-verbs through the spirit object, `family.verb` called on that family as `spirit.ready` holds it, or, for a server's
-family not there, as `spirit.require(spirit.branchPath(name))` binds it; its answer read through `spirit.outcome`, and its
+verbs through the spirit object, `family.verb` called on that family as `spirit.readyPromise` holds it, or, for a server's
+family not there, as `spirit.requireScript(spirit.branchPath(name))` binds it; its answer read through `spirit.callOutcome`, and its
 markup escaped with `spirit.escapeHtml`. No `api.verb`, no `api.escapeHtml`, and no api handed on: its rows' arming buttons hear a click elsewhere themselves. No family carries an FS set (goal/G43.20).
 
 Made without its ID table or its grants table, it throws nothing and says so (goal/G41.19, box v23: *"throws nothing
@@ -29,7 +29,7 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/search/contact.js`, `spirit/element/search/bundle.js`,
-  `spirit/element/search/api.js`, `spirit/element/search/grant.js` and `spirit/element/rowForm.js`, and the auth branch's interface (`spirit.require('spirit/auth/api.js')`, for nodeGrants), which alone requires its
+  `spirit/element/search/api.js`, `spirit/element/search/grant.js` and `spirit/element/rowForm.js`, and the auth branch's interface (`spirit.requireScript('spirit/auth/api.js')`, for nodeGrants), which alone requires its
   data.js (goal/G47.1); no data script, and not the job branch's interface: since goal/G47.4 it follows no server jobs.
 - The panel (`create`) names no grants table and no ID table: no auth grant verb, not nodeGrants, no agent verb, no
   loopback location, no branch. The node's bundles are the one dictionary both kinds of grant are made from, so reading a

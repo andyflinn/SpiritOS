@@ -171,7 +171,7 @@ test.run('a folder without its own .json is not one', 0.2, async function () {
 // of spirit/app/ and its existsSync of each api.js go. A manifest's content is no row of the cache, so its read stays.
 function appCode() { let t = ''; try { t = fs.readFileSync(FILE, 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
 test.run('spirit/app/script.js reaches the file/folder cache through spirit/fs/script.js', 0.2, function () {
-  return /require\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(appCode()) || false;
+  return /require(?:Script)?\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(appCode()) || false;
 }, test.limit.quick);
 test.run('spirit/app/script.js scans no folder on disc: no readdirSync and no existsSync', 0.2, function () {
   const c = appCode();

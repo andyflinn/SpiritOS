@@ -14,7 +14,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = S.require('spirit/element/nodeInfo.js');
+  var parts = S.requireScript('spirit/element/nodeInfo.js');
 
   function create(container, opts) {
     var o = opts || {};
@@ -35,5 +35,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/info/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/info/element.js', { create: create }); });
 }());

@@ -14,7 +14,7 @@
 // IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
 // file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
 (function () {
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 var contactsEscapeHtml = spirit.escapeHtml;
 
 // NO CHOICE ABOUT STRANGERS (goal/G43.17): the node ignores them always, and keeps their id only in its log. Andy: "so NO,
@@ -51,10 +51,10 @@ function contactsRefresh() {
 // every contact row on the page (goal/G30.18).
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
-// through spirit.require, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
+// through spirit.requireScript, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
 // replace icons painting all shell elements and apps."), so the icon element comes with the list.
 // And the panel stack, for a contact's or a relay's details when the mounter hands none (goal/G43.18).
-var contactsParts = Promise.all([spirit.require('spirit/element/search/contact/list.js'), spirit.require('spirit/element/icon.js'), spirit.require('spirit/element/panel.js'), spirit.require('spirit/element/fieldInput.js')]);
+var contactsParts = Promise.all([spirit.requireScript('spirit/element/search/contact/list.js'), spirit.requireScript('spirit/element/icon.js'), spirit.requireScript('spirit/element/panel.js'), spirit.requireScript('spirit/element/fieldInput.js')]);
 
 function contactCreate(container, options) {
     var gone = false;
@@ -108,7 +108,7 @@ function contactCreate(container, options) {
       } catch (e) { ok = false; }
       if (!ok) { out.textContent = 'a relay must be https — http is allowed only to 127.0.0.1'; return; }
       out.textContent = 'adding ' + url + '…';
-      spirit.ready.then(function (s) { return s.relay.add({ url: url, label: label }); }).then(function (said) {
+      spirit.readyPromise.then(function (s) { return s.relay.add({ url: url, label: label }); }).then(function (said) {
         out.textContent = said && said.ok ? 'added ' + url : 'not added: ' + ((said && said.error) || 'no answer');
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });
@@ -137,5 +137,5 @@ function contactCreate(container, options) {
     };
 }
 
-window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/contact/element.js', { create: contactCreate }); });
+window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/contact/element.js', { create: contactCreate }); });
 }());

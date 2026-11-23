@@ -11,17 +11,17 @@
 //   apiVerbs   'family.verb' -> { family, name }, each family's verbs (DEBUG never offered)
 // Andy, Q7: "Shall the app-server selector keep the node's api tree in an apiTree branch of spirit.required.spirit.data, read again when
 // a server job changes, and the family, verb and app-server selectors draw from it?" "yes." The selector reads the tree
-// (spirit.tree) and hands it here; read again, the tree replaces both branches whole. This file asks nothing.
+// (spirit.apiTree) and hands it here; read again, the tree replaces both branches whole. This file asks nothing.
 //   nodeCard   'self' -> { name, description }, what the node says of itself, as node.card answered it and each save
 //              (node.setName, node.setDescription) stored it; Info keeps both here and draws its fields from it
 (function family() {
   var TREE = 'apiTree';
   var VERBS = 'apiVerbs';
   var CARD = 'nodeCard';
-  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
-  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  var D = typeof require === 'function' ? require('../spirit.js').requireScript('spirit/data.js') : window.spirit.required.spirit.data;
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.requireScript('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('node', function () {
     var HOME = D.viewAt(null, 'node');
     var parties = {};

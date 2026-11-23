@@ -66,13 +66,13 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.chrome = await chromePage(findChrome());
   if (!W.node.up || W.chrome.error) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
-  await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+  await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   W.up = true;
   return true;
 }, test.limit.slow);
 test.run('the app search and the app detail load', 0.2, async function () {
   if (!W.up) return false;
-  const loaded = await W.chrome.evaluate('window.spirit.ready.then(function () { return Promise.all([spirit.require("spirit/element/search/app.js"), spirit.require("spirit/element/search/app/detail.js")]); }).then(function () { return "loaded"; }, function () { return false; })');
+  const loaded = await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return Promise.all([spirit.requireScript("spirit/element/search/app.js"), spirit.requireScript("spirit/element/search/app/detail.js")]); }).then(function () { return "loaded"; }, function () { return false; })');
   W.loaded = loaded === 'loaded';
   return W.loaded || false;
 }, test.limit.quick);
@@ -84,7 +84,7 @@ test.run('the app search and the app detail load', 0.2, async function () {
 // goal/G43.32, the box: "Monitor too: its createApp becomes its element.js, and appSelector's createApp path goes."
 test.run('spirit.app holds keys, and no app in it has a createApp, monitor\'s being its element.js', 0.2, async function () {
   if (!W.up) return false;
-  try { W.onApp = JSON.parse(await W.chrome.evaluate('(function () { var S = window.spirit; return Promise.all(["spirit/app/monitor/element.js"].map(function (p) { return Promise.resolve(S.require(p)).then(null, function () { return null; }); })).then(function () {' +
+  try { W.onApp = JSON.parse(await W.chrome.evaluate('(function () { var S = window.spirit; return Promise.all(["spirit/app/monitor/element.js"].map(function (p) { return Promise.resolve(S.requireScript(p)).then(null, function () { return null; }); })).then(function () {' +
     ' var out = { keys: Object.keys(S.app || {}), words: [] };' +
     ' var AUTO = ["remote", "listener", "subscribe", "unsubscribe"];' +
     ' out.keys.forEach(function (k) { var v = S.app[k]; if (typeof v === "function" && !/[A-Z]/.test(k) && AUTO.indexOf(k) === -1) out.words.push(k);' +

@@ -10,10 +10,10 @@
 // Its value: the resident memory of the node (stats.memory.rss), as bytes made readable. Until the first reading, a dash. It watches the one row it reads, the spirit job of the
 // page's node in the jobs family's cache, and writes its value on every change of that row.
 // THE INTERFACE IT READS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1): a require made while this file runs is part of its tree.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/job/api.js', 'spirit/element/monitor/value.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/job/api.js', 'spirit/element/monitor/value.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
-  var parts = Promise.all([S.require('spirit/job/api.js'), S.require('spirit/element/monitor/value.js')]);
+  var parts = Promise.all([S.requireScript('spirit/job/api.js'), S.requireScript('spirit/element/monitor/value.js')]);
   function valueOf(d) { return d.memory ? S.formatBytes(d.memory.rss) : '–'; }
 
   function create(container, options) {
@@ -42,5 +42,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/job/a
     };
   }
 
-  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/job/memory.js', { create: create }); });
+  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/job/memory.js', { create: create }); });
 }());

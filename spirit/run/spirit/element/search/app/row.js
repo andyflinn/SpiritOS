@@ -9,13 +9,13 @@
 // of that key. A row asks nothing of its own; what it shows is what the stream said.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // On spirit.required since goal/G43.18, as its file is in spirit/element/search/app/.
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/element/search/app/rowFormAppActive.js'].forEach(function (p) { window.spirit.require(p); });
-  var appReady = Promise.resolve(window.spirit.require('spirit/app/api.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
+  ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/element/search/app/rowFormAppActive.js'].forEach(function (p) { window.spirit.requireScript(p); });
+  var appReady = Promise.resolve(window.spirit.requireScript('spirit/app/api.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
 
   var apps = null;
   function dispatch(idx) {
@@ -74,7 +74,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
         // A press on the switch is the switch's, never the row's pick (as the installer it replaced stopped it).
         cell.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('button')) e.stopPropagation(); });
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
-        var made = Promise.resolve(window.spirit.require('spirit/element/search/app/rowFormAppActive.js')).then(function () {
+        var made = Promise.resolve(window.spirit.requireScript('spirit/element/search/app/rowFormAppActive.js')).then(function () {
           if (installer !== made) return;
           installer = window.spirit.required.spirit.element.search.app.rowFormAppActive.create(cell, { key: key });
         });
@@ -87,5 +87,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/row.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/row.js', { create: create }); });
 }());

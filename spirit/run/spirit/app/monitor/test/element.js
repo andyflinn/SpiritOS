@@ -78,12 +78,12 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.chrome = await chromePage(findChrome());
   if (!W.chrome || W.chrome.error) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
-  W.page = !!(await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000));
+  W.page = !!(await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
 }, test.limit.slow);
 test.run('monitor.js loads on a page', 0.2, async function () {
   if (!W.page) return false;
-  const started = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/job/api.js"); }).then(function () { return window.spirit.require("spirit/app/monitor/element.js"); }).then(function () { return "loaded"; }, function () { return null; })');
+  const started = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/job/api.js"); }).then(function () { return window.spirit.requireScript("spirit/app/monitor/element.js"); }).then(function () { return "loaded"; }, function () { return null; })');
   return started === 'loaded' || false;
 }, test.limit.quick);
 

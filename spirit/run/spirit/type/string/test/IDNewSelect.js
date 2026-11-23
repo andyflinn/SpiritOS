@@ -22,7 +22,7 @@ test.run('spirit/type/string/IDNewSelect.js exists and loads', 0.2, function () 
 }, test.limit.quick);
 test.run('isValid answers true, the boolean, for "", a key made just now', 0.4, function () {
   if (!T) return false;
-  try { fresh = spirit.require('spirit/relayAuth.js').generateIdentity('zz-type-test').publicKey; } catch (e) { return false; }
+  try { fresh = spirit.requireScript('spirit/relayAuth.js').generateIdentity('zz-type-test').publicKey; } catch (e) { return false; }
   try { return ["", fresh].every(function (v) { return T.isValid(v) === true; }) || false; } catch (e) { return false; }
 }, test.limit.quick);
 test.run('isValid throws an error for "goal/G48", a key cut short, 5, null', 0.4, function () {

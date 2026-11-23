@@ -98,7 +98,7 @@ const fs = require('fs');
 function table(rootDir, create) {
   if (!rootDir) return null;
   try {
-    var nodeStore = spirit.require('spirit/nodeStore.js');
+    var nodeStore = spirit.requireScript('spirit/nodeStore.js');
     if (!nodeStore.available()) return null;
     if (!create && !fs.existsSync(nodeStore.dbPath(rootDir))) return null;
     return nodeStore.open(rootDir).traffic;

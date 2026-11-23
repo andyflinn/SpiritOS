@@ -15,7 +15,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the toggle row and testicle's interface.
-  var parts = Promise.all(['spirit/element/search/app/rowFormToggle.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.require(p); }));
+  var parts = Promise.all(['spirit/element/search/app/rowFormToggle.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.requireScript(p); }));
   // A NODE WITH NO TESTICLE refuses its interface: the panel says so; the refusal is never left unhandled.
   parts.catch(function () {});
 
@@ -45,7 +45,7 @@
             if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed');
           });
         } });
-      return Promise.resolve(S.require('spirit/app/testicle/api.js')).then(function () {
+      return Promise.resolve(S.requireScript('spirit/app/testicle/api.js')).then(function () {
         if (gone) return;
         var P = S.required.spirit.data.testicle.data.preferences;
         draw(P.get());
@@ -64,5 +64,5 @@
     };
   }
 
-  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/settingsPanel.js', { create: create }); });
+  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/settingsPanel.js', { create: create }); });
 }());

@@ -26,13 +26,13 @@
 
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
-  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/rowForm.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') window.spirit.requireScript('spirit/element/rowForm.js');
   // And fieldInput, which holds the face name to its type as it is typed (goal/G48.4, box v22: "ever input field in every
   // element must validate the input with the new type checks.").
-  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/fieldInput.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') window.spirit.requireScript('spirit/element/fieldInput.js');
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
@@ -139,7 +139,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
     }
     var left = false;
-    Promise.resolve(window.spirit.require('spirit/contact/api.js')).then(function () {
+    Promise.resolve(window.spirit.requireScript('spirit/contact/api.js')).then(function () {
       if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
     });
     box._spFaceStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
@@ -153,7 +153,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       busy = true;
       say('asking the relay…', false);
       // Through the spirit object (goal/G32.2): spirit.required.spirit.relay.api.face answers the reply's body, or refuses with the node's words.
-      return spirit.ready.then(function (s) { return s.relay.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
+      return spirit.readyPromise.then(function (s) { return s.relay.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
         box._faceSaid = said.ok
           ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
           : { text: said.error || 'the relay did not answer', bad: true };
@@ -179,5 +179,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     mount(container, options);
     return { destroy: function () { if (container && typeof container._spFaceStop === 'function') container._spFaceStop(); if (container) container.innerHTML = ''; } };
   }
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/faceForm.js', { create: create, mount: mount, offers: function (relays) { return offered(relays).length > 0; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/faceForm.js', { create: create, mount: mount, offers: function (relays) { return offered(relays).length > 0; } }); });
 }());

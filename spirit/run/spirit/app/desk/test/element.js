@@ -28,7 +28,7 @@ test.run('a window of its own is made for the file to run on, with a stand-in De
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
     // The Desk page, as its own file places itself: by the one helper, at spirit.required.<its path>.
     if (p === DESK) helper(global.window.spirit, DESK, { create: function (container, opts) { const m = { container: container, opts: opts, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });

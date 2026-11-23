@@ -5,8 +5,8 @@
 // create hands the search element, a row's button and a pressed row (spec: ./list.md).
 // The browser file runs in node on a window of its own; probabilitySearch is a recorder in its place, so this tests the
 // list and not the search under it; the rows are the real contact row element (search/contact/row.js), over the real data set
-// and the contact family's data.js (goal/G41.28), loaded by its api.js as a page's spirit.require('spirit/contact/api.js') loads it,
-// the page's node known as spirit.start makes it known (spirit.node.key, then data.homeNode).
+// and the contact family's data.js (goal/G41.28), loaded by its api.js as a page's spirit.requireScript('spirit/contact/api.js') loads it,
+// the page's node known as spirit.startPage makes it known (spirit.nodeFacts.key, then data.homeNode).
 
 const fs = require('fs');
 const path = require('path');
@@ -34,7 +34,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = window.spirit;
-  window.spirit.ready = Promise.resolve({
+  window.spirit.readyPromise = Promise.resolve({
     contact: { search: function (b) { asked.push({ verb: 'contact.search', body: b }); return Promise.resolve(searchAnswer); } },
     peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); },
       // A card ask through the spirit object (goal/G43.24): the packet as it went, and the card the node verified.
@@ -52,7 +52,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
     peerPost: function (peer, app, body, how) {
       const PK = window.spirit.required.spirit.client.packet;
       const m = PK.encode(app, body);
-      return Promise.resolve(window.spirit.ready).then(function (f) { return f.peer.post({ to: String(peer), text: m.text }); }).then(function (s) {
+      return Promise.resolve(window.spirit.readyPromise).then(function (f) { return f.peer.post({ to: String(peer), text: m.text }); }).then(function (s) {
         const text = s && typeof s.text === 'string' ? s.text : '';
         const got = text ? PK.decode(text).body : null;
         const yes = !got || got.ok === undefined || !!got.ok;
@@ -75,11 +75,11 @@ test.run('the contacts list runs on a window of its own, with its row element an
   // goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
   // packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
   require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
-  const pageRequire = window.spirit.require;
-  // A branch's api.js (spirit.require('spirit/contact/api.js')): its real companion data.js runs once, attaching itself to
+  const pageRequire = window.spirit.requireScript;
+  // A branch's api.js (spirit.requireScript('spirit/contact/api.js')): its real companion data.js runs once, attaching itself to
   // the data set loaded below, as the real api.js requires it (goal/G47.1).
   const ran = {};
-  window.spirit.require = function (p) {
+  window.spirit.requireScript = function (p) {
     required.push(p);
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
     const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
@@ -87,11 +87,11 @@ test.run('the contacts list runs on a window of its own, with its row element an
     return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
   };
   // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.required.spirit.data takes it itself).
-  window.spirit.event = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
+  window.spirit.eventStream = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
   load(path.join(JS, '..', '..', 'spirit', 'data.js'));
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
-  window.spirit.node = { key: NODE_KEY };
+  window.spirit.nodeFacts = { key: NODE_KEY };
   window.spirit.required.spirit.data.homeNode(NODE_KEY);
   load(path.join(JS, 'row.js'));
   load(path.join(JS, 'search', 'contact', 'row.js'));
@@ -107,7 +107,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
 // it loads what it uses
 // goal/G41.16: no data script; what the stream means for contacts is the contact branch's data.js's (goal/G41.28), which
 // only its api.js requires (goal/G47.1).
-test.run('when it loads, it requires its row and the search element through spirit.require, and no data script', 0.2, function () {
+test.run('when it loads, it requires its row and the search element through spirit.requireScript, and no data script', 0.2, function () {
   const own = ['spirit/element/search/contact/row.js', 'spirit/element/search.js'];
   if (!atLoad) return false;
   return own.every(function (p) { return atLoad.indexOf(p) !== -1; }) && !atLoad.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
@@ -306,8 +306,8 @@ const tableAsked = [];
 let realReady = null;
 test.run('a table names its branch and verb, has no contact filters, nothing to open, and one column, the label', 0.2, function () {
   if (!L) return false;
-  realReady = window.spirit.ready;
-  window.spirit.ready = Promise.resolve({ agent: { job: function (b) { tableAsked.push(b); return Promise.resolve({ items: [{ key: 'row1', label: JSON.stringify({ id: 'KJ', title: 'Night job' }) }] }); } },
+  realReady = window.spirit.readyPromise;
+  window.spirit.readyPromise = Promise.resolve({ agent: { job: function (b) { tableAsked.push(b); return Promise.resolve({ items: [{ key: 'row1', label: JSON.stringify({ id: 'KJ', title: 'Night job' }) }] }); } },
     contact: { search: function (b) { tableAsked.push({ contact: b }); return Promise.resolve({ items: [] }); } } });
   global.spirit = window.spirit;
   L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/agent/job', key: 'id', label: 'title', face: 'dropdown' });
@@ -334,7 +334,7 @@ test.run('naming the contacts\' own table is the same as naming none', 0.2, func
   if (!L) return false;
   L.create({ isConnected: true, addEventListener: function () {} }, { table: 'loopback://api/contact/search' });
   const res = made.opts.server === 'contact' && made.opts.filters.length === L.filters.length ? true : false;
-  window.spirit.ready = realReady;
+  window.spirit.readyPromise = realReady;
   global.spirit = window.spirit;
   return res;
 }, test.limit.quick);

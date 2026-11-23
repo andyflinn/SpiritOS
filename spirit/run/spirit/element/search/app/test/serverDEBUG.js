@@ -61,7 +61,7 @@ const live = [];
 const nodeJson = function () { return readJson(path.join(s.run, 'spirit', 'state', NAME, 'node.json')) || {}; };
 const open = async function () {
   await c.send('Page.navigate', { url: N.base + '/face.html' });
-  return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000);
+  return until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000);
 };
 // One serverDEBUG per app, each in a box of its own.
 const make = function (key) { return c.evaluate('(function () { var b = document.createElement("div"); b.id = "dbg-' + key + '"; document.body.appendChild(b); window["dbg_' + key + '"] = spirit.required.spirit.element.search.app.serverDEBUG.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["dbg_' + key + '"]; }())'); };
@@ -156,9 +156,9 @@ test.run('a Chrome page opens the face shell, and it has its spirit', 0.2, async
   if (c.error) return false;
   return (await open()) ? true : false;
 }, test.limit.slow);
-test.run('serverDEBUG.js loads through spirit.require and puts its create on spirit.required', 0.2, async function () {
+test.run('serverDEBUG.js loads through spirit.requireScript and puts its create on spirit.required', 0.2, async function () {
   if (!c || c.error) return false;
-  loaded = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/serverDEBUG.js"); }).then(function () { return !!(spirit.required.spirit.element.search.app.serverDEBUG && spirit.required.spirit.element.search.app.serverDEBUG.create); }, function () { return false; })');
+  loaded = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/serverDEBUG.js"); }).then(function () { return !!(spirit.required.spirit.element.search.app.serverDEBUG && spirit.required.spirit.element.search.app.serverDEBUG.create); }, function () { return false; })');
   return loaded === true ? true : false;
 }, test.limit.quick);
 
@@ -218,7 +218,7 @@ test.run('the page opens again', 0.2, async function () {
 }, test.limit.quick);
 test.run('the detail of Zz Debug is made', 0.2, async function () {
   if (!c || c.error) return false;
-  detail = await c.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/detail.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.required.spirit.element.search.app.detail.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
+  detail = await c.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/detail.js"); }).then(function () { var b = document.createElement("div"); b.id = "zzDetail"; document.body.appendChild(b); window.__d = spirit.required.spirit.element.search.app.detail.create(b, { row: { key: ' + JSON.stringify(NAME) + ', label: ' + JSON.stringify(LABEL) + ', icon: "🐛" }, panel: true }); return true; })');
   return detail === true ? true : false;
 }, test.limit.quick);
 test.run('the detail loads changeAppIcon.js and changeAppLabel.js', 0.2, async function () {

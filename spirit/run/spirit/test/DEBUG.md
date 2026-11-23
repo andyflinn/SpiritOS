@@ -122,7 +122,7 @@ delete things, so neither Andy's node nor an agent's is touched.
 
 - The node: `spirit/server.js`, its DEBUG switched by its own verb, `node.debug { debug: { on } }`.
 - The relay: `spirit/server/relay.js`, in a process whose spirit object is switched on before the relay loads
-  (`spirit.debug(true)`): the relay's DEBUG verb is the owner's, by a signed packet, and a scratch relay has no owner.
+  (`spirit.debugLog(true)`): the relay's DEBUG verb is the owner's, by a signed packet, and a scratch relay has no owner.
   A second relay, not switched, is the DEBUG-off case.
 
 ## Owed, not asserted here

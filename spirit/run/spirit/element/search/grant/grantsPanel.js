@@ -28,20 +28,20 @@
 // family.verb or the family alone for (ALL), a path already granted counted done.
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.require, each element bringing its own.
+  // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.requireScript, each element bringing its own.
   // And the auth family's cache manager, which nodeGrants (below) reads.
   var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
-    'spirit/element/search/grant.js', 'spirit/element/rowForm.js', 'spirit/element/armingButton.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
-    .concat([window.spirit.require('spirit/auth/api.js')]));
+    'spirit/element/search/grant.js', 'spirit/element/rowForm.js', 'spirit/element/armingButton.js'].map(function (p) { return window.spirit.requireScript ? window.spirit.requireScript(p) : null; })
+    .concat([window.spirit.requireScript('spirit/auth/api.js')]));
 
-  // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.ready holds it,
-  // or as spirit.require binds a server's family, answering { status, body } as a list reads it.
+  // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.readyPromise holds it,
+  // or as spirit.requireScript binds a server's family, answering { status, body } as a list reads it.
   function ask(name, args) {
     var S = window.spirit;
     var n = String(name || '');
     var dot = n.indexOf('.');
     var fam = n.slice(0, dot);
-    return S.outcome(Promise.resolve(S.ready).then(function (s) { return s[fam] || S.require(S.branchPath(fam)); }).then(function (f) {
+    return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s[fam] || S.requireScript(S.branchPath(fam)); }).then(function (f) {
       // A dotted verb is a path into the family, as spirit.js builds it: a.b is f.a.b.
       var at = n.slice(dot + 1).split('.');
       var owner = f;
@@ -347,5 +347,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/grantsPanel.js', { create: create, nodeGrants: nodeGrants }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/grantsPanel.js', { create: create, nodeGrants: nodeGrants }); });
 }());

@@ -5,8 +5,8 @@
 // goal/G43.32). Andy: "this can be done with ONE single helper function spirit/element/installSpiritElement(spirit,
 // elementPath) - every element knows it's path, and if the helper is resident in the required they ALL autoinsert
 // themselves without name-space-collision", and, since goal/G49.5, a factory stands where its script is loaded (Andy, of his G43.32 Q5: "that ruling is reversed, since
-// the element factory is fine where it is loaded"; "spirit.require() places the loaded script at the exact same
-// location/path in the spirit object", on both sides): at spirit.required.<path-of-element-script>. Asked of the real spirit object in node, its own spirit.require loading the
+// the element factory is fine where it is loaded"; "spirit.requireScript() places the loaded script at the exact same
+// location/path in the spirit object", on both sides): at spirit.required.<path-of-element-script>. Asked of the real spirit object in node, its own spirit.requireScript loading the
 // helper; on a page, every element script's factory is asked at its place by the general rules
 // (spirit/test/spirit-sibling-node.js and spirit-sibling-browser.js, everyScriptRequired).
 
@@ -25,10 +25,10 @@ test.run('the helper\'s file is there', 0.2, function () {
   // the helper, resident in spirit.required
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
-test.run('spirit.require answers the helper at once, and it is a function', 0.2, function () {
+test.run('spirit.requireScript answers the helper at once, and it is a function', 0.2, function () {
   s = require(path.join(RUN, 'spirit', 'spirit.js'));
   install = null;
-  try { install = s.require(PLACE); } catch (e) { install = e; }
+  try { install = s.requireScript(PLACE); } catch (e) { install = e; }
   return (typeof install === 'function') ? true : false;
 }, test.limit.quick);
 test.run('it is resident at spirit.required.spirit.element.installSpiritElement', 0.2, function () {

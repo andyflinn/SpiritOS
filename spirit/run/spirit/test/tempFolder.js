@@ -24,9 +24,9 @@ fs.mkdirSync(path.join(FAKE_RUN, 'spirit', 'state'), { recursive: true });
 fs.writeFileSync(path.join(FAKE_RUN, 'spirit', 'state', 'identity.json'), JSON.stringify({ publicKey: KEY }));
 const NODE = crypto.createHash('sha256').update(KEY).digest('hex').slice(0, 16);
 
-test.run('it loads through spirit.require and stands at spirit.required.spirit.tempFolder', 0.4, function () {
+test.run('it loads through spirit.requireScript and stands at spirit.required.spirit.tempFolder', 0.4, function () {
   if (!fs.existsSync(FILE)) return false;
-  T = spirit.require('spirit/tempFolder.js');
+  T = spirit.requireScript('spirit/tempFolder.js');
   return typeof T === 'function' && spirit.required.spirit && spirit.required.spirit.tempFolder === T || false;
 }, test.limit.quick);
 // The box: "the system temp folder, then spirit, then the node, then the route".

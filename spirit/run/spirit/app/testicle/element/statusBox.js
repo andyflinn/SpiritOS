@@ -23,7 +23,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26; Andy: "the fucking status box must require the fucking api and make sure the
   // fucking data.js is installed"): the icon element, spirit.required.spirit.data, testicle's interface and testicle's cache manager, its
   // data.js, which the page's one stream feeds. Mounted alone, it gets its data by itself.
-  var parts = Promise.all([S.require('spirit/element/icon.js'), S.require('spirit/data.js'), S.require('spirit/app/testicle/api.js'), S.require('spirit/app/testicle/words.js')]);
+  var parts = Promise.all([S.requireScript('spirit/element/icon.js'), S.requireScript('spirit/data.js'), S.requireScript('spirit/app/testicle/api.js'), S.requireScript('spirit/app/testicle/words.js')]);
   // Its words testicle's own (goal/G47.1; ../words.js): every line it shows worded there, none here.
   function W() { return S.required.spirit.app.testicle.words; }
   parts.catch(function () {});
@@ -137,5 +137,5 @@
     };
   }
 
-  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/statusBox.js', { create: create }); });
+  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/statusBox.js', { create: create }); });
 }());

@@ -4,7 +4,7 @@
 // The tests of spirit/element/search/file/row.js, and of no other module (spec: ./row.md; goal/G30.18, goal/G41.16).
 // The browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. The shared
 // row element and the page's data set are real, and so is the fs family's data.js (goal/G41.28), brought by the fs
-// family's api.js the row requires, the page's node known as spirit.start makes it known (spirit.node.key, then
+// family's api.js the row requires, the page's node known as spirit.startPage makes it known (spirit.nodeFacts.key, then
 // data.homeNode); the node's fs family is the spirit object's, each call recorded.
 
 const fs = require('fs');
@@ -38,7 +38,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
     'spirit/element/fstat.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat.js'); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: 'fstat.js' }); } };
   // escapeHtml and formatBytes are the spirit object's own: spirit.js fills this object with them as the element helper
   // loads it, as on a page.
-  global.window = { spirit: { ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {},
+  global.window = { spirit: { readyPromise: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {},
     // The page's table of types, as spirit.js puts it on the spirit object.
     MIME_TYPES: { '.html': 'text/html; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' } } };
   global.spirit = global.window.spirit;
@@ -50,16 +50,16 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   D = global.window.spirit.required.spirit.data;
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
-  global.window.spirit.node = { key: NODE_KEY };
+  global.window.spirit.nodeFacts = { key: NODE_KEY };
   D.homeNode(NODE_KEY);
   // A branch's api.js brings its companion data.js, as the real api.js does (goal/G47.1: "every api.js requires it's
   // companion data.js"): the stand-in runs that data.js once, attaching itself to the data set. A data.js asked for
   // directly is only recorded.
   const ran = {};
   const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: f }); } };
-  global.window.spirit.require = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
@@ -257,7 +257,7 @@ test.run('a scratch node comes up with its DEBUG on, and Chrome opens the words 
   // The families these rows are coloured by are on the page the normal way: spirit.app and spirit.contact, each by
   // requiring its api.js (which brings its data.js). This page requires nothing else, and a family no file required is
   // not on the spirit object.
-  await page.evaluate('Promise.all([window.spirit.require("spirit/app/api.js"), window.spirit.require("spirit/contact/api.js")]).then(function () { return true; }, function () { return false; })');
+  await page.evaluate('Promise.all([window.spirit.requireScript("spirit/app/api.js"), window.spirit.requireScript("spirit/contact/api.js")]).then(function () { return true; }, function () { return false; })');
   row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return {}; } };
   return true;
 }, test.limit.slow);
@@ -303,7 +303,7 @@ test.run('outside spirit/ no word holds, so shell/app has no colour', 0.2, async
   const elsewhere = await row('shell/app', 'folder');
   return elsewhere.app === 'none' ? true : false;
 }, test.limit.slow);
-test.run('spirit/job, a reserved folder with no spirit.job, is light purple where red was', 0.2, async function () {
+test.run('spirit/job, a reserved folder with no spirit.processJob, is light purple where red was', 0.2, async function () {
   if (!row) return false;
   put('spirit/job/keep.txt', 'a folder for the word job');
   const job = await row('spirit/job');

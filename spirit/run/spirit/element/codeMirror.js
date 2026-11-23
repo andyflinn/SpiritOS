@@ -10,7 +10,7 @@
 // THE ONLY DOOR TO THE LIBRARY (goal/G43.5; Andy: "only access to codeMirror library is through the element!"): no page loads it
 // beside this. IT LOADS THE LIBRARY ITSELF, once, from its local copy (spirit/element/codeMirror/), never by reading
 // any page (goal/G40.7: the face never reads one): the library, its two stylesheets and the mode files of the path's
-// syntax, each through spirit.require.
+// syntax, each through spirit.requireScript.
 //
 // codeMirror.create(host, { mode, text, words, line, path }) -> Promise of { mode, cm, value(), mark(words) }
 //   mode    'read' (the default: the text shown, not editable) or 'edit' (editable; value() is what was typed)
@@ -45,10 +45,10 @@
   function modeName(mode) { return !mode ? '' : typeof mode === 'string' ? mode : mode.name; }
   function sp() { return window.spirit || {}; }
 
-  // EVERY FILE THROUGH spirit.require, THE ONE LOADER (Andy: "use the require interfaces that exists in spirit.js or
+  // EVERY FILE THROUGH spirit.requireScript, THE ONE LOADER (Andy: "use the require interfaces that exists in spirit.js or
   // boot.js, NOTHING HAND-ROLLED"): on a page it runs each as a plain script, a stylesheet as a style, and loads each
   // once. The library puts CodeMirror on the page; a mode file finds it there and defines its mode on it.
-  function need(p) { return Promise.resolve(sp().require(CM + p)); }
+  function need(p) { return Promise.resolve(sp().requireScript(CM + p)); }
   function library() {
     return Promise.all([need('lib/codemirror.js')].concat(SHEETS.map(function (p) {
       return need(p).then(null, function () { /* a sheet missing leaves the text plain */ });
@@ -141,5 +141,5 @@
     });
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/codeMirror.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/codeMirror.js', { create: create }); });
 }());

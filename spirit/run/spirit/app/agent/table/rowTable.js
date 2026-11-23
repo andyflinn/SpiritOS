@@ -23,10 +23,10 @@ require('../../../spirit.js');
 //   get {id}           the row without its secrets; answers the row
 //   search {text}      the rows ranked against the words, best first, cut to one answer; answers { items, more }
 // Any other op is refused. Every change is published as { agent: { table, row } } or { agent: { table, id, removed } }.
-const { generateIdentity } = spirit.require('spirit/relayAuth.js');
-const { createProbabilityBucket } = spirit.require('spirit/listLimiter.js');
-const { probabilityStringObjectMatch } = spirit.require('spirit/search/object.js');
-const limits = spirit.require('spirit/limits.js');
+const { generateIdentity } = spirit.requireScript('spirit/relayAuth.js');
+const { createProbabilityBucket } = spirit.requireScript('spirit/listLimiter.js');
+const { probabilityStringObjectMatch } = spirit.requireScript('spirit/search/object.js');
+const limits = spirit.requireScript('spirit/limits.js');
 
 const KEYSET = ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey'];
 const PRIVATE = ['privateKey', 'sealPrivateKey'];
@@ -94,7 +94,7 @@ function rowTable(db, def, publish) {
     return rule === 'bool' ? (v ? 1 : 0) : v;
   }
 
-  // Which arguments each op takes, checked by spirit.js's rules (spirit.check), so a refusal says why.
+  // Which arguments each op takes, checked by spirit.js's rules (spirit.checkArgs), so a refusal says why.
   const byOp = {
     add: Object.assign({ op: 'id' }, fields),
     set: Object.assign({ op: 'id', id: 'key' }, fields),
@@ -117,7 +117,7 @@ function rowTable(db, def, publish) {
     handler: function (a) {
       const spec = byOp[a.op];
       if (!spec) throw refuse('bad-request', name + ': op is one of ' + Object.keys(byOp).join(', '));
-      const bad = spirit.check(name, spec, a);
+      const bad = spirit.checkArgs(name, spec, a);
       if (bad) throw refuse(bad.code === 'no-such-argument' ? 'no-such-argument' : 'bad-request', bad.message);
       const why = def.check ? def.check(a, db) : '';
       if (why) throw refuse('bad-request', name + ': ' + why);

@@ -31,7 +31,7 @@ test.run('it lists its verbs', 0.2, function () {
 // spirit.js or spirit/app/chat/data.js, and nothing else.
 test.run('it requires nothing but spirit.js and its companion data.js: it is an interface', 0.2, function () {
   const src = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
-  const names = (src.match(/require\s*\(\s*['"][^'"]+['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\s*\(\s*['"]|['"]\s*\)$/g, ''); });
+  const names = (src.match(/require(?:Script)?\s*\(\s*['"][^'"]+['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require(?:Script)?\s*\(\s*['"]|['"]\s*\)$/g, ''); });
   return names.length > 0 && names.every(function (n) { return /(^|\/)spirit\.js$/.test(n) || n === 'spirit/app/chat/data.js'; }) ? true : false;
 }, test.limit.quick);
 test.run('it lists line.write, which the server serves', 0.2, function () {

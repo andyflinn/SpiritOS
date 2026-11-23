@@ -6,9 +6,9 @@
 // dispatch: a list built again from a changed set makes its rows again.
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   // goal/G41.23: the glyph is the icon element (spirit/element/icon.js), loaded here too.
-  if (window.spirit.require) ['spirit/element/row.js', 'spirit/element/icon.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.requireScript) ['spirit/element/row.js', 'spirit/element/icon.js'].forEach(function (p) { window.spirit.requireScript(p); });
   var icons = null;
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -41,5 +41,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon/row.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon/row.js', { create: create }); });
 }());

@@ -20,14 +20,14 @@
 
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
-  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/rowForm.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') window.spirit.requireScript('spirit/element/rowForm.js');
   // Its email field's limit, fieldInput's email rule (goal/G47.1, -browser: "every input it draws has a maxlength").
-  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/fieldInput.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') window.spirit.requireScript('spirit/element/fieldInput.js');
   // And the email type, which a send asks first (goal/G48.4, the box: "fieldRules.js dies").
-  if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/type/string/email.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') window.spirit.requireScript('spirit/type/string/email.js');
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
@@ -98,7 +98,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     var joinLink = shell && typeof shell.joinLink === 'function' ? String(shell.joinLink() || '') : '';
     var args = { url: url, email: email, code: '' };
     if (joinLink) args.link = joinLink;
-    return spirit.ready.then(function (s) { return s.relay.join(args); }).then(function (said) {
+    return spirit.readyPromise.then(function (s) { return s.relay.join(args); }).then(function (said) {
       said = said || {};
       // Andy (goal/G30.1): "an email in your inbox contains a confirmation link for the entered email".
       if (said.ok) return { ok: true, text: 'An email in your inbox at ' + email + ' holds a confirmation link. Open it on this computer within 10 minutes.' };
@@ -151,7 +151,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       draw(box);
     }
     var left = false;
-    Promise.resolve(window.spirit.require('spirit/contact/api.js')).then(function () {
+    Promise.resolve(window.spirit.requireScript('spirit/contact/api.js')).then(function () {
       if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
     });
     box._spJoinStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
@@ -182,5 +182,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
     mount(container, options);
     return { destroy: function () { if (container && typeof container._spJoinStop === 'function') container._spJoinStop(); if (container) container.innerHTML = ''; } };
   }
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/joinForm.js', { words: words, create: create, mount: mount, send: send }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/joinForm.js', { words: words, create: create, mount: mount, send: send }); });
 }());

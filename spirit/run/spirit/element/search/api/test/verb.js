@@ -51,7 +51,7 @@ test.run('it adds apiVerbSelector with a create to window.spirit.required, and c
     redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); };
   win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
-      require: function (p) {
+      requireScript: function (p) {
         w.required.push(String(p));
         if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.required.spirit = win.spirit.required.spirit || {}).element = win.spirit.required.spirit.element || {})); }
         // A family's cache (goal/G41.28): the node branch's interface brings its data.js, as the real api.js does; it runs
@@ -67,16 +67,16 @@ test.run('it adds apiVerbSelector with a create to window.spirit.required, and c
   win.window = win;
   // goal/G43.32: verb.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
-  const recorder = win.spirit.require;
+  const recorder = win.spirit.requireScript;
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
-  const pageRequire = win.spirit.require;
-  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  const pageRequire = win.spirit.requireScript;
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
-  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
-  win.spirit.node = { key: 'KEY+VERB/SELECTOR==' };
-  win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
+  win.spirit.nodeFacts = { key: 'KEY+VERB/SELECTOR==' };
+  win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   vm.runInContext(SRC, win, { filename: FILE });
   // goal/G43.32: it stands at its path, spirit.required.spirit.element.search.api.verb.
   E = ((win.spirit.required.spirit || {}).element || {});

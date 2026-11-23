@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/test/codeMirror.js
 // The tests of spirit/element/codeMirror.js, and of no other module (spec: ./codeMirror.md; goal/G41.7). The browser file
 // runs in node on a window of its own: CodeMirror is a recorder standing in for the library, handed over when the
-// element requires the library's path; every loader the page offers (spirit.require, fstat's read, a link
+// element requires the library's path; every loader the page offers (spirit.requireScript, fstat's read, a link
 // tag) writes down what it was asked for.
 // Its last part, libraryPart (once codeMirror-library.js, goal/G43.5), checks the library in spirit/element/codeMirror/ on
 // a real page: the one test file of codeMirror.js (spirit/run/spirit/test/TEST_SYSTEM.md).
@@ -69,7 +69,7 @@ function world() {
       });
       return out.sort(function (a, b) { return a[0] - b[0]; });
     },
-    require: function (p) {
+    requireScript: function (p) {
       const q = String(p).replace(/^\/+/, '');
       w.required.push(q);
       if (q === CM + 'lib/codemirror.js') { win.CodeMirror = CodeMirror; return Promise.resolve(CodeMirror); }
@@ -78,10 +78,10 @@ function world() {
   };
   // goal/G43.32: codeMirror.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit), and writes down only what the element asks for besides.
-  const own = win.spirit.require;
+  const own = win.spirit.requireScript;
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
-  const pageRequire = win.spirit.require;
-  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : own(p); };
+  const pageRequire = win.spirit.requireScript;
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : own(p); };
   vm.createContext(win);
   return { w: w, win: win };
 }
@@ -106,7 +106,7 @@ test.run('it puts itself on window.spirit.required as codeMirror, with create', 
 }, test.limit.quick);
 
 // It loads the library itself, never through index.html (goal/G40.7).
-test.run('it requires CodeMirror\'s lib/codemirror.js through spirit.require', 0.2, async function () {
+test.run('it requires CodeMirror\'s lib/codemirror.js through spirit.requireScript', 0.2, async function () {
   if (!S.E) return false;
   S.read = await S.E.create({ id: 'host-1' }, { mode: 'read', text: 'alpha beta\ngamma beta', words: 'beta', path: 'notes.md' });
   await settle();
@@ -271,7 +271,7 @@ test.run('a scratch node comes up with a Chrome page on it', 0.2, async function
   L.page = await H.chromePage(chrome);
   if (!L.page || L.page.error) return false;
   await L.page.send('Page.navigate', { url: L.node.base + '/' });
-  const ready = await H.until(function () { return L.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
+  const ready = await H.until(function () { return L.page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
   await H.sleep(2500);
   return !!ready || false;
 }, test.limit.long);
@@ -282,7 +282,7 @@ test.run('the page starts with no CodeMirror on it, since the only access to the
 }, test.limit.slow);
 test.run('the element draws from that folder, with its sheet, its marks and its search keys', 0.2, async function () {
   if (!L.page || L.page.error) return false;
-  await L.page.evaluate('Promise.resolve(window.spirit.require("spirit/element/codeMirror.js")).then(function () { return true; }, function () { return false; })');
+  await L.page.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/codeMirror.js")).then(function () { return true; }, function () { return false; })');
   try { L.cm = JSON.parse(await L.page.evaluate('(function () { var d = document.body.appendChild(document.createElement("div")); return window.spirit.required.spirit.element.codeMirror.create(d, { mode: "edit", text: "one needle", words: "needle" }).then(function () { return JSON.stringify({ drawn: !!d.querySelector(".CodeMirror"), marks: d.querySelectorAll(".text-view-match").length, cssLoaded: getComputedStyle(d.querySelector(".CodeMirror")).position === "relative", search: !!(window.CodeMirror.commands && window.CodeMirror.commands.find) }); }); })()')); } catch (e) { L.cm = {}; }
   L.fromHere = await L.page.evaluate('performance.getEntriesByType("resource").map(function (r) { return r.name; }).filter(function (u) { return /codemirror/i.test(u); }).join(" ")').catch(function () { return ''; });
   return (L.cm.drawn === true && L.cm.marks === 1 && L.cm.cssLoaded === true && L.cm.search === true) || false;

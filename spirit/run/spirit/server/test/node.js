@@ -61,12 +61,12 @@ test.run('a Chrome page opens at "/"', 0.2, async function () {
 }, test.limit.quick);
 test.run('the page at "/" has the spirit object', 0.2, async function () {
   if (!W.page || W.page.error) return false;
-  W.ready = await H.until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
+  W.ready = await H.until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
   return !!W.ready || false;
 }, test.limit.long);
-test.run('on the page at "/", spirit.ready settles, as on face.html', 0.2, async function () {
+test.run('on the page at "/", spirit.readyPromise settles, as on face.html', 0.2, async function () {
   if (!W.ready) return false;
-  const settled = await W.page.evaluate('window.spirit.ready.then(function () { return "ready"; }, function () { return false; })');
+  const settled = await W.page.evaluate('window.spirit.readyPromise.then(function () { return "ready"; }, function () { return false; })');
   return settled === 'ready' || false;
 }, test.limit.quick);
 test.run('the page at "/" loads face.html\'s own scripts first', 0.2, async function () {

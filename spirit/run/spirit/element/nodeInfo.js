@@ -28,12 +28,12 @@
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 // Each by its family's name, its path spirit.branchPath's (the families relay and node).
-if (window.spirit && typeof window.spirit.require === 'function' && typeof window.spirit.branchPath === 'function') ['relay', 'node'].forEach(function (n) { Promise.resolve(window.spirit.require(window.spirit.branchPath(n))).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function' && typeof window.spirit.branchPath === 'function') ['relay', 'node'].forEach(function (n) { Promise.resolve(window.spirit.requireScript(window.spirit.branchPath(n))).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/changeMyLabel.js', 'spirit/element/changeMyDescription.js', 'spirit/element/joinForm.js',
-    'spirit/element/faceForm.js', 'spirit/element/rowForm.js', 'spirit/element/panel.js'].map(function (p) { return S.require(p); }));
+    'spirit/element/faceForm.js', 'spirit/element/rowForm.js', 'spirit/element/panel.js'].map(function (p) { return S.requireScript(p); }));
 
   function create(container, opts) {
     var o = opts || {};
@@ -88,7 +88,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
     }
     // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
     function loadRelays() {
-      return Promise.resolve(S.ready).then(function (s) { return s.relay.status(''); }).then(function (r) {
+      return Promise.resolve(S.readyPromise).then(function (s) { return s.relay.status(''); }).then(function (r) {
         var said = (r && r.body) || {};
         relays = Array.isArray(said.rows) ? said.rows : [];
       }, function () { relays = []; }).then(function () { return parts.then(drawForms, function () { /* a form missing is not drawn */ }); });
@@ -98,7 +98,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
     function openRotate() {
       var into = typeof o.open === 'function' ? o.open : function (k, spec) { return stack.open(k, spec); };
       return into('rotateKey', { icon: '🆘', label: 'Rotate this node\'s cipher key', fill: function (pane, closed) {
-        return S.require('spirit/element/rotateKey.js').then(function () {
+        return S.requireScript('spirit/element/rotateKey.js').then(function () {
           if (closed()) return null;
           return S.required.spirit.element.rotateKey.create(pane, {});
         });
@@ -115,8 +115,8 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
       rotate.button.addEventListener('click', function () { openRotate(); });
       // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.required.spirit.data.node.data, and each of
       // the two fields draws itself from it.
-      return S.require('spirit/node/api.js').then(function () {
-        return S.outcome(Promise.resolve(S.ready).then(function (s) { return s.node.card({}); }));
+      return S.requireScript('spirit/node/api.js').then(function () {
+        return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s.node.card({}); }));
       }).then(function (r) {
         if (gone) return;
         var card = r && r.body;
@@ -141,5 +141,5 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/nodeInfo.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/nodeInfo.js', { create: create }); });
 }());

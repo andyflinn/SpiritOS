@@ -5,7 +5,7 @@ itself (rule/26). Owed since the rule *"every production script has its own test
 `./testicle.js`: a scratch node with testicle on, the general suites stubbed, tests set through `testicle.testicle.set`,
 the selector mounted alone on `/face.html` in a real Chrome.
 
-- `create(container, { script, face, placeholder, all, pick })` loads alone through `spirit.require`, appends its own
+- `create(container, { script, face, placeholder, all, pick })` loads alone through `spirit.requireScript`, appends its own
   root (class `suite-selector`) to the container and answers it, with `destroy` (box v23: *"every element gets a container
   and appends itself"*).
 - It loads `spirit/app/testicle/element/search/suite/list.js` itself.

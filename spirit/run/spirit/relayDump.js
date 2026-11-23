@@ -22,8 +22,8 @@ require('./spirit.js');
 // throws. Safe beside a running relay.
 
 const path = require('path');
-const relayStore = spirit.require('spirit/relayStore.js');
-const auth = spirit.require('spirit/relayAuth.js');
+const relayStore = spirit.requireScript('spirit/relayStore.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
 
 const LABEL_LIMIT = 10;
 

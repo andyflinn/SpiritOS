@@ -20,7 +20,7 @@
 // IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
 // file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
 (function () {
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/desk/api.js')).catch(function () {});
 var ddApi = null;
 var ddId = '';
 var ddFacts = null;          // the item's facts, as the server last said them
@@ -76,8 +76,8 @@ function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
 // made one after each paint; it arms, says so, and disarms itself on a click elsewhere; its second press is ddSecondPress.
 // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the say box
 // held to fieldRules' line rule by fieldInput, loaded here with the armingButton and attached after each paint.
-var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
-  ? Promise.all([spirit.require('spirit/element/armingButton.js'), spirit.require('spirit/element/fieldInput.js')]) : null);
+var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScript
+  ? Promise.all([spirit.requireScript('spirit/element/armingButton.js'), spirit.requireScript('spirit/element/fieldInput.js')]) : null);
 function ddArming() {
   return ddParts.then(function () {
     var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.armingButton;
@@ -129,12 +129,12 @@ function ddSecondPress(b) {
 // the top, using the whole width, like it is today", "just use workBench", "the left icons strip and panel, are what we
 // have today", "the center panel us the chat", "the right panel, we leave blank"). The
 // id, title and status stay in the shell's title bar (ddPaint). The left pane and the chat are written in a
-// holder first, so the inputs are in the frame from the start; the workBench, once spirit.require brings it, takes them.
+// holder first, so the inputs are in the frame from the start; the workBench, once spirit.requireScript brings it, takes them.
 // goal/G41.23: its panels' icons stand alone on the bench's strip, which paints them through the icon element; the panel
 // loads that element too, as it draws with it (Andy: "this element will replace icons painting all shell elements and
 // apps.").
-var ddBenchParts = typeof spirit !== 'undefined' && spirit.require
-  ? Promise.all([spirit.require('spirit/element/workBench.js'), spirit.require('spirit/element/icon.js')])
+var ddBenchParts = typeof spirit !== 'undefined' && spirit.requireScript
+  ? Promise.all([spirit.requireScript('spirit/element/workBench.js'), spirit.requireScript('spirit/element/icon.js')])
   : Promise.resolve(null);
 var ddBench = null;
 var ddBenchBoxes = {};
@@ -183,8 +183,8 @@ function ddFrame() {
 // which will add an item with <Title> blocking the goal/item it was created from."): the shell's rowForm, its span holding
 // the words and the title input (a label, fieldInput), its Add busy until the desk answers (busyButton). On a goal the new
 // item is the goal's; on an item it is of the same goal and blocks that item (item.add blocks).
-var ddAddParts = typeof spirit !== 'undefined' && spirit.require
-  ? Promise.all([spirit.require('spirit/element/rowForm.js'), spirit.require('spirit/element/fieldInput.js')])
+var ddAddParts = typeof spirit !== 'undefined' && spirit.requireScript
+  ? Promise.all([spirit.requireScript('spirit/element/rowForm.js'), spirit.requireScript('spirit/element/fieldInput.js')])
   : Promise.resolve(null);
 function ddMakeAdd(n) {
   var R = window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element.rowForm;
@@ -647,10 +647,10 @@ function ddTakeRow(obj) {
 }
 
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21, and Andy, of a dropdown: "Sometimes the dropdown does NOT
-// appear at ALL!"): spirit.require, never a script tag of its own. It loads a part once and answers once it ran.
+// appear at ALL!"): spirit.requireScript, never a script tag of its own. It loads a part once and answers once it ran.
 function ddNeed(p) {
-  var req = typeof window !== 'undefined' && window.spirit && window.spirit.require;
-  if (typeof req !== 'function') return Promise.reject(new Error('no spirit.require on this page'));
+  var req = typeof window !== 'undefined' && window.spirit && window.spirit.requireScript;
+  if (typeof req !== 'function') return Promise.reject(new Error('no spirit.requireScript on this page'));
   return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
 }
 
@@ -866,7 +866,7 @@ var ddApp = {
     return ddLoad();
   },
 };
-window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/deskDetails/deskDetails.js', { create: function (container, opts) {
+window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/deskDetails/deskDetails.js', { create: function (container, opts) {
   // MOUNTED EMPTY, NO THROW (goal/G47.1, the box: "an element that throws when mounted empty is a red at 0.8"): with no
   // page's way to the node (opts.via) or no item, it draws its empty body and opens nothing.
   var o = opts || {};

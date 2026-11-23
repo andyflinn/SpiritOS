@@ -186,16 +186,16 @@ function selfSubTree() {
   const dir = path.join(run, 'spirit', 'app', SELFSUB);
   fs.mkdirSync(path.join(dir, 'server'), { recursive: true });
   fs.writeFileSync(path.join(dir, SELFSUB + '.json'), JSON.stringify({ identity: { icon: '🧪', label: SELFSUB, intrinsic: false }, mount: { [SELFSUB + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }));
-  fs.writeFileSync(path.join(dir, SELFSUB + '.js'), "'use strict';\nrequire('../../spirit.js');\nspirit.require('spirit/app/" + SELFSUB + "/server/server.js');\n");
+  fs.writeFileSync(path.join(dir, SELFSUB + '.js'), "'use strict';\nrequire('../../spirit.js');\nspirit.requireScript('spirit/app/" + SELFSUB + "/server/server.js');\n");
   fs.writeFileSync(path.join(dir, 'server', 'server.js'), [
     "'use strict';",
     "require('../../../spirit.js');",
     "const fs = require('fs');",
     "const path = require('path');",
     "const SEEN = path.join(__dirname, '..', '..', '..', 'state', '" + SELFSUB + "', 'seen.json');",
-    "spirit.require('spirit/server/app.js').serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {",
+    "spirit.requireScript('spirit/server/app.js').serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {",
     "  publisher: { family: '" + SELFSUB + "', waitMs: 5000, bootstrap: function (key) {",
-    "    if (spirit.node && key && key === spirit.node.key) { try { fs.appendFileSync(SEEN, 'self\\n'); } catch (e) { /* judged by its absence */ } }",
+    "    if (spirit.nodeFacts && key && key === spirit.nodeFacts.key) { try { fs.appendFileSync(SEEN, 'self\\n'); } catch (e) { /* judged by its absence */ } }",
     "    return [];",
     "  } },",
     "});",

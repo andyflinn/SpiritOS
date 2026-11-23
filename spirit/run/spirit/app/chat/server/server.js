@@ -30,12 +30,12 @@ require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.require('spirit/server/app.js');
-const packet = spirit.require('spirit/client/packet.js');
-const limits = spirit.require('spirit/limits.js');
+const appServer = spirit.requireScript('spirit/server/app.js');
+const packet = spirit.requireScript('spirit/client/packet.js');
+const limits = spirit.requireScript('spirit/limits.js');
 // The probability modules (goal/G29.18).
-const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
-const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.requireScript('spirit/listLimiter.js').createProbabilityBucket;
+const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
@@ -87,7 +87,7 @@ function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused
 // {status, body}, or {status: 0} when the node did not answer at all. The node is this VM's own (spirit.js).
 function onNode(family, call) {
   // The branch's api.js, where its functions stand (goal/G49.6: spirit holds no branch), handed to the call.
-  return spirit.outcome(Promise.resolve(spirit.require('spirit/' + family + '/api.js')).then(function (api) { return call(api); }));
+  return spirit.callOutcome(Promise.resolve(spirit.requireScript('spirit/' + family + '/api.js')).then(function (api) { return call(api); }));
 }
 
 const getPeer = db.prepare('SELECT peer, highestSent, highestReceived, bornAt FROM peers WHERE peer = ?');
@@ -113,7 +113,7 @@ function lineOf(r) {
 }
 function publishLine(peer, sent, seq, extra) {
   const r = oneLine.get(peer, sent, seq);
-  if (r) spirit.event.publish(Object.assign({ line: lineOf(r) }, extra || {}));
+  if (r) spirit.eventStream.publish(Object.assign({ line: lineOf(r) }, extra || {}));
 }
 // The line a re names, in this record: the writer's key says which side wrote it (G4.2: "the chatClerver is the one
 // who knows what an incoming message may miss, in terms of what it refers to").

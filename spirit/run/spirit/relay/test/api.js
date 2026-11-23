@@ -5,7 +5,7 @@
 // production script has its own test" (goal/G47.1, box v72).
 // The relay family: the relays this node is a member of (goal/G32.1), and his relays as a screen wants them (names: status, puppets/G2).
 // The interface is run as spirit.js runs the text api {family} answers (loadInterface: the text, with module and exports
-// alone), each call checked by spirit.js's own check (spirit.check, its rules spirit.rules), the one the spirit object
+// alone), each call checked by spirit.js's own check (spirit.checkArgs, its rules spirit.ruleNames), the one the spirit object
 // runs before a call leaves. server.js is read as text only, to find the table the node mounts for the family.
 
 const fs = require('fs');
@@ -67,17 +67,17 @@ function mounted(family) {
 
 // What the world loads, read by every test after it.
 const W = { api: null, verbs: {}, names: [], mounted: null };
-const call = function (verb, args) { return spirit.check('relay.' + verb, W.verbs[verb], args); };
+const call = function (verb, args) { return spirit.checkArgs('relay.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = call(verb, args); return r ? r.code : null; };
 
-// On a page the text runs with module and exports alone, beside the page's window, whose spirit.require it asks for its
+// On a page the text runs with module and exports alone, beside the page's window, whose spirit.requireScript it asks for its
 // companion data.js; a planted window stands for the page's while it runs, each path asked kept.
 test.run('api.js loads as the node hands it, its text run with module and exports alone on a page', 0.2, function () {
   const had = Object.prototype.hasOwnProperty.call(globalThis, 'window');
   const was = globalThis.window;
   W.asked = [];
-  globalThis.window = { spirit: { require: function (p) { W.asked.push(String(p)); return Promise.resolve({}); } } };
+  globalThis.window = { spirit: { requireScript: function (p) { W.asked.push(String(p)); return Promise.resolve({}); } } };
   try {
     const m = { exports: {} };
     new Function('module', 'exports', fs.readFileSync(FILE, 'utf8'))(m, m.exports);
@@ -113,7 +113,7 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
       // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
-      if ((spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad.push(true);
+      if ((spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad.push(true);
     });
   });
   return bad.length === 0 || false;
@@ -177,7 +177,7 @@ function plant(search) {
   P.spirit = {
     contact: { search: function (a) { P.asked.push(a); return typeof search === 'function' ? search() : Promise.resolve(search); } },
     // The contact branch's api.js answers its stand-in, as the real require answers the api.js object (goal/G49.6).
-    require: function (p) { P.required.push(p); return Promise.resolve(p === 'spirit/contact/api.js' ? P.spirit.contact : {}); },
+    requireScript: function (p) { P.required.push(p); return Promise.resolve(p === 'spirit/contact/api.js' ? P.spirit.contact : {}); },
     required: { spirit: { data: { relay: { data: { keep: function (got) { P.kept.push(got); } } } } } },
   };
   return P;

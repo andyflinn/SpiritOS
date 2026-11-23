@@ -27,8 +27,8 @@ test.run('the testicle row element runs on a bare window', 0.2, async function (
   global.window = { spirit: { escapeHtml: function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }, element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  const own = global.window.spirit.require;
-  global.window.spirit.require = function (p) { required.push(String(p)); return own.apply(this, arguments); };
+  const own = global.window.spirit.requireScript;
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); return own.apply(this, arguments); };
   // TESTICLE'S WORDS, AS THE ROW'S OWN REQUIRE LOADS THEM ON A PAGE (goal/G47.1, spirit/app/testicle/words.js): the stand-in
   // require answers only what it is handed, so the file is run here into this window, where it places itself.
   const WORDS = path.join(RUN, 'spirit', 'app', 'testicle', 'words.js');

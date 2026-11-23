@@ -34,7 +34,7 @@ function caller() {
   const script = [
     "require('./spirit/spirit.js');",
     "const asked = " + JSON.stringify(ASKED) + ";",
-    "Promise.resolve(spirit.require('spirit/fs/script.js')).then(function () {",
+    "Promise.resolve(spirit.requireScript('spirit/fs/script.js')).then(function () {",
     "  setInterval(function () {",
     "    let rows = null, ready = false;",
     "    try { const V = spirit.required.spirit.data.viewAt(null, 'fs'); const b = V.branch('files') || {}; ready = V.ready('files') === true; rows = {}; asked.forEach(function (p) { rows[p] = b[p] || null; }); rows.count = Object.keys(b).length; } catch (e) { rows = null; }",
@@ -147,7 +147,7 @@ test.run('a page on the node holds the whole servable tree in its spirit.require
   if (!P.chrome || P.chrome.error) return false;
   await P.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
   await until(function () { return false; }, 1000);
-  await P.chrome.evaluate("window.spirit && window.spirit.ready ? window.spirit.ready.then(function (s) { return s.require('spirit/fs/api.js'); }).then(function () { return true; }, function () { return true; }) : false");
+  await P.chrome.evaluate("window.spirit && window.spirit.readyPromise ? window.spirit.readyPromise.then(function (s) { return s.require('spirit/fs/api.js'); }).then(function () { return true; }, function () { return true; }) : false");
   for (let i = 0; i < 100; i++) { P.rows = await pageRows(); if (P.rows && P.rows.ready && P.rows.desk) break; await H.sleep(300); }
   return (!!P.rows && P.rows.ready && P.rows.desk && P.rows.count > 100) || false;
 }, test.limit.slow);

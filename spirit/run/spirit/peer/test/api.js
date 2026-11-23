@@ -5,7 +5,7 @@
 // production script has its own test" (goal/G47.1, box v72).
 // The peer family: packets to peers, and acquiring one (goal/G32.1).
 // The interface is run as spirit.js runs the text api {family} answers (loadInterface: the text, with module and exports
-// alone), each call checked by spirit.js's own check (spirit.check, its rules spirit.rules), the one the spirit object
+// alone), each call checked by spirit.js's own check (spirit.checkArgs, its rules spirit.ruleNames), the one the spirit object
 // runs before a call leaves. server.js is read as text only, to find the table the node mounts for the family.
 
 const fs = require('fs');
@@ -69,18 +69,18 @@ function mounted(family) {
 
 // What the world loads, read by every test after it.
 const W = { api: null, verbs: {}, names: [], mounted: null };
-const call = function (verb, args) { return spirit.check('peer.' + verb, W.verbs[verb], args); };
+const call = function (verb, args) { return spirit.checkArgs('peer.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = call(verb, args); return r ? r.code : null; };
 
-test.run('api.js loads as spirit.js runs it on a page: its text run with module, exports and spirit.require of the page', 0.2, function () {
+test.run('api.js loads as spirit.js runs it on a page: its text run with module, exports and spirit.requireScript of the page', 0.2, function () {
   try {
     const m = { exports: {} };
-    // AS SPIRIT.JS RUNS IT ON A PAGE (loadInterface): module and exports, and the page's window.spirit.require, which it asks for
+    // AS SPIRIT.JS RUNS IT ON A PAGE (loadInterface): module and exports, and the page's window.spirit.requireScript, which it asks for
     // its companion data.js (goal/G47.1; Andy's rule: "every api.js requires it's companion data.js, and is the only script to
     // require that data.js"). What it asks is kept.
     W.asked = [];
-    new Function('module', 'exports', 'window', fs.readFileSync(FILE, 'utf8'))(m, m.exports, { spirit: { require: function (p) { W.asked.push(String(p)); return Promise.resolve({}); } } });
+    new Function('module', 'exports', 'window', fs.readFileSync(FILE, 'utf8'))(m, m.exports, { spirit: { requireScript: function (p) { W.asked.push(String(p)); return Promise.resolve({}); } } });
     W.api = m.exports;
   } catch (e) { return false; }
   W.verbs = (W.api && W.api.verbs) || {};
@@ -111,7 +111,7 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
       // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
-      return (spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule));
+      return (spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule));
     });
   });
   return bad.length === 0 || false;

@@ -32,7 +32,7 @@
   // button, and the jobs family's interface, spirit/job/api.js (it loads the cache manager), whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
   // branches are intrinsic doesn't fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT
   // REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS").
-  var parts = Promise.all([S.require('spirit/element/codeMirror.js'), S.require('spirit/job/api.js'), S.require('spirit/element/search/job/row.js')]);
+  var parts = Promise.all([S.requireScript('spirit/element/codeMirror.js'), S.requireScript('spirit/job/api.js'), S.requireScript('spirit/element/search/job/row.js')]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -145,12 +145,12 @@
       function failed(word) { return function (e) { console.error(word + ' failed', e); }; }
       if (what === 'cancel') {
         // It stays open: the next event shows the job stop.
-        Promise.all([S.ready, parts]).then(function (r) { return r[0].job.cancel({ id: id }); }).then(null, failed('cancel'));
+        Promise.all([S.readyPromise, parts]).then(function (r) { return r[0].job.cancel({ id: id }); }).then(null, failed('cancel'));
         return;
       }
       if (what === 'delete') {
         // IT GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the list.
-        Promise.all([S.ready, parts]).then(function (r) { return r[0].job.delete({ id: id }); }).then(function () {
+        Promise.all([S.readyPromise, parts]).then(function (r) { return r[0].job.delete({ id: id }); }).then(function () {
           if (typeof o.close === 'function') o.close();
         }, failed('delete'));
       }
@@ -186,5 +186,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/detail.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/detail.js', { create: create }); });
 }());

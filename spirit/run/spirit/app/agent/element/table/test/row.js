@@ -116,11 +116,11 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   load(path.join(RUN, 'spirit', 'data.js'));
   D = global.window.spirit.required.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
-  // kept as spirit.node.key; the row element requires the agent branch's interface (spirit/app/agent/api.js), which brings
+  // kept as spirit.nodeFacts.key; the row element requires the agent branch's interface (spirit/app/agent/api.js), which brings
   // its data.js; the stand-in require below runs that data.js through the real one, which in node reads it from its own
   // disk. The agent family's data.js (spirit/app/agent/data.js) keeps the tables' branches, <node>/agent/<table>, and answers them through
   // spirit.required.spirit.data.agent.data.
-  global.window.spirit.node = { key: HOME_KEY };
+  global.window.spirit.nodeFacts = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
   rowPath = function (table, id) { return global.window.spirit.required.spirit.data.agent.data.branch(table) + '/' + id; };
@@ -129,13 +129,13 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // has not; each ask kept.
   w.bundleAsks = [];
   w.bundlesHeld = { 7: 'Reader', 9: 'Writer' };
-  global.window.spirit.ready = Promise.resolve({ auth: { bundle: function (a) {
+  global.window.spirit.readyPromise = Promise.resolve({ auth: { bundle: function (a) {
     w.bundleAsks.push(a);
     if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
     return Promise.resolve({ items: [], more: false });
   } } });
   PE = function () { const e = global.window.spirit.required; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     w.required.push(String(p));
     // The agent branch's interface brings its data.js, as the real api.js does: run once, as the page runs it, into
     // this page's spirit.required.spirit.data.
@@ -157,7 +157,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     } };
     return Promise.resolve(p === AGENT ? w.family : true);
   };
-  // goal/G43.32: the page's own spirit.require answers the helper, so each element places itself by installSpiritElement,
+  // goal/G43.32: the page's own spirit.requireScript answers the helper, so each element places itself by installSpiritElement,
   // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
   // spirit.required.<their path>.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
@@ -496,10 +496,10 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
   // page's branch as the list seats it (spirit.required.spirit.data.seatRows).
   const { DatabaseSync } = require('node:sqlite');
   N.scratchDb = ownTemp('spirit-tableElement');
-  // The servers check their arguments through the one spirit object's rules (spirit.check), as in the agent process.
-  global.window.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;
+  // The servers check their arguments through the one spirit object's rules (spirit.checkArgs), as in the agent process.
+  global.window.spirit.checkArgs = require(path.join(RUN, 'spirit', 'spirit.js')).checkArgs;
   N.sctx = { db: new DatabaseSync(path.join(N.scratchDb, 'agent.db')), dbFile: path.join(N.scratchDb, 'agent.db'), tables: {}, publish: function () {} };
-  // goal/G43.32: a server runs in node, where spirit is spirit.js itself and spirit.require answers at once (decided 3);
+  // goal/G43.32: a server runs in node, where spirit is spirit.js itself and spirit.requireScript answers at once (decided 3);
   // the page's stand-in is the global spirit only for the page's scripts.
   const pageSpiritObj = global.spirit;
   global.spirit = require(path.join(RUN, 'spirit', 'spirit.js'));

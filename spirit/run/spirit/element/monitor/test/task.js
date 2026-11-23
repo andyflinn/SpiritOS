@@ -14,7 +14,7 @@ const FILE = path.join(RUN, 'spirit', 'element', 'monitor', 'task.js');
 // zztask publishes its progress, as a run process does (goal/G29.14: {job: {state, name, done, total, text}}), and runs on
 // until cancelled; zzfail fails at once; zznorun is no run app.
 const APPS = {
-  zztask: { label: 'Zz Task', icon: '🧪', run: true, script: ["'use strict';", "require('../../spirit.js');", "spirit.event.publish({ job: { state: 'progress', name: 'zz', done: 1, total: 2, text: 'halfway there' } });", 'setTimeout(function () {}, 60000);', ''] },
+  zztask: { label: 'Zz Task', icon: '🧪', run: true, script: ["'use strict';", "require('../../spirit.js');", "spirit.eventStream.publish({ job: { state: 'progress', name: 'zz', done: 1, total: 2, text: 'halfway there' } });", 'setTimeout(function () {}, 60000);', ''] },
   zzfail: { label: 'Zz Fail', icon: '💥', run: true, script: ["'use strict';", 'setTimeout(function () { process.exit(1); }, 300);', ''] },
   zznorun: { label: 'Zz No Run', icon: '🚫', run: false, script: ["'use strict';", ''] },
 };
@@ -48,13 +48,13 @@ test.run('a scratch node comes up with three apps planted, and Chrome opens its 
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
+  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
   // Slow, not quick: a scratch node booted, Chrome started and up to 20 s for the page cannot fit 10 s; on Andy's node,
   // loaded by his testicle run, it did not (2026-11-17, red at 0.7, every row after it with it).
 }, test.limit.slow);
-test.run('it loads through spirit.require', 0.2, async function () {
+test.run('it loads through spirit.requireScript', 0.2, async function () {
   if (!chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.require("spirit/element/monitor/task.js").then(function () { return spirit.required.spirit.element.monitor.task && typeof spirit.required.spirit.element.monitor.task.create === "function" ? "loaded" : "no create"; })');
+  loaded = await chrome.evaluate('spirit.requireScript("spirit/element/monitor/task.js").then(function () { return spirit.required.spirit.element.monitor.task && typeof spirit.required.spirit.element.monitor.task.create === "function" ? "loaded" : "no create"; })');
   return loaded === 'loaded' || false;
 }, test.limit.quick);
 

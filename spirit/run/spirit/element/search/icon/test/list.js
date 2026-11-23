@@ -68,10 +68,10 @@ async function faceOf(N, R) {
 const MAKE = '(function () {' +
   // The fs family bound first (a file of its own read, not counted): since goal/G43.27 a family binds when first called, and
   // a wrapper put on it before then is bound in as its own loadFile, calling itself for ever.
-  ' return window.spirit.ready.then(function (s) { if (window.__asks) return null; window.__asks = []; window.__watches = [];' +
+  ' return window.spirit.readyPromise.then(function (s) { if (window.__asks) return null; window.__asks = []; window.__watches = [];' +
   '  return Promise.resolve(s.fs.loadFile("spirit/fieldRules.js")).then(null, function () {}).then(function () {' +
   '  var read = s.fs.loadFile; s.fs.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); }).then(function () {' +
-  '  return window.spirit.require("spirit/element/search/icon/list.js"); }).then(function () { var F = window.spirit.required.spirit.data.fs.data;' +
+  '  return window.spirit.requireScript("spirit/element/search/icon/list.js"); }).then(function () { var F = window.spirit.required.spirit.data.fs.data;' +
   '   if (!F.__kept) { F.__kept = true; var watch = F.watch; F.watch = function (p) { window.__watches.push(typeof p === "function" ? "the tree" : String(p)); return watch.apply(this, arguments); }; }' +
   '   var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:600px;height:400px;display:flex;flex-direction:column;background:#fff;z-index:99999";' +
   '   window.__list = window.spirit.required.spirit.element.search.icon.list.create(box, { face: "pane" }); window.__box = box; return "made"; }); })';
@@ -132,7 +132,7 @@ test.run('a scratch node, a scratch relay and Chrome come up', 0.2, async functi
   chrome = c;
   open = async function (url) {
     await chrome.send('Page.navigate', { url: url });
-    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   };
   made = async function () { return chrome.evaluate(MAKE + '()').catch(function () { return null; }); };
   seen = function () { return chrome.evaluate(SEEN).then(parsed); };
@@ -260,7 +260,7 @@ test.run('a face with no star reads no set file', 0.8, async function () {
   await chrome.send('Network.setCookie', { name: 'spirit_face', value: F.sid, url: FACE, path: '/' });
   await open(FACE);
   await sleep(2000);
-  const got = await chrome.evaluate('Promise.race([window.spirit.ready.then(function (s) { return s.fs.loadFile(' + JSON.stringify(SET) + '); }).then(function (t) { return typeof t === "string" ? "read" : "none"; }, function () { return "none"; }), new Promise(function (r) { setTimeout(function () { r("none"); }, 10000); })])');
+  const got = await chrome.evaluate('Promise.race([window.spirit.readyPromise.then(function (s) { return s.fs.loadFile(' + JSON.stringify(SET) + '); }).then(function (t) { return typeof t === "string" ? "read" : "none"; }, function () { return "none"; }), new Promise(function (r) { setTimeout(function () { r("none"); }, 10000); })])');
   return got === 'none' ? true : false;
 }, test.limit.slow);
 

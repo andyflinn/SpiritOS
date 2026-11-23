@@ -17,13 +17,13 @@
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9): the spirit object's families, no api handed.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js','spirit/relay/api.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/relay/api.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
   var STEPS = 'spirit/app/join/join.json';
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/joinSteps.js', 'spirit/element/joinForm.js',
-    'spirit/element/search/contact/list.js', 'spirit/element/icon.js'].map(function (p) { return S.require(p); }));
+    'spirit/element/search/contact/list.js', 'spirit/element/icon.js'].map(function (p) { return S.requireScript(p); }));
   // ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
   var DONE = '☑️';
   var OPEN = '⬜';
@@ -102,7 +102,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     // this node lists, its seat, email and face.
     function withRelays(then) {
       // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
-      Promise.resolve(S.ready).then(function (s) { return s.relay.status(''); }).then(function (r) {
+      Promise.resolve(S.readyPromise).then(function (s) { return s.relay.status(''); }).then(function (r) {
         relays = (r && r.body && Array.isArray(r.body.rows)) ? r.body.rows : [];
       }, function () { relays = []; }).then(function () { if (!gone) then(); });
     }
@@ -130,10 +130,10 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     }
 
     // The steps, read once from the Join app's manifest; the job, from the jobs family's cache, watched.
-    Promise.resolve(S.ready).then(function (s) { return s.fs.loadFile(STEPS); }).then(function (text) {
+    Promise.resolve(S.readyPromise).then(function (s) { return s.fs.loadFile(STEPS); }).then(function (text) {
       try { steps = (JSON.parse(text) || {}).steps || []; } catch (e) { steps = []; }
     }, function () { steps = []; }).then(function () { return parts; }).then(function () {
-      return S.require('spirit/job/api.js');
+      return S.requireScript('spirit/job/api.js');
     }).then(function () {
       if (gone) return;
       var J = ((S.required.spirit.data || {}).job || {}).data;
@@ -157,5 +157,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/joinList.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/joinList.js', { create: create }); });
 }());

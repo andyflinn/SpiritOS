@@ -17,11 +17,11 @@ require('./spirit.js');
 // infrastructure and this knows about relays, keys and signatures.
 
 const path = require('path');
-const auth = spirit.require('spirit/relayAuth.js');
-const ownerBadge = spirit.require('spirit/ownerBadge.js');
-const sseClient = spirit.require('spirit/sseClient.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
+const ownerBadge = spirit.requireScript('spirit/ownerBadge.js');
+const sseClient = spirit.requireScript('spirit/sseClient.js');
 // Which key a relay answers to, pinned when this node took its seat.
-const relayKeys = spirit.require('spirit/relayKeys.js');
+const relayKeys = spirit.requireScript('spirit/relayKeys.js');
 
 function streamUrl(relayUrl, key) {
   return String(relayUrl).replace(/\/+$/, '') +
@@ -294,7 +294,7 @@ function createPresence(opts) {
     const relayKey = relayKeys.pinned(rootDir, url);
     if (!relayKey) return;
     let card = '';
-    try { card = spirit.require('spirit/nodeCard.js').describe(rootDir); }
+    try { card = spirit.requireScript('spirit/nodeCard.js').describe(rootDir); }
     catch (e) { card = ''; }
     if (!card) return;
     try {

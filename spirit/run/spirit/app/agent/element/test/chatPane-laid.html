@@ -15,10 +15,10 @@
 // Chat input row is filled by an upward scrolling chat log."): the chat pane in a centre of a stated size, and what the
 // browser makes of it, measured. Opened by ./chatPane.js at /DEBUG/spirit/app/agent/element/test/chatPane-laid.html.
 window.laid = function () {
-  // THE PAGE STARTS ITS SPIRIT, as the face's boot does (spirit.js start): spirit.ready answers only once start() has, and
+  // THE PAGE STARTS ITS SPIRIT, as the face's boot does (spirit.js start): spirit.readyPromise answers only once start() has, and
   // the agent tables' element waits on it.
-  spirit.start();
-  return Promise.resolve().then(function () { return Promise.all([spirit.require('spirit/app/agent/element/chatPane.js'), spirit.require('spirit/app/agent/element/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function () {
+  spirit.startPage();
+  return Promise.resolve().then(function () { return Promise.all([spirit.requireScript('spirit/app/agent/element/chatPane.js'), spirit.requireScript('spirit/app/agent/element/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function () {
     // Where the elements stand (goal/G43.32): spirit.required.<their path>.
     var AG = ((((spirit.required || {}).spirit || {}).app || {}).agent || {}).element || {};
     var E = AG.chatPane;

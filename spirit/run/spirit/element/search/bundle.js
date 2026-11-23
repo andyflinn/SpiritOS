@@ -47,7 +47,7 @@
     function openTab(row) {
       var tabs = options.tabs;
       var name = 'bundle-' + Number(row.id);
-      window.spirit.require('spirit/element/search/bundle/detail.js').then(function () {
+      window.spirit.requireScript('spirit/element/search/bundle/detail.js').then(function () {
         var said = typeof options.tabLabel === 'function' ? options.tabLabel(row) : String(row.label || '');
         var header = said && typeof said === 'object' ? said : { label: String(said || '') };
         tabs.add({ name: name, label: String(header.label || ''), italic: header.italic === true, closable: true, mount: function (box) {
@@ -57,7 +57,7 @@
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     var gone = false;
-    Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/search/bundle/list.js') : null).then(function () {
+    Promise.resolve(window.spirit.requireScript ? window.spirit.requireScript('spirit/element/search/bundle/list.js') : null).then(function () {
       if (gone) return;
       made = window.spirit.required.spirit.element.search.bundle.list.create(root, {
         face: isPane ? 'pane' : 'dropdown',
@@ -85,5 +85,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle.js', { create: function (container, options) { var root = createBundleSelector(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle.js', { create: function (container, options) { var root = createBundleSelector(options); container.appendChild(root); return root; } }); });
 })();

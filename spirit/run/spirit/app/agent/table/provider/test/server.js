@@ -393,19 +393,19 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.requi
   // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once; anything
   // else is a stand-in.
   const ran = {};
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     made.required.push(String(p));
     if (p === 'spirit/app/agent/api.js' && !ran[p]) { ran[p] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'data.js'), 'utf8'), { filename: 'spirit/app/agent/data.js' }); }
     return Promise.resolve(true);
   };
-  // goal/G43.32: the page's spirit.require answers the helper, so each file places itself by installSpiritElement as it
+  // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
-  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A branch's
+  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js comes with its api.js, and the stand-in require above runs the real file for it.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  global.window.spirit.node = { key: HOME_KEY };
+  global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
   const T = global.window.spirit.required.spirit.app.agent.element.table.provider || {};
@@ -531,7 +531,7 @@ test.run('the page server-picker.html draws the provider\'s detail with the real
   PK.pdir = ownTemp('spirit-provider-picker');
   // The servers check their arguments through the one spirit object's rules, as in the agent process; the page section
   // above put a stand-in in its place.
-  global.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;
+  global.spirit.checkArgs = require(path.join(RUN, 'spirit', 'spirit.js')).checkArgs;
   const pdir = PK.pdir;
   const pctx = { db: PK.db = new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
   pctx.tables.provider = require(path.join(DIR, 'server.js'))(pctx);

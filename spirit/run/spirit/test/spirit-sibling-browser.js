@@ -182,7 +182,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 // (spirit/data.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
-//   subs:  every spirit.event.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
+//   subs:  every spirit.eventStream.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
@@ -371,7 +371,7 @@ const WATCH = String.raw`(function () {
     var els = o.element;
     Object.defineProperty(o, 'element', { configurable: true, enumerable: true, get: function () { return els; }, set: function (v) { els = v; searches(v); } });
     searches(els);
-    // THE DATA SET STANDS AT spirit.required.spirit.data (goal/G49.4, step 1; Andy: "spirit.require() places the loaded
+    // THE DATA SET STANDS AT spirit.required.spirit.data (goal/G49.4, step 1; Andy: "spirit.requireScript() places the loaded
     // script at the exact same location/path in the spirit object"): its watches are kept there, the stream's on spirit.
     // A level not made yet is waited for, as spirit.js makes spirit.required and its first levels as it goes.
     function at(obj, keys, then) {
@@ -508,9 +508,9 @@ function ignoredByGit(rel) {
   try { require('child_process').execFileSync('git', ['check-ignore', '-q', '--no-index', rel], { cwd: REPO, stdio: 'ignore' }); return true; }
   catch (e) { return false; }
 }
-// EVERY PRODUCT SCRIPT LOADS THE TREE THROUGH spirit.require (goal/G43.32, the box, testing point 2). Andy: "every script
+// EVERY PRODUCT SCRIPT LOADS THE TREE THROUGH spirit.requireScript (goal/G43.32, the box, testing point 2). Andy: "every script
 // (other than spirit/spirit.js) must start with ... 'use strict'; 'let spirit = require(spirit) or the html pages <script
-// href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.require()", "node modules
+// href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.requireScript()", "node modules
 // designated to provide node.js functionality: require('http' | 'fs' etc.) are exempt", "i see no reason codemirrors
 // vendored scripts cannot be spirit.required....", and "just rename the bloody script" for a name with a dot of its own.
 // Judged by reading each product file (the box: "this item deals with PRODUCT files, NOT tests"); vendored code is
@@ -548,7 +548,7 @@ function shapeBreaks(rel) {
   if (rel === 'spirit/spirit.js') return why;
   // Every plain require: the first takes spirit.js; any other names one of node's own modules.
   const bare = codeOf(src, true);
-  const re = /(^|[^.\w$])require\s*\(/g;
+  const re = /(^|[^.\w$])require(?:Script)?\s*\(/g;
   let m;
   let first = true;
   while ((m = re.exec(bare))) {
@@ -559,7 +559,7 @@ function shapeBreaks(rel) {
     const spiritJs = /(^|\/)spirit\.js$/.test(named) || /['"]spirit\.js['"]\s*\)?$/.test(arg);
     if (spiritJs) { first = false; continue; }
     if (!first && lit && (BUILTIN.indexOf(named) !== -1 || BUILTIN.indexOf(named.replace(/^node:/, '')) !== -1)) continue;
-    // its first load is not spirit.js, or it loads a module not through spirit.require
+    // its first load is not spirit.js, or it loads a module not through spirit.requireScript
     why.push(true);
     first = false;
   }
@@ -579,8 +579,8 @@ function shapeBreaks(rel) {
 function moduleRules(full) {
   const code = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
   const requires = [];
-  // Plain requires only: spirit.require(...) is the door the rule asks for, never a plain require.
-  const re = /(^|[^.\w$])require\(\s*(['"])([^'"]+)\2\s*\)/g;
+  // Plain requires only: spirit.requireScript(...) is the door the rule asks for, never a plain require.
+  const re = /(^|[^.\w$])require(?:Script)?\(\s*(['"])([^'"]+)\2\s*\)/g;
   let m;
   while ((m = re.exec(code))) requires.push({ at: m.index, path: m[3] });
   const own = path.basename(full, '.js');
@@ -588,7 +588,7 @@ function moduleRules(full) {
   const first = requires[0];
   const page = !isSpirit && /\bwindow\b/.test(code) && !/\bmodule\.exports\b/.test(code);
   // THE RULE (Andy, 2026-11-13, goal/G47.1 box v73, replacing his api.js exemption of v72: "if a module requires
-  // anything, it must require spirit.js first. Other modules are required using spirit.require(), unless they are
+  // anything, it must require spirit.js first. Other modules are required using spirit.requireScript(), unless they are
   // native node.js modules."). A module that requires nothing holds it.
   let early = false;
   if (page || !requires.length) early = false;
@@ -602,7 +602,7 @@ function moduleRules(full) {
   } else {
     const native = function (p) { return BUILTIN.indexOf(p) !== -1 || BUILTIN.indexOf(p.replace(/^node:/, '')) !== -1; };
     const other = requires.slice(1).filter(function (r) { return !native(r.path) && !/(^|\/)spirit\.js$/.test(r.path); })[0];
-    // it requires another module plainly, not through spirit.require(): only node's own modules are required plainly
+    // it requires another module plainly, not through spirit.requireScript(): only node's own modules are required plainly
     if (other) early = true;
   }
   const bad = requires.filter(function (r) {
@@ -619,11 +619,11 @@ function productScripts() {
     .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)); });
 }
 // EVERY PRODUCT SCRIPT, PLACED WHERE IT IS REQUIRED (goal/G43.32, the box, testing point 3; Andy: "a general test for
-// any scriptFile.js is to spirit.require() it.", Q5: "doesn't spirit.require() only load a script, store it at
+// any scriptFile.js is to spirit.requireScript() it.", Q5: "doesn't spirit.requireScript() only load a script, store it at
 // spirit.required.<path>  and run it once.", "element scripts themselves are who installs the element factory at
 // spirit.required.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
 // demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
-// spirit.require()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
+// spirit.requireScript()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
 // the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
 // judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.required.<its
 // path> once required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
@@ -700,9 +700,9 @@ function every() {
     E.elements = E.req.filter(isElementScript);
     for (const f of E.req) {
       await page.send('Page.navigate', { url: E.node.base + '/face.html' });
-      await until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, WAIT);
+      await until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, WAIT);
       const keys = JSON.stringify(placeKeys(f));
-      const got = await page.evaluate('window.spirit.ready.then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); return spirit.require(' + JSON.stringify(f) + '); })' +
+      const got = await page.evaluate('window.spirit.readyPromise.then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); return spirit.requireScript(' + JSON.stringify(f) + '); })' +
         '.then(function () { var k = ' + keys + '; var at = function (root) { return k.reduce(function (o, x) { return o == null ? undefined : o[x]; }, root); };' +
         ' var el = at(spirit.required); return JSON.stringify({ err: (window.pageErrors || []).length > 0, placed: at(spirit.required) !== undefined, factory: !!el && typeof el.create === "function" }); },' +
         ' function () { return JSON.stringify({ err: true, placed: false, factory: false }); })');
@@ -799,7 +799,7 @@ async function session() {
 
   // it loads by itself
   // THE BARE MOUNT PAGE: spirit.js alone, then this one file, mounted by itself (rule/26: "every element loads its own
-  // parts via spirit.require; nothing is preloaded"). The node's DEBUG page for it, made from its address.
+  // parts via spirit.requireScript; nothing is preloaded"). The node's DEBUG page for it, made from its address.
   P.stage = 'debug page';
   const address = ADDRESS;
   const mountPage = await fetch(node.base + address);
@@ -827,7 +827,7 @@ async function session() {
   // and "if fucking spirit allready holds motherfucking spirit.required, for motherfucking scripts"): a page loads each file
   // by a plain script tag, so a name it declares outside a function of its own lands on the whole window, or in its global
   // scope (let, const, class). What it shares belongs on the spirit object. Judged on this one file alone: in a frame of
-  // the same origin that loads spirit.js and nothing else, its spirit.require held so none of its parts load, the file is
+  // the same origin that loads spirit.js and nothing else, its spirit.requireScript held so none of its parts load, the file is
   // loaded, and the frame's own window names and global lexical names after it are held against those before it.
   // Judged after the page's errors are counted, so what the file does in that frame, its parts held back, is never taken
   // for the page's.
@@ -842,7 +842,7 @@ async function session() {
     const ctx = (page.heard.filter(function (m) { return m.method === 'Runtime.executionContextCreated' && m.params.context.auxData && m.params.context.auxData.frameId === frameId && m.params.context.auxData.isDefault; }).pop() || { params: { context: {} } }).params.context.id;
     const lexical = async function () { if (!ctx) return null; const r = await page.send('Runtime.globalLexicalScopeNames', { executionContextId: ctx }); return (r.result && r.result.names) || null; };
     const lexBefore = await lexical();
-    const own = await page.evaluate('new Promise(function (r) { var w = document.getElementById(' + JSON.stringify(FRAME) + ').contentWindow; if (w.spirit) w.spirit.require = function () { return new Promise(function () {}); }; var before = Object.getOwnPropertyNames(w); var s = w.document.createElement("script"); s.src = ' + JSON.stringify('/' + rel) + '; var done = function () { r(JSON.stringify(Object.getOwnPropertyNames(w).filter(function (k) { return before.indexOf(k) === -1; }))); }; s.onload = done; s.onerror = function () { r(null); }; w.document.head.appendChild(s); })');
+    const own = await page.evaluate('new Promise(function (r) { var w = document.getElementById(' + JSON.stringify(FRAME) + ').contentWindow; if (w.spirit) w.spirit.requireScript = function () { return new Promise(function () {}); }; var before = Object.getOwnPropertyNames(w); var s = w.document.createElement("script"); s.src = ' + JSON.stringify('/' + rel) + '; var done = function () { r(JSON.stringify(Object.getOwnPropertyNames(w).filter(function (k) { return before.indexOf(k) === -1; }))); }; s.onload = done; s.onerror = function () { r(null); }; w.document.head.appendChild(s); })');
     const lexAfter = await lexical();
     await page.evaluate('(function () { var f = document.getElementById(' + JSON.stringify(FRAME) + '); if (f) f.remove(); return true; }())');
     if (own === null || lexBefore === null || lexAfter === null) return null;
@@ -939,7 +939,7 @@ async function session() {
     '  if (!el || el.textContent.replace(/[\\p{Extended_Pictographic}\\uFE0F\\u200D\\u{1F3FB}-\\u{1F3FF}\\s]/gu, "") !== "") continue;' +
     '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
     '  out.push(true); } return out; }())';
-  await page.evaluate('Promise.resolve().then(function () { return spirit.require("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.required.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
+  await page.evaluate('Promise.resolve().then(function () { return spirit.requireScript("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.required.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
   P.iconMark = await page.evaluate('window.spiritIconMark || ""');
   const loose = {};
   const iconProbe = async function () { const s = await page.evaluate('JSON.stringify(' + ICONS + ')'); (s ? JSON.parse(s) : []).forEach(function (x) { loose[x] = true; }); };

@@ -161,20 +161,20 @@ test.run('the page files place spirit.required.spirit.app.agent.element.table.pe
   global.window.spirit.required = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
   // The agent branch's interface brings its data.js, as the real api.js does: given spirit/app/agent/api.js, its data.js
   // runs once, as the page runs it, into this page's spirit.required.spirit.data.
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     made.required.push(String(p));
     if (p === 'spirit/app/agent/api.js' && !made.agentData) { made.agentData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'data.js'), 'utf8'), { filename: 'spirit/app/agent/data.js' }); }
     return Promise.resolve(true);
   };
-  // goal/G43.32: the page's spirit.require answers the helper, so each file places itself by installSpiritElement as it
+  // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
-  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. The agent
+  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. The agent
   // family's data.js comes with its interface, spirit/app/agent/api.js, which the stand-in require answers as the real one
   // does.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  global.window.spirit.node = { key: HOME_KEY };
+  global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   // What the page files require is what is asked from here on; the runner's own asks come before it.
   made.from = made.required.length;

@@ -10,7 +10,7 @@ it is the verb half of the family selector, `spirit/element/search/api.js`.
   `createApiVerbSelector` no more. The control is appended to the container and answered (box v23: *"every element gets
   a container and appends itself"*).
 - **Built on probabilitySearch**, as a dropdown (`face: 'dropdown'`); nothing of `shellCreateListSearch` (goal/G40.8).
-- **It loads probabilitySearch itself**, through `spirit.require` (goal/G41.3; rule/26): its test runs on a bare page.
+- **It loads probabilitySearch itself**, through `spirit.requireScript` (goal/G41.3; rule/26): its test runs on a bare page.
 - Its root carries `value`, the chosen verb. Its first option, at the top, reads `All Verbs`: a valid choice whose value is the
   empty string, every verb (Andy, goal/G41.14: *"the apiVerbSelector element MUST offer a (valid) \"All Verbs\" option at the
   top, which results in an empty string as \"value\""*).

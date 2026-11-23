@@ -19,5 +19,5 @@ among its kernel names.
 - An annotation verb or name left on the family.
 - A file verb climbing out of the run folder (goal/G47.6, box: *"a peer asking a file verb for ../, a full path or a drive
   letter is refused by the spirit object's path rule at the door"*): stat, load, save and delete, each asked for `../x`,
-  `a/../../x`, `..\x`, `/etc/passwd`, `\x`, `C:/x`, `c:\x` and a path with a NUL, are refused by spirit.check against the verbs
+  `a/../../x`, `..\x`, `/etc/passwd`, `\x`, `C:/x`, `c:\x` and a path with a NUL, are refused by spirit.checkArgs against the verbs
   declared here; a plain path inside the run folder passes.

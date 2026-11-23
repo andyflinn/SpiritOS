@@ -94,7 +94,7 @@ function world() {
   helper(global.window.spirit, 'spirit/element/busyButton.js', { attach: function (button, o) { W.busy.push({ button: button, o: o }); return button; } });
   // The agent server's family: provider(args), each ask kept, answering W.answer.
   W.family = { provider: function (a) { W.asks.push(a); const r = W.answer; return r instanceof Error ? Promise.reject(r) : Promise.resolve(r || {}); } };
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
     if (W.held) return W.held.promise;
     return Promise.resolve(p === AGENT ? W.family : true);

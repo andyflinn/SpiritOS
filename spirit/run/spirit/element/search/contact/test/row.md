@@ -4,8 +4,8 @@ One contact as a row element: `spirit.required.search.contact.row.create(row, op
 `row.create` (`spirit/element/row.js`). Its subject is a public key; it reads the node's contacts as the contact
 family's cache manager keeps them (`spirit/run/spirit/contact/data.js`, `spirit.required.spirit.data.contact.data`; goal/G41.28:
 in `spirit.required.spirit.data` under the serving node, `<node>/contact/contacts/<key>`), requires the contact interface, which brings that data script
-(`spirit.require('spirit/contact/api.js')`), and repaints from it. The test loads it as a page does, the page's node known
-(`spirit.node.key`, `data.homeNode`).
+(`spirit.requireScript('spirit/contact/api.js')`), and repaints from it. The test loads it as a page does, the page's node known
+(`spirit.nodeFacts.key`, `data.homeNode`).
 
 ## API
 
@@ -20,7 +20,7 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
   else → `add` (`peer.acquire { publicKey, publicLabel }`). An action asks and paints nothing; an action the row does
   not offer asks nothing. **What the row is follows its flags**: a row added (its `keep` set on its contact row) loses
   its Add and offers what a kept row offers; a row that leaves the book offers Add again.
-- **It loads what it uses** (goal/G41.3): loading, it requires `spirit/element/row.js` through `spirit.require`; `open`
+- **It loads what it uses** (goal/G41.3): loading, it requires `spirit/element/row.js` through `spirit.requireScript`; `open`
   first requires the one contact detail (`search/contact/detail.js`), for a person and a relay alike, then opens it, as a
   layer of the mounter's panel stack (`options.open`, goal/G43.18), handed `{ key, layer, relay }`: whether the row is a relay
   (goal/G43.32; Andy: *"the contact list already knows the difference between contact types. so should the detail panel."*), the layer's close and title,

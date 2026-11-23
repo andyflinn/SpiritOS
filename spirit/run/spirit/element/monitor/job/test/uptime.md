@@ -8,7 +8,7 @@ Its test is `./uptime.js`: a real Chrome on a scratch node's face page, the node
 
 ## Requirements
 
-- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.job.uptime`, with a `create`.
+- It loads through `spirit.requireScript` and places itself at `spirit.required.spirit.element.monitor.job.uptime`, with a `create`.
 - It requires the jobs family's interface, `spirit/job/api.js`, and the value tile, `spirit/element/monitor/value.js`.
 - Mounted, it is a value tile in tile mode: its icon ⏱️, drawn by the icon element, and its label Uptime.
 - Its value is how long the node has run, in its two largest units, worked out from the stats on the spirit job's row.

@@ -112,7 +112,7 @@ function pullOrigin(opts) {
   // 5 Pushed, through pushOrigin.
   const ahead = (git(['rev-list', '--count', 'origin/' + BRANCH + '..HEAD'], repo).stdout || '').trim();
   if (ahead === '0') { did.push('nothing to push'); return Promise.resolve({ ok: true, did: did }); }
-  const { pushOrigin } = spirit.require('spirit/app/pushOrigin/pushOrigin.js');
+  const { pushOrigin } = spirit.requireScript('spirit/app/pushOrigin/pushOrigin.js');
   return pushOrigin({ repo: repo }).then(function (r) {
     if (!r || !r.ok) return { ok: false, reason: 'the push did not go through: ' + ((r && r.reason) || 'unknown'), did: did };
     did.push(ahead + ' commit' + (ahead === '1' ? '' : 's') + ' pushed');

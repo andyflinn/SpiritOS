@@ -18,7 +18,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - It keeps no state of its own: no `showDebug`, no `relay-state`, no title of the old shell, and opening it saves no file.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
 - It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own
-  components."): with no workBench on the page, it loads `spirit/element/workBench.js` through `spirit.require`, then builds.
+  components."): with no workBench on the page, it loads `spirit/element/workBench.js` through `spirit.requireScript`, then builds.
 - The workBench has two tools on its right strip (the server's and the bundle editor, below), and on its left one per table of `agent.db`,
   in the order provider, model, persona, job, each with an icon of its own (goal/G41.4, box v22: "every one of
   these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI
@@ -128,7 +128,7 @@ item. no exceptions."*
 
 - Every list pane the app drew is a view of its table in the agent family's cache: it is handed that table's branch,
   `spirit.required.spirit.data.agent.data.branch(table)`. The page runs the real data set, its node known, and each branch's data.js,
-  which only its api.js requires (`spirit.require('spirit/app/agent/api.js')`, goal/G47.1).
+  which only its api.js requires (`spirit.requireScript('spirit/app/agent/api.js')`, goal/G47.1).
 
 ### What its test must try to break
 

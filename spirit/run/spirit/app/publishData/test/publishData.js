@@ -121,7 +121,7 @@ const STUB = [
   // goal/G43.32, decided 3: on the node a script comes back at once, by its run-root path; a branch's api.js binds it.
   "  require: function (p) { if (!/\\/api\\.js$/.test(p)) return require(require('path').join(" + JSON.stringify(RUN) + ", p)); log({ require: p }); return Promise.resolve(family); },",
   "  outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function () { return { status: 0, body: null }; }); },",
-  // Its job, as spirit.js's spirit.job: each progress it publishes is logged, in order.
+  // Its job, as spirit.js's spirit.processJob: each progress it publishes is logged, in order.
   "  job: { progress: function (done, total, text) { log({ progress: { done: done, total: total, text: String(text) } }); return Promise.resolve(true); } },",
   "};",
   "const realLoad = Module._load;",
@@ -674,7 +674,7 @@ test.run('the origin\'s platform/README.md then lists every platform folder the 
 // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
 // ITS STEPS ARE ITS JOB'S PROGRESS (goal/G47.1; Andy: "if \"one-shot-script-apps\" (node:run:true) actually publish what
 // they're doing, like publishData should"; the task row, spirit/element/monitor/task.js, shows the text its job last
-// published): each step published as spirit.job.progress(done, total, text), in order, four steps in all.
+// published): each step published as spirit.processJob.progress(done, total, text), in order, four steps in all.
 test.run('the whole run publishes its four steps as its job\'s progress, in order, each with words', 0.2, function () {
   if (!WR.ready || !w) return false;
   const pr = w.progress || [];

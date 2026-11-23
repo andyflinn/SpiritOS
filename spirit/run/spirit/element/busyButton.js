@@ -58,5 +58,5 @@
     return attach(b, o);
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/busyButton.js', { create: create, attach: attach }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/busyButton.js', { create: create, attach: attach }); });
 }());

@@ -40,8 +40,8 @@
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   // ITS ICONS ARE THE ICON ELEMENT'S (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
   // apps."): loaded through the one loader, once, as this file runs.
-  var iconReady = window.spirit && typeof window.spirit.require === 'function'
-    ? Promise.resolve(window.spirit.require('spirit/element/icon.js')).then(null, function () { /* the glyph drawn as text, below */ })
+  var iconReady = window.spirit && typeof window.spirit.requireScript === 'function'
+    ? Promise.resolve(window.spirit.requireScript('spirit/element/icon.js')).then(null, function () { /* the glyph drawn as text, below */ })
     : Promise.resolve();
 
   function create(container, opts) {
@@ -196,5 +196,5 @@
 
   var root = typeof window !== 'undefined' ? window : globalThis;
   root.spirit = root.spirit || {};
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/workBench.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/workBench.js', { create: create }); });
 }());

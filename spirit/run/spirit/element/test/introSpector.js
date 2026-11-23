@@ -36,11 +36,11 @@ test.after(function () {
   try { if (node && node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* scratch */ }
 });
-test.run('it loads through spirit.require and mounts with the create of spirit.required.spirit.element.introSpector, handed a container', 0.2, async function () {
+test.run('it loads through requireScript and mounts with the create of spirit.required.spirit.element.introSpector, handed a container', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-  made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/introSpector.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;overflow:auto;background:#111;z-index:9"; document.body.appendChild(c); var I = spirit.required.spirit.element.introSpector; if (!I || typeof I.create !== "function") return false; window.made = I.create(c); return "made"; }, function () { return false; })');
+  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
+  made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/introSpector.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:760px;overflow:auto;background:#111;z-index:9"; document.body.appendChild(c); var I = spirit.required.spirit.element.introSpector; if (!I || typeof I.create !== "function") return false; window.made = I.create(c); return "made"; }, function () { return false; })');
   return (made === 'made') ? true : false;
 }, test.limit.quick);
 test.run('the party is self (this node) until a pick', 0.2, async function () {

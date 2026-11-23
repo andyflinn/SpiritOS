@@ -28,11 +28,11 @@ const crypto = require('crypto');
 const { execFile, execFileSync, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 // Every status line and every result's icon, worded in one place (goal/G47.1; ./words.js).
-const appServer = spirit.require('spirit/server/app.js');
-const { VENDORED_FOLDERS } = spirit.require('spirit/fs/fileSystem.js');
-const { createProbabilityBucket } = spirit.require('spirit/listLimiter.js');
-const { probabilityStringObjectMatch } = spirit.require('spirit/search/object.js');
-const limits = spirit.require('spirit/limits.js');
+const appServer = spirit.requireScript('spirit/server/app.js');
+const { VENDORED_FOLDERS } = spirit.requireScript('spirit/fs/fileSystem.js');
+const { createProbabilityBucket } = spirit.requireScript('spirit/listLimiter.js');
+const { probabilityStringObjectMatch } = spirit.requireScript('spirit/search/object.js');
+const limits = spirit.requireScript('spirit/limits.js');
 // What one search answer holds once its frame is counted (as the agent's tables count it, rowTable.js).
 const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 
@@ -141,7 +141,7 @@ const T = {
 };
 // The rule a test's title keeps (goal/G47.4, the box: "test titles are constrained BY DESCRIPTION_MAX_BYTES, in
 // spirit/fieldRules.js").
-function fieldRules() { return spirit.require('spirit/fieldRules.js'); }
+function fieldRules() { return spirit.requireScript('spirit/fieldRules.js'); }
 // A SUITE ROW'S STATUS, THE SERVER'S ALONE (goal/G47.1, the box: "A suite row's status, for its script: \"needs running\"
 // when it never ran; \"still red\" when it ran, but has failed tests in it for that script; \"green\" if all tests in the
 // suite passed", "\"needs running\" clears when the server has a full, successful report from the suite in its database for
@@ -387,7 +387,7 @@ function sweep(when) {
     });
   } catch (e) { /* no lab on this tree */ }
   let profiles = '';
-  try { profiles = spirit.require('spirit/tempFolder.js').path('spirit/test/headLessChrome'); } catch (e) { profiles = ''; }
+  try { profiles = spirit.requireScript('spirit/tempFolder.js').path('spirit/test/headLessChrome'); } catch (e) { profiles = ''; }
   const chromes = profiles ? chromesOn(profiles) : [];
   // TESTICLE'S OWN NODE AND CHROME ARE SPARED, their records too: swept before every suite (wsl's red, "while the runner stays
   // busy, a stray left on a lab node during one suite is ended before the next suite runs"), the world it hands its runs lives
@@ -797,7 +797,7 @@ const STRAY_SEVERITY = 0.7;
 function judgeStray(j) {
   if (!j || j.classify || j.batch || j.stopped || !j.script || !/\.js$/.test(j.suite)) return;
   let left = false;
-  try { left = fs.existsSync(spirit.require('spirit/tempFolder.js').path(j.suite.replace(/\.js$/, ''))); }
+  try { left = fs.existsSync(spirit.requireScript('spirit/tempFolder.js').path(j.suite.replace(/\.js$/, ''))); }
   catch (e) { logError('judgeStray ' + j.script + ' ' + j.suite, e); return; }
   try { setResult(j.script, j.suite, STRAY, !left, STRAY_SEVERITY, j.scriptHash, j.suiteHash); }
   catch (e) { logError('judgeStray ' + j.script + ' ' + j.suite, e); }
@@ -1164,7 +1164,7 @@ function toldOwed() {
   owedTold = s;
   // The job's data first, then the message: every job event after carries the new numbers, none the old.
   const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o, reds: reds, leaders: top } }); };
-  Promise.resolve(spirit.job.report({ data: { owed: o, reds: reds, leaders: top } })).then(say, say);
+  Promise.resolve(spirit.processJob.report({ data: { owed: o, reds: reds, leaders: top } })).then(say, say);
 }
 let busyTold = false;
 let runningTold = '';
@@ -1204,7 +1204,7 @@ function kick() {
 // THE NODE'S ONE TREE, NO WATCHER OF ITS OWN (goal/G49.2; Andy: "go on the five!", "the shared dataset needs to be complete,
 // period."): every change of the run folder comes from spirit/fs/script.js, the node's file tree as this process receives it, and
 // is passed on as the watcher passed it: add, change or unlink of a file, a path the server does not ignore.
-const tree = spirit.require('spirit/fs/script.js');
+const tree = spirit.requireScript('spirit/fs/script.js');
 const held = new Set();
 function onFile(event, rel) {
   if (!rel || ignored(path.join(RUN, rel))) return;

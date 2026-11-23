@@ -12,9 +12,9 @@ rows by a column sort or in arrival order.
 It reads `spirit.required.spirit.search.object` (`probabilityStringObjectMatch`, `measureObject`) and `spirit.required.spirit.listLimiter` (`createProbabilityBucket`), and nothing else of
 the spirit.
 
-**It loads those files itself** (rule/26: every element loads its own parts via spirit.require; nothing is preloaded;
+**It loads those files itself** (rule/26: every element loads its own parts via spirit.requireScript; nothing is preloaded;
 goal/G41.18, found by the shell's general rules on a bare page, where the Apps and Grants lists threw
-`createProbabilityBucket is not a function`). Through `spirit.require` it asks for `spirit/search/string.js`,
+`createProbabilityBucket is not a function`). Through `spirit.requireScript` it asks for `spirit/search/string.js`,
 `spirit/search/object.js` and `spirit/listLimiter.js`, and `spirit/element/icon.js` and
 `spirit/element/fieldInput.js`. Loaded on a window with nothing
 preloaded, whose loader answers in the reverse of the order asked (as a page's fetches may), once its files are in, it
@@ -73,9 +73,9 @@ draws and ranks.
   - Re-ranks the cache at once.
   - Asks `server.verb` with `args(words, values)`, or `{ text }` without `args`: through its own data source
     `search(args, verb)` when the mounter hands one, else through the spirit object itself (goal/G43.24; Andy: *"every
-    element that accesses ANY api must require them themselves"*): the family on `spirit.ready`, or the one
-    `spirit.require(spirit.branchPath(server))` binds, a dotted verb walked as a path into it, answered by
-    `spirit.outcome`. It takes no api from its options. With neither a source nor a server and verb it asks nobody.
+    element that accesses ANY api must require them themselves"*): the family on `spirit.readyPromise`, or the one
+    `spirit.requireScript(spirit.branchPath(server))` binds, a dotted verb walked as a path into it, answered by
+    `spirit.callOutcome`. It takes no api from its options. With neither a source nor a server and verb it asks nobody.
 - **One call on the wire**:
   - While a search is out, more typing sends nothing.
   - When the search returns, one search goes with the words as they then stand.

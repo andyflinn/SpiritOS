@@ -21,7 +21,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/search/file.js'), S.require('spirit/element/icon.js')]);
+  var parts = Promise.all([S.requireScript('spirit/element/fstat.js'), S.requireScript('spirit/element/search/file.js'), S.requireScript('spirit/element/icon.js')]);
 
   function tagFor(kind) { return kind === 'audio' ? 'audio' : kind === 'video' ? 'video' : 'img'; }
 
@@ -142,5 +142,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/media/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/media/element.js', { create: create }); });
 }());

@@ -17,7 +17,7 @@ function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let set = {}, glyphs = [], N, chrome, left, made, rows, offered, want;
-const ASKS = 'window.spirit.ready.then(function (s) { window.__asks = []; return Promise.resolve(s.fs.loadFile("spirit/fieldRules.js")).then(null, function () {}).then(function () { var read = s.fs.loadFile; s.fs.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); })';
+const ASKS = 'window.spirit.readyPromise.then(function (s) { window.__asks = []; return Promise.resolve(s.fs.loadFile("spirit/fieldRules.js")).then(null, function () {}).then(function () { var read = s.fs.loadFile; s.fs.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); })';
 
 test.after(function () {
   if (chrome && chrome.kid) chrome.kid.kill();
@@ -36,7 +36,7 @@ test.run('a scratch node comes up, with Chrome on its face page', 0.2, async fun
   if (c.error) { if (c.kid) chrome = c; return false; }
   chrome = c;
   await chrome.send('Page.navigate', { url: N.base + '/face.html' });
-  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   rows = async function () {
     // The list's dropdown: its field opens its popup, whose rows carry their glyph as their key.
     await chrome.evaluate('(function () { var f = window.__root.querySelector("button[id$=field]"); var p = f && document.getElementById(f.id.replace(/field$/, "popup")); if (f && p && p.hidden) f.click(); })()');
@@ -48,7 +48,7 @@ test.run('the icon selector is made on the page', 0.2, async function () {
   if (!rows) return false;
   left = glyphs[0];
   made = await chrome.evaluate(ASKS + '.then(function () {' +
-    ' return window.spirit.require("spirit/element/search/icon.js"); }).then(function () { var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:400px;z-index:99999";' +
+    ' return window.spirit.requireScript("spirit/element/search/icon.js"); }).then(function () { var box = document.body.appendChild(document.createElement("div")); box.style.cssText = "position:fixed;left:0;top:0;width:400px;z-index:99999";' +
     ' window.__root = window.spirit.required.spirit.element.search.icon.create(box, { exclude: [' + JSON.stringify(left) + '] }); return "made"; })').catch(function () { return null; });
   return made === 'made' ? true : false;
 }, test.limit.slow);
@@ -94,9 +94,9 @@ test.run('a pick makes its value that glyph, with one bubbling change', 0.2, asy
 test.run('a selector and two lists made together read the icon set file once', 0.2, async function () {
   if (!rows) return false;
   await chrome.send('Page.navigate', { url: N.base + '/face.html' });
-  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   await chrome.evaluate(ASKS + '.then(function () {' +
-    ' return Promise.all([window.spirit.require("spirit/element/search/icon.js"), window.spirit.require("spirit/element/search/icon/list.js")]); }).then(function () { var box = document.body.appendChild(document.createElement("div"));' +
+    ' return Promise.all([window.spirit.requireScript("spirit/element/search/icon.js"), window.spirit.requireScript("spirit/element/search/icon/list.js")]); }).then(function () { var box = document.body.appendChild(document.createElement("div"));' +
     ' window.__root = window.spirit.required.spirit.element.search.icon.create(box, {}); window.spirit.required.spirit.element.search.icon.list.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); window.spirit.required.spirit.element.search.icon.list.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); return 1; })');
   await until(function () { return rows().then(function (r) { return r.length > 0; }); }, 8000);
   const once = (parsed(await chrome.evaluate('JSON.stringify(window.__asks)')) || []).filter(function (p) { return /iconSet\.json$/.test(p); });

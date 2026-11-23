@@ -15,8 +15,8 @@
 //   spirit.required.spirit.app.agent.element.chatPane.create(container, { persona }) -> { destroy() }   persona: the row picked, { id, label }
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
 (function () {
   var made = 0;
 
@@ -39,7 +39,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
       '</div>';
     container.appendChild(root);
     var gone = false;
-    Promise.all([spirit.require('spirit/app/agent/element/table/tableElement.js'), spirit.require('spirit/element/icon.js')]).then(function () {
+    Promise.all([spirit.requireScript('spirit/app/agent/element/table/tableElement.js'), spirit.requireScript('spirit/element/icon.js')]).then(function () {
       if (gone) return;
       root.querySelector('#' + pre + 'title').innerHTML = window.spirit.required.spirit.app.agent.element.table.tableElement.titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
     });
@@ -47,7 +47,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     var sendButton = root.querySelector('#' + pre + 'send');
     // THE LINE STOPS AT ITS LIMIT (goal/G41.27: "any input field must be checked for size-limits"): fieldInput's line rule,
     // a chat line's, loaded here (rule/26).
-    spirit.require('spirit/element/fieldInput.js').then(function () {
+    spirit.requireScript('spirit/element/fieldInput.js').then(function () {
       var F = window.spirit.required.spirit.element.fieldInput;
       if (!gone && F) F.attach(line, 'spirit.type.string.paragraph');
     }, function () { /* the line is unheld until it loads */ });
@@ -65,5 +65,5 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/chatPane.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/chatPane.js', { create: create }); });
 }());

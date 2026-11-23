@@ -92,8 +92,8 @@ it names no element (Andy, of the `shell/mount.html` it replaces: *"why are ther
 
 - It loads `/spirit.js` and nothing else of the shell by a tag. Its body holds one box of the whole page, of class
   `fill`.
-- It starts the spirit object (`spirit.start()`), then requires the one module of the address through `spirit.require`.
-  Nothing is preloaded (rule/26: every element loads its own parts via spirit.require), so a file that uses a part it
+- It starts the spirit object (`spirit.startPage()`), then requires the one module of the address through `spirit.requireScript`.
+  Nothing is preloaded (rule/26: every element loads its own parts via spirit.requireScript), so a file that uses a part it
   did not require fails here.
 - **An app** (it calls `spirit.shell.activateApp`) is mounted into the box with the api a face gives an app.
 - **An element** mounts with its container alone, no options: the page creates the element its file registers on
@@ -147,7 +147,7 @@ box is its own check, named by the element's path and the box's id chain."*
   spirit-object becomes a global at the top of all modules"*; spirit.js itself: *"it must establish the global spirit
   object early in the code, it must follow the require-path restrictions we discussed."*
   - **The global early**, judged in "it requires spirit.js first" (Andy, 2026-11-13, G47.1 box v73: *"if a module
-    requires anything, it must require spirit.js first. Other modules are required using spirit.require(), unless they
+    requires anything, it must require spirit.js first. Other modules are required using spirit.requireScript(), unless they
     are native node.js modules."*): a module requiring nothing holds it; one requiring anything has `spirit.js` first,
     and any other plain require is one of node's own modules. `spirit.js` sets the global before its first require.
     Page code (no `module.exports`, speaks to `window`) is never loaded by node.
@@ -167,7 +167,7 @@ box is its own check, named by the element's path and the box's id chain."*
     NOW!!!!"*, *"if fucking spirit allready holds motherfucking spirit.required, for motherfucking scripts"*): no name of
     its own lands on the window or in the page's global scope (`var`, `function`, `let`, `const`, `class` outside a
     function of its own); what it shares belongs on the spirit object. Judged on the file alone: in a frame of the same
-    origin that loads `spirit.js` and nothing else, its `spirit.require` held so none of its parts load, the file is
+    origin that loads `spirit.js` and nothing else, its `spirit.requireScript` held so none of its parts load, the file is
     loaded, and the frame's own window names and global lexical names (Chrome's `Runtime.globalLexicalScopeNames`) after
     it are held against those before it. A frame that did not load is red, never green. Judged after the page's errors
     are counted, so what the file does there is not taken for the page's. Also for a file that installs no element.
@@ -222,7 +222,7 @@ box is its own check, named by the element's path and the box's id chain."*
 - **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
   since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
   that sent a write (a call it made that is not the stream, not an interface, and carries no read op or read verb)
-  holds, while mounted, a `spirit.event.subscribe` or `spirit.required.spirit.data.watchPath` of its own making (a family view's watch, `spirit.required.spirit.data.viewAt(node, family).watch`, counts as one, under its whole path).
+  holds, while mounted, a `spirit.eventStream.subscribe` or `spirit.required.spirit.data.watchPath` of its own making (a family view's watch, `spirit.required.spirit.data.viewAt(node, family).watch`, counts as one, under its whole path).
 - **While a write is out, it draws nothing of its own** (rule/19; the box: *"after a press, until the stream answers, an
   element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
   is red"*): from a press that sent a write until the node has answered it, the only changes in its box are a busy mark
@@ -352,10 +352,10 @@ Judged in the run with no file:
 - A tool listed as a test, so `noFuckingGarbage` judges it as a test named after no module.
 - A `.gitignore` line for a path under run:// that `/spirit/run/*` already covers; `run://spirit/` ignored by mistake.
 
-### Requirements (goal/G43.32, the refactor): every product script loads the tree through `spirit.require`
+### Requirements (goal/G43.32, the refactor): every product script loads the tree through `spirit.requireScript`
 
 Andy: *"every script (other than spirit/spirit.js) must start with ... 'use strict'; 'let spirit = require(spirit) or the
-html pages <script href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.require()"*,
+html pages <script href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.requireScript()"*,
 *"node modules designated to provide node.js functionality: require('http' | 'fs' etc.) are exempt"*, *"i see no reason
 codemirrors vendored scripts cannot be spirit.required...."*, *"just rename the bloody script"*, and *"this item deals
 with PRODUCT files, NOT tests."* Judged by reading every tracked `.js` under `spirit/run/spirit/`, test folders and
@@ -364,14 +364,14 @@ vendored code left out; with no file, all of them in one check; with a file, tha
 - **It starts with `'use strict';`**, its first statement, comments aside. `spirit/spirit.js` too.
 - **It takes the spirit object first**: its first `require()` names `spirit.js`; a page script, which has none, finds
   spirit on the page, which loaded `spirit/spirit.js` by its script tag.
-- **Nothing else of the tree is loaded but by `spirit.require`**: any other `require()` names one of node's own modules
+- **Nothing else of the tree is loaded but by `spirit.requireScript`**: any other `require()` names one of node's own modules
   (`fs`, `http`, `node:sqlite`, ...), as a plain string. A relative path, a computed path or another package is red.
-  `spirit/spirit.js`, which is `spirit.require`, is not judged on this.
+  `spirit/spirit.js`, which is `spirit.requireScript`, is not judged on this.
 - **No script name holds a dot of its own** besides `.js`.
 
-- **Placed where it is required** (testing point 3; Andy: *"a general test for any scriptFile.js is to spirit.require()
+- **Placed where it is required** (testing point 3; Andy: *"a general test for any scriptFile.js is to spirit.requireScript()
   it."*, *"I'm NOT demanding that all scripts load in all environments, I'm demanding that they're placed in the spirit
-  object according to these rules IF they are required."*): every product script is `spirit.require()`d alone, on the
+  object according to these rules IF they are required."*): every product script is `spirit.requireScript()`d alone, on the
   node (in the scratch copy beside the scratch node, a process of its own) and on a page (the scratch node's face
   page, a fresh page each). Where it loads, it stands at `spirit.required.<its path>`, and on the node the answer came
   at once, not a promise; a branch's `api.js` binds its branch (decided 8), so it is waited on and judged by its place. Where it does not load nothing is judged; that some load on each side is itself checked.

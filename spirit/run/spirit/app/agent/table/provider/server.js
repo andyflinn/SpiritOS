@@ -21,7 +21,7 @@ require('../../../../spirit.js');
 // provider row will be flagged as unusable"); a later answer clears the flag.
 const fs = require('fs');
 const path = require('path');
-const { rowTable } = spirit.require('spirit/app/agent/table/rowTable.js');
+const { rowTable } = spirit.requireScript('spirit/app/agent/table/rowTable.js');
 
 const PLUGINS = path.join(__dirname, '..', '..', 'provider');
 const FALLBACK = 'openai';
@@ -37,7 +37,7 @@ function pluginOf(label) {
   let names = [];
   try { names = fs.readdirSync(PLUGINS); } catch (e) { names = []; }
   const name = names.filter(function (n) { return n.toLowerCase() === want && fs.existsSync(path.join(PLUGINS, n, n + '.js')); })[0] || FALLBACK;
-  return spirit.require('spirit/app/agent/provider/' + name + '/' + name + '.js');
+  return spirit.requireScript('spirit/app/agent/provider/' + name + '/' + name + '.js');
 }
 
 module.exports = function (ctx) {
@@ -66,7 +66,7 @@ module.exports = function (ctx) {
       if (was && sameUrl(was.url) !== sameUrl(a.url)) a = Object.assign({}, a, { apiKey: '' });
     }
     if (!a || a.op !== 'ask') return handler(a);
-    const bad = spirit.check('provider', { op: 'id', id: 'key' }, a);
+    const bad = spirit.checkArgs('provider', { op: 'id', id: 'key' }, a);
     if (bad) throw refuse(bad.code === 'no-such-argument' ? 'no-such-argument' : 'bad-request', bad.message);
     const row = ctx.db.prepare('SELECT * FROM "provider" WHERE id = ?').get(String(a.id));
     if (!row) throw refuse('no-such-row', 'provider has no row ' + a.id);

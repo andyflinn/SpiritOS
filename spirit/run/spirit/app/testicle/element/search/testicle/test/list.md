@@ -6,7 +6,7 @@ suite selector (`../suite.js`). Owed since the rule *"every production script ha
 The world of `../../test/testicle.js`: a scratch node with testicle on, the general suites stubbed, tests set through
 `testicle.testicle.set`, the list mounted alone on `/face.html` in a real Chrome.
 
-- `create(container, { pick })` loads alone through `spirit.require` and answers `{ destroy }`.
+- `create(container, { pick })` loads alone through `spirit.requireScript` and answers `{ destroy }`.
 - Opened, red on and green off, the reds of every script shown, the most severe first (Andy: *"the default setting for
   testicle search should be EQUAL the the RED verb of testicle."*).
 - Each test once, by its current row: also after a flip streamed in while the list is open.

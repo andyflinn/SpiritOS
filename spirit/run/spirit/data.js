@@ -24,7 +24,7 @@
 //   seatRows(branch, items)  a search answer's items ({ key, label: json }) merged into the tree like any event
 //
 //   nodeId(key)     a public key in base64url, as data names the node
-//   homeNode(key?)      the node a reader means when it names none: on a page the node that served it (spirit.node.key,
+//   homeNode(key?)      the node a reader means when it names none: on a page the node that served it (spirit.nodeFacts.key,
 //                   which spirit.js asks of node.card once as the page loads; Andy, Q10: "yes."), in a process the node
 //                   whose rows it last took. Given a key on a page, it is the page's node from now on.
 //   viewAt(node, family)  a family's view of the tree: get, set, merge, del, watch, rows, seat, ready, quietly and branch
@@ -215,10 +215,10 @@
   var homeNode = '';
   function home(key) {
     if (key !== undefined && String(key)) { var was = homeNode; homeNode = nodeId(key); if (onPage && !was) replay(); return homeNode; }
-    // A KEY IS A STRING (goal/G43.20, found by data-families): spirit.node is the node family, bound when first called
-    // (spirit.js lazyCall), so before node.card has answered spirit.node.key is a function waiting for the family, and a
+    // A KEY IS A STRING (goal/G43.20, found by data-families): spirit.nodeFacts is the node family, bound when first called
+    // (spirit.js lazyCall), so before node.card has answered spirit.nodeFacts.key is a function waiting for the family, and a
     // page filed every row under that function's text.
-    if (!homeNode && root.spirit && root.spirit.node && typeof root.spirit.node.key === 'string' && root.spirit.node.key) homeNode = nodeId(root.spirit.node.key);
+    if (!homeNode && root.spirit && root.spirit.nodeFacts && typeof root.spirit.nodeFacts.key === 'string' && root.spirit.nodeFacts.key) homeNode = nodeId(root.spirit.nodeFacts.key);
     return homeNode;
   }
   // A FAMILY'S VIEW (goal/G41.28): what its data.js or its row element addresses, its branches under its own
@@ -342,7 +342,7 @@
     if (onPage) Array.from(seenJobs.keys()).forEach(function (k) { if (k === String(id) || k.indexOf(String(id) + '\n') === 0) seenJobs.delete(k); });
     if (handing()) each('onDelete', stamped({ id: String(id) }, from));
   }
-  // A SNAPSHOT IS A CONNECT (spirit.event hands one on every open of the stream, the first and each reconnect). THE CACHE IS
+  // A SNAPSHOT IS A CONNECT (spirit.eventStream hands one on every open of the stream, the first and each reconnect). THE CACHE IS
   // NOT WIPED (goal/G47.1, box v148: "on a reconnect spirit/data.js forgets nothing; the snapshot's jobs are laid over what is
   // kept, and every app's rows stay"; Andy, overruling goal/G41.3 Q2's "on a reconnect a cache forgets": "THE FUCKING CACHE
   // IS NOT WIPED OUT."): nothing kept goes, and each job the snapshot brings is laid over it as an update is.
@@ -374,8 +374,8 @@
   var SEARCH_SCANNED = 1000;
   function ranking() {
     if (typeof require === 'function' && typeof module !== 'undefined' && module) {
-      return { match: require('./spirit.js').require('spirit/search/object.js').probabilityStringObjectMatch,
-        bucket: require('./spirit.js').require('spirit/listLimiter.js').createProbabilityBucket, limits: require('./spirit.js').require('spirit/limits.js') };
+      return { match: require('./spirit.js').requireScript('spirit/search/object.js').probabilityStringObjectMatch,
+        bucket: require('./spirit.js').requireScript('spirit/listLimiter.js').createProbabilityBucket, limits: require('./spirit.js').requireScript('spirit/limits.js') };
     }
     // On a page each at its one place, spirit.required.<its path> (goal/G49.4).
     var q = ((root.spirit && root.spirit.required) || {}).spirit || {};
@@ -427,7 +427,7 @@
     // For a suite: the stream's events fed by hand.
     takeJob: onJob, takeRename: onRename };
 
-  // FED BY THE PAGE'S ONE STREAM, spirit.event.subscribe (goal/G40.6). A relay's own events go to whichever translator
+  // FED BY THE PAGE'S ONE STREAM, spirit.eventStream.subscribe (goal/G40.6). A relay's own events go to whichever translator
   // keeps them (onRelay), as everything else on that stream does.
   var sp = root.spirit;
   function relayEvent(ev) { each('onRelay', ev); }
@@ -442,8 +442,8 @@
   }
   function onReconnect() { reconnected.slice().forEach(function (fn) { try { fn(); } catch (e) { /* one reader's fault */ } }); }
   api.whenReconnected = whenReconnected;
-  if (onPage && sp.event && typeof sp.event.subscribe === 'function') {
-    sp.event.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent, onReconnect: onReconnect });
+  if (onPage && sp.eventStream && typeof sp.eventStream.subscribe === 'function') {
+    sp.eventStream.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent, onReconnect: onReconnect });
   }
   // A SERVER THAT NEEDS ITS OWN NODE'S EVENTS ASKS FOR THEM HERE (goal/G43.5; Andy: "the rule covers everything, apps,
   // element"; spirit/test/spirit-branches.js: only data.js takes the node's stream). A server is otherwise fed by its listener
@@ -456,11 +456,11 @@
     if (o && typeof o.onConnection === 'function') followers.push(o.onConnection);
     // Asked now, not at load: this file may be required before the spirit object has its events.
     var s = root.spirit;
-    if (following || !s || !s.event || typeof s.event.subscribe !== 'function') return;
+    if (following || !s || !s.eventStream || typeof s.eventStream.subscribe !== 'function') return;
     following = true;
     // A process its node did not name still keeps its rows somewhere: a level of the tree needs a name.
     if (!home()) homeNode = 'local';
-    s.event.subscribe({ onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent,
+    s.eventStream.subscribe({ onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent,
       onConnection: function (up) { followers.slice().forEach(function (fn) { try { fn(up); } catch (e) { /* one reader's fault */ } }); } });
   }
   api.followStream = follow;

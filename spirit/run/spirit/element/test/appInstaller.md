@@ -12,7 +12,7 @@ come later.
 ## Requirements
 
 - **An app in spirit/app** (goal/G43.9): it is on while its row in `spirit.required.spirit.data.app` says `active: true`
-  (`spirit.require('spirit/app/api.js')`, whose companion data.js keeps it, then `watch(key)`); it requires no data script.
+  (`spirit.requireScript('spirit/app/api.js')`, whose companion data.js keeps it, then `watch(key)`); it requires no data script.
   - A press asks the node, `spirit.required.spirit.app.api.activeApp({ key, active })`, the row's active turned over.
   - It draws only what the stream then brings (rule/19): a press leaves the button as it was until the row changes.
 - **An intrinsic app** (its row says `intrinsic: true`) gets no button and no note (goal/G43.15).

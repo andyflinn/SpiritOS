@@ -24,7 +24,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its two halves, the family list and
   // the verb half, its filter.
   var parts = Promise.all(['spirit/element/search/api/list.js', 'spirit/element/search/api/verb.js'].map(function (p) {
-    return window.spirit.require ? window.spirit.require(p) : null;
+    return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
   }));
 
   // ── THE FAMILY SELECTOR (apiAuth/G1.9) ─────────────────────────────
@@ -132,5 +132,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api.js', { create: function (container, options) { var root = createApiFamilySelector(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api.js', { create: function (container, options) { var root = createApiFamilySelector(options); container.appendChild(root); return root; } }); });
 })();

@@ -16,12 +16,12 @@
 // family's cache manager (spirit/auth/data.js), so a bundle added, renamed or deleted anywhere shows in every list.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  if (window.spirit.require) ['spirit/element/search.js', 'spirit/element/search/bundle/row.js'].forEach(function (p) { window.spirit.require(p); });
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
+  if (window.spirit.requireScript) ['spirit/element/search.js', 'spirit/element/search/bundle/row.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // And the auth family's cache manager, whose bundles branch the list is a view of (goal/G41.28).
-  window.spirit.require('spirit/auth/api.js');
+  window.spirit.requireScript('spirit/auth/api.js');
   var COLUMNS = {
     label: { field: 'label', label: 'Bundle', sort: 'text' },
     owner: { field: 'owner', label: 'Owner', sort: 'text' },
@@ -39,7 +39,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     function search(args) {
       var text = String((args && args.text) || '').trim();
       var ask = family ? { op: 'search', text: text, owner: family } : { op: 'search', text: text };
-      return spirit.ready.then(function (s) { return s.auth.bundle(ask); }).then(function (got) {
+      return spirit.readyPromise.then(function (s) { return s.auth.bundle(ask); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
@@ -77,5 +77,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/list.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/list.js', { create: create }); });
 }());

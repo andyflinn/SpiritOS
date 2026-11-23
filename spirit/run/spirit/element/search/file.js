@@ -11,9 +11,9 @@
 //                    pane fills the box it is given
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.
-  window.spirit.require('spirit/element/search/file/list.js');
+  window.spirit.requireScript('spirit/element/search/file/list.js');
   function create(container, options) {
     return window.spirit.required.spirit.element.search.file.list.create(container, options);
   }
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file.js', { create: create }); });
 }());

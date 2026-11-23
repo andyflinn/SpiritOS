@@ -10,7 +10,7 @@ in an appServer that subscribes, which reads it from its own disc.
 - It is `spirit/app/desk/data.js`.
 - Required in node, as the subscribing appServer requires it from its own disc, it answers `cache { keep, shed, answer }`:
   the cache rules of `family/cacheRules.js`, which it requires in node alone; `family/api.js` holds the verbs alone.
-- deskClient's stream names it as its translator. The page loads it from the node that served it, with `spirit.require`.
+- deskClient's stream names it as its translator. The page loads it from the node that served it, with `spirit.requireScript`.
 - The cache file it fills stays appServer's: `spirit/state/<client appServerName>/<the sender's key in base64url>.json`,
   one per server followed (appServer.js, goal/G41.28).
 

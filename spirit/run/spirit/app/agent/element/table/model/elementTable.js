@@ -9,18 +9,18 @@
 //   spirit.required.spirit.app.agent.element.table.model.elementTable.create(container, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/agent/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/agent/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var made = 0;
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/model/elementTable.js', {
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/model/elementTable.js', {
     create: function (container, detail) {
       var pre = 'mt' + (++made) + '-';
       var table = null;
       var drop = null;
       var gone = false;
       // WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search and the rowForm.
-      Promise.all([spirit.require('spirit/app/agent/element/table/tableElement.js'), spirit.require('spirit/app/agent/element/table/model/elementRow.js'),
-        spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowForm.js')]).then(function () {
+      Promise.all([spirit.requireScript('spirit/app/agent/element/table/tableElement.js'), spirit.requireScript('spirit/app/agent/element/table/model/elementRow.js'),
+        spirit.requireScript('spirit/element/search.js'), spirit.requireScript('spirit/element/rowForm.js')]).then(function () {
         if (gone) return;
         // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
         container.innerHTML = '<div class="fill" style="overflow:hidden">' +
@@ -38,7 +38,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
           var id = drop && drop.value ? String(drop.value) : '';
           if (!id) return null;
           said.textContent = '';
-          return Promise.resolve(spirit.require(spirit.branchPath('agent'))).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
+          return Promise.resolve(spirit.requireScript(spirit.branchPath('agent'))).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
             if (!gone) said.textContent = window.spirit.required.spirit.app.agent.element.table.tableElement.whyOf(e);
           });
         } });

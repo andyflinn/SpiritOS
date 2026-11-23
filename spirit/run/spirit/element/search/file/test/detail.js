@@ -40,11 +40,11 @@ test.run('a scratch node comes up with a Chrome on its face page', 0.2, async fu
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
+  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
 }, test.limit.slow);
 test.run('it loads on a page, at spirit.required.spirit.element.search.file.detail, and makes its detail', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  made = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/file/detail.js"); }).then(function () { var E = (((((window.spirit.required || {}).spirit || {}).element || {}).search || {}).file || {}).detail; if (!E || typeof E.create !== "function") return false; var b = document.body.appendChild(document.createElement("div")); b.id = "zzDetail"; window.__made = E.create(b, { path: ' + JSON.stringify(PATH) + ' }); return "made"; }, function () { return false; })');
+  made = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/search/file/detail.js"); }).then(function () { var E = (((((window.spirit.required || {}).spirit || {}).element || {}).search || {}).file || {}).detail; if (!E || typeof E.create !== "function") return false; var b = document.body.appendChild(document.createElement("div")); b.id = "zzDetail"; window.__made = E.create(b, { path: ' + JSON.stringify(PATH) + ' }); return "made"; }, function () { return false; })');
   return made === 'made' ? true : false;
 }, test.limit.quick);
 // fstat's facts: the MIME type at once, then the size once fs.stat answers.

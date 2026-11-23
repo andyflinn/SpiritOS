@@ -11,8 +11,8 @@
 // stack's open.
 (function () {
   var S = window.spirit = window.spirit || {};
-  var face = S.require('spirit/element/search/job.js');
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/job/element.js', {
+  var face = S.requireScript('spirit/element/search/job.js');
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/job/element.js', {
     create: function (container, options) {
       var made = null;
       var gone = false;

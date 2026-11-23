@@ -35,18 +35,18 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.chrome = await chromePage(findChrome());
   if (!W.node.up || !W.chrome || W.chrome.error) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
-  W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.ready)'); }, 20000));
+  W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
 }, test.limit.slow);
-test.run('it loads through spirit.require, at spirit.required.spirit.element.monitor.job.uptime, with a create', 0.2, async function () {
+test.run('it loads through spirit.requireScript, at spirit.required.spirit.element.monitor.job.uptime, with a create', 0.2, async function () {
   if (!W.page) return false;
-  W.loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/monitor/job/uptime.js"); }).then(function () { var m = window.spirit.required.spirit.element.monitor.job; return !!(m && m.uptime && typeof m.uptime.create === "function"); }, function () { return false; })');
+  W.loaded = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/monitor/job/uptime.js"); }).then(function () { var m = window.spirit.required.spirit.element.monitor.job; return !!(m && m.uptime && typeof m.uptime.create === "function"); }, function () { return false; })');
   return W.loaded === true || false;
 }, test.limit.quick);
 // The box: "Each requires the jobs family's interface".
 test.run('it requires the jobs branch\'s interface and the value tile itself', 0.2, function () {
   const code = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
-  return code.indexOf("S.require('spirit/job/api.js')") !== -1 && code.indexOf("S.require('spirit/element/monitor/value.js')") !== -1 ? true : false;
+  return code.indexOf("S.requireScript('spirit/job/api.js')") !== -1 && code.indexOf("S.requireScript('spirit/element/monitor/value.js')") !== -1 ? true : false;
 }, test.limit.quick);
 test.run('mounted, it is a value tile: its icon ⏱️ drawn by the icon element, and its label Uptime', 0.4, async function () {
   if (!W.loaded) return false;

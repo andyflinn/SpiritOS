@@ -68,13 +68,13 @@ const neverRan = function (k) { return RC[k] ? (!RC[k].ran ? true : false) : fal
 // boots, so no app of the tree coming or going ever changes what it judges.
 const PLANTED = {
   'zzserve/zzserve.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Serve', intrinsic: false }, mount: { 'zzserve.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }),
-  'zzserve/zzserve.js': ["'use strict';", "require('../../spirit.js');", "spirit.require('spirit/server/app.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
-  'zzserve/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').require('spirit/app/zzserve/data.js'); else window.spirit.require('spirit/app/zzserve/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('zzserve', function () { return {}; }); }());", ''].join('\n'),
+  'zzserve/zzserve.js': ["'use strict';", "require('../../spirit.js');", "spirit.requireScript('spirit/server/app.js').serve({ 'ping.get': { request: {}, reply: { ok: true }, handler: function () { return { ok: true }; } } });", ''].join('\n'),
+  'zzserve/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').requireScript('spirit/app/zzserve/data.js'); else window.spirit.requireScript('spirit/app/zzserve/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
+  'zzserve/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').requireScript('spirit/data.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('zzserve', function () { return {}; }); }());", ''].join('\n'),
   'zzshot/zzshot.json': JSON.stringify({ identity: { icon: 'Z', label: 'Zz Shot', intrinsic: false }, mount: { 'zzshot.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: false } }),
   'zzshot/zzshot.js': ["'use strict';", "require('../../spirit.js');", ''].join('\n'),
-  'zzshot/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').require('spirit/app/zzshot/data.js'); else window.spirit.require('spirit/app/zzshot/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
-  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('zzshot', function () { return {}; }); }());", ''].join('\n'),
+  'zzshot/api.js': ["'use strict';", "if (typeof require === 'function') require('../../spirit.js').requireScript('spirit/app/zzshot/data.js'); else window.spirit.requireScript('spirit/app/zzshot/data.js');", "module.exports = { verbs: { 'ping.get': {} } };", ''].join('\n'),
+  'zzshot/data.js': ["'use strict';", "(function family() { var D = typeof require === 'function' ? require('../../spirit.js').requireScript('spirit/data.js') : window.spirit.required.spirit.data; if (!D) return; D.makeFamily('zzshot', function () { return {}; }); }());", ''].join('\n'),
 };
 function plantApps(run) {
   Object.keys(PLANTED).forEach(function (rel) { const p = path.join(run, 'spirit', 'app', rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, PLANTED[rel]); });
@@ -836,22 +836,22 @@ test.run('no other line of index.js changed', 0.2, function () {
 }, test.limit.quick);
 test.run('index.js names readdirp by name nowhere', 0.2, function () {
   const now = VL.now || [];
-  return now.length && !now.some(function (l) { return !!/from\s+['"]readdirp['"]|require\(\s*['"]readdirp['"]\s*\)/.test(l); }) ? true : false;
+  return now.length && !now.some(function (l) { return !!/from\s+['"]readdirp['"]|require(?:Script)?\(\s*['"]readdirp['"]\s*\)/.test(l); }) ? true : false;
 }, test.limit.quick);
 
 // 3. the two users require it by path: job.js here, deskClient.js in its own test
 test.run('spirit/run/spirit/job.js requires chokidar by a path that is spirit/job/chokidar/index.js', 0.2, function () {
   const u = 'spirit/run/spirit/job.js';
   const c = code(fs.readFileSync(path.join(REPO, u), 'utf8'));
-  const specs = (c.match(/require\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\(\s*['"]|['"]\s*\)$/g, ''); });
+  const specs = (c.match(/require(?:Script)?\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require(?:Script)?\(\s*['"]|['"]\s*\)$/g, ''); });
   let to = '';
-  // goal/G43.32: loaded by spirit.require, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
+  // goal/G43.32: loaded by spirit.requireScript, by its run-root path ("spirit/jobs/chokidar/index.js"); a relative path is the old way.
   try { to = specs.length === 1 ? require.resolve(specs[0].charAt(0) === '.' ? path.resolve(path.dirname(path.join(REPO, u)), specs[0]) : path.join(RUN, specs[0])) : ''; } catch (e) { to = ''; }
   return to === idxNew ? true : false;
 }, test.limit.quick);
 test.run('no file requires chokidar by its bare name', 0.2, function () {
   const byName = VL.tracked.filter(function (f) { return /\.(js|mjs|cjs|html)$/.test(f) && !SELF.test(f) && f.indexOf(NEW + 'chokidar/') !== 0; })
-    .filter(function (f) { return !!/require\(\s*['"]chokidar['"]\s*\)|from\s+['"]chokidar['"]|import\(\s*['"]chokidar['"]\s*\)/.test(code(fs.readFileSync(path.join(REPO, f), 'utf8'))); });
+    .filter(function (f) { return !!/require(?:Script)?\(\s*['"]chokidar['"]\s*\)|from\s+['"]chokidar['"]|import\(\s*['"]chokidar['"]\s*\)/.test(code(fs.readFileSync(path.join(REPO, f), 'utf8'))); });
   return !byName.length ? true : false;
 }, test.limit.quick);
 
@@ -1045,14 +1045,14 @@ function mountPart() {
     ].join('\n') + '\n');
     fs.writeFileSync(path.join(dir, 'helper.js'), "require('fs').writeFileSync(process.argv[2], 'ran');\n");
     // Its api.js requires its companion data.js, the one script that does (goal/G47.1), on a page and in node.
-    fs.writeFileSync(path.join(dir, 'api.js'), INTERFACE + "\nif (typeof window !== 'undefined') window.spirit.require('spirit/app/" + name + "/data.js'); else require('../../spirit.js').require('spirit/app/" + name + "/data.js');\nmodule.exports = { verbs: { ping: {} } };\n");
+    fs.writeFileSync(path.join(dir, 'api.js'), INTERFACE + "\nif (typeof window !== 'undefined') window.spirit.requireScript('spirit/app/" + name + "/data.js'); else require('../../spirit.js').requireScript('spirit/app/" + name + "/data.js');\nmodule.exports = { verbs: { ping: {} } };\n");
     fs.writeFileSync(path.join(dir, 'note.txt'), NOTE);
     fs.writeFileSync(path.join(dir, OLD_FOLDER, 'api.js'), '// the decoy\nmodule.exports = { verbs: { decoy: {} } };\n');
     fs.writeFileSync(path.join(dir, OLD_FOLDER, 'note.txt'), 'the decoy');
     fs.writeFileSync(path.join(dir, 'data.js'), [
       '(function family() {',
       "  var D = typeof window !== 'undefined' ? window.spirit.required.spirit.data : require('../../data.js');",
-      "  if (!D) { window.spirit.require('spirit/data.js').then(family); return; }",
+      "  if (!D) { window.spirit.requireScript('spirit/data.js').then(family); return; }",
       "  D.makeFamily('" + name + "');",
       "  (typeof window !== 'undefined' ? window : global).__appData = '" + name + "';",
       '}());',
@@ -1400,21 +1400,21 @@ function mountPart() {
   }, test.limit.quick);
   test.run('the page has its spirit object', 0.2, async function () {
     if (noPage()) return false;
-    return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
+    return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
   }, test.limit.quick);
   test.run('a page binds the new branch by its name, and its verb answers', 0.2, async function () {
     if (noPage()) return false;
-    const pinged = await onPage("spirit.ready.then(function () { return spirit.require(spirit.branchPath('" + NAME + "')); }).then(function (f) { return f.ping({}); })");
+    const pinged = await onPage("spirit.readyPromise.then(function () { return spirit.requireScript(spirit.branchPath('" + NAME + "')); }).then(function (f) { return f.ping({}); })");
     return (!!pinged && !!pinged.v && Number(pinged.v.pid) > 0) || false;
   }, test.limit.quick);
   test.run('on a page, binding the branch by its api.js loads and runs the data.js beside <name>.js', 0.2, async function () {
     if (noPage()) return false;
-    const managed = await onPage("spirit.ready.then(function () { return spirit.require(spirit.branchPath('" + NAME + "')); }).then(function () { return window.__appData; })");
+    const managed = await onPage("spirit.readyPromise.then(function () { return spirit.requireScript(spirit.branchPath('" + NAME + "')); }).then(function () { return window.__appData; })");
     return (!!managed && managed.v === NAME) || false;
   }, test.limit.quick);
   test.run('the one <name>.js also runs on a page, one file on the page and as the server', 0.2, async function () {
     if (noPage()) return false;
-    const same = await onPage("spirit.require('spirit/app/" + NAME + '/' + NAME + ".js').then(function () { return window.__appOnPage; })");
+    const same = await onPage("spirit.requireScript('spirit/app/" + NAME + '/' + NAME + ".js').then(function () { return window.__appOnPage; })");
     return (!!same && same.v === NAME) || false;
   }, test.limit.quick);
   // A process requires the family's api.js alone, and says whether its data.js then stands at spirit.required.spirit.data.<family>, and
@@ -1543,6 +1543,6 @@ test.run('spirit/job.js holds neither of its old tree reads', 0.2, function () {
 ['spirit/event/event.js', 'spirit/faceHome.js', 'spirit/nodeSearches.js'].forEach(function (rel) {
   test.run(rel + ' reads the tree through spirit/fs/script.js, not through job.js', 0.2, function () {
     const c = codeOf(rel);
-    return (c.length > 0 && /require\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(c) && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
+    return (c.length > 0 && /require(?:Script)?\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(c) && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
   }, test.limit.quick);
 });

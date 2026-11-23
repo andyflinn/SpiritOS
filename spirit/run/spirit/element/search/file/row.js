@@ -13,13 +13,13 @@
 // no annotations, which are the node's only (goal/G43.20).
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   // goal/G41.23: a file's icon is the icon element (spirit/element/icon.js), loaded here too.
   // goal/G43.17: a file's icon is its kind's, which fstat says.
-  if (window.spirit.require) ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/word/script.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.requireScript) ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/word/script.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.requireScript(p); });
   var files = null;
 
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
@@ -27,7 +27,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   // it fills; a row reads spirit.required.spirit.data.fs.data.
   function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
   // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
-  var fsReady = Promise.resolve(window.spirit.require('spirit/fs/api.js')).then(function () { return fsReads(); });
+  var fsReady = Promise.resolve(window.spirit.requireScript('spirit/fs/api.js')).then(function () { return fsReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
@@ -145,10 +145,10 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
           return null;
         } },
         // Through the spirit object (goal/G32.2): checked calls answering the reply's body.
-        { name: 'remove', label: 'Remove', run: function (el) { return spirit.ready.then(function (s) { return s.fs.delete({ path: el.row.path }); }); } },
+        { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function (s) { return s.fs.delete({ path: el.row.path }); }); } },
       ],
       expand: function (el) {
-        return spirit.ready.then(function (s) {
+        return spirit.readyPromise.then(function (s) {
           return s.fs.stat({ path: el.row.path });
         }).then(function (stat) { return { stat: stat }; });
       },
@@ -163,7 +163,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       paintWords();
     };
     if (((((window.spirit || {}).required || {}).spirit || {}).word || {}).script) listen();
-    else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/word/script.js')).then(listen, function () { /* no colours */ });
+    else if (window.spirit.requireScript) Promise.resolve(window.spirit.requireScript('spirit/word/script.js')).then(listen, function () { /* no colours */ });
     var destroy = el.destroy;
     el.destroy = function () { live = false; if (offWords) offWords(); return destroy.apply(el, arguments); };
     // A FILE DELETED ON DISC TAKES ITS ROW OUT OF THE LIST (goal/G47.1; Andy: "why would the file row not listen to a file
@@ -182,5 +182,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/row.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/row.js', { create: create }); });
 }());

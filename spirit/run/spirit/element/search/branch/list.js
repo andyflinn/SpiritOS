@@ -16,12 +16,12 @@
 // stream keeps them current through the auth family's cache manager (spirit/auth/data.js), so a branch added or deleted
 // anywhere shows in every list.
 (function () {
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   // And the auth family's cache manager, whose branches branch the list is a view of (goal/G41.28). And the verb filter
   // (goal/G43.18, the box: "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too").
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/branch/row.js', 'spirit/element/search/api.js', 'spirit/element/search/api/verb.js'].map(function (p) {
-    return window.spirit.require ? window.spirit.require(p) : null;
-  }).concat([window.spirit.require('spirit/auth/api.js')]));
+    return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
+  }).concat([window.spirit.requireScript('spirit/auth/api.js')]));
   var COLUMNS = {
     family: { field: 'family', label: 'Family', sort: 'text' },
     verb: { field: 'verb', label: 'Verb', sort: 'text' },
@@ -46,7 +46,7 @@
       if (o.bundle) ask.bundle = Number(o.bundle);
       if (family.family) ask.family = family.family;
       if (family.family && family.verb) ask.verb = family.verb;
-      return spirit.ready.then(function (s) { return s.auth.branch(ask); }).then(function (got) {
+      return spirit.readyPromise.then(function (s) { return s.auth.branch(ask); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
@@ -96,5 +96,5 @@
 
   // Its parts are loaded first, so a caller that requires this file and waits finds them all on the page.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/branch/list.js', { create: create, ready: parts }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/branch/list.js', { create: create, ready: parts }); });
 }());

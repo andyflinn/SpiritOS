@@ -22,7 +22,7 @@ TextEditor app are gone. It replaces `spirit/element/textView.js`, which is gone
 ## Requirements
 
 - **It is the only door to the library** (goal/G43.5; Andy: *"only access to codeMirror library is through the element!"*).
-- **It loads the CodeMirror library itself**, through `spirit.require`:
+- **It loads the CodeMirror library itself**, through `spirit.requireScript`:
   `spirit/element/codeMirror/lib/codemirror.js`, then CodeMirror's search add-ons (`addon/dialog/dialog.js`,
   `addon/search/searchcursor.js`, `addon/search/search.js`, `addon/search/jump-to-line.js`), and the mode files of the
   path's syntax (`spirit/element/codeMirror/mode/<mode>/<mode>.js`, a mode it builds on first). Its stylesheets,

@@ -22,35 +22,35 @@ require('./spirit.js');
 // lost — the answer arrives on the stream and is matched by hash — which
 // is why the hash comes back even on the fast path.
 
-const auth = spirit.require('spirit/relayAuth.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
 // The hint bound and the tunnel predicate (cycle 2) — one file for the
 // relay, the node and the page, so all three agree what fits.
-const limits = spirit.require('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits.js');
 // The address book (contacts.js) is asked one question only, may this
 // key be COUNTED, and it is required where that is asked, below, not
 // here. A relay builds no peerPost (its partner router went with
 // partnering, Andy's decision goal/G22.6), and loading the book at the top
 // carried the node's contact code onto every relay (goal/G16.9). The lazy require is the same seam contacts.js uses for
 // its own store.
-const nodeCard = spirit.require('spirit/nodeCard.js');
+const nodeCard = spirit.requireScript('spirit/nodeCard.js');
 // The one sealing implementation (cycle 10, R4). oneDoor.js asserts it is
 // the only one in the tree — two seal functions differing in one detail
 // is how associated data gets dropped on one path.
-const seal = spirit.require('spirit/seal.js');
+const seal = spirit.requireScript('spirit/seal.js');
 // WHICH REQUEST GOES NEXT. A relay holds one route per member (0016), so
 // a node that fires freely is refused; one that queues turns a refusal
 // into latency, which is `reach over speed`. The rules live next door
 // because they are decidable without a socket and therefore testable
 // without one — see postQueue.js and spirit/test/postQueue.js.
-const postQueue = spirit.require('spirit/postQueue.js');
+const postQueue = spirit.requireScript('spirit/postQueue.js');
 // THE HELD STREAM TO EACH RELAY, a part of this door (goal/G19.14). Andy:
 // "can peerPost require('presenceNode') as one of its components". Built
 // by holdStreams below and reached by nobody else; oneDoorStacks.js holds
 // the line.
-const presenceNode = spirit.require('spirit/presenceNode.js');
-const spiritErrors = spirit.require('spirit/error/script.js');
+const presenceNode = spirit.requireScript('spirit/presenceNode.js');
+const spiritErrors = spirit.requireScript('spirit/error/script.js');
 // The node layer's one reading of what arrived (N1, goal/G16.5).
-const arrivals = spirit.require('spirit/arrivals.js');
+const arrivals = spirit.requireScript('spirit/arrivals.js');
 
 // A UX number, not a protocol constant tuned against another machine's
 // tick. It only decides how long a caller stares at a spinner.
@@ -535,7 +535,7 @@ function createPeerPost(opts) {
   // Only where holdStreams was called: the table and the streams exist there.
   // The relay table is relayKeys.js's, keyed by relay key; a url is handed
   // in for lookup. Required lazily, here.
-  function relayTable() { return spirit.require('spirit/relayKeys.js'); }
+  function relayTable() { return spirit.requireScript('spirit/relayKeys.js'); }
   function plainUrl(url) { return relayTable().normalizeUrl(url); }
   // THE REFUSAL STANDS WHILE THE SEAT IS GONE (goal/G40.11: the refusal is not stored, seated is). What this process
   // heard refused, on a relay this node is not seated on; a claim or a join seats it again, and the refusal is over.
@@ -1812,7 +1812,7 @@ function createPeerPost(opts) {
     var id = auth.nameIdentity(rootDir, name);
     // server.js fills the description on every boot; this stays for one
     // emptied by hand. A caption must never be the reason a claim fails.
-    try { spirit.require('spirit/server/serveCommon.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the claim still goes */ }
+    try { spirit.requireScript('spirit/server/serveCommon.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the claim still goes */ }
     var body = {
       name: name,
       publicKey: id.publicKey,
@@ -1900,7 +1900,7 @@ function createPeerPost(opts) {
     }
     return keyed.then(function (key) {
       var mine = me();
-      try { spirit.require('spirit/server/serveCommon.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the join still goes */ }
+      try { spirit.requireScript('spirit/server/serveCommon.js').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the join still goes */ }
       var card = nodeCard.describe(rootDir);
       var body = code
         ? { joinConfirm: { code: String(code), card: card } }
@@ -2027,7 +2027,7 @@ function createPeerPost(opts) {
       if (presence) throw new Error('holdStreams: this door already holds its streams');
       var given = presenceOpts || {};
       heldJobs = given.jobs || null;
-      var open = given.connectImpl || spirit.require('spirit/sseClient.js').connect;
+      var open = given.connectImpl || spirit.requireScript('spirit/sseClient.js').connect;
       presence = presenceNode.createPresence(Object.assign({ rootDir: rootDir }, given, {
         router: self,
         connectImpl: function (o) {

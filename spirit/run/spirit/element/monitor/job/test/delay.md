@@ -8,7 +8,7 @@ Its test is `./delay.js`: a real Chrome on a scratch node's face page, the node'
 
 ## Requirements
 
-- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.job.delay`, with a `create`.
+- It loads through `spirit.requireScript` and places itself at `spirit.required.spirit.element.monitor.job.delay`, with a `create`.
 - It requires the jobs family's interface, `spirit/job/api.js`, and the value tile, `spirit/element/monitor/value.js`.
 - Mounted, it is a value tile in tile mode: its icon 🔁, drawn by the icon element, and its label Event loop delay.
 - Its value is the 99th percentile of the event loop delay of the node, one decimal and ms, worked out from the stats on the spirit job's row.

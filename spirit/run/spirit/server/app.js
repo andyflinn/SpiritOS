@@ -41,11 +41,11 @@ require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const errors = spirit.require('spirit/error/script.js');
-const limits = spirit.require('spirit/limits.js');
+const errors = spirit.requireScript('spirit/error/script.js');
+const limits = spirit.requireScript('spirit/limits.js');
 // A STREAM'S BUNDLE IN ONE PLACE (goal/G48.7; Andy: "i would NOT want that to be done in two places", "the module is
 // spirit/streamBundle.js"): the publisher packs with it, both listeners unpack with it.
-const streamBundle = spirit.require('spirit/streamBundle.js');
+const streamBundle = spirit.requireScript('spirit/streamBundle.js');
 
 const RESERVED = ['api', 'ok'];
 const VERB_RE = /^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/;
@@ -327,7 +327,7 @@ function shape(v) {
   return typeof v === 'string' ? "'" + v + "'" : String(v);
 }
 // PUBLISHING (desk/G2.3) is not here. It is shared by every spawned process, server or transient, so it lives in
-// spirit.js (spirit.event.publish, spirit.job) with its size check, beside the job cycle (goal/G40.6); this file
+// spirit.js (spirit.eventStream.publish, spirit.processJob) with its size check, beside the job cycle (goal/G40.6); this file
 // keeps only what serving needs.
 
 // ── AGENTS: AN APP'S RULES FOR AGENTS, FROM A FILE (slim/G1.8) ────────
@@ -346,7 +346,7 @@ function shape(v) {
 
 // DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:
 // {} reads, {on: true|false} sets; both answer {debug} with the state that resulted. It flips this
-// process's DEBUG, spirit.debug (goal/G40.6). A member never reaches it (apiDoor refuses it by name).
+// process's DEBUG, spirit.debugLog (goal/G40.6). A member never reaches it (apiDoor refuses it by name).
 function withDebug(verbs) {
   if (Object.prototype.hasOwnProperty.call(verbs, 'DEBUG')) return verbs;
   const all = Object.assign({}, verbs);
@@ -354,8 +354,8 @@ function withDebug(verbs) {
     request: { on: false }, reply: { debug: false },
     accepts: function (a) { return isPlain(a) && (Object.keys(a).length === 0 || (Object.keys(a).length === 1 && typeof a.on === 'boolean')); },
     handler: function (a) {
-      const was = spirit.debug();
-      const now = spirit.debug(typeof a.on === 'boolean' ? a.on : undefined);
+      const was = spirit.debugLog();
+      const now = spirit.debugLog(typeof a.on === 'boolean' ? a.on : undefined);
       if (now !== was) reportDebug();
       return { debug: now };
     },
@@ -367,9 +367,9 @@ function withDebug(verbs) {
 // keeps it from there for an app of spirit/app/ (spirit/job.js, Q2, Q3).
 function reportDebug() {
   // Quietly, when this process has no job to report on (a suite's stand-in, a server started by hand).
-  if (!spirit.job || typeof spirit.job.report !== 'function') return;
+  if (!spirit.processJob || typeof spirit.processJob.report !== 'function') return;
   try {
-    Promise.resolve(spirit.job.report({ data: { debug: spirit.debug() === true } })).catch(function () { /* not started by a node */ });
+    Promise.resolve(spirit.processJob.report({ data: { debug: spirit.debugLog() === true } })).catch(function () { /* not started by a node */ });
   } catch (e) { /* not started by a node */ }
 }
 
@@ -426,7 +426,7 @@ const CACHE_LIMIT = 4 * 1024 * 1024;
 const CACHE_SAVE_MS = 10;
 let streamData = null;
 function dataSet() {
-  if (!streamData) streamData = spirit.require('spirit/data.js');
+  if (!streamData) streamData = spirit.requireScript('spirit/data.js');
   return streamData;
 }
 // One per sender this server follows: where it stands and what it keeps.
@@ -447,7 +447,7 @@ function familyApi(family) {
   // Beside the family's api.js (spirit.branchPath): an app's in spirit/app/<name>/, a system family's in spirit/<name>/.
   const file = path.join(RUN_ROOT, path.dirname(spirit.branchPath(String(family))), 'data.js');
   if (!fs.existsSync(file)) return null;
-  try { return spirit.require(path.relative(RUN_ROOT, file).split(path.sep).join('/')); } catch (e) { return null; }
+  try { return spirit.requireScript(path.relative(RUN_ROOT, file).split(path.sep).join('/')); } catch (e) { return null; }
 }
 function senderOf(key, family) {
   const k = String(key || '');
@@ -576,7 +576,7 @@ function heard(st, from, e) {
   // IN CLIENT MODE, ON TO ITS OWN PAGES (goal/G47.5, box v12: "the replies and reply stream data are cached as they are
   // now, but also published to its own faces"): a row the chosen sibling sent goes on the node's stream for this node's
   // pages, as its own publishings would; never to its own subscribers, whom client mode dropped.
-  if (clientMode() && from === remote.current) { try { spirit.event.publish(e.row); } catch (err) { /* no page listens */ } }
+  if (clientMode() && from === remote.current) { try { spirit.eventStream.publish(e.row); } catch (err) { /* no page listens */ } }
   // Then the server's own word on it.
   return following.onRow(e.row, from);
 }
@@ -584,7 +584,7 @@ function withStreamListener(verbs, stream, followed, name) {
   if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'listener')) return verbs;
   dataSet();
   // A family's data.js stands on this server's data set as it is required (goal/G41.24, goal/G43.7).
-  if (stream.translator) spirit.require(path.relative(RUN_ROOT, path.resolve(String(stream.translator))).split(path.sep).join('/'));
+  if (stream.translator) spirit.requireScript(path.relative(RUN_ROOT, path.resolve(String(stream.translator))).split(path.sep).join('/'));
   const cache = stream.cache === true || isPlain(stream.cache);
   following = {
     module: String(stream.module || ''),
@@ -628,7 +628,7 @@ function withStreamListener(verbs, stream, followed, name) {
 //   unsubscribe {}                     the caller's key stops being sent anything
 // Who may subscribe is the node's normal grant (<server>.subscribe, or the server as a whole); the caller's key is the
 // subscriber, never named. publish(row) puts the row on the node's job stream for its pages, as it always has, and hands
-// the same row to every subscriber through its family's listener over peerPost (spirit.require with a key: no packet
+// the same row to every subscriber through its family's listener over peerPost (spirit.requireScript with a key: no packet
 // built here). In order per subscriber.
 // EVERY ROW TO EVERY SUBSCRIBER (goal/G48.8; Andy: "the MOTHERFUCKING server/app.js HAS BEEN MOTHERFUCKING POLLUTED WITH
 // MOTHERFUCKING APP-SPECIFIC FUCKING GARBAGE", "GET RID OF THAT FUCKING SHIT IN THE APPSERVER!"): this file reads no field
@@ -677,9 +677,9 @@ const log = [];                  // { run, n, row }, oldest first, bounded by pu
 function branchPath(name) { return spirit.branchPath(name); }
 function deliver(key, q, bundle) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), with the publisher's own wait.
-  return spirit.require(branchPath(q.family), key, { waitMs: publisher.waitMs }).then(function (branch) {
+  return spirit.requireScript(branchPath(q.family), key, { waitMs: publisher.waitMs }).then(function (branch) {
     if (!branch || typeof branch.listener !== 'function') return 'away';
-    return spirit.outcome(branch.listener({ json: JSON.stringify(bundle) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
+    return spirit.callOutcome(branch.listener({ json: JSON.stringify(bundle) })).then(function (r) { return r.status === 200 ? 'taken' : 'away'; });
   }, function () { return 'away'; });
 }
 function pumpTo(key) {
@@ -705,7 +705,7 @@ function sendTo(key, entry) {
 // THE ONE PUBLISH (goal/G33.4, box v43: "the desk server publishes its changes to the browser with the same function
 // that it publishes its changes to the deskClients"). Numbered, logged, and handed to every subscriber.
 function publish(row) {
-  const out = spirit.event.publish(row);
+  const out = spirit.eventStream.publish(row);
   if (!publisher) return out;
   published += 1;
   const entry = { run: RUN_ID, n: published, row: row };
@@ -754,7 +754,7 @@ function pushToPages() {
   } else {
     try { rows = (publisher && publisher.bootstrap && publisher.bootstrap(selfKey())) || []; } catch (e) { rows = []; }
   }
-  rows.forEach(function (row) { if (isPlain(row)) { try { spirit.event.publish(row); } catch (e) { /* no page listens */ } } });
+  rows.forEach(function (row) { if (isPlain(row)) { try { spirit.eventStream.publish(row); } catch (e) { /* no page listens */ } } });
 }
 function withPublisher(verbs, opts) {
   if (!opts || typeof opts !== 'object') return verbs;
@@ -797,7 +797,7 @@ function withPublisher(verbs, opts) {
 function subscribersFromGrants(name) {
   if (!publisher) return Promise.resolve(0);
   readListeners();
-  return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.search({ text: name }); })).then(function (r) {
+  return spirit.callOutcome(spirit.requireScript('spirit/auth/api.js').then(function (auth) { return auth.search({ text: name }); })).then(function (r) {
     // auth.search answers the new search (goal/G29.7): items {key, label}, each label {name, key, path} as JSON. Read as
     // records, as it once answered, it restored nobody, and after every restart the desk sent its clients nothing
     // (found 2026-10-27, goal/G41.11: his "all:" lines woke nobody once the clients no longer subscribed again on a
@@ -826,7 +826,7 @@ function subscribersFromGrants(name) {
 // spirit/jobs/ ...", "i think the shape needs alignment."): a server is spirit/app/<name>/<name>.js, its family beside it.
 function withAgents(verbs, script) {
   const resolved = path.resolve(String(script || ''));
-  spirit.require('spirit/introSpector.js').stale(path.dirname(resolved), Object.keys(verbs)).forEach(function (file) {
+  spirit.requireScript('spirit/introSpector.js').stale(path.dirname(resolved), Object.keys(verbs)).forEach(function (file) {
     console.error('appServer: ' + file + ' names a verb this server does not declare');
   });
   return Object.assign({}, verbs);
@@ -839,11 +839,11 @@ function withAgents(verbs, script) {
 // EVERY CALL CHECKED BY THE APP'S api.js, IN THE APP'S OWN PROCESS (goal/G43.32, the box, decided 9). Andy: "the arguments
 // for an API call MUST be validated twice: a) on the browser ... b) ON THE FUCKING NODE ... and it MUST be the same code",
 // and "appClient.js has no business running or parsing code. that must be done by the plugin. i don't care if it's
-// spirit/server/app.js, since it'll crash with the server process and leave the node intact." So the same spirit.check the
-// page runs, against the branch's api.js where spirit.require placed it (spirit.required.spirit.app.<name>.api), before the
+// spirit/server/app.js, since it'll crash with the server process and leave the node intact." So the same spirit.checkArgs the
+// page runs, against the branch's api.js where spirit.requireScript placed it (spirit.required.spirit.app.<name>.api), before the
 // handler. THE AUTO-VERBS' ARGUMENTS NAME THEIR TYPES TOO (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*";
 // Andy: "aren't there more undefined args?"): appServer's own DEBUG, listener and remote, which no api.js declares, are
-// checked by the same spirit.check against AUTO_RULES; a verb neither declares goes on unchecked, as before.
+// checked by the same spirit.checkArgs against AUTO_RULES; a verb neither declares goes on unchecked, as before.
 const AUTO_RULES = {
   DEBUG: { on: 'spirit.type.boolean?' },
   listener: { json: 'spirit.type.string.json' },
@@ -855,8 +855,8 @@ function withChecked(verbs, script) {
   const branch = m[1];
   const apiPath = 'spirit/app/' + branch + '/api.js';
   if (!fs.existsSync(path.join(RUN_ROOT, apiPath))) return verbs;
-  // spirit.require places the file at once; its binding asks a node, which this check needs nothing of.
-  try { Promise.resolve(spirit.require(apiPath)).then(null, function () { /* the binding; the check reads the file */ }); } catch (e) { return verbs; }
+  // spirit.requireScript places the file at once; its binding asks a node, which this check needs nothing of.
+  try { Promise.resolve(spirit.requireScript(apiPath)).then(null, function () { /* the binding; the check reads the file */ }); } catch (e) { return verbs; }
   const api = ['spirit', 'app', branch, 'api'].reduce(function (o, k) { return o == null ? undefined : o[k]; }, spirit.required);
   const declaredVerbs = api && api.verbs && typeof api.verbs === 'object' ? api.verbs : null;
   if (!declaredVerbs) return verbs;
@@ -868,7 +868,7 @@ function withChecked(verbs, script) {
     const rule = declared ? declaredVerbs[v] : AUTO_RULES[v];
     out[v] = Object.assign({}, out[v], {
       handler: function (a, caller) {
-        const bad = spirit.check(branch + '.' + v, rule, a);
+        const bad = spirit.checkArgs(branch + '.' + v, rule, a);
         if (bad) throw Object.assign(new Error(String(bad.message || 'bad-request')), { refusal: bad.refusal && errors.byCode(bad.refusal) ? bad.refusal : 'bad-request', extra: { why: String(bad.message || '') } });
         return own.apply(this, arguments);
       },
@@ -890,8 +890,8 @@ function withChecked(verbs, script) {
 // subscribe a server makes to another kind of server (deskClient to desk) is untouched: remote routes toward its own kind.
 const remote = { name: '', current: '', known: [], refreshing: false, server: null, hasListener: false };
 function remoteFile() { return path.join(RUN_ROOT, 'spirit', 'state', remote.name, 'remote.json'); }
-function selfKey() { return String((spirit.node && typeof spirit.node.key === 'string' && spirit.node.key) || ''); }
-function selfLabel() { return String((spirit.node && (spirit.node.label || spirit.node.name)) || ''); }
+function selfKey() { return String((spirit.nodeFacts && typeof spirit.nodeFacts.key === 'string' && spirit.nodeFacts.key) || ''); }
+function selfLabel() { return String((spirit.nodeFacts && (spirit.nodeFacts.label || spirit.nodeFacts.name)) || ''); }
 function clientMode() { return !!remote.current && remote.current !== selfKey(); }
 function readRemote() {
   let held = null;
@@ -921,7 +921,7 @@ function remoteList() {
 // TO ITS OWN LOOPBACK CLIENTS AND ITS RELAY-FACE ONLY (Andy, box v12): on the node's stream for its pages, never to the
 // peers subscribed to this server.
 function publishRemote() {
-  try { spirit.event.publish({ remote: remoteList() }); } catch (e) { /* no page listens */ }
+  try { spirit.eventStream.publish({ remote: remoteList() }); } catch (e) { /* no page listens */ }
 }
 // THE LIST CHECKED AGAIN AT LEISURE (box v12: "the appServer then leisurely asks again in the background whether the list
 // is still current"): each kept contact's server of this kind is asked remote {}, the one verb every appServer has with
@@ -934,7 +934,7 @@ function refreshRemote() {
   if (remote.refreshing) return;
   remote.refreshing = true;
   const me = selfKey();
-  Promise.resolve(spirit.require('spirit/contact/api.js')).then(function (c) {
+  Promise.resolve(spirit.requireScript('spirit/contact/api.js')).then(function (c) {
     return c && typeof c.search === 'function' ? c.search({ q: '', keep: true }) : { items: [] };
   }).then(function (got) {
     const people = ((got && got.items) || []).filter(function (i) { return i && i.key && i.key !== me; }).slice(0, REMOTE_ASK_MAX);
@@ -943,7 +943,7 @@ function refreshRemote() {
       let named = null;
       try { named = typeof p.label === 'string' ? JSON.parse(p.label) : null; } catch (e) { named = null; }
       const row = { key: String(p.key), label: String((named && (named.myLabel || named.name || named.publicLabel)) || p.name || '') };
-      return spirit.outcome(Promise.resolve(spirit.require(branchPath(remote.name), row.key, { waitMs: 5000 })).then(function (branch) {
+      return spirit.callOutcome(Promise.resolve(spirit.requireScript(branchPath(remote.name), row.key, { waitMs: 5000 })).then(function (branch) {
         if (!branch || typeof branch.remote !== 'function') throw Object.assign(new Error('no remote'), { status: 0 });
         return branch.remote({});
       })).then(function (r) {
@@ -971,7 +971,7 @@ const siblingListener = {
       // The place it got to in the sibling's stream, handed back at the next subscribe (below).
       if (typeof e.run === 'string' && Number.isInteger(e.n)) { sibling.run = e.run; sibling.n = e.n; }
       siblingKeep(e);
-      if (isPlain(e.row)) { try { spirit.event.publish(e.row); } catch (err) { /* no page listens */ } }
+      if (isPlain(e.row)) { try { spirit.eventStream.publish(e.row); } catch (err) { /* no page listens */ } }
     });
     siblingSaveSoon();
     return { heard: true };
@@ -1062,8 +1062,8 @@ function listenToSibling() {
     asked = typeof s.subscribe === 'function' ? s.subscribe(key, remote.name).catch(function () { return false; }) : Promise.resolve(false);
   } else {
     const position = sibling.run ? { branch: remote.name, run: sibling.run, since: sibling.n } : { branch: remote.name };
-    asked = spirit.outcome(Promise.resolve(spirit.require('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.listener' }); })).then(function () {
-      return spirit.outcome(Promise.resolve(spirit.require(branchPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
+    asked = spirit.callOutcome(Promise.resolve(spirit.requireScript('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.listener' }); })).then(function () {
+      return spirit.callOutcome(Promise.resolve(spirit.requireScript(branchPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') throw Object.assign(new Error('the sibling takes no subscribe'), { status: 0 });
         return p.subscribe(position);
       }));
@@ -1111,7 +1111,7 @@ function gateRemote(verb, args, caller) {
   if (!clientMode() || verb === 'remote' || verb === 'DEBUG') return null;
   const key = String((caller && caller.key) || '');
   if (caller && caller.owner === true) {
-    return spirit.outcome(Promise.resolve(spirit.require(branchPath(remote.name), remote.current, { waitMs: 10000 })).then(function (p) {
+    return spirit.callOutcome(Promise.resolve(spirit.requireScript(branchPath(remote.name), remote.current, { waitMs: 10000 })).then(function (p) {
       if (!p || typeof p[verb] !== 'function') throw Object.assign(new Error('the sibling serves no verb ' + verb), { code: 'no-such-verb' });
       return p[verb](args);
     })).then(function (r) { return { status: r.status, body: r.body }; });
@@ -1139,7 +1139,7 @@ function serve(verbs, opts) {
   const name = path.basename(String(argv[1] || 'server'), '.js');
   // THE DEBUG IT HAD (goal/G43.15, Q2: "i think we should persist it, always."): the node hands it over as --debug.
   const debugAt = argv.indexOf('--debug');
-  if (debugAt !== -1) spirit.debug(argv[debugAt + 1] === 'true');
+  if (debugAt !== -1) spirit.debugLog(argv[debugAt + 1] === 'true');
   try {
     // goal/G33.8: both halves, the stream it publishes (withPublisher) and the streams it listens to (withStreamListener).
     // THE PUBLISHER AND THE LISTENER ON EVERY SERVER (goal/G47.5; Andy: "both: \"publisher\" and \"listener\" belong in
@@ -1164,7 +1164,7 @@ function serve(verbs, opts) {
   // starting the listener, it should announce itself with its name, and a
   // nicely formatted overview of it's api." Published, not printed (desk/G2.3).
   const srv = s.listen(pipe, function () {
-    spirit.event.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
+    spirit.eventStream.publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
       return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };
     }) } });
     subscribersFromGrants(name);
@@ -1197,7 +1197,7 @@ function serve(verbs, opts) {
     // binding's wait, it answers false, and the caller asks again later.
     return s.follow(k).catch(function () { return false; }).then(function () {
       // The publisher's family, bound by the one spirit object under its key (goal/G40.6), with its own wait.
-      return spirit.outcome(spirit.require(branchPath(fam), k, { waitMs: 10000 }).then(function (p) {
+      return spirit.callOutcome(spirit.requireScript(branchPath(fam), k, { waitMs: 10000 }).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') return { ok: false };
         return p.subscribe(position);
       }));
@@ -1209,7 +1209,7 @@ function serve(verbs, opts) {
     const k = String(key || '');
     if (!k || !verbs.listener) return Promise.resolve(false);
     followed.add(k);
-    return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.grant({ key: k, path: name + '.listener' }); })).then(function (r) {
+    return spirit.callOutcome(spirit.requireScript('spirit/auth/api.js').then(function (auth) { return auth.grant({ key: k, path: name + '.listener' }); })).then(function (r) {
       return r.status === 200 || (r.body && r.body.code === 'already-granted');
     });
   };
@@ -1232,7 +1232,7 @@ function serve(verbs, opts) {
     const st = senders.get(k);
     if (!st || !st.family) return Promise.resolve(null);
     const v = String(verb);
-    return spirit.outcome(spirit.require(branchPath(st.family), k, { waitMs: 10000 }).then(function (p) {
+    return spirit.callOutcome(spirit.requireScript(branchPath(st.family), k, { waitMs: 10000 }).then(function (p) {
       if (!p || typeof p[v] !== 'function') throw Object.assign(new Error('the sender serves no verb ' + v), { code: 'no-such-verb' });
       return p[v](args || {});
     })).then(function (r) {
@@ -1259,7 +1259,7 @@ function saveCaches() {
   return out;
 }
 
-// THE NODE'S FACTS ON THE SPIRIT OBJECT (goal/G19.10, goal/G40.6): its port, name, key and owner are spirit.node, which
+// THE NODE'S FACTS ON THE SPIRIT OBJECT (goal/G19.10, goal/G40.6): its port, name, key and owner are spirit.nodeFacts, which
 // spirit.js reads itself as it is required: the port from spirit/state/environment.json, the rest from --node.
 
 module.exports = {
@@ -1281,8 +1281,8 @@ module.exports = {
 // every server process as "node spirit/server.js --app <script>""; before it goal/G43.32, decided 9: "for one-shot servers, appClient
 // launches appServer with the argument "spirit/app/<name>/name.js", then the appServer module "requires" that script"):
 // spirit/server.js hands its --app here with the arguments as they stand after it, so the script stands where it always stood
-// (argv[1]), is required through spirit.require, and serves through serve() above, where each call is checked by its api.js.
+// (argv[1]), is required through spirit.requireScript, and serves through serve() above, where each call is checked by its api.js.
 function start(script) {
-  spirit.require(path.relative(RUN_ROOT, path.resolve(script)).split(path.sep).join('/'));
+  spirit.requireScript(path.relative(RUN_ROOT, path.resolve(script)).split(path.sep).join('/'));
 }
 module.exports.start = start;

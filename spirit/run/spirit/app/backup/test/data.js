@@ -101,7 +101,7 @@ test.run('it translates nothing: a job of the backup on the stream writes nothin
 test.run('in node, requiring the interface spirit/app/backup/api.js brings it, and it stands at spirit.required.spirit.data.backup.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'spirit.js'));
   const s = globalThis.spirit;
-  try { await Promise.resolve(s.require('spirit/app/backup/api.js')); } catch (e) { return false; }
+  try { await Promise.resolve(s.requireScript('spirit/app/backup/api.js')); } catch (e) { return false; }
   const B = s.required.spirit.data && s.required.spirit.data.backup && s.required.spirit.data.backup.data;
   return (!!B && typeof B.status === 'function' && typeof B.keep === 'function') || false;
 }, test.limit.quick);

@@ -17,7 +17,7 @@ require('../../../../spirit.js');
 // update(providerId, models): the provider table's ask (../provider/server.js) puts a provider's list here: a model not
 // yet there is added, labelled with its model name as the provider gives it; one no longer listed is removed; one still
 // listed keeps its row. Another provider's models are not touched. Every change goes through the verb, so it is published.
-const { rowTable } = spirit.require('spirit/app/agent/table/rowTable.js');
+const { rowTable } = spirit.requireScript('spirit/app/agent/table/rowTable.js');
 
 // The capabilities, a list of strings in JSON (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json").
 function listOfWords(json) {

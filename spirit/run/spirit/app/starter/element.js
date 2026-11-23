@@ -10,7 +10,7 @@
 // description. That is all it does.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
 
@@ -35,7 +35,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     box.textContent = 'asking this node what it is…';
     container.innerHTML = '';
     container.appendChild(box);
-    S.outcome(Promise.resolve(S.ready).then(function (s) { return s.node.card({}); })).then(function (r) {
+    S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s.node.card({}); })).then(function (r) {
       if (gone) return;
       box.textContent = '';
       var card = r && r.status === 200 ? r.body : null;
@@ -46,5 +46,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     return { destroy: function () { gone = true; container.innerHTML = ''; } };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/starter/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/starter/element.js', { create: create }); });
 }());

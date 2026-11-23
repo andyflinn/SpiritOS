@@ -11,15 +11,15 @@
 // the field shows what the node STORED (rule/19).
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function (root) {
   var E = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
-  // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput and its type, through spirit.require (goal/G48.4, the box:
+  // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput and its type, through spirit.requireScript (goal/G48.4, the box:
   // "fieldRules.js dies").
-  var parts = root.spirit.require ? Promise.all([root.spirit.require('spirit/element/fieldInput.js'), root.spirit.require('spirit/type/string/description.js')]) : Promise.resolve();
+  var parts = root.spirit.requireScript ? Promise.all([root.spirit.requireScript('spirit/element/fieldInput.js'), root.spirit.requireScript('spirit/type/string/description.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
-  if (root.spirit.require) root.spirit.require('spirit/element/rowForm.js');
+  if (root.spirit.requireScript) root.spirit.requireScript('spirit/element/rowForm.js');
 
   function description() { var r = root.spirit && root.spirit.required; return (r && r.spirit && r.spirit.type && r.spirit.type.string && r.spirit.type.string.description) || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
@@ -57,7 +57,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
       var bad = '';
       if (D) { try { D.isValid(input.value); } catch (e) { bad = (e && e.message) || 'not a description'; } }
       if (bad) { say(bad, true); return Promise.resolve(); }
-      return root.spirit.outcome(Promise.resolve(root.spirit.ready).then(function (s) { return s.node.setDescription({ description: input.value }); })).then(function (r) {
+      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function (s) { return s.node.setDescription({ description: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
         root.spirit.required.spirit.data.node.data.card.keep({ description: String(body.description == null ? '' : body.description) });
@@ -75,7 +75,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
       input.defaultValue = text;
       input.value = text;
     }
-    root.spirit.require('spirit/node/api.js').then(function () {
+    root.spirit.requireScript('spirit/node/api.js').then(function () {
       if (gone) return;
       stop = root.spirit.required.spirit.data.node.data.card.watch(show);
       show(root.spirit.required.spirit.data.node.data.card.get());
@@ -98,5 +98,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/node/
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/changeMyDescription.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/changeMyDescription.js', { create: create }); });
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -23,7 +23,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/rowForm.js'), S.require('spirit/element/icon.js')]);
+  var parts = Promise.all([S.requireScript('spirit/element/rowForm.js'), S.requireScript('spirit/element/icon.js')]);
 
   function create(host, under) {
     var layers = Object.create(null);
@@ -79,10 +79,10 @@
         // WHAT LANDS IN spirit.required.spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/data.js"): the server's
         // published remote row, filed there by spirit/data.js, is followed as it comes.
         var unwatchRemote = S.required.spirit.data && typeof S.required.spirit.data.watchPath === 'function' ? S.required.spirit.data.watchPath('remote/' + server, function (p, r) { take(r); }) : null;
-        S.require('spirit/element/search.js').then(function () {
+        S.requireScript('spirit/element/search.js').then(function () {
           if (dropped) return;
           take(S.required.spirit.data && S.required.spirit.data[server] && S.required.spirit.data[server].remote);
-          var fam = function () { return Promise.resolve(S.require(S.branchPath(server))); };
+          var fam = function () { return Promise.resolve(S.requireScript(S.branchPath(server))); };
           opts = {
             face: 'dropdown', placeholder: 'remote…',
             // ITS OWN SOURCE: remote's rows are { key, label } with the label a name, while a list's rows ride as a label
@@ -202,5 +202,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/panel.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/panel.js', { create: create }); });
 }());

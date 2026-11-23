@@ -194,7 +194,7 @@ test.run('a Chrome page opens for this suite', 0.2, async function () {
 test.run('the face shell opens in that page with its spirit ready', 0.2, async function () {
   if (!W.c) return false;
   await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
-  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
+  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
   if (W.page) await W.c.evaluate(HANDS);
   return W.page || false;
 }, test.limit.quick);
@@ -202,13 +202,13 @@ const T = function (expr) { return W.c.evaluate('window.__t.' + expr); };
 // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
 const waitFor = function (expr, ms) { return until(function () { return W.c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
 const selector = function (face) {
-  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
 };
 
 // the box: "file.js is an element, spirit.element.spirit.app.file.element.create(container) -> { destroy() }"
 test.run('create(container) draws into it and answers { destroy }, and destroy leaves it empty', 0.2, async function () {
   if (!W.page) return false;
-  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); return spirit.require("spirit/app/file/element.js").then(function () { var E = spirit.required.spirit.app.file.element; if (!E || typeof E.create !== "function") return false; var m = E.create(b); if (!m || typeof m.destroy !== "function") return false; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var full = b.innerHTML.length > 0; m.destroy(); var empty = b.innerHTML === ""; b.remove(); return full && empty ? "ok" : false; }); }, function () { return false; }); }())');
+  const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzOwn"; b.style.cssText = "position:absolute;left:0;top:0;width:50%;height:50%"; document.body.appendChild(b); return spirit.requireScript("spirit/app/file/element.js").then(function () { var E = spirit.required.spirit.app.file.element; if (!E || typeof E.create !== "function") return false; var m = E.create(b); if (!m || typeof m.destroy !== "function") return false; return new Promise(function (r) { setTimeout(r, 2500); }).then(function () { var full = b.innerHTML.length > 0; m.destroy(); var empty = b.innerHTML === ""; b.remove(); return full && empty ? "ok" : false; }); }, function () { return false; }); }())');
   return made === 'ok' || false;
 }, test.limit.slow);
 

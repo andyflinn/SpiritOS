@@ -8,7 +8,7 @@ Its test is `./value.js`: a real Chrome on a scratch node's face page.
 
 ## Requirements
 
-- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.value`, with a `create`.
+- It loads through `spirit.requireScript` and places itself at `spirit.required.spirit.element.monitor.value`, with a `create`.
 - Mounted with an icon, a label and a value, it is a tile (`.stat-tile`) showing all three, the icon drawn by the icon element.
 - Handed no mode, it is shown as a tile; handed a mode it does not know yet (row, until row is built), it is shown as a tile.
 - Handed no value, it shows a dash.

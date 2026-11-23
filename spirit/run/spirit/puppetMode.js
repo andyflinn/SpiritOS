@@ -21,7 +21,7 @@ require('./spirit.js');
 // own (Andy: "pupped is the fate of having an owner that is not the self").
 // Read on every call, so an owner edit is seen at once.
 function puppetIn(rootDir, log) {
-  const auth = spirit.require('spirit/relayAuth.js');
+  const auth = spirit.requireScript('spirit/relayAuth.js');
   const say = log || function () {};
   let moaned = null;
   return function () {

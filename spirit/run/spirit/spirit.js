@@ -331,7 +331,7 @@
   // Andy: "every javascript VM has ONE, one and only spirit object"; "What is createSpirit, it is completely
   // unnecessary"; "every loaded/required module then simply inserts its api functions into the one spirit object".
   // Nothing here makes a second object. A node branch's api.js, run here, inserts its verbs on the instance as
-  // spirit.<branch>; a peer's branch is held under that peer's key and answered by spirit.require.
+  // spirit.<branch>; a peer's branch is held under that peer's key and answered by spirit.requireScript.
   //
   // A branch's interface asked by ask, and made a member over ask and getFile, or refused no-interface.
   var interfaceDefs = Object.create(null);
@@ -382,7 +382,7 @@
   }
   // This VM's node's branch. Two callers at once ask once; a refusal is asked again next time.
   // ONE PLACE FOR A BRANCH (goal/G49.6; Andy: "I WANT THAT FUCKING TRUNK OF THE spirit NAMESPACE FUCKING CLEARED OUT!!!", and of
-  // G40.6 beside G43.32/G49.5, "AND WHICH FUCKING RULING DO YOU THINK APPLIES??????": the later, "spirit.require() places the
+  // G40.6 beside G43.32/G49.5, "AND WHICH FUCKING RULING DO YOU THINK APPLIES??????": the later, "spirit.requireScript() places the
   // loaded script at the exact same path"): the branch's functions are kept here, never on spirit.<branch>, and its api.js
   // carries them at spirit.required.<its path> (requireOne, below), the one place a caller reaches them.
   var asking = {};
@@ -402,11 +402,25 @@
   // names it holds already kept as they are; it stands at spirit.required.<its path>, and is what a caller is answered.
   function carried(fam, m) {
     var p = apiPathOf(fam);
-    var api = (isNode() && nodeOnce[p]) || interfaceDefs[fam] || null;
-    if (!api || typeof api !== 'object') return m;
+    var def = (isNode() && nodeOnce[p]) || interfaceDefs[fam] || null;
+    if (!def || typeof def !== 'object') return m;
+    // A new object, the api.js's own names and the functions beside them: the module itself stays as its file wrote it, so a
+    // plain require of the api.js answers its table alone.
+    var api = {};
+    Object.keys(def).forEach(function (k) { api[k] = def[k]; });
     Object.keys(m).forEach(function (k) { if (!(k in api)) api[k] = m[k]; });
-    placeAt(required, p, api);
+    standAt(required, p, api);
     return api;
+  }
+  // The branch's place set to its object, whatever stood there (its module, placed as the require ran), the folder levels kept.
+  function standAt(rootObj, p, value) {
+    var keys = String(p).replace(/\.js$/, '').split('/').filter(Boolean);
+    var o = rootObj;
+    for (var i = 0; i < keys.length - 1; i += 1) {
+      if (o[keys[i]] == null || (typeof o[keys[i]] !== 'object' && typeof o[keys[i]] !== 'function')) o[keys[i]] = holder();
+      o = o[keys[i]];
+    }
+    o[keys[keys.length - 1]] = value;
   }
   function bindOwn(fam) {
     if (bound[fam]) return Promise.resolve(members[fam]);
@@ -450,7 +464,7 @@
     return held[fam];
   }
 
-  // spirit.tree() -> the node's api answer as it stands: every branch and verb this caller may call.
+  // spirit.apiTree() -> the node's api answer as it stands: every branch and verb this caller may call.
   function tree() {
     return post('api', {}).then(function (r) {
       if (r && r.status >= 200 && r.status < 300) return r.body || {};
@@ -468,10 +482,10 @@
       });
   }
 
-  // ── spirit.require(path, key, how) (goal/G40.1, goal/G40.6) ─────────────────────────────────────────────────────────
+  // ── spirit.requireScript(path, key, how) (goal/G40.1, goal/G40.6) ─────────────────────────────────────────────────────────
   // Andy: "the dynamic loading must be in spirit.js, because it belongs there, and so that any component touched later,
-  // can load its needed components there."; "the loaders name should be spirit.require()"; the key "a second argument
-  // in spirit.require(), by default it's null (owner node) otherwise it's a peer ID". The one async loader, the same on a
+  // can load its needed components there."; "the loaders name should be spirit.requireScript()"; the key "a second argument
+  // in spirit.requireScript(), by default it's null (owner node) otherwise it's a peer ID". The one async loader, the same on a
   // page and in node. path is from the run root. A path in the node's own naming of an interface,
   // branchPath(name) (a server's) or spirit/<name>/api.js (a node branch's), binds that branch: on the
   // instance as spirit.<name> from this VM's node, or with a key as that peer's branch (how, in node, is peerPost's
@@ -516,7 +530,7 @@
     if (typeof document === 'undefined' || document.readyState !== 'loading') return Promise.resolve();
     return new Promise(function (resolve) { document.addEventListener('DOMContentLoaded', function () { resolve(); }, { once: true }); });
   }
-  // EVERY SCRIPT REQUIRED STANDS AT spirit.required.<its path> (goal/G43.32). Andy: "spirit.require() both on the node, AND
+  // EVERY SCRIPT REQUIRED STANDS AT spirit.required.<its path> (goal/G43.32). Andy: "spirit.requireScript() both on the node, AND
   // on the browser should simply install every script required, at the following point: spirit.required.<path.of.fucking.
   // script>. - no name collisions - easily checkable if script is already loaded." One key per folder of its run-root path,
   // its name without .js the last: spirit/relayUrl.js at spirit.required.spirit.relayUrl. On the node it is the module's
@@ -557,7 +571,7 @@
     return o[last];
   }
   // ON A PAGE, WHAT A SCRIPT PLACED FOR ITSELF IS ITS ANSWER (goal/G43.32; Andy, goal/G49.4: "have i NOT fucking specified, that
-  // on both, browser and node, spirit.require() places the loaded script at the exact same motherfucking location/path in the
+  // on both, browser and node, spirit.requireScript() places the loaded script at the exact same motherfucking location/path in the
   // spirit object??????", "FUCKING FIX THAT!!"): a page script has no module box, so it stands at spirit.required.<its path>
   // by placing itself there as it runs (spirit/data.js does); the loader answers that object, as in node it answers the
   // module's exports. A script that placed nothing gets an empty object there, which says it is loaded.
@@ -660,22 +674,22 @@
   self.isNode = isNode;
   self.isBrowser = isBrowser;
   self.isLoopback = isLoopback;
-  self.error = error;
+  self.logError = error;
   self.formatBytes = formatBytes;
   self.escapeHtml = escapeHtml;
-  self.check = check;
-  self.rules = Object.keys(RULES);
-  self.outcome = outcome;
-  self.tree = tree;
-  self.require = requireOne;
+  self.checkArgs = check;
+  self.ruleNames = Object.keys(RULES);
+  self.callOutcome = outcome;
+  self.apiTree = tree;
+  self.requireScript = requireOne;
   self.branchPath = branchPath;
 
   self.MIME_TYPES = MIME_TYPES;
   self.VERSION = VERSION;
   self.DEFAULT_SPIRIT_PORT = DEFAULT_SPIRIT_PORT;
-  self.debug = debug;
+  self.debugLog = debug;
 
-  // ── THE ONE STREAM OF THIS VM: spirit.event.subscribe(handlers) (goal/G40.6) ──────────────────────────────────────
+  // ── THE ONE STREAM OF THIS VM: spirit.eventStream.subscribe(handlers) (goal/G40.6) ──────────────────────────────────────
   // Andy: "two verbs on events - publish - subscribe". The node's events branch is its one dispatcher; this is its
   // subscribe, moved here from the old kernel's page stream. ONE STREAM PER PAGE (goal/G30.16; Andy: "the home page should
   // need one stream only."): every subscriber shares it, and one that comes later is handed the jobs as they stand and
@@ -858,7 +872,7 @@
       if (!streamSubs.length && streamHandle) { var s = streamHandle; streamHandle = null; streamUp = false; s.stop(); }
     };
   }
-  self.event = { subscribe: subscribeEvents };
+  self.eventStream = { subscribe: subscribeEvents };
 
   // IN NODE, spirit.js's OWN, AND NO KERNEL (goal/G40.6). Andy: "WHY THE FUCK WOULD we pass spirit.js if not for the
   // fucking servers to use it?", and "Fix that SHIT. in this item, here. NOW." What a server process took from the old kernel
@@ -869,20 +883,20 @@
     var facts = {};
     try { var at = process.argv.indexOf('--node'); facts = at !== -1 ? (JSON.parse(String(process.argv[at + 1] || '')) || {}) : {}; } catch (e) { facts = {}; }
     var str = function (v) { return typeof v === 'string' ? v : ''; };
-    self.node = { port: PORT, name: str(facts.name), key: str(facts.publicKey), ownerKey: str(facts.ownerKey) };
+    self.nodeFacts = { port: PORT, name: str(facts.name), key: str(facts.publicKey), ownerKey: str(facts.ownerKey) };
 
     // THIS PROCESS'S JOB (goal/G29.15), REPORTED BY THE ONE PATH TO PUBLISH (goal/G40.6; Andy, 2026-10-25: "ONE path for
     // everybody to publish events"): a process the node started as a job publishes on it by event.publish with its own id
     // (SPIRIT_JOB_ID), one post; the node changes the job and every subscriber hears it.
-    //   spirit.event.publish(obj)   the object as the job's app, every page hears it; over PAYLOAD_MAX it is not sent,
+    //   spirit.eventStream.publish(obj)   the object as the job's app, every page hears it; over PAYLOAD_MAX it is not sent,
     //                  and the pages hear that one was dropped, with its size (fileTransfer goal/G1.4)
-    //   spirit.job.start(name), progress(done, total, text), end(result)   one job at a time: a start while one is open
+    //   spirit.processJob.start(name), progress(done, total, text), end(result)   one job at a time: a start while one is open
     //                  refuses job-open; each resolves once the node has it, so awaited calls arrive in order
-    //   spirit.job.report(patch), log(text), complete(data), fail(error)   the job's own state, and its three common forms
+    //   spirit.processJob.report(patch), log(text), complete(data), fail(error)   the job's own state, and its three common forms
     var JOB = String(process.env.SPIRIT_JOB_ID || '');
     var PAYLOAD_MAX = require('./limits.js').PAYLOAD_MAX;
     var openJob = null;
-    var jobs = self.job = self.job && typeof self.job === 'object' ? self.job : {};
+    var jobs = self.processJob = self.processJob && typeof self.processJob === 'object' ? self.processJob : {};
     var bytesOf = function (o) { try { return new TextEncoder().encode(JSON.stringify(o)).length; } catch (e) { return -1; } };
     jobs.report = function (patch) {
       if (!JOB) return Promise.reject(refusal('no-job', 'this process was not started by a node as a job (SPIRIT_JOB_ID is unset)'));
@@ -891,7 +905,7 @@
     jobs.log = function (message) { return jobs.report({ logMessage: message }); };
     jobs.complete = function (data) { return jobs.report({ status: 'completed', data: data }); };
     jobs.fail = function (e) { return jobs.report({ status: 'failed', data: { error: String(e) } }); };
-    self.event.publish = function (obj) {
+    self.eventStream.publish = function (obj) {
       if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return false;
       var size = bytesOf(obj);
       if (size < 0) return false;
@@ -908,7 +922,7 @@
       var one = { job: job };
       var size = bytesOf(one);
       if (size < 0) return Promise.resolve(false);
-      if (size > PAYLOAD_MAX) return Promise.resolve(self.event.publish(one));
+      if (size > PAYLOAD_MAX) return Promise.resolve(self.eventStream.publish(one));
       return jobs.report({ app: one }).then(function () { return true; }, function () { return false; });
     };
     jobs.start = function (name) {
@@ -922,7 +936,7 @@
     jobs.end = function (result) {
       var one = { state: 'end', name: openJob === null ? '' : openJob };
       openJob = null;
-      if (result instanceof Error) one.error = String(result.message || result);
+      if (result instanceof Error) one.logError = String(result.message || result);
       else if (result !== undefined) one.result = result;
       return jobs.cycle(one);
     };
@@ -1012,8 +1026,8 @@
   // { ok, status, body, card, from, error }: card is the node's VERIFIED card of the peer (spirit/peerPost.js, answer.card), ok
   // only when it reached and the peer did not refuse. A page hears no answer-post: the node's own peerPost waits on the
   // node's server stream, which a page does not hold, so peer.post's reply is the answer.
-  // spirit.start() runs once the page can reach its node (the face shell after its link is up; index.html at load). It asks
-  // no api (goal/G43.27, Q1): spirit.ready answers the instance, on which any branch named stands, bound when first called.
+  // spirit.startPage() runs once the page can reach its node (the face shell after its link is up; index.html at load). It asks
+  // no api (goal/G43.27, Q1): spirit.readyPromise answers the instance, on which any branch named stands, bound when first called.
   self.peerPost = function (peer, app, body, how) {
     var whole = !!(how && how.answer === true);
     // What it needs, it requires itself: packet.js on a page wants the limits before it (spirit/limits.js).
@@ -1039,7 +1053,7 @@
   };
   var started = null;
   // A BRANCH THAT BINDS WHEN FIRST CALLED (goal/G43.27). spirit.<branch> stands as an object at once: what it already holds
-  // (spirit.event' stream, spirit.job in node) answers as it is, and any other name is a call waiting for the branch: called,
+  // (spirit.eventStream' stream, spirit.processJob in node) answers as it is, and any other name is a call waiting for the branch: called,
   // it binds the branch once (bindOwn: one api call), then calls the bound function of that name, a dotted path included
   // (spirit.<branch>.a.b). Once bound, the bound functions are on the object itself. Nothing is then-able, so a
   // branch handed to Promise.resolve stays a branch.
@@ -1077,7 +1091,7 @@
     }
     return lazies[fam];
   }
-  // WHAT spirit.ready ANSWERS: the one instance, seen so that a branch is there the moment it is named (goal/G43.27, Q1;
+  // WHAT spirit.readyPromise ANSWERS: the one instance, seen so that a branch is there the moment it is named (goal/G43.27, Q1;
   // Andy: "shouldn't it work without making a call, since the elements will trigger the necessary calls?", "Q1: clear").
   // A name the instance does not hold, read off it, stands there as a branch waiting for its first call (lazyBranch), so an
   // app switched on after the page loaded is reached with no reload. The cost wsl named: a misspelt branch fails when it is
@@ -1092,8 +1106,8 @@
   // ON A PAGE, ready IS THERE FROM THE START: an element that runs before start() (one required as face.html loads) waits on
   // it, and it answers once start() has. In node there is no start, and no ready.
   var readyNow = null;
-  if (isBrowser()) self.ready = new Promise(function (resolve) { readyNow = resolve; });
-  self.start = function () {
+  if (isBrowser()) self.readyPromise = new Promise(function (resolve) { readyNow = resolve; });
+  self.startPage = function () {
     if (started) return started;
     // NO API CALL AT LOAD (goal/G43.27, Q1, above; before it, "lazy-load, is a tree....", G41.3, and "AGAIN, when i say
     // lazy-load you found a way to fuck it up"): the node's api is never asked whole. A branch binds the first time
@@ -1107,21 +1121,21 @@
       return parsed().then(function () { return requireOne('spirit/data.js'); });
     }).then(function () {
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
-      // key as spirit.node.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.node as a
+      // key as spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.nodeFacts as a
       // process has it, and handed to the data set, which files the page's stream under it from then on.
       return Promise.resolve(view.node.card()).then(function (c) {
         var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
         if (!key) return;
-        (self.node = self.node && typeof self.node === 'object' ? self.node : {}).key = key;
+        (self.nodeFacts = self.nodeFacts && typeof self.nodeFacts === 'object' ? self.nodeFacts : {}).key = key;
         if (self.required.spirit.data && typeof self.required.spirit.data.homeNode === 'function') self.required.spirit.data.homeNode(key);
       }, function () { /* the page files nothing until its node is known */ });
     }).then(function () { return view; });
     if (readyNow) readyNow(started);
-    self.ready = started;
+    self.readyPromise = started;
     return started;
   };
 
-  // ── THE RELAY LOGIN, spirit.login (goal/G43.18, box v29, "The relay login") ───────────────────────────────────────
+  // ── THE RELAY LOGIN, spirit.faceLogin (goal/G43.18, box v29, "The relay login") ───────────────────────────────────────
   // Andy: "the login app should belong to the relay only, and not really be an "app"", and "spirit.login": no app, no shell.
   // The relay's own three calls on /face/api, { call, args } as every call (goal/G41.15), each answering the relay's body:
   //   state() -> { ok, face, loggedIn }   login(text) -> { ok, loggedIn }   logout() -> { ok, loggedIn: false }
@@ -1134,20 +1148,20 @@
       });
   }
   if (isBrowser()) {
-    self.login = {
+    self.faceLogin = {
       state: function () { return relayCall('state'); },
       login: function (text) { return relayCall('login', { text: String(text == null ? '' : text) }); },
       logout: function () { return relayCall('logout'); },
     };
   }
 
-  // ── THE LINK HOME, spirit.link (goal/G43.18, Q22, Andy: "ok." to "the link home moves into spirit.js, and boot.js keeps
+  // ── THE LINK HOME, spirit.faceLink (goal/G43.18, Q22, Andy: "ok." to "the link home moves into spirit.js, and boot.js keeps
   // only the stream and loading the shell") ─────────────────────────────────────────────────────────────────────────
   // On a face, once logged in: the home node's keys (faceHome answers { keys: 1 }), one key of this page's own, kept in
   // memory and lost with the session (goal/G30.11), and every request to the home node through the relay's /face/call,
   // sealed when this browser can seal (shell/seal.js, the node's own seal in WebCrypto). It is spirit.transport's ask and
   // file, so every call of the spirit object goes through it; boot.js reads its key for the face stream.
-  //   spirit.link: { sealed, key, node, ask(verb, args), file(path, onPiece), call(request), onDown(fn) }
+  //   spirit.faceLink: { sealed, key, node, ask(verb, args), file(path, onPiece), call(request), onDown(fn) }
   // Moved from boot.js as it was (goal/G30.11, G30.16, G33.1, G33.10).
   var faceLink = { sealed: false, key: null, node: null, downs: [] };
   function linkText(bytes) { return new TextDecoder().decode(bytes); }
@@ -1299,23 +1313,23 @@
       if (!can) return null;
       return self.required.shell.seal.newKey().then(function (key) { faceLink.key = key; faceLink.sealed = true; });
     }).then(function () {
-      self.link = {
+      self.faceLink = {
         get sealed() { return faceLink.sealed; }, get key() { return faceLink.key; }, get node() { return faceLink.node; },
         ask: linkAsk, file: linkFile, call: linkCall,
         onDown: function (fn) { if (typeof fn === 'function') faceLink.downs.push(fn); },
       };
       self.transport = { ask: linkAsk, file: linkFile };
-      return self.link;
+      return self.faceLink;
     });
   }
 
   // ── THE FACE PAGE (goal/G40.6; goal/G43.18, box v29) ─────────────────────────────────────────────────────────────
   // Andy: "face.html loads spirit.js FIRST, in it's spirit.js that fetches that fetches all other scripts". face.html says
   // what it is (data-spirit="face") and holds spirit.js alone. On loopback it is the home node's own page: boot.js comes
-  // from the node. On a relay, logged out, spirit.login draws the one field and nothing else is loaded; logged in, the link
+  // from the node. On a relay, logged out, spirit.faceLogin draws the one field and nothing else is loaded; logged in, the link
   // home is made, and boot.js, the sheets and every other part of the shell come from the home node over it (box v29: "The
-  // relay serves a logged-out face one plain page ... with spirit.js and seal.js only"). spirit.face says where the page
-  // stands, { home, loggedIn, name }; spirit.booted answers once boot.js runs.
+  // relay serves a logged-out face one plain page ... with spirit.js and seal.js only"). spirit.faceState says where the page
+  // stands, { home, loggedIn, name }; spirit.faceBooted answers once boot.js runs.
   var FACE = ['shell/boot.js'];
   // THE ONE FIELD (box v29: "draws the one field when logged out"; Andy: "i don't care if the face-login is totally plain, it
   // only serves one single-field form...."): the email or the mailed token, Log in, and a line for what the relay said.
@@ -1340,7 +1354,7 @@
       e.preventDefault();
       var typed = input.value;
       line.textContent = '…';
-      self.login.login(typed).then(function (s) {
+      self.faceLogin.login(typed).then(function (s) {
         if (s && s.loggedIn) { root.location.reload(); return; }
         input.value = '';
         line.textContent = /@/.test(typed) ? 'If that address is this face\'s, a mail with a token is on its way: paste the token here.' : 'That token did not log you in.';
@@ -1350,16 +1364,16 @@
   }
   function startFace() {
     if (isLoopback()) {
-      self.face = { home: true, loggedIn: true, name: '' };
+      self.faceState = { home: true, loggedIn: true, name: '' };
       // THE GHOST AT HOME (Q26, Andy: "the ghost one for loopback, the face one for the face."): the tab's icon, /favicon.svg.
       var icon = root.document && root.document.querySelector('link[rel="icon"]');
       if (icon) icon.setAttribute('href', '/favicon.svg');
       return boot(FACE);
     }
-    return self.login.state().then(function (s) {
-      self.face = { home: false, loggedIn: !!(s && s.loggedIn), name: String((s && s.face) || '') };
+    return self.faceLogin.state().then(function (s) {
+      self.faceState = { home: false, loggedIn: !!(s && s.loggedIn), name: String((s && s.face) || '') };
       if (s && s.face && root.document) root.document.title = String(s.face);
-      if (!self.face.loggedIn) { drawLogin(''); return null; }
+      if (!self.faceState.loggedIn) { drawLogin(''); return null; }
       return makeLink().then(function () { return boot(FACE); });
     }, function (e) { drawLogin('The relay did not answer: ' + ((e && e.message) || e)); return null; });
   }
@@ -1386,7 +1400,7 @@
   }
   var doc = root.document;
   if (doc && doc.documentElement && doc.documentElement.getAttribute('data-spirit') === 'face') {
-    var go = function () { self.booted = startFace(); };
+    var go = function () { self.faceBooted = startFace(); };
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', go); else go();
   }
 }(globalThis));

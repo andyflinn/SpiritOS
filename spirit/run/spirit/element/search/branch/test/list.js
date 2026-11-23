@@ -47,38 +47,38 @@ test.run('the list runs on a bare window, with the page\'s data set real', 0.2, 
       lists.push(l); return l;
     } }); },
     // The real row element requires the auth family's api.js as it runs (goal/G41.28, G47.1); its stand-in does the same.
-    'spirit/element/search/branch/row.js': function (E) { global.window.spirit.require('spirit/auth/api.js'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/row.js', { create: function (row) { return { kind: 'branch', row: row }; } }); },
+    'spirit/element/search/branch/row.js': function (E) { global.window.spirit.requireScript('spirit/auth/api.js'); require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, 'spirit/element/search/branch/row.js', { create: function (row) { return { kind: 'branch', row: row }; } }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'spirit/element/search/api.js': function (E) { (E.search = E.search || {}).api = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/data.js), which spirit.js brings with the client.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const DATA = global.window.spirit.required.spirit.data;
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
-  global.window.spirit.node = { key: NODE_KEY };
+  global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
   // The auth family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
   // itself to the data set.
   let ran = false;
-  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
-  // same window.spirit.require).
+  // same window.spirit.requireScript).
   loaded = required.slice();
   return true;
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the search element, its row element and the branch selector through spirit.require', 0.2, function () {
+test.run('it requires the search element, its row element and the branch selector through spirit.requireScript', 0.2, function () {
   if (!required) return false;
   return ['spirit/element/search.js', 'spirit/element/search/branch/row.js', 'spirit/element/search/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);

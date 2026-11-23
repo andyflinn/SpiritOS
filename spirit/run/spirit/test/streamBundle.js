@@ -78,7 +78,7 @@ test.run('what pack packs, unpack gives back the same', 0.2, function () {
 const APP = path.join(RUN, 'spirit', 'server', 'app.js');
 const appText = function () { try { return fs.readFileSync(APP, 'utf8'); } catch (e) { return ''; } };
 test.run('spirit/server/app.js requires spirit/streamBundle.js', 0.2, function () {
-  return /require\(\s*['"]spirit\/streamBundle\.js['"]\s*\)/.test(appText()) || false;
+  return /require(?:Script)?\(\s*['"]spirit\/streamBundle\.js['"]\s*\)/.test(appText()) || false;
 }, test.limit.quick);
 test.run('spirit/server/app.js parses no delivery\'s json itself', 0.2, function () {
   const t = appText();

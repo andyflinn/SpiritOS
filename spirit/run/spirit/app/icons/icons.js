@@ -6,4 +6,4 @@ require('../../spirit.js');
 // A one-shot run (Andy: "the node must execute spirit/app/<name>/<name>.js with the request, instead of routing it to a server,
 // like a cgi-script, and that process lives only as long as the request."): it requires ./server/server.js, which answers the one
 // call. The page loads the app's main element, ./element.js, itself (goal/G43.32, rule 4).
-spirit.require('spirit/app/icons/server/server.js');
+spirit.requireScript('spirit/app/icons/server/server.js');

@@ -39,12 +39,12 @@
 // page. spirit.js requires limits.js before packet.js for exactly that
 // reason (spirit.peerPost).
 var limits = (typeof process !== 'undefined' && process.versions && process.versions.node)
-  ? require('../spirit.js').require('spirit/limits.js')
+  ? require('../spirit.js').requireScript('spirit/limits.js')
   : (typeof window !== 'undefined' ? ((((window.spirit || {}).required || {}).spirit || {}).limits || null) : null);
 
 // WHAT IT NEEDS, IT LOADS ITSELF (rule/26; goal/G47.1, Andy: "cw, FIX IT!", after the classifier found this file failing
 // in a page loaded alone): in a page with no limits yet, this file asks for spirit/limits.js and defines itself once it is
-// in. A spirit.require made while this file runs is one its own require waits for (spirit.js, requireOne's collecting), so
+// in. A spirit.requireScript made while this file runs is one its own require waits for (spirit.js, requireOne's collecting), so
 // whoever required packet.js finds it defined. On the node, and in a page that has the limits, it is defined at once.
 function definePacket() {
 // SAY WHICH SCRIPT IS MISSING, rather than dying on `undefined.PAYLOAD_MAX`.
@@ -380,7 +380,7 @@ var packetApi = {
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = packetApi;
 } else if (typeof window !== 'undefined') {
-  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.requireScript() places the loaded script at the exact same
   // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
   var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   ((R.spirit = R.spirit || {}).client = R.spirit.client || {}).packet = packetApi;
@@ -388,5 +388,5 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
 }
 
 if ((typeof process !== 'undefined' && process.versions && process.versions.node) || limits) definePacket();
-else window.spirit.require('spirit/limits.js').then(function () { limits = ((((window.spirit || {}).required || {}).spirit || {}).limits || null); definePacket(); });
+else window.spirit.requireScript('spirit/limits.js').then(function () { limits = ((((window.spirit || {}).required || {}).spirit || {}).limits || null); definePacket(); });
 }());

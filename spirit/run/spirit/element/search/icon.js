@@ -15,7 +15,7 @@
 //     options.face     'pane' or the default 'dropdown'; options.placeholder, options.all, options.empty as the list's
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.
-  window.spirit.require('spirit/element/search/icon/list.js');
+  window.spirit.requireScript('spirit/element/search/icon/list.js');
   function create(container, options) {
     var o = options || {};
     var exclude = Array.isArray(o.exclude) ? o.exclude.map(String) : [];
@@ -45,5 +45,5 @@
     root.destroy = function () { list.destroy(); if (root.parentNode) root.parentNode.removeChild(root); };
     return root;
   }
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon.js', { create: create }); });
 }());

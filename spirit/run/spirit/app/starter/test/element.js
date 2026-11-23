@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/starter/test/element.js
 // The tests of spirit/app/starter/element.js, and of no other module (spec: ./starter.md; goal/G43.27). The browser file
-// runs in node on a bare window: the node's family is a stand-in that answers node.card, and spirit.outcome wraps an
+// runs in node on a bare window: the node's family is a stand-in that answers node.card, and spirit.callOutcome wraps an
 // answer as spirit.js's does ({status, body}).
 
 const fs = require('fs');
@@ -46,12 +46,12 @@ function world(card, hold) {
     return hold ? hold.then(function () { return answer; }) : answer;
   } };
   win.spirit = {
-    ready: Promise.resolve({ node: family }),
-    outcome: function (c) {
+    readyPromise: Promise.resolve({ node: family }),
+    callOutcome: function (c) {
       return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
         function (e) { return { status: 500, body: { ok: false, error: e.message } }; });
     },
-    require: function (p) { w.required.push(String(p)); return Promise.resolve({}); },
+    requireScript: function (p) { w.required.push(String(p)); return Promise.resolve({}); },
   };
   // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js places itself by
   // installSpiritElement at spirit.required.spirit.app.starter.element as it runs.

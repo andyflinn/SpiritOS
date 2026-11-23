@@ -5,7 +5,7 @@
 // Andy: "this can be done with ONE single helper function spirit/element/installSpiritElement(spirit,elementPath) - every
 // element knows it's path, and if the helper is resident in the required they ALL autoinsert themselves without
 // name-space-collision". WHERE IT PLACES (goal/G49.5; Andy, of his G43.32 Q5: "that ruling is reversed, since the element
-// factory is fine where it is loaded"; "spirit.require() places the loaded script at the exact same motherfucking
+// factory is fine where it is loaded"; "spirit.requireScript() places the loaded script at the exact same motherfucking
 // location/path in the spirit object"): at spirit.required.<its path>, where the loader finds it, on a page as in node.
 //
 //   installSpiritElement(spirit, elementPath, factory) -> factory
@@ -18,8 +18,8 @@
 // mark the loader leaves) holds only what was placed under it, and the file's factory takes the place and keeps those.
 // A factory that stood is never overwritten.
 //
-// On a page an element script loads it first (spirit.require answers once it ran, the function then at
-// spirit.required.spirit.element.installSpiritElement); in node spirit.require answers the function itself.
+// On a page an element script loads it first (spirit.requireScript answers once it ran, the function then at
+// spirit.required.spirit.element.installSpiritElement); in node spirit.requireScript answers the function itself.
 // In node it loads the spirit object first, as every module does (the spirit object is the only door); on a page spirit.js
 // is there already.
 if (typeof module === 'object' && module && module.exports) require('../spirit.js');
@@ -54,7 +54,7 @@ if (typeof module === 'object' && module && module.exports) require('../spirit.j
   }
 
   // A HELPER, NOT AN ELEMENT: IT LIVES IN spirit.required (Andy: "helpers with no create are no fucking elements. they live
-  // in require."). In node spirit.require places its module.exports there; on a page it puts itself there as it runs, at
+  // in require."). In node spirit.requireScript places its module.exports there; on a page it puts itself there as it runs, at
   // spirit.required.spirit.element.installSpiritElement, where every element script calls it from.
   if (typeof module === 'object' && module && module.exports) module.exports = installSpiritElement;
   else if (root && root.spirit && root.spirit.required) {

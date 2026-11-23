@@ -9,8 +9,8 @@
 // nothing of the node's auth grants can be the panel's own. The node's bundles and api tree are stubs. It asks its verbs
 // through the spirit object (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"), so no api.verb is
 // handed: the families stand as spirit.js binds them, each verb a function answering its body or throwing its refusal,
-// and every family's FS verbs under FS; the auth family on spirit.ready, a server's family through
-// spirit.require(spirit.branchPath(name)). Then the table it offers by name, grantsPanel.nodeGrants (moved here from the
+// and every family's FS verbs under FS; the auth family on spirit.readyPromise, a server's family through
+// spirit.requireScript(spirit.branchPath(name)). Then the table it offers by name, grantsPanel.nodeGrants (moved here from the
 // Grants app), over the real auth branch's data.js, which its api.js requires.
 // This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the authSource and noWarning parts, once files of
 // their own, are sections at its end, run after the checks above and counted with them. One test.run per test (goal/G47.2).
@@ -145,7 +145,7 @@ function world() {
     } },
     'search.grant': { create: function (host, opts) { const l = { host: host, opts: opts || {}, redrawn: 0, list: { redraw: function () { l.redrawn += 1; } } }; w.grantLists.push(l); return l; } },
   });
-  // The auth family, the node's own (spirit.ready holds it): its bundles' branches, the one dictionary both kinds of grant
+  // The auth family, the node's own (spirit.readyPromise holds it): its bundles' branches, the one dictionary both kinds of grant
   // are made from; and its grant verbs, the node's grants table, nodeGrants' (below).
   const auth = family(w, 'auth', {
     branch: function (args) { return { status: 200, body: { items: (w.branchesOf[args && args.bundle] || []).map(function (b, i) { return { key: String(i + 1), label: JSON.stringify(Object.assign({ id: i + 1, bundle: args.bundle }, b)) }; }), more: false } }; },
@@ -154,7 +154,7 @@ function world() {
     grant: function (args) { return args.path === 'fs.search' ? { status: 409, body: { ok: false, code: 'already-granted', error: 'already granted' } } : { status: 200, body: { ok: true } }; },
     revoke: function () { return { status: 200, body: { ok: true } }; },
   });
-  // The node's own families on spirit.ready; a server's family (jobs here) bound through spirit.require(branchPath).
+  // The node's own families on spirit.readyPromise; a server's family (jobs here) bound through spirit.requireScript(branchPath).
   const families = { fs: family(w, 'fs', { search: function () { return { status: 200, body: {} }; } }) };
   const servers = { jobs: family(w, 'jobs', { list: function () { return { status: 200, body: {} }; } }) };
   const FILES = { 'spirit/element/search/bundle.js': ['search'], 'spirit/element/search/contact.js': ['search'],
@@ -164,8 +164,8 @@ function world() {
   const branchPath = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
     // The page knows its node: spirit.required.spirit.data files nothing before it does (goal/G41.28, Q10).
-    spirit: { required: page, node: { key: 'KEY+GRANTS/PANEL==' },
-      require: function (p) {
+    spirit: { required: page, nodeFacts: { key: 'KEY+GRANTS/PANEL==' },
+      requireScript: function (p) {
         w.required.push(String(p));
         const server = Object.keys(servers).filter(function (k) { return branchPath(k) === p; })[0];
         if (server) return Promise.resolve(servers[server]);
@@ -180,9 +180,9 @@ function world() {
         return Promise.resolve(true);
       },
       branchPath: branchPath,
-      tree: function () { w.treeAsked += 1; return Promise.resolve(w.tree || TREE); },
+      apiTree: function () { w.treeAsked += 1; return Promise.resolve(w.tree || TREE); },
       // The spirit object's outcome as spirit.js has it: a call's answer as { status, body }, 0 when nothing answered.
-      outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },
+      callOutcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },
       escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); } },
     document: { createElement: function (t) { return node('<' + t + '>'); }, getElementById: function (id) { return byId[id] || null; } },
     Event: function (type) { this.type = type; },
@@ -191,17 +191,17 @@ function world() {
     confirm: function (t) { w.confirms.push(String(t)); return w.confirmAnswer; },
   };
   win.window = win;
-  win.spirit.ready = Promise.resolve(Object.assign({ auth: auth }, families));
+  win.spirit.readyPromise = Promise.resolve(Object.assign({ auth: auth }, families));
   // goal/G43.32: grantsPanel.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
-  const recorder = win.spirit.require;
+  const recorder = win.spirit.requireScript;
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
-  const pageRequire = win.spirit.require;
-  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  const pageRequire = win.spirit.requireScript;
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
-  win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
+  win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.page = page;
   return w;
@@ -256,7 +256,7 @@ test.run('it requires no data script', 0.2, function () {
 // goal/G43.32: create() runs up to where the script places itself, as it ran up to E.grantsPanel = before.
 test.run('the panel names no grants or ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location, no branch', 0.2, function () {
   if (!code) return false;
-  const made = code.slice(code.indexOf('function create('), code.indexOf("window.spirit.require('spirit/element/installSpiritElement.js')"));
+  const made = code.slice(code.indexOf('function create('), code.indexOf("window.spirit.requireScript('spirit/element/installSpiritElement.js')"));
   return made.length > 0 && !/auth\.(grant|revoke|search)\b|nodeGrants|data\.auth|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(made) ? true : false;
 }, test.limit.quick);
 // Andy: "every fucking element gets the interfaces it needs".
@@ -835,6 +835,6 @@ test.run('Grants\' data source has moved into grantsPanel, which asks auth.revok
   return /\bauth\W{1,4}revoke\b/.test(panel) ? true : false;
 }, test.limit.quick);
 test.run('grantsPanel holds the auth cache it reads, spirit.required.spirit.data.auth', 0.2, function () {
-  const holds = /\bdata\.auth\b|require\s*\(\s*['"]spirit\/auth\/api\.js['"]/.test(panel);
+  const holds = /\bdata\.auth\b|require(?:Script)?\s*\(\s*['"]spirit\/auth\/api\.js['"]/.test(panel);
   return holds ? true : false;
 }, test.limit.quick);

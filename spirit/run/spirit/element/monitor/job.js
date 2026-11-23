@@ -12,7 +12,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   var TILES = ['memory', 'cpu', 'uptime', 'delay', 'connections', 'running'];
-  var parts = Promise.all(TILES.map(function (n) { return S.require('spirit/element/monitor/job/' + n + '.js'); }));
+  var parts = Promise.all(TILES.map(function (n) { return S.requireScript('spirit/element/monitor/job/' + n + '.js'); }));
 
   function create(container) {
     var gone = false;
@@ -37,5 +37,5 @@
     };
   }
 
-  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/job.js', { create: create }); });
+  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/job.js', { create: create }); });
 }());

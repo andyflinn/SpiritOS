@@ -43,13 +43,13 @@
 // and the rows its stream then brings, never what was typed.
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
 (function () {
   var AGENT = spirit.branchPath('agent');
   var made = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-  function agent() { return Promise.resolve(spirit.require(AGENT)); }
+  function agent() { return Promise.resolve(spirit.requireScript(AGENT)); }
   // One call of a table's verb; a refusal comes back as { refused: why }, the server's own reason when it gave one (its
   // answer's extra.why: which argument, which row), else the refusal's words.
   function whyOf(e) {
@@ -59,12 +59,12 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
   function call(table, args) {
     return agent().then(function (a) { return a[table](args); }).then(function (body) { return body || {}; }, function (e) { return { refused: whyOf(e) }; });
   }
-  function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.require(p); })); }
+  function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.requireScript(p); })); }
   // A TABLE'S BRANCH IS THE agent FAMILY'S CACHE (goal/G41.28): its whole path in spirit.required.spirit.data, as the family's own
   // data.js keeps it (spirit.required.spirit.data.agent.data), loaded with this element, as part of its tree. A page where it could
   // not be loaded (the agent server not running on its node, so the family is not there) is refused, never drawn
   // without its branch.
-  spirit.require('spirit/app/agent/api.js');
+  spirit.requireScript('spirit/app/agent/api.js');
   function branchOf(table) {
     if (!((window.spirit.required.spirit.data || {}).agent || {}).data) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
     return window.spirit.required.spirit.data.agent.data.branch(table);
@@ -190,5 +190,5 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/tableElement.js', Object.assign({ create: createTable }, parts)); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/tableElement.js', Object.assign({ create: createTable }, parts)); });
 }());

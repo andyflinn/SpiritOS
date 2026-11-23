@@ -17,6 +17,6 @@ interactive user loop"*), entered by `node spirit/console/script.js` with no wor
 On a scratch node of its own, the loop's node told its input and output are a terminal (so it runs on every machine), its keys
 written as a terminal sends them: `spirit: ` at the start; `path app` gives `spirit.app: `; `path agent` gives `spirit.app.agent: ` and app.agent
 in state; `path nope` leaves the prompt; `path <` gives `spirit.app: `; there the up key offers `path agent` and never
-`path app.agent` or `path app`; `path <<` gives `spirit: `, `path node` gives `spirit.node: `, where the up key offers
+`path app.agent` or `path app`; `path <<` gives `spirit: `, `path node` gives `spirit.nodeFacts: `, where the up key offers
 neither `path agent` nor `path app.agent`; there `card`, which ran, is offered again by the up key, and `nope`, which
 failed, is not (Andy: *"the up key isn't for navigation only, it's for every command that is successful."*).

@@ -14,7 +14,7 @@
 (function (root) {
   var E = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
   // A TYPE'S FILE, ITS PATH (goal/G48.4): spirit.type.string.label is spirit/type/string/label.js, loaded through
-  // spirit.require (rule/26) and held where spirit.required puts it.
+  // spirit.requireScript (rule/26) and held where spirit.required puts it.
   function fileOf(type) { return /^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(String(type)) ? String(type).split('.').join('/') + '.js' : ''; }
   function typeOf(type) {
     var at = String(type).split('.').reduce(function (o, k) { return o && o[k]; }, root.spirit && root.spirit.required);
@@ -22,7 +22,7 @@
   }
   function load(type) {
     var f = fileOf(type);
-    return f && root.spirit && typeof root.spirit.require === 'function' ? Promise.resolve(root.spirit.require(f)) : Promise.resolve();
+    return f && root.spirit && typeof root.spirit.requireScript === 'function' ? Promise.resolve(root.spirit.requireScript(f)) : Promise.resolve();
   }
   function bytes(s) {
     if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(String(s)).length;

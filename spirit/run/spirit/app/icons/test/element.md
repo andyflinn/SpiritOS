@@ -6,7 +6,7 @@ The box (goal/G43.19, v16): *"the page asks icons through its api branch; only .
 
 ## Requirements
 
-- It loads through `spirit.require` and mounts with `spirit.required.spirit.app.icons.icons.create(container)`.
+- It loads through `spirit.requireScript` and mounts with `spirit.required.spirit.app.icons.icons.create(container)`.
 - Its add row: ➕, an icon to paste, then its keywords, comma separated, and Add. The list shows the set.
 - An Add with no icon says `paste an icon first` and writes nothing.
 - An Add writes the icon with its keywords, split at the commas, by asking `icons.icon` and nothing of the fs family; the list shows it with no reload.

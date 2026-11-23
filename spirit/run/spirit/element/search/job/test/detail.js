@@ -46,12 +46,12 @@ test.run('a scratch node of its own comes up with two planted apps, and Chrome o
   };
   jobOf = function (id) { return call('job.get', { key: id }).then(function (j) { return (j.body && j.body.job) || null; }); };
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   return true;
 }, test.limit.slow);
-test.run('it loads through spirit.require as spirit.required.spirit.element.search.job.detail, whose create takes a host, an id and close', 0.2, async function () {
+test.run('it loads through requireScript as spirit.required.spirit.element.search.job.detail, whose create takes a host, an id and close', 0.2, async function () {
   if (!call) return false;
-  loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/job/detail.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(1); }); window.closes = []; var J = spirit.required.spirit.element.search.job.detail; return J && typeof J.create === "function" ? "loaded" : ""; }, function () { return ""; })');
+  loaded = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/job/detail.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(1); }); window.closes = []; var J = spirit.required.spirit.element.search.job.detail; return J && typeof J.create === "function" ? "loaded" : ""; }, function () { return ""; })');
   mount = function (id) { return chrome.evaluate('(function () { if (window.made) window.made.destroy(); var old = document.getElementById("box"); if (old) old.remove(); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1000px;height:760px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.required.spirit.element.search.job.detail.create(c, { id: ' + JSON.stringify(id) + ', close: function (w) { window.closes.push(w === undefined ? null : w); } }); return true; }())'); };
   text = function () { return chrome.evaluate('String((document.getElementById("box") || {}).innerText || "")'); };
   buttons = function () { return chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll("#box button"), function (b) { return b.getClientRects().length; }).map(function (b) { return String(b.textContent).trim(); })'); };

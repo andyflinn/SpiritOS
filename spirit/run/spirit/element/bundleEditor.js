@@ -13,13 +13,13 @@
 //     tabLabel(row) what names those tabs, its mounter's (the agent app's browserAgent.js), handed on to ./search/bundle.js
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require; and the auth family's cache manager, whose
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript; and the auth family's cache manager, whose
   // bundles it adds to (goal/G41.28).
   var parts = Promise.all(['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js', 'spirit/element/rowForm.js'].map(function (p) {
-    return window.spirit.require ? window.spirit.require(p) : null;
-  }).concat([window.spirit.require('spirit/auth/api.js')]));
+    return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
+  }).concat([window.spirit.requireScript('spirit/auth/api.js')]));
   // The label's rule, the one definition both sides use (spirit/fieldRules.js).
   function labelOf(text) {
     var R = (((window.spirit || {}).required || {}).spirit || {}).fieldRules || {};
@@ -77,7 +77,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
         if (got.why) { say(got.why); return null; }
         say('');
         waitingFor = got.value;
-        return spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value }); }).then(null, function (e) {
+        return spirit.readyPromise.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value }); }).then(null, function (e) {
           waitingFor = '';
           say((e && (e.message || e.refusal)) || 'not added');
         });
@@ -88,5 +88,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/bundleEditor.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/bundleEditor.js', { create: create }); });
 }());

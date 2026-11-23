@@ -6,7 +6,7 @@ tree HAS a clientCacheManager"*). Owed since the rule *"every production script 
 
 The family is the stream itself: what it carries is kept by the family each row belongs to, never here.
 
-- In node, requiring its branch's api.js, `spirit.require('spirit/event/api.js')`, puts it at `spirit.required.spirit.data.event.data`
+- In node, requiring its branch's api.js, `spirit.requireScript('spirit/event/api.js')`, puts it at `spirit.required.spirit.data.event.data`
   (the api.js is the one script that requires its data.js).
 - Run beside spirit.required.spirit.data it makes its family there; it has no reads yet.
 - **It keeps nothing, and names no branch**: it adds no translator, and a job of every kind the node streams, and a

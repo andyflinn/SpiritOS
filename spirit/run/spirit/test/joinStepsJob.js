@@ -37,10 +37,10 @@ test.after(function () {
 });
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const J = require(path.join(RUN, 'spirit', 'joinStepsJob.js'));
-const relayKeys = spirit.require('spirit/relayKeys.js');
-const ownerBadge = spirit.require('spirit/ownerBadge.js');
-const contacts = spirit.require('spirit/contact/script.js');
-const auth = spirit.require('spirit/relayAuth.js');
+const relayKeys = spirit.requireScript('spirit/relayKeys.js');
+const ownerBadge = spirit.requireScript('spirit/ownerBadge.js');
+const contacts = spirit.requireScript('spirit/contact/script.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A jobs table as job.js's: ownNews(id, kind, data) answers the job whose data is the news; every call is recorded.

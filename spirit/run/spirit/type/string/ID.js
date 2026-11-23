@@ -12,7 +12,7 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   function no(why) { throw new Error(why); }
   // A KEY THIS NODE KNOWS, READ FROM DISC ON THE NODE SIDE (goal/G48.4; Andy: "the validity check for an ID must either check
   // in the browser data, or node side the shadow roll and the own ID", Q14: "Why can't the ID type not just get it from disc
-  // itself?", and Q12: a new key is IDNew's): in a process of a tree that holds a node, its own key (spirit.node.key, or
+  // itself?", and Q12: a new key is IDNew's): in a process of a tree that holds a node, its own key (spirit.nodeFacts.key, or
   // the public key of its identity file), a key in its shadow roll (the seen table of its node.db, opened read-only once and
   // kept); a tree with no node checks the form only. A store busy for a moment lets the key through rather than stop the
   // call. ON A PAGE, ITS CACHE (Andy: "the shadow roll is in the browser cache as soon as the contact api is loaded"): the
@@ -22,7 +22,7 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   function onPage() {
     var C = root && root.spirit && root.spirit.required.spirit.data && root.spirit.required.spirit.data.contact && root.spirit.required.spirit.data.contact.data;
     if (!C || typeof C.contact !== 'function') return null;
-    return function (k) { var N = root.spirit.node; return (N && N.key === k) || !!C.contact(k); };
+    return function (k) { var N = root.spirit.nodeFacts; return (N && N.key === k) || !!C.contact(k); };
   }
   function nodeKnows() {
     if (knows !== undefined) return knows;
@@ -40,7 +40,7 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
       // A key holding a grant is one the node knows too, its row in the shadow roll or not (a grant with no label writes none).
       var g = db.prepare('SELECT 1 AS k FROM grants WHERE peer_id = ? LIMIT 1');
       knows = function (k) {
-        var N = root && root.spirit && root.spirit.node;
+        var N = root && root.spirit && root.spirit.nodeFacts;
         if (k === own || (N && N.key === k)) return true;
         try { return !!q.get(k) || !!g.get(k); } catch (e) { return true; }
       };
@@ -53,11 +53,11 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
     MAX_BYTES: MAX_BYTES,
     // ITS FORM, the one place it is written: IDNew takes a key of this form that nobody here knows yet.
     FORM: KEY,
-    // ITS DEFAULT (goal/G48.4, the box v33: "default: \"the nodes own public key\""): spirit.node.key, the node's own on the
+    // ITS DEFAULT (goal/G48.4, the box v33: "default: \"the nodes own public key\""): spirit.nodeFacts.key, the node's own on the
     // node and the key of the node a page came from once it has answered; until then the key of all zero bytes, which passes
     // the check and is nobody's (Andy, of that first moment: fine as long as nothing sends it).
     defaultValue: function () {
-      var N = root && root.spirit && root.spirit.node;
+      var N = root && root.spirit && root.spirit.nodeFacts;
       var own = N && typeof N.key === 'string' ? N.key : '';
       if (!KEY.test(own)) { nodeKnows(); own = ownOnDisc; }
       return KEY.test(own) ? own : 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '=';

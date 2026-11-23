@@ -36,8 +36,8 @@ test.after(function () {
 // The face, mounted alone in a box, as the Icons app's createApp mounts it.
 const mount = async function (page) {
   await page.send('Page.navigate', { url: W.node.base + '/face.html' });
-  await until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-  return page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/icons/element.js"); }).then(function () { var c =document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.required.spirit.app.icons.element.create(c); window.__posts = []; var f = window.fetch; window.fetch = function (u, o) { if (/\\/api\\//.test(String(u)) && o && o.body) window.__posts.push(String(o.body).slice(0, 200)); return f.apply(this, arguments); }; return "made"; }, function () { return false; })');
+  await until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
+  return page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/app/icons/element.js"); }).then(function () { var c =document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.required.spirit.app.icons.element.create(c); window.__posts = []; var f = window.fetch; window.fetch = function (u, o) { if (/\\/api\\//.test(String(u)) && o && o.body) window.__posts.push(String(o.body).slice(0, 200)); return f.apply(this, arguments); }; return "made"; }, function () { return false; })');
 };
 const field = function (which) { return '(function () { return Array.prototype.filter.call(document.querySelectorAll("#box input"), function (i) { var p = String(i.placeholder || ""); return i.getClientRects().length && (' + (which === 'glyph' ? '/icon/i.test(p) && !/keyword/i.test(p)' : '/keywords, comma separated/i.test(p)') + '); })[0] || null; }())'; };
 const button = function (word) { return '(function () { return Array.prototype.filter.call(document.querySelectorAll("#box button"), function (b) { return b.getClientRects().length && String(b.textContent).trim() === ' + JSON.stringify(word) + '; })[0] || null; }())'; };
@@ -76,7 +76,7 @@ test.run('the system set is read, and four glyphs it does not hold are found', 0
   W.fresh = fresh;
   return W.ready || false;
 }, test.limit.quick);
-test.run('the icons element loads through spirit.require and mounts with spirit.required.spirit.app.icons.element.create, given a container', 0.2, async function () {
+test.run('the icons element loads through requireScript and mounts with spirit.required.spirit.app.icons.element.create, given a container', 0.2, async function () {
   if (!W.ready) return false;
   const made = await mount(W.chrome);
   W.mounted = made === 'made';

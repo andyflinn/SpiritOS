@@ -61,7 +61,7 @@ async function startNode(run) {
 // to send its DEBUG verb.
 async function startRelay(run, debug) {
   const port = await freePort();
-  const code = 'require("./spirit/spirit.js").debug(' + (debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");';
+  const code = 'require("./spirit/spirit.js").debugLog(' + (debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   const up = await until(function () { return ask('127.0.0.1', port, '/').then(function (r) { return r.status > 0; }); }, 30000);
   return { port: port, child: child, up: up };
@@ -551,7 +551,7 @@ test.run('/spirit/DEBUG/garbageArguments.js cannot be fetched', 0.8, async funct
 
 test.run('the scratch relay comes up with DEBUG off', 0.2, async function () {
   await stop(node); node = null;
-  // A RELAY SERVES NO APP (goal/G43.18, box v29: the login is spirit.login, no app, and a relay serves a face spirit.js and the
+  // A RELAY SERVES NO APP (goal/G43.18, box v29: the login is spirit.faceLogin, no app, and a relay serves a face spirit.js and the
   // seal alone), so its DEBUG answers are judged on its own api's garbage.
   // /spirit/relay/garbageArguments.json, a relay, DEBUG off.
   relay = await startRelay(copy.run, false);

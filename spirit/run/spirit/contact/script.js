@@ -24,11 +24,11 @@ require('../spirit.js');
 // somebody it listens to. A search finds people, and only the owner's act (Add, accept, a claim on a relay this node
 // owns, an invite) keeps them.
 
-const nodeCard = spirit.require('spirit/nodeCard.js');
-const auth = spirit.require('spirit/relayAuth.js');
-const ownerBadge = spirit.require('spirit/ownerBadge.js');
+const nodeCard = spirit.requireScript('spirit/nodeCard.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
+const ownerBadge = spirit.requireScript('spirit/ownerBadge.js');
 
-function seen(rootDir) { return spirit.require('spirit/nodeStore.js').open(rootDir).seen; }
+function seen(rootDir) { return spirit.requireScript('spirit/nodeStore.js').open(rootDir).seen; }
 
 // A table row as a contact row; null for no row.
 function shaped(r) {

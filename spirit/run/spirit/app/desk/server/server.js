@@ -29,8 +29,8 @@ require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.require('spirit/server/app.js');
-const limits = spirit.require('spirit/limits.js');
+const appServer = spirit.requireScript('spirit/server/app.js');
+const limits = spirit.requireScript('spirit/limits.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -177,9 +177,9 @@ function walked(walk, pairOf, room) {
 // into the bucket. at the end calls serialize, done."
 //
 // With no text every probability is 0 and the bucket keeps the walk's order.
-const probabilityStringMatch = spirit.require('spirit/search/string.js').probabilityStringMatch;
-const probabilityStringObjectMatch = spirit.require('spirit/search/object.js').probabilityStringObjectMatch;
-const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
+const probabilityStringMatch = spirit.requireScript('spirit/search/string.js').probabilityStringMatch;
+const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
+const createProbabilityBucket = spirit.requireScript('spirit/listLimiter.js').createProbabilityBucket;
 const MAX_SCANNED_ITEMS = 1000;
 function lineProbability(text, line) { return text ? probabilityStringMatch(text, String(line.text)) : 0; }
 // THE WHOLE ROW, AS ITS GET SERVES IT (goal/G41.28; Andy, box v15: "a probability search of a dataBase table must ALWAYS
@@ -946,7 +946,7 @@ function refused(code) { const e = new Error(code); e.refusal = code; return e; 
 function refusedWhy(code, why) { const e = refused(code); e.extra = { why: String(why) }; return e; }
 // A FIELD RULE'S ANSWER IN WORDS: what was wrong with which field, and its bytes against the limit when it is the size.
 function fieldWhy(what, value, paragraph) {
-  const fr = spirit.require('spirit/fieldRules.js');
+  const fr = spirit.requireScript('spirit/fieldRules.js');
   const p = paragraph ? fr.paragraphProblem(value) : fr.problem(value);
   if (!p) return '';
   const max = paragraph ? fr.PARAGRAPH_MAX_BYTES : fr.MAX_BYTES;

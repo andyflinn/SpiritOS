@@ -13,8 +13,8 @@ require('./spirit.js');
 //                      (both listeners of spirit/server/app.js, and the console's log wait once envelopeOf in
 //                      spirit/arrivals.js has opened the envelope)
 
-const limits = spirit.require('spirit/limits.js');
-const createProbabilityBucket = spirit.require('spirit/listLimiter.js').createProbabilityBucket;
+const limits = spirit.requireScript('spirit/limits.js');
+const createProbabilityBucket = spirit.requireScript('spirit/listLimiter.js').createProbabilityBucket;
 
 // One answer's room, as the desk's lists were cut (ANSWER_ROOM): half a sealed packet less 512 bytes for its envelope,
 // less the bytes the bundle's JSON gains as the json string of its request.

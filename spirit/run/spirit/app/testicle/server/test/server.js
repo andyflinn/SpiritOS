@@ -2706,9 +2706,9 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   const DEP = { lib: D0 + 'lib.js', user: D0 + 'user.js', lazyLib: D0 + 'lazyLib.js', lazy: D0 + 'lazy.js' };
   const DEP_SRC = {
     lib: "'use strict';\nmodule.exports = { v: 1 };\n",
-    user: "'use strict';\nrequire('../../../../spirit.js').require('" + D0 + "lib.js');\nmodule.exports = { user: true };\n",
+    user: "'use strict';\nrequire('../../../../spirit.js').requireScript('" + D0 + "lib.js');\nmodule.exports = { user: true };\n",
     lazyLib: "'use strict';\nmodule.exports = { lazy: 1 };\n",
-    lazy: "'use strict';\nconst spirit = require('../../../../spirit.js');\nmodule.exports = { use: function () { return spirit.require('" + D0 + "lazyLib.js'); } };\n",
+    lazy: "'use strict';\nconst spirit = require('../../../../spirit.js');\nmodule.exports = { use: function () { return spirit.requireScript('" + D0 + "lazyLib.js'); } };\n",
   };
   const DEP_TEST = {
     lib: "test.run('lib answers', 0.2, function () { return true; }, test.limit.quick);\n",
@@ -2880,7 +2880,7 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
 {
   const R0 = 'spirit/app/testicle/temp/zzRecon/';
   const RC = { a: R0 + 'aR.js', b: R0 + 'bR.js', c: R0 + 'cR.js' };
-  const pulls = function (what) { return "'use strict';\nrequire('../../../../spirit.js').require('" + R0 + "bR.js');\nmodule.exports = { " + what + ": true };\n"; };
+  const pulls = function (what) { return "'use strict';\nrequire('../../../../spirit.js').requireScript('" + R0 + "bR.js');\nmodule.exports = { " + what + ": true };\n"; };
   const RC_SRC = { a: pulls('a'), b: "'use strict';\nmodule.exports = { b: true };\n", c: pulls('c') };
   const ownOfR = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
   const RR = { s: null, N: null, DB: '', ran: false, moved: false };
@@ -3066,7 +3066,7 @@ test.run('testicle\'s server keeps no chokidar watcher of its own', 0.2, functio
   return (TESTICLE_CODE.length > 0 && !/chokidar/.test(TESTICLE_CODE)) || false;
 }, test.limit.quick);
 test.run('testicle\'s server reaches the tree through spirit/fs/script.js', 0.2, function () {
-  return /require\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(TESTICLE_CODE) || false;
+  return /require(?:Script)?\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(TESTICLE_CODE) || false;
 }, test.limit.quick);
 test.run('testicle\'s treeScripts walks no folder on the disc', 0.2, function () {
   const at = TESTICLE_CODE.indexOf('function treeScripts(');

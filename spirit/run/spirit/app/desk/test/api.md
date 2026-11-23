@@ -2,13 +2,13 @@
 
 The desk server's interface (goal/G32.3): every verb the desk serves, each argument with its rule, written to
 spirit.js's standard (`'?'` after a rule makes it optional). The node answers this text to `api {family}` and maps it to
-its name; the spirit object checks every call against it before the call leaves (`spirit.check`). Written by hand from
+its name; the spirit object checks every call against it before the call leaves (`spirit.checkArgs`). Written by hand from
 the handlers (Andy, 2026-10-22: "request validation worth a damn?").
 
 ## Requirements
 
 - It exports `{ verbs }` and nothing else: it names no family of its own.
-- Each verb's arguments are a plain object; each rule is one of spirit.js's rules (`spirit.rules`), with `'?'` optional.
+- Each verb's arguments are a plain object; each rule is one of spirit.js's rules (`spirit.ruleNames`), with `'?'` optional.
 - DEBUG is appServer's, not listed.
 - **Every verb listed is served**: a handler in desk.js's verb table or appServer's
   streamPublisher (`subscribe`, `unsubscribe`).

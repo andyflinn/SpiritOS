@@ -10,11 +10,11 @@ judged in its rotate part (once `./nodeInfo-rotate.js`), the sections below.
 - **Mounted the new shell's way**: it sets `spirit.elements.nodeInfo = { create(container, { open }) -> { ready,
   destroy() } }`. `ready` settles once the card is read and kept (or said refused). No `spirit.shell.activateApp`, no
   `callDialog` of the old shell.
-- **It loads what it uses itself** (rule/26), through `spirit.require`: `spirit/element/changeMyLabel.js`,
+- **It loads what it uses itself** (rule/26), through `spirit.requireScript`: `spirit/element/changeMyLabel.js`,
   `changeMyDescription.js`, `joinForm.js`, `faceForm.js`, `rowForm.js` and `panel.js`; `spirit/element/rotateKey.js` only
   when the dialog is opened. A part refused, it says *Info could not be loaded.*
 - **What it needs, it gets itself** (Andy: *"every fucking element gets the interfaces it needs"*): the spirit object's
-  families (`spirit.required.spirit.node.api.card`, `spirit.relay.status`, through `spirit.ready` and `spirit.outcome`); no api, no
+  families (`spirit.required.spirit.node.api.card`, `spirit.relay.status`, through `spirit.readyPromise` and `spirit.callOutcome`); no api, no
   `api.verb`, no `peerPost`.
 - **The page**: it empties its container and draws one fill box: the heading *What this node says about itself*, the
   note *Anybody who asks this node is told these two things, whether or not you have ever met. Nothing else about this
@@ -22,7 +22,7 @@ judged in its rotate part (once `./nodeInfo-rotate.js`), the sections below.
   form and the rotate row.
 - **Its two fields are the two elements** (goal/G41.6): changeMyLabel in the name slot, changeMyDescription in the
   description slot, each made with its container alone (no api handed); each holds its own rule, check and save.
-- **The card**: it requires the node branch's interface (`spirit.require('spirit/node/api.js')`, which brings its data.js; no data.js
+- **The card**: it requires the node branch's interface (`spirit.requireScript('spirit/node/api.js')`, which brings its data.js; no data.js
   itself), asks `spirit.required.spirit.node.api.card({})`
   once and keeps the answer in `spirit.required.spirit.data.node.data.card` (goal/G41.28), from which each field draws itself. A refusal
   is said in the node's words and nothing is kept; no answer is said as *node.card did not answer*.

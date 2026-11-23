@@ -47,11 +47,11 @@ test.run('a scratch node comes up, with Chrome on its face page', 0.2, async fun
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
+  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
 }, test.limit.slow);
-test.run('it loads through spirit.require and is spirit.required.spirit.element.search.app.list', 0.2, async function () {
+test.run('it loads through spirit.requireScript and is spirit.required.spirit.element.search.app.list', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('spirit.ready.then(function () { return spirit.require("spirit/element/search/app/list.js"); }).then(function () { var L = spirit.required.spirit.element.search.app.list; return !!(L && typeof L.create === "function"); }, function () { return false; })');
+  loaded = await chrome.evaluate('spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/list.js"); }).then(function () { var L = spirit.required.spirit.element.search.app.list; return !!(L && typeof L.create === "function"); }, function () { return false; })');
   return loaded === true || false;
 }, test.limit.slow);
 

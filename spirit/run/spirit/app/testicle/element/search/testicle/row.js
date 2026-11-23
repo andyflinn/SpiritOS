@@ -14,12 +14,12 @@
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
-  S.require('spirit/element/row.js');
+  S.requireScript('spirit/element/row.js');
   // A result's icon worded by testicle's words (goal/G47.1; ../../../words.js), loaded as this file runs (rule/26).
-  S.require('spirit/app/testicle/words.js');
+  S.requireScript('spirit/app/testicle/words.js');
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
   function nameOf(p) { var s = String(p == null ? '' : p); return s.slice(s.lastIndexOf('/') + 1); }
@@ -46,5 +46,5 @@
     });
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle/row.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle/row.js', { create: create }); });
 }());

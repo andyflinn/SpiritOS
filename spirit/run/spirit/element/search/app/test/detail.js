@@ -42,11 +42,11 @@ test.run('a scratch node comes up, and Chrome opens its face page', 0.2, async f
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) ? true : false;
+  return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
 }, test.limit.slow);
-test.run('it loads through spirit.require', 0.2, async function () {
+test.run('it loads through spirit.requireScript', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
-  loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/app/detail.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return ""; })');
+  loaded = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/detail.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return ""; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.quick);
 test.run('spirit.required.spirit.element.search.app.detail.create, given a host and a row, makes a detail', 0.2, async function () {

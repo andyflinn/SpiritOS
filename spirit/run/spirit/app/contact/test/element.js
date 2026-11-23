@@ -146,7 +146,7 @@ test.run('a Chrome page opens', 0.2, async function () {
 }, test.limit.quick);
 // The shell Andy uses, /face.html, where the shell app (spirit/element/script.js) runs the appSelector (boot.js loads what an app's pages open with).
 const selector = function (face) {
-  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+  return W.c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
 };
 // The box's text on one line, so a failure says what was on the page.
 const shown = function () { return W.c.evaluate('(document.getElementById("zzBox") || {}).innerText || ""').then(function (t) { return String(t).replace(/\s+/g, ' '); }); };
@@ -157,7 +157,7 @@ const press = function (words) {
 test.run('the face shell has its spirit', 0.2, async function () {
   if (!W.c) return false;
   await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
-  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000));
+  W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
   return W.page || false;
 }, test.limit.quick);
 

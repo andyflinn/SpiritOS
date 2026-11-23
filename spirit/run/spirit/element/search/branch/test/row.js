@@ -6,7 +6,7 @@
 // row element is put there real; the arming button is a stand-in that records what it was handed. The node's auth
 // family is the spirit object's, each call recorded. The page's data set is real, and so is the auth family's
 // data.js (goal/G41.28), brought by the auth family's api.js as the element requires it, the page's node known as
-// spirit.start makes it known (spirit.node.key, then data.homeNode).
+// spirit.startPage makes it known (spirit.nodeFacts.key, then data.homeNode).
 
 const fs = require('fs');
 const path = require('path');
@@ -46,16 +46,16 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
     'spirit/element/armingButton.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
   };
   global.document = { createElement: function () { return {}; } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   // The page's one data set (spirit/data.js): the stream's branch rows land there.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   DATA = global.window.spirit.required.spirit.data;
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
-  global.window.spirit.node = { key: NODE_KEY };
+  global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
   // A branch's api.js brings its companion data.js, as the real api.js does (goal/G47.1: "every api.js requires it's
   // companion data.js"): the stand-in runs that data.js once, attaching itself to the data set. A data.js asked for
@@ -64,7 +64,7 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
   const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: f }); } };
   // The direct writes below are the auth family's own view of the home node, as its data.js files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
@@ -75,7 +75,7 @@ test.run('the branch row runs on a bare window, with the page\'s data set and th
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
-test.run('it requires the shared row element and the arming button through spirit.require', 0.2, function () {
+test.run('it requires the shared row element and the arming button through spirit.requireScript', 0.2, function () {
   if (!required) return false;
   return ['spirit/element/row.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);

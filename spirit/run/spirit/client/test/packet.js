@@ -155,12 +155,12 @@ test.run('in a page, with limits loaded first, it is window.spirit.required.spir
   const r = p.encode('chat', 'x');
   return (p.MAX_TEXT === limits.SEALED_MAX && r.ok === true && /^[0-9a-f]{32}$/.test(r.envelope.id)) || false;
 }, test.limit.quick);
-// WHAT IT NEEDS, IT LOADS ITSELF (goal/G47.1, Andy: "cw, FIX IT!"): in a page with no limits yet it asks spirit.require for
+// WHAT IT NEEDS, IT LOADS ITSELF (goal/G47.1, Andy: "cw, FIX IT!"): in a page with no limits yet it asks spirit.requireScript for
 // spirit/limits.js, and is window.spirit.required.spirit.client.packet once that is in.
 test.run('in a page without limits.js it asks for spirit/limits.js itself, and is spirit.required.spirit.client.packet once it is in', 0.2, async function () {
   const asked = [];
   const win = { spirit: {} };
-  win.spirit.require = function (p) {
+  win.spirit.requireScript = function (p) {
     asked.push(p);
     return Promise.resolve().then(function () { ((win.spirit.required = win.spirit.required || {}).spirit = win.spirit.required.spirit || {}); win.spirit.required.spirit.limits = { PAYLOAD_MAX: limits.PAYLOAD_MAX, PLAINTEXT_MAX: limits.PLAINTEXT_MAX, SEALED_MAX: limits.SEALED_MAX }; return {}; });
   };

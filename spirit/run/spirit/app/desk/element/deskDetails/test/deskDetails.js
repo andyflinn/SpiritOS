@@ -215,8 +215,8 @@ function ddWorld(facts, checks, o) {
     console: { log: function () {}, error: function () {}, warn: function () {} } };
   win.window = win;
   win.spirit = { escapeHtml: api.escapeHtml,
-    // workBench is on the page once spirit.require brings it, never preloaded.
-    require: function (p) {
+    // workBench is on the page once spirit.requireScript brings it, never preloaded.
+    requireScript: function (p) {
       const q = String(p).replace(/^\/+/, '');
       required.push(q);
       if (q === 'spirit/element/workBench.js') win.spirit.required.spirit.element.workBench = workBenchStub(document, benches);
@@ -328,7 +328,7 @@ test.run('deskDetails.js names no icon table', 0.2, function () {
 // strip is today's panels, each its icon, in order", on what the workBench is given, not on the source.
 
 // ── goal/G41.9: IT LOADS armingButton AND KEEPS NO ARMING OF ITS OWN ────────────────────────────────────────────────
-test.run('it requires spirit/element/armingButton.js through spirit.require', 0.2, async function () {
+test.run('it requires spirit/element/armingButton.js through spirit.requireScript', 0.2, async function () {
   const w0 = await opened(GOAL);
   return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || false;
 }, test.limit.quick);
@@ -442,14 +442,14 @@ const RULED = Object.assign({}, ITEM, { id: 'goal/G9.5', rules: Array.from({ len
 const walk = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walk(c, out); }); return out; };
 const shown = function (n) { for (let p = n; p; p = p.parentNode) { if (p.hidden || (p.style && p.style.display === 'none')) return false; } return true; };
 const inPage = function (w, n) { return walk(w.document.root, []).indexOf(n) !== -1; };
-// A search that writes down where it was made; on the page, as spirit.require brings it, never preloaded.
+// A search that writes down where it was made; on the page, as spirit.requireScript brings it, never preloaded.
 const ruleWorld = function () {
   const r = ddWorld(RULED, []);
   r.searches = [];
   const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
   delete r.win.spirit.required.spirit.element.search;
-  const req = r.win.spirit.require;
-  r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.required.spirit.element.search = make; return req(p); };
+  const req = r.win.spirit.requireScript;
+  r.win.spirit.requireScript = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.required.spirit.element.search = make; return req(p); };
   return r;
 };
 // RULES GO OUT OF DESK (goal/G47.4, box v36: "The rules list on each goal and item goes"; Andy: "go!"): the details panel
@@ -485,7 +485,7 @@ test.run('the shell\'s title bar says the id, the title and the status', 0.2, as
   return (lastTitle.indexOf('goal/G9.7') !== -1 && lastTitle.indexOf('A titled item') !== -1 && lastTitle.indexOf('running') !== -1) || false;
 }, test.limit.quick);
 // goal/G41.22: one workBench, the button row above it.
-test.run('it requires spirit/element/workBench.js through spirit.require', 0.2, async function () {
+test.run('it requires spirit/element/workBench.js through spirit.requireScript', 0.2, async function () {
   const wb = S.wb = await opened(ITEM);
   S.bench = wb.benches[0] || null;
   return wb.required.indexOf('spirit/element/workBench.js') !== -1 || false;
@@ -613,13 +613,13 @@ function stop(node, page) {
   try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
   try { if (node && node.root) require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).freeTree(node); } catch (e) { /* left */ }
 }
-function stopOpened() { stop(S.node, S.page); S.node = S.page = null; }
+function stopOpened() { stop(S.nodeFacts, S.page); S.nodeFacts = S.page = null; }
 function stopPressing() { stop(S.scratch, S.page2); S.scratch = S.page2 = null; }
 test.after(function () { stopOpened(); stopPressing(); });
 test.run('Chrome opens a scratch node with its DEBUG on, and its page measures the panel opened on an item', 0.2, async function () {
   S.chrome = H.findChrome();
   if (!S.chrome) return false;
-  const node = S.node = await H.scratchNode();
+  const node = S.nodeFacts = await H.scratchNode();
   const page = S.page = node.up && node.debug ? await H.chromePage(S.chrome) : null;
   if (!page || page.error) return false;
   await page.send('Page.navigate', { url: node.base + OPENED });
@@ -708,7 +708,7 @@ const btn = function (id) { return "Array.prototype.filter.call(document.querySe
 const shut = function () { return S.page2.evaluate("(function () { var c = Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container-close'), function (x) { return x.getClientRects().length; }).pop(); if (c) c.click(); return !!c; })()"); };
 // The detail of a row opened from the List, its button there or not.
 async function detailOffers(title, id, what) {
-  if (!S.ready) return false;
+  if (!S.readyPromise) return false;
   await H.until(function () { return openRow(title); }, H.WAIT);
   S.there = await H.until(function () { return S.page2.evaluate('!!' + btn(id)); }, H.WAIT);
   return S.there || false;
@@ -722,13 +722,13 @@ async function pressOnce(id) {
 }
 test.run('there is an item done, and an item in design mode offering Delete', 0.2, async function () {
   stopOpened();
-  S.ready = false;
+  S.readyPromise = false;
   if (!S.chrome) return false;
   const scratch = S.scratch = await H.scratchNode();
   const page = S.page2 = scratch.up ? await H.chromePage(S.chrome) : null;
   if (!page || page.error) return false;
   await page.send('Page.navigate', { url: scratch.base + '/face.html' });
-  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   await call('app.active', { key: 'desk', active: true });
   await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
   const g = await call('desk.goal.add', { title: 'Pressing goal' });
@@ -738,15 +738,15 @@ test.run('there is an item done, and an item in design mode offering Delete', 0.
   const design = S.design = await call('desk.item.add', { goal: g.id, title: 'A design item to delete' });
   await call('desk.press', { id: design.id, what: 'start-design' });
   const before = S.beforePress = { done: await state(done.id), design: await state(design.id) };
-  await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()");
-  S.ready = true;
+  await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()");
+  S.readyPromise = true;
   return (before.done.status === 'done' && (before.design.buttons || []).indexOf('delete') !== -1) || false;
 }, test.limit.long);
 test.run('the detail of "A done item to close" offers Close', 0.2, function () {
   return detailOffers('A done item to close', 'dd-close', 'Close');
 }, test.limit.quick);
 test.run('with its Close pressed once, the item is still done and nothing is closed', 0.2, async function () {
-  if (!S.ready) return false;
+  if (!S.readyPromise) return false;
   S.closeArmed = await pressOnce('dd-close');
   const afterClose = await state(S.done.id);
   return afterClose.status === 'done' || false;
@@ -755,13 +755,13 @@ test.run('its Close then stands armed, waiting for the second press', 0.2, funct
   return S.closeArmed === true || false;
 }, test.limit.quick);
 test.run('the detail of "A design item to delete" offers Delete', 0.2, async function () {
-  if (!S.ready) return false;
+  if (!S.readyPromise) return false;
   await shut();
   return detailOffers('A design item to delete', 'dd-delete', 'Delete');
 }, test.limit.quick);
 // Delete closes rather than erases (goal/G9.7): nothing deleted is the same item, its status and its Delete as before.
 test.run('with its Delete pressed once, the item is still there, its status as before and still offering Delete, and nothing is deleted', 0.2, async function () {
-  if (!S.ready) return false;
+  if (!S.readyPromise) return false;
   S.deleteArmed = await pressOnce('dd-delete');
   const design = S.design, before = S.beforePress;
   const afterDelete = await state(design.id);

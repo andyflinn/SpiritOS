@@ -63,7 +63,7 @@ which will never reach the browser or any place outside of the agent process exc
 - **elementRow.js requires the agent family's api.js, whose data.js takes the provider table's rows from the stream**
   (goal/G41.16; Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28; goal/G47.1: only an api.js requires its
   companion data.js): its page files require no data script; the row element requires
-  `spirit.require('spirit/app/agent/api.js')`, which brings `spirit/app/agent/data.js`, and `spirit.required.spirit.data.agent.data.branch('provider')` is the home node's `<node>/agent/provider`; a row
+  `spirit.requireScript('spirit/app/agent/api.js')`, which brings `spirit/app/agent/data.js`, and `spirit.required.spirit.data.agent.data.branch('provider')` is the home node's `<node>/agent/provider`; a row
   of the agent stream (`{ agent: { table: 'provider', row } }`, module `spirit.app.agent`) lands at `<node>/agent/provider/<id>`,
   read through `spirit.required.spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
@@ -85,7 +85,7 @@ providers, two models of one and one of the other; `./server-picker.html`, opene
 `/DEBUG/spirit/app/agent/table/provider/test/server-picker.html` on a scratch node with its DEBUG on
 (`spirit/test/headLessChrome.js`), draws that provider's detail with the real row element, the real shared table element and
 the real dropdown, the agent server a stand-in answering what the real tables answered for each call. The page starts as
-the Agent app's does (`spirit.start()`: the data set, its home node from `node.card`), and 
+the Agent app's does (`spirit.startPage()`: the data set, its home node from `node.card`), and 
 the family's `api.js`, required by the row element, loads its real `data.js` (goal/G41.28, goal/G47.1).
 
 - The provider's detail shows its Model field, the provider having models.

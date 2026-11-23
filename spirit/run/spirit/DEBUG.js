@@ -67,7 +67,7 @@ function addressOf(req) {
 
 // True when the request was DEBUG.js's and is answered (or being answered) here.
 function answer(req, res, server) {
-  if (!spirit.debug()) return false;
+  if (!spirit.debugLog()) return false;
   if (req.method !== 'GET') return false;
   if (!fromLoopback(req.socket && req.socket.remoteAddress)) return false;
   if (FORWARDED.some(function (h) { return req.headers[h] !== undefined; })) return false;
@@ -82,7 +82,7 @@ function answer(req, res, server) {
     return true;
   }
   let made = null;
-  try { made = spirit.require(path.relative(RUN, at.script).split(path.sep).join('/')).make({ module: at.module, file: at.file, ext: at.ext, run: RUN, server: server || {} }); }
+  try { made = spirit.requireScript(path.relative(RUN, at.script).split(path.sep).join('/')).make({ module: at.module, file: at.file, ext: at.ext, run: RUN, server: server || {} }); }
   catch (e) { made = Promise.reject(e); }
   Promise.resolve(made).then(function (out) {
     if (!out) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }

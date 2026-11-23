@@ -88,7 +88,7 @@ function filesUnder(dir) {
     if (c.error) { STOP = true; return false; }
     open = async function () {
       await c.send('Page.navigate', { url: N.base + '/' });
-      return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+      return until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     };
     return (await open()) ? true : false;
   }, test.limit.slow);
@@ -97,7 +97,7 @@ function filesUnder(dir) {
     if (STOP) return false;
     // The appSelector, as the shell app makes it, over the page. A second call replaces the first.
     selector = function (face) {
-      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };
     // The box's text on one line, so a failure says what was on the page.
     shown = function () { return c.evaluate('(document.getElementById("zzBox") || {}).innerText || ""').then(function (t) { return String(t).replace(/\s+/g, ' '); }); };

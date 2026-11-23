@@ -10,10 +10,10 @@
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js','spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  window.spirit.require('spirit/element/search/app/rowFormToggle.js');
-  window.spirit.require('spirit/app/api.js');
+  window.spirit.requireScript('spirit/element/search/app/rowFormToggle.js');
+  window.spirit.requireScript('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -25,7 +25,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       var r = row();
       if (!r) return null;
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
-      return S.ready.then(function (s) { return s.app.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
+      return S.readyPromise.then(function (s) { return s.app.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
     }
     var t = S.required.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
@@ -43,14 +43,14 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       shown(true);
     }
     function ask() {
-      S.ready.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
     // WHAT IT MOUNTS, read from <name>.json, again each time the row changes: a closed panel is kept, not made anew (goal/G43.17,
     // the box: "A closed layer is hidden, not destroyed"), so a read made once would show an old file when it is shown again.
     function readParts() {
-      S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+      S.readyPromise.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
         var j = JSON.parse(String(text));
         parts = (j.shell && j.shell.mount === true ? ['face'] : []).concat(j.node && j.node.mount === true ? ['server'] : []);
         paint();
@@ -65,5 +65,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     return { destroy: function () { gone = true; offRow(); offAll(); t.destroy(); } };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/rowFormAppActive.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/rowFormAppActive.js', { create: create }); });
 }());

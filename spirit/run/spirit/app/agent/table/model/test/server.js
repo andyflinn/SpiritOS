@@ -206,21 +206,21 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   // The page's one loader: asked for a branch's api.js, it runs that branch's real data.js once, as the real api.js
   // requires its companion data.js; the data set (spirit/data.js) is run below.
   const ran = {};
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     made.required.push(String(p));
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
     const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
     if (companion && !ran[companion] && fs.existsSync(path.join(RUN, companion))) { ran[companion] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), { filename: path.join(RUN, companion) }); }
     return Promise.resolve(p === AGENT ? made.family : true);
   };
-  // The page's spirit.require answers the helper, so each file places itself by installSpiritElement as it runs
+  // The page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it runs
   // (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
-  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A branch's
+  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js is loaded by its api.js, through the stand-in above.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  global.window.spirit.node = { key: HOME_KEY };
+  global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
   const T = global.window.spirit.required.spirit.app.agent.element.table.model || {};

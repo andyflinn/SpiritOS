@@ -582,8 +582,8 @@ test.run('after destroy nothing draws and nothing is asked', 0.2, async function
 }, test.limit.quick);
 test.run('its code reads no api off its options', 0.2, function () {
   // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "every element that accesses ANY api must require them
-  // themselves"): handed no source, the list asks server.verb through the spirit object, a family on spirit.ready or one
-  // spirit.require binds, a dotted verb walked as a path; it takes no api from its options.
+  // themselves"): handed no source, the list asks server.verb through the spirit object, a family on spirit.readyPromise or one
+  // spirit.requireScript binds, a dotted verb walked as a path; it takes no api from its options.
   // create: handed no source, it asks through the spirit object
   SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
   return (!/\b(?:o|opts|options)\s*\.\s*api\b|\bapi\s*\.\s*verb\b/.test(SRC)) ? true : false;
@@ -595,15 +595,15 @@ const fam = function (name) {
     return name === 'desk' && verb === 'items' ? { search: function (args) { asked.push({ name: 'desk.items.search', args: args }); return Promise.resolve({ ok: true, items: [] }); } } : at;
   } });
 };
-test.run('typing asks srv.search on the branch spirit.ready holds', 0.2, async function () {
+test.run('typing asks srv.search on the branch spirit.readyPromise holds', 0.2, async function () {
   asked = [];
   refuse = null;
   bound = [];
   SP = window.spirit;
-  SP.ready = Promise.resolve({ srv: fam('srv'), desk: fam('desk') });
+  SP.readyPromise = Promise.resolve({ srv: fam('srv'), desk: fam('desk') });
   SP.branchPath = function (n) { return 'spirit/app/' + n + '/api.js'; };
-  SP.require = function (p) { bound.push(p); return Promise.resolve(fam(/^spirit\/app\/([^/]+)\//.exec(p)[1])); };
-  SP.outcome = function (c) {
+  SP.requireScript = function (p) { bound.push(p); return Promise.resolve(fam(/^spirit\/app\/([^/]+)\//.exec(p)[1])); };
+  SP.callOutcome = function (c) {
     return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
       function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; });
   };
@@ -615,10 +615,10 @@ test.run('typing asks srv.search on the branch spirit.ready holds', 0.2, async f
   await tick();
   return (asked.length === 1 && asked[0].name === 'srv.search' && asked[0].args.text === 'ro') ? true : false;
 }, test.limit.quick);
-test.run('the answer of the branch spirit.ready holds joins the list', 0.2, function () {
+test.run('the answer of the branch spirit.readyPromise holds joins the list', 0.2, function () {
   return (cs.shown().indexOf('r1') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('ask goes the same way, through the branch spirit.ready holds', 0.2, async function () {
+test.run('ask goes the same way, through the branch spirit.readyPromise holds', 0.2, async function () {
   return ((await Ls.ask('count', { a: 1 })).n === 3 && asked[asked.length - 1].name === 'srv.count') ? true : false;
 }, test.limit.quick);
 test.run('a refused call rejects ask with the node\'s words', 0.2, async function () {
@@ -627,7 +627,7 @@ test.run('a refused call rejects ask with the node\'s words', 0.2, async functio
   try { await Ls.ask('count'); } catch (err) { refused = err.message; }
   return (refused === 'not yours') ? true : false;
 }, test.limit.quick);
-test.run('a branch not on spirit.ready is bound by requiring its branch path through the spirit object', 0.2, async function () {
+test.run('a branch not on spirit.readyPromise is bound by requiring its branch path through the spirit object', 0.2, async function () {
   refuse = null;
   Ls.destroy();
   co = container();
@@ -660,10 +660,10 @@ test.run('with neither a source nor a server and verb it asks nobody', 0.2, asyn
 }, test.limit.quick);
 test.run('with nothing to show it shows its empty words', 0.2, function () {
   Ln.destroy();
-  delete SP.ready;
-  delete SP.require;
+  delete SP.readyPromise;
+  delete SP.requireScript;
   delete SP.branchPath;
-  delete SP.outcome;
+  delete SP.callOutcome;
   // create: an empty list, and no rows given
   c2 = container();
   PS.create(c2, { data: branchOf([]), empty: 'No one.' });
@@ -1075,14 +1075,14 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
   // it loads the spirit's probability files itself (rule/26; goal/G41.18)
   // Found by the shell's general rules on a bare page (spirit/test/spirit-sibling-browser.js): the Apps and Grants
   // lists threw "createProbabilityBucket is not a function", since only boot loaded these files. rule/26: every element
-  // loads its own parts via spirit.require; nothing is preloaded. This loader answers in the reverse of the order it was
+  // loads its own parts via spirit.requireScript; nothing is preloaded. This loader answers in the reverse of the order it was
   // asked, as a page's fetches may: whatever order the files land in, the list must work once they are in.
   asked10 = [];
   global.window = { spirit: { element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   wait = 60;
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     const rel = String(p).replace(/^\/+/, '');
     asked10.push(rel);
     const delay = (wait = Math.max(0, wait - 20));
@@ -1185,8 +1185,8 @@ async function keptPart() {
   test.run('a list of five rows is drawn with a filter, a selector, two sortable columns and a search field, and each row is marked', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
+    made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search.js"); }).then(function () { ' +
       'var b = document.createElement("div"); b.id = "zzKept"; b.style.cssText = "position:absolute;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column"; document.body.appendChild(b); ' +
       HANDS + '; ' + PAGE_DATA +
       'K.rows = ' + JSON.stringify(FIVE) + '; K.b = window.__branchOf(K.rows); ' +
@@ -1524,9 +1524,9 @@ async function popupPart() {
   test.run('three search dropdowns of 40 rows, each in a 48 px box cutting off its overflow, a block over the space below the first two', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     // Each box cuts off what overflows it (overflow hidden), and stands under a sibling drawn later on the same spot's level.
-    made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
+    made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search.js"); }).then(function () { ' +
       PAGE_DATA + 'var rows = []; for (var i = 0; i < 40; i++) rows.push({ key: "r" + i, name: "row " + i }); window.__z = {}; ' +
       '[["a", 40, 100], ["b", 500, 100], ["low", 40, window.innerHeight - 70]].forEach(function (x) { var b = document.createElement("div"); b.id = "zz-" + x[0]; ' +
       'b.style.cssText = "position:absolute;left:" + x[1] + "px;top:" + x[2] + "px;width:320px;height:48px;overflow:hidden;border:1px solid"; document.body.appendChild(b); ' +
@@ -1671,8 +1671,8 @@ async function tilesPart() {
   test.run('the search element loads on the page', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search.js"); }).then(function () { return "loaded"; }, function () { return null; })');
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
+    loaded = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/search.js"); }).then(function () { return "loaded"; }, function () { return null; })');
     return (loaded === 'loaded') ? true : false;
   }, test.limit.quick);
   const read = async function () {
@@ -2022,9 +2022,9 @@ async function reconnectPart() {
     chrome = await chromePage(findChrome());
     if (!node.up || chrome.error) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search.js"); }).then(function () { ' +
-      'window.__r = { asked: 0, up: false }; spirit.event.subscribe({ onConnection: function (u) { if (u) window.__r.up = true; } }); var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
+    made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search.js"); }).then(function () { ' +
+      'window.__r = { asked: 0, up: false }; spirit.eventStream.subscribe({ onConnection: function (u) { if (u) window.__r.up = true; } }); var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +
       'window.__r.h = spirit.required.spirit.element.search.create(b, { verb: "zz.search", columns: [{ field: "name", label: "Name" }], name: function (r) { return r.name; }, ' +
       '  search: function () { window.__r.asked += 1; var n = window.__r.asked; return Promise.resolve({ status: 200, body: { items: [{ key: "k" + n, label: JSON.stringify({ name: "answer " + n }) }], more: false } }); } }); ' +
       'window.__r.h.refresh(); return "made"; }, function () { return null; })');

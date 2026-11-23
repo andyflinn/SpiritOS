@@ -32,9 +32,9 @@ test.run('isValid throws an error for "ftp://example.com", "example.com", "", "h
 // loopback URL with port\"".
 test.run('on a node its default is the node\'s loopback URL with its port, http://127.0.0.1:<port>', 0.4, function () {
   if (!T) return false;
-  const S = globalThis.spirit; const was = S.node && S.node.port;
-  S.node = S.node || {}; S.node.port = 45678;
-  try { return T.defaultValue() === 'http://127.0.0.1:45678' || false; } finally { S.node.port = was; }
+  const S = globalThis.spirit; const was = S.nodeFacts && S.nodeFacts.port;
+  S.nodeFacts = S.nodeFacts || {}; S.nodeFacts.port = 45678;
+  try { return T.defaultValue() === 'http://127.0.0.1:45678' || false; } finally { S.nodeFacts.port = was; }
 }, test.limit.quick);
 test.run('on a page its default is the page\'s own URL', 0.4, function () {
   if (!T) return false;

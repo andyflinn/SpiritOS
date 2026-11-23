@@ -34,10 +34,10 @@ test.run('isValid throws an error for "goal/G48", "", a key cut short at either 
 // goal/G48.4, the box v33: "spirit/type/string/ID.js (public keys), default: \"the nodes own public key\"".
 test.run('its default is the node\'s own public key, once the node is known', 0.4, function () {
   if (!T) return false;
-  const S = globalThis.spirit; const was = S.node && S.node.key;
+  const S = globalThis.spirit; const was = S.nodeFacts && S.nodeFacts.key;
   const own = 'MCowBQYDK2VwAyEA' + 'B'.repeat(43) + '=';
-  S.node = S.node || {}; S.node.key = own;
-  try { return T.defaultValue() === own || false; } finally { S.node.key = was; }
+  S.nodeFacts = S.nodeFacts || {}; S.nodeFacts.key = own;
+  try { return T.defaultValue() === own || false; } finally { S.nodeFacts.key = was; }
 }, test.limit.quick);
 // THE TIGHT CHECK AT THE NODE (goal/G48.4, Q12; Andy: "the validity check for an ID must either check in the browser data, or
 // node side the shadow roll and the own ID"; cw: "ID's tight check would run where the node lets a call in"): on a scratch
@@ -71,7 +71,7 @@ test.run('at the node, contact.label takes the node\'s own key past its argument
 let stranger = '';
 test.run('at the node, contact.label refuses a well-formed key nobody there has seen, naming publicKey', 0.4, async function () {
   if (!N.card || N.card.status !== 200) return false;
-  try { stranger = spirit.require('spirit/relayAuth.js').generateIdentity('zz-stranger').publicKey; } catch (e) { return false; }
+  try { stranger = spirit.requireScript('spirit/relayAuth.js').generateIdentity('zz-stranger').publicKey; } catch (e) { return false; }
   const r = await call('contact.label', { publicKey: stranger, myLabel: 'zz stranger' });
   return typeRefused(r, 'publicKey') || false;
 }, test.limit.slow);

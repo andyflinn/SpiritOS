@@ -3,7 +3,7 @@
 What a client knows of its node's relays (goal/G41.28): what `relay.get` answered, kept by `spirit.relay.status`
 (`keep`). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside the real `spirit/data.js`; the test reads through `spirit.required.spirit.data.relay.data` alone.
 
-- In node, requiring its branch's api.js, `spirit.require('spirit/relay/api.js')`, puts it at `spirit.required.spirit.data.relay.data`
+- In node, requiring its branch's api.js, `spirit.requireScript('spirit/relay/api.js')`, puts it at `spirit.required.spirit.data.relay.data`
   (the api.js is the one script that requires its data.js).
 - **It translates nothing**: the node publishes no relay.get answer.
 - `keep(answer)` keeps one answer by its key, its relay and its report (none when it carried none); a refusal, or an

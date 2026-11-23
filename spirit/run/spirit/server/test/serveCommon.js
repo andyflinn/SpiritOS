@@ -251,7 +251,7 @@ test.run('with no identity, ensureFirstRun writes nothing and answers null', 0.2
   return C.ensureFirstRun(home, { kind: 'node' }) === null || false;
 }, test.limit.quick);
 test.run('ensureFirstRun gives a blank description the first one, and a restart never overwrites a typed one', 0.2, function () {
-  const auth = spirit.require('spirit/relayAuth.js');
+  const auth = spirit.requireScript('spirit/relayAuth.js');
   const home = fs.mkdtempSync(path.join(HOME, 'node-'));
   auth.saveIdentity(home, auth.generateIdentity('a node'));
   const now = new Date('2026-11-13T09:00:00.000Z');
@@ -261,7 +261,7 @@ test.run('ensureFirstRun gives a blank description the first one, and a restart 
   return (first && first.description === 'this node described for the first time 2026-11-13 09:00:00 UTC' && again && again.description === 'my own words') || false;
 }, test.limit.quick);
 test.run('ensureFirstRun names a relay named nothing or "relay" as "relay" and its machine\'s name, and a name of its own stays', 0.2, function () {
-  const auth = spirit.require('spirit/relayAuth.js');
+  const auth = spirit.requireScript('spirit/relayAuth.js');
   const home = fs.mkdtempSync(path.join(HOME, 'relay-'));
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const got = C.ensureFirstRun(home, { kind: 'relay' });
@@ -295,5 +295,5 @@ test.run('every file PAGE_FILES names is there in the tree', 0.2, function () {
 
 // ── debugFirst (goal/G41.19) ──
 test.run('debugFirst is DEBUG.js\'s answer, handed every request first', 0.2, function () {
-  return C.debugFirst === spirit.require('spirit/DEBUG.js').answer || false;
+  return C.debugFirst === spirit.requireScript('spirit/DEBUG.js').answer || false;
 }, test.limit.quick);

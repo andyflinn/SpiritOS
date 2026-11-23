@@ -9,7 +9,7 @@ list.js and a row.js script to fit within the probabilitySearch framework."*
 
 ## Requirements
 
-- It loads what it uses itself (rule/26): `spirit/element/row.js`, through `spirit.require`; no arming button
+- It loads what it uses itself (rule/26): `spirit/element/row.js`, through `spirit.requireScript`; no arming button
   (Delete is the branchEditor's, goal/G41.32).
 - It registers `spirit.required.search.bundle.row.create(row)`: a row element (`spirit/element/row.js`) of kind
   `bundle`, keyed by the bundle's id. Its row is the bundle as `auth.bundle` answers it, `{ id, label, owner }`.
@@ -28,7 +28,7 @@ list.js and a row.js script to fit within the probabilitySearch framework."*
 
 - The node's bundle rows are taken from the stream by the auth family's data.js
   (`spirit/run/spirit/auth/data.js`, goal/G41.28), which comes with the auth family's interface the row element requires itself
-  (`spirit.require('spirit/auth/api.js')`, goal/G47.1: only an api.js requires its data.js; G41.14 until then, its own translation), into `spirit.required.spirit.data.auth.data.bundles`: the node publishes each changed row of its two
+  (`spirit.requireScript('spirit/auth/api.js')`, goal/G47.1: only an api.js requires its data.js; G41.14 until then, its own translation), into `spirit.required.spirit.data.auth.data.bundles`: the node publishes each changed row of its two
   bundle tables on one permanent job of type `bundles`, `{ table, row }`, and `{ table, row: { id }, gone: true }`. A row
   published is kept by its id, published again replaces it, gone takes it out; the other table's rows, another job's, and
   a row with no id write nothing. It requires no data script.

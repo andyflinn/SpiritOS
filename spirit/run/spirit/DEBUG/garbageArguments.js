@@ -21,7 +21,7 @@
 'use strict';
 require('../spirit.js');
 
-const limits = spirit.require('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits.js');
 
 const DEPTH = 64;
 const EXTRA = 'noSuchArgumentFromDEBUG';

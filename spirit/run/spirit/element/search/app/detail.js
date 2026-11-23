@@ -8,15 +8,15 @@
 // Its icon and label, the same row element a list row is, so nothing has to keep the two in sync (G30.18), and its
 // (de)activate button (goal/G43.9, Q2: "in the detail as well.").
 (function () {
-  window.spirit.require('spirit/element/search/app/row.js');
-  window.spirit.require('spirit/element/appInstaller.js');
+  window.spirit.requireScript('spirit/element/search/app/row.js');
+  window.spirit.requireScript('spirit/element/appInstaller.js');
   // goal/G43.15: the switches are elements of their own, each hiding itself where it does not apply.
-  window.spirit.require('spirit/element/search/app/rowFormAppActive.js');
-  window.spirit.require('spirit/element/search/app/serverDEBUG.js');
-  window.spirit.require('spirit/element/search/app/changeAppIcon.js');
-  window.spirit.require('spirit/element/search/app/changeAppLabel.js');
+  window.spirit.requireScript('spirit/element/search/app/rowFormAppActive.js');
+  window.spirit.requireScript('spirit/element/search/app/serverDEBUG.js');
+  window.spirit.requireScript('spirit/element/search/app/changeAppIcon.js');
+  window.spirit.requireScript('spirit/element/search/app/changeAppLabel.js');
   // goal/G43.21, goal/G47.1: the Run row is the task row.
-  window.spirit.require('spirit/element/monitor/task.js');
+  window.spirit.requireScript('spirit/element/monitor/task.js');
 
   // THE PANEL'S FORM (goal/G43.9, as Andy drew it), rowForms under the title bar. What the node chose comes on the row, and follows
   // it; what <name>.json describes, whether it mounts a face or a server, is read by the switch from the file, again each time its row changes, so it stays off the rows.
@@ -81,5 +81,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/detail.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/detail.js', { create: create }); });
 }());

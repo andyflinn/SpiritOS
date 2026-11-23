@@ -342,7 +342,7 @@ var limitsApi = {
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = limitsApi;
 } else if (typeof window !== 'undefined') {
-  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.requireScript() places the loaded script at the exact same
   // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
   var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   (R.spirit = R.spirit || {}).limits = limitsApi;

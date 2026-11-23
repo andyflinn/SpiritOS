@@ -4,7 +4,7 @@
 // The tests of spirit/app/chat/element.js, and of no other module (spec: ./element.md; goal/G43.31). The box: "The app's
 // element is spirit/app/chat/element.js (Andy: "the app-element must be spirit/app/chat/element.js"):
 // spirit.required.spirit.app.chat.element.create(container, { open }). It is today's chatter.js, working as it does, made an element: no
-// activateApp and no handed api, the server through spirit itself, node.card through spirit.ready." Written from reading
+// activateApp and no handed api, the server through spirit itself, node.card through spirit.readyPromise." Written from reading
 // chatter.js: the contacts pane on the left (the contact search), one chat in the centre with its input (Enter sends,
 // Shift+Enter a new line), the chats asked of the server at mount. Mounted alone in a box of a real Chrome on a scratch
 // node's face page, the app switched on; every call the page sends recorded as it leaves.
@@ -55,20 +55,20 @@ test.run('a scratch node comes up with chat switched on and its face page open i
     return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'chat.chats.search', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; });
   }, 40000);
   await page.send('Page.navigate', { url: node.base + '/face.html' });
-  X.ready = await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
+  X.ready = await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
   return X.ready ? true : false;
 }, test.limit.slow);
 
 // ── spirit.required.spirit.app.chat.element.create(container, { open }) -> { destroy }, mounted alone ──
-test.run('it loads through spirit.require and mounts, answering an object with a destroy', 0.2, async function () {
+test.run('it loads through spirit.requireScript and mounts, answering an object with a destroy', 0.2, async function () {
   const page = X.page;
   if (!page || !X.ready) return false;
   // Every call the page sends, recorded as it leaves: its fetch and its XMLHttpRequest bodies.
-  X.made = await page.evaluate('window.spirit.ready.then(function () {' +
+  X.made = await page.evaluate('window.spirit.readyPromise.then(function () {' +
     ' window.sent = []; window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); });' +
     ' var f = window.fetch; window.fetch = function (u, o) { try { window.sent.push(String(o && o.body || "")); } catch (e) {} return f.apply(this, arguments); };' +
     ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { try { window.sent.push(String(b || "")); } catch (e) {} return x.apply(this, arguments); };' +
-    ' return spirit.require(' + JSON.stringify(PLACE) + '); }).then(function () {' +
+    ' return spirit.requireScript(' + JSON.stringify(PLACE) + '); }).then(function () {' +
     ' var E = spirit.required && spirit.required.spirit.app.chat.element; if (!E || typeof E.create !== "function") return false;' +
     ' var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:760px;display:flex;background:#111;z-index:9"; document.body.appendChild(c);' +
     ' window.made = E.create(c, {}); return window.made && typeof window.made.destroy === "function" ? "made" : false; }, function () { return false; })');

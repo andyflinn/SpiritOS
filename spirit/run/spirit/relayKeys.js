@@ -61,7 +61,7 @@ const path = require('path');
 // Required on first use, not at load (reviewCleanup): written when a relay
 // loaded this file through presenceNode and must not pull the node's store in.
 // A relay loads no node code now (relayServer.js), so neither happens.
-const nodeStore = { open: function (rootDir) { return spirit.require('spirit/nodeStore.js').open(rootDir); } };
+const nodeStore = { open: function (rootDir) { return spirit.requireScript('spirit/nodeStore.js').open(rootDir); } };
 
 // A URL is the ADDRESS a relay answers at, held on its keyed record, and
 // one relay per address: two spellings of one URL must not become two
@@ -216,7 +216,7 @@ function seatedUrls(rootDir) {
 function seatLabel(rootDir, url) {
   const row = byUrl(rootDir, url);
   if (!row || !row.seated) return '';
-  try { return String(spirit.require('spirit/relayAuth.js').loadIdentity(rootDir).name || ''); }
+  try { return String(spirit.requireScript('spirit/relayAuth.js').loadIdentity(rootDir).name || ''); }
   catch (e) { return ''; }
 }
 

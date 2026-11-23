@@ -2,7 +2,7 @@
 <!-- spirit/run/spirit/shell/face.html
      THE NEW SHELL IN THE MAKING (goal/G30.9): the lazy-load shell, served by the relay at <face>.<relay host> and by
      the home node at /face.html alike. It has the shell's skeleton (the desktop, the title bar with Back and Home,
-     the app screen); its sheets come with boot.js's parts (below). Logged out, spirit.login draws the one field (the
+     the app screen); its sheets come with boot.js's parts (below). Logged out, spirit.faceLogin draws the one field (the
      login app went with goal/G43.18). Logged in, everything else comes from the home node over the
      sealed link (goal/G30.11; shell/seal.js is the node's seal in WebCrypto, shell/boot.js says the rest); the not
      connected mark is the local shell's, and the banner line carries what the face must say (unsealed, another device).
@@ -10,7 +10,7 @@
      face shell itself; the seal comes once the face links to its home node. spirit.js comes by a plain script tag, and
      this file is served as it is on disk (goal/G41.19; Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!"). NO SHEET HERE (goal/G43.18, box v29:
      "boot.js, shell.css, face.css and every other part of the shell come from the home node over that link"): boot.js
-     loads them with its parts; logged out, spirit.login draws the one field, plain. -->
+     loads them with its parts; logged out, spirit.faceLogin draws the one field, plain. -->
 <html lang="en" data-spirit="face">
 <head>
   <meta charset="utf-8">

@@ -7,7 +7,7 @@ The node's HTTP server, the module the launcher spirit/server.js hands --node to
 Andy: *"can we delete run://shell/, run://spirit/shell/index.html, and make face.html the default for "/" ???"* The box: *"In spirit/server.js, the home page is face.html."*
 
 - `GET /` answers 200, as `text/html`, with `spirit/shell/face.html` byte for byte, as it stands on the disc.
-- Opened in a real Chrome, the page at `/` has the spirit object, `spirit.ready` settles, and it loads face.html's own scripts.
+- Opened in a real Chrome, the page at `/` has the spirit object, `spirit.readyPromise` settles, and it loads face.html's own scripts.
 
 ## What its test must try to break
 

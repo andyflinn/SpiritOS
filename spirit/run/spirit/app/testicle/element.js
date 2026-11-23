@@ -30,15 +30,15 @@
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the workBench and the file list.
   var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/search/app/rowFormToggle.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
     'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/testicle.js', 'spirit/app/testicle/element/search/testicle/detail.js',
     'spirit/app/testicle/api.js',
     // ITS OWN PARTS, EACH AN ELEMENT (goal/G47.1, box v134-135: "element.js keeps only the face: it mounts those elements and the
     // searches, nothing drawn of its own").
-    'spirit/app/testicle/element/scriptDetail.js', 'spirit/app/testicle/element/statusBox.js', 'spirit/app/testicle/element/settingsPanel.js'].map(function (p) { return window.spirit.require(p); }));
+    'spirit/app/testicle/element/scriptDetail.js', 'spirit/app/testicle/element/statusBox.js', 'spirit/app/testicle/element/settingsPanel.js'].map(function (p) { return window.spirit.requireScript(p); }));
   // A NODE WITH NO TESTICLE refuses its interface: create says testicle could not be loaded; the refusal is never left
   // unhandled.
   parts.catch(function () {});
@@ -111,5 +111,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element.js', { create: create }); });
 }());

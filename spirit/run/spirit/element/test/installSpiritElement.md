@@ -9,7 +9,7 @@ themselves are who installs the element factory at spirit.required.<path-of-elem
 
 ## Requirements
 
-- `spirit.require('spirit/element/installSpiritElement.js')` answers the helper, a function, and it is resident at
+- `spirit.requireScript('spirit/element/installSpiritElement.js')` answers the helper, a function, and it is resident at
   `spirit.required.spirit.element.installSpiritElement`.
 - `installSpiritElement(spirit, elementPath, factory)`: the element script hands its own run-root path and its factory;
   the factory then stands at `spirit.required.<its path>`, one key per folder and its name without `.js` the last

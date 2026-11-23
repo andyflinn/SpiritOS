@@ -94,10 +94,10 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   load(path.join(RUN, 'spirit', 'data.js'));
   D = global.window.spirit.required.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
-  // kept as spirit.node.key; the agent family's api.js, asked of the stand-in require below, brings its companion data.js
+  // kept as spirit.nodeFacts.key; the agent family's api.js, asked of the stand-in require below, brings its companion data.js
   // with it, the real file run once from disk, as the real api.js does. That data.js (spirit/app/agent/data.js) keeps the tables'
   // branches, <node>/agent/<table>, and answers them through spirit.required.spirit.data.agent.data.
-  global.window.spirit.node = { key: HOME_KEY };
+  global.window.spirit.nodeFacts = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
   const ran = {};
   BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
@@ -105,13 +105,13 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // has not; each ask kept.
   w.bundleAsks = [];
   w.bundlesHeld = { 7: 'Reader', 9: 'Writer' };
-  global.window.spirit.ready = Promise.resolve({ auth: { bundle: function (a) {
+  global.window.spirit.readyPromise = Promise.resolve({ auth: { bundle: function (a) {
     w.bundleAsks.push(a);
     if (a && a.op === 'get') return w.bundlesHeld[Number(a.id)] ? Promise.resolve({ id: Number(a.id), label: w.bundlesHeld[Number(a.id)] }) : Promise.reject(Object.assign(new Error('auth.bundle has no row ' + a.id), { code: 'no-such-row' }));
     return Promise.resolve({ items: [], more: false });
   } } });
   const PE = function () { const e = global.window.spirit.required; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     w.required.push(String(p));
     // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once.
     if (p === AGENT && !ran[p]) { ran[p] = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
@@ -132,7 +132,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     } };
     return Promise.resolve(p === AGENT ? w.family : true);
   };
-  // goal/G43.32: the page's own spirit.require answers the helper, so the element places itself by installSpiritElement,
+  // goal/G43.32: the page's own spirit.requireScript answers the helper, so the element places itself by installSpiritElement,
   // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
   // spirit.required.<their path>.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
@@ -150,7 +150,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   E.agentTable = AT.tableElement;
   AD = AT.tableElement || {};
   // What it asked as it loaded, kept apart from what this process asks later (the runner's own reports to testicle go
-  // through the same window.spirit.require).
+  // through the same window.spirit.requireScript).
   w.loaded = w.required.slice();
   return true;
 }, test.limit.quick);

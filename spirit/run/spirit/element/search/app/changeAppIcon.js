@@ -9,10 +9,10 @@
 // It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, spirit.required.spirit.app.api.iconApp,
 // and the row the stream then brings redraws it.
 (function () {
-  window.spirit.require('spirit/element/rowForm.js');
-  window.spirit.require('spirit/element/icon.js');
-  window.spirit.require('spirit/element/search/icon/list.js');
-  window.spirit.require('spirit/app/api.js');
+  window.spirit.requireScript('spirit/element/rowForm.js');
+  window.spirit.requireScript('spirit/element/icon.js');
+  window.spirit.requireScript('spirit/element/search/icon/list.js');
+  window.spirit.requireScript('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -28,7 +28,7 @@
     // comes"): handed as press, so Change is busy until the node answers.
     var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change', press: function () {
       if (!picked) return null;
-      return S.ready.then(function (s) { return s.app.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
+      return S.readyPromise.then(function (s) { return s.app.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
     } });
     form.span.appendChild(document.createTextNode('Icon '));
     var shown = document.createElement('span');
@@ -43,7 +43,7 @@
       if (r) E.spirit.element.icon.create(shown, { glyph: r.icon });
     }
     function ask() {
-      S.ready.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
@@ -54,5 +54,5 @@
     return { destroy: function () { gone = true; offRow(); offAll(); list.destroy(); host.innerHTML = ''; } };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/changeAppIcon.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/changeAppIcon.js', { create: create }); });
 }());

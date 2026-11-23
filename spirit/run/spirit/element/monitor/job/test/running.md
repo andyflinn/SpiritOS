@@ -8,7 +8,7 @@ Its test is `./running.js`: a real Chrome on a scratch node's face page, the nod
 
 ## Requirements
 
-- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.job.running`, with a `create`.
+- It loads through `spirit.requireScript` and places itself at `spirit.required.spirit.element.monitor.job.running`, with a `create`.
 - It requires the jobs family's interface, `spirit/job/api.js`, and the value tile, `spirit/element/monitor/value.js`.
 - Mounted, it is a value tile in tile mode: its icon 🏃, drawn by the icon element, and its label Jobs running.
 - Its value is the number of jobs of the node running now, worked out from the stats on the spirit job's row.

@@ -187,7 +187,7 @@ function createVerbTable() {
       shape[v] = { request: d.request, reply: d.reply };
     });
     claim(ns, (opts && opts.by) || ns, group, opts);
-    spirit.require('spirit/introSpector.js').stale(String(dir || ''), Object.keys(declarations)).forEach(function (file) {
+    spirit.requireScript('spirit/introSpector.js').stale(String(dir || ''), Object.keys(declarations)).forEach(function (file) {
       console.error('verbTable: ' + file + ' in the folder of ' + ns + ' names a verb it does not declare');
     });
     shapes[ns] = shape;
@@ -218,11 +218,11 @@ function createVerbTable() {
     if (dot < 1) return null;
     var family = name.slice(0, dot);
     if (!(family in declared)) {
-      // The family's api.js through spirit.require (goal/G43.32), read where it is placed, spirit.required.spirit.<family>.api;
+      // The family's api.js through spirit.requireScript (goal/G43.32), read where it is placed, spirit.required.spirit.<family>.api;
       // the binding it also starts asks this node, which the check needs nothing of.
       try {
         // Through spirit.fs's own processor, never raw fs (goal/G49.2; Andy: "go on the five!").
-        if (require('./fs/fileSystem.js').statFile('spirit/' + family + '/api.js')) Promise.resolve(spirit.require('spirit/' + family + '/api.js')).then(null, function () { /* the binding */ });
+        if (require('./fs/fileSystem.js').statFile('spirit/' + family + '/api.js')) Promise.resolve(spirit.requireScript('spirit/' + family + '/api.js')).then(null, function () { /* the binding */ });
         var placed = spirit.required && spirit.required.spirit && spirit.required.spirit[family] && spirit.required.spirit[family].api;
         declared[family] = (placed && placed.verbs) || null;
       } catch (e) { declared[family] = null; }
@@ -230,7 +230,7 @@ function createVerbTable() {
     var verbs = declared[family];
     var v = name.slice(dot + 1);
     if (!verbs || !Object.prototype.hasOwnProperty.call(verbs, v)) return null;
-    return require('./spirit.js').check(name, verbs[v], args);
+    return require('./spirit.js').checkArgs(name, verbs[v], args);
   }
 
   // ── ONE CALL, IN-PROCESS (goal/G30.4) ────────────────────────────────
@@ -419,7 +419,7 @@ function createVerbTable() {
 // that has already passed (found on a planted node, 2026-10-09: every family ask hung and the client saw no answer).
 // Moved here from introSpector with mount (goal/G30.4).
 function readBody(rq) {
-  return spirit.require('spirit/server/serveCommon.js').readJsonBody(rq);
+  return spirit.requireScript('spirit/server/serveCommon.js').readJsonBody(rq);
 }
 
 module.exports = { createVerbTable: createVerbTable };

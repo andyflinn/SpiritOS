@@ -29,7 +29,7 @@
   // cache manager.
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/job/row.js', 'spirit/element/panel.js',
     'spirit/element/search/job/detail.js']
-    .map(function (p) { return S.require(p); }).concat([S.require('spirit/job/api.js')]));
+    .map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/job/api.js')]));
 
   function J() { return S.required.spirit.element.search.job; }
 
@@ -114,5 +114,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/list.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/list.js', { create: create }); });
 }());

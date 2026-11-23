@@ -82,7 +82,7 @@ function world(answer) {
   win.window = win;
   vm.createContext(win);
   win.spirit = {
-    require: function (p) {
+    requireScript: function (p) {
       w.required.push(String(p));
       if (p === 'spirit/element/armingButton.js') {
         vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'armingButton.js'), 'utf8'), win, { filename: 'armingButton.js' });
@@ -94,9 +94,9 @@ function world(answer) {
       return w.hold ? w.hold : Promise.resolve({});
     },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); },
-    // The node family through spirit.ready, as the page reaches every family (goal/G43.27, Q1: no api at load).
+    // The node family through spirit.readyPromise, as the page reaches every family (goal/G43.27, Q1: no api at load).
     get ready() { return Promise.resolve(win.spirit); },
-    outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },
+    callOutcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },
     node: {
       rotateCipher: function (args) {
         w.calls.push({ name: 'node.rotateCipher', args: args });
@@ -108,10 +108,10 @@ function world(answer) {
   };
   // goal/G43.32: every element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit), at once, held or not.
-  const recorder = win.spirit.require;
+  const recorder = win.spirit.requireScript;
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
-  const pageRequire = win.spirit.require;
-  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  const pageRequire = win.spirit.requireScript;
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
   w.button = function (host) { return host.querySelector('[data-rotate]'); };
@@ -140,7 +140,7 @@ test.run('rotateKey asks the node through the spirit object, by spirit.required.
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
   return (!/\.verb\s*\(/.test(CODE) && /\bnode\.rotateCipher\b/.test(CODE)) ? true : false;
 }, test.limit.quick);
-test.run('rotateKey loads spirit/element/armingButton.js itself, through spirit.require', 0.2, function () {
+test.run('rotateKey loads spirit/element/armingButton.js itself, through spirit.requireScript', 0.2, function () {
   return (w.required.indexOf('spirit/element/armingButton.js') !== -1) ? true : false;
 }, test.limit.quick);
 test.run('rotateKey has no data-armed of its own', 0.2, function () {

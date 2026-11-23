@@ -10,10 +10,10 @@
 // monitor tiles): six tiles, each an element of its own (goal/G47.1, Q24; Andy: "one
 // container, subscribed to "spirit" that draws a few pretty tiles with icon and a value pair", "throw out "valued" completely").
 // THE ELEMENT IT SHOWS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1): a require made while this file runs is part of its tree.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/element/monitor/job.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/element/monitor/job.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
-  var parts = Promise.resolve(S.require('spirit/element/monitor/job.js'));
+  var parts = Promise.resolve(S.requireScript('spirit/element/monitor/job.js'));
 
   function create(container) {
     var gone = false;
@@ -31,5 +31,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/eleme
     };
   }
 
-  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/monitor/element.js', { create: create }); });
+  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/monitor/element.js', { create: create }); });
 }());

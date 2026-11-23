@@ -27,8 +27,8 @@ test.run('the icon row element runs on a bare window', 0.2, async function () {
   global.window = { spirit: { element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  const own = global.window.spirit.require;
-  global.window.spirit.require = function (p) { required.push(String(p)); return own.apply(this, arguments); };
+  const own = global.window.spirit.requireScript;
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); return own.apply(this, arguments); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = global.window.spirit.required.spirit.element;

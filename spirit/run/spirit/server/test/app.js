@@ -36,7 +36,7 @@ function plantFamilies() {
   const head = "'use strict';\n// Planted by spirit/server/test/app.js for its stream checks, and removed when it ends.\n";
   fs.writeFileSync(path.join(at(FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
   fs.writeFileSync(path.join(at(FAMILY), 'data.js'), head + [
-    "const D = require('../../spirit.js').require('spirit/data.js');",
+    "const D = require('../../spirit.js').requireScript('spirit/data.js');",
     "D.makeFamily('" + FAMILY + "', function () {",
     "  const HOME = D.viewAt(null, '" + FAMILY + "');",
     "  D.addTranslator({ onJob: function (job) {",
@@ -113,7 +113,7 @@ const branchPath = require(path.join(RUN, 'spirit', 'spirit.js')).branchPath;
 delete require.cache[require.resolve(path.join(RUN, 'spirit', 'data.js'))];
 const fake = {
   branchPath: branchPath,
-  require: function (p, key) {
+  requireScript: function (p, key) {
     const q = String(p);
     if (/spirit\/auth\/api\.js$/.test(q)) {
       return Promise.resolve({
@@ -153,18 +153,18 @@ const fake = {
         remote: function () { asked.push({ verb: 'sibling.remote', key: key }); return Promise.reject({ status: 403, body: { ok: false, code: 'owner-only' } }); },
       });
     }
-    // goal/G43.32, decided 3: on the node spirit.require is a path-translating wrapper, a script's module at once.
+    // goal/G43.32, decided 3: on the node spirit.requireScript is a path-translating wrapper, a script's module at once.
     if (!/\/api\.js$/.test(q)) return require(path.join(RUN, q));
     return Promise.resolve({});
   },
-  // A refusal keeps its status and body, as spirit.outcome does (the code is what the remote check reads, goal/G47.5).
-  outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: (e && e.status) || 500, body: (e && e.body) || { ok: false } }; }); },
+  // A refusal keeps its status and body, as spirit.callOutcome does (the code is what the remote check reads, goal/G47.5).
+  callOutcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: (e && e.status) || 500, body: (e && e.body) || { ok: false } }; }); },
   // What the server publishes to its own pages, kept (goal/G47.5: remote is published to them).
-  event: { published: [], publish: function (e) { fake.event.published.push(e); }, subscribe: function () {} },
+  eventStream: { published: [], publish: function (e) { fake.eventStream.published.push(e); }, subscribe: function () {} },
   // A server reports its DEBUG on its job (goal/G43.15); the stand-in node takes the report and keeps nothing.
-  job: { report: function () { return Promise.resolve({ ok: true }); } },
+  processJob: { report: function () { return Promise.resolve({ ok: true }); } },
   // Its DEBUG flag, as spirit.js keeps one: read with no argument, set with a boolean.
-  debug: (function () { let on = false; return function (v) { if (typeof v === 'boolean') on = v; return on; }; }()),
+  debugLog: (function () { let on = false; return function (v) { if (typeof v === 'boolean') on = v; return on; }; }()),
 };
 const realLoad = Module._load;
 Module._load = function (request, parent) {
@@ -219,12 +219,12 @@ const hasIn = function (D, n, group) { return !!itemOf((group || 'a') + n); };
 // subscribes, and the rows of the push it is answered with are published to its own pages (the stand-in's event.publish),
 // and none goes out by peerPost (the stand-in's deliveries).
 async function selfSubscribe() {
-  const publishedAt = fake.event.published.length;
+  const publishedAt = fake.eventStream.published.length;
   const postsAt = posts.length;
   const status = (await post('subscribe', { branch: NAME }, SELF)).status;
   await tick(800);
   const ids = function (list) { const out = []; list.forEach(function (e) { (Array.isArray(e) ? e : [e]).forEach(function (x) { const r = x && (x.row || x); if (r && r.item && r.item.id) out.push(r.item.id); }); }); return out; };
-  return { selfStatus: status, toPages: ids(fake.event.published.slice(publishedAt)), byPost: ids(posts.slice(postsAt)) };
+  return { selfStatus: status, toPages: ids(fake.eventStream.published.slice(publishedAt)), byPost: ids(posts.slice(postsAt)) };
 }
 const allOf = function (list) { return Array.isArray(list) && ['head', 'a1', 'a2'].every(function (id) { return list.indexOf(id) !== -1; }); };
 
@@ -302,7 +302,7 @@ async function child(mode) {
     // spirit/server/app.js in client mode automatically caches the servers's state the way it always did", "deskClient
     // produces the EXACT same cache file as your own desk in client-mode"). A server with a publisher alone, as the desk is,
     // named for a family with a folder here, switched by its owner to the sibling, then sent a push and a row by it.
-    globalThis.spirit.node = Object.assign({}, globalThis.spirit.node || {}, { key: SELF, label: 'this node' });
+    globalThis.spirit.nodeFacts = Object.assign({}, globalThis.spirit.nodeFacts || {}, { key: SELF, label: 'this node' });
     const A = require(FILE);
     A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, { publisher: { family: NAME, bootstrap: function () { return []; }, waitMs: 5000 } });
     await tick(300);
@@ -328,7 +328,7 @@ async function child(mode) {
   }
   if (mode === 'selfServer') {
     // The same in server mode: its push is its bootstrap.
-    globalThis.spirit.node = Object.assign({}, globalThis.spirit.node || {}, { key: SELF, label: 'this node' });
+    globalThis.spirit.nodeFacts = Object.assign({}, globalThis.spirit.nodeFacts || {}, { key: SELF, label: 'this node' });
     const A = require(FILE);
     A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, { publisher: { family: NAME, bootstrap: function () { return [row(GOAL), row(item(1)), row(item(2))]; }, waitMs: 5000 } });
     await tick(300);
@@ -1002,7 +1002,7 @@ function ownPart() {
   test.after(function () { try { fs.rmSync(remoteFile, { force: true }); } catch (e) { /* none */ } });
   test.run('remote is an auto-verb: the api tree names it', 0.2, async function () {
     if (noServer()) return false;
-    globalThis.spirit.node = Object.assign({}, globalThis.spirit.node || {}, { key: SELF, label: 'this node' });
+    globalThis.spirit.nodeFacts = Object.assign({}, globalThis.spirit.nodeFacts || {}, { key: SELF, label: 'this node' });
     const t = await asOwner('api', {});
     return (t.status === 200 && !!t.body && 'remote' in t.body) || false;
   }, test.limit.quick);
@@ -1056,10 +1056,10 @@ function ownPart() {
     if (!R.switched) return false;
     const last = posts.filter(Array.isArray).map(function (b) { return b[b.length - 1]; }).filter(function (e) { return e && e.run; }).pop();
     if (!last) return false;
-    const before = (fake.event.published || []).length;
+    const before = (fake.eventStream.published || []).length;
     const sent = await post('listener', { json: JSON.stringify([{ run: last.run, n: Number(last.n) + 1, row: row(item(81)) }]) }, PUBLISHER);
     await tick(300);
-    const heard = (fake.event.published || []).slice(before).some(function (e) { return e && e.item && e.item.id === 'a81'; });
+    const heard = (fake.eventStream.published || []).slice(before).some(function (e) { return e && e.item && e.item.id === 'a81'; });
     return (sent.status === 200 && heard) || false;
   }, test.limit.quick);
   test.run('remote with this node\'s id switches home: { current } is this node and its own verb answers again', 0.2, async function () {
@@ -1072,7 +1072,7 @@ function ownPart() {
   // current", "only to its own loopback clients and its relay-face, never to the peers subscribed to it".
   test.run('a switch publishes remote to its own pages, with current and the list', 0.2, function () {
     if (!R.switched) return false;
-    const seen = (fake.event.published || []).map(function (e) { return e && e.remote; }).filter(Boolean);
+    const seen = (fake.eventStream.published || []).map(function (e) { return e && e.remote; }).filter(Boolean);
     return (seen.some(function (r) { return r.current === PUBLISHER && Array.isArray(r.items); }) && seen.some(function (r) { return r.current === SELF; })) || false;
   }, test.limit.quick);
   test.run('remote is never delivered to the peers subscribed to it', 0.2, function () {

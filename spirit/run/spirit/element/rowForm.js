@@ -19,7 +19,7 @@
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the icon element, asked as this file runs, so whoever requires the
   // form is answered once it is in.
-  if (window.spirit && typeof window.spirit.require === 'function') { window.spirit.require('spirit/element/icon.js'); window.spirit.require('spirit/element/busyButton.js'); }
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/element/icon.js'); window.spirit.requireScript('spirit/element/busyButton.js'); }
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
 
   function create(container, options) {
@@ -41,5 +41,5 @@
     return { root: root, span: span, button: button };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/rowForm.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/rowForm.js', { create: create }); });
 }());

@@ -32,7 +32,7 @@ function world(o) {
   // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so join.js places itself by
   // installSpiritElement at spirit.required.spirit.app.join.element; joinList stands where it reads it.
   win.spirit = { required: { spirit: { element: els, app: {} } },
-    require: function (p) {
+    requireScript: function (p) {
       w.required.push(String(p));
       if (opt.refuse) return Promise.reject(new Error('not-found ' + p));
       const put = function () { if (p === 'spirit/element/joinList.js') els.joinList = joinList; return {}; };

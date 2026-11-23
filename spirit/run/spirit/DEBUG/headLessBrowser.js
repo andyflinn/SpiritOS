@@ -5,7 +5,7 @@ require('../spirit.js');
 // be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit.js"> and the most minimal
 // mount for armingButton.js". Its first user is the shell's general rules (spirit/test/spirit-sibling-browser.md).
 //
-// The page loads /spirit.js, then the module through spirit.require, alone (rule/26). An app (it calls
+// The page loads /spirit.js, then the module through spirit.requireScript, alone (rule/26). An app (it calls
 // spirit.shell.activateApp) is mounted into the box with an api as the face
 // gives one (shell/boot.js apiFor). An element
 // is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled
@@ -29,7 +29,7 @@ function mountScript(file) {
     '  var fam = dot > 0 ? spirit[name.slice(0, dot)] : null;\n' +
     '  var fn = fam && typeof fam[name.slice(dot + 1)] === "function" ? fam[name.slice(dot + 1)] : null;\n' +
     '  if (!fn) return Promise.resolve({ status: 400, text: "", body: { ok: false, code: "no-such-verb", error: "no verb " + name } });\n' +
-    '  return spirit.outcome(fn(args || {})).then(function (o) { return { status: o.status, text: o.body == null ? "" : JSON.stringify(o.body), body: o.body }; });\n' +
+    '  return spirit.callOutcome(fn(args || {})).then(function (o) { return { status: o.status, text: o.body == null ? "" : JSON.stringify(o.body), body: o.body }; });\n' +
     '}\n' +
     'var api = {\n' +
     '  escapeHtml: spirit.escapeHtml, verb: ask,\n' +
@@ -41,7 +41,7 @@ function mountScript(file) {
     '};\n' +
     'var app = null;\n' +
     '(spirit.shell = spirit.shell || {}).activateApp = function (behavior) { app = behavior; };\n' +
-    'Promise.resolve(spirit.start()).then(function () { return spirit.require(file); }).then(function () {\n' +
+    'Promise.resolve(spirit.startPage()).then(function () { return spirit.requireScript(file); }).then(function () {\n' +
     '  if (app && typeof app.mount === "function") {\n' +
     '    app.mount(box, api);\n' +
     '    if (typeof app.render === "function") app.render();\n' +

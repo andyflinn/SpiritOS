@@ -32,13 +32,13 @@ test.run('a scratch node comes up with Chrome on its face page', 0.2, async func
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) { chrome = chrome.error ? (chrome.kid ? chrome : null) : chrome; return false; }
   await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
   return true;
 }, test.limit.slow);
-test.run('it loads through spirit.require', 0.2, async function () {
+test.run('it loads through spirit.requireScript', 0.2, async function () {
   if (!text) return false;
-  loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/search/app.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return false; })');
+  loaded = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return false; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.slow);
 test.run('its create makes a list in the host it is given', 0.2, async function () {

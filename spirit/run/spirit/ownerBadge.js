@@ -21,10 +21,10 @@
 // will be changed in one of them. Nothing below this line requires
 // anything unless it is running under node.
 const isNode = typeof process !== 'undefined' && !!process.versions && !!process.versions.node;
-const auth = isNode ? require('./spirit.js').require('spirit/relayAuth.js') : null;
+const auth = isNode ? require('./spirit.js').requireScript('spirit/relayAuth.js') : null;
 // Where this node holds a seat, and who each relay is. Both are records
 // this node keeps about itself — see probe.
-const relayKeys = isNode ? require('./spirit.js').require('spirit/relayKeys.js') : null;
+const relayKeys = isNode ? require('./spirit.js').requireScript('spirit/relayKeys.js') : null;
 
 function normalizeUrl(u) {
   return String(u == null ? '' : u).trim().replace(/\/+$/, '');
@@ -474,7 +474,7 @@ if (isNode) {
     chooseUrl: chooseUrl,
   };
 } else if (typeof window !== 'undefined') {
-  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.requireScript() places the loaded script at the exact same
   // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
   var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   (R.spirit = R.spirit || {}).ownerBadge = {

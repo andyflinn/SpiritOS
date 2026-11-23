@@ -15,7 +15,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the icon element, asked as this file runs.
-  var parts = Promise.resolve(S.require('spirit/element/icon.js'));
+  var parts = Promise.resolve(S.requireScript('spirit/element/icon.js'));
 
   function create(container, options) {
     var o = options || {};
@@ -49,5 +49,5 @@
     };
   }
 
-  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/value.js', { create: create }); });
+  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/value.js', { create: create }); });
 }());

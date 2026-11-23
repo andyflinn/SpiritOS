@@ -92,7 +92,7 @@ if (typeof require === 'function') require('../spirit.js'); // node only: a page
 
   var api = { LABEL: LABEL, supported: supported, newKey: newKey, seal: seal, open: open, toB64: toB64, fromB64: fromB64 };
   // On the one spirit object (goal/G40.7), nothing on window: spirit.required.shell.seal.
-  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.require() places the loaded script at the exact same
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.requireScript() places the loaded script at the exact same
   // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
   var R = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
   (R.shell = R.shell || {}).seal = api;

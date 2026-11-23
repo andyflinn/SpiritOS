@@ -36,12 +36,12 @@ var cdKey = '';        // whose row this screen is
 var cdPerson = null;   // the row itself, as contact.get answers it
 var cdChanged = false; // has anything happened? Nothing reads it now: the list repaints from the stream
 
-// THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb on spirit.ready, answered { status, text, body } as this screen
+// THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb on spirit.readyPromise, answered { status, text, body } as this screen
 // reads it; a refusal is the node's status and words. The verb is the argument; this app knows no address.
 function cdPost(verb, body) {
   var n = String(verb);
   var at = n.indexOf('.');
-  return Promise.resolve(spirit.ready).then(function (s) { return s[n.slice(0, at)][n.slice(at + 1)](body || {}); }).then(function (b) {
+  return Promise.resolve(spirit.readyPromise).then(function (s) { return s[n.slice(0, at)][n.slice(at + 1)](body || {}); }).then(function (b) {
     return { status: 200, text: JSON.stringify(b), body: b };
   }, function (e) {
     var b = (e && e.body) || { ok: false, error: String((e && e.message) || e) };
@@ -86,7 +86,7 @@ function cdStatus(text) {
 var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relay.status
 function cdRelayClaim() {
   cdClaim = null;
-  return Promise.resolve(spirit.ready).then(function (s) { return s.relay.status(''); }).then(function (r) {
+  return Promise.resolve(spirit.readyPromise).then(function (s) { return s.relay.status(''); }).then(function (r) {
     ((r.body && r.body.rows) || []).forEach(function (row) {
       if (row && (row.key === cdKey || (row.roll && row.roll.relayKey === cdKey))) cdClaim = { owned: !!row.owned, ownerLabel: String(row.ownerLabel || '') };
     });
@@ -387,7 +387,7 @@ var cdRelay = (function () {
 // faceForm."), the armingButton its are-you-sure buttons are (goal/G41.9), and the icon element its fold marks are
 // (goal/G41.23), each panel drawn again once they are there.
 var iconReady = Promise.all(['spirit/element/icon.js', 'spirit/element/joinForm.js', 'spirit/element/faceForm.js', 'spirit/element/armingButton.js', 'spirit/ownerBadge.js'].map(function (p) {
-  return window.spirit && window.spirit.require ? window.spirit.require(p) : null;
+  return window.spirit && window.spirit.requireScript ? window.spirit.requireScript(p) : null;
 }));
 
 // One panel, everything below its own.
@@ -552,11 +552,11 @@ var ndUnlisted = false;
 // A verb that moves from hub.js to somewhere else changes nothing here,
 // and there is no longer a way to get the address right and the request
 // wrong.
-// THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb on spirit.ready, answered { status, text, body } as this screen
+// THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb on spirit.readyPromise, answered { status, text, body } as this screen
 // reads it; a refusal is the node's status and body.
 function ndPost(verb, body) {
   var at = String(verb).indexOf('.');
-  return Promise.resolve(spirit.ready).then(function (s) { return s[String(verb).slice(0, at)][String(verb).slice(at + 1)](body || {}); }).then(function (b) {
+  return Promise.resolve(spirit.readyPromise).then(function (s) { return s[String(verb).slice(0, at)][String(verb).slice(at + 1)](body || {}); }).then(function (b) {
     return { status: 200, text: JSON.stringify(b), body: b };
   }, function (e) {
     var b = (e && e.body) || { ok: false, error: String((e && e.message) || e) };
@@ -611,7 +611,7 @@ function ndLoad() {
   ndUnlisted = false;
 // relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
   // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
-  return Promise.resolve(spirit.ready).then(function (s) { return s.relay.status(ndLabel || ''); }).then(function (r) { return r && r.body; })
+  return Promise.resolve(spirit.readyPromise).then(function (s) { return s.relay.status(ndLabel || ''); }).then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];
@@ -1908,7 +1908,7 @@ var ndPage = ({
     // ITS ROW, FROM THE ONE TABLE (goal/G40.11), THE CONTACT FAMILY'S CACHE (goal/G41.28): painted as it changes, with no
     // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
     // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
-    ndStops.push(Promise.resolve(spirit.require('spirit/contact/api.js')).then(function () {
+    ndStops.push(Promise.resolve(spirit.requireScript('spirit/contact/api.js')).then(function () {
       if (ndGone || !((window.spirit.required.spirit.data || {}).contact || {}).data) return function () {};
       return window.spirit.required.spirit.data.contact.data.watch(ndHearRow);
     }));
@@ -2098,11 +2098,11 @@ return {
 return panel;
 }());
 
-// The armingButton it draws Block and Forget with, it loads itself (goal/G41.3), through spirit.require.
-if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/armingButton.js');
+// The armingButton it draws Block and Forget with, it loads itself (goal/G41.3), through spirit.requireScript.
+if (window.spirit && window.spirit.requireScript) window.spirit.requireScript('spirit/element/armingButton.js');
 // EVERY FIELD HELD BY ITS TYPE AS IT IS TYPED (goal/G48.4, box v22: "ever input field in every element must validate the input
 // with the new type checks."): fieldInput, asked as this file runs, and each field it draws handed to it with its type.
-if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/fieldInput.js');
+if (window.spirit && window.spirit.requireScript) window.spirit.requireScript('spirit/element/fieldInput.js');
 function typedField() { var r = window.spirit && window.spirit.required; return (r && r.spirit && r.spirit.element && r.spirit.element.fieldInput) || null; }
 // The contact's own name for it.
 function cdTypeFields(scope) {
@@ -2136,7 +2136,7 @@ function ndTypeFields(scope) {
 // create(container, options) draws the same screen into the container, options { key, layer }.
 // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "contactDetails.js should really be
 // spirit/run/spirit/element/search/contact/detail.js"): merged into, so the parts of search/contact/ load in any order.
-window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/detail.js', {
+window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/detail.js', {
   create: function (container, options) {
     var o = options || {};
     var done = { destroy: function () { container.innerHTML = ''; } };

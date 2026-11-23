@@ -11,11 +11,11 @@
 //
 // Node only. It changes no caller (box v17, "OUT OF SCOPE OF THIS ITEM: changing any future client of spirit/fs/script.js").
 require('../spirit.js');
-// The branch's api.js, which brings its companion spirit/fs/data.js, which makes spirit.required.spirit.data.fs. In node spirit.require
+// The branch's api.js, which brings its companion spirit/fs/data.js, which makes spirit.required.spirit.data.fs. In node spirit.requireScript
 // loads the file at once and then binds spirit.fs; a process with no port to bind to (the node's own main process on a
 // fresh tree) is refused the binding, never the file, so that refusal is let go.
-Promise.resolve(spirit.require('spirit/fs/api.js')).then(null, function () { /* the binding; the dataset is here */ });
-const D = spirit.require('spirit/data.js');
+Promise.resolve(spirit.requireScript('spirit/fs/api.js')).then(null, function () { /* the binding; the dataset is here */ });
+const D = spirit.requireScript('spirit/data.js');
 
 let fed = false;
 let following = false;

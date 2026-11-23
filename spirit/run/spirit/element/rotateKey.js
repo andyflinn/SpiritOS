@@ -19,7 +19,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the arming button.
-  var parts = S.require('spirit/element/armingButton.js');
+  var parts = S.requireScript('spirit/element/armingButton.js');
 
   function create(container) {
     var busy = false;
@@ -67,7 +67,7 @@
     function rotate() {
       busy = true;
       draw();
-      S.outcome(Promise.resolve(S.ready).then(function (s) { return s.node.rotateCipher({}); })).then(function (r) {
+      S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return s.node.rotateCipher({}); })).then(function (r) {
         busy = false;
         result = r && r.status === 200 && r.body ? r.body : { ok: false, error: (r && r.body && (r.body.error || r.body.code)) || 'no answer' };
         draw();
@@ -78,5 +78,5 @@
     return { destroy: function () { gone = true; container.innerHTML = ''; } };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/rotateKey.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/rotateKey.js', { create: create }); });
 }());

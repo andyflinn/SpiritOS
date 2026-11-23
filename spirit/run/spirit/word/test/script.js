@@ -345,8 +345,8 @@ test.run('a browser opens the page of a scratch node, for the asks below', 0.2, 
   if (!W.page || W.page.error) return false;
   const page = W.page;
   await page.send('Page.navigate', { url: W.node.base + '/' });
-  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
-  await page.evaluate('window.spirit.ready.then(function () { return true; })').catch(function () { return false; });
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
+  await page.evaluate('window.spirit.readyPromise.then(function () { return true; })').catch(function () { return false; });
   await H.sleep(2500);
   return true;
 }, test.limit.slow);
@@ -364,13 +364,13 @@ test.run('the planted spirit/app/word.json is read, and its word is found at spi
   const page = W.page;
   fs.writeFileSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'app', 'word.json'), JSON.stringify({ zzword: true }));
   await page.send('Page.navigate', { url: W.node.base + '/' });
-  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
-  const asked = await page.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/fs/api.js"); }).then(function () {' +
+  await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
+  const asked = await page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/fs/api.js"); }).then(function () {' +
     ' return new Promise(function (r) { setTimeout(r, 3000); }); }).then(function () {' +
     ' window.sentWord = []; var keep = function (b) { try { var s = String(b || ""); if (/word\\.json/.test(s)) window.sentWord.push(s); } catch (e) {} };' +
     ' var f = window.fetch; window.fetch = function (u, o) { keep(String(u) + " " + (o && o.body || "")); return f.apply(this, arguments); };' +
     ' var x = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { keep(b); return x.apply(this, arguments); };' +
-    ' return spirit.require("spirit/word/script.js"); }).then(function () {' +
+    ' return spirit.requireScript("spirit/word/script.js"); }).then(function () {' +
     ' var paths = ["spirit.app.zz", "spirit.app.table.zz", "spirit.app.table.rows.zz", "spirit.element.search.zz", "spirit.fs.zz", "spirit.contact.zz", "spirit.data.zz", "spirit.app.desk.element.zz"];' +
     ' var asks = []; for (var n = 0; n < 5; n++) paths.forEach(function (p) { asks.push(spirit.required.spirit.word.script.check(p, "zzword")); asks.push(spirit.required.spirit.word.script.check(p, "other")); });' +
     ' return Promise.all(asks); }).then(function (answers) { return new Promise(function (r) { setTimeout(function () { r(answers); }, 1500); }); })' +

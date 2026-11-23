@@ -75,36 +75,36 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, addEventListener: function () {}, removeEventListener: function () {} };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
-    required: { spirit: { fieldRules: require(path.join(RUN, 'spirit', 'fieldRules.js')) } }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+    required: { spirit: { fieldRules: require(path.join(RUN, 'spirit', 'fieldRules.js')) } }, readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   global.spirit = global.window.spirit;
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream's rows land there.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   DATA = global.window.spirit.required.spirit.data;
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
-  global.window.spirit.node = { key: NODE_KEY };
+  global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
   // The auth family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
   // itself to the data set; the bundles are the auth family's (goal/G41.28).
   let ran = false;
   // The direct writes below are the auth family's own view of the home node, as its data.js files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; load('spirit/auth/data.js'); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; load('spirit/auth/data.js'); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // What was asked as it loaded, kept apart from what this process asks later (the runner's own reports go through the
-  // same window.spirit.require).
+  // same window.spirit.requireScript).
   loaded = required.slice();
   return true;
 }, test.limit.quick);
 
 // it loads what it uses itself (rule/26)
 // goal/G41.26: the label is shown only, so no field input is used, and none is asked of it.
-test.run('it requires the shared row element through spirit.require, and no arming button, because Delete is the branchEditor\'s', 0.2, function () {
+test.run('it requires the shared row element through spirit.requireScript, and no arming button, because Delete is the branchEditor\'s', 0.2, function () {
   if (!required) return false;
   return required.indexOf('spirit/element/row.js') !== -1 && required.indexOf('spirit/element/armingButton.js') === -1 ? true : false;
 }, test.limit.quick);

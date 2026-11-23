@@ -12,7 +12,7 @@
 // another container."): one workBench at a time in a container of its own, every pane given 5000 pixels of content, and
 // what the browser makes of it, measured. Opened by ./workBench.js at /DEBUG/spirit/element/test/workBench-contained.html.
 window.contained = function (name) {
-  return spirit.require('spirit/element/workBench.js').then(function () {
+  return spirit.requireScript('spirit/element/workBench.js').then(function () {
     document.body.querySelectorAll('.case').forEach(function (n) { n.remove(); });
     var c;
     var outer = null;
@@ -59,7 +59,7 @@ window.contained = function (name) {
 // strip.", and "this element will replace icons painting all shell elements and apps."): a workBench of n left tools in
 // a box of 300 pixels, its strip measured. An icon made here gives the class the icon element carries.
 window.strip = function (n) {
-  return Promise.all([spirit.require('spirit/element/workBench.js'), Promise.resolve().then(function () { return spirit.require('spirit/element/icon.js'); }).catch(function () { return null; })]).then(function () {
+  return Promise.all([spirit.requireScript('spirit/element/workBench.js'), Promise.resolve().then(function () { return spirit.requireScript('spirit/element/icon.js'); }).catch(function () { return null; })]).then(function () {
     document.body.querySelectorAll('.case').forEach(function (x) { x.remove(); });
     var mark = '';
     if (spirit.required.spirit.element.icon && typeof spirit.required.spirit.element.icon.create === 'function') {

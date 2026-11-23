@@ -28,7 +28,7 @@
 // again (Q11: "it only must disappear from view. it won't be loaded on the next shell-boot.").
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // AN APP'S MAIN ELEMENT BY THE APP'S NAME (goal/G43.32, rule 4): spirit/app/<name>/element.js, placed at
   // spirit.required.spirit.app.<name>.element.
@@ -97,7 +97,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       var look = {};
       function title(t) { look.file = t && t.file; look.icon = t && t.icon; if (look.set) look.set(); }
       open('app', row, function (pane, closed) {
-        return S.require('spirit/app/' + name + '/element.js').then(function () {
+        return S.requireScript('spirit/app/' + name + '/element.js').then(function () {
           if (closed()) return null;
           // What the app opens goes in this same stack, over all of it (panel.js: one stack, each ✕ one step back).
           var over = function (k, spec) { return stack ? stack.open('app/' + name + '/' + k, spec) : Promise.resolve(null); };
@@ -109,7 +109,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     }
     // AN APP'S DETAIL COMES WHEN ONE OPENS (goal/G43.27; Andy: "make sure that spirit.js does NOT load all that shit!!!!!!!!!"):
     // detail.js and what it draws with are required then, once, and not as the list loads.
-    function detailReady() { return window.spirit.require('spirit/element/search/app/detail.js'); }
+    function detailReady() { return window.spirit.requireScript('spirit/element/search/app/detail.js'); }
     function panel(row) {
       open('detail', row, function (pane, closed) {
         return detailReady().then(function () { return closed() ? null : window.spirit.required.spirit.element.search.app.detail.create(pane, { row: row, panel: true }); });
@@ -137,7 +137,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
       if (stack) stack.close();
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.all([window.spirit.require('spirit/element/search/app.js'), window.spirit.require('spirit/element/panel.js')]).then(function () {
+    Promise.all([window.spirit.requireScript('spirit/element/search/app.js'), window.spirit.requireScript('spirit/element/panel.js')]).then(function () {
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
       stack = window.spirit.required.spirit.element.panel.create(root, listBox);
@@ -167,5 +167,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     return root;
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/script.js', { create: function (container, options) { var root = createAppSelector(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/script.js', { create: function (container, options) { var root = createAppSelector(options); container.appendChild(root); return root; } }); });
 })();

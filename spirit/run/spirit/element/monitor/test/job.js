@@ -45,12 +45,12 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.chrome = await chromePage(findChrome());
   if (!W.node.up || !W.chrome || W.chrome.error) return false;
   await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
-  W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.ready)'); }, 20000));
+  W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
 }, test.limit.slow);
-test.run('it loads through spirit.require, at spirit.required.spirit.element.monitor.job, with a create, the six tiles beside it', 0.2, async function () {
+test.run('it loads through spirit.requireScript, at spirit.required.spirit.element.monitor.job, with a create, the six tiles beside it', 0.2, async function () {
   if (!W.page) return false;
-  W.loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/monitor/job.js"); }).then(function () { var j = window.spirit.required.spirit.element.monitor.job; return !!(j && typeof j.create === "function") && ' + JSON.stringify(NAMES) + '.every(function (n) { return j[n] && typeof j[n].create === "function"; }); }, function () { return false; })');
+  W.loaded = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/monitor/job.js"); }).then(function () { var j = window.spirit.required.spirit.element.monitor.job; return !!(j && typeof j.create === "function") && ' + JSON.stringify(NAMES) + '.every(function (n) { return j[n] && typeof j[n].create === "function"; }); }, function () { return false; })');
   return W.loaded === true || false;
 }, test.limit.quick);
 test.run('mounted, it lays out the six tiles in one grid, in order: memory, CPU, uptime, event loop delay, connections, jobs running', 0.4, async function () {

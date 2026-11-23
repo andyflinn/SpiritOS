@@ -160,8 +160,8 @@ async function appsPhase(chrome) {
   if (W.page.error) { W.appsFail = true; return; }
   const P = W.page;
   P.send('Page.navigate', { url: W.node.base + '/face.html' });
-  if (!(await until(function () { return P.evaluate('!!(window.spirit && window.spirit.ready)'); }, LOAD_LIMIT_MS))) { W.appsFail = true; return; }
-  const parts = await P.evaluate('window.spirit.ready.then(function () { return Promise.all(["spirit/app/app/element.js", "spirit/element/search/app.js", "spirit/element/search/app/detail.js"].map(function (p) { return spirit.require(p); })); }).then(function () { return "loaded"; }, function () { return "no"; })');
+  if (!(await until(function () { return P.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, LOAD_LIMIT_MS))) { W.appsFail = true; return; }
+  const parts = await P.evaluate('window.spirit.readyPromise.then(function () { return Promise.all(["spirit/app/app/element.js", "spirit/element/search/app.js", "spirit/element/search/app/detail.js"].map(function (p) { return spirit.requireScript(p); })); }).then(function () { return "loaded"; }, function () { return "no"; })');
   if (parts !== 'loaded') { W.appsFail = true; return; }
   const want = apps.map(function (a) { return Object.assign({ key: a }, declared(a)); });
   const labels = JSON.stringify(want.map(function (a) { return a.label; }));

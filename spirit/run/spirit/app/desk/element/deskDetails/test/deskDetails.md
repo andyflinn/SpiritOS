@@ -21,7 +21,7 @@ G43.3 and G43.22 require of it, and the verifier's removal.
 Every are-you-sure in the dialog is an armingButton (`spirit/element/armingButton.js`; Andy, Q1: "absolutely"), in place of
 the arming deskDetails.js hand-rolled.
 
-- **It loads armingButton itself**, through `spirit.require('spirit/element/armingButton.js')`.
+- **It loads armingButton itself**, through `spirit.requireScript('spirit/element/armingButton.js')`.
 - **Nothing hand-rolled is left**: no `data-armed`, no `armUntilElsewhere`, no armed flag of its own (`ddArmed`,
   `ddDisarm`, `armedClose`, `armedAll`).
 - **Each two-press button is an armingButton handed the app's api**, saying today's armed wording; its first press
@@ -82,7 +82,7 @@ vertically"*.
 
 - **No appHeader**: deskDetails.js names none. The id, title and status go to the shell's title bar
   (`api.setScreenTitle`).
-- **One workBench** (`spirit/element/workBench.js`, loaded through `spirit.require`), made inside the dialog's body.
+- **One workBench** (`spirit/element/workBench.js`, loaded through `spirit.requireScript`), made inside the dialog's body.
   - Its **left** tools are today's panels, `DD_PANELS`, each by its key and glyph, in order. A left icon shows that
     panel in the left pane.
   - Its **right** side has no tool: it is blank.

@@ -11,7 +11,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = S.require('spirit/element/joinList.js');
+  var parts = S.requireScript('spirit/element/joinList.js');
 
   function create(container) {
     var gone = false;
@@ -31,5 +31,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/join/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/join/element.js', { create: create }); });
 }());

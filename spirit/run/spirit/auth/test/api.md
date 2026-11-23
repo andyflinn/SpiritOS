@@ -1,7 +1,7 @@
 # spirit/auth/api.js — its own test
 
 The auth family: who may call what on this node, the grants, and the node's bundles and branches. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). The file is run as spirit.js runs the text `api {family}` answers (`loadInterface`: its text with
-`module` and `exports`, and on a page `window.spirit.require`, which it asks for its companion `spirit/auth/data.js` and nothing else: goal/G47.1, Andy's rule *"every api.js requires it's companion data.js, and is the only script to require that data.js"*), every call checked by spirit.js's own check (`spirit.check`, its rules `spirit.rules`).
+`module` and `exports`, and on a page `window.spirit.requireScript`, which it asks for its companion `spirit/auth/data.js` and nothing else: goal/G47.1, Andy's rule *"every api.js requires it's companion data.js, and is the only script to require that data.js"*), every call checked by spirit.js's own check (`spirit.checkArgs`, its rules `spirit.ruleNames`).
 `server.js` is read as text only, for the table `loopbackVerbs.mount('auth', ...)` mounts.
 
 - It runs with nothing but `module` and `exports`, and exports its table of verbs and nothing else: it names

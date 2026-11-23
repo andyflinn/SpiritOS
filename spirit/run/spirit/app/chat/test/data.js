@@ -28,7 +28,7 @@ function world() {
   win.spirit = {};
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
-  // The page's one data set, its node known, as spirit.start leaves it before any app runs.
+  // The page's one data set, its node known, as spirit.startPage leaves it before any app runs.
   win.spirit.required.spirit.data.homeNode(HOME);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   const D = win.spirit.required.spirit.data;

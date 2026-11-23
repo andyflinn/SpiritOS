@@ -4,8 +4,8 @@
 // The tests of spirit/element/search/contact/row.js, and of no other module: one contact as a row element (spec:
 // ./row.md). The browser file runs in node on a window of its own, over the shared row.js and the
 // faceless layer it reads, with the contact family's data.js (goal/G41.28) loaded as a page's
-// spirit.require('spirit/contact/api.js') brings it, the page's node known as spirit.start makes it known (spirit.node.key, then
-// data.homeNode); the node behind spirit.ready is a recorder. After it, the parts once files of their own: noHeld (the
+// spirit.requireScript('spirit/contact/api.js') brings it, the page's node known as spirit.startPage makes it known (spirit.nodeFacts.key, then
+// data.homeNode); the node behind spirit.readyPromise is a recorder. After it, the parts once files of their own: noHeld (the
 // row offers no heldActions, its code read) and relayOnFace (a relay's row opens the relay on a real face, in a real
 // Chrome). The one test file of contact/row.js.
 
@@ -39,7 +39,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = window.spirit;
-  window.spirit.ready = Promise.resolve({ contact: { block: verb('contact.block'), unblock: verb('contact.unblock'),
+  window.spirit.readyPromise = Promise.resolve({ contact: { block: verb('contact.block'), unblock: verb('contact.unblock'),
     forget: verb('contact.forget'), label: verb('contact.label'), get: verb('contact.get') }, peer: { acquire: verb('peer.acquire') } });
   ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); window.spirit.required.spirit.fieldRules = { normalize: function (t) { return String(t || '').trim(); },
     problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
@@ -49,19 +49,19 @@ test.run('the contact row runs on a window of its own, with the data set and the
   // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
   // goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
-  const pageRequire = window.spirit.require;
+  const pageRequire = window.spirit.requireScript;
   // The contact branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself
   // to the data set.
   let contactData = false;
-  window.spirit.require = function (p) {
+  window.spirit.requireScript = function (p) {
     required.push(p);
     if (p === 'spirit/contact/api.js') { if (!contactData) { contactData = true; load(path.join(JS, '..', '..', 'spirit', 'contact', 'data.js')); } return Promise.resolve(true); }
     return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
   };
   load(path.join(JS, '..', '..', 'spirit', 'data.js'));
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
-  window.spirit.node = { key: NODE_KEY };
+  window.spirit.nodeFacts = { key: NODE_KEY };
   window.spirit.required.spirit.data.homeNode(NODE_KEY);
   load(path.join(JS, 'row.js'));
   load(path.join(JS, 'search', 'contact', 'row.js'));
@@ -133,12 +133,12 @@ test.run('each opens as a layer of the mounter\'s panel stack, handed that layer
   return layers.length === 2 && layers[0].key === 'contact/contact/K1' && layers[1].key === 'contact/relay/R1' && opens.every(function (o) { return !('api' in o.body) && o.body.layer && typeof o.body.layer.close === 'function' && typeof o.body.layer.setTitle === 'function'; })
     ? true : false;
 }, test.limit.quick);
-test.run('open loads the detail it opens first, through spirit.require, for a person and a relay alike', 0.2, function () {
+test.run('open loads the detail it opens first, through spirit.requireScript, for a person and a relay alike', 0.2, function () {
   const pages = required.slice(-2).join(',');
   return pages === 'spirit/element/search/contact/detail.js,spirit/element/search/contact/detail.js' ? true : false;
 }, test.limit.quick);
 // goal/G43.32, decided 5: every element script also requires installSpiritElement, to place itself; that is no part it draws with.
-test.run('the row loads the shared row element it is built on itself, through spirit.require', 0.2, function () {
+test.run('the row loads the shared row element it is built on itself, through spirit.requireScript', 0.2, function () {
   const parts = required.filter(function (p) { return p !== 'spirit/element/installSpiritElement.js'; });
   return parts[0] === 'spirit/element/row.js' ? true : false;
 }, test.limit.quick);
@@ -422,7 +422,7 @@ async function faceOf(N, R) {
 // The names on a desktop, as it reads: icon and name line by line, the name lines only.
 async function desktop(chrome, url) {
   await chrome.send('Page.navigate', { url: url });
-  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.event)'); }, 20000);
+  await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.eventStream)'); }, 20000);
   await sleep(DRAWN_MS);
   const text = String(await chrome.evaluate('document.body.innerText'));
   return text.split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return /[A-Za-z]/.test(l); });

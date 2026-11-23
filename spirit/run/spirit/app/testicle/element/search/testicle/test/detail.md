@@ -5,7 +5,7 @@ test row is clicked. Owed since the rule *"every production script has its own t
 of `../../test/testicle.js`: a scratch node with testicle on, a test flipped three times through `testicle.testicle.set`,
 the detail mounted alone on `/face.html` in a real Chrome.
 
-- `create(container, { script, suite, test })` loads alone through `spirit.require` and answers `{ destroy }`.
+- `create(container, { script, suite, test })` loads alone through `spirit.requireScript` and answers `{ destroy }`.
 - The title line is the test's title in full, in row 1: a row form with the 🏃 as its icon and its run button on the right,
   as the app's task row (goal/G47.4, Andy: *"row 1: Title Bubble: presented as Row Form with a run button on the right
   side, like the ones in app for one-shot jobs"*).

@@ -25,15 +25,15 @@
 // IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
 // file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
 (function () {
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/desk/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/desk/api.js')).catch(function () {});
 // Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/element/fieldInput.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/element/fieldInput.js')).catch(function () {});
 var deskOpts = {};
 var deskStack = null;
 function deskVerbCall(name, args) {
   var S = window.spirit;
-  return S.outcome(Promise.resolve(S.ready).then(function (s) {
+  return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) {
     var n = String(name || '');
     var dot = n.indexOf('.');
     var fam = s && s[n.slice(0, dot)];
@@ -50,7 +50,7 @@ function deskHear(fn) {
   var S = window.spirit;
   deskHeard.push(fn);
   if (!deskHearing) {
-    deskHearing = Promise.resolve(S.require('spirit/app/desk/api.js')).then(function () {
+    deskHearing = Promise.resolve(S.requireScript('spirit/app/desk/api.js')).then(function () {
       S.required.spirit.data.addTranslator({
         onJob: function (job) {
           if (!(job && job.module === 'spirit.app.desk' && job.app && typeof job.app === 'object')) return;
@@ -83,7 +83,7 @@ function deskDialog(key, label, file, element, params) {
     var layer = null;
     var made = null;
     function fillWith(pane) {
-      return S.require(file).then(function () {
+      return S.requireScript(file).then(function () {
         // The dialog asks through the page's own way to the node; its close and its title are its layer's.
         var via = Object.assign({}, deskVia, {
           closeDialog: function (result) { if (layer && typeof layer.hide === 'function') layer.hide(); resolve(result || {}); },
@@ -349,11 +349,11 @@ function deskOnPublished(obj) {
 // spirit.required.spirit.data keeps the current goal for this page and the item dialog, as deskClient keeps it in node. Loaded once.
 var DESK_DATA = '/spirit/app/desk/data.js';
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21: "always look for existing code", and Andy, on the add-rule
-// dropdown that sometimes never appeared: "FIX IT"): spirit.require, never a script tag of its own. It loads a part once
+// dropdown that sometimes never appeared: "FIX IT"): spirit.requireScript, never a script tag of its own. It loads a part once
 // for the page and answers when it has run.
 function deskNeed(p) {
-  var req = typeof window !== 'undefined' && window.spirit && window.spirit.require;
-  if (typeof req !== 'function') return Promise.reject(new Error('no spirit.require on this page'));
+  var req = typeof window !== 'undefined' && window.spirit && window.spirit.requireScript;
+  if (typeof req !== 'function') return Promise.reject(new Error('no spirit.requireScript on this page'));
   return Promise.resolve(req.call(window.spirit, String(p).replace(/^\/+/, '')));
 }
 // AN ICON THAT STANDS ALONE IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell
@@ -625,8 +625,8 @@ function deskTime(at) {
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button on the page is an
 // armingButton (spirit/element/armingButton.js), which the page loads itself. It arms, says so, and disarms
 // itself the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
-var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
-  ? spirit.require('spirit/element/armingButton.js') : null);
+var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScript
+  ? spirit.requireScript('spirit/element/armingButton.js') : null);
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
@@ -740,7 +740,7 @@ function deskBackupHtml() {
 // under the titlebar, and takes its id.
 function deskHeader() {
   // What it draws with, it loads itself (rule/26).
-  window.spirit.require('spirit/element/appHeader/appHeader.js').then(deskHeaderMove, function () { /* the bars stay plain */ });
+  window.spirit.requireScript('spirit/element/appHeader/appHeader.js').then(deskHeaderMove, function () { /* the bars stay plain */ });
 }
 function deskHeaderMove() {
   var old = document.getElementById('desk-bars');
@@ -757,7 +757,7 @@ function deskHeaderMove() {
   old.parentNode.removeChild(old);
 }
 
-window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/desk/desk.js', { create: function (container, opts) {
+window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/desk/desk.js', { create: function (container, opts) {
     deskOpts = opts || {};
     {
     // ── THE TABS ───────────────────────────────────────────────────
@@ -871,7 +871,7 @@ window.spirit.require('spirit/element/installSpiritElement.js').then(function ()
     deskLoad();
     }
     // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
-    if (typeof deskOpts.open !== 'function') window.spirit.require('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = window.spirit.required.spirit.element.panel.create(container, container.firstElementChild); });
+    if (typeof deskOpts.open !== 'function') window.spirit.requireScript('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = window.spirit.required.spirit.element.panel.create(container, container.firstElementChild); });
     return { destroy: function () {
       deskHeard = [];
       // Its watch let go (rule/8): the backup line's.

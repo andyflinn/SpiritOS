@@ -14,8 +14,8 @@
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
   function createTesticleSearch(options) {
     var o = options || {};
     var root = document.createElement('div');
@@ -26,7 +26,7 @@
     var made = null;
     var gone = false;
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.resolve(window.spirit.require('spirit/app/testicle/element/search/testicle/list.js')).then(function () {
+    Promise.resolve(window.spirit.requireScript('spirit/app/testicle/element/search/testicle/list.js')).then(function () {
       if (gone) return;
       made = window.spirit.required.spirit.app.testicle.element.search.testicle.list.create(root, { pick: o.pick });
     });
@@ -41,5 +41,5 @@
 
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself").
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle.js', { create: function (container, options) { var root = createTesticleSearch(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle.js', { create: function (container, options) { var root = createTesticleSearch(options); container.appendChild(root); return root; } }); });
 })();

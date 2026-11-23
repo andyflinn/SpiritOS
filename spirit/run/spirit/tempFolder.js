@@ -17,7 +17,7 @@ require('./spirit.js');
 //            digits, dot, dash, underscore and slash; no empty part, no '.' or '..' part
 //     run    the run folder whose node it is (default: the run folder this file lives in); its node is named by its key,
 //            spirit/state/identity.json, and a run with no key yet by its own path, hashed the same way
-// Node only: a page has no temp folder. Placed at spirit.required.spirit.tempFolder by spirit.require, as every helper.
+// Node only: a page has no temp folder. Placed at spirit.required.spirit.tempFolder by spirit.requireScript, as every helper.
 (function () {
 const fs = require('fs');
 const os = require('os');

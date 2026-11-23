@@ -21,7 +21,7 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/nodeCard
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/nodeCard'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const C = require(path.join(RUN, 'spirit', 'nodeCard.js'));
-const auth = spirit.require('spirit/relayAuth.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
 
 // A scratch node home with an identity named as given.
 function home(name) {

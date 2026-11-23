@@ -21,9 +21,9 @@ async function mountIn(page, place) {
   const box = { id: 'mount-box' };
   const calls = { required: [], started: 0, created: [], mounted: [], rendered: 0, destroyed: 0 };
   const sp = {
-    start: function () { calls.started += 1; return Promise.resolve(); },
-    require: function (p) { calls.required.push(p); place(sp, calls); return Promise.resolve(); },
-    outcome: function (v) { return Promise.resolve(v).then(function (b) { return { status: 200, body: b }; }); },
+    startPage: function () { calls.started += 1; return Promise.resolve(); },
+    requireScript: function (p) { calls.required.push(p); place(sp, calls); return Promise.resolve(); },
+    callOutcome: function (v) { return Promise.resolve(v).then(function (b) { return { status: 200, body: b }; }); },
     escapeHtml: function (s) { return String(s); },
     thing: { hello: function (a) { return { said: a.word }; } },
   };
@@ -82,7 +82,7 @@ test.run('an element placed at its path is mounted', 0.2, async function () {
   });
   return !!el.report || false;
 }, test.limit.quick);
-test.run('the module is loaded through spirit.require, after spirit.start, alone', 0.2, function () {
+test.run('the module is loaded through spirit.requireScript, after spirit.startPage, alone', 0.2, function () {
   if (!el || !el.report) return false;
   return (el.calls.started === 1 && JSON.stringify(el.calls.required) === JSON.stringify(['spirit/element/zzThing.js'])) || false;
 }, test.limit.quick);

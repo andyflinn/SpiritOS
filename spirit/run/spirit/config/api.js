@@ -7,7 +7,7 @@
 // ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
 // data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
 // (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
-if (typeof require === 'function') require('../spirit.js').require('spirit/config/data.js'); else window.spirit.require('spirit/config/data.js');
+if (typeof require === 'function') require('../spirit.js').requireScript('spirit/config/data.js'); else window.spirit.requireScript('spirit/config/data.js');
 module.exports = {
   verbs: {
     // none yet

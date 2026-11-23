@@ -7,7 +7,7 @@ was handed. The same world as the other tables' `elementRow` tests.
 
 - Before it runs there is no `spirit.required.spirit.app.agent.element.table.provider.elementRow`; once it has, it stands
   there with `create`.
-- As it loads it requires the agent family's interface, `spirit.require('spirit/app/agent/api.js')`, which brings
+- As it loads it requires the agent family's interface, `spirit.requireScript('spirit/app/agent/api.js')`, which brings
   the family's data.js with it (goal/G41.28: its table's rows are the agent family's cache); it requires no data.js
   itself, since only an api.js requires its data.js (goal/G47.1).
 - `create(container, id, added, detail)` loads `../row.js` itself (rule/26) and makes the row element in that

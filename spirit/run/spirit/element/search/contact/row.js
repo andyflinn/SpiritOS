@@ -17,21 +17,21 @@
 // once.
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) window.spirit.require('spirit/element/row.js');
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
+  if (window.spirit.requireScript) window.spirit.requireScript('spirit/element/row.js');
   // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
   // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-  if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+  if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
   // ITS DOT AND ITS MARK ARE THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting
   // all shell elements and apps."): an icon that stands alone, loaded here too.
-  var iconReady = Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/icon.js') : null).then(null, function () { /* the glyph stays as text */ });
+  var iconReady = Promise.resolve(window.spirit.requireScript ? window.spirit.requireScript('spirit/element/icon.js') : null).then(null, function () { /* the glyph stays as text */ });
   var contacts = null;
 
   // A NODE'S CONTACTS ARE THE contact FAMILY'S CACHE (goal/G41.28): what the stream means for them, and their branch, are
   // the family's own data.js's (spirit/contact/data.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.contact.data.
   function contactReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).contact || {}).data) || null; }
-  var contactReady = Promise.resolve(window.spirit.require('spirit/contact/api.js')).then(function () { return contactReads(); });
+  var contactReady = Promise.resolve(window.spirit.requireScript('spirit/contact/api.js')).then(function () { return contactReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
@@ -101,7 +101,7 @@
   // their ✕ back"): opts.open(key, { icon, label, fill(pane, closed) }), the mounter's panel stack (spirit/element/panel.js),
   // as file opens its viewers. The details are handed only the layer they are drawn in, its close and title (options.layer);
   // every verb they ask, they ask through the spirit object themselves (goal/G43.24). No open handed: no details to open.
-  // The page loads when it is first opened, through spirit.require.
+  // The page loads when it is first opened, through spirit.requireScript.
   // ONE DETAIL, WHICH KNOWS THE TYPE (goal/G43.32; Andy: "the contact list already knows the difference between contact types.
   // so should the detail panel."): the row opens ./detail.js alone, telling it what the row is; the detail draws a
   // relay's panel or a person's. The row names the layer only.
@@ -109,7 +109,7 @@
     if (typeof open !== 'function') return Promise.resolve(null);
     var layer = null;
     return Promise.resolve(open('contact/' + kind + '/' + key, { icon: '', label: kind === 'relay' ? 'Relay' : 'Contact', fill: function (pane) {
-      return window.spirit.require('spirit/element/search/contact/detail.js').then(function () {
+      return window.spirit.requireScript('spirit/element/search/contact/detail.js').then(function () {
         var here = {
           close: function () { if (layer) layer.hide(); },
           setTitle: function (text) { if (layer) layer.set({ label: String(text || '') }); },
@@ -136,15 +136,15 @@
     var bookActions = [
       { name: 'open', label: 'Open', run: function (el) { return openDetails(co.open, 'contact', el.key); } },
       // Through the spirit object (goal/G32.2): each a checked call answering the reply's body, refusing otherwise.
-      { name: 'block', label: 'Block', run: function (el) { return spirit.ready.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },
-      { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.ready.then(function (s) { return s.contact.unblock({ publicKey: el.key }); }); } },
-      { name: 'remove', label: 'Remove', run: function (el) { return spirit.ready.then(function (s) { return s.contact.forget({ publicKey: el.key }); }); } },
+      { name: 'block', label: 'Block', run: function (el) { return spirit.readyPromise.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },
+      { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.readyPromise.then(function (s) { return s.contact.unblock({ publicKey: el.key }); }); } },
+      { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function (s) { return s.contact.forget({ publicKey: el.key }); }); } },
     ];
     var strangerActions = [
       // Acquired at the relay that found them, under the name they gave it.
       { name: 'add', label: 'Add', run: function (el) {
         var ask = { publicKey: el.key, publicLabel: String(el.row.publicLabel || '') };
-        return spirit.ready.then(function (s) { return s.peer.acquire(ask); });
+        return spirit.readyPromise.then(function (s) { return s.peer.acquire(ask); });
       } },
     ];
     function offered(v) { return v.relay === true ? relayActions : bookOf(v) ? bookActions : strangerActions; }
@@ -181,7 +181,7 @@
             var wanted = typeof R.normalize === 'function' ? R.normalize(text) : String(text || '').trim();
             var bad = typeof R.problem === 'function' ? R.problem(wanted) : '';
             if (bad) return Promise.resolve({ ok: false, error: bad });
-            return spirit.ready.then(function (s) { return s.contact.label({ publicKey: el.key, myLabel: wanted }); })
+            return spirit.readyPromise.then(function (s) { return s.contact.label({ publicKey: el.key, myLabel: wanted }); })
               .then(function (body) { return { ok: true, body: body }; }, function (e) { return { ok: false, error: (e && e.message) || 'not renamed' }; });
           } },
         { name: 'add', from: ['keep', 'mine', 'blocked', 'relay'], paint: function (v) {
@@ -194,7 +194,7 @@
       actions: actions,
       expand: function (el) {
         if (relay || !bookOf(el.row)) return Promise.resolve(null);
-        return spirit.ready.then(function (s) { return s.contact.get({ key: el.key }); });
+        return spirit.readyPromise.then(function (s) { return s.contact.get({ key: el.key }); });
       },
     });
     // Its icons made in each cell it paints: as it is mounted, once icon.js is in, and after each repaint.
@@ -220,5 +220,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/row.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/row.js', { create: create }); });
 }());

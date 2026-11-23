@@ -6,7 +6,7 @@ test"* (goal/G47.1, box v72). The world of `../../test/testicle.js`: a scratch n
 stubbed, tests set through `testicle.testicle.set` (which makes the suite rows), the list mounted alone on `/face.html`
 in a real Chrome.
 
-- `create(container, { script, face, placeholder, all, pick })` loads alone through `spirit.require` and answers
+- `create(container, { script, face, placeholder, all, pick })` loads alone through `spirit.requireScript` and answers
   `{ destroy }`.
 - The script's own suite rows (its own test and a general suite), no row of another script, each suite once (the box:
   *"answers that file's suite rows only, each suite once, with its filename and its status"*).

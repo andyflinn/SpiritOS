@@ -44,10 +44,10 @@ function world(rows) {
     annotate: function () { w.fsAsked += 1; return Promise.resolve({ ok: true }); },
   };
   const win = { spirit: {
-    ready: Promise.resolve({ fs: fsApi, app: { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } }), fs: fsApi,
+    readyPromise: Promise.resolve({ fs: fsApi, app: { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } }), fs: fsApi,
     // The one loader, a recorder: every path it is asked for; what the app branch's api.js loads, its data.js, stands
     // below as spirit.required.spirit.data.app.
-    require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
+    requireScript: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
     required: { spirit: { data: { app: { data: {
       rows: function () { return w.rows; },
       watch: function (key, fn) { (w.watchers[key] = w.watchers[key] || []).push(fn); return function () { w.released += 1; w.watchers[key] = w.watchers[key].filter(function (x) { return x !== fn; }); }; },

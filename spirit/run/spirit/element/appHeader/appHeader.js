@@ -10,7 +10,7 @@
 // app's own pane, opaque in the shell's background and above the content. SINCE goal/G41.22 the pane is what scrolls
 // (shell.css: "EVERYTHING IS CONSTRAINED, TOP DOWN"), and it starts under the shell's titlebar, so the header sticks at
 // 0; it measured the titlebar while the whole window scrolled, and that height left a gap of its own size above it.
-// Loaded through spirit.require by what draws with it.create(container).
+// Loaded through spirit.requireScript by what draws with it.create(container).
 
 (function () {
   function createAppHeader() {
@@ -26,5 +26,5 @@
 
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
   // create(container) appends the header area and answers it.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/appHeader/appHeader.js', { create: function (container) { var div = createAppHeader(); container.appendChild(div); return div; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/appHeader/appHeader.js', { create: function (container) { var div = createAppHeader(); container.appendChild(div); return div; } }); });
 })();

@@ -19,7 +19,7 @@
 // spirit.required.spirit.element.search.create(container, {   (the probabilitySearch)
 //   server, verb               the family searched and its search verb: the list asks server.verb itself, through the spirit
 //                              object (goal/G43.24; Andy: "every element that accesses ANY api must require them
-//                              themselves"), a family on spirit.ready or one spirit.require(spirit.branchPath(server))
+//                              themselves"), a family on spirit.readyPromise or one spirit.requireScript(spirit.branchPath(server))
 //                              binds, a dotted verb walked as a path into it
 //   search(args, verb)         optional: the list's own data source, asked instead, answering { status, body } (a list
 //                              that shapes its answer itself: contacts, branches, grants); verb is the search's or ask's
@@ -66,13 +66,13 @@
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, score }.
 (function () {
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
-  // and object matchers and the probability bucket, through spirit.require. Asked as this file runs, so whoever requires
+  // and object matchers and the probability bucket, through spirit.requireScript. Asked as this file runs, so whoever requires
   // the list is answered once they are in. And fieldInput, which holds the search words to their rule.
   // fieldInput's load is kept: a search made before it is in attaches its words to it once it is (below).
   var fieldInputIn = null;
-  if (window.spirit && typeof window.spirit.require === 'function') {
+  if (window.spirit && typeof window.spirit.requireScript === 'function') {
     ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/icon.js',
-      'spirit/element/fieldInput.js', 'spirit/limits.js'].forEach(function (p) { var got = window.spirit.require(p); if (p === 'spirit/element/fieldInput.js') fieldInputIn = got; });
+      'spirit/element/fieldInput.js', 'spirit/limits.js'].forEach(function (p) { var got = window.spirit.requireScript(p); if (p === 'spirit/element/fieldInput.js') fieldInputIn = got; });
   }
   // The three ranking helpers, each at its one place, spirit.required.<its path> (goal/G49.4).
   function P() {
@@ -81,14 +81,14 @@
     return { probabilityStringObjectMatch: o.probabilityStringObjectMatch, measureObject: o.measureObject, createProbabilityBucket: (q.listLimiter || {}).createProbabilityBucket };
   }
   // A VERB OF A FAMILY, THROUGH THE SPIRIT OBJECT (goal/G43.24, as grantsPanel asks): family.verb called on that family as
-  // spirit.ready holds it, or as spirit.require binds a server's; a dotted verb is a path into the family (a.b is
-  // f.a.b); answered { status, body } by spirit.outcome, as the list reads it.
+  // spirit.readyPromise holds it, or as spirit.requireScript binds a server's; a dotted verb is a path into the family (a.b is
+  // f.a.b); answered { status, body } by spirit.callOutcome, as the list reads it.
   function viaSpirit(name, args) {
     var S = window.spirit;
     var n = String(name || '');
     var dot = n.indexOf('.');
     var fam = n.slice(0, dot);
-    return S.outcome(Promise.resolve(S.ready).then(function (s) { return (s && s[fam]) || S.require(S.branchPath(fam)); }).then(function (f) {
+    return S.callOutcome(Promise.resolve(S.readyPromise).then(function (s) { return (s && s[fam]) || S.requireScript(S.branchPath(fam)); }).then(function (f) {
       var at = n.slice(dot + 1).split('.');
       var owner = f;
       for (var i = 0; i < at.length - 1; i++) owner = owner ? owner[at[i]] : null;
@@ -886,6 +886,6 @@
     return out;
   }
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search.js', { create: create, order: order }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search.js', { create: create, order: order }); });
   window.spirit.matchRanges = matchRanges;
 }());

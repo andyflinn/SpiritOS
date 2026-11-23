@@ -205,7 +205,7 @@ async function handed(opts) {
   }
   const theRuns = function () { return Promise.reject(new Error('a handed node is its run\'s: ask scratchNode({ own: true }) for one to stop or restart')); };
   return { base: base, root: run ? path.dirname(path.dirname(run)) : '', run: run, child: null, up: true, debug: true, shared: true,
-    start: function () { return Promise.resolve(true); }, stop: theRuns, restart: theRuns, release: function () { return Promise.resolve(); } };
+    startPage: function () { return Promise.resolve(true); }, stop: theRuns, restart: theRuns, release: function () { return Promise.resolve(); } };
 }
 async function scratchNode(o) {
   const opts = o || {};
@@ -293,7 +293,7 @@ async function scratchRelay(o) {
   fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
   if (opts.faceDomain) fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: opts.faceDomain }));
   const port = await freePort();
-  const code = 'require("./spirit/spirit.js").debug(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");';
+  const code = 'require("./spirit/spirit.js").debugLog(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
@@ -549,8 +549,8 @@ async function chromePage(chrome) {
 
 // A FAKE PAGE'S SPIRIT, AS AN ELEMENT FINDS IT (goal/G43.32): a test that runs an element script in a world of its own
 // (vm) hands that world's spirit object here. It gets spirit.required, the real installSpiritElement resident at
-// spirit.required.spirit.element.installSpiritElement, and a spirit.require that answers what is already loaded at once,
-// as spirit.require does a second time: the helper, or any path the test hands in loaded. So an element script run there
+// spirit.required.spirit.element.installSpiritElement, and a spirit.requireScript that answers what is already loaded at once,
+// as spirit.requireScript does a second time: the helper, or any path the test hands in loaded. So an element script run there
 // places its factory at spirit.required.<its path> by its own call, as it runs. Answers the spirit object.
 function pageSpirit(s, loaded) {
   const sp = s || {};
@@ -560,8 +560,8 @@ function pageSpirit(s, loaded) {
   sp.required.spirit.element = sp.required.spirit.element || {};
   sp.required.spirit.element.installSpiritElement = helper;
   const have = Object.assign({ 'spirit/element/installSpiritElement.js': helper }, loaded || {});
-  const own = sp.require;
-  sp.require = function (p) {
+  const own = sp.requireScript;
+  sp.requireScript = function (p) {
     const at = String(p || '').replace(/^\/+/, '');
     if (Object.prototype.hasOwnProperty.call(have, at)) { const v = have[at]; return { then: function (f) { return Promise.resolve(f ? f(v) : v); } }; }
     return typeof own === 'function' ? own.apply(this, arguments) : Promise.resolve({});

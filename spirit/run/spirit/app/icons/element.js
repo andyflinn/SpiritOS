@@ -17,19 +17,19 @@
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
   // data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): icons's api.js and its
   // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/icons/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/icons/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/icons/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/icons/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/icon/row.js', 'spirit/element/rowForm.js',
     // Its own cache manager by its own path, beside it: asked by name, a page whose app list has not yet reached icons (or
     // holds it switched off) looks for spirit/icons/data.js, which is no file (wsl's verify, the general rules' page).
-    'spirit/element/fieldInput.js', 'spirit/element/icon.js', 'spirit/element/panel.js', 'spirit/element/armingButton.js', 'spirit/app/icons/data.js'].map(function (p) { return S.require(p); }));
+    'spirit/element/fieldInput.js', 'spirit/element/icon.js', 'spirit/element/panel.js', 'spirit/element/armingButton.js', 'spirit/app/icons/data.js'].map(function (p) { return S.requireScript(p); }));
 
   function esc(s) { return S.escapeHtml ? S.escapeHtml(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function words(text) { return String(text || '').split(',').map(function (w) { return w.trim(); }).filter(Boolean); }
-  // THE ONE VERB (./api.js): the icons branch, bound by its name on what spirit.ready answers (the node finds the folder).
-  function icon(args) { return Promise.resolve(S.ready).then(function (s) { return s.icons.icon(args); }); }
+  // THE ONE VERB (./api.js): the icons branch, bound by its name on what spirit.readyPromise answers (the node finds the folder).
+  function icon(args) { return Promise.resolve(S.readyPromise).then(function (s) { return s.icons.icon(args); }); }
 
   function create(container, options) {
     var gone = false;
@@ -150,5 +150,5 @@
 
   // Under both names: icons.js stands spirit.required.spirit.app.icons.icons up at once and waits for this file; once here, the face itself.
   // At its own path (goal/G43.32): icons.js, the app's element, draws through it from there.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/icons/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/icons/element.js', { create: create }); });
 }());

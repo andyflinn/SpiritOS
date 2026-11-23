@@ -4,7 +4,7 @@
 // The tests of spirit/app/api.js, and of no other module (spec: ./api.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // The app family on the spirit object (goal/G43.2): the node's apps, four verbs, and the page's functions that implement them
-// (goal/G43.7). Required as the node reads it; every verb is checked by spirit.js's own check (spirit.check), the one the
+// (goal/G43.7). Required as the node reads it; every verb is checked by spirit.js's own check (spirit.checkArgs), the one the
 // spirit object runs before a call leaves. The node's mount of the family (server.js) is read as text only.
 // One test.run per test (goal/G47.2).
 
@@ -20,7 +20,7 @@ const isPlain = function (v) { return v !== null && typeof v === 'object' && !Ar
 
 // What the world test loads, read by the tests after it.
 const W = { api: null, verbs: {}, names: [], functions: {} };
-const call = function (verb, args) { return spirit.check('app.' + verb, W.verbs[verb], args); };
+const call = function (verb, args) { return spirit.checkArgs('app.' + verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return !!W.verbs[verb] && call(verb, args) === null; };
 const refusedAs = function (verb, args) { if (!W.verbs[verb]) return ''; const r = call(verb, args); return r ? r.code : ''; };
 
@@ -48,7 +48,7 @@ test.run('every argument rule is one of spirit.js\'s standard rules, a trailing 
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
       // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
-      if ((spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad.push(v);
+      if ((spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad.push(v);
     });
   });
   return bad.length === 0 || false;

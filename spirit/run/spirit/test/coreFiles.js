@@ -110,7 +110,7 @@ test.run('spirit/app/grants/grants.json says intrinsic true', 0.2, function () {
 // depend on, are core-files, too."). A core file is grant-locked (spirit/coreFiles.js); a file it loads that is not
 // could be rewritten by any page, and the core file would run what was written. So every file a core file loads must be
 // core too, or this test is red naming both. Read from the code itself, comments left out: a page's script and style
-// tags, a script's require of a file beside it, and spirit.require of a literal path. A test folder, a vendored folder
+// tags, a script's require of a file beside it, and spirit.requireScript of a literal path. A test folder, a vendored folder
 // (fileSystem.js's list) and a require by package name (node's own) are not files of the run, and are not asked.
 const REPO = path.join(RUN, '..', '..');
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')).VENDORED_FOLDERS;
@@ -140,7 +140,7 @@ function loads(rel) {
     if (!/\.(js|json)$/.test(p)) p = exists(p + '.js') ? p + '.js' : exists(p + '/index.js') ? p + '/index.js' : p + '.js';
     out.push(p);
   }
-  const sreq = /spirit\.require\(\s*(['"])([^'"]+\.(?:js|css|json))\1/g;
+  const sreq = /spirit\.requireScript\(\s*(['"])([^'"]+\.(?:js|css|json))\1/g;
   while ((m = sreq.exec(t))) out.push(m[2].replace(/^\/+/, ''));
   return out;
 }

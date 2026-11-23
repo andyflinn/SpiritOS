@@ -10,7 +10,7 @@ PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream
 - `spirit/shell/boot.js` is there; `face/shell.js` is gone, and so is every other file of face/: `spirit/shell/seal.js`,
   `spirit/shell/face.css` and `spirit/shell/favicon.svg` are there instead, with face.html, shell.css and
   ghost.svg (index.html went with the old shell, goal/G43.30), and spirit.js is in spirit/; none of them is left at the run root or in shell/.
-- `shell/login/` is gone (goal/G43.18, box v29: *"The login is spirit.login, in spirit.js, no app ... shell/login/ and its
+- `shell/login/` is gone (goal/G43.18, box v29: *"The login is spirit.faceLogin, in spirit.js, no app ... shell/login/ and its
   login.json go."*).
 - spirit.js loads `shell/boot.js` on a face page (its FACE list): at home from the node; on a face, logged in, over the
   link spirit.js made.
@@ -36,7 +36,7 @@ PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream
   to replace itself.
 - No desktop of its own (Q23, Andy: *"yes."* to the old shell apps missing from the green shell for now): no drawDesktop,
   readFace, listApps, openApp, loadApp or serverUp.
-- No link and no relay login of its own (Q22): `spirit.link` and `spirit.login` are spirit.js's.
+- No link and no relay login of its own (Q22): `spirit.faceLink` and `spirit.faceLogin` are spirit.js's.
 - Join decides where it stands itself (Q18, Andy: *"join. not the shells job."*): boot works out no join step.
 
 ## No icon table on the face (goal/G41.1, box v19-v20)

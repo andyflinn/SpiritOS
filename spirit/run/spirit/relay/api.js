@@ -7,7 +7,7 @@
 // ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
 // data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
 // (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
-if (typeof require === 'function') require('../spirit.js').require('spirit/relay/data.js'); else window.spirit.require('spirit/relay/data.js');
+if (typeof require === 'function') require('../spirit.js').requireScript('spirit/relay/data.js'); else window.spirit.requireScript('spirit/relay/data.js');
 module.exports = {
   verbs: {
     claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'spirit.type.string.word?', inviteLabel: 'spirit.type.string.label?' },
@@ -33,7 +33,7 @@ module.exports = {
       var one = typeof spirit !== 'undefined' ? spirit : (typeof window !== 'undefined' ? window.spirit : null);
       if (!one) return Promise.reject(new Error('no spirit object'));
       // The contact branch's api.js, where its functions stand, on a page as in node (goal/G49.6: spirit holds no branch).
-      return Promise.resolve(one.require('spirit/contact/api.js')).then(function (contact) {
+      return Promise.resolve(one.requireScript('spirit/contact/api.js')).then(function (contact) {
         if (!contact || typeof contact.search !== 'function') throw new Error('no contact branch');
         return contact.search({ q: '*', relay: true, keep: true });
       });
@@ -44,7 +44,7 @@ module.exports = {
         var one = typeof spirit !== 'undefined' ? spirit : (typeof window !== 'undefined' ? window.spirit : null);
         return listed().then(function (s) {
           if (!s || !s.ok) return { status: 200, text: JSON.stringify(s || {}), body: s };
-          return Promise.all([one.require('spirit/relay/data.js')].concat((s.items || []).map(function (i) {
+          return Promise.all([one.requireScript('spirit/relay/data.js')].concat((s.items || []).map(function (i) {
             return call('get', { key: i.key }).then(function (g) { return g; }, function () { return null; });
           }))).then(function (got) {
             var gets = got.slice(1);

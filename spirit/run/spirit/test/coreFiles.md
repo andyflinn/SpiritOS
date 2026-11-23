@@ -15,7 +15,7 @@ grant on the item. It needs nothing of the desk's.
 ### What was core before goal/G41.29
 
 - The face's boot: `spirit/shell/face.html`, `spirit/shell/boot.js`, `spirit/shell/seal.js`, `spirit/shell/face.css`, `spirit/shell/favicon.svg`.
-- Join, whole: every file under `spirit/app/join/`, its `.json` included. The login app went (goal/G43.18, box v29: the login is spirit.login).
+- Join, whole: every file under `spirit/app/join/`, its `.json` included. The login app went (goal/G43.18, box v29: the login is spirit.faceLogin).
 - Never a manifest that is not an app's own `<name>.json` (Desk's element manifests).
 - Everything under `spirit/run/spirit/` and `spirit/run/spirit/element/`, the product's tests and their tools in `spirit/run/spirit/test/` among them (goal/G43.32).
 - CodeMirror in `spirit/run/spirit/element/codeMirror/`, which the page loads on every boot (goal/G41.30,
@@ -62,7 +62,7 @@ that core files depend on, are core-files, too."*).
   `.html` file outside a test folder, read from its code with comments left out:
   - a page's script and style tags (`src`, `href`), not an outside address;
   - a script's `require` of a file beside it;
-  - `spirit.require` of a literal path.
+  - `spirit.requireScript` of a literal path.
   Each such file that exists must be core, or the test is red naming it and the core files that load it.
 - **run://shell/ is gone** (goal/G43.30; Andy: *"can we delete run://shell/"*), shell/shared/ with it: the rule that it held
   no core file (goal/G41.30) has nothing left to hold, and the test finds no tracked file under it.

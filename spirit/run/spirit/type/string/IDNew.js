@@ -7,9 +7,9 @@
 // On the node the spirit object first, as every file of the tree takes it (the general rules).
 if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../spirit.js');
 (function (root) {
-  // spirit.type.string.ID, through spirit.require: on the node its module at once, on a page what spirit.required holds.
+  // spirit.type.string.ID, through spirit.requireScript: on the node its module at once, on a page what spirit.required holds.
   var S0 = root && root.spirit;
-  var IDT = S0 && typeof S0.require === 'function' ? S0.require('spirit/type/string/ID.js') : null;
+  var IDT = S0 && typeof S0.requireScript === 'function' ? S0.requireScript('spirit/type/string/ID.js') : null;
   function id() {
     if (IDT && typeof IDT.isValid === 'function') return IDT;
     var r = S0 && S0.required && S0.required.spirit && S0.required.spirit.type && S0.required.spirit.type.string;

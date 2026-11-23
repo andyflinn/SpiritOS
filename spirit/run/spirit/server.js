@@ -31,7 +31,7 @@ if (args[0] === '--app') {
   const script = args[1];
   if (!script) refuse('--app needs the app\'s script after it');
   process.argv.splice(1, 2);
-  spirit.require('spirit/server/app.js').start(script);
+  spirit.requireScript('spirit/server/app.js').start(script);
 } else {
   const modes = args.filter(function (a) { return MODES.indexOf(a) !== -1; });
   if (modes.length > 1) refuse('one mode only, not ' + modes.join(' and '));
@@ -40,5 +40,5 @@ if (args[0] === '--app') {
   if (unknown.length) refuse('no such mode or option: ' + unknown.join(' '));
   // The mode word itself is the launcher's; the module reads the rest as it always read its arguments.
   if (modes.length) process.argv.splice(2 + args.indexOf(modes[0]), 1);
-  spirit.require(modes[0] === '--relay' ? 'spirit/server/relay.js' : 'spirit/server/node.js');
+  spirit.requireScript(modes[0] === '--relay' ? 'spirit/server/relay.js' : 'spirit/server/node.js');
 }

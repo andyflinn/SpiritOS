@@ -15,10 +15,10 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
   // The family list too, the reader of the api tree (./list.js, goal/G43.32; it stood in ../api.js, which requires
   // this file), and with it the node family's cache manager, the keeper of the verbs it draws from (goal/G41.28).
-  var parts = Promise.all([window.spirit.require ? window.spirit.require('spirit/element/search.js') : null,
-    window.spirit.require ? window.spirit.require('spirit/element/search/api/list.js') : null,
-    window.spirit.require ? window.spirit.require('spirit/client/apiTreeIndex.js') : null,
-    window.spirit.require('spirit/node/api.js')]);
+  var parts = Promise.all([window.spirit.requireScript ? window.spirit.requireScript('spirit/element/search.js') : null,
+    window.spirit.requireScript ? window.spirit.requireScript('spirit/element/search/api/list.js') : null,
+    window.spirit.requireScript ? window.spirit.requireScript('spirit/client/apiTreeIndex.js') : null,
+    window.spirit.requireScript('spirit/node/api.js')]);
 
   function createApiVerbSelector(options) {
     options = options || {};
@@ -76,5 +76,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api/verb.js', { create: function (container, options) { var root = createApiVerbSelector(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api/verb.js', { create: function (container, options) { var root = createApiVerbSelector(options); container.appendChild(root); return root; } }); });
 })();

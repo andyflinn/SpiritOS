@@ -11,8 +11,8 @@
 // press(row, key): the app search picks the app, as a press on its row does.
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  window.spirit.require('spirit/element/icon.js');
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
+  window.spirit.requireScript('spirit/element/icon.js');
 
   function create(row, opts) {
     var r = row || {};
@@ -38,5 +38,5 @@
     return n;
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/tile.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/tile.js', { create: create }); });
 }());

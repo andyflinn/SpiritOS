@@ -7,7 +7,7 @@ its test folder"): one shell element, the Description field and its Save. Info d
 
 - A shell element of its own: it adds `changeMyDescription.create(host)` to
   `window.spirit.required`, and answers `{ set(value), destroy() }`.
-- **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
+- **It loads fieldInput itself**, through `spirit.requireScript` (goal/G41.3).
 - **Its form is a rowForm** (goal/G41.27; Andy: *"changeMyDescription:\n\n[✏️][Description-input][Save]"*): it loads
   `spirit/element/rowForm.js` itself and makes one rowForm in its host, its icon ✏️ and its button Save; its span holds the
   description input alone, no word beside it; the rowForm's button is its Save, and it draws no Save of its own; its
@@ -21,7 +21,7 @@ its test folder"): one shell element, the Description field and its Save. Info d
   goal/G48.4: "fieldRules.js dies"), and the field says why; nothing goes on the wire.
 - **Save asks the node**, `node.setDescription` with the field as typed, through the spirit object itself, no api handed (goal/G43.24), and then shows what the node stored (rule/19),
   says saved, and keeps the stored description in the node card. Enter in the field presses Save. Its Save is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): the press settles only once the node has answered, so the button is busy until then.
-- **What it changes, it listens for** (goal/G41.28): it requires the node family's interface (`spirit.require('spirit/node/api.js')`), which brings its data.js, and no
+- **What it changes, it listens for** (goal/G41.28): it requires the node family's interface (`spirit.requireScript('spirit/node/api.js')`), which brings its data.js, and no
   data script itself (goal/G47.1),
   and draws the field from `spirit.required.spirit.data.node.data.card.watch`; a description changed in the card from elsewhere redraws the
   field.

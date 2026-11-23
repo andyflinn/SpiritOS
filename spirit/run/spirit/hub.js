@@ -1,18 +1,18 @@
 'use strict';
 
-// The spirit object first (goal/G43.32): every other part of the tree through spirit.require.
+// The spirit object first (goal/G43.32): every other part of the tree through spirit.requireScript.
 require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
-const auth = require('./spirit.js').require('spirit/relayAuth.js');
+const auth = require('./spirit.js').requireScript('spirit/relayAuth.js');
 // seal.js was required here for the sealed claim; the claim is peerPost's
 // since goal/G22.6, and the hub seals nothing.
 // invites.js STOOD HERE, required and never used — it is the relay's
 // waiting room, on the relay's disc (cycle 3), and nothing on a node reads it.
-const ownerBadge = require('./spirit.js').require('spirit/ownerBadge.js');
-const contactBook = require('./spirit.js').require('spirit/contact/script.js');
-const relayKeys = require('./spirit.js').require('spirit/relayKeys.js');
+const ownerBadge = require('./spirit.js').requireScript('spirit/ownerBadge.js');
+const contactBook = require('./spirit.js').requireScript('spirit/contact/script.js');
+const relayKeys = require('./spirit.js').requireScript('spirit/relayKeys.js');
 // WHAT A SEARCH LEARNED, kept until it becomes useful. A search answer
 // says where each person lives, and that was thrown away — see
 // seenPeers.js. A row of the one table, never kept: a search result is
@@ -37,9 +37,9 @@ function shadow(rootDir) {
     // owner has written one, the 20 MB default when not — and never
     // written by this code, because an owner's bound is obeyed rather
     // than moved (0015).
-    shadows.set(key, require('./spirit.js').require('spirit/seenPeers.js').createSeenPeers({
+    shadows.set(key, require('./spirit.js').requireScript('spirit/seenPeers.js').createSeenPeers({
       rootDir: rootDir,
-      maxBytes: require('./spirit.js').require('spirit/nodeSettings.js').cacheMaxBytes(rootDir),
+      maxBytes: require('./spirit.js').requireScript('spirit/nodeSettings.js').cacheMaxBytes(rootDir),
     }));
   }
   return shadows.get(key);
@@ -71,28 +71,28 @@ function learnPresence(rootDir, toKey, answer) {
   if (answer && answer.ok) {
     present = true;
   } else {
-    var meant = require('./spirit.js').require('spirit/error/script.js').classifyAnswer(answer);
+    var meant = require('./spirit.js').requireScript('spirit/error/script.js').classifyAnswer(answer);
     present = meant ? meant.presence : null;
   }
   if (present !== true && present !== false) return;
   try { shadow(rootDir).note(toKey, { present: present }); }
   catch (e) { /* a cache that will not take a row is not a reason to fail the post */ }
 }
-const peerFile = require('./spirit.js').require('spirit/peerFile.js');
+const peerFile = require('./spirit.js').requireScript('spirit/peerFile.js');
 // What this node says about itself — the same two fields a stranger is
 // answered with, so the screen that edits them and the wire that sends
 // them cannot drift.
-const nodeCard = require('./spirit.js').require('spirit/nodeCard.js');
-const limits = require('./spirit.js').require('spirit/limits.js');
+const nodeCard = require('./spirit.js').requireScript('spirit/nodeCard.js');
+const limits = require('./spirit.js').requireScript('spirit/limits.js');
 // goal/G29.6: contact.search ranks with the probability modules.
-const probabilityStringObjectMatch = require('./spirit.js').require('spirit/search/object.js').probabilityStringObjectMatch;
-const createProbabilityBucket = require('./spirit.js').require('spirit/listLimiter.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('./spirit.js').requireScript('spirit/search/object.js').probabilityStringObjectMatch;
+const createProbabilityBucket = require('./spirit.js').requireScript('spirit/listLimiter.js').createProbabilityBucket;
 const MAX_SEARCHED_PEOPLE = 1000;
 // Every label checked at one point (Andy, 2026-10-03, goal/G4.16: "all
 // occurrences of label and description must validate at a central
 // point"). Empty is not a label here but its absence: clearing your own
 // name for somebody, or a pasted key with no label yet.
-const fieldRules = require('./spirit.js').require('spirit/fieldRules.js');
+const fieldRules = require('./spirit.js').requireScript('spirit/fieldRules.js');
 function labelRefusal(text) {
   return fieldRules.normalize(text) ? fieldRules.problem(text) : '';
 }
@@ -120,7 +120,7 @@ function labelRefusal(text) {
 //
 // The rule is assertable and wsl-claude holds it: `hub.js` may call
 // `packet.encode` and never `packet.decode`.
-const packet = require('./spirit.js').require('spirit/client/packet.js');
+const packet = require('./spirit.js').requireScript('spirit/client/packet.js');
 
 // isLoopbackHost, assertRelayUrl and relayRequest MOVED to
 // spirit/relayRequest.js on 2026-09-16 (assertRelayUrl on to relayUrl.js, below). They were the node's outbound socket
@@ -130,14 +130,14 @@ const packet = require('./spirit.js').require('spirit/client/packet.js');
 // directly or to go without. Both are the rule being broken.
 //
 // Re-exported below, unchanged, so every existing caller is untouched.
-const wire = require('./spirit.js').require('spirit/relayRequest.js');
+const wire = require('./spirit.js').requireScript('spirit/relayRequest.js');
 const relayRequest = wire.relayRequest;
 // THE ADDRESS CHECK IS NOT THE RELAY LIBRARY. Andy's decision (goal/G22.4):
 // "The relay address check (assertRelayUrl) moves out of relayRequest.js
 // into a module of its own, since it sends nothing; the relay library then
 // means only traffic on the wire." The hub checks an address before it
 // hands a claim or a contact to peerPost, and sends nothing itself.
-const assertRelayUrl = require('./spirit.js').require('spirit/relayUrl.js').assertRelayUrl;
+const assertRelayUrl = require('./spirit.js').requireScript('spirit/relayUrl.js').assertRelayUrl;
 
 // signedClaim AND sealedClaim STOOD HERE: the claim's body, sealed to the
 // cipher key this node fetched from the relay's public key route, for the
@@ -570,11 +570,11 @@ function createHub(rootDir) {
   // A kept rename of a contact, on its way to every open page (the events
   // family's stream carries it as contact.rename). The same seam shape as
   // arrivals: the hub notes, the stream fans out, neither knows the other.
-  var contactRenames = require('./spirit.js').require('spirit/arrivals.js').createFanOut();
+  var contactRenames = require('./spirit.js').requireScript('spirit/arrivals.js').createFanOut();
   // A grant revoked because its contact was forgotten (goal/G47.4, Q3; Andy: "When you forget a contact, should the node
   // revoke all of its grants at once?" "yes. it should."), { key, path }, on its way to the auth tables' job as a revoked
   // grant (server.js), so every open grants list lets it go.
-  var grantsRevoked = require('./spirit.js').require('spirit/arrivals.js').createFanOut();
+  var grantsRevoked = require('./spirit.js').requireScript('spirit/arrivals.js').createFanOut();
   function fail(res, status, msg) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: msg }));
@@ -1144,7 +1144,7 @@ function createHub(rootDir) {
     networkOut = true;
     // A HIT IS NEWS OF spirit.contact (goal/G43.20, Q1: "peer search should generate contact events"): { q, item }.
     if (!networkJob) networkJob = d.jobs.ownJob('spirit.contact');
-    var ranks = require('./spirit.js').require('spirit/seenPeers.js');
+    var ranks = require('./spirit.js').requireScript('spirit/seenPeers.js');
     var onRow = function (row) {
       shadow(rootDir).note(row.publicKey, {
         at: row.atKey, url: row.relay, label: row.publicLabel,
@@ -1169,7 +1169,7 @@ function createHub(rootDir) {
     if (!key) return { ok: false, status: 400, error: 'key required' };
     var person = buildPeople(rootDir).filter(function (p) { return p.publicKey === key; })[0];
     if (!person) return { ok: false, status: 404, error: 'not in the book' };
-    return require('./spirit.js').require('spirit/limits.js').boundedGet({ ok: true, status: 200, key: key, person: person });
+    return require('./spirit.js').requireScript('spirit/limits.js').boundedGet({ ok: true, status: 200, key: key, person: person });
   }
 
   // ── peer.find STOOD HERE (handleHandle / findHandle), DELETED ──────
@@ -1283,7 +1283,7 @@ function createHub(rootDir) {
         if (!gone) { fail(res, 404, 'no row for that key'); return; }
         // EVERY GRANT OF THE KEY GOES WITH IT (goal/G47.4, Q3: "yes. it should."), one exact grant row at a time, each told.
         try {
-          var grantTable = require('./spirit.js').require('spirit/nodeStore.js').open(rootDir).auth;
+          var grantTable = require('./spirit.js').requireScript('spirit/nodeStore.js').open(rootDir).auth;
           grantTable.paths(publicKey).forEach(function (p) { if (grantTable.revoke(publicKey, p)) grantsRevoked.note({ key: publicKey, path: p }); });
         } catch (e) { /* the contact is forgotten; a grant left is the grants list's to revoke */ }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -2102,7 +2102,7 @@ function createHub(rootDir) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
       var said = null;
       // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
-      try { var env = require('./spirit.js').require('spirit/arrivals.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
+      try { var env = require('./spirit.js').requireScript('spirit/arrivals.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
       if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
       if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
       return { ok: true, status: 200, url: row.url, name: said.name, email: said.email };
@@ -2134,7 +2134,7 @@ function createHub(rootDir) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
       var said = null;
       // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
-      try { var env = require('./spirit.js').require('spirit/arrivals.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
+      try { var env = require('./spirit.js').requireScript('spirit/arrivals.js').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
       if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
       if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
       relayKeys.unseat(rootDir, row.url);
@@ -2156,7 +2156,7 @@ function createHub(rootDir) {
       var row = summary.rows.filter(function (r) { return r.url === key; })[0];
       if (!row) return { ok: false, status: 404, error: 'no such relay' };
       var reports = (deps && deps.router && deps.router.relayStatus) ? deps.router.relayStatus() : {};
-      return require('./spirit.js').require('spirit/limits.js').boundedGet({ ok: true, status: 200, key: key, relay: row,
+      return require('./spirit.js').requireScript('spirit/limits.js').boundedGet({ ok: true, status: 200, key: key, relay: row,
         report: reports[key] || null });
     });
   }

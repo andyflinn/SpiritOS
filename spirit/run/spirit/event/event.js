@@ -22,7 +22,7 @@
 
 // The spirit object first, as the global spirit (goal/G40.1).
 require('../spirit.js');
-const limits = spirit.require('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits.js');
 
 // o: { jobs, relayEvents, arrivals, renames, readJsonBody, bodyRefused, pageStreams, pageConnected? }
 //   pageConnected()   called at each page's connect (goal/G47.5, part 2), after it is subscribed
@@ -72,7 +72,7 @@ function createEvents(o) {
     // and a reader that is no process of a node (no X-Spirit-Reader: server) is handed no spirit.fs command of a path the serve
     // rule refuses. A process of the node gets every one.
     const asServer = req.headers['x-spirit-reader'] === 'server';
-    const fileServable = spirit.require('spirit/fs/fileSystem.js').fileServable;
+    const fileServable = spirit.requireScript('spirit/fs/fileSystem.js').fileServable;
     const hidden = function (kind, data) {
       const c = kind === 'job-updated' && data && data.id === 'spirit.fs' && data.data ? data.data.command : null;
       return !asServer && !!c && !!c.path && !fileServable(String(c.path));
@@ -101,7 +101,7 @@ function createEvents(o) {
     // so the shell knows the tree is whole before it discovers apps from it.
     const fsJob = o.jobs.getJob ? o.jobs.getJob('spirit.fs') : null;
     if (fsJob) {
-      spirit.require('spirit/fs/script.js').commands().forEach(function (command) { write('job-updated', Object.assign({}, fsJob, { data: { command: command } })); });
+      spirit.requireScript('spirit/fs/script.js').commands().forEach(function (command) { write('job-updated', Object.assign({}, fsJob, { data: { command: command } })); });
       write('job-updated', Object.assign({}, fsJob, { data: { treeComplete: true } }));
     }
 

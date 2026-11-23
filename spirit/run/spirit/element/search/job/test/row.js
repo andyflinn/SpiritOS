@@ -30,11 +30,11 @@ test.run('the row runs on a bare window', 0.2, async function () {
   specs = [];
   indexes = [];
   global.document = { createElement: function () { return { innerHTML: '' }; } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve({}), element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   const E = function () { return global.window.spirit.required.spirit.element; };
-  global.window.spirit.require = function (p) { required.push(String(p)); return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(true); };
   vm.runInThisContext(SRC, { filename: FILE });
   await settle();
   // The shared parts, as the page has them once they are loaded: the row element keeps its spec; the bar says its numbers.

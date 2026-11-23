@@ -11,7 +11,7 @@
 // (rule/19: draw only what the server says).
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  window.spirit.require('spirit/element/rowForm.js');
+  window.spirit.requireScript('spirit/element/rowForm.js');
 
   function create(host, options) {
     var o = options || {};
@@ -49,5 +49,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/rowFormToggle.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/rowFormToggle.js', { create: create }); });
 }());

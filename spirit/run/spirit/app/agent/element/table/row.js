@@ -14,13 +14,13 @@
 // server's get and the rows its stream then brings, never what was typed.
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the tables' shared element, whose helpers it uses.
-  spirit.require('spirit/app/agent/element/table/tableElement.js');
+  spirit.requireScript('spirit/app/agent/element/table/tableElement.js');
   // And fieldInput, which holds a name or a description field to its rule (goal/G47.1: without it the label took 4096 bytes).
-  spirit.require('spirit/element/fieldInput.js');
+  spirit.requireScript('spirit/element/fieldInput.js');
   var made = 0;
   function A() { return window.spirit.required.spirit.app.agent.element.table.tableElement; }
   function esc(s) { return A().esc(s); }
@@ -223,7 +223,7 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
             bundleHeld[row[f.field]] = true;
             var named = row[f.field];
-            Promise.resolve(spirit.ready).then(function (s) { return s.auth.bundle({ op: 'get', id: Number(named) }); }).then(function (got) {
+            Promise.resolve(spirit.readyPromise).then(function (s) { return s.auth.bundle({ op: 'get', id: Number(named) }); }).then(function (got) {
               if (gone || String(row[f.field]) !== String(named)) return;
               bundleLabel[named] = String((got && got.label) || named);
               paint();
@@ -341,5 +341,5 @@ if (window.spirit && typeof window.spirit.require === 'function') Promise.resolv
     return { destroy: function () { gone = true; unwatch(); dropIcons(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); }); container.innerHTML = ''; } };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/row.js', { create: createRow }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/row.js', { create: createRow }); });
 }());

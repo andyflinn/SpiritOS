@@ -31,20 +31,20 @@ window.picker = function (answers) {
     return function (args) { var a = answer(table, args); return a && a.ok === false ? Promise.reject(Object.assign(new Error(a.error), { body: a })) : Promise.resolve(a); };
   } });
   var AGENT = spirit.branchPath('agent');
-  var realRequire = spirit.require;
+  var realRequire = spirit.requireScript;
   // The scratch node runs no agent server, so the stand-in answers for the agent family's api.js, asked by its path
   // (spirit/app/agent/api.js) or by spirit.branchPath('agent'), and loads the family's real data.js with it, as the real
   // api.js does (goal/G47.1). Every other family is asked as the page asks it.
-  spirit.require = function (p) { return p === AGENT || p === 'spirit/app/agent/api.js' ? realRequire.call(spirit, 'spirit/app/agent/data.js').then(function () { return family; }) : realRequire.apply(spirit, arguments); };
+  spirit.requireScript = function (p) { return p === AGENT || p === 'spirit/app/agent/api.js' ? realRequire.call(spirit, 'spirit/app/agent/data.js').then(function () { return family; }) : realRequire.apply(spirit, arguments); };
   // No api is handed (goal/G43.24): the dropdown asks agent.<table> through the spirit object, the stand-in family above.
   var detail = { open: function () {}, look: function (t) { return { icon: '🏢', name: 'Provider', title: 'Model providers', table: t }; } };
   var pane = document.getElementById('pane');
   // The page starts as the Agent app's does (goal/G41.28): the data set loaded and its home node known, from node.card,
   // before the row element is asked for.
-  // THE STAND-IN ON THE READY SPIRIT TOO (goal/G47.1): the shared search asks a family through spirit.ready first, and only
-  // then by spirit.require (spirit/element/search.js, viaSpirit); so the agent family there is the stand-in as well, or the
+  // THE STAND-IN ON THE READY SPIRIT TOO (goal/G47.1): the shared search asks a family through spirit.readyPromise first, and only
+  // then by spirit.requireScript (spirit/element/search.js, viaSpirit); so the agent family there is the stand-in as well, or the
   // Model dropdown's own search went to the scratch node, which runs no agent server, and drew none of its answer.
-  return Promise.resolve(spirit.start()).then(function () { return spirit.ready; }).then(function (s) { if (s) s.agent = family; }).then(function () { return spirit.require('spirit/app/agent/element/table/provider/elementRow.js'); }).then(function () {
+  return Promise.resolve(spirit.startPage()).then(function () { return spirit.readyPromise; }).then(function (s) { if (s) s.agent = family; }).then(function () { return spirit.requireScript('spirit/app/agent/element/table/provider/elementRow.js'); }).then(function () {
     // goal/G43.32: the row element stands at its path.
     spirit.required.spirit.app.agent.element.table.provider.elementRow.create(pane, answers.provider, false, detail);
     return wait(1500);

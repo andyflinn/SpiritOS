@@ -23,7 +23,7 @@
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 // Each by its family's name, its path spirit.branchPath's (the family app).
-if (window.spirit && typeof window.spirit.require === 'function' && typeof window.spirit.branchPath === 'function') ['app'].forEach(function (n) { Promise.resolve(window.spirit.require(window.spirit.branchPath(n))).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function' && typeof window.spirit.branchPath === 'function') ['app'].forEach(function (n) { Promise.resolve(window.spirit.requireScript(window.spirit.branchPath(n))).catch(function () {}); });
 (function () {
   // one: the table's name as a detail pane's title row says it ("[Table-Icon] \"Add | Change\" [Table-name]").
   var TABLES = [
@@ -35,7 +35,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
 
   // ITS TABLES ASK FOR THEMSELVES (goal/G43.24; Andy: "every element that accesses ANY api must require them themselves"):
   // each table's list is a probabilitySearch that asks agent.<table> through the spirit object, the agent's own family
-  // bound by spirit.require when it is not on spirit.ready. So the app hands its tables no api: their box and its detail pane.
+  // bound by spirit.requireScript when it is not on spirit.readyPromise. So the app hands its tables no api: their box and its detail pane.
 
   // An element by its place, spirit.required.<its path> (goal/G43.32): undefined while any part of the path is not there yet.
   function agentAt(place) {
@@ -48,13 +48,13 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
 
       // Its whole app area is one workBench, in a box of a stated size (rule/16). THE APP BOOTSTRAPS ITS OWN COMPONENTS
       // (goal/G41.1; Andy: "the shell should not know that. every app needs to bootstrap its own components."): the
-      // element is loaded here, through spirit.require, never put on the face's own list of parts.
+      // element is loaded here, through spirit.requireScript, never put on the face's own list of parts.
       // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
       container.innerHTML = '<div id="agent-bench" class="fill" style="overflow:hidden"></div>';
       var benchBox = container.querySelector('#agent-bench');
       // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
       // apps."), painted by the workBench's strip through spirit/element/icon.js, loaded here with it.
-      var loaded = Promise.all([E.spirit.element.workBench ? null : spirit.require('spirit/element/workBench.js'), spirit.require('spirit/element/icon.js'), spirit.require('spirit/element/tabContainer.js')]);
+      var loaded = Promise.all([E.spirit.element.workBench ? null : spirit.requireScript('spirit/element/workBench.js'), spirit.requireScript('spirit/element/icon.js'), spirit.requireScript('spirit/element/tabContainer.js')]);
       loaded.then(function () { if (gone) return; E = (window.spirit && window.spirit.required) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
       // THE WORKBENCH'S CENTRE IS CLOSABLE TABS (goal/G41.31; Andy: "i need a tabContainer permanently situated in the center pane of
       // the workBench.", "each panel, that the agent app placed into the center panel now becomes a closable tab in the
@@ -127,7 +127,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
         left: TABLES.map(function (t) {
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
-            Promise.resolve(spirit.require('spirit/app/agent/element/table/' + t.name + '/elementTable.js')).then(function () {
+            Promise.resolve(spirit.requireScript('spirit/app/agent/element/table/' + t.name + '/elementTable.js')).then(function () {
               own(agentAt('spirit.app.agent.element.table.' + t.name + '.elementTable').create(box, detail));
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
           } };
@@ -138,7 +138,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
           // pane shows up in the center pane of workBench"). The personaSelector:pane is the persona table's search in pane
           // mode (rule/29), the agent tables' own; a persona picked opens its chat in the centre, in place of what was there.
           box.className = 'fill';
-          Promise.resolve(spirit.require('spirit/app/agent/element/table/tableElement.js')).then(function () {
+          Promise.resolve(spirit.requireScript('spirit/app/agent/element/table/tableElement.js')).then(function () {
             var D = window.spirit.required.spirit.app.agent.element.table.tableElement;
             box.innerHTML = '<div class="fill">' + D.titleRow({ icon: '💬' }, ['Select Persona']) + '<div id="agent-personas" class="fill" style="margin-top:1em"></div></div>';
             own(D.search(box.querySelector('#agent-personas'), { table: 'persona' }, { face: 'pane', pick: function (row, key) {
@@ -147,7 +147,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
               detail.open(function (centre) {
                 var pane = null;
                 var closed = false;
-                Promise.resolve(spirit.require('spirit/app/agent/element/chatPane.js')).then(function () {
+                Promise.resolve(spirit.requireScript('spirit/app/agent/element/chatPane.js')).then(function () {
                   if (!closed) pane = window.spirit.required.spirit.app.agent.element.chatPane.create(centre, { persona: picked });
                 });
                 return { destroy: function () { closed = true; if (pane) pane.destroy(); } };
@@ -160,7 +160,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
         // icon and label, as the appSelector's detail shows them (Q4; Andy: "both above the debug thinggie...").
         right: [{ name: 'server', icon: '⚙', title: 'The agent server', mount: function (box) {
           var A = 'spirit/element/search/app/';
-          Promise.all([spirit.require(A + 'changeAppIcon.js'), spirit.require(A + 'changeAppLabel.js'), spirit.require(A + 'serverDEBUG.js')]).then(function () {
+          Promise.all([spirit.requireScript(A + 'changeAppIcon.js'), spirit.requireScript(A + 'changeAppLabel.js'), spirit.requireScript(A + 'serverDEBUG.js')]).then(function () {
             if (gone) return;
             var hosts = [0, 1, 2].map(function () { var d = document.createElement('div'); box.appendChild(d); return d; });
             var made = [
@@ -175,7 +175,7 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
           // open in this centre's tabs (goal/G41.31; Andy: "agent: <bundle-name>."; "if the bundle is not node-owned:
           // (<bundle-name>) in italic print.").
           box.className = 'fill';
-          Promise.resolve(spirit.require('spirit/element/bundleEditor.js')).then(function () {
+          Promise.resolve(spirit.requireScript('spirit/element/bundleEditor.js')).then(function () {
             own(window.spirit.required.spirit.element.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) {
               var label = String(row.label || '');
               return String(row.owner || 'node') === 'node' ? label : { label: '(' + label + ')', italic: true };
@@ -200,5 +200,5 @@ if (window.spirit && typeof window.spirit.require === 'function' && typeof windo
       };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element.js', { create: create }); });
 }());

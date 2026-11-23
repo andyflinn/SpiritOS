@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
-const fileSystem = spirit.require('spirit/fs/fileSystem.js');
+const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
 const { EventEmitter } = require('events');
 const { monitorEventLoopDelay } = require('perf_hooks');
 
@@ -113,7 +113,7 @@ module.exports = function installJobs(port) {
     // NOTHING OVERSIZED ENTERS A PAGE'S STREAM (Andy: "the shared layer MUST instantly reject a payload, when the
     // json exceeds the maximum size"). A server's published object over PAYLOAD_MAX is refused whole: the job keeps
     // what it had, and no job-updated is emitted.
-    if (patch.app && typeof patch.app === 'object' && Buffer.byteLength(JSON.stringify(patch.app), 'utf8') > spirit.require('spirit/limits.js').PAYLOAD_MAX) return null;
+    if (patch.app && typeof patch.app === 'object' && Buffer.byteLength(JSON.stringify(patch.app), 'utf8') > spirit.requireScript('spirit/limits.js').PAYLOAD_MAX) return null;
 
     if (patch.status) {
       job.status = patch.status;
@@ -210,7 +210,7 @@ module.exports = function installJobs(port) {
   // reports at startup what the seed already holds, which sends nothing.
   const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
   const RUN_ROOT = path.join(__dirname, '..');
-  // THE TREE IS spirit.required.spirit.data.fs (goal/G49.1, box v17: "chokidar --> (node: spirit.required.spirit.data.fs) --> spirit.event --> browsers and
+  // THE TREE IS spirit.required.spirit.data.fs (goal/G49.1, box v17: "chokidar --> (node: spirit.required.spirit.data.fs) --> spirit.eventStream --> browsers and
   // node processes"; "job.js's own tree (fsTree) goes. Nothing else holds a tree on the node"): the watcher writes each
   // command into this process's spirit.required.spirit.data, where spirit/fs/data.js files it as it does a page's stream, and reads it back
   // from there. Its readers ask spirit/fs/script.js for it, commands() and entries() (goal/G49.2: "job.js's fsTreeCommands and
@@ -218,9 +218,9 @@ module.exports = function installJobs(port) {
   // is, null once it stopped.
   const FS_HOME = 'local'; // the node's own name in its spirit.required.spirit.data, as a child that follows the stream names it (spirit/data.js)
   let fsWatching = null;
-  function fsDataset() { return spirit.require('spirit/fs/script.js'); }
+  function fsDataset() { return spirit.requireScript('spirit/fs/script.js'); }
   function fsWrite(command) {
-    spirit.require('spirit/data.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
+    spirit.requireScript('spirit/data.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
   }
   // THE TWO FOLDER FLAGS (goal/G49.1, the box): api, a folder holding api.js and data.js; app, a folder <name> holding
   // its manifest <name>/<name>.json (Q1, Andy: "yes. testicle already checks validity of an app.json": spirit/app/job,
@@ -247,7 +247,7 @@ module.exports = function installJobs(port) {
   // on the node's one thread, for every page and face that connected: 17 of 45 s on Andy's node, measured.
   function heldOf(p, full, kind) {
     const held = statOf(full, kind);
-    if (kind === 'file' && spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
+    if (kind === 'file' && spirit.requireScript('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
     return held;
   }
   // A file row as a tree command: spirit/fs/script.js's, where a connect's whole tree is read too (goal/G49.2).
@@ -269,7 +269,7 @@ module.exports = function installJobs(port) {
       if (held.kind === 'folder') Object.assign(held, folderFlags(p, function (q) { return seed.has(q); }));
       fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
     });
-    spirit.require('spirit/data.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
+    spirit.requireScript('spirit/data.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
     const has = function (q) { return !!tree.file(q); };
     // THE NODE'S FILES ARE spirit.fs (goal/G43.20).
     const job = ownJob('spirit.fs');
@@ -281,7 +281,7 @@ module.exports = function installJobs(port) {
       if (!rel || rel.indexOf('..') === 0) return false;
       return rel.split('/').some(function (part) { return part === '.git'; });
     };
-    const watcher = spirit.require('spirit/job/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
+    const watcher = spirit.requireScript('spirit/job/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
     watcher.on('all', function (event, full) {
       const op = FS_OPS[event];
       const rel = full ? relOf(full) : '';
@@ -323,7 +323,7 @@ module.exports = function installJobs(port) {
         Object.keys(files).forEach(function (p) {
           const h = files[p];
           if (h.kind !== 'file' || p.indexOf(under) !== 0 || p === rel) return;
-          const core = spirit.require('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'));
+          const core = spirit.requireScript('spirit/coreFiles.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'));
           if (core === (h.core === true)) return;
           send(commandOf('changeFile', p, new Date().toISOString(), Object.assign({}, h, { core: core })));
         });
@@ -356,7 +356,7 @@ module.exports = function installJobs(port) {
       env: Object.assign({}, process.env, {
         SPIRIT_JOB_ID: job.id,
         // THE ONE DOOR, and the id travels beside the verb rather than
-        // baked into the path — spirit.js's spirit.job reads SPIRIT_JOB_ID,
+        // baked into the path — spirit.js's spirit.processJob reads SPIRIT_JOB_ID,
         // and a process that needs the node's port reads this URL.
         SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit',
       }),
@@ -367,7 +367,7 @@ module.exports = function installJobs(port) {
       // ITS CONSOLE GOES TO NULL AT THE SOURCE (goal/G41.33, the box: "Console output goes to null by default, at the source,
       // for every process, except node and relay. Only DEBUG turns it on. A crash is no exception"). Read as it starts, so a
       // process started with DEBUG off stays silent until it is started again. Its published lines and exit code stay.
-      stdio: require('./spirit.js').debug() ? ['ignore', 'pipe', 'pipe', 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'],
+      stdio: require('./spirit.js').debugLog() ? ['ignore', 'pipe', 'pipe', 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'],
     });
     [child.stdout, child.stderr].forEach(function (stream) {
       if (!stream) return;
@@ -513,7 +513,7 @@ module.exports = function installJobs(port) {
   // node.mount in spirit/app/<name>/<name>.json says it has a server at all.
   function appActive(root, name) {
     // An intrinsic app is always active (goal/G43.14): its <name>.json says so, and node.json is not asked.
-    if (spirit.require('spirit/coreFiles.js').appIntrinsic(path.resolve(root, '..', '..'), name) === true) return true;
+    if (spirit.requireScript('spirit/coreFiles.js').appIntrinsic(path.resolve(root, '..', '..'), name) === true) return true;
     try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
   }
   // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21): node.run in its <name>.json.
@@ -582,7 +582,7 @@ module.exports = function installJobs(port) {
     try { own = JSON.parse(fs.readFileSync(path.join(rootDir, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { own = null; }
     const values = {};
     ((own && Array.isArray(own.args)) ? own.args : []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
-    const pipe = spirit.require('spirit/appClient.js').pipePathFor(rootDir, name, process.platform);
+    const pipe = spirit.requireScript('spirit/appClient.js').pipePathFor(rootDir, name, process.platform);
     // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/<name>/data/ (goal/G43.10), handed over as --state, so a
     // process never works out its own folder. Its folder, spirit/state/<name>/, holds node.json, cache/, data/ and on Linux
     // door.sock (goal/G43.20).
@@ -614,13 +614,13 @@ module.exports = function installJobs(port) {
   // ownerKey is owner.json's key as loadOwner reads it, or '' when the
   // node owns itself or nobody owns it: no owner to ask (puppetMode's
   // puppetIn rule, compared here against the key read above). spirit.js
-  // puts them on spirit.node as it is required (the port from
+  // puts them on spirit.nodeFacts as it is required (the port from
   // spirit/state/environment.json).
   // Read as a server starts: a server learns a changed owner when the node
   // starts it again.
   function nodeArgOf(rootDir) {
-    const me = spirit.require('spirit/relayAuth.js').loadIdentity(rootDir);
-    const owner = spirit.require('spirit/relayAuth.js').loadOwner(rootDir, function () {});
+    const me = spirit.requireScript('spirit/relayAuth.js').loadIdentity(rootDir);
+    const owner = spirit.requireScript('spirit/relayAuth.js').loadOwner(rootDir, function () {});
     return ['--node', JSON.stringify({
       name: String(me.name || ''), publicKey: String(me.publicKey),
       ownerKey: owner && owner !== String(me.publicKey) ? owner : '',
@@ -655,7 +655,7 @@ module.exports = function installJobs(port) {
     updateJob(job.id, { status: 'running' });
     const state = path.join(rootDir, 'spirit', 'state', name, 'data');
     try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the run says why */ }
-    const pipe = spirit.require('spirit/appClient.js').pipePathFor(rootDir, name, process.platform);
+    const pipe = spirit.requireScript('spirit/appClient.js').pipePathFor(rootDir, name, process.platform);
     // One run of the script, handed what a permanent server is handed: its pipe, its state folder, the node's facts and its
     // DEBUG; launch() gives it its job's id. A socket left by the run before is cleared first (off Windows a pipe is a file).
     const start = function () {
@@ -676,7 +676,7 @@ module.exports = function installJobs(port) {
   // An app found off at boot: remembered, its row marked not served, no job.
   function rememberOneShot(rootDir, client, name) {
     if (!client || typeof client.registerOneShot !== 'function') return;
-    const pipe = spirit.require('spirit/appClient.js').pipePathFor(rootDir, name, process.platform);
+    const pipe = spirit.requireScript('spirit/appClient.js').pipePathFor(rootDir, name, process.platform);
     if (client.registerOneShot(name, pipe, function () { return null; }, path.join(rootDir, 'spirit', 'app', name, 'api.js'))) client.serve(name, false);
   }
 

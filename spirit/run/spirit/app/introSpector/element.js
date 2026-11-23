@@ -10,8 +10,8 @@
 // waits for it. The app selector's tile opens it.
 (function () {
   var S = window.spirit = window.spirit || {};
-  var face = S.require('spirit/element/introSpector.js');
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/introSpector/element.js', {
+  var face = S.requireScript('spirit/element/introSpector.js');
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/introSpector/element.js', {
     create: function (container, options) {
       var made = null;
       var gone = false;

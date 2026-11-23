@@ -105,25 +105,25 @@ function world(o) {
   };
   win.window = win;
   vm.createContext(win);
-  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   const S = win.spirit;
   Object.assign(S.required.spirit, page.spirit);
-  S.node = { key: 'NODEKEY+INFO==',
+  S.nodeFacts = { key: 'NODEKEY+INFO==',
     card: function (args) { w.calls.push({ name: 'node.card', args: args });
       if (opt.cardHeld) return opt.cardHeld;
       const a = opt.card ? opt.card() : { status: 200, body: CARD };
       return a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: a.status, body: a.body }); } };
-  S.required.spirit.data.homeNode(S.node.key);
+  S.node = S.nodeFacts; S.required.spirit.data.homeNode(S.nodeFacts.key);
   S.relay = { status: function (arg) { w.statuses += 1; w.calls.push({ name: 'relay.status', args: arg });
     if (opt.relaysHeld) return opt.relaysHeld;
     if (opt.relaysRefused) return Promise.reject({ status: 503, body: { ok: false, error: 'no relay answered' } });
     // As the real one answers (spirit/relay/api.js): { status, text, body: { rows, ... } }.
     return Promise.resolve(answered((opt.rows || ROWS).slice())); } };
-  S.ready = Promise.resolve(S);
+  S.readyPromise = Promise.resolve(S);
   S.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
-  S.outcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
-  S.require = function (p) {
+  S.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
+  S.requireScript = function (p) {
     w.required.push(String(p));
     if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error('not-found ' + p));
     // A family's cache (goal/G41.28): a branch's interface brings its data.js, as the real api.js does; it runs once on
@@ -137,10 +137,10 @@ function world(o) {
   };
   // goal/G43.32: nodeInfo.js places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
-  const recorder = S.require;
+  const recorder = S.requireScript;
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(S);
-  const pageRequire = S.require;
-  S.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  const pageRequire = S.requireScript;
+  S.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.S = S; w.page = page; w.els = els;
   w.slot = function (host, name) { return host.querySelector('[data-info="' + name + '"]'); };
@@ -503,23 +503,23 @@ function formsPart() {
       if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
       return f;
     } };
-    S.node = { key: 'NODEKEY+INFO==', card: function () { return Promise.resolve(CARD); } };
-    S.required.spirit.data.homeNode(S.node.key);
+    S.nodeFacts = { key: 'NODEKEY+INFO==', card: function () { return Promise.resolve(CARD); } };
+    S.node = S.nodeFacts; S.required.spirit.data.homeNode(S.nodeFacts.key);
     // As the relay family's status answers (spirit/relay/api.js, status): { status, text, body: { rows, ... } }.
     S.relay = { status: function () {
       const body = { name: '', rows: relayRows.slice(), ownedUrls: [], claimedUrls: [], mustPick: false, relayStatus: {}, more: false };
       return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body });
     } };
-    S.ready = Promise.resolve(S);
+    S.readyPromise = Promise.resolve(S);
     S.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
-    S.outcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
+    S.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
     // The two forms are the real files, run on this window as a page runs them; every other part a stand-in.
     const real = { 'spirit/element/joinForm.js': 1, 'spirit/element/faceForm.js': 1 };
     // goal/G43.32: each element places itself by installSpiritElement, handed by the page stand-in
     // (spirit/test/headLessChrome.js pageSpirit).
     require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(S);
-    const pageRequire = S.require;
-    S.require = function (p) {
+    const pageRequire = S.requireScript;
+    S.requireScript = function (p) {
       if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
       if (real[p]) { vm.runInContext(fs.readFileSync(path.join(RUN, p), 'utf8'), win, { filename: p }); delete real[p]; }
       // A branch's interface brings its data.js, as the real api.js does: run once on this window from its path.
@@ -718,14 +718,14 @@ function rotatePart() {
     if (!where) return false;
     if (!c || c.error) return false;
     await c.send('Page.navigate', { url: N.base + '/face.html' });
-    return (await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000)) ? true : false;
+    return (await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000)) ? true : false;
   }, test.limit.quick);
   test.run('the page\'s node.rotateCipher is replaced by a recorder that refuses', 0.2, async function () {
     if (!N || !N.up) return false;
     if (!where) return false;
     if (!c || c.error) return false;
     // NO KEY IS ROTATED: the page's node.rotateCipher records the ask and refuses it.
-    spy = await c.evaluate('window.spirit.ready.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.node || typeof S.required.spirit.node.api.rotateCipher !== "function") return false; S.required.spirit.node.api.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
+    spy = await c.evaluate('window.spirit.readyPromise.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.nodeFacts || typeof S.required.spirit.node.api.rotateCipher !== "function") return false; S.required.spirit.node.api.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
     return (spy === 'spied') ? true : false;
   }, test.limit.quick);
   const T = function (expr) { return c.evaluate('window.__t.' + expr); };
@@ -739,7 +739,7 @@ function rotatePart() {
     await c.evaluate(HANDS);
     await c.evaluate('window.__in = "zzBox"');
     // the box, 8: "nodeInfo's rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"
-    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__shell = spirit.required.spirit.element.script.create(b); return "made"; }, function () { return false; }); }())');
+    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__shell = spirit.required.spirit.element.script.create(b); return "made"; }, function () { return false; }); }())');
     return (shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : false;
   }, test.limit.quick);
   test.run('Info opens from its tile, showing its name field and its rotate button', 0.2, async function () {

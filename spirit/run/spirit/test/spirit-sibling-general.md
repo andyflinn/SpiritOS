@@ -71,7 +71,7 @@ gone. From `./app.js`: that an app's description names its icon and label. A scr
   unlimited strings are forbidden in SpiritOS."*, *"\"flags\" must be booleans"*): each argument of `api.js` is
   `spirit.type.<...>`, a trailing `?` making it optional, and its type file `spirit/type/<...>.js` is there.
 - **Required on the node it is placed and binds** (decided 8: *"A branch's api.js is placed at
-  spirit.required.spirit.<branch-path>.api and also binds the branch."*): in a process of its own, `spirit.require` of it
+  spirit.required.spirit.<branch-path>.api and also binds the branch."*): in a process of its own, `spirit.requireScript` of it
   leaves the `api.js` at `spirit.required.<its path>`, and binds every verb it declares on `spirit.<name>`, under the name
   its `functions` gives it if any (`spirit/app/api.js`: `search` is `searchApp`).
 
@@ -292,7 +292,7 @@ that one; given none, every tracked production `.js` file.
 
 - **A production file** is a tracked `.js` file under `spirit/run/`, not inside a `test/` folder (`spirit/test/`'s
   tools included), not vendor code (`node_modules`, CodeMirror).
-- **It loads no test file**: in its code, comments left out, no `require()`, `import()`, `spirit.require()`,
+- **It loads no test file**: in its code, comments left out, no `require()`, `import()`, `spirit.requireScript()`,
   `readFileSync()`, `readFile()` or `createReadStream()` names a path into a `test/` folder. The path is read from the
   call's own text, its string pieces joined as `path.join` joins them, so `path.join(__dirname, 'test', 'x.js')` is
   caught as `'test/x.js'` is.
@@ -349,7 +349,7 @@ That every element loads on a page and stands at `spirit.required.<its path>` is
 
 Rules that read every file, once in one script's test, so their red landed on that script. Each is said over the tree, and on a file handed.
 
-- **Every `spirit.require` of a written path names a file that exists.** Andy: *"every spirit.require of a written path names a file that exists"*, in place of search.js's list of old paths: read from the code, so a require that runs only on a click is judged too. `spirit.require('<path>')`, and a list of written paths a require is mapped over.
+- **Every `spirit.requireScript` of a written path names a file that exists.** Andy: *"every spirit.requireScript of a written path names a file that exists"*, in place of search.js's list of old paths: read from the code, so a require that runs only on a click is judged too. `spirit.requireScript('<path>')`, and a list of written paths a require is mapped over.
 - **No tracked file of the repository names `spirit/run/node_modules`, and `.gitignore` keeps no exception for it** (goal/G43.25, from `./job.js`). The suites that compare the libraries with the commit before their move name it on purpose.
 - **No `<verb>.warning.txt` is left** (goal/G43.27, from `spirit/element/search/grant/test/grantsPanel.js`). Andy: *"compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."*
 - **Under `spirit/element/search/` every name is a word, and every folder sits beside its `<name>.js`** (goal/G43.18, from `spirit/element/test/search.js`). Andy: *"all "probabilitySearch" elements follow the EXACT SAME PATTERN."*

@@ -20,9 +20,9 @@
 //   filter ... what the hell is it even for?").
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   var parts = Promise.all(['spirit/element/row.js', 'spirit/element/armingButton.js'].map(function (p) {
-    return window.spirit.require ? window.spirit.require(p) : null;
+    return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
   }));
   function keyOf(key, path) { return String(key) + '\n' + String(path); }
 
@@ -94,5 +94,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/row.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/row.js', { create: create }); });
 }());

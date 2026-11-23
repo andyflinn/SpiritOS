@@ -8,7 +8,7 @@ Its test is `./connections.js`: a real Chrome on a scratch node's face page, the
 
 ## Requirements
 
-- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.job.connections`, with a `create`.
+- It loads through `spirit.requireScript` and places itself at `spirit.required.spirit.element.monitor.job.connections`, with a `create`.
 - It requires the jobs family's interface, `spirit/job/api.js`, and the value tile, `spirit/element/monitor/value.js`.
 - Mounted, it is a value tile in tile mode: its icon 🔌, drawn by the icon element, and its label Connections.
 - Its value is the streams open to the node, worked out from the stats on the spirit job's row.

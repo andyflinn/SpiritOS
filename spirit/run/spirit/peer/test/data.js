@@ -41,12 +41,12 @@ function world() {
     nodes: function () { return Object.keys((F && F.cache) || {}); } };
 }
 
-// The same on a page: spirit.isBrowser() true and the page's node known (spirit.node.key, as node.card answered it), so
+// The same on a page: spirit.isBrowser() true and the page's node known (spirit.nodeFacts.key, as node.card answered it), so
 // a row another node served is filed under the node that served it while the reads stay the page's own node's.
 function pageWorld() {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, Date: Date, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
-  win.spirit = { isBrowser: function () { return true; }, node: { key: SENDER } };
+  win.spirit = { isBrowser: function () { return true; }, nodeFacts: { key: SENDER } };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });

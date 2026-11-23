@@ -3,35 +3,35 @@ require('./spirit.js');
 
 const fs = require('fs');
 const path = require('path');
-const auth = spirit.require('spirit/relayAuth.js');
-const invites = spirit.require('spirit/invites.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
+const invites = spirit.requireScript('spirit/invites.js');
 // One place decides how big a thing may be, and the browser reads the
 // same file (limits.js, beside this one). A cap the client pre-checks must be the cap
 // the relay enforces, or the pre-check is a lie.
-const limits = spirit.require('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits.js');
 // The peer search's one ranker, on the probability modules (goal/G29.17), shared with the node.
-const peerRank = spirit.require('spirit/peerRank.js');
-const presence = spirit.require('spirit/presence.js');
-const routerTable = spirit.require('spirit/router.js');
-const relayStatus = spirit.require('spirit/relayStatus.js');
+const peerRank = spirit.requireScript('spirit/peerRank.js');
+const presence = spirit.requireScript('spirit/presence.js');
+const routerTable = spirit.requireScript('spirit/router.js');
+const relayStatus = spirit.requireScript('spirit/relayStatus.js');
 // The relay's data on disc (cycle 3): members and invites.
-const relayStore = spirit.require('spirit/relayStore.js');
-const faceRoute = spirit.require('spirit/faceRoute.js');
+const relayStore = spirit.requireScript('spirit/relayStore.js');
+const faceRoute = spirit.requireScript('spirit/faceRoute.js');
 // The same validation the file gets at boot, so the owner's `config` verb
 // (reconfigure) cannot accept a figure a restart would then refuse.
-const relayConfig = spirit.require('spirit/relayConfig.js');
+const relayConfig = spirit.requireScript('spirit/relayConfig.js');
 // A relay is a peer with a key (0010), so posts addressed to it are
 // sealed like any other and it opens them with its own (cycle 10, R9).
-const seal = spirit.require('spirit/seal.js');
+const seal = spirit.requireScript('spirit/seal.js');
 // And it keeps its members' cards, verifying each one on every read
 // against the key its row is filed under (cycle 10, R5 and R13).
-const nodeCard = spirit.require('spirit/nodeCard.js');
+const nodeCard = spirit.requireScript('spirit/nodeCard.js');
 // The ceilings the owner's read reports — what this box could give — from
 // the same module the installer and first start use.
-const relayLimits = spirit.require('spirit/relayLimits.js');
+const relayLimits = spirit.requireScript('spirit/relayLimits.js');
 // Once, at load, for the same reason server.js does it: the answer must
 // describe the code that is running, not the code on disk.
-const RUNNING = spirit.require('spirit/buildStamp.js').resolve(path.join(__dirname, '..'));
+const RUNNING = spirit.requireScript('spirit/buildStamp.js').resolve(path.join(__dirname, '..'));
 
 // NO STORE-AND-FORWARD (decision 0006). Andy: "the ring was a lie all
 // along. it was unable to promise reliable delivery anyways, because it
@@ -111,7 +111,7 @@ var SEARCH_WORDS_MAX = 200;
 // THIS FILE IS STILL THE ENFORCER. The browser half is a courtesy that
 // saves a hop; the ledger is written here, and every claim and rename
 // is checked here whatever any page believed.
-var fieldRules = spirit.require('spirit/fieldRules.js');
+var fieldRules = spirit.requireScript('spirit/fieldRules.js');
 
 // ── HOW MANY STREAMS THE OWNER'S RAM ALLOWS (cycle 8) ────────────────────
 //
@@ -2558,14 +2558,14 @@ function createRelay(rootDir, deps) {
   // refuse"). Off, a member asking an owner verb gets the plain refusal a verb nobody declared gets; on, the owner
   // diagnosing his relay sees the reason. The verbs themselves are public (the repository), so this hides nothing.
   function notGranted() {
-    return require('./spirit.js').debug()
+    return require('./spirit.js').debugLog()
       ? { ok: false, status: 403, code: 'not-granted', error: 'that verb is not open to you on this relay' }
       : { ok: false, status: 404, error: 'no such peer' };
   }
   var selfFamily = null;
   function relaySelfFamily() {
     if (!selfFamily) {
-      try { selfFamily = spirit.require('spirit/introSpector.js').family(path.join(__dirname, 'relaySelf'), { declared: MEMBER_VERBS.concat(OWNER_VERBS) }).verbs; }
+      try { selfFamily = spirit.requireScript('spirit/introSpector.js').family(path.join(__dirname, 'relaySelf'), { declared: MEMBER_VERBS.concat(OWNER_VERBS) }).verbs; }
       catch (e) { selfFamily = {}; }
     }
     return selfFamily;
@@ -2845,9 +2845,9 @@ function createRelay(rootDir, deps) {
       // signed by the owner over bytes that bind sender, recipient and this
       // text — so a captured `on` cannot be replayed as an `off`.
       if (Object.prototype.hasOwnProperty.call(body.debug, 'on')) {
-        require('./spirit.js').debug(!!body.debug.on);
+        require('./spirit.js').debugLog(!!body.debug.on);
       }
-      out = { ok: true, debug: require('./spirit.js').debug() };
+      out = { ok: true, debug: require('./spirit.js').debugLog() };
     }
 
     // FORGETTING SOMEBODY, by key — and the one verb that is BOTH kinds.
@@ -3703,7 +3703,7 @@ function createRelay(rootDir, deps) {
     //
     // Found by wsl-claude, whose relayCannotRead.js caught it as its CONTROL
     // rather than as an assertion — C3, "DEBUG off means no payload".
-    row.held = require('./spirit.js').debug() && extra && typeof extra.held === 'string' ? extra.held : '';
+    row.held = require('./spirit.js').debugLog() && extra && typeof extra.held === 'string' ? extra.held : '';
     // THE FULL REPORT, EVERY TIME SOMETHING HAPPENS (cycle 8). Andy: the
     // owner "receives also the full stat package whenever events occur" —
     // and no coalescing: "if the relay can handle 500 near-simultaneous

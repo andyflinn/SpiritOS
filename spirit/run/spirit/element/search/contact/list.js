@@ -43,12 +43,12 @@
 // A table's rows are no contacts: each is a plain row of its label, with no contact filters and nothing to open.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) ['spirit/element/search/contact/row.js', 'spirit/element/search.js', 'spirit/element/row.js'].forEach(function (p) { window.spirit.require(p); });
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
+  if (window.spirit.requireScript) ['spirit/element/search/contact/row.js', 'spirit/element/search.js', 'spirit/element/row.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
-  window.spirit.require('spirit/contact/api.js');
+  window.spirit.requireScript('spirit/contact/api.js');
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   // A row with that flag: mine, blocked, or relay.
   function is(kind) {
@@ -138,12 +138,12 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
       // Through the spirit object (goal/G32.2): the reply's body.
       if (table) {
         var asked = table.verb === 'search' ? { text: q } : { op: 'search', text: q };
-        return spirit.ready.then(function (s) { return s[table.family][table.verb](asked); }).then(function (got) {
+        return spirit.readyPromise.then(function (s) { return s[table.family][table.verb](asked); }).then(function (got) {
           var items = ((got && got.items) || []).filter(function (i) { return i && i.key; }).map(function (i) { var r = idRow(i, o); return { key: String(r.key), label: JSON.stringify(r) }; });
           return { status: 200, body: { ok: true, items: items, more: !!(got && got.more) } };
         });
       }
-      return spirit.ready.then(function (s) { return s.contact.search({ q: q }); }).then(function (got) {
+      return spirit.readyPromise.then(function (s) { return s.contact.search({ q: q }); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
@@ -250,5 +250,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/conta
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/list.js', { create: create, filters: FILTERS }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/list.js', { create: create, filters: FILTERS }); });
 }());

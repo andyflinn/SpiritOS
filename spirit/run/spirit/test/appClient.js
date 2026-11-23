@@ -138,12 +138,12 @@ test.run('no run of icons.js is left running after the six trees', 0.2, async fu
 // code.", "so, really the appClient.js has no business running or parsing code. that must be done by the plugin. i
 // don't care if it's spirit/server/app.js, since it'll crash with the server process and leave the node intact.", and
 // "for one-shot servers, appClient launches appServer with the argument "spirit/app/<name>/name.js", then the
-// appServer module "requires" that script and passes it a ready-made spirit-object with it's spirit.check already done".
+// appServer module "requires" that script and passes it a ready-made spirit-object with it's spirit.checkArgs already done".
 // The box: "The node starts every app server, one-shot and long-running alike, as appServer.js with the app's path".
 // The node runs no app code: every app server is appServer.js with the app's path, and checks in its own process.
 test.run('appClient.js loads no app\'s api.js, nor any of its code', 0.2, function () {
   const own = fs.readFileSync(path.join(RUN, 'spirit', 'appClient.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-  return (!/\brequire\s*\([^)]*\bapi\b/.test(own) && !/\bspirit\.require\s*\([^)]*api/.test(own)) || false;
+  return (!/\brequire(?:Script)?\s*\([^)]*\bapi\b/.test(own) && !/\bspirit\.require(?:Script)?\s*\([^)]*api/.test(own)) || false;
 }, test.limit.quick);
 const cmdOf = function (pid) { try { return fs.readFileSync('/proc/' + pid + '/cmdline', 'utf8').split('\0').join(' '); } catch (e) { return ''; } };
 // The process command lines are read on Linux only; elsewhere these tests are not registered, as they were not judged.

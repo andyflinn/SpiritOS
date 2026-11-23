@@ -106,17 +106,17 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     Object.assign(row, FORCE[name] || {});
     return row;
   }
-  return Promise.resolve(S.ready).then(function () {
-    return Promise.all([S.require('spirit/element/search.js'), S.require('spirit/element/panel.js')]);
+  return Promise.resolve(S.readyPromise).then(function () {
+    return Promise.all([S.requireScript('spirit/element/search.js'), S.requireScript('spirit/element/panel.js')]);
   }).then(function () {
     // The probabilitySearch watched: the spirit.required.spirit.data branch each one is made with.
     var made = R.made = [];
     var f = S.required.spirit.element.search; var real = f.create;
     f.create = function (host, o) { var x = o || {}; made.push({ data: typeof x.data === 'string' ? x.data : '', host: host }); return real.apply(this, arguments); };
-    return S.require('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.require('spirit/element/search/' + name + '/list.js') : null; })
+    return S.requireScript('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.requireScript('spirit/element/search/' + name + '/list.js') : null; })
       // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/list.js: "opts.grants the grants table, required"):
       // the node's own, as the Grants app hands it (grantsPanel.nodeGrants).
-      .then(function () { return name === 'grant' ? S.require('spirit/element/search/grant/grantsPanel.js').then(function () { OPTIONS.grant = { grants: S.required.spirit.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
+      .then(function () { return name === 'grant' ? S.requireScript('spirit/element/search/grant/grantsPanel.js').then(function () { OPTIONS.grant = { grants: S.required.spirit.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
   }).then(function () {
     var box = document.createElement('div');
     box.id = 'zz-host';
@@ -196,7 +196,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     });
   }).then(function () {
     // 5, 6, 8: the detail, by the search's detail, in a panel layer as the apps open one.
-    return S.require('spirit/element/search/' + name + '/detail.js').then(function () { return true; }, function () { return false; });
+    return S.requireScript('spirit/element/search/' + name + '/detail.js').then(function () { return true; }, function () { return false; });
   }).then(function (has) {
     var D = has && S.required.spirit.element.search[name] && S.required.spirit.element.search[name].detail;
     if (!D || typeof D.create !== 'function') { R.noDetail = true; return R; }
@@ -306,7 +306,7 @@ async function openEach() {
   const failed = [];
   for (const n of TARGETS) {
     await W.page.send('Page.navigate', { url: W.node.base + '/face.html' });
-    await until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, 20000);
+    await until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, 20000);
     let got = null;
     try { got = await Promise.race([W.page.evaluate('Promise.resolve(' + PAGE + '(' + JSON.stringify(n) + ',' + ROWS + ',' + JSON.stringify(LONG) + ',' + PANE_W + ',' + PANE_H + ',' + JSON.stringify(VIA_LIST) + ',' + JSON.stringify(OPTIONS) + ',' + JSON.stringify(SHAPES) + ',' + JSON.stringify(KEEP) + ',' + JSON.stringify(FORCE) + ')).then(function (r) { return JSON.stringify(r); })'), sleep(60000).then(function () { return null; })]); } catch (e) { got = null; }
     let r = null; try { r = JSON.parse(got); } catch (e) { r = null; }

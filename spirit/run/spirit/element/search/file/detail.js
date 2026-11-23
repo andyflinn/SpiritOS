@@ -8,7 +8,7 @@
 //   spirit.required.spirit.element.search.file.detail.create(host, { path }) -> { destroy() }
 //     path   the file's path on the home node; fstat shows its MIME type at once, then its size, changed and created
 (function () {
-  var parts = Promise.resolve(window.spirit.require('spirit/element/fstat.js'));
+  var parts = Promise.resolve(window.spirit.requireScript('spirit/element/fstat.js'));
   function create(host, opts) {
     var gone = false;
     var path = String((opts && opts.path) || '');
@@ -24,5 +24,5 @@
     // Destroy leaves its host empty, as every element.
     return { destroy: function () { gone = true; host.innerHTML = ''; } };
   }
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/detail.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/detail.js', { create: create }); });
 }());

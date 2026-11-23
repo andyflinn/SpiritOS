@@ -9,8 +9,8 @@
 // goal/G41.28 (spirit/element/search/grant/grantsPanel.js, which spirit/app/grants/element.js mounts: the branch the auth family's cache manager keeps, spirit.required.spirit.data.auth.data.grants.branch,
 // and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.required.spirit.data path
 // (node/family/branch) and its watch that branch's. The auth family's data.js is loaded as a
-// page's spirit.require('spirit/auth/api.js') brings it, as the Grants app asks it, the page's node known as spirit.start makes it
-// known (spirit.node.key, then data.homeNode).
+// page's spirit.requireScript('spirit/auth/api.js') brings it, as the Grants app asks it, the page's node known as spirit.startPage makes it
+// known (spirit.nodeFacts.key, then data.homeNode).
 
 const fs = require('fs');
 const path = require('path');
@@ -62,15 +62,15 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
     'spirit/element/armingButton.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
   };
   global.document = { createElement: function () { return {}; } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, ready: Promise.resolve({}), element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   DATA = global.window.spirit.required.spirit.data;
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
-  global.window.spirit.node = { key: NODE_KEY };
+  global.window.spirit.nodeFacts = { key: NODE_KEY };
   DATA.homeNode(NODE_KEY);
   // The auth family's data.js, run from its path as the auth interface brings it: the Grants app requires
   // spirit/auth/api.js as it loads (spirit/element/search/grant/grantsPanel.js), and that api.js requires its data.js.
@@ -78,7 +78,7 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   // What the row asked as it loaded; the runner's own asks after this test are not the row's.

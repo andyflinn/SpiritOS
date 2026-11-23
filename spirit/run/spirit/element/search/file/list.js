@@ -24,13 +24,13 @@
 //     opts.pick(row, key)   a file chosen; row.line is the first matched line of a file found by its contents
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) ['spirit/element/search/file/row.js', 'spirit/element/search/file/tile.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
+  if (window.spirit.requireScript) ['spirit/element/search/file/row.js', 'spirit/element/search/file/tile.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
-  window.spirit.require('spirit/fs/api.js');
+  window.spirit.requireScript('spirit/fs/api.js');
   function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
 
   function accepted(accept, row) {
@@ -51,7 +51,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   function search(args, found) {
     var a = args || {};
     if (!a.contents || !a.q) { found(Object.create(null), Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
-    return spirit.ready.then(function (s) { return s.fs.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
+    return spirit.readyPromise.then(function (s) { return s.fs.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
       body = body || {};
       var F = fsReads();
       var next = Object.create(null);
@@ -164,5 +164,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/list.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/list.js', { create: create }); });
 }());

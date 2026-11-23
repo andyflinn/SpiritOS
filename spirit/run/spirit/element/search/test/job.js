@@ -37,10 +37,10 @@ test.run('the selector runs on a bare window', 0.2, async function () {
     } }); },
   };
   global.document = { createElement: element };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({}), element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     required.push(String(p));
     if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); }
     return Promise.resolve(true);

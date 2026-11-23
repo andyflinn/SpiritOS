@@ -18,7 +18,7 @@ panel's `grantsPanel.nodeGrants` since goal/G43.24, and what the panel draws and
   `spirit.shell.activateApp`; nothing of the old shell (no `shellCreateListSearch`, no `api.ui.elements`, no
   `apiBranchSelector`).
 - **A wrapper**: it loads `spirit/element/search/grant/grantsPanel.js`, `spirit/element/tabContainer.js` and
-  `spirit/element/bundleEditor.js` through `spirit.require` (rule/26), and nothing else. It asks nothing itself (no verb,
+  `spirit/element/bundleEditor.js` through `spirit.requireScript` (rule/26), and nothing else. It asks nothing itself (no verb,
   no api, no auth verb, no cache of its own) and draws nothing itself (no markup, no list, no selector).
 - `create(container)` empties the container and makes one `tabContainer` in it with two tabs: `grants` (*Grants*), then
   `bundles` (*Bundles*).
@@ -79,10 +79,10 @@ Done: its test runs from its new place, and `shell/` is gone. Their checks are d
 
 #### 6. A wrapper of spirit/element/
 
-- `grants.js` loads only `spirit/element/` scripts, through `spirit.require`; names no `data.js` script (no data family of its own); calls no verb (`.verb(`, `spirit.outcome`, `callDialog`, `fetch`, relay.status, node.card, auth.search/grant/revoke); draws no markup of its own.
+- `grants.js` loads only `spirit/element/` scripts, through `spirit.requireScript`; names no `data.js` script (no data family of its own); calls no verb (`.verb(`, `spirit.callOutcome`, `callDialog`, `fetch`, relay.status, node.card, auth.search/grant/revoke); draws no markup of its own.
 - (Grants' data source, in grantsPanel, is the authSource part of `spirit/element/search/grant/test/grantsPanel.js`.)
 
 #### 7. The new shell's way
 
 - No `spirit.shell.activateApp` in `grants.js`.
-- On the page, `spirit.require('spirit/app/grants/element.js')` sets `spirit.required.spirit.app.grants.element`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.
+- On the page, `spirit.requireScript('spirit/app/grants/element.js')` sets `spirit.required.spirit.app.grants.element`, whose `create(container, opts)` draws into the container and answers `{ destroy() }`.

@@ -21,7 +21,7 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/search/grant/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js']
-    .map(function (p) { return S.require(p); }));
+    .map(function (p) { return S.requireScript(p); }));
 
   function create(container) {
     var gone = false;
@@ -51,5 +51,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/grants/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/grants/element.js', { create: create }); });
 }());

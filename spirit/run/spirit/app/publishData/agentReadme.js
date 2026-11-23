@@ -38,7 +38,7 @@ function ms(x) { return String(Math.round(Number(x || 0) * 10) / 10); }
 
 function summaryOf(cap) {
   if (!cap || !(Number(cap.relayAtRestRss) > 0)) return null;
-  const relay = spirit.require('spirit/relay.js');
+  const relay = spirit.requireScript('spirit/relay.js');
   const allowance = relay.allowanceFor(RAM_MB, Number(cap.relayAtRestRss) / 1048576);
   const members = allowance ? Math.floor(allowance / relay.SEAT_STREAMS) : 0;
   const perPeer = Number(cap.perReachablePeerBytes) || 0;

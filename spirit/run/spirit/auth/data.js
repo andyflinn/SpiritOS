@@ -18,10 +18,10 @@
   var BRANCHES = 'branches';
   var GRANTS = 'grants';
   function grantKey(key, path) { return String(key) + '\n' + String(path); }
-  var D = typeof require === 'function' ? require('../spirit.js').require('spirit/data.js') : window.spirit.required.spirit.data;
-  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.require,
+  var D = typeof require === 'function' ? require('../spirit.js').requireScript('spirit/data.js') : window.spirit.required.spirit.data;
+  // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.require('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  if (!D) { window.spirit.requireScript('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('auth', function () {
     var HOME = D.viewAt(null, 'auth');
     D.addTranslator({

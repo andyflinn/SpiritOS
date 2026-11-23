@@ -10,11 +10,11 @@
 // current through the family's manager and the row element.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  ['spirit/element/search.js', 'spirit/element/search/app/row.js', 'spirit/element/search/app/tile.js'].forEach(function (p) { window.spirit.require(p); });
-  window.spirit.require('spirit/app/api.js');
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
+  ['spirit/element/search.js', 'spirit/element/search/app/row.js', 'spirit/element/search/app/tile.js'].forEach(function (p) { window.spirit.requireScript(p); });
+  window.spirit.requireScript('spirit/app/api.js');
 
   function create(host, opts) {
     var o = opts || {};
@@ -23,7 +23,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
     // THE SOURCE: app.search, with a search string and nothing more (Andy, box: "no filters, just a search string").
     function search(args) {
       var q = String((args && args.text) || '').trim();
-      return spirit.ready.then(function (s) { return s.app.searchApp({ q: q }); }).then(function (got) {
+      return spirit.readyPromise.then(function (s) { return s.app.searchApp({ q: q }); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
@@ -79,5 +79,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/app/a
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/list.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/list.js', { create: create }); });
 }());

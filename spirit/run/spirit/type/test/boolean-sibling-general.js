@@ -83,7 +83,7 @@ if (!asked || /Select\.js$/.test(asked)) {
     return !files.some(function (f) { let c = ''; try { c = fs.readFileSync(path.join(RUN, f), 'utf8'); } catch (e) { return false; } return /spirit\.type\.string\.line(Select)?\b/.test(c); }) || false;
   }, test.limit.quick);
   test.run('every <type>Select.js has its <type>.js beside it and requires it', 0.4, function () {
-    return everySelect(function (T, B, rel) { const sib = siblingOf(rel); let code = ''; try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; } return fs.existsSync(path.join(RUN, sib)) && code.indexOf(path.basename(sib, '.js')) !== -1 && /require\(/.test(code); }) || false;
+    return everySelect(function (T, B, rel) { const sib = siblingOf(rel); let code = ''; try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; } return fs.existsSync(path.join(RUN, sib)) && code.indexOf(path.basename(sib, '.js')) !== -1 && /require(?:Script)?\(/.test(code); }) || false;
   }, test.limit.quick);
   test.run('every <type>Select.js takes "", and its defaultValue() is ""', 0.4, function () {
     return everySelect(function (T) { try { return T.isValid('') === true && T.defaultValue() === ''; } catch (e) { return false; } }) || false;
@@ -111,7 +111,7 @@ if (!asked || /New\.js$/.test(asked)) {
     return fs.existsSync(path.join(RUN, 'spirit', 'type', 'string', 'IDNew.js')) || false;
   }, test.limit.quick);
   test.run('every <type>New.js has its <type>.js beside it and requires it', 0.4, function () {
-    return everyNew(function (T, B, rel) { const sib = siblingOfNew(rel); let code = ''; try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; } return fs.existsSync(path.join(RUN, sib)) && code.indexOf(path.basename(sib, '.js')) !== -1 && /require\(/.test(code); }) || false;
+    return everyNew(function (T, B, rel) { const sib = siblingOfNew(rel); let code = ''; try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; } return fs.existsSync(path.join(RUN, sib)) && code.indexOf(path.basename(sib, '.js')) !== -1 && /require(?:Script)?\(/.test(code); }) || false;
   }, test.limit.quick);
   test.run('every <type>New.js takes what its <type>.js takes, and throws for a number, an object and true', 0.4, function () {
     return everyNew(function (T, B) {

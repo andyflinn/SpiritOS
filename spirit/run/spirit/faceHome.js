@@ -30,10 +30,10 @@ require('./spirit.js');
 // each piece's text its bytes in base64. Its stream is sealed to k line by line, k handed over by face-open. A face
 // that cannot seal is answered as before, unsealed; it was warned that the relay can read it.
 
-const auth = spirit.require('spirit/relayAuth.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
 // Every upload goes out through the one outbound door (goal/G30.10): relayRequest.relayUpload, streamed.
-const relayUpload = spirit.require('spirit/relayRequest.js').relayUpload;
-const seal = spirit.require('spirit/seal.js');
+const relayUpload = spirit.requireScript('spirit/relayRequest.js').relayUpload;
+const seal = spirit.requireScript('spirit/seal.js');
 
 const FACE_PRIORITY = { fs: 2, presence: 3, app: 4, stats: 5 };
 const FACE_PIECE = 64 * 1024;
@@ -168,7 +168,7 @@ function createFaceHome(opts) {
   const pieces = new Map();
   const PIECES_MAX = 64;
   const PIECE_WAIT_MS = 60000;
-  const PIECES_BYTES_MAX = PIECES_MAX * spirit.require('spirit/limits.js').BODY_MAX;
+  const PIECES_BYTES_MAX = PIECES_MAX * spirit.requireScript('spirit/limits.js').BODY_MAX;
   function piece(p, res) {
     const now = Date.now();
     pieces.forEach(function (v, k) { if (now - v.at > PIECE_WAIT_MS) pieces.delete(k); });
@@ -232,7 +232,7 @@ function createFaceHome(opts) {
       dropUpload(id);
       // ITS WORK FILE FROM THE ONE TEMP HELPER (goal/G47.1, the box: "nothing else builds a temp path"): a folder of its own
       // per transfer, spirit/upload/<id> under the node's own temp folder (the node's job is spirit), removed with the transfer.
-      const dir = spirit.require('spirit/tempFolder.js')('spirit/upload/' + id);
+      const dir = spirit.requireScript('spirit/tempFolder.js')('spirit/upload/' + id);
       const file = require('path').join(dir, 'part');
       try { fsm.writeFileSync(file, ''); } catch (e) { json(res, 500, { ok: false, code: 'not-saved', error: 'the work file could not be made: ' + e.message }); return; }
       uploads.set(id, { file: file, dir: dir, path: rel, size: size, of: of, next: 0, written: 0, at: nowMs() });
@@ -363,7 +363,7 @@ function createFaceHome(opts) {
     // the app servers' priority.
     // A tree change of a path no page may see is not sent (goal/G49.2).
     const c = job && job.id === 'spirit.fs' && job.data ? job.data.command : null;
-    if (c && c.path && !spirit.require('spirit/fs/fileSystem.js').fileServable(String(c.path))) return;
+    if (c && c.path && !spirit.requireScript('spirit/fs/fileSystem.js').fileServable(String(c.path))) return;
     toFaces(priorityOf(job) || FACE_PRIORITY.app, { event: 'job-updated', data: job });
   }
   // ONE SUBSCRIBER OF THE NODE'S EVENTS (goal/G40.6): the face's home side hears the events family, as the loopback
@@ -408,8 +408,8 @@ function createFaceHome(opts) {
     if (fsJob) {
       // A face is a page: the servable tree only (goal/G49.2; Andy: "it is at publish-to-clients time that !fileServable be the
       // filter").
-      const servable = spirit.require('spirit/fs/fileSystem.js').fileServable;
-      spirit.require('spirit/fs/script.js').commands().forEach(function (command) {
+      const servable = spirit.requireScript('spirit/fs/fileSystem.js').fileServable;
+      spirit.requireScript('spirit/fs/script.js').commands().forEach(function (command) {
         if (!servable(String(command.path))) return;
         face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { command: command } }) });
       });

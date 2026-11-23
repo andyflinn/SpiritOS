@@ -8,7 +8,7 @@ Its test is `./task.js`: a real Chrome on a scratch node's face page, with three
 
 ## Requirements
 
-- It loads through `spirit.require` and places itself at `spirit.required.spirit.element.monitor.task`, with a `create`.
+- It loads through `spirit.requireScript` and places itself at `spirit.required.spirit.element.monitor.task`, with a `create`.
 - For a run app it shows a row form: the app's icon and its label from its `<name>.json`, and a Run button.
 - For an app that is no run app, or one with no `<name>.json`, it shows nothing.
 - Pressed, Run is busy while the node is asked: disabled, with its turning mark (goal/G47.1, Q20).

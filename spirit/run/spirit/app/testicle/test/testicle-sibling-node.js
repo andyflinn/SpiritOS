@@ -23,6 +23,6 @@ function mine() {
 function one(rel) { test.run("node reads it as a script: node --check passes", 0.2, function () { try { return (function () { try { execFileSync(process.execPath, ['--check', path.join(RUN, rel)], { stdio: 'ignore' }); return true; } catch (e) { return false; } }()); } catch (e) { return false; } }, test.limit.quick); }
 // A SECOND DUMB CHECK, ONE A BROKEN SCRIPT FAILS (goal/G47.1; box v143: "each with a dumb test or two"; ./testicle.js: "handed
 // both, names both"): read as text, never loaded.
-function two(rel) { test.run("its first plain require is spirit.js", 0.2, function () { try { const m = /(^|[^.\w])require\(\s*['"]([^'"]+)['"]/m.exec(fs.readFileSync(path.join(RUN, rel), 'utf8')); return !m || /spirit\.js$/.test(m[2]) || false; } catch (e) { return false; } }, test.limit.quick); }
+function two(rel) { test.run("its first plain require is spirit.js", 0.2, function () { try { const m = /(^|[^.\w])require(?:Script)?\(\s*['"]([^'"]+)['"]/m.exec(fs.readFileSync(path.join(RUN, rel), 'utf8')); return !m || /spirit\.js$/.test(m[2]) || false; } catch (e) { return false; } }, test.limit.quick); }
 if (!GIVEN.length) mine().forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });
 else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });

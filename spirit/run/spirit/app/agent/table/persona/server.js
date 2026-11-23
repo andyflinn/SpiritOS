@@ -7,7 +7,7 @@ require('../../../../spirit.js');
 // SINCE goal/G41.26 a persona names its provider, kept as the job keeps its own (Andy, box: "agent.persona gains a provider
 // field"); not mandatory. Its bundle is kept as the job's is.
 // No description since goal/G41.21 (Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.").
-const { rowTable } = spirit.require('spirit/app/agent/table/rowTable.js');
+const { rowTable } = spirit.requireScript('spirit/app/agent/table/rowTable.js');
 
 module.exports = function (ctx) {
   return rowTable(ctx.db, {

@@ -123,12 +123,12 @@ test.run('the face page has its spirit', 0.2, async function () {
   c = await chromePage(where);
   if (c.error) return false;
   await c.send('Page.navigate', { url: N.base + '/face.html' });
-  return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000)) || false;
+  return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
 }, test.limit.long);
-test.run('it loads alone through spirit.require and mounts with create, handed a container, a script and a pick, answering destroy', 0.2, async function () {
+test.run('it loads alone through spirit.requireScript and mounts with create, handed a container, a script and a pick, answering destroy', 0.2, async function () {
   if (!N || !N.up) return false;
   if (!c || c.error || !c.evaluate) return false;
-  const loaded = await c.evaluate('window.spirit.ready.then(function () { return window.spirit.require("spirit/app/testicle/element/search/suite.js"); }).then(function () { return "loaded"; }, function () { return false; })');
+  const loaded = await c.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/app/testicle/element/search/suite.js"); }).then(function () { return "loaded"; }, function () { return false; })');
   if (loaded !== 'loaded') return false;
   made = await mount('zzBox', { script: A });
   return made === 'made' || false;

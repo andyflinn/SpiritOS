@@ -98,7 +98,7 @@ function world() {
     loadFile: function (p) { w.loads.push(String(p)); return Promise.resolve(null); },
     saveFile: function (p, text) { w.saves.push({ path: String(p), text: String(text) }); return Promise.resolve({ ok: true }); },
   };
-  // The agent server's interface, as spirit.require hands it: its debug call recorded, answered as the server does.
+  // The agent server's interface, as spirit.requireScript hands it: its debug call recorded, answered as the server does.
   w.calls = []; w.required = [];
   w.provider = [];
   w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); },
@@ -113,20 +113,20 @@ function load(w) {
   global.window = { spirit: { required: { spirit: { element: { workBench: w.workBench, tabContainer: w.tabContainer, search: { app: {} } }, app: { agent: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, branchPath: branchPath, isBrowser: function () { return true; },
     // A branch's api.js: its real companion data.js run on this window over the real data set, as the real api.js
     // requires it (goal/G47.1).
-    require: function (p) {
+    requireScript: function (p) {
       w.required.push(String(p));
       const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
       const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
       if (companion && fs.existsSync(path.join(RUN, companion))) vm.runInThisContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), { filename: companion });
       return Promise.resolve(p === AGENT_FAMILY ? w.family : true);
     } } };
-  global.window.spirit.ready = Promise.resolve(Object.assign(Object.create(global.window.spirit), { agent: w.family }));
+  global.window.spirit.readyPromise = Promise.resolve(Object.assign(Object.create(global.window.spirit), { agent: w.family }));
   global.spirit = global.window.spirit;
   w.win = global.window;
-  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any app runs.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
-  global.window.spirit.node = { key: 'KEY+AGENT/APP==' };
-  global.window.spirit.required.spirit.data.homeNode(global.window.spirit.node.key);
+  global.window.spirit.nodeFacts = { key: 'KEY+AGENT/APP==' };
+  global.window.spirit.required.spirit.data.homeNode(global.window.spirit.nodeFacts.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app places itself by installSpiritElement as it runs.
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(global.window.spirit);
@@ -374,7 +374,7 @@ test.run('the server\'s tool on the right strip takes ⚙', 0.2, function () {
   const SERVER_TOOL = X.SERVER_TOOL;
   return !!SERVER_TOOL && /⚙/.test(String(SERVER_TOOL.icon)) && !/🐞/.test(String(SERVER_TOOL.icon)) ? true : false;
 }, test.limit.quick);
-test.run('its mount loads spirit/element/search/app/serverDEBUG.js through spirit.require', 0.2, async function () {
+test.run('its mount loads spirit/element/search/app/serverDEBUG.js through spirit.requireScript', 0.2, async function () {
   if (!X.SERVER_TOOL) return false;
   const w = X.w;
   global.window.spirit.required.spirit.element.search.app.serverDEBUG = { create: function (into, o) { SD.debugs.push({ into: into, o: o || {} }); SD.made.push('serverDEBUG'); return { destroy: function () {} }; } };
@@ -414,14 +414,14 @@ test.run('the server tool makes the icon, then the label, for the agent, above s
 }, test.limit.quick);
 
 // ── it bootstraps its own components ──
-test.run('with no workBench on the page it loads spirit/element/workBench.js through spirit.require, then builds one', 0.2, async function () {
+test.run('with no workBench on the page it loads spirit/element/workBench.js through spirit.requireScript, then builds one', 0.2, async function () {
   if (X.R.length !== 2) return false;
   const w3 = world();
   const required = [];
   const def3 = load(w3);
   // No workBench on the page (goal/G43.32: an element stands at spirit.required.<its path>).
   global.window.spirit.required.spirit.element = {};
-  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.required.spirit.element.workBench = w3.workBench; global.window.spirit.required.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); global.window.spirit.required.spirit.element.workBench = w3.workBench; global.window.spirit.required.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
   def3.create(box('app3')); await settle();
   return required.indexOf('spirit/element/workBench.js') !== -1 && w3.created.length === 1 ? true : false;
 }, test.limit.quick);
@@ -514,11 +514,11 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
     c = await chromePage(where);
     if (c.error) { STOP = true; return false; }
     await c.send('Page.navigate', { url: N.base + '/face.html' });
-    await until(function () { return c.evaluate('!!(window.spirit && window.spirit.event)'); }, 20000);
+    await until(function () { return c.evaluate('!!(window.spirit && window.spirit.eventStream)'); }, 20000);
     LEAF = 'function leaf(w, within) { var root = within ? document.querySelector(within) : document; if (!root) return null; return Array.prototype.slice.call(root.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === w && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === w; }); })[0] || null; }';
     press = function (words, within) { return c.evaluate('(function () { ' + LEAF + ' var e = leaf(' + JSON.stringify(words) + ', ' + JSON.stringify(within || '') + '); if (!e) return false; e.click(); return true; }())'); };
     // The Agent opens from the appSelector's tiles, as the shell app makes them (goal/G43.13).
-    await c.evaluate('(function () { var b = document.createElement("div"); b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { spirit.required.spirit.element.script.create(b, { face: "tiles" }); return 1; }); }())');
+    await c.evaluate('(function () { var b = document.createElement("div"); b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { spirit.required.spirit.element.script.create(b, { face: "tiles" }); return 1; }); }())');
     await until(function () { return press('Agent'); }, 20000);
     await until(function () { return c.evaluate('!!document.querySelector("[data-tool=provider]")'); }, 10000);
     appOpen = await c.evaluate('!!document.querySelector("[data-tool=provider]")');
@@ -905,7 +905,7 @@ async function tabOpens(kind, row) {
       escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
       branchPath: branchPath, isBrowser: function () { return true; },
       fs: { loadFile: function () { return Promise.reject(new Error('none')); }, saveFile: function () { return Promise.resolve(); } },
-      tree: function () { return Promise.resolve({}); },
+      apiTree: function () { return Promise.resolve({}); },
       // goal/G43.32: the stand-ins stand where the elements read them, at spirit.required.<their path>.
       required: { spirit: { app: {}, element: nestSearch({
         // The recorder: the box each list is made in, and whether it is a dropdown.
@@ -919,7 +919,7 @@ async function tabOpens(kind, row) {
       }) } },
       // A branch's api.js, a node branch's or an app's: its real companion data.js is run on this page once, over the real
       // data set, as the real api.js requires it (goal/G47.1).
-      require: function (p) {
+      requireScript: function (p) {
         const rel = String(p).replace(/^\/+/, '');
         const m = /^spirit\/(.+)\/api\.js$/.exec(rel);
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
@@ -929,14 +929,14 @@ async function tabOpens(kind, row) {
         return Promise.resolve({});
       },
     };
-    win.spirit.ready = Promise.resolve(win.spirit);
+    win.spirit.readyPromise = Promise.resolve(win.spirit);
     // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file places itself by installSpiritElement as it runs.
     require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
     vm.createContext(win);
-    win.spirit.require('spirit/data.js');
-    // Its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
-    win.spirit.node = { key: 'KEY+AGENT/BOXES==' };
-    win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
+    win.spirit.requireScript('spirit/data.js');
+    // Its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any app runs.
+    win.spirit.nodeFacts = { key: 'KEY+AGENT/BOXES==' };
+    win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
     vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
     return { document: document, win: win, panes: panes };
   }

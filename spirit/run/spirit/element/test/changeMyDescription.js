@@ -60,7 +60,7 @@ function world(answer) {
       } } } } },
       // Each path kept; the node family's api.js requires its companion data.js (goal/G41.28, G47.1), as the real one
       // does: the real file, run once on this window over the real data set.
-      require: function (p) {
+      requireScript: function (p) {
         w.required.push(String(p));
         if (p === 'spirit/node/api.js' && !w.ran) { w.ran = true; vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'node', 'data.js'), 'utf8'), win, { filename: 'spirit/node/data.js' }); }
         return Promise.resolve(true);
@@ -72,29 +72,29 @@ function world(answer) {
   win.window = win;
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
-  const recorder = win.spirit.require;
+  const recorder = win.spirit.requireScript;
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(win.spirit);
-  const pageRequire = win.spirit.require;
-  win.spirit.require = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
+  const pageRequire = win.spirit.requireScript;
+  win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   win.spirit.required.spirit.element.fieldInput = { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } };
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'type', 'string', 'description.js'), 'utf8'), win, { filename: 'description.js' });
-  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
-  win.spirit.node = { key: 'KEY+DESCRIPTION/NODE==' };
-  win.spirit.required.spirit.data.homeNode(win.spirit.node.key);
+  win.spirit.nodeFacts = { key: 'KEY+DESCRIPTION/NODE==' };
+  win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24): no api is handed. The page's spirit object stands in: its escapeHtml, its
   // outcome as spirit.js has it, and the node family's setDescription, which records every call and answers as the node would
   // (its body, or a refusal thrown with its status and body).
   win.spirit.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
-  win.spirit.outcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
-  win.spirit.node.setDescription = function (args) {
+  win.spirit.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
+  win.spirit.nodeFacts.setDescription = function (args) {
     w.calls.push({ name: 'node.setDescription', args: args });
     const a = answer('node.setDescription', args);
     return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
   };
-  win.spirit.ready = Promise.resolve(win.spirit);
+  win.spirit.readyPromise = Promise.resolve(win.spirit);
   // goal/G43.32: it stands at its path.
   w.E = win.spirit.required.spirit.element; w.win = win;
   return w;

@@ -27,5 +27,5 @@
     return '<span class="progress-bar">' + tag + (words ? ' <span class="job-manifest-note">' + esc(words) + '</span>' : '') + '</span>';
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/progressBar.js', progressBar); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/progressBar.js', progressBar); });
 }());

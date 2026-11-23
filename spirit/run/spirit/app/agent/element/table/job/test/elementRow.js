@@ -31,7 +31,7 @@ function world() {
   const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
   // The tables' row element, as its own file places itself: by the one helper, at spirit.required.<its path>.
   helper(global.window.spirit, ROW, { create: function (container, o) { const m = { container: container, o: o, destroyed: false, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
     if (p === ROW && W.held) return W.held.promise;
     return Promise.resolve(true);

@@ -22,8 +22,8 @@
 require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
-const appServer = spirit.require('spirit/server/app.js');
-const limits = spirit.require('spirit/limits.js');
+const appServer = spirit.requireScript('spirit/server/app.js');
+const limits = spirit.requireScript('spirit/limits.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -127,11 +127,11 @@ function handle(a) {
   writeSet(set);
   return publish({ icons: { glyph: have, removed: true } }).then(function () { return { deleted: true, glyph: have }; });
 }
-// THE PUBLISH IS ON THE NODE BEFORE THE ANSWER: a one-shot run is ended once it has answered, and spirit.event.publish
+// THE PUBLISH IS ON THE NODE BEFORE THE ANSWER: a one-shot run is ended once it has answered, and spirit.eventStream.publish
 // posts without waiting, so its post would die with the run. The same post, event.publish with this job's id and the row
-// as its app (spirit.js), awaited: spirit.job.report({ app }). One that cannot reach the node leaves the answer standing:
+// as its app (spirit.js), awaited: spirit.processJob.report({ app }). One that cannot reach the node leaves the answer standing:
 // the file is written, the next search reads it.
-function publish(row) { return Promise.resolve(spirit.job.report({ app: row })).then(function () {}, function () {}); }
+function publish(row) { return Promise.resolve(spirit.processJob.report({ app: row })).then(function () {}, function () {}); }
 
 appServer.serve({
   icon: {

@@ -23,7 +23,7 @@ test.run('spirit/type/string/IDNew.js exists and loads', 0.2, function () {
 }, test.limit.quick);
 test.run('isValid answers true for a well-formed key made just now, which no node has seen', 0.4, function () {
   if (!T) return false;
-  try { fresh = spirit.require('spirit/relayAuth.js').generateIdentity('zz-idnew').publicKey; } catch (e) { return false; }
+  try { fresh = spirit.requireScript('spirit/relayAuth.js').generateIdentity('zz-idnew').publicKey; } catch (e) { return false; }
   try { return T.isValid(fresh) === true || false; } catch (e) { return false; }
 }, test.limit.quick);
 test.run('isValid throws an error for an item name, an empty string, a key cut short and a key with a space', 0.4, function () {

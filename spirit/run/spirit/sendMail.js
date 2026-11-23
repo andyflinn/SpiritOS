@@ -26,7 +26,7 @@ function createSender(rootDir, options) {
   const name = String(v.driver || '').trim();
   if (!/^[a-z][a-zA-Z0-9]*$/.test(name) || !fs.existsSync(path.join(DRIVERS, name + '.js'))) return null;
   let made = null;
-  try { made = spirit.require('spirit/sendMail/' + name + '.js').create(v, options && options.fetch); } catch (e) { made = null; }
+  try { made = spirit.requireScript('spirit/sendMail/' + name + '.js').create(v, options && options.fetch); } catch (e) { made = null; }
   return made && typeof made.send === 'function' ? { driver: name, send: made.send } : null;
 }
 

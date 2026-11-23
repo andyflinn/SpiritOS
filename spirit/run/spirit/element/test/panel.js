@@ -136,7 +136,7 @@ test.run('a Chrome page opens', 0.2, async function () {
 const open = async function () {
   await c.evaluate('window.__zzOld = true').catch(function () {});
   await c.send('Page.navigate', { url: N.base + '/face.html' });
-  const up = await until(function () { return c.evaluate('!window.__zzOld && !!(window.spirit && window.spirit.ready && window.spirit.event)'); }, 20000);
+  const up = await until(function () { return c.evaluate('!window.__zzOld && !!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000);
   await c.evaluate(HANDS);
   return up;
 };
@@ -150,7 +150,7 @@ test.run('the face shell has its spirit', 0.2, async function () {
 const T = function (expr) { return c.evaluate('window.__t.' + expr); };
 const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
 const selector = function (face) {
-  return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+  return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__sel = spirit.required.spirit.element.script.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
 };
 test.run('the tiles show Files', 0.2, async function () {
   if (!N || !N.up) return false;

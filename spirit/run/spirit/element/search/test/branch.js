@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/search/test/branch.js
 // The tests of spirit/element/search/branch.js, and of no other module (spec: ./branch.md; goal/G41.14). The browser
 // file runs in node on a BARE window (rule/26: "every shell element loads its own elements dynamically through the ...
-// spirit.require functionality"): no element is on the page until the selector requires it. Its list,
+// spirit.requireScript functionality"): no element is on the page until the selector requires it. Its list,
 // search/branch/list.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
 
 const fs = require('fs');
@@ -42,11 +42,11 @@ test.run('the branch selector runs on a bare window', 0.2, async function () {
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: element, addEventListener: function () {}, removeEventListener: function () {} };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({}), element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     required.push(String(p));
     if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); }
     return Promise.resolve(true);

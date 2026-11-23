@@ -5,7 +5,7 @@ the app-server selector keep the node's api tree in an apiTree branch of spirit.
 changes, and the family, verb and app-server selectors draw from it?"* *"yes."*), and its card. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside the
 real `spirit/data.js`, with a planted `apiTreeIndex`; the test reads through `spirit.required.spirit.data.node.data` alone.
 
-- In node, requiring its branch's api.js, `spirit.require('spirit/node/api.js')`, puts it at `spirit.required.spirit.data.node.data`
+- In node, requiring its branch's api.js, `spirit.requireScript('spirit/node/api.js')`, puts it at `spirit.required.spirit.data.node.data`
   (the api.js is the one script that requires its data.js).
 - `card.keep` keeps node.card's answer, its name and description; a field a save stored is merged in; an answer that
   is not ok, or no object, keeps nothing. `card.get()`, `card.watch(fn)` (and its release).

@@ -156,7 +156,7 @@ test.run('"api" at the root, where spirit has no api.js, answers a JSON error', 
   const p = await go('api');
   return refused(p, '') || false;
 }, test.limit.slow);
-test.run('"api" at spirit.node lists its verbs in JSON, by name only and sorted, as its api.js names them', 0.4, async function () {
+test.run('"api" at spirit.nodeFacts lists its verbs in JSON, by name only and sorted, as its api.js names them', 0.4, async function () {
   if (!up()) return false;
   await go('path node');
   if (at() !== 'node') return false;
@@ -165,7 +165,7 @@ test.run('"api" at spirit.node lists its verbs in JSON, by name only and sorted,
   const got = json(p.out);
   return (!!want && want.length > 0 && Array.isArray(got) && JSON.stringify(got) === JSON.stringify(want)) || false;
 }, test.limit.slow);
-test.run('"api card" at spirit.node answers card.json\'s description and request in JSON, with "usage" at the very bottom', 0.4, async function () {
+test.run('"api card" at spirit.nodeFacts answers card.json\'s description and request in JSON, with "usage" at the very bottom', 0.4, async function () {
   if (!up() || at() !== 'node') return false;
   const p = await go('api card');
   return describes(p.out, 'card', fileOf('node', 'card')) || false;
@@ -176,7 +176,7 @@ test.run('a verb\'s answer is printed as JSON.stringify(it, null, 2)', 0.4, asyn
   const o = json(p.out);
   return (!!o && typeof o.usage === 'string' && String(p.out).trim() === JSON.stringify(o, null, 2)) || false;
 }, test.limit.slow);
-test.run('"api nope", a verb spirit.node does not have, answers a JSON error, and the path stays', 0.4, async function () {
+test.run('"api nope", a verb spirit.nodeFacts does not have, answers a JSON error, and the path stays', 0.4, async function () {
   if (!up() || at() !== 'node') return false;
   const p = await go('api nope');
   return refused(p, 'node') || false;
@@ -223,7 +223,7 @@ async function call(verb, args) {
   } catch (e) { return { status: 0, body: null }; }
 }
 const answered = function (p) { const o = json(p.out); return p.ended && !!o && typeof o === 'object' && o.ok !== false && String(p.out).trim() === JSON.stringify(o, null, 2) ? o : null; };
-test.run('at spirit.node, "card" executes node.card and shows its answer as JSON.stringify(answer, null, 2)', 0.4, async function () {
+test.run('at spirit.nodeFacts, "card" executes node.card and shows its answer as JSON.stringify(answer, null, 2)', 0.4, async function () {
   if (!up()) return false;
   await go('path <<');
   await go('path node');

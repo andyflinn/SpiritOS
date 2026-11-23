@@ -2,8 +2,8 @@
 
 // spirit/run/spirit/app/desk/: the test of the desk server's family interface (test/api.js in its family folder)
 // The tests of the desk server's family interface, spirit/app/desk/api.js (goal/G43.27), and of no other module (spec: ./api.md; goal/G41.11). The interface
-// is required as the node reads it, and every verb is checked by spirit.js's own check (spirit.check, its rules list
-// spirit.rules), the one the spirit object runs before a call leaves. The server's source is read as text only, to find
+// is required as the node reads it, and every verb is checked by spirit.js's own check (spirit.checkArgs, its rules list
+// spirit.ruleNames), the one the spirit object runs before a call leaves. The server's source is read as text only, to find
 // each verb's handler.
 
 const fs = require('fs');
@@ -18,8 +18,8 @@ const isPlain = function (v) { return v !== null && typeof v === 'object' && !Ar
 
 // What the world test loads, read by every test after it.
 const W = { api: null, verbs: {}, names: [] };
-// spirit.check answers null when the call passes, else a refusal carrying its code.
-const call = function (verb, args) { return spirit.check(verb, W.verbs[verb], args); };
+// spirit.checkArgs answers null when the call passes, else a refusal carrying its code.
+const call = function (verb, args) { return spirit.checkArgs(verb, W.verbs[verb], args); };
 const passes = function (verb, args) { return call(verb, args) === null; };
 const refusedAs = function (verb, args) { const r = call(verb, args); return r ? r.code : ''; };
 const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
@@ -52,7 +52,7 @@ test.run('every rule is one of spirit.js\'s standard rules, a trailing question 
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
       // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
-      if ((spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) badRule++;
+      if ((spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) badRule++;
     });
   });
   return badRule === 0 || false;

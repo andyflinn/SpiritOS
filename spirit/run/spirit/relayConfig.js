@@ -49,7 +49,7 @@ require('./spirit.js');
 // computed, so the figures a relay runs on are always readable on the box
 // rather than implied by an absent file.
 
-var relayLimits = spirit.require('spirit/relayLimits.js');
+var relayLimits = spirit.requireScript('spirit/relayLimits.js');
 
 // `text` is the file's contents, or null when there is no file.
 // `measured` is relayLimits.measure()'s answer — { totalMB, availableMB,

@@ -8,7 +8,7 @@ read as text, and its one inline script is run on a window of its own with a pla
 - `make`: HTML typed `text/html; charset=utf-8`; null for an address that is not `.html`.
 - The page: `<script src="/spirit.js">` and one inline script, nothing more, `/spirit.js` first; no comments; `/shell.css`
   linked; `#mount-box`; the module's name as its title.
-- The module is loaded through `spirit.require` after `spirit.start`, alone (rule/26).
+- The module is loaded through `spirit.requireScript` after `spirit.startPage`, alone (rule/26).
 - An element: the one at `spirit.required.<its path>`, created with the box alone, no options (box v23); `window.spiritMount`
   says `mounted`, holds the box, and its `destroy` is the element's.
 - An app (`spirit.shell.activateApp`): mounted into the box with an api, rendered, said mounted; the api's `verb` asks the

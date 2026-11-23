@@ -10,11 +10,11 @@
 // the jobs family's cache; a press asks the server's DEBUG {on}, and the job's next change redraws it.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js','spirit/app/api.js','spirit/job/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/app/api.js','spirit/job/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  window.spirit.require('spirit/element/search/app/rowFormToggle.js');
-  window.spirit.require('spirit/app/api.js');
-  window.spirit.require('spirit/job/api.js');
+  window.spirit.requireScript('spirit/element/search/app/rowFormToggle.js');
+  window.spirit.requireScript('spirit/app/api.js');
+  window.spirit.requireScript('spirit/job/api.js');
 
   var LIVE = { running: true, pending: true };
 
@@ -37,7 +37,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     function press() {
       var want = !on();
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
-      return Promise.resolve(S.require(S.branchPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
+      return Promise.resolve(S.requireScript(S.branchPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
     }
     var t = S.required.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
@@ -51,17 +51,17 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
       t.set(now, 'turn ' + (now ? 'off' : 'on') + ' DEBUG ' + label());
       shown(true);
     }
-    Promise.resolve(S.require('spirit/job/api.js')).then(function () {
+    Promise.resolve(S.requireScript('spirit/job/api.js')).then(function () {
       if (gone) return;
       offJobs = S.required.spirit.data.job.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
       paint();
     }, function () { /* no jobs, no server to show */ });
     var offRow = S.required.spirit.data.app.data.watch(key, paint);
-    S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+    S.readyPromise.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
       var j = JSON.parse(String(text));
       serves = !!(j.node && j.node.mount === true);
       paint();
-      if (serves) return Promise.resolve(S.require(S.branchPath(key))).then(function (fam) { return fam.DEBUG({}); }).then(function (r) {
+      if (serves) return Promise.resolve(S.requireScript(S.branchPath(key))).then(function (fam) { return fam.DEBUG({}); }).then(function (r) {
         if (!job()) asked = !!(r && r.debug === true);
         paint();
       }, function () { /* not running: it stays hidden */ });
@@ -69,5 +69,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     return { destroy: function () { gone = true; offJobs(); offRow(); t.destroy(); } };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/serverDEBUG.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/serverDEBUG.js', { create: create }); });
 }());

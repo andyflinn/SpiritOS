@@ -43,7 +43,7 @@ test.run('the addresses stay: /face.html, /spirit.js, /shell/boot.js and /favico
   return pages.pageFile('face.html') === 'spirit/shell/face.html' && pages.pageFile('spirit.js') === 'spirit/spirit.js' && pages.pageFile('shell/boot.js') === 'spirit/shell/boot.js' && pages.pageFile('favicon.svg') === 'spirit/shell/ghost.svg' ? true : false;
 }, test.limit.quick);
 // goal/G43.18, box v29: "The login is spirit.login, in spirit.js, no app ... shell/login/ and its login.json go."
-test.run('shell/login/ is gone: the login is spirit.login', 0.2, function () {
+test.run('shell/login/ is gone: the login is spirit.faceLogin', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'shell', 'login')) || false;
 }, test.limit.quick);
 test.run('spirit.js loads shell/boot.js on a face page', 0.2, function () {
@@ -115,7 +115,7 @@ test.run('no desktop of its own: no drawDesktop, readFace, listApps, openApp, lo
   if (!boot) return false;
   return !(/function (drawDesktop|readFace|listApps|openApp|loadApp|serverUp)\(/).test(boot) || false;
 }, test.limit.quick);
-test.run('no link and no relay login of its own: spirit.link and spirit.login are spirit.js\'s', 0.2, function () {
+test.run('no link and no relay login of its own: spirit.faceLink and spirit.faceLogin are spirit.js\'s', 0.2, function () {
   const boot = code('spirit/shell/boot.js');
   if (!boot) return false;
   return !(/function (postCall|uploadSave)\(/).test(boot) && !(/'\/face\/api'/).test(boot) ? true : false;
@@ -152,7 +152,7 @@ test.run('every app manifest names its icon as the glyph itself', 0.2, function 
   return !keyed.length || false;
 }, test.limit.quick);
 
-// ONE PLACE ONLY MANAGES THE STREAM (goal/G47.1, box v148: "spirit.js, which holds the page's one stream (spirit.event);
+// ONE PLACE ONLY MANAGES THE STREAM (goal/G47.1, box v148: "spirit.js, which holds the page's one stream (spirit.eventStream);
 // spirit/shell/boot.js keeps no stream loop of its own and opens the face's stream through spirit.js, handing only the face's
 // address and its line format"). Read as code, its comments left out.
 test.run('boot.js keeps no stream loop of its own: it reads no stream body and fetches no /face/stream itself', 0.8, function () {

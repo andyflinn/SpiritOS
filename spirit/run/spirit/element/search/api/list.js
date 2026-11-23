@@ -27,9 +27,9 @@
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): the list, its row and its detail,
   // the reader of the api tree, and the node family's cache manager, the keeper of the api tree (goal/G41.28).
-  var parts = Promise.all([window.spirit.require('spirit/element/search.js'), window.spirit.require('spirit/element/search/api/row.js'),
-    window.spirit.require('spirit/element/search/api/detail.js'), window.spirit.require('spirit/client/apiTreeIndex.js'),
-    window.spirit.require('spirit/node/api.js')]);
+  var parts = Promise.all([window.spirit.requireScript('spirit/element/search.js'), window.spirit.requireScript('spirit/element/search/api/row.js'),
+    window.spirit.requireScript('spirit/element/search/api/detail.js'), window.spirit.requireScript('spirit/client/apiTreeIndex.js'),
+    window.spirit.requireScript('spirit/node/api.js')]);
 
   // THE NODE'S API TREE IN spirit.required.spirit.data (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
   // apiTree branch of spirit.required.spirit.data, read again when a server job changes, and the family, verb and app-server selectors
@@ -42,7 +42,7 @@
   }
   var reading = null;
   function readOwnTree() {
-    reading = reading || parts.then(function () { return spirit.ready; }).then(function (s) { return s.tree(); }).then(function (tree) {
+    reading = reading || parts.then(function () { return spirit.readyPromise; }).then(function (s) { return s.tree(); }).then(function (tree) {
       reading = null;
       var t = tree && typeof tree === 'object' ? tree : null;
       keepTree(t);
@@ -54,7 +54,7 @@
     if (D && typeof D.addTranslator === 'function') D.addTranslator({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
   }
   if (window.spirit && window.spirit.required.spirit.data) follow(window.spirit.required.spirit.data);
-  else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('spirit/data.js')).then(function () { follow(window.spirit.required.spirit.data); }, function () {});
+  else if (window.spirit && window.spirit.requireScript) Promise.resolve(window.spirit.requireScript('spirit/data.js')).then(function () { follow(window.spirit.required.spirit.data); }, function () {});
 
   function createFamilyList(options) {
     options = options || {};
@@ -143,5 +143,5 @@
 
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself").
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api/list.js', { create: function (container, options) { var root = createFamilyList(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api/list.js', { create: function (container, options) { var root = createFamilyList(options); container.appendChild(root); return root; } }); });
 })();

@@ -38,7 +38,7 @@ function world() {
     W.tables.push(t); return t;
   } });
   helper(global.window.spirit, ROW, { create: function (box, id, added, detail) { const r = { box: box, id: id, added: added, detail: detail }; W.rows.push(r); return r; } });
-  global.window.spirit.require = function (p) {
+  global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
     if (W.held) return W.held.promise;
     return Promise.resolve(true);

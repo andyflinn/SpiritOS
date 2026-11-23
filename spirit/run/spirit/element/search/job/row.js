@@ -18,7 +18,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the shared row element, the icon element, the progress bar.
-  ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/element/progressBar.js'].forEach(function (p) { S.require(p); });
+  ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/element/progressBar.js'].forEach(function (p) { S.requireScript(p); });
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -106,5 +106,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/row.js', { create: create, kindOf: kindOf, STATUS_ICON: STATUS_ICON, mark: mark, actionOf: actionOf }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/row.js', { create: create, kindOf: kindOf, STATUS_ICON: STATUS_ICON, mark: mark, actionOf: actionOf }); });
 }());

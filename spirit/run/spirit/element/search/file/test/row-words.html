@@ -37,7 +37,7 @@ function read(host, parts) {
   return out;
 }
 window.ready = function () {
-  return Promise.resolve(spirit.start()).then(function () { return spirit.require('spirit/element/search/file/row.js'); }).then(function () { return wait(800); }).then(function () { return 'ready'; });
+  return Promise.resolve(spirit.startPage()).then(function () { return spirit.requireScript('spirit/element/search/file/row.js'); }).then(function () { return wait(800); }).then(function () { return 'ready'; });
 };
 window.row = function (p, kind) {
   var host = made[p];

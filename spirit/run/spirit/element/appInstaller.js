@@ -40,7 +40,7 @@
       var b = host.querySelector('button');
       if (b) b.addEventListener('click', press);
     }
-    Promise.resolve(sp().require('spirit/app/api.js')).then(function () {
+    Promise.resolve(sp().requireScript('spirit/app/api.js')).then(function () {
       if (gone) return;
       render();
       var A = reads();
@@ -61,5 +61,5 @@
     return createForApp(host, app[1]);
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/appInstaller.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/appInstaller.js', { create: create }); });
 }());

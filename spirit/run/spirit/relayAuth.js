@@ -15,7 +15,7 @@ const os = require('os');
 // What a label and a description may be, said once for both sides of the
 // wire. It requires nothing at all — that is what lets the browser have
 // the same copy — so this is another one-way edge.
-const fieldRules = spirit.require('spirit/fieldRules.js');
+const fieldRules = spirit.requireScript('spirit/fieldRules.js');
 
 // ── RESERVED_NAME = 'relay' STOOD HERE ───────────────────────────────
 //

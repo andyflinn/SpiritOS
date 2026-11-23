@@ -18,11 +18,11 @@
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the suite search and testicle's interface.
-  var parts = Promise.all(['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.require(p); }));
+  var parts = Promise.all(['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.requireScript(p); }));
   // A NODE WITH NO TESTICLE refuses its interface: the detail says so below its title; the refusal is never left unhandled.
   parts.catch(function () {});
 
@@ -45,7 +45,7 @@
         if (gone || !F) return;
         ownLine.textContent = F.ready() && !F.file(own) ? own : '';
       };
-      Promise.resolve(S.require('spirit/fs/api.js')).then(function () {
+      Promise.resolve(S.requireScript('spirit/fs/api.js')).then(function () {
         if (gone) return;
         drawOwn();
         release = S.required.spirit.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
@@ -72,5 +72,5 @@
     };
   }
 
-  S.require('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/scriptDetail.js', { create: create }); });
+  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/scriptDetail.js', { create: create }); });
 }());

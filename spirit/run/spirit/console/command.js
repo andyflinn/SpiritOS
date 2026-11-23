@@ -54,7 +54,7 @@ function shown(p) { return p ? 'spirit.' + p : 'spirit'; }
 
 // Whether spirit/<the path's folders> is there, as the node's fs stat answers.
 function there(p) {
-  return spirit.require(spirit.branchPath('fs')).then(function (f) { return f.stat({ path: 'spirit/' + p.split('.').join('/') }); })
+  return spirit.requireScript(spirit.branchPath('fs')).then(function (f) { return f.stat({ path: 'spirit/' + p.split('.').join('/') }); })
     .then(function () { return true; }, function () { return false; });
 }
 
@@ -94,7 +94,7 @@ function pathCommand(s, arg) {
 // a verb: it returns that verbs command-line-format in json, human and machine readable, with a field \"usage\" at the very
 // bottom"; Andy: "the console command: \"api search\" will return a JSON.stringify(search,null,2) desription"). The branch
 // at the path is spirit/<its folders>/api.js, asked whether it is there through the node's fs stat and loaded through
-// spirit.require; its verbs are its own verbs table. One verb is its <verb>.json as the node's fs load serves it, with usage
+// spirit.requireScript; its verbs are its own verbs table. One verb is its <verb>.json as the node's fs load serves it, with usage
 /// added last: the line a person types, each argument a placeholder named by its rule in the branch's own verbs table, an
 // optional one in brackets.
 function apiFile(p) { return 'spirit/' + p.split('.').join('/') + '/api.js'; }
@@ -102,8 +102,8 @@ function apiFile(p) { return 'spirit/' + p.split('.').join('/') + '/api.js'; }
 function apiAt(p) {
   if (!p) return Promise.resolve(null);
   const file = apiFile(p);
-  return spirit.require(spirit.branchPath('fs')).then(function (f) { return f.stat({ path: file }); }).then(function () {
-    spirit.require(file);
+  return spirit.requireScript(spirit.branchPath('fs')).then(function (f) { return f.stat({ path: file }); }).then(function () {
+    spirit.requireScript(file);
     const at = file.replace(/\.js$/, '').split('/').reduce(function (o, k) { return o && o[k]; }, spirit.required);
     return at && at.verbs && typeof at.verbs === 'object' ? at : null;
   }, function () { return null; });
@@ -118,7 +118,7 @@ function served(p) {
   const m = /^app\.([A-Za-z0-9_-]+)$/.exec(p);
   if (!m) return Promise.resolve(false);
   const file = 'spirit/app/' + m[1] + '/' + m[1] + '.json';
-  return spirit.require(spirit.branchPath('fs')).then(function (f) { return f.load({ path: file }); }).then(function (r) {
+  return spirit.requireScript(spirit.branchPath('fs')).then(function (f) { return f.load({ path: file }); }).then(function (r) {
     let manifest = null;
     try { manifest = JSON.parse(String((r && r.text) || '')); } catch (e) { manifest = null; }
     return !!(manifest && manifest.node && manifest.node.mount === true);
@@ -143,7 +143,7 @@ function apiCommand(s, verb, line) {
     if (!verb) { logged(s, line); return { ok: true, out: JSON.stringify(Object.keys(verbs).sort(), null, 2), path: s.path }; }
     if (!Object.prototype.hasOwnProperty.call(verbs, verb)) return refused(s, 'no-such-verb', 'no such verb at ' + shown(s.path) + ': ' + verb);
     const file = 'spirit/' + s.path.split('.').join('/') + '/' + verb + '.json';
-    return spirit.require(spirit.branchPath('fs')).then(function (f) { return f.load({ path: file }); }).then(function (r) {
+    return spirit.requireScript(spirit.branchPath('fs')).then(function (f) { return f.load({ path: file }); }).then(function (r) {
       const j = JSON.parse(String((r && r.text) || ''));
       const out = Object.assign({}, j, { usage: usageOf(verb, verbs[verb]) });
       logged(s, line);
@@ -195,7 +195,7 @@ function valueOf(rule, text) {
 }
 // EXECUTING A VERB (the box, ## executing verbs: "at a branch, a line typed as its usage shows ... executes that verb, and
 // the console shows the json it returns, as JSON.stringify(answer,null,2)", "a verb the node refuses shows that refusal as
-// a json error"): the branch bound through spirit.require, the verb asked with the arguments typed name=value.
+// a json error"): the branch bound through spirit.requireScript, the verb asked with the arguments typed name=value.
 function verbCommand(s, verbs, words, line) {
   const verb = words[0];
   const rules = verbs[verb] || {};
@@ -211,7 +211,7 @@ function verbCommand(s, verbs, words, line) {
   // isn't the verb itself."): the name the branch's api.js gives it (functions), else the verb itself, as spirit.js binds it.
   return apiAt(s.path).then(function (at) {
     const named = at && at.functions && typeof at.functions[verb] === 'string' ? at.functions[verb] : verb;
-    return Promise.resolve(spirit.require(apiFile(s.path))).then(function (branch) { return branch[named](args); });
+    return Promise.resolve(spirit.requireScript(apiFile(s.path))).then(function (branch) { return branch[named](args); });
   }).then(function (answer) {
     logged(s, line);
     return { ok: true, out: JSON.stringify(answer === undefined ? null : answer, null, 2), path: s.path };
@@ -260,7 +260,7 @@ function matches(o, filters) {
 }
 // What of one log row a wait-row matches: the call's arguments, or for a listener's bundle each entry's row.
 function matchesOf(row, rows) {
-  const env = spirit.require('spirit/arrivals.js').envelopeOf(String(row.payload || ''));
+  const env = spirit.requireScript('spirit/arrivals.js').envelopeOf(String(row.payload || ''));
   if (!env || !env.body || typeof env.body !== 'object') return [];
   const out = [];
   rows.forEach(function (text) {
@@ -270,7 +270,7 @@ function matchesOf(row, rows) {
     const args = call && typeof call === 'object' ? call : {};
     const base = { wait: text, at: row.at, peer: row.peer || '', app: env.app, api: w.branch + '.' + w.verb };
     if (w.verb === 'listener' && typeof args.json === 'string') {
-      (spirit.require('spirit/streamBundle.js').unpack(args.json) || []).forEach(function (e) {
+      (spirit.requireScript('spirit/streamBundle.js').unpack(args.json) || []).forEach(function (e) {
         if (matches(e.row || {}, w.filters)) out.push(Object.assign({ entry: e }, base));
       });
     } else if (matches(args, w.filters)) out.push(Object.assign({ args: args }, base));
@@ -313,7 +313,7 @@ function waitCommand(s, words, line) {
   fs.writeFileSync(WAIT_LOCK, String(process.pid));
   const unlock = function () { try { if (Number(fs.readFileSync(WAIT_LOCK, 'utf8')) === process.pid) fs.unlinkSync(WAIT_LOCK); } catch (e) { /* gone */ } };
   process.once('exit', unlock);
-  const log = spirit.require('spirit/trafficLog.js').createTrafficLog({ rootDir: RUN });
+  const log = spirit.requireScript('spirit/trafficLog.js').createTrafficLog({ rootDir: RUN });
   // THE FIRST WAIT STARTS AT THE NEWEST ROW (the box): with no pointer, now.
   if (!s.since) { s.since = new Date().toISOString(); save(s); }
   const deadline = Date.now() + s.timeout * 1000;

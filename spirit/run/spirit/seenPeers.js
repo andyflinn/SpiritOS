@@ -127,7 +127,7 @@ function createSeenPeers(opts) {
   opts = opts || {};
   var nowFn = opts.now || Date.now;
   var maxBytes = opts.maxBytes || MAX_BYTES;
-  var store = opts.store || (opts.rootDir ? spirit.require('spirit/nodeStore.js').open(opts.rootDir) : null);
+  var store = opts.store || (opts.rootDir ? spirit.requireScript('spirit/nodeStore.js').open(opts.rootDir) : null);
   if (!store) throw new Error('seenPeers needs a store: pass rootDir or store');
   var rows = store.seen;
 

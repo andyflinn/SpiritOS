@@ -140,5 +140,5 @@
 
   var root = typeof window !== 'undefined' ? window : globalThis;
   root.spirit = root.spirit || {};
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/tabContainer.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/tabContainer.js', { create: create }); });
 }());

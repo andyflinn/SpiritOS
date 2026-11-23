@@ -40,10 +40,10 @@ function world() {
   const win = {
     // goal/G43.32: an element stands at spirit.required.<its path>, its parts there too.
     spirit: { required: { spirit: { element: E } }, escapeHtml: function (s) { return String(s); },
-      ready: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }),
+      readyPromise: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }),
       // A branch's api.js, as a page's: its real companion data.js run on this window, attaching itself to the data set, as
       // the real api.js requires it (goal/G47.1); the api tree is the node branch's (spirit.required.spirit.data.node.data).
-      require: function (p) {
+      requireScript: function (p) {
         w.required.push(String(p));
         const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
@@ -62,8 +62,8 @@ function world() {
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   pageData = win.spirit.required.spirit.data;
-  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
-  win.spirit.node = { key: 'nOdE+key/one==' };
+  // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
+  win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   vm.runInContext(SERVER_SRC, win, { filename: SERVER_FILE });

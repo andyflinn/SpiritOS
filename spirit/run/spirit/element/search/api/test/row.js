@@ -21,10 +21,10 @@ test.run('the row runs on a bare window, with a stand-in for the shared row elem
   if (!fs.existsSync(FILE)) return false;
   required = [];
   specs = [];
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve({}), element: {} } };
+  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
   require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  global.window.spirit.require = function (p) { required.push(String(p)); return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   const E = global.window.spirit.required.spirit.element;

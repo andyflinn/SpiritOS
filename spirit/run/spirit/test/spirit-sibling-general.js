@@ -96,7 +96,7 @@ TARGETS.forEach(function (b) {
   b.family = b.name;
 });
 
-// On the node, in a process of its own: each api.js required as every script is (spirit.require), and what that placed
+// On the node, in a process of its own: each api.js required as every script is (spirit.requireScript), and what that placed
 // and bound. Decided 8 (the box): "A branch's api.js is placed at spirit.required.spirit.<branch-path>.api and also binds
 // the branch." node -e: the arguments start at argv[1].
 const PLACED = `
@@ -105,7 +105,7 @@ const out = {};
 (async function () {
   for (const f of JSON.parse(process.argv[2])) {
     try {
-      const fam = await s.require(f);
+      const fam = await s.requireScript(f);
       let at = s.required; f.replace(/\\.js$/, '').split('/').forEach(function (k) { at = at && at[k]; });
       const decl = (at && at.verbs) || {};
       const names = (at && at.functions) || {};
@@ -295,7 +295,7 @@ if (withData.length) {
   // The one difference is the disk: no manager touches a file or the browser's storage.
   test.run('its data.js touches no file and no browser storage', 0.4, function () {
     return overAll(withData, function (b) {
-      const disk = /require\(\s*['"](fs|node:fs|path)['"]\s*\)|\b(writeFile|readFile|appendFile|localStorage|sessionStorage|indexedDB)\b/.exec(b.src);
+      const disk = /require(?:Script)?\(\s*['"](fs|node:fs|path)['"]\s*\)|\b(writeFile|readFile|appendFile|localStorage|sessionStorage|indexedDB)\b/.exec(b.src);
       return !disk;
     });
   }, test.limit.quick);
@@ -310,7 +310,7 @@ if (withData.length) {
   const apiAndData = withData.filter(function (b) { return !!b.api; });
   // The data.js paths its api.js requires by their written path, comments left out (this part's own reader: the one the
   // tree-wide check uses lives in another part's function and is not in reach here).
-  const requiresData = function (rel) { const out = []; const re = /\brequire\s*\(\s*['"`](spirit\/[^'"`]+\/data\.js)['"`]/g; const c = code(path.join(RUN, rel)); let m; while ((m = re.exec(c))) out.push(m[1]); return out; };
+  const requiresData = function (rel) { const out = []; const re = /\brequire(?:Script)?\s*\(\s*['"`](spirit\/[^'"`]+\/data\.js)['"`]/g; const c = code(path.join(RUN, rel)); let m; while ((m = re.exec(c))) out.push(m[1]); return out; };
   if (apiAndData.length) test.run('its api.js requires the data.js beside it', 0.4, function () {
     return overAll(apiAndData, function (b) { return requiresData(b.api).indexOf(b.data) !== -1; });
   }, test.limit.quick);
@@ -558,7 +558,7 @@ if (served.length) {
     }, test.limit.slow);
   }
 
-  // EACH data.js FETCHED BY ITS PATH (goal/G47.1, box v182: "It is loaded by that path with spirit.require, data.js exactly
+  // EACH data.js FETCHED BY ITS PATH (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript, data.js exactly
   // as api.js"; a -general test opens no browser).
   const found = served.filter(function (b) { return b.data; });
   if (found.length) {
@@ -1086,7 +1086,7 @@ function testReachRules(ARGS) {
 // production module loads or requires any test file, with the exception of DEBUG.js." Its name is its reach
 // (./TEST_SYSTEM.md): a -sibling- test beside spirit.js judges every production module in spirit/run/ and below.
 //
-// Judged in the code, comments left out: no require(), import(), spirit.require(), readFileSync() or createReadStream()
+// Judged in the code, comments left out: no require(), import(), spirit.requireScript(), readFileSync() or createReadStream()
 // of a path into a test/ folder. A path is read from the call's own text, its string pieces joined as path.join joins
 // them, so path.join(__dirname, 'test', 'x.js') is caught as 'test/x.js' is. Running a suite as its own process (spawn,
 // execFile, fork) loads nothing into the module, and is not asked: the desk and its verifier run suites by their path.
@@ -1281,7 +1281,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 // (spirit/data.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
-//   subs:  every spirit.event.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
+//   subs:  every spirit.eventStream.subscribe and spirit.required.spirit.data.watchPath (a family view's, spirit.required.spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
@@ -1547,9 +1547,9 @@ function ignoredByGit(rel) {
   try { require('child_process').execFileSync('git', ['check-ignore', '-q', '--no-index', rel], { cwd: REPO, stdio: 'ignore' }); return true; }
   catch (e) { return false; }
 }
-// EVERY PRODUCT SCRIPT LOADS THE TREE THROUGH spirit.require (goal/G43.32, the box, testing point 2). Andy: "every script
+// EVERY PRODUCT SCRIPT LOADS THE TREE THROUGH spirit.requireScript (goal/G43.32, the box, testing point 2). Andy: "every script
 // (other than spirit/spirit.js) must start with ... 'use strict'; 'let spirit = require(spirit) or the html pages <script
-// href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.require()", "node modules
+// href=spirit/spirit.js> kind of thing; all other scripts should be loaded using spirit.requireScript()", "node modules
 // designated to provide node.js functionality: require('http' | 'fs' etc.) are exempt", "i see no reason codemirrors
 // vendored scripts cannot be spirit.required....", and "just rename the bloody script" for a name with a dot of its own.
 // Judged by reading each product file (the box: "this item deals with PRODUCT files, NOT tests"); vendored code is
@@ -1586,7 +1586,7 @@ function shapeBreaks(rel) {
   if (rel === 'spirit/spirit.js') return false;
   // Every plain require: the first takes spirit.js; any other names one of node's own modules.
   const bare = codeOf(src, true);
-  const re = /(^|[^.\w$])require\s*\(/g;
+  const re = /(^|[^.\w$])require(?:Script)?\s*\(/g;
   let m;
   let first = true;
   while ((m = re.exec(bare))) {
@@ -1597,7 +1597,7 @@ function shapeBreaks(rel) {
     const spiritJs = /(^|\/)spirit\.js$/.test(named) || /['"]spirit\.js['"]\s*\)?$/.test(arg);
     if (spiritJs) { first = false; continue; }
     if (!first && lit && (BUILTIN.indexOf(named) !== -1 || BUILTIN.indexOf(named.replace(/^node:/, '')) !== -1)) continue;
-    // Its first load is not spirit.js, or it loads a module plainly, not through spirit.require.
+    // Its first load is not spirit.js, or it loads a module plainly, not through spirit.requireScript.
     return true;
   }
   return false;
@@ -1616,8 +1616,8 @@ function shapeBreaks(rel) {
 function moduleRules(full) {
   const code = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
   const requires = [];
-  // Plain requires only: spirit.require(...) is the door the rule asks for, never a plain require.
-  const re = /(^|[^.\w$])require\(\s*(['"])([^'"]+)\2\s*\)/g;
+  // Plain requires only: spirit.requireScript(...) is the door the rule asks for, never a plain require.
+  const re = /(^|[^.\w$])require(?:Script)?\(\s*(['"])([^'"]+)\2\s*\)/g;
   let m;
   while ((m = re.exec(code))) requires.push({ at: m.index, path: m[3] });
   const own = path.basename(full, '.js');
@@ -1625,7 +1625,7 @@ function moduleRules(full) {
   const first = requires[0];
   const page = !isSpirit && /\bwindow\b/.test(code) && !/\bmodule\.exports\b/.test(code);
   // THE RULE (Andy, 2026-11-13, goal/G47.1 box v73, replacing his api.js exemption of v72: "if a module requires
-  // anything, it must require spirit.js first. Other modules are required using spirit.require(), unless they are
+  // anything, it must require spirit.js first. Other modules are required using spirit.requireScript(), unless they are
   // native node.js modules."). A module that requires nothing holds it.
   let early = false;
   if (page || !requires.length) early = false;
@@ -1637,7 +1637,7 @@ function moduleRules(full) {
     // It does not require spirit.js first.
     early = true;
   } else {
-    // It requires another module plainly, not through spirit.require(): only node's own modules are required plainly.
+    // It requires another module plainly, not through spirit.requireScript(): only node's own modules are required plainly.
     const native = function (p) { return BUILTIN.indexOf(p) !== -1 || BUILTIN.indexOf(p.replace(/^node:/, '')) !== -1; };
     const other = requires.slice(1).filter(function (r) { return !native(r.path) && !/(^|\/)spirit\.js$/.test(r.path); })[0];
     if (other) early = true;
@@ -1683,10 +1683,10 @@ function codeLinesMatching(rel, re, bare) {
   lines.forEach(function (line, i) { if (re.test(line)) hits.push(i + 1); });
   return hits;
 }
-// EVERY WRITTEN REQUIRE NAMES A FILE THAT EXISTS (goal/G47.1; Andy: "every spirit.require of a written path names a file
+// EVERY WRITTEN REQUIRE NAMES A FILE THAT EXISTS (goal/G47.1; Andy: "every spirit.requireScript of a written path names a file
 // that exists", in place of search.js's list of old paths, "a require that runs later, on a click, now goes unseen until you
-// click"). Read from the code, so a require that only runs on a click is judged too: spirit.require('<path>'), and a list of
-// written paths a require is mapped over (['a.js', 'b.js'].map(... spirit.require ...)). Comments left out.
+// click"). Read from the code, so a require that only runs on a click is judged too: spirit.requireScript('<path>'), and a list of
+// written paths a require is mapped over (['a.js', 'b.js'].map(... spirit.requireScript ...)). Comments left out.
 function missingRequires(rel) {
   // Tests too (cw's review: a test that still requires a deleted file is the stale test again). A test asks for a missing
   // file on purpose by its name: one it plants, zz<Name>, or one that is not there, noSuch<Name>.
@@ -1695,9 +1695,9 @@ function missingRequires(rel) {
   try { src = readSource(rel); } catch (e) { return []; }
   const code = codeOf(src, false);
   const asked = [];
-  // spirit.require, and any short name a file gives its spirit (S.require, sp.require): every <name>.require of a path written
+  // spirit.requireScript, and any short name a file gives its spirit (S.requireScript, sp.requireScript): every <name>.require of a path written
   // as the tree's, spirit/... or run://spirit/...; node's own require of a relative path is not this rule's.
-  const one = /\b(?:[A-Za-z_$][\w$]*\s*\.\s*)?require\s*\(\s*(['"])((?:run:\/\/|\/)?spirit\/[^'"\n]+)\1/g;
+  const one = /\b(?:[A-Za-z_$][\w$]*\s*\.\s*)?require(?:Script)?\s*\(\s*(['"])((?:run:\/\/|\/)?spirit\/[^'"\n]+)\1/g;
   let m = null;
   while ((m = one.exec(code))) asked.push({ p: m[2], at: m.index });
   const list = /\[((?:\s*['"][^'"\n]+\.(?:js|css|json|html)['"]\s*,?)+)\s*\]/g;
@@ -1730,7 +1730,7 @@ function dataRequiresOf(rel) {
   let src = '';
   try { src = readSource(rel); } catch (e) { return []; }
   const out = [];
-  const re = /\brequire\s*\(\s*['"`](spirit\/[^'"`]+\/data\.js)['"`]/g;
+  const re = /\brequire(?:Script)?\s*\(\s*['"`](spirit\/[^'"`]+\/data\.js)['"`]/g;
   const code = codeOf(src, false);
   let m;
   while ((m = re.exec(code))) out.push(m[1]);
@@ -1794,11 +1794,11 @@ function strayElementReaches(rel) {
   return stray;
 }
 // EVERY PRODUCT SCRIPT, PLACED WHERE IT IS REQUIRED (goal/G43.32, the box, testing point 3; Andy: "a general test for
-// any scriptFile.js is to spirit.require() it.", Q5: "doesn't spirit.require() only load a script, store it at
+// any scriptFile.js is to spirit.requireScript() it.", Q5: "doesn't spirit.requireScript() only load a script, store it at
 // spirit.required.<path>  and run it once.", "element scripts themselves are who installs the element factory at
 // spirit.required.<path-of-element-script>", and "I'm NOT demanding that all scripts load in all environments, I'm
 // demanding that they're placed in the spirit object according to these rules IF they are required."). Each script is
-// spirit.require()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
+// spirit.requireScript()d alone on the node and on a page; where it loads, it stands at spirit.required.<its path>, and on
 // the node the answer came at once. Where it does not load (a page element on the node, a server on a page) nothing is
 // judged. An element script, one that calls installSpiritElement, has a factory with a create at spirit.required.<its
 // path> once required on a page. The node side runs in the scratch copy beside the scratch node, each script in a
@@ -1825,7 +1825,7 @@ const NG_LAB = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const NODE_GLOBALS_PROBE = 'const path = require("path"); const fs = require("fs"); const g0 = Object.getOwnPropertyNames(globalThis), p0 = Object.getOwnPropertyNames(process); let err = "";' +
   'process.on("exit", function () { try { fs.writeSync(1, "\\n@@" + JSON.stringify({ err: err, g: Object.getOwnPropertyNames(globalThis).filter(function (k) { return g0.indexOf(k) === -1; }),' +
   ' p: Object.getOwnPropertyNames(process).filter(function (k) { return p0.indexOf(k) === -1; }) }) + "\\n"); } catch (e) { /* gone */ } });' +
-  'try { const s = require(path.join(process.cwd(), "spirit", "spirit.js")); s.require(process.argv[1]); } catch (e) { err = String(e && e.message || e); }' +
+  'try { const s = require(path.join(process.cwd(), "spirit", "spirit.js")); s.requireScript(process.argv[1]); } catch (e) { err = String(e && e.message || e); }' +
   'process.exit(0);';
 // { err, leaks }: leaks the names this script's own code put on globalThis (global) or process; null when it could not be
 // loaded at all.
@@ -1921,7 +1921,7 @@ function every() {
   test.run('.gitignore holds no exception for spirit/run/node_modules', 0.4, function () {
     return !/run\/node_modules/.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8')) || false;
   }, test.limit.quick);
-  test.run('every spirit.require of a written path names a file that exists', 0.4, function () {
+  test.run('every spirit.requireScript of a written path names a file that exists', 0.4, function () {
     const all = E.elementFiles || [];
     const missing = [].concat.apply([], all.map(missingRequires));
     return (all.length > 100 && !missing.length) || false;
@@ -2023,7 +2023,7 @@ function every() {
     return !ignoredByGit(inside) || false;
   }, test.limit.quick);
 
-  // every product script: use strict, spirit first, the tree only through spirit.require
+  // every product script: use strict, spirit first, the tree only through spirit.requireScript
   test.run('the product scripts are read, tests and vendored code left out', 0.2, function () {
     E.scripts = productScripts();
     return E.scripts.length > 100 || false;
@@ -2137,7 +2137,7 @@ function oneFile(P) {
       return !hits.length || false;
     }, test.limit.quick);
     if (/\.(js|html)$/.test(rel)) {
-      test.run('every spirit.require of a written path in it names a file that exists', 0.4, function () {
+      test.run('every spirit.requireScript of a written path in it names a file that exists', 0.4, function () {
         const missing = missingRequires(rel);
         return !missing.length || false;
       }, test.limit.quick);
@@ -2164,8 +2164,8 @@ function oneFile(P) {
   }
   // goal/G43.32: a product script holds the shape (everyScriptShaped).
   if (/^spirit\/.+\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel)) {
-    // <address>: use strict, spirit first, the tree only through spirit.require
-    test.run('it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.require', 0.4, function () {
+    // <address>: use strict, spirit first, the tree only through spirit.requireScript
+    test.run('it starts with \'use strict\', takes spirit first, and loads the tree only through spirit.requireScript', 0.4, function () {
       return !shapeBreaks(rel);
     }, test.limit.quick);
   }
@@ -2286,7 +2286,7 @@ function oneFile(P) {
       const ON_BRANCH = /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/;
       const child = function () {
         if (!/\b(?:table|branch)\s*:\s*['"][\w.-]+['"]/.test(own)) return false;
-        const asked = own.match(/require\(\s*['"](spirit\/[^'"]+\.js)['"]/g) || [];
+        const asked = own.match(/require(?:Script)?\(\s*['"](spirit\/[^'"]+\.js)['"]/g) || [];
         return asked.some(function (r) {
           const p = /['"]([^'"]+)['"]/.exec(r)[1];
           let c = ''; try { c = fs.readFileSync(path.join(RUN, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); } catch (e) { return false; }

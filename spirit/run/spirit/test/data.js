@@ -303,7 +303,7 @@ test.run('by default a row over the answer limit is left out, in bytes, the rest
 function pageCopy() {
   const vm = require('vm');
   const h = {};
-  const win = { spirit: { node: { key: NODE }, isBrowser: function () { return true; }, event: { subscribe: function (x) { Object.assign(h, x); return function () {}; } } } };
+  const win = { spirit: { nodeFacts: { key: NODE }, isBrowser: function () { return true; }, eventStream: { subscribe: function (x) { Object.assign(h, x); return function () {}; } } } };
   win.window = win;
   vm.runInNewContext(require('fs').readFileSync(path.join(__dirname, '..', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   // P is the page's view of the family, as its manager addresses it; P.whole the page's data set itself.
@@ -493,10 +493,10 @@ function cachesRead() {
 // ── 2. ONE CODE: the browser and node load the same files, and nothing else keeps a family's cache ──
 // Andy: "we needed it so node.js based clients could share the exact same client code. please move the file to
 // repo:/spirit/run/spirit/spiritData.js". Every client's file, so it sits with spirit's own, not the shell's.
-// goal/G43.32: appServer loads it by spirit.require and its run-root path, as every script loads the tree.
+// goal/G43.32: appServer loads it by spirit.requireScript and its run-root path, as every script loads the tree.
 test.run('the data set is one file: spirit.js brings spirit/data.js to a page, and appServer requires the same file', 0.2, function () {
   cachesRead();
-  return !!/['"]spirit\/data\.js['"]/.test(C.spiritJs) && /\.require\(\s*['"]spirit\/data\.js['"]\s*\)/.test(C.appServer) ? true
+  return !!/['"]spirit\/data\.js['"]/.test(C.spiritJs) && /\.require(?:Script)?\(\s*['"]spirit\/data\.js['"]\s*\)/.test(C.appServer) ? true
     : false;
 }, test.limit.quick);
 test.run('the data set is spirit/data.js', 0.2, function () {
@@ -525,14 +525,14 @@ const ROWS = [
 const SERVER = Buffer.from('KEY-CACHES\xfb\xef\xbf\xfe', 'latin1').toString('base64');
 const SERVER_ID = Buffer.from(SERVER, 'base64').toString('base64url');
 // In node, as appServer runs them: the data set required, then the family's data.js, on the process's global.
-// goal/G43.32: the data set and the family's data.js are spirit.require()d, as appServer and the family's file load them,
+// goal/G43.32: the data set and the family's data.js are spirit.requireScript()d, as appServer and the family's file load them,
 // so both hold the one instance at spirit.required.spirit.data.
 function inNode() {
   let out = null;
   try {
     const S = require(path.join(RUN, 'spirit', 'spirit.js'));
-    const SD = S.require('spirit/data.js');
-    S.require(path.relative(RUN, DESK).split(path.sep).join('/'));
+    const SD = S.requireScript('spirit/data.js');
+    S.requireScript(path.relative(RUN, DESK).split(path.sep).join('/'));
     SD.homeNode(SERVER);
     ROWS.forEach(function (row) { SD.desk.data.published(JSON.parse(JSON.stringify(row))); });
     out = JSON.parse(JSON.stringify(SD.desk.cache));
@@ -653,11 +653,11 @@ test.run('a scratch node\'s page in Chrome answers what spirit.required.spirit.d
   F.page = chrome && F.node.up ? await H.chromePage(chrome) : null;
   if (!F.page || F.page.error) return false;
   await F.page.send('Page.navigate', { url: F.node.base + '/' });
-  await H.until(function () { return F.page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
-  await F.page.evaluate('window.spirit.ready.then(function () { return true; })').catch(function () { return false; });
+  await H.until(function () { return F.page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
+  await F.page.evaluate('window.spirit.readyPromise.then(function () { return true; })').catch(function () { return false; });
   await H.sleep(2500);
   const got = await ask('(function () { var S = window.spirit; var names = ' + JSON.stringify(FAMILIES) + '; var paths = ' + JSON.stringify(API_PATHS) + ';' +
-    ' return Promise.all(paths.map(function (p) { return Promise.resolve(S.require(p)).then(null, function () { return null; }); })).then(function () {' +
+    ' return Promise.all(paths.map(function (p) { return Promise.resolve(S.requireScript(p)).then(null, function () { return null; }); })).then(function () {' +
     ' var D = S.required.spirit.data || {}; var out = { first: Object.keys(S), keys: {}, families: {} };' +
     ' Object.keys(D).forEach(function (k) { out.keys[k] = typeof D[k]; });' +
     ' names.forEach(function (n) { var f = D[n]; out.families[n] = { data: f && typeof f.data, cache: f && typeof f.cache }; });' +

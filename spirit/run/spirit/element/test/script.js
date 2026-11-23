@@ -70,14 +70,14 @@ test.after(stopAll);
     // Monitor's main element, placed at the planted app's own path, as a tile asks for it (goal/G43.32, rule 4).
     fs.writeFileSync(path.join(zz, 'element.js'), fs.readFileSync(path.join(RUN, 'spirit', 'app', 'monitor', 'element.js'), 'utf8').split('spirit/app/monitor/element.js').join('spirit/app/hearing/element.js'));
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     W1.up = true;
     return true;
   }, test.limit.long);
   let made, text;
-  test.run('it loads through spirit.require and mounts as a pane', 0.2, async function () {
+  test.run('it loads through spirit.requireScript and mounts as a pane', 0.2, async function () {
     if (!W1.up) return false;
-    made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () {' +
+    made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/script.js"); }).then(function () {' +
       ' var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); window.changes = 0;' +
       ' window.sel = spirit.required.spirit.element.script.create(c, { face: "pane" }); if (window.sel.parentNode !== c) c.appendChild(window.sel); window.sel.addEventListener("change", function () { window.changes += 1; }); return "made"; }, function () { return false; })');
     return (made === 'made') ? true : false;
@@ -469,8 +469,8 @@ test.after(stopAll);
   test.run('the face page reloads and the app selector loads', 0.2, async function () {
     if (!W1.up) return false;
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
-    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/element/script.js"); }).then(function () { return "loaded"; }, function () { return false; })');
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
+    loaded = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/script.js"); }).then(function () { return "loaded"; }, function () { return false; })');
     W1.loaded = loaded === 'loaded';
     return (loaded === 'loaded') ? true : false;
   }, test.limit.long);
@@ -776,7 +776,7 @@ test.after(stopAll);
     LIVE.push({ c: c4 });
     if (c4.error) return false;
     await c4.send('Page.navigate', { url: N4.base + '/face.html' });
-    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.ready && spirit.app && spirit.required.spirit.app.api.activeApp)'); }, 20000);
+    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.app && spirit.required.spirit.app.api.activeApp)'); }, 20000);
     await c4.evaluate('spirit.required.spirit.app.api.activeApp({ key: "testicle", active: true }); spirit.required.spirit.app.api.activeApp({ key: "starter", active: true }); true');
     const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body.testicle); }); }, 60000);
     await c4.send('Page.navigate', { url: N4.base + '/face.html' });
@@ -806,7 +806,7 @@ test.after(stopAll);
   const fieldText = function () { return c4.evaluate('(function () { var f = ' + barForm() + '; var b = f && f.querySelector("button[id$=\'field\']"); return b ? String(b.textContent || "") : ""; }())'); };
   test.run('before any pick the dropdown\'s field names the server remote answers as current', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
-    W4.real = parsed(await c4.evaluate('spirit.require(spirit.branchPath("testicle")).then(function (f) { return f.remote({}); }).then(function (r) { return JSON.stringify(r); }, function () { return "null"; })')) || {};
+    W4.real = parsed(await c4.evaluate('spirit.requireScript(spirit.branchPath("testicle")).then(function (f) { return f.remote({}); }).then(function (r) { return JSON.stringify(r); }, function () { return "null"; })')) || {};
     const c = (W4.real.items || []).filter(function (i) { return String(i.key) === String(W4.real.current); })[0];
     const label = c ? String(c.label || '') : '';
     if (!label) return false;

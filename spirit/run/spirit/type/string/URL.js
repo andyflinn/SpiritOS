@@ -16,7 +16,7 @@
     defaultValue: function () {
       var L = root && root.location;
       if (L && /^https?:\/\//.test(String(L.href || ''))) return String(L.href);
-      var N = root && root.spirit && root.spirit.node;
+      var N = root && root.spirit && root.spirit.nodeFacts;
       return N && Number(N.port) > 0 ? 'http://127.0.0.1:' + Number(N.port) : 'http://127.0.0.1';
     },
     ruleDescription: function () { return 'a URL: http:// or https://, no spaces, at most 1024 bytes'; },

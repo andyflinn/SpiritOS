@@ -57,13 +57,13 @@ const outArg = flag('--out');
 function end(code, text) { (code ? console.error : console.log)(text); process.exit(code); }
 function say(text) { console.log('publishData: ' + text); }
 // ITS STEPS ARE ITS JOB'S PROGRESS (goal/G47.1; Andy: "if \"one-shot-script-apps\" (node:run:true) actually publish what
-// they're doing, like publishData should"): each step published as spirit.job.progress(done, STEPS, text), the text the
+// they're doing, like publishData should"): each step published as spirit.processJob.progress(done, STEPS, text), the text the
 // app detail's task row (spirit/element/monitor/task.js) shows while it runs. Started by hand, with no job, the node
 // refuses it, and the run goes on: a progress never stops a step.
 const STEPS = 4;
 function step(done, text) {
   say(text);
-  const J = spirit.job;
+  const J = spirit.processJob;
   if (!J || typeof J.progress !== 'function') return Promise.resolve();
   return Promise.resolve(J.progress(done, STEPS, text)).catch(function () { /* not started as a job */ });
 }
@@ -74,7 +74,7 @@ function ask(verb, args) {
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the spirit object (goal/G32.3): the verb by its name, as {status, body}.
   // Every ask here is a testicle verb: its family bound on the one spirit object (goal/G40.6).
-  const asked = spirit.outcome(spirit.require(spirit.branchPath('testicle')).then(function (c) { return c[String(verb).split('.').slice(1).join('.')](args); }));
+  const asked = spirit.callOutcome(spirit.requireScript(spirit.branchPath('testicle')).then(function (c) { return c[String(verb).split('.').slice(1).join('.')](args); }));
   return Promise.race([asked, late]).then(function (r) { clearTimeout(timer); return r || {}; },
     function (e) { clearTimeout(timer); end(1, 'publishData: the node on port ' + port + ' did not answer ' + verb + ': ' + ((e && e.message) || e)); });
 }
@@ -87,7 +87,7 @@ function closingRows(clone, sinceIso) {
   const src = path.join(clone, 'spirit', 'run', 'spirit', 'state', 'node.db');
   if (!fs.existsSync(src)) end(1, 'publishData: no traffic log at ' + src + ' (is the node run from this clone?)');
   // ITS TEMP FOLDER FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "a job by its route (spirit.app.publishData)").
-  const tmp = spirit.require('spirit/tempFolder.js')('spirit.app.publishData/nodeDb');
+  const tmp = spirit.requireScript('spirit/tempFolder.js')('spirit.app.publishData/nodeDb');
   const copy = path.join(tmp, 'node.db');
   ['', '-wal', '-shm'].forEach(function (x) { if (fs.existsSync(src + x)) fs.copyFileSync(src + x, copy + x); });
   const { DatabaseSync } = require('node:sqlite');
@@ -185,7 +185,7 @@ function writeSuiteDocs(out, report) {
 
 // platform/<platform>/README.md, written by agentReadme.js (goal/G47.1, box v170): the title, the measured-on line, the
 // machine, Summary (its figures measure.js's, on lab nodes and a lab relay) and Details, testState.md first.
-const README = spirit.require('spirit/app/publishData/agentReadme.js');
+const README = spirit.requireScript('spirit/app/publishData/agentReadme.js');
 // THE REDS AND THEIR TWO LEADERS (goal/G48.5, Andy: "in that document's \"Summary\" section, we can list add the following 3
 // bullets": the outstanding issues, "the leading module responsible for that count", "the leading test suite contributing
 // to the error count"): from the test state's reds, the script and the suite holding the most, the more severe first on a tie.
@@ -280,7 +280,7 @@ async function main() {
   // 4. THE SUMMARY'S FIGURES, on lab nodes and a lab relay (measure.js), then the README.
   await step(3, 'measuring on lab nodes');
   let measured = null;
-  try { measured = await spirit.require('spirit/app/publishData/measure.js').measure(say); }
+  try { measured = await spirit.requireScript('spirit/app/publishData/measure.js').measure(say); }
   catch (e) { end(1, 'publishData: the measurements failed: ' + ((e && e.message) || e)); }
   writeIndex(out, platform, commit, measured, state);
   say('packets: ' + packets.posts + ' posts, wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms, ' + packets.retried + ' retried');
@@ -307,7 +307,7 @@ async function main() {
   // and leaves the clone as it was; the publish commit is then undone, its list dropped, the clone brought to origin's front by
   // pushOrigin with nothing of this run in it, and the list written again from the folders the front holds. Each platform
   // writes only its own folder, so the list is the one file two publishes can clash on.
-  const { pushOrigin } = spirit.require('spirit/app/pushOrigin/pushOrigin.js');
+  const { pushOrigin } = spirit.requireScript('spirit/app/pushOrigin/pushOrigin.js');
   const listRel = path.posix.join(path.posix.dirname(rel), 'README.md');
   const message = 'publish: ' + platform + ' at ' + commit + ' (platform/' + platform + '/, the standing grant of goal/G4.33)';
   let pushed = null;

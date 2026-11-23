@@ -18,12 +18,12 @@
 // WHAT THE NODE SAYS, AND ONLY THAT (rule/19): a refused load is no empty file, and a refused save says the node's words.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26). fstat for reading a file only.
-  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/rowForm.js'), S.require('spirit/element/search/file.js'),
-    S.require('spirit/element/codeMirror.js'), S.require('spirit/fs/api.js')]);
+  var parts = Promise.all([S.requireScript('spirit/element/fstat.js'), S.requireScript('spirit/element/rowForm.js'), S.requireScript('spirit/element/search/file.js'),
+    S.requireScript('spirit/element/codeMirror.js'), S.requireScript('spirit/fs/api.js')]);
 
   function create(container, opts) {
     var o = opts || {};
@@ -129,5 +129,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/text/element.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/text/element.js', { create: create }); });
 }());

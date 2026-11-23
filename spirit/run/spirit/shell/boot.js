@@ -3,11 +3,11 @@
 // THE BOOT OF THE GREEN SHELL'S PAGE (goal/G30.9; since goal/G43.18, box v29, "The shell"; Andy: "boot should solve
 // transport issues only, then load whichever shell the node has configured"; Q22, Andy: "ok." to "the link home moves
 // into spirit.js, and boot.js keeps only the stream and loading the shell"). spirit.js runs it once the page stands: at
-// home, from the node itself; on a face, logged in, over the link spirit.js made (spirit.link). A face logged out never
-// loads it: spirit.login draws the one field.
+// home, from the node itself; on a face, logged in, over the link spirit.js made (spirit.faceLink). A face logged out never
+// loads it: spirit.faceLogin draws the one field.
 //
 // WHAT IT DOES
-//   - THE STREAM. At home the node's own (spirit.event); on a face /face/stream, sealed to this page's key when it can
+//   - THE STREAM. At home the node's own (spirit.eventStream); on a face /face/stream, sealed to this page's key when it can
 //     seal: the jobs as the loopback page gets them, presence peer by peer, rebuilt into the presence news of the spirit.contact job the apps
 //     read. Another device holding it is said, with Connect here; a face replaced by another device is told it was taken.
 //     The home node offline: the small red not connected mark shows.
@@ -29,9 +29,9 @@
   // script must not crash where its parts are missing"): boot is face.html's, and a page without its area and its banner
   // gets no stream, no shell and no throw.
   if (!desktop || !banner) return;
-  // WHERE THE PAGE STANDS, AS spirit.js FOUND IT (goal/G43.18, box v29: the login is spirit.login, the link spirit.link).
-  var state = window.spirit.face || { home: true, loggedIn: true };
-  var link = { up: null, loaded: false };   // up: null until first known; the keys are spirit.link's
+  // WHERE THE PAGE STANDS, AS spirit.js FOUND IT (goal/G43.18, box v29: the login is spirit.faceLogin, the link spirit.faceLink).
+  var state = window.spirit.faceState || { home: true, loggedIn: true };
+  var link = { up: null, loaded: false };   // up: null until first known; the keys are spirit.faceLink's
 
   function say(text, action) {
     banner.innerHTML = '';
@@ -58,16 +58,16 @@
       var fam = dot > 0 ? spirit[name.slice(0, dot)] : null;
       var fn = fam && typeof fam[name.slice(dot + 1)] === 'function' ? fam[name.slice(dot + 1)] : null;
       if (!fn) return Promise.resolve({ status: 400, text: '', body: { ok: false, code: 'no-such-verb', error: 'no verb ' + name } });
-      return spirit.outcome(fn(args || {})).then(function (o) { return { status: o.status, text: o.body == null ? '' : JSON.stringify(o.body), body: o.body }; });
+      return spirit.callOutcome(fn(args || {})).then(function (o) { return { status: o.status, text: o.body == null ? '' : JSON.stringify(o.body), body: o.body }; });
     }
-    return spirit.link.ask(verb, args || {});
+    return spirit.faceLink.ask(verb, args || {});
   }
   // A file of the home node, as text: by the node's own GET at home, through the link on a face.
   function fileText(path) {
     var clean = String(path).replace(/^\/+/, '');
     var got = state.home
       ? fetch('/' + clean).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); })
-      : spirit.link.call({ get: clean }).then(function (r) { return { status: r.status, text: new TextDecoder().decode(r.bytes) }; });
+      : spirit.faceLink.call({ get: clean }).then(function (r) { return { status: r.status, text: new TextDecoder().decode(r.bytes) }; });
     return got.then(function (r) {
       if (r.status !== 200) throw new Error(clean + ' answered ' + r.status);
       return r.text;
@@ -77,7 +77,7 @@
   // ── THE STREAM, AND WHAT THE APPS SUBSCRIBE TO ──────────────────────────────────────────────────────────────────
   var subscribers = [];
   // THE FACE LINK'S SNAPSHOT: what this face's stream hands a subscriber that comes late, as spirit.js's own stream keeps
-  // its own (spirit.event). It is the stream, not a store: every reader reads the jobs from the jobs family's cache
+  // its own (spirit.eventStream). It is the stream, not a store: every reader reads the jobs from the jobs family's cache
   // (spirit.required.spirit.data.job.data, goal/G41.28), which this stream feeds.
   var linkJobs = {};
   var presence = {};
@@ -85,7 +85,7 @@
   var stream = null;
   var here = false;
 
-  // A FACE SAYS ITS RECONNECT AS THE NODE'S OWN STREAM DOES (spirit.event's onReconnect; goal/G47.1, the box: on a reconnect
+  // A FACE SAYS ITS RECONNECT AS THE NODE'S OWN STREAM DOES (spirit.eventStream's onReconnect; goal/G47.1, the box: on a reconnect
   // every search a page shows runs once more): up again after having been up is a reconnect.
   var stoodBefore = false;
   function setConnected(up) {
@@ -104,9 +104,9 @@
   // The kernel's jobs.subscribe on a face (window.spirit.transport.events): what is known now, then every update.
   function events(handlers) {
     var h = handlers || {};
-    // AT HOME THE EVENTS ARE THE NODE'S OWN STREAM, spirit.event (goal/G40.10): there is no face stream on loopback,
+    // AT HOME THE EVENTS ARE THE NODE'S OWN STREAM, spirit.eventStream (goal/G40.10): there is no face stream on loopback,
     // and nothing is kept here.
-    if (state.home) return spirit.event.subscribe(h);
+    if (state.home) return spirit.eventStream.subscribe(h);
     subscribers.push(h);
     if (h.onSnapshot) { try { h.onSnapshot(jobsList()); } catch (e) { /* one app's fault */ } }
     if (h.onConnection) { try { h.onConnection(link.up); } catch (e) { /* one app's fault */ } }
@@ -147,7 +147,7 @@
   }
   function connectHere() { say(''); here = true; openStream(); }
   function line(l) {
-    var L = spirit.link;
+    var L = spirit.faceLink;
     var got = null;
     try { got = JSON.parse(l); } catch (e) { return Promise.resolve(); }
     if (got && got.type === 'refused') {
@@ -172,7 +172,7 @@
       retryMs: 5000,
       // The face's address, asked at each open: its sealing key, and here once after a Connect here press.
       url: function () {
-        var L = spirit.link;
+        var L = spirit.faceLink;
         var q = [];
         if (L.sealed) q.push('key=' + encodeURIComponent(L.key.publicKey));
         if (here) q.push('here=1');
@@ -200,7 +200,7 @@
   // other part of the shell come from the home node over that link"), the face's green last, over the shell's. NO SCRIPT
   // (goal/G43.27; Andy: "spirit.js still seems to be loading all sorts of shit that it doesn't need yet.", "wsl, I SAID,
   // make sure that spirit.js does NOT load all that shit!!!!!!!!!"): every script comes when what draws with it requires
-  // it, through spirit.require, once (goal/G43.24: "every element that accesses ANY api must require them themselves").
+  // it, through spirit.requireScript, once (goal/G43.24: "every element that accesses ANY api must require them themselves").
   // The list of goal/G40.7 that fetched spirit's libraries, Join's steps and the navigation here is gone.
   var FACE_PARTS = [
     'shell.css',
@@ -219,7 +219,7 @@
   // state-storage") ───────────────────────────────────────────────────────────────────────────────────────────────
   // Its element is loaded and made in the page's area, at home and on a face alike; one that does not load is said in the banner.
   function loadShell() {
-    return Promise.resolve(spirit.require('spirit/element/script.js')).then(function () {
+    return Promise.resolve(spirit.requireScript('spirit/element/script.js')).then(function () {
       var E = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.script;
       desktop.innerHTML = '';
       // THE SHELL'S AREA IS NO DESKTOP GRID (Andy, of his face.html: "all icons of the app.search are in a thin strip in the left
@@ -233,11 +233,11 @@
   // ── STARTED ─────────────────────────────────────────────────────────────────────────────────────────────────────
   function start() {
     var home = !!state.home;
-    if (!home) spirit.link.onDown(function () { setConnected(false); });
+    if (!home) spirit.faceLink.onDown(function () { setConnected(false); });
     // AT HOME THE STREAM WAITS FOR THE PARTS (goal/G40.10): the node hands the file tree once, as a stream opens, and a
     // part that subscribes as it loads (the data cache) would open it before the parts that read the tree (its
     // translators) are in, and lose it. So at home the subscriptions made while the parts load are held, and released
-    // onto spirit.event once they are all in. On a relay the face's own stream opens after the parts already.
+    // onto spirit.eventStream once they are all in. On a relay the face's own stream opens after the parts already.
     var held = [];
     if (home) {
       setConnected(true);
@@ -249,15 +249,15 @@
     // there; then what boot.js draws with, each required by it: the file tree's row element and the jobs family's cache
     // manager (goal/G41.28).
     var parts = function () {
-      return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/search/file/row.js'), window.spirit.require('spirit/job/api.js')]); })
+      return loadParts().then(function () { return Promise.all([window.spirit.requireScript('spirit/element/search/file/row.js'), window.spirit.requireScript('spirit/job/api.js')]); })
         .then(null, function () { /* a part missing is said by what needs it */ });
     };
-    return Promise.resolve(window.spirit.start()).then(parts, parts).then(function () {
+    return Promise.resolve(window.spirit.startPage()).then(parts, parts).then(function () {
       if (home) {
         var waiting = held;
         held = [];
         delete window.spirit.transport;
-        waiting.forEach(function (h) { spirit.event.subscribe(h); });
+        waiting.forEach(function (h) { spirit.eventStream.subscribe(h); });
       }
       Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow });
       link.loaded = true;
@@ -299,7 +299,7 @@
     var code = joinCode;
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
-    Promise.all([window.spirit.require('spirit/element/joinSteps.js'), Promise.resolve(spirit.ready).then(function (sp) { return sp.contact.search({ q: '*', relay: true }); })]).then(function (got) {
+    Promise.all([window.spirit.requireScript('spirit/element/joinSteps.js'), Promise.resolve(spirit.readyPromise).then(function (sp) { return sp.contact.search({ q: '*', relay: true }); })]).then(function (got) {
       var S = window.spirit.required && window.spirit.required.spirit.element.joinSteps;
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
@@ -314,6 +314,6 @@
     }, function (e) { say('The join did not finish: ' + ((e && e.message) || 'this node did not answer') + '.'); });
   }
   if ((window.location.search || '').length > 1) { try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the token is spent */ } }
-  if (!state.home && spirit.link && !spirit.link.sealed) say('This browser cannot seal: your traffic is readable on the relay.');
+  if (!state.home && spirit.faceLink && !spirit.faceLink.sealed) say('This browser cannot seal: your traffic is readable on the relay.');
   start();
 }());

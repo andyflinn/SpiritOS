@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/test/contactLabel.js
 // The tests of spirit/element/contactLabel.js, and of no other module: a contact's name by key, in both modes (spec:
 // ./contactLabel.md). The browser file runs in node on a window and a document of its own, the document a small stub
-// of the few DOM calls the label makes, and the node behind spirit.ready a recorder.
+// of the few DOM calls the label makes, and the node behind spirit.readyPromise a recorder.
 
 const fs = require('fs');
 const path = require('path');
@@ -36,7 +36,7 @@ global.window = { spirit: {} };
 // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
 require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
 global.spirit = window.spirit;
-window.spirit.ready = Promise.resolve({ contact: {
+window.spirit.readyPromise = Promise.resolve({ contact: {
   get: function (b) { asked.push({ verb: 'contact.get', key: b.key });
     return b.key === 'KX' ? Promise.reject(new Error('no')) : Promise.resolve({ person: captions[b.key] !== undefined ? { caption: captions[b.key] } : null }); },
   label: function (b) { asked.push({ verb: 'contact.label', body: b });

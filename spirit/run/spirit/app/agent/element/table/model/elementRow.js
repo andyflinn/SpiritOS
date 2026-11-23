@@ -6,22 +6,22 @@
 //   page's detail pane, whose look(table) gives the title row its icon and name
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.require === 'function') Promise.resolve(window.spirit.require('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
 (function () {
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
   // (spirit/app/agent/data.js) translates them into the table's branch; it is loaded here, with
   // this element.
-  window.spirit.require('spirit/app/agent/api.js');
+  window.spirit.requireScript('spirit/app/agent/api.js');
   // goal/G41.21: every field shown only. The label is the model name as the provider gives it (Andy: "the label hold the
   // model name as provided by the provider, and is output only in the models UI"); the capabilities ("model details,
   // capabilites, is output only").
   var FIELDS = [{ field: 'label', label: 'Model', kind: 'output' }, { field: 'providerId', label: 'Provider', kind: 'output', pick: 'provider' }, { field: 'capabilities', label: 'Capabilities', kind: 'output' }];
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/model/elementRow.js', {
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/model/elementRow.js', {
     create: function (container, id, added, detail) {
       var made = null;
       var gone = false;
-      Promise.resolve(spirit.require('spirit/app/agent/element/table/row.js')).then(function () {
+      Promise.resolve(spirit.requireScript('spirit/app/agent/element/table/row.js')).then(function () {
         if (gone) return;
         made = window.spirit.required.spirit.app.agent.element.table.row.create(container, {
           table: 'model', id: id, added: added === true, look: detail && detail.look ? detail.look('model') : null, fields: FIELDS,

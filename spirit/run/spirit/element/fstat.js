@@ -26,7 +26,7 @@
   // Through the spirit object (goal/G32.2): fs.stat, null where the node refuses.
   function ask(verb, args) {
     var name = String(verb).replace(/^fs\./, '');
-    return (window.spirit && window.spirit.ready ? window.spirit.ready : Promise.reject(new Error('no spirit object')))
+    return (window.spirit && window.spirit.readyPromise ? window.spirit.readyPromise : Promise.reject(new Error('no spirit object')))
       .then(function (s) { return s.fs[name](args); }).then(function (body) { return body; }, function () { return null; });
   }
 
@@ -116,5 +116,5 @@
     return { path: path, slot: slot };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/fstat.js', { create: create, read: read, mimeOf: mimeOf, kindOf: kindOf, iconOf: iconOf }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/fstat.js', { create: create, read: read, mimeOf: mimeOf, kindOf: kindOf, iconOf: iconOf }); });
 }());

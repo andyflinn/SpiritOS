@@ -9,8 +9,8 @@ require('./spirit.js');
 // It once also answered the relay's device-offer request; that went with
 // the device enrolment, removed by goal/G16.2. The name stays.
 
-const relayKeys = spirit.require('spirit/relayKeys.js');
-const auth = spirit.require('spirit/relayAuth.js');
+const relayKeys = spirit.requireScript('spirit/relayKeys.js');
+const auth = spirit.requireScript('spirit/relayAuth.js');
 
 // opts: { rootDir, askKey, onKeyChanged }
 //

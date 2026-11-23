@@ -54,7 +54,7 @@ check's standing grant for `platform/<platform>/`.
   counts are testicle's current rows: every current test, the failed ones its reds, each named with its script and suite.
 - The README beside them: its layout is box v170's, below.
 - ITS STEPS ARE ITS JOB'S PROGRESS (Andy: *"if "one-shot-script-apps" (node:run:true) actually publish what they're doing,
-  like publishData should"*): each step is published as `spirit.job.progress(done, 4, text)`, in order, the words the app
+  like publishData should"*): each step is published as `spirit.processJob.progress(done, 4, text)`, in order, the words the app
   detail's task row shows while it runs: the asks, the test state, the lab measurements, and, on a publish, the commit and
   push. A look publishes the first three. Started by hand, with no job, a progress the node refuses never stops a step.
 - With `--only packets` or `--out` it stops there: exit 0, `written to <out>`, nothing committed, nothing posted.

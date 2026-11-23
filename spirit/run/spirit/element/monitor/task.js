@@ -21,7 +21,7 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the row form, the jobs family's interface (which loads its cache), and the
   // job row element that holds the Cancel or Delete rule.
-  var parts = Promise.all(['spirit/element/rowForm.js', 'spirit/job/api.js', 'spirit/element/search/job/row.js'].map(function (p) { return S.require(p); }));
+  var parts = Promise.all(['spirit/element/rowForm.js', 'spirit/job/api.js', 'spirit/element/search/job/row.js'].map(function (p) { return S.requireScript(p); }));
   var WORD = { run: 'Run', cancel: 'Cancel', 'delete': 'Delete' };
   var PREFIX = 'spirit.app.';
 
@@ -66,7 +66,7 @@
     function press() {
       var a = actionOf(job());
       said.textContent = '';
-      return S.ready.then(function (s) {
+      return S.readyPromise.then(function (s) {
         if (a === 'run') return s.job.create({ command: 'node', args: JSON.stringify(['spirit/app/' + name + '/' + name + '.js']) });
         if (a === 'cancel') return s.job.cancel({ id: id });
         if (a === 'delete') return s.job['delete']({ id: id });
@@ -75,7 +75,7 @@
     }
 
     if (name) {
-      Promise.all([parts, S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + name + '/' + name + '.json'); })]).then(function (r) {
+      Promise.all([parts, S.readyPromise.then(function (s) { return s.fs.loadFile('spirit/app/' + name + '/' + name + '.json'); })]).then(function (r) {
         var j = JSON.parse(String(r[1]));
         if (gone || !(j.node && j.node.run === true)) return;
         var identity = j.identity || {};
@@ -99,5 +99,5 @@
     };
   }
 
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/monitor/task.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/monitor/task.js', { create: create }); });
 }());

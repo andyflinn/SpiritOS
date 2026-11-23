@@ -5,7 +5,7 @@
 // production script has its own test" (goal/G47.1, box v72).
 // The testicle server's family interface (goal/G32.3), where spirit.branchPath('testicle') finds it: every verb it serves,
 // each argument with its rule. Required as the node reads it; every verb is checked by spirit.js's own check
-// (spirit.check). The server's source (testicle.js) and appServer.js are read as text only, to find each verb's handler.
+// (spirit.checkArgs). The server's source (testicle.js) and appServer.js are read as text only, to find each verb's handler.
 // One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -19,8 +19,8 @@ const spirit = globalThis.spirit;
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 
 const W = { api: null, verbs: {}, names: [] };
-const passes = function (verb, args) { return !!W.verbs[verb] && spirit.check('testicle.' + verb, W.verbs[verb], args) === null; };
-const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.check('testicle.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
+const passes = function (verb, args) { return !!W.verbs[verb] && spirit.checkArgs('testicle.' + verb, W.verbs[verb], args) === null; };
+const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.checkArgs('testicle.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 // suite.success since box v129-131 (Andy: "the reporter reporting fucking success/failure of the suite through a new verb
 // testicle.suite.success").
 const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'testicle.title', 'suite.success', 'testicle.search', 'red', 'analyze', 'run', 'subscribe', 'unsubscribe'];
@@ -51,7 +51,7 @@ test.run('every rule is one of spirit.js\'s standard rules, a trailing question 
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
       // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
-      if ((spirit.rules.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad++;
+      if ((spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) bad++;
     });
   });
   return bad === 0 || false;

@@ -17,7 +17,7 @@ require('../../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.require('spirit/server/app.js');
+const appServer = spirit.requireScript('spirit/server/app.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -35,7 +35,7 @@ const db = new DatabaseSync(DB_FILE);
 const TABLES = ['provider', 'model', 'persona', 'job'];
 const tables = {};
 const ctx = { db: db, dbFile: DB_FILE, tables: tables, publish: function (x) { appServer.publish(x); } };
-TABLES.forEach(function (name) { tables[name] = spirit.require('spirit/app/agent/table/' + name + '/server.js')(ctx); });
+TABLES.forEach(function (name) { tables[name] = spirit.requireScript('spirit/app/agent/table/' + name + '/server.js')(ctx); });
 
 const verbs = {};
 TABLES.forEach(function (name) { verbs[name] = tables[name].verb; });

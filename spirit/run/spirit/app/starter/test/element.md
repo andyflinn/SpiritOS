@@ -7,7 +7,7 @@ run in node on a bare window, the node's family a stand-in that answers `node.ca
 ## Requirements
 
 1. **One element**: `spirit.required.spirit.app.starter.element.create(container, opts)`, answering `{ destroy() }`.
-2. **It asks its node once**: `node.card` through `spirit.ready` and `spirit.outcome`, nothing else. It requires the node's interface (`spirit/node/api.js`, goal/G47.1: every element requires the interfaces it needs), nothing more.
+2. **It asks its node once**: `node.card` through `spirit.readyPromise` and `spirit.callOutcome`, nothing else. It requires the node's interface (`spirit/node/api.js`, goal/G47.1: every element requires the interfaces it needs), nothing more.
 3. **It shows what the card says**: the node's name and its description, each in its own row, in the container.
 4. **A refusal is said, not swallowed**: a card that does not come back draws a `refused` row with the error.
 5. **Destroy empties its container**, and an answer that comes after it draws nothing.

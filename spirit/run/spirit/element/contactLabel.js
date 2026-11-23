@@ -29,11 +29,11 @@
 // contact.rename").
 
 (function () {
-  // WHAT IT USES, IT LOADS ITSELF (goal/G43.27): the label type, which mode 2 checks a name with, through spirit.require
+  // WHAT IT USES, IT LOADS ITSELF (goal/G43.27): the label type, which mode 2 checks a name with, through spirit.requireScript
   // (goal/G48.4, the box: "fieldRules.js dies").
-  if (window.spirit && window.spirit.require) window.spirit.require('spirit/type/string/label.js');
+  if (window.spirit && window.spirit.requireScript) window.spirit.requireScript('spirit/type/string/label.js');
   // And fieldInput, which holds the name typed in mode 2 to that type as it is typed.
-  if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/fieldInput.js');
+  if (window.spirit && window.spirit.requireScript) window.spirit.requireScript('spirit/element/fieldInput.js');
   // ONE NAME PER KEY FOR THE PAGE (Andy, goal/G4.10: "the pane and dropdown seem to still initialize with keys. this
   // makes the keys flashing briefly every time an update occurs"). A list redrawn makes new labels; a name already
   // known draws at once, and one key is asked of the node once, however many labels wait for it.
@@ -42,7 +42,7 @@
   function nameFor(key) {
     if (!asking[key]) {
       // Through the spirit object (goal/G32.2): a checked call answering the reply's body.
-      asking[key] = spirit.ready.then(function (s) { return s.contact.get({ key: key }); }).then(function (body) {
+      asking[key] = spirit.readyPromise.then(function (s) { return s.contact.get({ key: key }); }).then(function (body) {
         var person = body && body.person;
         if (person && typeof person.caption === 'string') known[key] = person.caption;
         return known[key] || '';
@@ -96,7 +96,7 @@
       var bad = '';
       if (L) { try { L.isValid(name); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { why.textContent = bad; return; }
-      spirit.ready.then(function (s) { return s.contact.label({ publicKey: key, myLabel: name }); }).then(function (body) {
+      spirit.readyPromise.then(function (s) { return s.contact.label({ publicKey: key, myLabel: name }); }).then(function (body) {
         caption = (body && typeof body.caption === 'string') ? body.caption : name;
         known[key] = caption;
         close();
@@ -161,5 +161,5 @@
 
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/contactLabel.js', { create: function (container, options) { var root = createContactLabel(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/contactLabel.js', { create: function (container, options) { var root = createContactLabel(options); container.appendChild(root); return root; } }); });
 })();

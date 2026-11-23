@@ -18,8 +18,8 @@
 // search seats its rows there, and the stream keeps them current through the table's family's cache manager (the
 // node's grants: the auth family's, goal/G41.28), so one grant appears or goes and nothing is read again.
 (function () {
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  if (window.spirit.require) ['spirit/element/search.js', 'spirit/element/search/grant/row.js'].forEach(function (p) { window.spirit.require(p); });
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
+  if (window.spirit.requireScript) ['spirit/element/search.js', 'spirit/element/search/grant/row.js'].forEach(function (p) { window.spirit.requireScript(p); });
 
   function create(host, opts) {
     var o = opts || {};
@@ -72,5 +72,5 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/list.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/list.js', { create: create }); });
 }());

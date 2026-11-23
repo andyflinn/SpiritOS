@@ -2,10 +2,10 @@
 
 The testicle server's family interface (goal/G32.3), where `spirit.branchPath('testicle')` finds it: every verb it
 serves, each argument with its rule. Owed since the rule *"every production script has its own test"* (goal/G47.1, box
-v72). Required as the node reads it; each verb's arguments are judged by `spirit.check`.
+v72). Required as the node reads it; each verb's arguments are judged by `spirit.checkArgs`.
 
 - `spirit.branchPath('testicle')` is this file; it exports `{ verbs }` and nothing else; every rule is one of
-  `spirit.rules`.
+  `spirit.ruleNames`.
 - Its verbs are `busy`, `preferences`, `script.get`, `script.classify`, `suite.search`, `testicle.set`, `testicle.title` (goal/G47.4), `testicle.search`, `red`, `run`, `subscribe`,
   `unsubscribe`. Each is a handler of testicle.js, or, for subscribe and unsubscribe, of appServer's streamPublisher,
   which testicle.js asks for by its `publisher`; testicle.js serves no verb it does not list (*"a verb added to the

@@ -6,7 +6,7 @@
 // ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
 // data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
 // (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
-if (typeof require === 'function') require('../../spirit.js').require('spirit/app/testicle/data.js'); else window.spirit.require('spirit/app/testicle/data.js');
+if (typeof require === 'function') require('../../spirit.js').requireScript('spirit/app/testicle/data.js'); else window.spirit.requireScript('spirit/app/testicle/data.js');
 module.exports = {
   verbs: {
     // goal/G47.1, the box: "busy": true if it is doing any work, false if it is idle. It takes nothing.

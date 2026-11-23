@@ -23,7 +23,7 @@
     var made = null;
     var gone = false;
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.resolve(window.spirit.require('spirit/element/search/job/list.js')).then(function () {
+    Promise.resolve(window.spirit.requireScript('spirit/element/search/job/list.js')).then(function () {
       if (gone) return;
       made = window.spirit.required.spirit.element.search.job.list.create(root, { open: o.open, face: o.face, placeholder: o.placeholder, pick: o.pick });
     });
@@ -38,5 +38,5 @@
 
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself").
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job.js', { create: function (container, options) { var root = createJobSelector(options); container.appendChild(root); return root; } }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job.js', { create: function (container, options) { var root = createJobSelector(options); container.appendChild(root); return root; } }); });
 })();

@@ -22,17 +22,17 @@
 //     opts.details(row, glyph)   a pane's press, when the app opens the icon itself
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   // goal/G41.23: each icon it lists is the icon element (spirit/element/icon.js), which its rows paint through.
-  if (window.spirit.require) ['spirit/element/search/icon/row.js', 'spirit/element/search.js', 'spirit/element/icon.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.requireScript) ['spirit/element/search/icon/row.js', 'spirit/element/search.js', 'spirit/element/icon.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // Andy, goal/G43.11: "run://spirit/iconSet.json IS the system set now."
   var SET = 'spirit/iconSet.json';
 
   // The fs family's cache, where the set is kept and the file followed.
-  var cache = window.spirit.require('spirit/fs/api.js');
+  var cache = window.spirit.requireScript('spirit/fs/api.js');
   function F() { return ((window.spirit.required.spirit.data || {}).fs || {}).data || null; }
 
   // A read that is refused keeps nothing, so a face that gets its star can read it later. Lists read together read once.
@@ -53,7 +53,7 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
     if (reading) return reading;
     // Through the spirit object (goal/G32.2).
     var stamp = '';
-    reading = Promise.resolve(cache).then(function () { stamp = F() ? stampOf(F().file(SET)) : ''; return spirit.ready; }).then(function (s) { return s.fs.loadFile(SET); }).then(function (text) {
+    reading = Promise.resolve(cache).then(function () { stamp = F() ? stampOf(F().file(SET)) : ''; return spirit.readyPromise; }).then(function (s) { return s.fs.loadFile(SET); }).then(function (text) {
       reading = null;
       readStamp = stamp;
       var set = JSON.parse(text);
@@ -115,5 +115,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/fs/ap
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon/list.js', { create: create, set: readSet, SET: SET }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon/list.js', { create: create, set: readSet, SET: SET }); });
 }());

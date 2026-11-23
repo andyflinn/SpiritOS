@@ -18,7 +18,7 @@ goal/G41.1 (box v19-v20), goal/G41.9, goal/G41.11, goal/G43.22, goal/G43.3 and t
 Every are-you-sure on the page is an armingButton (`spirit/element/armingButton.js`; Andy, Q1: "absolutely"), in place of
 the arming desk.js hand-rolled.
 
-- **It loads armingButton itself**, through `spirit.require('spirit/element/armingButton.js')`.
+- **It loads armingButton itself**, through `spirit.requireScript('spirit/element/armingButton.js')`.
 - **Nothing hand-rolled is left**: no `data-armed`, no `armUntilElsewhere`, no armed flag of its own (`deskArmed`,
   `deskArmOrFire`, `deskDisarm`); armingButton arms, says so, and hands the shell its disarm.
 - **Each two-press button is an armingButton handed the app's api**, saying today's armed wording; its first press

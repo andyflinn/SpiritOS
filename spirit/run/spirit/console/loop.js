@@ -12,8 +12,8 @@
 ///   start() -> runs until exit, or until its input ends
 require('../spirit.js');
 const readline = require('readline');
-// The processor, through spirit.require (the general rules).
-const command = spirit.require('spirit/console/command.js');
+// The processor, through spirit.requireScript (the general rules).
+const command = spirit.requireScript('spirit/console/command.js');
 
 function promptOf(p) { return (p ? 'spirit.' + p : 'spirit') + ': '; }
 

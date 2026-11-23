@@ -4,7 +4,7 @@
 // The tests of spirit/app/backup/api.js, and of no other module (spec: ./api.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // The backup server's family interface (goal/G32.3), where spirit.branchPath('backup') finds it (goal/G41.12): one verb,
-// status.get, taking nothing. Required as the node reads it; the verb is checked by spirit.js's own check (spirit.check).
+// status.get, taking nothing. Required as the node reads it; the verb is checked by spirit.js's own check (spirit.checkArgs).
 // The server's source (backup.js) is read as text only, to find the handler. One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -18,7 +18,7 @@ const spirit = globalThis.spirit;
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
 
 const W = { api: null, verbs: {}, names: [] };
-const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.check('backup.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
+const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const r = spirit.checkArgs('backup.' + verb, W.verbs[verb], args); return r ? r.code : ''; };
 
 test.run('the backup branch\'s api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }

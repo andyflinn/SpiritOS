@@ -19,16 +19,16 @@
 //     row            { id, label, owner }, as auth.bundle answers it
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.require(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  if (window.spirit.require) window.spirit.require('spirit/element/row.js');
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
+  if (window.spirit.requireScript) window.spirit.requireScript('spirit/element/row.js');
 
   // A NODE'S BUNDLES ARE THE auth FAMILY'S CACHE (goal/G41.28): what a bundle row on the stream means, and its branch,
   // are the family's own data.js's (spirit/auth/data.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.auth.data.bundles.
-  var authReady = Promise.resolve(window.spirit.require('spirit/auth/api.js')).then(function () { return window.spirit.required.spirit.data.auth.data.bundles; });
+  var authReady = Promise.resolve(window.spirit.requireScript('spirit/auth/api.js')).then(function () { return window.spirit.required.spirit.data.auth.data.bundles; });
   // THE KIND'S INDEX: one watch on the bundles for every bundle row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var bundles = null;
@@ -75,5 +75,5 @@ if (window.spirit && typeof window.spirit.require === 'function') ['spirit/auth/
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.require('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/row.js', { create: create }); });
+  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/row.js', { create: create }); });
 }());

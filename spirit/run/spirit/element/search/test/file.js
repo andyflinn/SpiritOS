@@ -22,7 +22,7 @@ const W = { required: [], made: [], ANSWER: { list: {}, refresh: function () {},
 
 test.run('the selector runs on a window of its own', 0.2, async function () {
   if (!fs.existsSync(FILE)) return false;
-  global.window = { spirit: { element: {}, require: function (p) {
+  global.window = { spirit: { element: {}, requireScript: function (p) {
     W.required.push(String(p));
     // Its list, a recorder in its place, placed where the real one places itself.
     if (p === LIST) require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'))(global.window.spirit, LIST, { create: function (host, opts) { W.made.push({ host: host, opts: opts }); return W.ANSWER; } });
