@@ -115,6 +115,10 @@ db.exec('CREATE TABLE IF NOT EXISTS testicle (id INTEGER PRIMARY KEY, script TEX
   'severity REAL NOT NULL DEFAULT 0, suiteHash TEXT NOT NULL DEFAULT \'\')');
 // BOTH HASHES ON A TEST ROW (goal/G47.1, the box: "A testicle row carries both hashes it ran against, the script's and the
 // suite's"): judged is the script's, suiteHash the suite's.
+// THE TEST'S OWN HASH (goal/G49.6, box v18; Andy: "i opt for the new testHash field", "yes for testicle.set arg"): the hash of
+// the test's own block, sent by the reporter with each result, so the analyze tool tells a changed test from a changed suite.
+// Added as the server starts when it is not there; rows already kept stay as they are, without one.
+if (!db.prepare('PRAGMA table_info(testicle)').all().some(function (c) { return c.name === 'testHash'; })) db.exec("ALTER TABLE testicle ADD COLUMN testHash TEXT NOT NULL DEFAULT ''");
 db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, severity DESC, tested DESC) WHERE current = 1');
 // A TEST'S ROWS FOUND BY ITS KEY (goal/G49.6, the box, "The index"; Andy: "index: yes"): without it each look at one test's rows
 // read the whole table, 37 ms of this one thread for every report that lands on a table of 30,000 rows, and the analyze tool's
@@ -122,8 +126,8 @@ db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, seve
 db.exec('CREATE INDEX IF NOT EXISTS testicle_key ON testicle (script, suite, test, id)');
 const T = {
   current: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? AND current = 1'),
-  add: db.prepare('INSERT INTO testicle (script, suite, test, current, verified, tested, judged, severity, suiteHash) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)'),
-  tested: db.prepare('UPDATE testicle SET tested = ?, judged = ?, severity = MAX(severity, ?), suiteHash = ? WHERE id = ?'),
+  add: db.prepare('INSERT INTO testicle (script, suite, test, current, verified, tested, judged, severity, suiteHash, testHash) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?)'),
+  tested: db.prepare('UPDATE testicle SET tested = ?, judged = ?, severity = MAX(severity, ?), suiteHash = ?, testHash = ? WHERE id = ?'),
   retire: db.prepare('UPDATE testicle SET current = 0 WHERE id = ?'),
   // The current rows in the index's order: the failed first, then most severe first, the newest report first among equals
   // (goal/G47.1, the box: "Every test search answers its failed tests first, then by severity").
@@ -900,17 +904,18 @@ function judgeLeftovers(j) {
 // current row retired and a new one made (goal/G47.1, the test-table cycle), each tagged with the two hashes. On a flip the
 // replaced row, current false now, is published too, before the new current row ("on a flip, the replaced row turning
 // current false is published too, beside the new current row"). Answers the current row as served.
-function setResult(script, suite, name, verified, severity, scriptHash, suiteHash) {
+function setResult(script, suite, name, verified, severity, scriptHash, suiteHash, testHash) {
+  const ownHash = String(testHash || '');
   const now = Date.now();
   const was = T.current.get(script, suite, name);
   const same = !!was && !!was.verified === !!verified;
   let id = 0;
   db.exec('BEGIN');
   try {
-    if (same) { id = Number(was.id); T.tested.run(now, scriptHash, severity, suiteHash, id); }
+    if (same) { id = Number(was.id); T.tested.run(now, scriptHash, severity, suiteHash, ownHash, id); }
     else {
       if (was) T.retire.run(Number(was.id));
-      id = Number(T.add.run(script, suite, name, verified ? 1 : 0, now, scriptHash, was ? Math.max(severity, Number(was.severity) || 0) : severity, suiteHash).lastInsertRowid);
+      id = Number(T.add.run(script, suite, name, verified ? 1 : 0, now, scriptHash, was ? Math.max(severity, Number(was.severity) || 0) : severity, suiteHash, ownHash).lastInsertRowid);
     }
     db.exec('COMMIT');
   } catch (e) { db.exec('ROLLBACK'); throw e; }
@@ -1587,7 +1592,7 @@ appServer.serve({
         const late = own ? null : killed.get(script + '|' + suite);
         const isLate = !!late && late.scriptHash === scriptHash && late.suiteHash === suiteHash;
         if (late && !isLate) killed.delete(script + '|' + suite);
-        const out = setResult(script, suite, name, isLate ? false : !!a.verified, severity, scriptHash, suiteHash);
+        const out = setResult(script, suite, name, isLate ? false : !!a.verified, severity, scriptHash, suiteHash, String(a.testHash || ''));
         // A classifying run's count moves with each script it has said its class of (runningNow), and is told.
         if (asClassified && !asClassified.seen[script]) { asClassified.seen[script] = true; asClassified.done += 1; asClassified.lastClassified = script; told(); }
         return out;

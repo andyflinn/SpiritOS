@@ -21,7 +21,8 @@ module.exports = {
     // goal/G47.1, the verbs cycle: the suite rows of one production script, the words narrowing them ('' for all).
     'suite.search': { script: 'spirit.type.string.fileSelect?', text: 'spirit.type.string.descriptionSelect' },
     // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling); severity from 0.0 to 1.0.
-    'testicle.set': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', test: 'spirit.type.string.description', verified: 'spirit.type.boolean', severity: 'spirit.type.number.probability' },
+    // testHash, the hash of the test's own block (goal/G49.6, box v18; Andy: "yes for testicle.set arg", wsl reviewed it).
+    'testicle.set': { script: 'spirit.type.string.file', suite: 'spirit.type.string.file', test: 'spirit.type.string.description', verified: 'spirit.type.boolean', severity: 'spirit.type.number.probability', testHash: 'spirit.type.string.word?' },
     // goal/G47.4, the box: "a new verb testicle.title will change a testicle title, the script, suite AND oldTitle arguments
     // must match an existing row exactly" (Andy: "GO!"; wsl reviewed it): the title replaced in its suite file, committed and
     // pushed, then every row of that suite and title renamed.

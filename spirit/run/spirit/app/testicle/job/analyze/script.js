@@ -49,6 +49,7 @@ const Q = {
   // testicle.red's own order: the reds, the most severe first, the newest first among equals.
   reds: db.prepare('SELECT * FROM testicle WHERE current = 1 AND verified = 0 ORDER BY severity DESC, tested DESC'),
   history: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? ORDER BY id DESC'),
+  byId: db.prepare('SELECT * FROM testicle WHERE id = ?'),
   suiteRow: db.prepare('SELECT * FROM suite WHERE script = ? AND suite = ?'),
   depsOf: db.prepare('SELECT requires FROM dependency WHERE script = ?'),
   requirersOf: db.prepare('SELECT script FROM dependency WHERE requires = ?'),
@@ -81,7 +82,14 @@ let row = null;
 if (given !== undefined) {
   let g = null;
   try { g = JSON.parse(given); } catch (e) { fail('the red handed is not JSON'); }
-  if (!g || typeof g !== 'object' || !g.script || !g.suite || !g.test) fail('the red handed names no script, suite and test');
+  if (!g || typeof g !== 'object') fail('the red handed is no row');
+  // Handed its id alone, the rest of the row is read from testicle.db (the box v18).
+  if (!g.script && !g.suite && !g.test && Number(g.id) > 0) {
+    const byId = Q.byId.get(Number(g.id));
+    if (!byId) fail('no such red: id ' + g.id);
+    g = byId;
+  }
+  if (!g.script || !g.suite || !g.test) fail('the red handed names no script, suite and test');
   const h = Q.history.all(posix(g.script), posix(g.suite), String(g.test));
   row = (Number(g.id) > 0 ? h.filter(function (r) { return Number(r.id) === Number(g.id); })[0] : null) || h.filter(function (r) { return r.current; })[0] || h[0] || null;
   if (!row) fail('no such red: ' + g.script + ' | ' + g.suite + ' | ' + g.test);
@@ -99,25 +107,29 @@ const unknown = [];
 
 // 1. the red itself
 const red = { script: script, suite: suite, test: testTitle, id: Number(row.id), severity: Number(row.severity), verified: !!row.verified,
-  reason: suiteRow.reason || (row.verified ? '' : 'fail'), tested: Number(row.tested), judged: String(row.judged || ''), suiteHash: String(row.suiteHash || '') };
+  reason: suiteRow.reason || (row.verified ? '' : 'fail'), tested: Number(row.tested), judged: String(row.judged || ''), suiteHash: String(row.suiteHash || ''),
+  testHash: String(row.testHash || '') };
 if (red.verified) unknown.push('this row is green now: it is no red');
+// THE TEST'S OWN HASH (the box v18, Andy: "i opt for the new testHash field"): two rows are compared by their testHash, the hash
+// of the test's own block; a row from before testHash has none, and for it the suite's hash stands in.
+function byTestHash(a, b) { return !!String(a.testHash || '') && !!String(b.testHash || ''); }
+function sameTest(a, b) { return byTestHash(a, b) ? String(a.testHash) === String(b.testHash) : String(a.suiteHash || '') === String(b.suiteHash || ''); }
 // 2. flip or never green
 const green = history.filter(function (r) { return r.verified && Number(r.tested) < red.tested; })[0] || null;
 const lastGreen = green ? { id: Number(green.id), tested: Number(green.tested), judged: String(green.judged || ''), suiteHash: String(green.suiteHash || ''),
-  sameHashes: String(green.judged || '') === red.judged && String(green.suiteHash || '') === red.suiteHash } : null;
+  testHash: String(green.testHash || ''), sameHashes: String(green.judged || '') === red.judged && sameTest(green, red) } : null;
 if (!lastGreen) unknown.push('never green: no green of this test in its history');
-// 5. what to fix first: a red setup check of the same script first, then its other current reds; and the same test red on
+// 5. what to fix first: a red setup check of the same script alone (the box v18: "the only thing to fix first ...; the script's
+// other current reds are a count beside it, never a list, so no red points at another in a circle"); and the same test red on
 // other scripts, since a rule red on many points at the rule or one shared file
 const reds = Q.reds.all();
 const others = reds.filter(function (r) { return r.script === script && !(r.suite === suite && r.test === testTitle); });
 const setup = others.filter(function (r) { return SETUP.test(String(r.test)); });
-const fixFirst = bounded(setup.concat(others.filter(function (r) { return setup.indexOf(r) === -1; })).map(function (r) {
-  return { script: r.script, suite: r.suite, test: r.test, severity: Number(r.severity), setup: setup.indexOf(r) !== -1 };
-}));
+const fixFirst = bounded(setup.map(function (r) { return { script: r.script, suite: r.suite, test: r.test, severity: Number(r.severity), setup: true }; }));
+const otherReds = others.length - setup.length;
 const sameTestElsewhere = bounded(reds.filter(function (r) { return r.suite === suite && r.test === testTitle && r.script !== script; }).map(function (r) { return r.script; }));
-// 6. flaky: the same script hash and suite hash, both green and red
-const sameRuns = history.filter(function (r) { return String(r.judged || '') === red.judged && String(r.suiteHash || '') === red.suiteHash; });
-const flaky = sameRuns.some(function (r) { return r.verified; }) && sameRuns.some(function (r) { return !r.verified; });
+// What it requires (the dependency table), read here since a contradicting test must share a file with the red.
+const deps = Q.depsOf.all(script).map(function (d) { return d.requires; });
 // 7. contradictory tests: the tests that turned green from red between the last green and the red, found from the red alone;
 // one counts only when it took turns at least twice (the box v17: "a single flip is a fix"): its verdict changed twice or more.
 function turnsOf(rows) { let n = 0; for (let i = 1; i < rows.length; i++) if (!!rows[i].verified !== !!rows[i - 1].verified) n += 1; return n; }
@@ -126,6 +138,8 @@ if (lastGreen) {
   for (const r of Q.greens.iterate(lastGreen.tested, red.tested)) {
     if (!ALL && contradictsAll.length > LIST_MAX) break;
     if (r.script === script && r.suite === suite && r.test === testTitle) continue;
+    // It shares a file with the red (the box v18): the same script, or one in the red script's dependency rows.
+    if (r.script !== script && deps.indexOf(r.script) === -1) continue;
     const its = Q.history.all(r.script, r.suite, r.test).slice().sort(function (a, b) { return Number(a.tested) - Number(b.tested); });
     const before = its.filter(function (h) { return Number(h.tested) < Number(r.tested); }).pop();
     if (before && !before.verified && turnsOf(its) >= 2) contradictsAll.push({ script: r.script, suite: r.suite, test: r.test, turnedGreen: Number(r.tested) });
@@ -134,11 +148,11 @@ if (lastGreen) {
 const contradicts = bounded(contradictsAll);
 // The look stops one past the bound, so the count left out is a floor there, and said so.
 if (!ALL && contradictsAll.length > LIST_MAX) unknown.push('contradicts: the look stopped past ' + LIST_MAX + '; more may be there than contradictsMore says (--all looks at all)');
-// 4. suspects: what it requires, changed after the last green, newest first
-const deps = Q.depsOf.all(script).map(function (d) { return d.requires; });
+// 4. suspects: what it requires, changed after the last green, newest first; never green, none (the box v18: "since there is no
+// green to be after")
 if (!deps.length) unknown.push('no dependency rows for this script');
 const since = lastGreen ? lastGreen.tested : 0;
-const suspects = bounded(deps.map(function (p) { return Q.scriptRowOf.get(p); }).filter(function (s) { return !!s && Number(s.changed) > since; })
+const suspects = bounded((lastGreen ? deps : []).map(function (p) { return Q.scriptRowOf.get(p); }).filter(function (s) { return !!s && Number(s.changed) > since; })
   .sort(function (x, y) { return Number(y.changed) - Number(x.changed); }).map(function (s) { return { script: s.name, changed: Number(s.changed) }; }));
 if (lastGreen) unknown.push('the hash each required script had at the last green is not kept: a file changed and changed back is still a suspect');
 // 8. where the run came from
@@ -147,23 +161,34 @@ unknown.push('the commit the run\'s world was copied from is not kept');
 // after the last green: a fault there shows in this red when the test loads them.
 const requirers = Q.requirersOf.all(script).map(function (d) { return d.script; }).filter(function (p) { return deps.indexOf(p) !== -1; });
 const requiringChanged = requirers.map(function (p) { return Q.scriptRowOf.get(p); }).filter(function (s) { return !!s && Number(s.changed) > since; }).map(function (s) { return s.name; });
+// 6. flaky: the same script hash and test hash (the suite's for a row without one), both green and red, and nothing it requires
+// or that requires it changed after the green: "nothing changed, so it is the machine, a timing or the order, never the code"
+const sameRuns = history.filter(function (r) { return String(r.judged || '') === red.judged && sameTest(r, red); });
+const flaky = sameRuns.some(function (r) { return r.verified; }) && sameRuns.some(function (r) { return !r.verified; }) && !suspects.items.length && !requiringChanged.length;
 // 3. blame: where the fault lies, not who made it (Andy: "a fix is a fix and does not need to be done by the person/agent who
 // caused the problem"), one verdict against the last green, its evidence beside it; the commits since the green that touched
 // the script, its suite or what it requires stay as the evidence, each with its diff, without author (we commit as one account).
 function whereOf() {
   const elsewhereCount = sameTestElsewhere.items.length + sameTestElsewhere.more;
+  // First the run (the box v18): one that hung or crashed (the suite row's reason) is its own verdict, ahead of every check.
+  const runReason = String(suiteRow.reason || '');
+  if (runReason === 'hung' || runReason === 'crashed') return { where: 'not in this test: the run ' + runReason, because: 'the suite row\'s reason is ' + runReason + ', so every red of that run follows from it', scripts: [] };
   if (!lastGreen) return { where: 'not known', because: 'never green', scripts: [] };
-  if (flaky) return { where: 'not in this script', because: 'flaky: red with the same hashes as a green', scripts: [] };
+  // Then the hashes (wsl's red fd4995f6: a changed script with its own test unchanged is in the script, though a setup check
+  // and the same test elsewhere are red too); then a setup check, the same test elsewhere, what requires or is required, flaky.
+  const scriptChanged = lastGreen.judged !== red.judged;
+  // The test's own hash in place of the suite's (the box v18); the suite's for a row without one.
+  const which = byTestHash(lastGreen, red) ? 'test' : 'suite';
+  const suiteChanged = !sameTest(lastGreen, red);
+  if (scriptChanged && !suiteChanged) return { where: 'in the script', because: 'the script\'s hash changed since the last green, the ' + which + '\'s did not', scripts: [script] };
+  if (suiteChanged && !scriptChanged) return { where: 'in the test', because: 'the ' + which + '\'s hash changed since the last green, the script\'s did not', scripts: [suite] };
+  if (scriptChanged && suiteChanged) return { where: 'not known', because: 'both the script\'s and the ' + which + '\'s hash changed since the last green', scripts: [] };
   if (fixFirst.items.some(function (x) { return x.setup; })) return { where: 'not in this script', because: 'a setup check of its run is red too', scripts: [] };
   if (elsewhereCount >= 3) return { where: 'not in this script', because: 'the same test is red on ' + elsewhereCount + ' other scripts: the test, a general rule or a file they share', scripts: [] };
-  const scriptChanged = lastGreen.judged !== red.judged;
-  const suiteChanged = lastGreen.suiteHash !== red.suiteHash;
-  if (scriptChanged && !suiteChanged) return { where: 'in the script', because: 'its hash changed since the last green, the suite\'s did not', scripts: [script] };
-  if (suiteChanged && !scriptChanged) return { where: 'in the test', because: 'the suite\'s hash changed since the last green, the script\'s did not', scripts: [suite] };
-  if (scriptChanged && suiteChanged) return { where: 'not known', because: 'both the script\'s and the suite\'s hash changed since the last green', scripts: [] };
   if (requiringChanged.length) return { where: 'in a script requiring it', because: 'neither hash changed; a script that requires it and that the test loads changed after the green', scripts: requiringChanged };
   const required = suspects.items.map(function (s) { return s.script; });
   if (required.length) return { where: 'in a script it requires', because: 'neither hash changed; a file it requires changed after the green (by change time only)', scripts: required };
+  if (flaky) return { where: 'not in this script', because: 'flaky: red with the same hashes as a green', scripts: [] };
   return { where: 'not known', because: 'neither hash changed, and nothing it requires changed after the green', scripts: [] };
 }
 let changes = bounded([]);
@@ -174,12 +199,15 @@ if (lastGreen) {
     const files = [script, suite].concat(deps).map(inRepo);
     const sinceArg = '--since=@' + Math.floor(lastGreen.tested / 1000);
     const log = git(['log', sinceArg, '--format=%h%x09%an%x09%cI%x09%s', '--'].concat(files));
-    changes = bounded(log.split('\n').filter(Boolean).map(function (l) { const p = l.split('\t'); return { commit: p[0], at: p[2], subject: p.slice(3).join('\t') }; }));
+    // Each commit by its first line, cut at about 120 characters (the box v18).
+    changes = bounded(log.split('\n').filter(Boolean).map(function (l) { const p = l.split('\t'); const subject = p.slice(3).join('\t'); return { commit: p[0], at: p[2], subject: subject.length > 120 ? subject.slice(0, 120) + '…' : subject }; }));
     changes.items.forEach(function (b) { Object.assign(b, shortDiff(git(['show', '-U0', '--format=', b.commit, '--'].concat(files)))); });
     suspects.items.forEach(function (s) { Object.assign(s, shortDiff(git(['log', sinceArg, '-p', '-U0', '--format=', '--', inRepo(s.script)]))); });
   } catch (e) { unknown.push('git could not be asked for the commits'); }
 }
 const blame = Object.assign(whereOf(), { changes: changes.items });
+// The box v19, 9: whenever a verdict rests on testHash, that a helper the test calls outside its own block can change without it.
+if (lastGreen && byTestHash(lastGreen, red) && /^in /.test(blame.where)) unknown.push('the verdict rests on testHash: a helper the test calls outside its own block can change without it');
 
 // SAID FIRST, BY FIXED SENTENCES FROM THE FIELDS (the box: "so the same red always gives the same words").
 function saidOf() {
@@ -201,7 +229,7 @@ const out = {
   lastGreen: lastGreen,
   blame: blame, blameMore: changes.more,
   suspects: suspects.items, suspectsMore: suspects.more,
-  fixFirst: fixFirst.items, fixFirstMore: fixFirst.more,
+  fixFirst: fixFirst.items, fixFirstMore: fixFirst.more, otherReds: otherReds,
   sameTestElsewhere: sameTestElsewhere.items, sameTestElsewhereMore: sameTestElsewhere.more,
   flaky: flaky,
   contradicts: contradicts.items, contradictsMore: contradicts.more,

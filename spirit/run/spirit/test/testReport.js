@@ -323,7 +323,11 @@ async function runAll() {
     else { test.failureCount++; line(title + ' ' + ICON.ERROR); }
     if (!v.pass) held[script] = false;
     if (!v.pass && v.crash) reasonOf[script] = (v.hung || reasonOf[script] === 'hung') ? 'hung' : 'crashed';
-    reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity });
+    // ITS OWN BLOCK'S HASH (goal/G49.6, box v18: "each result row keeps the hash of its own test's block, the source of its
+    // function"): the analyze tool tells a changed test from a changed suite by it.
+    // Its first 32 hex digits, a word (testicle.set's rule for it: at most 32 bytes).
+    const testHash = require('crypto').createHash('sha256').update(String(t.body)).digest('hex').slice(0, 32);
+    reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity, testHash: testHash });
     // EVERY RESULT REACHES TESTICLE THE MOMENT ITS TEST IS DONE (goal/G49.5; Andy: "the testicle server gets a report
     // IMMEDIATELY after completion of a test", "it is supposed to pick up there where it was interrupted", "suites are NOT
     // allowed to fail. they must be FIXED!"): the next test starts only once this one's report has landed (or given up), so
