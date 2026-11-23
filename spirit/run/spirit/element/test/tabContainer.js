@@ -8,7 +8,10 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const test = require(path.join(path.resolve(__dirname, '../../..'), 'spirit', 'test', 'testReport.js'));
+const RUN = path.resolve(__dirname, '../../..');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const FILE = path.join(__dirname, '..', 'tabContainer.js');
 
@@ -82,7 +85,7 @@ let loadError, T, mounted, tab, c1, tc, ids, iTabs, iContent, c1b, m0, firstMoun
 test.run('it loads on window.spirit.required.spirit.element.tabContainer with create', 0.2, function () {
   global.window = { spirit: { element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   loadError = null;
   try { vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE }); } catch (e) { loadError = e; }
   T = window.spirit.required.spirit.element.tabContainer;

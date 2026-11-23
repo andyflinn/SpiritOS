@@ -11,7 +11,10 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const test = require(path.join(path.resolve(__dirname, '..', '..', '..', '..', '..'), 'spirit', 'test', 'testReport.js'));
+const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const JS = path.join(__dirname, '..', '..', '..');
 function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
@@ -32,7 +35,7 @@ let L = null, F = null, dataSubscribed = 0, pane = null, o = null, CD = null, el
 test.run('the contacts list runs on a window of its own, with its row element and the data set real', 0.2, function () {
   global.window = { spirit: {} };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
-  require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = window.spirit;
   window.spirit.readyPromise = Promise.resolve({
     contact: { search: function (b) { asked.push({ verb: 'contact.search', body: b }); return Promise.resolve(searchAnswer); } },
@@ -45,7 +48,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
       } },
   });
   // The packet envelope, the real one (spirit/client/packet.js), as the list requires it.
-  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); (window.spirit.required.spirit.client = window.spirit.required.spirit.client || {}); window.spirit.required.spirit.client.packet = require(path.join(__dirname, '..', '..', '..', '..', 'client', 'packet.js'));
+  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); (window.spirit.required.spirit.client = window.spirit.required.spirit.client || {}); window.spirit.required.spirit.client.packet = LOADER.requireScript('spirit/client/packet.js');
   Object.assign(window.spirit, {
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
     // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
@@ -74,7 +77,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
   // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
   // goal/G43.32: the helper an element places itself with comes from the page stand-in (headLessChrome.js pageSpirit).
   // packet.js above takes the real spirit.js, whose require is the node's; the page stand-in goes back on top of it.
-  require(path.join(__dirname, '..', '..', '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   const pageRequire = window.spirit.requireScript;
   // A branch's api.js (spirit.requireScript('spirit/contact/api.js')): its real companion data.js runs once, attaching itself to
   // the data set loaded below, as the real api.js requires it (goal/G47.1).

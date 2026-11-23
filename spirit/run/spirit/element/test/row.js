@@ -7,12 +7,15 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const test = require(path.join(path.resolve(__dirname, '../../..'), 'spirit', 'test', 'testReport.js'));
+const RUN = path.resolve(__dirname, '../../..');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const FILE = path.join(__dirname, '..', 'row.js');
 global.window = { spirit: {} };
 // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
-require(path.join(__dirname, '..', '..', 'test', 'headLessChrome.js')).pageSpirit(window.spirit);
+LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
 // The element, once the first test has run its file.
 let R = null;
 
