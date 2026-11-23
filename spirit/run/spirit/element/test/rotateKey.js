@@ -96,11 +96,13 @@ function world(answer) {
         const real = win.spirit.required.spirit.element.armingButton.attach;
         win.spirit.required.spirit.element.armingButton.attach = function (b, o) { w.attached.push({ button: b, opts: o || {} }); return real(b, o); };
       }
+      // The node branch by its api.js's path, the one place rotateKey reaches it (goal/G49.6: nothing hands out a branch by name).
+      if (p === 'spirit/node/api.js') return Promise.resolve(win.spirit.node);
       return w.hold ? w.hold : Promise.resolve({});
     },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); },
-    // The node family through spirit.readyPromise, as the page reaches every family (goal/G43.27, Q1: no api at load).
-    get ready() { return Promise.resolve(win.spirit); },
+    // readyPromise, as the page names it since goal/G49.6's renames; the node branch is then required by its path (above).
+    get readyPromise() { return Promise.resolve(win.spirit); },
     callOutcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },
     node: {
       rotateCipher: function (args) {
@@ -143,7 +145,9 @@ test.run('rotateKey.js uses no spirit.shell.activateApp and no dialog of the old
 }, test.limit.quick);
 test.run('rotateKey asks the node through the spirit object, by spirit.required.spirit.node.api.rotateCipher, and never by api.verb', 0.2, function () {
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
-  return (!/\.verb\s*\(/.test(CODE) && /\bnode\.rotateCipher\b/.test(CODE)) ? true : false;
+  // Since goal/G49.6 the node branch is required by its api.js's path, and its verb called on what that answers, the object
+  // standing at spirit.required.spirit.node.api.
+  return (!/\.verb\s*\(/.test(CODE) && /requireScript\(\s*['"]spirit\/node\/api\.js['"]\s*\)/.test(CODE) && /\.rotateCipher\s*\(/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('rotateKey loads spirit/element/armingButton.js itself, through spirit.requireScript', 0.2, function () {
   return (w.required.indexOf('spirit/element/armingButton.js') !== -1) ? true : false;
@@ -157,7 +161,8 @@ test.run('rotateKey calls no armUntilElsewhere itself', 0.2, function () {
 }, test.limit.quick);
 test.run('rotateKey takes no api and hands none on', 0.2, function () {
   // Andy: "anybody can mount any element without knowing what it actually needs...." (goal/G43.24).
-  return (!/\bapi\b/.test(CODE)) ? true : false;
+  // Judged on its code, its strings left out: the path of the node branch's api.js it requires is no api taken or handed on.
+  return (!/\bapi\b/.test(CODE.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g, "''"))) ? true : false;
 }, test.limit.quick);
 test.run('rotateKey has no armed flag and no armed class of its own', 0.2, function () {
   return (!/\brkArmed\b/.test(CODE) && !/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE)) ? true : false;
