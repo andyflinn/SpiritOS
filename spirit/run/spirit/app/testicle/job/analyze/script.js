@@ -42,7 +42,8 @@ const given = args.filter(function (a) { return a !== '--all'; })[0];
 
 if (!fs.existsSync(DB_FILE)) fail('no testicle database at ' + DB_FILE);
 let db = null;
-try { db = new DatabaseSync(DB_FILE, { readOnly: true }); } catch (e) { fail('the testicle database could not be opened: ' + (e && e.message)); }
+// A busy timeout of 5 s on the open itself (the box v20), so a server write makes it wait, never fail.
+try { db = new DatabaseSync(DB_FILE, { readOnly: true, timeout: 5000 }); } catch (e) { fail('the testicle database could not be opened: ' + (e && e.message)); }
 db.exec('PRAGMA busy_timeout = 5000');
 
 const Q = {
@@ -127,6 +128,8 @@ const others = reds.filter(function (r) { return r.script === script && !(r.suit
 const setup = others.filter(function (r) { return SETUP.test(String(r.test)); });
 const fixFirst = bounded(setup.map(function (r) { return { script: r.script, suite: r.suite, test: r.test, severity: Number(r.severity), setup: true }; }));
 const otherReds = others.length - setup.length;
+// The other scripts whose same test went red within a second of this red (the box v20).
+const together = reds.filter(function (r) { return r.suite === suite && r.test === testTitle && r.script !== script && Math.abs(Number(r.tested) - Number(row.tested)) <= 1000; }).map(function (r) { return r.script; });
 const sameTestElsewhere = bounded(reds.filter(function (r) { return r.suite === suite && r.test === testTitle && r.script !== script; }).map(function (r) { return r.script; }));
 // What it requires (the dependency table), read here since a contradicting test must share a file with the red.
 const deps = Q.depsOf.all(script).map(function (d) { return d.requires; });
@@ -173,6 +176,9 @@ function whereOf() {
   // First the run (the box v18): one that hung or crashed (the suite row's reason) is its own verdict, ahead of every check.
   const runReason = String(suiteRow.reason || '');
   if (runReason === 'hung' || runReason === 'crashed') return { where: 'not in this test: the run ' + runReason, because: 'the suite row\'s reason is ' + runReason + ', so every red of that run follows from it', scripts: [] };
+  // ONE RUN RED ON SEVERAL SCRIPTS AT ONE MOMENT (the box v20): the same test red on 2 or more other scripts within a second of
+  // it is one run cut off, as a classifier's at a restart, which keeps no reason.
+  if (together.length >= 2) return { where: 'not in this test: one run red on all', because: 'the same test went red on ' + together.length + ' other scripts within a second of it: one run cut off', scripts: together };
   if (!lastGreen) return { where: 'not known', because: 'never green', scripts: [] };
   // Then the hashes (wsl's red fd4995f6: a changed script with its own test unchanged is in the script, though a setup check
   // and the same test elsewhere are red too); then a setup check, the same test elsewhere, what requires or is required, flaky.
