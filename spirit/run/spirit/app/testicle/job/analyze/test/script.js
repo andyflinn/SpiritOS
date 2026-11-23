@@ -33,6 +33,8 @@ const R = 'spirit/zz/r.js', RS = 'spirit/zz/test/r.js', RT = 'r, whose required 
 const D = 'spirit/zz/d.js';
 const HS = 'spirit/zz/h.js', HSS = 'spirit/zz/test/h.js', HT = 'h, whose run hung';
 const N = 'spirit/zz/n.js', NS = 'spirit/zz/test/n.js', NT = 'n, never green';
+const C = ['spirit/zz/c1.js', 'spirit/zz/c2.js', 'spirit/zz/c3.js'], CS = 'spirit/test/zzClassify.js', CT = 'it loads, so it can be classified';
+const E = ['spirit/zz/e1.js', 'spirit/zz/e2.js', 'spirit/zz/e3.js'], ES = 'spirit/test/zzApart.js', ET = 'it is red, apart';
 const F = 'spirit/zz/f.js', FS_ = 'spirit/zz/test/f.js', FT = 'f wobbles';
 const OTHERS = Array.from({ length: 25 }, function (v, i) { return 'spirit/zz/y' + i + '.js'; });
 const SCHEMA = [
@@ -51,7 +53,7 @@ function plant(root, rows) {
   const put = db.prepare('INSERT INTO testicle (script, suite, test, current, verified, tested, judged, severity, suiteHash, testHash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   rows.forEach(function (r) { put.run(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9] || ''); });
   // d.js, required by r.js, changed at T1, after r.js's green at T0; every other script last changed at T0.
-  [X, Z, WS, U, Q, R, D, HS, N, F].concat(OTHERS).forEach(function (n) { db.prepare('INSERT INTO script (name, hash, changed) VALUES (?, ?, ?)').run(n, n === X ? 'h2' : 'h', n === D ? T1 : T0); });
+  [X, Z, WS, U, Q, R, D, HS, N, F].concat(C, E, OTHERS).forEach(function (n) { db.prepare('INSERT INTO script (name, hash, changed) VALUES (?, ?, ?)').run(n, n === X ? 'h2' : 'h', n === D ? T1 : T0); });
   DEPS.forEach(function (d) { db.prepare('INSERT INTO dependency (script, requires) VALUES (?, ?)').run(d[0], d[1]); });
   [[X, GEN, ''], [Q, QS, ''], [R, RS, ''], [HS, HSS, 'hung'], [N, NS, '']].forEach(function (x) { db.prepare('INSERT INTO suite (script, suite, outcome, changed, reason) VALUES (?, ?, ?, ?, ?)').run(x[0], x[1], 'red', T2, x[2]); });
   db.close();
@@ -85,7 +87,17 @@ const WORLD = [
   [WS, WSS, WT, 1, 1, T2, 'hw', 0.4, 'sw'],
   [F, FS_, FT, 0, 1, T0, 'hf', 0.4, 'sf'],
   [F, FS_, FT, 1, 0, T2, 'hf', 0.4, 'sf']
-].concat(OTHERS.map(function (n) { return [n, GEN, RED, 1, 0, T2, 'h', 0.5, 's1']; }));
+// The 25 others red each 5 s apart, before x.js, so none falls within a second of it: no one run cut off (box v20).
+].concat(OTHERS.map(function (n, i) { return [n, GEN, RED, 1, 0, T2 - (i + 1) * 5000, 'h', 0.5, 's1']; }))
+// box v20: "the same test red on 2 or more other scripts within a second of it is one run cut off (a classifier's has no
+// reason): not in this test: one run red on all". c1.js went red with c2.js and c3.js within 400 ms, its script hash changed;
+// e1.js went red with e2.js and e3.js 5 s apart, its script hash changed too, and that is no one run.
+  .concat([
+    [C[0], CS, CT, 0, 1, T0, 'hc1', 0.35, 'sc', 'tc'], [C[0], CS, CT, 1, 0, T2, 'hc2', 0.35, 'sc', 'tc'],
+    [C[1], CS, CT, 1, 0, T2 + 200, 'h', 0.35, 'sc', 'tc'], [C[2], CS, CT, 1, 0, T2 + 400, 'h', 0.35, 'sc', 'tc'],
+    [E[0], ES, ET, 0, 1, T0, 'he1', 0.35, 'se', 'te'], [E[0], ES, ET, 1, 0, T2, 'he2', 0.35, 'se', 'te'],
+    [E[1], ES, ET, 1, 0, T2 + 5000, 'h', 0.35, 'se', 'te'], [E[2], ES, ET, 1, 0, T2 + 10000, 'h', 0.35, 'se', 'te']
+  ]);
 
 const W = {};
 // The tool stands in the scratch run root, a copy of it at its own path, and is started there: its run root is that root,
@@ -215,6 +227,36 @@ test.run('handed x.js\'s red by its id alone, it analyzes that red', 0.4, functi
   const row = handed(X, GEN, RED);
   const r = run(W.root, [JSON.stringify({ id: row && row.id })]);
   return r.code === 0 && !!r.json && !!r.json.red && r.json.red.script === X && r.json.red.test === RED;
+}, test.limit.slow);
+test.run('c1.js\'s red, red with c2.js and c3.js within a second, is not in this test: one run red on all', 0.6, function () {
+  const j = verdictOf(C[0], CS, CT);
+  return !!j && !!j.blame && /^not in this test/.test(String(j.blame.where)) && /one run/.test(String(j.blame.where) + ' ' + String(j.blame.because));
+}, test.limit.slow);
+test.run('e1.js\'s red, red with e2.js and e3.js 5 s apart, is no one run: blamed on its changed script', 0.4, function () {
+  const j = verdictOf(E[0], ES, ET);
+  return !!j && !!j.blame && j.blame.where === 'in the script';
+}, test.limit.slow);
+// box v20: "it opens testicle.db with a busy timeout of 5 s, so a server write makes it wait, never fail". The suite holds a write on
+// the planted database for 2 s while the tool starts; the tool waits and answers.
+test.run('started while testicle.db is held by a write for 2 s, it waits and answers, never failing on a lock', 0.6, async function () {
+  if (!W.root) return false;
+  const copy = path.join(W.root, REL);
+  if (!fs.existsSync(copy)) return false;
+  const db = new DatabaseSync(path.join(W.root, 'spirit', 'state', 'testicle', 'data', 'testicle.db'));
+  // A write inside it, as the server's are: an exclusive transaction that has written keeps every reader out until it ends.
+  db.exec('BEGIN EXCLUSIVE');
+  db.exec('UPDATE testicle SET severity = severity WHERE id = (SELECT min(id) FROM testicle)');
+  const kid = require('child_process').spawn(process.execPath, [copy], { cwd: W.root });
+  let out = '';
+  kid.stdout.on('data', function (d) { out += d; });
+  const ended = new Promise(function (r) { kid.on('close', function (code) { r(code); }); });
+  await new Promise(function (r) { setTimeout(r, 2000); });
+  db.exec('ROLLBACK');
+  db.close();
+  const code = await ended;
+  let j = null;
+  try { j = JSON.parse(out); } catch (e) { j = null; }
+  return code === 0 && !!j && !!j.red;
 }, test.limit.slow);
 // "handed a red-testicle: the red testicle row itself"
 test.run('handed f.js\'s red row, it analyzes that one, and finds it flaky: green and red with the same hashes', 0.6, function () {
