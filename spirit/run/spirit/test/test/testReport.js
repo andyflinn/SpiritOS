@@ -269,6 +269,14 @@ test.run('a report carries the title as the test, and the result', 0.2, function
   const f = setOf('it fails with false')[0] || {};
   return (p.test === 'it passes' && p.verified === true && f.test === 'it fails with false' && f.verified === false) || false;
 }, test.limit.quick);
+// goal/G49.6, box v18 (Andy: "i opt for the new testHash field"): "each result row keeps the hash of its own test's block, the
+// source of its function ... The reporter holds that function, so it sends the hash with each result". Two tests of different
+// bodies carry different hashes.
+test.run('a report carries testHash, the hash of its own test\'s block, different for different tests', 0.4, function () {
+  const p = setOf('it passes')[0] || {};
+  const f = setOf('it fails with false')[0] || {};
+  return (typeof p.testHash === 'string' && p.testHash.length > 0 && typeof f.testHash === 'string' && f.testHash.length > 0 && p.testHash !== f.testHash) || false;
+}, test.limit.quick);
 test.run('a report carries the severity the test gives', 0.2, function () {
   const p = setOf('it passes')[0] || {};
   const sec = setOf('a security check')[0] || {};

@@ -116,6 +116,13 @@ test.run('testicle.set takes one test\'s result, with script, suite, test, verif
   return (passes('testicle.set', SET) && without.length === 0 && refusedAs('testicle.set', Object.assign({}, SET, { verified: 'yes' })) === 'bad-request'
     && refusedAs('testicle.set', Object.assign({}, SET, { severity: '0.2' })) === 'bad-request') || false;
 }, test.limit.quick);
+// goal/G49.6, box v18 (Andy: "i opt for the new testHash field"): "The reporter holds that function, so it sends the hash with
+// each result; testicle.set takes it as an argument".
+test.run('testicle.set takes testHash, the hash of the test\'s own block, beside its result', 0.4, function () {
+  if (!W.api) return false;
+  const v = W.verbs['testicle.set'] || {};
+  return (Object.prototype.hasOwnProperty.call(v, 'testHash') && passes('testicle.set', Object.assign({}, SET, { testHash: 'a1b2c3' }))) || false;
+}, test.limit.quick);
 test.run('testicle.set takes one test only and refuses a list of results', 0.2, function () {
   if (!W.api) return false;
   return refusedAs('testicle.set', Object.assign({}, SET, { tests: [] })) === 'no-such-argument' || false;

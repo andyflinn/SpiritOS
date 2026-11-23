@@ -3130,3 +3130,12 @@ test.run('testicle.db holds an index of the testicle table on script, suite, tes
     return names.some(function (n) { return db.prepare('PRAGMA index_info(' + JSON.stringify(n) + ')').all().map(function (c) { return c.name; }).join() === 'script,suite,test,id'; });
   } catch (e) { return false; } finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
 }, test.limit.quick);
+// The box v18 (Andy: "i opt for the new testHash field"): "each result row keeps the hash of its own test's block ... testicle's
+// server adds the column as it starts". The scratch node's testicle.db has it.
+test.run('testicle.db\'s testicle table has a testHash column', 0.4, function () {
+  if (!up()) return false;
+  const { DatabaseSync } = require('node:sqlite');
+  let db = null;
+  try { db = new DatabaseSync(DB, { readOnly: true }); return db.prepare('PRAGMA table_info(testicle)').all().some(function (c) { return c.name === 'testHash'; }); }
+  catch (e) { return false; } finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
+}, test.limit.quick);

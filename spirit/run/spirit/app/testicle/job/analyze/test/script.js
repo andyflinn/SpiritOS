@@ -27,34 +27,60 @@ const SETUP = 'a scratch node with its DEBUG on and a Chrome page are ready';
 const NEIGHBOUR = 'it says no error';
 const Z = 'spirit/zz/z.js', ZS = 'spirit/zz/test/z.js', ZT = 'z works';
 const WS = 'spirit/zz/w.js', WSS = 'spirit/zz/test/w.js', WT = 'w turns green once';
+const U = 'spirit/zz/u.js', US = 'spirit/zz/test/u.js', UT = 'u takes turns, sharing nothing';
+const Q = 'spirit/zz/q.js', QS = 'spirit/zz/test/q.js', QT = 'q, whose own block changed';
+const R = 'spirit/zz/r.js', RS = 'spirit/zz/test/r.js', RT = 'r, whose required file changed';
+const D = 'spirit/zz/d.js';
+const HS = 'spirit/zz/h.js', HSS = 'spirit/zz/test/h.js', HT = 'h, whose run hung';
+const N = 'spirit/zz/n.js', NS = 'spirit/zz/test/n.js', NT = 'n, never green';
 const F = 'spirit/zz/f.js', FS_ = 'spirit/zz/test/f.js', FT = 'f wobbles';
 const OTHERS = Array.from({ length: 25 }, function (v, i) { return 'spirit/zz/y' + i + '.js'; });
 const SCHEMA = [
   "CREATE TABLE script (name TEXT PRIMARY KEY, hash TEXT NOT NULL DEFAULT '', deleted INTEGER NOT NULL DEFAULT 0, changed INTEGER NOT NULL, reClassify INTEGER NOT NULL DEFAULT 1, browserOnly INTEGER NOT NULL DEFAULT 0, nodeOnly INTEGER NOT NULL DEFAULT 0)",
   "CREATE TABLE suite (script TEXT NOT NULL, suite TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0, hash TEXT NOT NULL DEFAULT '', outcome TEXT NOT NULL DEFAULT '', changed INTEGER NOT NULL, reason TEXT NOT NULL DEFAULT '', ms INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (script, suite))",
   'CREATE TABLE dependency (script TEXT NOT NULL, requires TEXT NOT NULL, PRIMARY KEY (script, requires))',
-  "CREATE TABLE testicle (id INTEGER PRIMARY KEY, script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT '', severity REAL NOT NULL DEFAULT 0, suiteHash TEXT NOT NULL DEFAULT '')"
+  "CREATE TABLE testicle (id INTEGER PRIMARY KEY, script TEXT NOT NULL, suite TEXT NOT NULL, test TEXT NOT NULL, current INTEGER NOT NULL DEFAULT 1, verified INTEGER NOT NULL, tested INTEGER NOT NULL, judged TEXT NOT NULL DEFAULT '', severity REAL NOT NULL DEFAULT 0, suiteHash TEXT NOT NULL DEFAULT '', testHash TEXT NOT NULL DEFAULT '')"
 ];
+// What requires what (the dependency table): x.js requires z.js, so z.js shares a file with the red; r.js and n.js require d.js.
+const DEPS = [[X, Z], [R, D], [N, D]];
 function plant(root, rows) {
   const dir = path.join(root, 'spirit', 'state', 'testicle', 'data');
   fs.mkdirSync(dir, { recursive: true });
   const db = new DatabaseSync(path.join(dir, 'testicle.db'));
   SCHEMA.forEach(function (s) { db.exec(s); });
-  const put = db.prepare('INSERT INTO testicle (script, suite, test, current, verified, tested, judged, severity, suiteHash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-  rows.forEach(function (r) { put.run(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]); });
-  [X, Z, WS, F].concat(OTHERS).forEach(function (n) { db.prepare('INSERT INTO script (name, hash, changed) VALUES (?, ?, ?)').run(n, n === X ? 'h2' : 'h', T0); });
-  db.prepare('INSERT INTO suite (script, suite, outcome, changed) VALUES (?, ?, ?, ?)').run(X, GEN, 'red', T2);
+  const put = db.prepare('INSERT INTO testicle (script, suite, test, current, verified, tested, judged, severity, suiteHash, testHash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  rows.forEach(function (r) { put.run(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9] || ''); });
+  // d.js, required by r.js, changed at T1, after r.js's green at T0; every other script last changed at T0.
+  [X, Z, WS, U, Q, R, D, HS, N, F].concat(OTHERS).forEach(function (n) { db.prepare('INSERT INTO script (name, hash, changed) VALUES (?, ?, ?)').run(n, n === X ? 'h2' : 'h', n === D ? T1 : T0); });
+  DEPS.forEach(function (d) { db.prepare('INSERT INTO dependency (script, requires) VALUES (?, ?)').run(d[0], d[1]); });
+  [[X, GEN, ''], [Q, QS, ''], [R, RS, ''], [HS, HSS, 'hung'], [N, NS, '']].forEach(function (x) { db.prepare('INSERT INTO suite (script, suite, outcome, changed, reason) VALUES (?, ?, ?, ?, ?)').run(x[0], x[1], 'red', T2, x[2]); });
   db.close();
 }
 const WORLD = [
-  [X, GEN, RED, 0, 0, TM, 'h0', 0.6, 's1'],
-  [X, GEN, RED, 0, 1, T0, 'h1', 0.6, 's1'],
-  [X, GEN, RED, 1, 0, T2, 'h2', 0.6, 's1'],
+  // x.js's red: since its green the script's hash changed (h1 to h2) and the suite's (s1 to s2), its own test's did not (t1)
+  [X, GEN, RED, 0, 0, TM, 'h0', 0.6, 's1', 't1'],
+  [X, GEN, RED, 0, 1, T0, 'h1', 0.6, 's1', 't1'],
+  [X, GEN, RED, 1, 0, T2, 'h2', 0.6, 's2', 't1'],
   [X, GEN, NEIGHBOUR, 1, 0, T2, 'h2', 0.3, 's1'],
   [X, GEN, SETUP, 1, 0, T2, 'h2', 0.2, 's1'],
   [Z, ZS, ZT, 0, 1, TM, 'hz', 0.4, 'sz'],
   [Z, ZS, ZT, 0, 0, T1, 'hz', 0.4, 'sz'],
   [Z, ZS, ZT, 1, 1, T2, 'hz', 0.4, 'sz'],
+  // u.js took turns with the red twice too, but shares no file with it
+  [U, US, UT, 0, 1, TM, 'hu', 0.4, 'su'],
+  [U, US, UT, 0, 0, T1, 'hu', 0.4, 'su'],
+  [U, US, UT, 1, 1, T2, 'hu', 0.4, 'su'],
+  // q.js: its own test's hash changed (tq1 to tq2), its script's did not
+  [Q, QS, QT, 0, 1, T0, 'hq', 0.35, 'sq1', 'tq1'],
+  [Q, QS, QT, 1, 0, T2, 'hq', 0.35, 'sq2', 'tq2'],
+  // r.js: neither its script's nor its test's hash changed, and d.js, which it requires, changed after its green
+  [R, RS, RT, 0, 1, T0, 'hr', 0.35, 'sr1', 'tr'],
+  [R, RS, RT, 1, 0, T2, 'hr', 0.35, 'sr2', 'tr'],
+  // h.js: red in a run that hung
+  [HS, HSS, HT, 0, 1, T0, 'hh1', 0.35, 'sh', 'th'],
+  [HS, HSS, HT, 1, 0, T2, 'hh2', 0.35, 'sh', 'th'],
+  // n.js: never green, requiring d.js
+  [N, NS, NT, 1, 0, T2, 'hn', 0.35, 'sn', 'tn'],
   [WS, WSS, WT, 0, 0, T1, 'hw', 0.4, 'sw'],
   [WS, WSS, WT, 1, 1, T2, 'hw', 0.4, 'sw'],
   [F, FS_, FT, 0, 1, T0, 'hf', 0.4, 'sf'],
@@ -112,12 +138,12 @@ test.run('its last green is the one at T0, which had another script hash', 0.4, 
   const g = W.a && W.a.json && W.a.json.lastGreen;
   return !!g && Number(g.tested) === T0 && g.sameHashes === false;
 }, test.limit.quick);
-// "5. what to fix first: a setup check of the same run that is red too ... comes first ...; then the script's other current reds"
-test.run('what to fix first starts with the setup check of the same run, then the script\'s other red', 0.6, function () {
+// box v18, 5: "a setup check of the same run that is red too ... is the only thing to fix first ...; the script's other current
+// reds are a count beside it, never a list, so no red points at another in a circle"
+test.run('what to fix first is the setup check of the same run alone, never the script\'s other red', 0.6, function () {
   const f = W.a && W.a.json && W.a.json.fixFirst;
   if (!Array.isArray(f) || !f.length) return false;
-  const titles = f.map(function (x) { return x && x.test; });
-  return titles[0] === SETUP && titles.indexOf(NEIGHBOUR) > 0;
+  return f.every(function (x) { return x && x.test === SETUP; });
 }, test.limit.quick);
 // "and the same test red on other scripts"; box v17: "every list at most 5 by default, --all for the rest", with a count of what was left out beside it
 test.run('the same test red on 25 other scripts is listed 5, with 20 counted as left out', 0.4, function () {
@@ -127,9 +153,11 @@ test.run('the same test red on 25 other scripts is listed 5, with 20 counted as 
 // "7. contradictory tests: ... that take turns, one green whenever the other is red"; box v17: they count only when they took turns
 // at least twice. z.js was green while x.js was red (TM), red while x.js was green (T0, T1), and green again as x.js turned red
 // (T2): it took turns twice. w.js only turned green at T2, once: a fix, never a contradiction.
-test.run('z.js\'s test, which took turns with the red twice, contradicts it; w.js\'s, green once, does not', 0.4, function () {
+// box v18: "and when it shares a file with the red: the same script, or one in the red script's dependency rows": x.js requires
+// z.js; u.js took turns twice too but shares nothing.
+test.run('z.js, sharing a file with the red and taking turns twice, contradicts it; w.js, green once, and u.js, sharing nothing, do not', 0.4, function () {
   const c = W.a && W.a.json && W.a.json.contradicts;
-  return Array.isArray(c) && c.some(function (x) { return x && x.script === Z && x.test === ZT; }) && !c.some(function (x) { return x && x.script === WS; });
+  return Array.isArray(c) && c.some(function (x) { return x && x.script === Z && x.test === ZT; }) && !c.some(function (x) { return x && (x.script === WS || x.script === U); });
 }, test.limit.quick);
 // "6. flaky: the same test, with the same script hash and suite hash, has both green and red in its history"
 test.run('the red, whose script hash changed, is not flaky', 0.4, function () {
@@ -145,6 +173,49 @@ test.run('said is plain words, the same both times the same red is analyzed', 0.
   const a = W.a && W.a.json, b = W.b && W.b.json;
   return !!a && !!b && typeof a.said === 'string' && a.said.length > 0 && a.said === b.said;
 }, test.limit.quick);
+// box v18, 3, the hashes, the test's own hash (testHash) in place of the suite's: "in the script (the script's hash changed, the
+// test's did not)"; x.js's suite hash changed too, which no longer makes it not known.
+test.run('x.js\'s red, its script changed and its own test not, is blamed on the script', 0.6, function () {
+  const b = W.a && W.a.json && W.a.json.blame;
+  return !!b && b.where === 'in the script';
+}, test.limit.quick);
+function handed(script, suite, title) {
+  const db = new DatabaseSync(path.join(W.root, 'spirit', 'state', 'testicle', 'data', 'testicle.db'), { readOnly: true });
+  try { return db.prepare('SELECT * FROM testicle WHERE current = 1 AND script = ? AND suite = ? AND test = ?').get(script, suite, title); } finally { db.close(); }
+}
+function verdictOf(script, suite, title) {
+  if (!W.root) return null;
+  const r = run(W.root, [JSON.stringify(handed(script, suite, title))]);
+  return r.code === 0 && r.json ? r.json : null;
+}
+// "in the test (the test's hash changed, the script's did not)"
+test.run('q.js\'s red, its own test changed and its script not, is blamed on the test', 0.6, function () {
+  const j = verdictOf(Q, QS, QT);
+  return !!j && !!j.blame && j.blame.where === 'in the test';
+}, test.limit.slow);
+// "in a script it requires (neither changed, and a file it requires changed after the green, named ...)"
+test.run('r.js\'s red, neither changed and d.js it requires changed after the green, is blamed on a script it requires, d.js named', 0.6, function () {
+  const j = verdictOf(R, RS, RT);
+  return !!j && !!j.blame && j.blame.where === 'in a script it requires' && JSON.stringify(j.blame).indexOf(D) !== -1;
+}, test.limit.slow);
+// "First the run: a run that hung, crashed or never started (the suite row's reason) is its own verdict, not in this test: the
+// run hung, ahead of every check below": h.js's script hash changed too, and the run's reason still comes first.
+test.run('h.js\'s red, in a run that hung, is not in this test, ahead of its changed script hash', 0.6, function () {
+  const j = verdictOf(HS, HSS, HT);
+  return !!j && !!j.blame && /^not in this test/.test(String(j.blame.where)) && /hung/.test(JSON.stringify(j.blame));
+}, test.limit.slow);
+// box v18, 4: "never green, none, since there is no green to be after"
+test.run('n.js\'s red, never green, has no suspects though it requires d.js', 0.4, function () {
+  const j = verdictOf(N, NS, NT);
+  return !!j && Array.isArray(j.suspects) && j.suspects.length === 0;
+}, test.limit.slow);
+// "handed its id alone, it reads the rest of the row from testicle.db"
+test.run('handed x.js\'s red by its id alone, it analyzes that red', 0.4, function () {
+  if (!W.root) return false;
+  const row = handed(X, GEN, RED);
+  const r = run(W.root, [JSON.stringify({ id: row && row.id })]);
+  return r.code === 0 && !!r.json && !!r.json.red && r.json.red.script === X && r.json.red.test === RED;
+}, test.limit.slow);
 // "handed a red-testicle: the red testicle row itself"
 test.run('handed f.js\'s red row, it analyzes that one, and finds it flaky: green and red with the same hashes', 0.6, function () {
   if (!W.root) return false;
