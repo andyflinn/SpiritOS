@@ -1163,7 +1163,9 @@ function toldOwed() {
   if (s === owedTold) return;
   owedTold = s;
   // The job's data first, then the message: every job event after carries the new numbers, none the old.
-  const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o, reds: reds, leaders: top } }); };
+  // BUSY AND RUNNING RIDE IT TOO (goal/G49.6; Andy: "cw, change that message."): a page that connects is handed the last
+  // message only, and in a run that is this one, sent after each test; without them it drew idle while a run went on.
+  const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o, reds: reds, leaders: top, busy: busyNow(), running: runningNow() } }); };
   Promise.resolve(spirit.processJob.report({ data: { owed: o, reds: reds, leaders: top } })).then(say, say);
 }
 let busyTold = false;
