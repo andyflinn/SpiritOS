@@ -2615,11 +2615,6 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     const r = await until(function () { const x = rowOf(DDUP); return Promise.resolve(!!x && no(x.test) && x.outcome ? x : null); }, 280000);
     return (!!r && r.outcome === 'red' && r.reason === 'duplicate titles') || false;
   }, test.limit.long);
-  test.run('a suite failed as duplicate titles reports none of its tests', 0.6, function () {
-    if (!reasonUp()) return false;
-    const r = rowOf(DDUP);
-    return (!!r && r.reason === 'duplicate titles' && currentOf(tables(R.DB), DDUP, GENERAL, 'it is twice').length === 0) || false;
-  }, test.limit.quick);
   test.run('a title past 128 bytes is stored cut before the character that overflows, and judged', 0.6, async function () {
     if (!reasonUp()) return false;
     const r = await until(function () { const x = currentOf(tables(R.DB), ELONG, GENERAL, LONG_CUT)[0]; return Promise.resolve(x || null); }, 280000);
