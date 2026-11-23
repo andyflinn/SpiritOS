@@ -1,6 +1,0 @@
-{
-  "description": "testicle.analyze (goal/G49.6, box v7): one red, its analysis in one payload, cut to its size: {red, lastGreen, fixFirst, sameTestElsewhere, flaky, contradicts, suspects, blame, world, unknown}. red is the red testicle row as testicle.red hands it, in json; its script, suite and test name the test. red: the red itself (script, suite, test, severity, reason, tested); lastGreen: its newest green before the red, with sameHashes, whether that green ran against the same script hash and suite hash; fixFirst: a red setup check of the same script first, then its other current reds; sameTestElsewhere: the same test red on other scripts; flaky: the same test with the same hashes both green and red in its history; contradicts: tests that turned green from red between the last green and the red; suspects: the scripts it requires changed after the last green, newest first; blame: the commits since the last green that touched the script, its suite or what it requires; world: the commit the run's world was copied from, unknown until testicle keeps it; unknown: what it does not know, said plainly. Refused: \"the red is no testicle row\" when red names no test testicle holds.",
-  "request": {
-    "red": "spirit.type.string.json"
-  }
-}
