@@ -1541,6 +1541,13 @@ appServer.serve({
   },
   'testicle.set': {
     request: { script: '', suite: '', test: '', verified: false, severity: 0 }, reply: {},
+    // testHash optional (goal/G49.6, box v18; Andy: "yes for testicle.set arg"): appServer matches a request's keys exactly,
+    // so without this every report carrying it was refused no-such-argument.
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
+      if (typeof a.script !== 'string' || typeof a.suite !== 'string' || typeof a.test !== 'string' || typeof a.verified !== 'boolean' || typeof a.severity !== 'number') return false;
+      return Object.keys(a).every(function (k) { return ['script', 'suite', 'test', 'verified', 'severity'].indexOf(k) !== -1 || (k === 'testHash' && typeof a[k] === 'string'); });
+    },
     handler: function (a) {
       const script = posix(String(a.script || '')).replace(/^\.?\//, '');
       const suite = posix(String(a.suite || '')).replace(/^\.?\//, '');
