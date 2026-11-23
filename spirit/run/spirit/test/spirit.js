@@ -549,6 +549,18 @@ test.run('on a page, an app branch called first through readyPromise has its ver
   const placed = r.app && r.app.zapp && r.app.zapp.api;
   return (!!placed && typeof placed.hello === 'function' && !(r.zapp && r.zapp.api)) || false;
 }, test.limit.quick);
+// NO API BY NAME (goal/G49.6; Andy: "AND ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN", "spirit.branchPath()
+// must die."): a branch is reached only by requiring its api.js by its path. On a page spirit holds no branchPath, and what
+// readyPromise answers holds no branch by a name it was never given.
+test.run('on a page, spirit holds no branchPath, and readyPromise answers no branch by name', 0.2, async function () {
+  const fq = page();
+  const view = await fq.spirit.startPage();
+  return (!('branchPath' in fq.spirit) && !!view && view.zapp === undefined) || false;
+}, test.limit.quick);
+test.run('in node, spirit holds no branchPath', 0.2, function () {
+  const o = O(); if (!o || !o.keys) return false;
+  return o.keys.length > 0 && o.keys.indexOf('branchPath') === -1;
+}, test.limit.quick);
 test.run('on a page with no link, calls go to the page\'s own origin, /api/spirit, as a call with its args', 0.2, async function () {
   if (!T.ps) return false;
   const wq = T.wq;
