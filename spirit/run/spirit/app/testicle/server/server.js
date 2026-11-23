@@ -119,6 +119,12 @@ db.exec('CREATE TABLE IF NOT EXISTS testicle (id INTEGER PRIMARY KEY, script TEX
 // the test's own block, sent by the reporter with each result, so the analyze tool tells a changed test from a changed suite.
 // Added as the server starts when it is not there; rows already kept stay as they are, without one.
 if (!db.prepare('PRAGMA table_info(testicle)').all().some(function (c) { return c.name === 'testHash'; })) db.exec("ALTER TABLE testicle ADD COLUMN testHash TEXT NOT NULL DEFAULT ''");
+// A RED'S HOLD (goal/G49.7, box v6): heldBy, the holder's ID (the caller's key), '' when not held; heldSince, when the hold
+// began, 0 when not held. Added as the server starts when they are not there; rows already kept stay as they are, not held.
+if (!db.prepare('PRAGMA table_info(testicle)').all().some(function (c) { return c.name === 'heldBy'; })) db.exec("ALTER TABLE testicle ADD COLUMN heldBy TEXT NOT NULL DEFAULT ''");
+if (!db.prepare('PRAGMA table_info(testicle)').all().some(function (c) { return c.name === 'heldSince'; })) db.exec('ALTER TABLE testicle ADD COLUMN heldSince INTEGER NOT NULL DEFAULT 0');
+// A hold stands an hour (the box: "ownership expires after one hour").
+const HOLD_MS = 60 * 60000;
 db.exec('CREATE INDEX IF NOT EXISTS testicle_current ON testicle (verified, severity DESC, tested DESC) WHERE current = 1');
 // A TEST'S ROWS FOUND BY ITS KEY (goal/G49.6, the box, "The index"; Andy: "index: yes"): without it each look at one test's rows
 // read the whole table, 37 ms of this one thread for every report that lands on a table of 30,000 rows, and the analyze tool's
@@ -134,6 +140,8 @@ const T = {
   currents: db.prepare('SELECT * FROM testicle WHERE current = 1 ORDER BY verified, severity DESC, tested DESC'),
   reds: db.prepare('SELECT * FROM testicle WHERE current = 1 AND verified = 0 ORDER BY severity DESC, tested DESC'),
   row: db.prepare('SELECT * FROM testicle WHERE id = ?'),
+  // A red's hold (goal/G49.7): its holder and since when, cleared as '' and 0.
+  hold: db.prepare('UPDATE testicle SET heldBy = ?, heldSince = ? WHERE id = ?'),
   // A test's history: every row of it, the newest first.
   history: db.prepare('SELECT * FROM testicle WHERE script = ? AND suite = ? AND test = ? ORDER BY id DESC'),
   // The current rows of one script and suite: what its status is judged from.
@@ -1649,6 +1657,40 @@ appServer.serve({
     request: {}, reply: { items: [], more: false },
     handler: function () { return mostSevereFirst(T.reds.all().map(testServed)); },
   },
+  // A RED HELD BY THE ONE FIXING IT (goal/G49.7, box v6; Andy: "green from me. verb approved. GO!", "a caller key ALWAYS arrives
+  // at an app servers handler"; wsl reviewed the verb): by the testicle key as every testicle verb takes it. The asker is the
+  // caller, never an argument. Without holder it asks: "" when not held or expired (an expired hold cleared), the holder's ID
+  // when someone else holds it, and the holder asking lets it go. With holder, the asker's own ID, it holds a red not held or
+  // expired; one held and not expired is refused, its holder too (to keep it past the hour, let go and hold again).
+  hold: {
+    request: { script: '', suite: '', test: '' }, reply: { holder: '' },
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
+      return Object.keys(a).every(function (k) { return ['script', 'suite', 'test', 'holder'].indexOf(k) !== -1 && typeof a[k] === 'string'; });
+    },
+    handler: function (a, caller) {
+      const script = posix(String(a.script || '')).replace(/^\.?\//, '');
+      const suite = posix(String(a.suite || '')).replace(/^\.?\//, '');
+      const name = String(a.test || '');
+      if (!script || !suite || !name) throw refused('key-missing');
+      const asker = String((caller && caller.key) || '');
+      const row = T.current.get(script, suite, name);
+      if (!row || row.verified) throw refused('no-current-red');
+      const now = Date.now();
+      const by = String(row.heldBy || '');
+      const standing = !!by && now - Number(row.heldSince || 0) < HOLD_MS;
+      if (by && !standing) T.hold.run('', 0, Number(row.id));
+      if (a.holder === undefined) {
+        if (!standing) return { holder: '' };
+        if (by === asker) { T.hold.run('', 0, Number(row.id)); return { holder: '' }; }
+        return { holder: by };
+      }
+      if (String(a.holder) !== asker) throw refused('not-the-asker');
+      if (standing) throw Object.assign(refused('held'), { extra: { heldBy: by, heldSince: Number(row.heldSince) } });
+      T.hold.run(asker, now, Number(row.id));
+      return { holder: asker };
+    },
+  },
 // No peer user: the owner's own test status (apiAuth/G1.10).
 }, {
   // ITS ROWS ON THE NODE'S JOB STREAM (goal/G47.1, the UI cycle), as the agent's tables publish theirs: { testicle: { table,
@@ -1669,4 +1711,9 @@ appServer.serve({
   'not-found-once': { status: 409, text: 'the title is not written exactly once in its suite file' },
   'suite-has-edits': { status: 409, text: 'the suite file or its spec has edits of its own' },
   'push-failed': { status: 409, text: 'the change could not be pushed, and was put back' },
+  // testicle.hold's refusals (goal/G49.7, box v6).
+  'key-missing': { status: 400, text: 'key argument missing' },
+  'no-current-red': { status: 404, text: 'no current red row for that key' },
+  'not-the-asker': { status: 400, text: 'holder must be the asker\'s own ID' },
+  'held': { status: 409, text: 'the red is held, and the hold has not expired' },
 } });
