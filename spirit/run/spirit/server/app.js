@@ -98,6 +98,8 @@ let declaredBy = '';
 
 function declareCodes(name, codes) {
   declaredBy = String(name || '');
+  // appServer's own refusal of the auto-verb remote, where the app's manifest has node.remote false (goal/G49.8, withRemote).
+  declared['no-remote-support'] = { status: 409, text: 'no remote support' };
   if (codes === undefined || codes === null) return;
   if (!isPlain(codes)) throw new Error('appServer: codes must be an object of {code: {status, text}}');
   Object.keys(codes).forEach(function (code) {
@@ -890,7 +892,7 @@ function withChecked(verbs, script) {
 // In client mode (gateRemote) the owner's calls go to the sibling and its answer comes back; a peer's post is refused
 // client-mode, other than the chosen sibling's stream deliveries; the subscribers it had are dropped at the switch. The
 // subscribe a server makes to another kind of server (deskClient to desk) is untouched: remote routes toward its own kind.
-const remote = { name: '', current: '', known: [], refreshing: false, server: null, hasListener: false };
+const remote = { name: '', current: '', known: [], refreshing: false, server: null, hasListener: false, refused: false };
 function remoteFile() { return path.join(RUN_ROOT, 'spirit', 'state', remote.name, 'remote.json'); }
 function selfKey() { return String((spirit.nodeFacts && typeof spirit.nodeFacts.key === 'string' && spirit.nodeFacts.key) || ''); }
 function selfLabel() { return String((spirit.nodeFacts && (spirit.nodeFacts.label || spirit.nodeFacts.name)) || ''); }
@@ -1087,10 +1089,21 @@ function switchRemote(id) {
   publishRemote();
   return { current: remote.current || me };
 }
+// AN APP CAN REFUSE CLIENT MODE (goal/G49.8, box v3; Andy: "apps like testicle overwhelm the network with HUGE quantities of
+// streamed rows", "node:remote is a new manifest entry"; wsl reviewed it): its manifest spirit/app/<name>/<name>.json saying
+// node.remote false makes remote refuse every call, "no remote support", and this server never runs in client mode, whatever
+// its remote.json held. Left out, client mode is allowed as before.
+function remoteRefused(name) {
+  let own = null;
+  try { own = JSON.parse(fs.readFileSync(path.join(RUN_ROOT, 'spirit', 'app', String(name), String(name) + '.json'), 'utf8')); } catch (e) { return false; }
+  return !!(own && own.node && own.node.remote === false);
+}
 function withRemote(verbs, name) {
   remote.name = String(name || '');
   remote.hasListener = Object.prototype.hasOwnProperty.call(verbs, 'listener');
+  remote.refused = remoteRefused(remote.name);
   readRemote();
+  if (remote.refused) remote.current = '';
   const all = Object.assign({}, verbs);
   if (!remote.hasListener) all.listener = siblingListener;
   all.remote = {
@@ -1098,6 +1111,7 @@ function withRemote(verbs, name) {
     // Called empty, or with the id to switch to.
     accepts: function (x) { return isPlain(x) && Object.keys(x).every(function (k) { return k === 'id'; }) && (x.id === undefined || (typeof x.id === 'string' && !!x.id)); },
     handler: function (a, caller) {
+      if (remote.refused) throw Object.assign(new Error('no-remote-support'), { refusal: 'no-remote-support' });
       if (!caller || caller.owner !== true) throw Object.assign(new Error('owner-only'), { refusal: 'owner-only', extra: { why: 'remote is the owner\'s alone' } });
       // An empty call publishes the list too, to this node's own pages alone, so every open page's spirit.required.spirit.data.<server>.remote
       // holds it (spirit/data.js files it), and then the peers are checked again in the background.

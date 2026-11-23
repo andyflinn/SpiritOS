@@ -41,18 +41,19 @@
 //   recordPaths(fn)   the paths fn wrote (set, merge, del), so a stream's row can take what it wrote with it (goal/G41.12)
 //   byteCap(n?)         the byte cap: reads it, or sets it in a process
 //
-// NO CAP ON A PAGE (box v17; Andy: "the browsers side will flush on every page-refresh, so we'll avoid the complication of
-// bounding those browser site caches completely. no cache bounding on the browser side."). A PROCESS'S CACHE IS A NODE
-// STORE (goal/G41.3, Q2): past its byte cap it sheds the oldest writes first, each told as a delete.
+// ONE CAP, ON A PAGE AS IN A PROCESS (goal/G49.8, box v3; Andy: "the browser will need a cache limit. my testicle UI keeps
+// freezing up when it hold a few thousand rows", "I'd say 9000 rows are more than plenty"; replacing box v17's "no cache
+// bounding on the browser side"): a cache is a node store (goal/G41.3, Q2), past its 4 MB it sheds the oldest writes first,
+// each told as a delete, so a page drops the elements it drew for a shed row too. Only a process may set another cap.
 (function (root) {
   var families = Object.create(null);  // name -> spirit.required.spirit.data.<name>
   var watchers = Object.create(null);   // path -> [fn]
   var readyOf = Object.create(null);
   var quiet = Object.create(null);      // a type being filled without telling (the tree arriving)
   var onPage = !!(root.spirit && typeof root.spirit.isBrowser === 'function' && root.spirit.isBrowser());
-  var PROCESS_CAP = 4 * 1024 * 1024;
-  var capBytes = onPage ? Infinity : PROCESS_CAP;
-  var sizes = new Map();                // path -> bytes, oldest write first (a process only)
+  var CAP = 4 * 1024 * 1024;
+  var capBytes = CAP;
+  var sizes = new Map();                // path -> bytes, oldest write first
   var total = 0;
 
   // A path cut where the tree is: node, family, branch, and the row, which may hold slashes. type is the branch's whole

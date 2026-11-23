@@ -5,7 +5,7 @@
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the app row and list) asks spirit.required.spirit.data.app.data
 // (below), never a branch by name.
-//   apps   key -> { key, label, icon, active, shell, intrinsic, nodeMount }, what app.search answered (seated by the list that is a view of it), and the
+//   apps   key -> { key, label, icon, active, shell, intrinsic, nodeMount, nodeRemote }, what app.search answered (seated by the list that is a view of it), and the
 //          whole table the apps news of the node's own job spirit.app holds (spirit/app/script.js): a key it no longer names is gone.
 // Every event ends in set or del; it asks nothing.
 (function family() {
@@ -27,7 +27,7 @@
         // is listed in pane mode only, and shows Run, not Activate).
         Object.keys(all).forEach(function (k) {
           var r = all[k] || {};
-          V.set(APPS + '/' + k, { key: k, label: String(r.label || ''), icon: String(r.icon || ''), active: r.active === true, shell: r.shell === true, intrinsic: r.intrinsic === true, nodeMount: r.nodeMount === true, api: r.api === true, run: r.run === true, runOnly: r.runOnly === true, shellMount: r.shellMount === true });
+          V.set(APPS + '/' + k, { key: k, label: String(r.label || ''), icon: String(r.icon || ''), active: r.active === true, shell: r.shell === true, intrinsic: r.intrinsic === true, nodeMount: r.nodeMount === true, nodeRemote: r.nodeRemote !== false, api: r.api === true, run: r.run === true, runOnly: r.runOnly === true, shellMount: r.shellMount === true });
         });
       },
     });

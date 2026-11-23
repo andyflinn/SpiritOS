@@ -68,6 +68,9 @@ function createApp(opts) {
     return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, intrinsic: i.intrinsic === true,
       // WHETHER IT RUNS ON THE NODE (goal/G43.18, Q6, Andy: "yes."): its <name>.json's node.mount, for the app search's server filter.
       nodeMount: !!(own && own.node && own.node.mount === true),
+      // WHETHER IT TAKES CLIENT MODE (goal/G49.8, box v3; Andy: "node:remote is a new manifest entry"): false only where its
+      // <name>.json's node.remote is false, so the shell draws no remote in its title bar and its server refuses remote.
+      nodeRemote: !(own && own.node && own.node.remote === false),
       // RUN, NOT MOUNTED (goal/G43.21; Andy, the box: "spirit app search will list these jobs (node:run) only in pane mode", "the
       // app detail will show a run button."): its <name>.json's node.run.
       run: !!(own && own.node && own.node.run === true),

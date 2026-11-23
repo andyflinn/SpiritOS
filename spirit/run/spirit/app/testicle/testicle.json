@@ -13,6 +13,7 @@
     "tile": true
   },
   "node": {
-    "mount": true
+    "mount": true,
+    "remote": false
   }
 }
