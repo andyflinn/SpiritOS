@@ -482,7 +482,7 @@ test.after(stopAll);
   test.run('every app, planted and the tree\'s, is made active', 0.2, async function () {
     if (!W1.loaded) return false;
     keys = Object.keys(PLANT);
-    await chrome.evaluate('(function () { var a = spirit.app && spirit.required.spirit.app.api.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
+    await chrome.evaluate('(function () { var a = spirit.required.spirit.app && spirit.required.spirit.app.api && spirit.required.spirit.app.api.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
     await until(function () { return rows().then(function (r) { return keys.every(function (k) { return r[k] && r[k].active; }); }); }, 10000);
     // A row the node would not make active through the verb is made active on its disc, as a user's earlier press left it.
     r = await rows();
@@ -778,7 +778,7 @@ test.after(stopAll);
     LIVE.push({ c: c4 });
     if (c4.error) return false;
     await c4.send('Page.navigate', { url: N4.base + '/face.html' });
-    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.app && spirit.required.spirit.app.api.activeApp)'); }, 20000);
+    await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.required.spirit.app && spirit.required.spirit.app.api && spirit.required.spirit.app.api.activeApp)'); }, 20000);
     await c4.evaluate('spirit.required.spirit.app.api.activeApp({ key: "chat", active: true }); spirit.required.spirit.app.api.activeApp({ key: "testicle", active: true }); spirit.required.spirit.app.api.activeApp({ key: "starter", active: true }); true');
     const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body.chat && r.body.testicle); }); }, 60000);
     await c4.send('Page.navigate', { url: N4.base + '/face.html' });
@@ -804,7 +804,7 @@ test.after(stopAll);
   // selection, the setting remains on \"WSL ANDY VSCode\""; "nothing returned handles the data"; "all, agreed. spirit/data.js"):
   // before any pick the field names the server remote answers as current; chat's published remote row reaches the page's
   // spirit.required.spirit.data.chat.remote; and the field follows what lands there.
-  const barForm = function () { return '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(TESTICLE) + ') !== -1; })[0]'; };
+  const barForm = function () { return '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(CHAT) + ') !== -1; })[0]'; };
   const fieldText = function () { return c4.evaluate('(function () { var f = ' + barForm() + '; var b = f && f.querySelector("button[id$=\'field\']"); return b ? String(b.textContent || "") : ""; }())'); };
   test.run('before any pick the dropdown\'s field names the server remote answers as current', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
@@ -831,7 +831,7 @@ test.after(stopAll);
   test.run('picking a row of the dropdown sends remote with that row\'s id', 0.2, async function () {
     if (W4.bar !== 'dropdown') return false;
     // The dropdown's own rows, inside the title bar's row form (cw: the tiles under the open layer have data-key rows too).
-    const inBar = '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(TESTICLE) + ') !== -1; })[0]';
+    const inBar = '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(CHAT) + ') !== -1; })[0]';
     await c4.evaluate('(function () { var f = ' + inBar + '; var b = f && f.querySelector("button[id$=\'field\']"); if (b) b.click(); return !!b; }())');
     await sleep(1500);
     await c4.evaluate('(function () { var f = ' + inBar + '; var r = f && f.querySelector("[data-key]"); if (r) r.click(); return !!r; }())');
