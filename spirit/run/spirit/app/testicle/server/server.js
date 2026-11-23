@@ -1571,6 +1571,9 @@ appServer.serve({
       // WHY A RED REACHED NO VERDICT (goal/G47.6, box point 1): crashed or hung, as the reporter knows it; '' otherwise.
       const broke = !a.success && (a.reason === 'crashed' || a.reason === 'hung');
       if (broke) setReason.run(a.reason, script, suite);
+      // A SUITE THAT SAID ONE TITLE TWICE IS RED AS SUCH (goal/G49.6; Andy: "a new status for suites \"duplicate titles\""): its
+      // run reached its verdict, so it sheds no reported row; its reason says why it is red.
+      if (!a.success && a.reason === 'duplicateTitles') setReason.run('duplicate titles', script, suite);
       // A COMPLETED RUN SHEDS THE TITLES IT DID NOT REPORT (goal/G47.4, the box: "titles that did not report for a completed
       // run of a script/suite combination, will be completely erased from the data base", "killed or crashed run of a
       // script/suite deletes no testicle rows"): the verdict of the run testicle started, not crashed or hung.

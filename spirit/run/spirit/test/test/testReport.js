@@ -329,17 +329,21 @@ test.run('a suite that says a title twice runs', 0.2, async function () {
   W.twice = await runSuite(W.tree.run, 'probe/test/twice.js');
   return /Test completed\./.test(W.twice.out) || false;
 }, test.limit.slow);
-test.run('a title said twice in a suite fails the second time', 0.2, function () {
+// TWO TESTS OF ONE TITLE FAIL THE SUITE, NOT A TEST (goal/G49.6; Andy: "that refusal has to be a suite level failure", "rule
+// one wins": every test is run and reported as it ends): both run, and the suite's success goes out false, duplicateTitles.
+test.run('a title said twice in a suite runs both times, and the suite reports success false as duplicateTitles', 0.2, function () {
   const lines = W.twice.out.split('\n').map(function (l) { return l.replace(/^\*+\s*/, '').trim(); }).filter(function (t) { return t === 'one title ✅' || t === 'one title ❌'; });
-  return (lines.length === 2 && lines[0] === 'one title ✅' && lines[1] === 'one title ❌') || false;
+  const said = ((W.node && W.node.successes) || []).filter(function (s) { return s && s.suite === 'probe/test/twice.js'; });
+  return (lines.length === 2 && lines[0] === 'one title ✅' && lines[1] === 'one title ✅' && said.some(function (s) { return s.success === false && s.reason === 'duplicateTitles'; })) || false;
 }, test.limit.quick);
 test.run('a severity outside 0.0 to 1.0 fails its test', 0.2, function () {
   return markIn(W.twice.out, 'a severity out of range') === '❌';
 }, test.limit.quick);
 // A TITLE PAST THE DESCRIPTION RULE (goal/G47.4, the box: "test titles are constrained BY DESCRIPTION_MAX_BYTES, in
-// spirit/fieldRules.js"): counted in bytes, refused never cut; one byte past fails a test that passes, at 128 it passes.
-test.run('a title of 128 bytes passes, and one of 129 bytes fails its test, printed whole', 0.2, function () {
-  return (markIn(W.twice.out, 'é'.repeat(64)) === '✅' && markIn(W.twice.out, 'é'.repeat(64) + 'x') === '❌') || false;
+// spirit/fieldRules.js"), counted in bytes; since goal/G49.6 a longer one is cut before the character that overflows (Andy: "cut
+// before the character that causes overflow"), never refused: at 128 it passes, and one byte past is cut to the same 128.
+test.run('a title of 128 bytes passes, and one of 129 bytes is cut to its first 128 and run', 0.2, function () {
+  return (markIn(W.twice.out, 'é'.repeat(64)) === '✅' && ((W.node && W.node.sets) || []).some(function (s) { return s && s.test === 'é'.repeat(64); })) || false;
 }, test.limit.quick);
 test.run('an empty title fails its test', 0.2, function () {
   const marks = W.twice.out.split('\n').map(function (l) { return l.replace(/^\*+\s*/, '').trim(); });

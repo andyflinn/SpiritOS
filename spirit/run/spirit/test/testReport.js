@@ -248,6 +248,22 @@ function requiresOfSuite(script) {
     .filter(function (r) { return r && /\.js$/.test(r) && r !== script && !/(^|\/)test\//.test(r) && r.indexOf('node_modules/') === -1; });
 }
 
+// A title cut to the description rule's bytes, before the character that would overflow them (goal/G49.6; Andy: "cut before
+// the character that causes overflow"): whole characters only, never half of one.
+const TITLE_MAX_BYTES = 128;
+function cutTitle(title) {
+  const s = String(title).trim();
+  if (Buffer.byteLength(s, 'utf8') <= TITLE_MAX_BYTES) return s;
+  let out = '';
+  let bytes = 0;
+  for (const ch of s) {
+    const b = Buffer.byteLength(ch, 'utf8');
+    if (bytes + b > TITLE_MAX_BYTES) break;
+    out += ch;
+    bytes += b;
+  }
+  return out;
+}
 async function runAll() {
   test.startTest(SUITE_FILE);
   const seen = Object.create(null);
@@ -262,11 +278,14 @@ async function runAll() {
   // WHY NO VERDICT, PER SCRIPT (goal/G47.6, box point 1): hung when a test of it ran past its limit, else crashed when one threw;
   // a suite that only answered false reached its verdict, and has none.
   const reasonOf = Object.create(null);
+  // A script whose suite said one title twice (goal/G49.6).
+  const dupTitles = Object.create(null);
   const succeeded = function (script) {
     if (ONLY !== null || reported[script]) return;
     reported[script] = true;
     const rec = { script: script, suite: SUITE_FILE, success: held[script] !== false };
-    if (!rec.success && reasonOf[script]) rec.reason = reasonOf[script];
+    if (!rec.success && dupTitles[script]) rec.reason = 'duplicateTitles';
+    else if (!rec.success && reasonOf[script]) rec.reason = reasonOf[script];
     if (SUITE_FILE === ownSuiteOf(script)) rec.requires = JSON.stringify(requiresOfSuite(script));
     reportToTesticle(rec, 'suite.success');
   };
@@ -274,7 +293,9 @@ async function runAll() {
     while (i > lastOf() && holds > 0) await new Promise(function (r) { woken = r; });
     if (i > lastOf()) break;
     const t = queue[i];
-    const title = String(t.title);
+    // A TITLE PAST ITS BYTES IS CUT, NEVER REFUSED (goal/G49.6; Andy: "a title over 128 bytes, cut it at the reporter",
+    // "cut before the character that causes overflow"): the test runs and is reported under the cut title.
+    const title = cutTitle(String(t.title));
     let sev = Number(t.severity);
     const script = t.script || SCRIPT;
     // A SCRIPT DONE (goal/G47.1, box v129-131): the first test of another script ends the one before, whose success goes
@@ -288,7 +309,11 @@ async function runAll() {
     // A title said twice, a severity that is no number from 0.0 to 1.0, or no body: a fail at 0.7, as a crash is.
     // A TITLE THAT BREAKS THE DESCRIPTION RULE too (goal/G47.4, the box: "test titles are constrained BY
     // DESCRIPTION_MAX_BYTES, in spirit/fieldRules.js"): empty, invisible characters, or past its 128 bytes; refused, never cut.
-    if (TITLE_RULE.describeProblem(title) || seen[once] || typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1) || typeof t.body !== 'function') t.verdict = { pass: false, crash: true };
+    // TWO TESTS OF ONE TITLE, CUT OR NOT, FAIL THE SUITE, NOT A TEST (goal/G49.6; Andy: "that refusal has to be a suite level
+    // failure. then you can have a new status for suites \"duplicate titles\"", "rule one wins": every test is still run and
+    // reported as it ends): the suite's success for the script goes out false, its reason duplicateTitles.
+    if (seen[once]) { dupTitles[script] = true; held[script] = false; }
+    if (TITLE_RULE.describeProblem(title) || typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1) || typeof t.body !== 'function') t.verdict = { pass: false, crash: true };
     else await one(t);
     seen[once] = true;
     const v = t.verdict || { pass: false };
