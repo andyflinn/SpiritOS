@@ -22,7 +22,8 @@
 // spirit.required.spirit.element.installSpiritElement); in node spirit.requireScript answers the function itself.
 // In node it loads the spirit object first, as every module does (the spirit object is the only door); on a page spirit.js
 // is there already.
-if (typeof module === 'object' && module && module.exports) require('../spirit.js');
+// Node by node's own require, not by module: a page hands its scripts a module box too (goal/G49.9).
+if (typeof require === 'function' && typeof module === 'object' && module && module.exports) require('../spirit.js');
 (function (root) {
   var holders = typeof WeakSet === 'function' ? new WeakSet() : null;
   function holder() { var h = {}; if (holders) holders.add(h); return h; }
@@ -33,6 +34,8 @@ if (typeof module === 'object' && module && module.exports) require('../spirit.j
   function installSpiritElement(spirit, elementPath, factory) {
     var s = spirit || root.spirit;
     var keys = String(elementPath || '').replace(/^\/+/, '').replace(/\.js$/, '').split('/').filter(Boolean);
+    // A folder's script.js stands at its folder's own name, as spirit.js places it (goal/G49.9, box v5).
+    if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
     if (!s || !keys.length) return factory;
     if (!s.required || typeof s.required !== 'object') s.required = {};
     var o = s.required;

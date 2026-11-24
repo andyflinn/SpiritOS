@@ -59,7 +59,8 @@
     return !!o && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, w) && o[w] === true;
   }
 
-  if (typeof module === 'object' && module && module.exports) {
+  // Node by node's own require, not by module: a page hands its scripts a module box too (goal/G49.9).
+  if (typeof require === 'function' && typeof module === 'object' && module && module.exports) {
     // The spirit object first (goal/G40.1).
     require('../spirit.js');
     var fs = require('fs');

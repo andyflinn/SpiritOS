@@ -411,7 +411,7 @@
   }
   // The branch's place set to its object, whatever stood there (its module, placed as the require ran), the folder levels kept.
   function standAt(rootObj, p, value) {
-    var keys = String(p).replace(/\.js$/, '').split('/').filter(Boolean);
+    var keys = placeKeys(p);
     var o = rootObj;
     for (var i = 0; i < keys.length - 1; i += 1) {
       if (o[keys[i]] == null || (typeof o[keys[i]] !== 'object' && typeof o[keys[i]] !== 'function')) o[keys[i]] = holder();
@@ -533,8 +533,17 @@
   // THE ELEMENTS STAND HERE TOO (goal/G49.5; Andy, of his G43.32 Q5: "that ruling is reversed, since the element factory is
   // fine where it is loaded"): an element's factory is at spirit.required.<its path>, put there by
   // spirit/element/installSpiritElement.js as the script runs; there is no spirit.element.
+  // A PATH'S PLACE, ITS KEYS (goal/G49.9, box v5; Andy: "every single script into it's own named folder, is exactly so that
+  // anything exposed by the script has a private (own) contained inside of the spirit object"): one key per folder, the
+  // file's name without .js the last, and a folder's script.js at its folder's own name: spirit/element/busyButton/script.js
+  // at spirit.required.spirit.element.busyButton, the folder's other scripts under it.
+  function placeKeys(p) {
+    var keys = String(p).replace(/^\/+/, '').replace(/\.js$/, '').split('/').filter(Boolean);
+    if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+    return keys;
+  }
   function placeAt(rootObj, p, value) {
-    var keys = String(p).replace(/\.js$/, '').split('/').filter(Boolean);
+    var keys = placeKeys(p);
     var o = rootObj;
     for (var i = 0; i < keys.length - 1; i += 1) {
       var k = keys[i];
@@ -558,7 +567,7 @@
   // by placing itself there as it runs (spirit/data.js does); the loader answers that object, as in node it answers the
   // module's exports. A script that placed nothing gets an empty object there, which says it is loaded.
   function keptAt(p) {
-    var keys = String(p).replace(/\.js$/, '').split('/').filter(Boolean);
+    var keys = placeKeys(p);
     var o = required;
     for (var i = 0; i < keys.length && o; i += 1) o = o[keys[i]];
     if (o && (typeof o === 'object' || typeof o === 'function') && !isHolder(o)) return o;
@@ -596,6 +605,8 @@
       // A script that is not there refuses not-found, as it always has (spirit.js's own test); one that is answers at once.
       if (!require('fs').existsSync(file)) return Promise.reject(refusal('not-found', p + ' is not there'));
       var mod = require(file);
+      // A script.js exposes an object or a function, so its folder's other scripts can stand under it (goal/G49.9, box v5).
+      if (/(^|\/)script\.js$/.test(p) && !placeable(mod)) return Promise.reject(refusal('not-placeable', p + ' exposes ' + typeof mod + ': a script exposes an object or a function'));
       nodeOnce[p] = mod;
       placeAt(required, p, mod);
       return mod;
@@ -611,7 +622,16 @@
       // interfaces that exists in spirit.js or boot.js, NOTHING HAND-ROLLED"): every shell element puts itself into
       // window.spirit as it runs, so none is handed a module box, and a file written for both node and a page
       // (CodeMirror's) takes its page branch. A stylesheet goes on the page as a style.
-      try { inject(p, text(r.bytes)); } finally { collecting = outer; }
+      // SPIRIT'S OWN SCRIPTS GET A MODULE BOX ON A PAGE TOO (goal/G49.9, box v5; Andy: "can spirit.js opaquely hide
+      // installSpiritElement behind spirit.requireScript when isBrowser?"): a script sets module.exports as it runs, the same
+      // line as in node, and the loader places it at the script's place and answers with it. A vendored script gets no box,
+      // so a file written for both (CodeMirror's) still takes its page branch (G41.7).
+      var box = null;
+      try { box = injectBoxed(p, text(r.bytes)); } finally { collecting = outer; }
+      if (box && box.set) {
+        if (!placeable(box.exports)) throw refusal('not-placeable', p + ' exposes ' + typeof box.exports + ': a script exposes an object or a function');
+        placeAt(required, p, box.exports);
+      }
       return Promise.all(tree).then(function () { return keptAt(p); });
     });
     requiredOnce[p] = answer;
@@ -1310,6 +1330,28 @@
       if (!self.faceState.loggedIn) { drawLogin(''); return null; }
       return makeLink().then(function () { return boot(FACE); });
     }, function (e) { drawLogin('The relay did not answer: ' + ((e && e.message) || e)); return null; });
+  }
+  // The vendored folders, as spirit/fs/fileSystem.js's VENDORED_FOLDERS names them (a page cannot load that node file): a
+  // script inside one runs as it was written, with no module box.
+  var VENDORED_ON_PAGE = ['spirit/job/chokidar/', 'spirit/job/readdirp/', 'spirit/element/codeMirror/'];
+  function vendored(p) { return VENDORED_ON_PAGE.some(function (v) { return String(p).indexOf(v) === 0; }); }
+  // What a script may expose: an object or a function, so its folder's other scripts can stand under it.
+  function placeable(v) { return !!v && (typeof v === 'object' || typeof v === 'function'); }
+  // A page script run in a module box: { set, exports }, set true when it put anything into module.exports. A stylesheet,
+  // or a vendored script, is injected as it is and answers null.
+  var boxes = 0;
+  function injectBoxed(p, src) {
+    if (/\.css$/.test(p) || !/\.js$/.test(p) || vendored(p)) { inject(p, src); return null; }
+    var id = 'b' + (boxes += 1);
+    var start = {};
+    var box = { exports: start };
+    var slot = self.moduleBoxes = self.moduleBoxes || {};
+    slot[id] = box;
+    try {
+      inject(p, '(function (module, exports) {' + src + '\n}(window.spirit.moduleBoxes.' + id + ', window.spirit.moduleBoxes.' + id + '.exports));');
+    } finally { delete slot[id]; }
+    var set = box.exports !== start || Object.keys(start).length > 0;
+    return { set: set, exports: box.exports };
   }
   function inject(p, src) {
     if (/\.css$/.test(p)) {

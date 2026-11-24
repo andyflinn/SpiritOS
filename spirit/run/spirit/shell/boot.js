@@ -219,8 +219,8 @@
   // state-storage") ───────────────────────────────────────────────────────────────────────────────────────────────
   // Its element is loaded and made in the page's area, at home and on a face alike; one that does not load is said in the banner.
   function loadShell() {
-    return Promise.resolve(spirit.requireScript('spirit/element/script.js')).then(function () {
-      var E = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.script;
+    // What spirit.requireScript hands back is the shell itself (goal/G49.9: never read at its spirit.required path).
+    return Promise.resolve(spirit.requireScript('spirit/element/script.js')).then(function (E) {
       desktop.innerHTML = '';
       // THE SHELL'S AREA IS NO DESKTOP GRID (Andy, of his face.html: "all icons of the app.search are in a thin strip in the left
       // of my browser window"): a fill column the shell lays itself out in (face.css, #desktop.shell-area).
