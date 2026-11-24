@@ -351,7 +351,17 @@
   // what it wrote and is still the last to have written, each told as a delete, and its job is no longer replayed.
   var pageCaches = Object.create(null);  // node/branch -> { bucket, last: path -> entry }
   var makeBucket = null;
-  function rowBucket() { if (!makeBucket) { var r = ranking(); makeBucket = typeof r.bucket === 'function' ? r.bucket : null; } return makeBucket; }
+  var askedBucket = false;
+  // ITS BUCKET IT LOADS ITSELF (wsl's red 9b493e97; the rule that a part loads what it uses): on a page spirit/listLimiter.js is
+  // asked for once, so a page where nothing else loaded it is capped too; the rows before it lands stay uncapped.
+  function rowBucket() {
+    if (!makeBucket) { var r = ranking(); makeBucket = typeof r.bucket === 'function' ? r.bucket : null; }
+    if (!makeBucket && !askedBucket && root.spirit && typeof root.spirit.requireScript === 'function') {
+      askedBucket = true;
+      try { Promise.resolve(root.spirit.requireScript('spirit/listLimiter.js')).then(null, function () { askedBucket = false; }); } catch (e) { askedBucket = false; }
+    }
+    return makeBucket;
+  }
   // A path's node/branch: up to its second slash.
   function branchKey(p) { var a = p.indexOf('/'); var b = a === -1 ? -1 : p.indexOf('/', a + 1); return b === -1 ? p : p.slice(0, b); }
   function cacheRow(job, seen, paths) {
