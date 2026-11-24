@@ -61,7 +61,7 @@ Andy: *"KILL those fields in shadow-roll, KILL the functionality, KILL it!"*
 One relay (goal/G41.32), drawn by the one contact detail since goal/G43.32 (Andy: *"the contact list already knows the difference
 between contact types. so should the detail panel."*); `spirit/element/search/contact/relayPanel.js` until then. Its test is
 the relay part of `./script.js` (once `./detail-relay.js`). `spirit.required.spirit.element.search.contact.detail.create(container, { key, layer, relay: true })`, a panel with no `open`
-of its own (goal/G43.18; it was a page on the navigation, goal/G40.8). It reads that relay's row by `spirit.relay.status` as it is drawn, and listens after
+of its own (goal/G43.18; it was a page on the navigation, goal/G40.8). It reads that relay's row by contact.search and contact.get (goal/G49.11) as it is drawn, and listens after
 that: the relayRowStream section below. Its panels fold; the owner's panels (Memory and disc, Invites)
 sit in one more fold, "Managing my relay".
 
@@ -82,9 +82,9 @@ row's; its title goes there.
 - **Every button below is an arming button** (`armingButton.attach` or `create`), handed no api: the button hears a
   click elsewhere itself.
   - **Leave** (a relay this node holds a seat on and does not own): label `Leave this relay`, armed
-    `Press again to leave`; its run asks `relay.leave { key: url }`.
+    `Press again to leave`; its run asks `contact.leave { key }` by the row's key (goal/G49.11).
   - **Remove** (a relay the removal rule lets go, `ownerBadge.removalRefusal`): label `Remove this relay`, armed
-    `Press again to remove`; its run asks `relay.remove { key: url }`, and the page closes once the node says ok.
+    `Press again to remove`; its run asks `contact.forget { publicKey }` (goal/G49.11), and the page closes once the node says forgotten.
   - **Restart** (Memory and disc, an owned relay): label `Restart`, armed `Restart? Every stream drops`; its run posts
     the relay `config { restart: true }` and nothing else.
   - **Revoke** (each outstanding invite, an owned relay): label `Revoke`, armed `Revoke <name>?`; its run posts the
@@ -134,7 +134,7 @@ stream, a real Chrome.
 - **The lab holds two relays** (`lab/labNodes.js`): a relay whose checks are over is stopped and freed before the next is asked for.
 - **A relay this node is not a member of cannot be made faceable** (Andy, of the star: *"a relay I'm not a member of can not be starred (relays i own automatically give me membership)"*; box v33: 😏 *"for a relay this node holds a seat on only"*): `contact.faceable` refuses it at the node with a code, and refuses a node; its panel offers no 😏; a member can; leaving takes 😏 away, and it cannot be put back; an owned relay can.
 - **The contact list marks a relay** (Andy: *"print its label in bold-italic"*): under 📡 Relays (the app opens on People, which shows no relay: goal/G47.4, box v29) a relay's label is bold and italic; under 👨‍👩‍👧‍👦 People a person's is not.
-- **It listens, shown or hidden**: a change is painted with no further `relay.status` or `relay.get`. **It follows only its row.**
+- **It listens, shown or hidden**: a change is painted with no further `contact.search` or `contact.get`. **It follows only its row.**
 - **Gone from the page, it stops**: after `destroy` a change neither throws nor paints.
 
 ### What its test must try to break

@@ -239,11 +239,19 @@ function relayWorld(rows, relayStatus) {
   };
   const families = new Proxy({}, { get: function (t, fam) {
     if (fam === 'then') return undefined;
-    // relay.status, reached through spirit.readyPromise as the page reaches every family (goal/G43.27, Q1: no api at load).
-    // Its other verbs recorded, as every family's are below.
-    if (fam === 'relay') return new Proxy({}, { get: function (t2, verb) {
-      if (verb === 'status') return function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); };
-      return function (body) { w.calls.push({ name: 'relay.' + String(verb), body: body }); return Promise.resolve({ ok: true }); };
+    // THE RELAYS FROM THE CONTACT BRANCH (goal/G49.11, box v9: "The contact detail asks relay.status for its relay panel, and
+    // relay.join, relay.claim, relay.leave and relay.remove from its panels: contact.get, contact.join, contact.claim, contact.leave
+    // and contact.forget"): contact.search lists the rows' keys, contact.get answers each row as relay.get did, with its report.
+    // Its other verbs recorded, as every family's are below; forget answers forgotten, as the node's does.
+    if (fam === 'contact') return new Proxy({}, { get: function (t2, verb) {
+      if (verb === 'search') return function () { return Promise.resolve({ ok: true, items: rows.map(function (r) { return { key: r.key }; }), more: false }); };
+      if (verb === 'get') return function (body) {
+        w.calls.push({ name: 'contact.get', body: body });
+        const r = rows.filter(function (x) { return x.key === (body && body.key); })[0];
+        const report = r && relayStatus ? relayStatus[r.url] : undefined;
+        return Promise.resolve(r ? Object.assign({ ok: true, key: r.key, relay: JSON.parse(JSON.stringify(r)) }, report ? { report: report } : {}) : { ok: false, status: 404 });
+      };
+      return function (body) { w.calls.push({ name: 'contact.' + String(verb), body: body }); return Promise.resolve(verb === 'forget' ? { publicKey: body && body.publicKey, forgotten: true } : { ok: true }); };
     } });
     if (fam === 'peer') return { post: function (b) {
       const sent = P.decode(b.text);
@@ -709,8 +717,9 @@ test.run('Pressing the armed Remove button asks the node to remove this relay', 
   if (typeof L.remove.opts.run === 'function') await L.remove.opts.run();
   await settle();
   L.removeRan = true;
-  const asked = L.w.calls.slice(before).filter(function (c) { return c.name === 'relay.remove'; })[0];
-  return (!!asked && asked.body.key === OWNED_URL) || false;
+  // relay.remove is gone (goal/G49.11): judged on what replaced it, contact.forget of this relay's row by its public key.
+  const asked = L.w.calls.slice(before).filter(function (c) { return c.name === 'contact.forget'; })[0];
+  return (!!asked && asked.body.publicKey === OWNED[0].key) || false;
 }, test.limit.quick);
 test.run('The page closes once the node says the relay is removed', 0.2, function () {
   if (!L.removeRan) return false;
@@ -726,7 +735,7 @@ test.run('two presses on the drawn Remove remove nothing without the element', 0
   const before2 = w2.calls.length;
   const drawn = await press(w2, '.nd-remove');
   await press(w2, '.nd-remove');
-  return (!!drawn && !w2.calls.slice(before2).some(function (c) { return c.name === 'relay.remove'; })) || false;
+  return (!!drawn && !w2.calls.slice(before2).some(function (c) { return c.name === 'contact.forget'; })) || false;
 }, test.limit.quick);
 
 // Leave, on a relay this node holds a seat on, is an arming button with the reset it lacked
@@ -751,8 +760,9 @@ test.run('Pressing the armed Leave button asks the node to leave this relay', 0.
   const before = L.w3.calls.length;
   if (typeof L.leave.opts.run === 'function') await L.leave.opts.run();
   await settle();
-  const asked = L.w3.calls.slice(before).filter(function (c) { return c.name === 'relay.leave'; })[0];
-  return (!!asked && asked.body.key === SEAT_URL) || false;
+  // relay.leave is gone (goal/G49.11): judged on contact.leave, naming this relay's row by its key.
+  const asked = L.w3.calls.slice(before).filter(function (c) { return c.name === 'contact.leave'; })[0];
+  return (!!asked && asked.body.key === SEATED[0].key) || false;
 }, test.limit.quick);
 test.run('two presses on the drawn Leave leave nothing without the element', 0.2, async function () {
   const w4 = relayWorld(SEATED, {});
@@ -762,7 +772,7 @@ test.run('two presses on the drawn Leave leave nothing without the element', 0.2
   const before4 = w4.calls.length;
   const drawnLeave = await press(w4, '.nd-leave');
   await press(w4, '.nd-leave');
-  return (!!drawnLeave && !w4.calls.slice(before4).some(function (c) { return c.name === 'relay.leave'; })) || false;
+  return (!!drawnLeave && !w4.calls.slice(before4).some(function (c) { return c.name === 'contact.leave'; })) || false;
 }, test.limit.quick);
 
 // THE STAR ON A RELAY (goal/G41.30; Andy: "the message is different for members and owners, showing members who they
@@ -945,15 +955,15 @@ test.run('the relay mails a join code', 0.2, async function () {
   S.stream = stream(S.N.base);
   S.key = S.R.relayKey;
   S.up = true;
-  await home(S.N.base, 'relay.add', { url: S.R.base, label: 'scratch' });
-  await home(S.N.base, 'relay.join', { url: S.R.base, email: MAIL });
+  await home(S.N.base, 'contact.add', { url: S.R.base, label: 'scratch' });
+  await home(S.N.base, 'contact.join', { key: S.R.relayKey, email: MAIL });
   await until(function () { return S.R.mailed.length > 0; }, 5000);
   S.code = joinCode(S.R);
   return !!S.code || false;
 }, test.limit.slow);
 test.run('Once the join code is given, the relay\'s row says it is claimed', 0.2, async function () {
   if (!S.code) return false;
-  await home(S.N.base, 'relay.join', { url: S.R.base, email: MAIL, code: S.code });
+  await home(S.N.base, 'contact.join', { key: S.R.relayKey, email: MAIL, code: S.code });
   await until(function () { const r = last(S.key); return !!r && r.claimed === true && r.status === 200; }, 10000);
   S.seated = last(S.key) || {};
   return S.seated.claimed === true || false;
@@ -1150,10 +1160,10 @@ test.run('a second relay comes up', 0.2, async function () {
 test.run('the other relay\'s row, seated and not owned, is on the stream', 0.2, async function () {
   if (!S.Other) return false;
   const Other = S.Other;
-  await home(S.N.base, 'relay.add', { url: Other.base, label: 'zzOtherRelay' });
-  await home(S.N.base, 'relay.join', { url: Other.base, email: MAIL });
+  await home(S.N.base, 'contact.add', { url: Other.base, label: 'zzOtherRelay' });
+  await home(S.N.base, 'contact.join', { key: Other.relayKey, email: MAIL });
   await until(function () { return Other.mailed.length > 0; }, 5000);
-  await home(S.N.base, 'relay.join', { url: Other.base, email: MAIL, code: joinCode(Other) });
+  await home(S.N.base, 'contact.join', { key: Other.relayKey, email: MAIL, code: joinCode(Other) });
   await until(function () { const r = last(Other.relayKey); return !!r && r.claimed === true && r.owned === false; }, 10000);
   const otherRow = last(Other.relayKey) || {};
   return (otherRow.claimed === true && otherRow.owned === false) || false;
@@ -1260,7 +1270,7 @@ test.run('a third relay comes up', 0.2, async function () {
 }, test.limit.slow);
 test.run('The home node refuses with a code to make faceable a relay that is listed but holds no seat', 0.2, async function () {
   if (!S.Far) return false;
-  await home(S.N.base, 'relay.add', { url: S.Far.base, label: 'zzFar' });
+  await home(S.N.base, 'contact.add', { url: S.Far.base, label: 'zzFar' });
   await until(function () { return rowsOf(S.Far.relayKey).length > 0; }, 8000);
   const farNo = await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (farNo.status >= 400 && farNo.status < 500 && !!(farNo.body && farNo.body.code)) || false;
@@ -1298,9 +1308,9 @@ test.run('The detail of a relay with no seat has no 😏 fold', 0.2, function ()
 // Leaving: read from his ruling, and Q21 asks him outright (ubi: "a relay you have left keeps its star"); if he says no, these two checks go.
 test.run('Once this node has joined the relay, 😏 goes on', 0.2, async function () {
   if (!S.Far) return false;
-  await home(S.N.base, 'relay.join', { url: S.Far.base, email: MAIL });
+  await home(S.N.base, 'contact.join', { key: S.Far.relayKey, email: MAIL });
   await until(function () { return S.Far.mailed.length > 0; }, 5000);
-  await home(S.N.base, 'relay.join', { url: S.Far.base, email: MAIL, code: joinCode(S.Far) });
+  await home(S.N.base, 'contact.join', { key: S.Far.relayKey, email: MAIL, code: joinCode(S.Far) });
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === true; }, 10000);
   const farYes = await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: true });
   return (farYes.status === 200 && await starred(S.Far.relayKey)) || false;
@@ -1309,7 +1319,7 @@ test.run('it leaves the relay: its row holds no seat', 0.2, async function () {
   if (!S.Far) return false;
   // The first ask may still be waiting for the relay's card, as relay.face's does.
   let left = null;
-  for (let i = 0; i < 8; i++) { left = await home(S.N.base, 'relay.leave', { key: S.Far.base }); if (left.status < 300 || left.status === 404) break; await sleep(2000); }
+  for (let i = 0; i < 8; i++) { left = await home(S.N.base, 'contact.leave', { key: S.Far.relayKey }); if (left.status < 300 || left.status === 404) break; await sleep(2000); }
   await until(function () { const r = last(S.Far.relayKey); return !!r && r.claimed === false; }, 8000);
   return ((last(S.Far.relayKey) || {}).claimed) === false || false;
 }, test.limit.long);
@@ -1335,11 +1345,11 @@ test.run('a relay naming this node its owner comes up', 0.2, async function () {
 test.run('Once the owned relay\'s report has come, its row says it is owned', 0.2, async function () {
   if (!S.Own) return false;
   const Own = S.Own;
-  await home(S.N.base, 'relay.add', { url: Own.base, label: 'zzOwned' });
-  await home(S.N.base, 'relay.join', { url: Own.base, email: MAIL });
+  await home(S.N.base, 'contact.add', { url: Own.base, label: 'zzOwned' });
+  await home(S.N.base, 'contact.join', { key: Own.relayKey, email: MAIL });
   await until(function () { return Own.mailed.length > 0; }, 5000);
   const ownCode = joinCode(Own);
-  if (ownCode) await home(S.N.base, 'relay.join', { url: Own.base, email: MAIL, code: ownCode });
+  if (ownCode) await home(S.N.base, 'contact.join', { key: Own.relayKey, email: MAIL, code: ownCode });
   await until(function () { const r = last(Own.relayKey); return !!r && r.owned === true; }, 20000);
   const ownedRow2 = last(Own.relayKey) || {};
   return ownedRow2.owned === true || false;

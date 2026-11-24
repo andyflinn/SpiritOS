@@ -60,6 +60,25 @@ const ROWS = [
   { url: 'https://n.example', label: 'N', claimed: true },
   { url: 'https://b.example', label: 'B', claimed: false, roll: { relayKey: 'RELAYKEY+B==' } },
 ];
+// THE CONTACT BRANCH STANDS IN FOR THE RELAYS (goal/G49.11, box v9: "nodeInfo and joinList ... read contact.search and
+// contact.get instead"): nodeInfo builds its relay list from contact.search {q, relay, keep} and a contact.get of each key.
+// Over a source answering as relay.status did (answered(rows), or a refusal), each row keyed by its url here.
+function contactOver(source, heard) {
+  let rows = [];
+  return {
+    search: function (args) {
+      heard(args);
+      return Promise.resolve(source()).then(function (a) {
+        rows = ((a && a.body && a.body.rows) || []).slice();
+        return { ok: true, items: rows.map(function (r) { return { key: r.url }; }), more: false };
+      });
+    },
+    get: function (args) {
+      const r = rows.filter(function (x) { return x.url === (args && args.key); })[0];
+      return Promise.resolve(r ? { ok: true, key: r.url, relay: r } : { ok: false, status: 404 });
+    },
+  };
+}
 function answered(rows) { return { status: 200, text: '', body: { name: '', rows: rows, ownedUrls: [], claimedUrls: [], mustPick: false, relayStatus: {}, more: false } }; }
 const CARD = { ok: true, name: 'Andy', description: 'a node', key: 'NODEKEY+INFO==' };
 
@@ -125,11 +144,11 @@ function world(o) {
       const a = opt.card ? opt.card() : { status: 200, body: CARD };
       return a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: a.status, body: a.body }); } };
   S.node = S.nodeFacts; S.required.spirit.data.homeNode(S.nodeFacts.key);
-  S.relay = { status: function (arg) { w.statuses += 1; w.calls.push({ name: 'relay.status', args: arg });
+  S.contact = contactOver(function () {
     if (opt.relaysHeld) return opt.relaysHeld;
     if (opt.relaysRefused) return Promise.reject({ status: 503, body: { ok: false, error: 'no relay answered' } });
-    // As the real one answers (spirit/relay/api.js): { status, text, body: { rows, ... } }.
-    return Promise.resolve(answered((opt.rows || ROWS).slice())); } };
+    return answered((opt.rows || ROWS).slice());
+  }, function (args) { w.statuses += 1; w.calls.push({ name: 'contact.search', args: args }); });
   S.readyPromise = Promise.resolve(S);
   S.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
   S.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
@@ -148,8 +167,8 @@ function world(o) {
     if (FILES[p]) { els[FILES[p][0]] = E[FILES[p][0]]; return Promise.resolve(E[FILES[p][0]]); }
     if (p === 'spirit/element/panel/script.js') { els.panel = panel; return Promise.resolve(panel); }
     if (p === 'spirit/element/rotateKey/script.js') return Promise.resolve(rotateKey);
-    // The node's branches by their api.js paths (goal/G49.6: never by a name): the relay and the node stand above.
-    if (p === 'spirit/relay/api.js') return Promise.resolve(S.relay);
+    // The node's branches by their api.js paths (goal/G49.6: never by a name): the contact and the node stand above.
+    if (p === 'spirit/contact/api.js') return Promise.resolve(S.contact);
     if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
     return Promise.resolve({});
   };
@@ -300,7 +319,9 @@ test.run('a node that does not answer is said as node.card did not answer', 0.2,
 }, test.limit.quick);
 test.run('it asks spirit.relay.status once, with an empty string', 0.2, function () {
   // the two forms: the email form always, the face form only for a starred relay (goal/G43.27)
-  return (w.statuses === 1 && w.calls.filter(function (c) { return c.name === 'relay.status'; })[0].args === '') ? true : false;
+  // relay.status is gone (goal/G49.11): judged on what replaced it, one contact.search of the kept relays.
+  const asked = w.calls.filter(function (c) { return c.name === 'contact.search'; })[0];
+  return (w.statuses === 1 && !!asked && asked.args && asked.args.relay === true && asked.args.keep === true) ? true : false;
 }, test.limit.quick);
 test.run('the email form (joinForm) stands above the face form (faceForm), each in its slot', 0.2, function () {
   join = w.forms.filter(function (f) { return f.form === 'join'; }).pop();
@@ -528,11 +549,8 @@ function formsPart() {
     } };
     S.nodeFacts = { key: 'NODEKEY+INFO==', card: function () { return Promise.resolve(CARD); } };
     S.node = S.nodeFacts; S.required.spirit.data.homeNode(S.nodeFacts.key);
-    // As the relay family's status answers (spirit/relay/api.js, status): { status, text, body: { rows, ... } }.
-    S.relay = { status: function () {
-      const body = { name: '', rows: relayRows.slice(), ownedUrls: [], claimedUrls: [], mustPick: false, relayStatus: {}, more: false };
-      return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body });
-    } };
+    // The relays from the contact branch, contact.search and contact.get (goal/G49.11), over these rows.
+    S.contact = contactOver(function () { return answered(relayRows.slice()); }, function () {});
     S.readyPromise = Promise.resolve(S);
     S.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
     S.callOutcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
@@ -556,7 +574,7 @@ function formsPart() {
       if (p === 'spirit/element/panel/script.js') { at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } }; return Promise.resolve(at.panel); }
       if (p === 'spirit/element/rotateKey/script.js') return Promise.resolve({ create: function () { return { destroy: function () {} }; } });
       // The node's branches by their api.js paths (goal/G49.6: never by a name): the relay and the node stand above.
-      if (p === 'spirit/relay/api.js') return Promise.resolve(S.relay);
+      if (p === 'spirit/contact/api.js') return Promise.resolve(S.contact);
       if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
       // fieldInput is not loaded here, so the forms draw without it: its require fails, as a script that is not there does.
       if (p === 'spirit/element/fieldInput/script.js') return Promise.reject(new Error('not loaded here: ' + p));
@@ -634,7 +652,8 @@ function partsPart() {
   }, test.limit.quick);
   test.run('nodeInfo asks relay.status, the relays this node holds a seat on', 0.2, function () {
     // The relay branch by its api.js path (goal/G49.6), its status asked of what that answered.
-    return (/'spirit\/relay\/api\.js'\)[\s\S]{0,80}\.status\(/.test(nodeInfo)) ? true : false;
+    // relay.status is gone (goal/G49.11): the contact branch by its api.js path, its relays listed by contact.search.
+    return (/'spirit\/contact\/api\.js'/.test(nodeInfo) && /\.search\(\{[^}]*relay:\s*true/.test(nodeInfo)) ? true : false;
   }, test.limit.quick);
   test.run('nodeInfo puts the card from node.card into the node cache', 0.2, function () {
     return (/\bnode\W{1,4}card\b/.test(nodeInfo)) ? true : false;

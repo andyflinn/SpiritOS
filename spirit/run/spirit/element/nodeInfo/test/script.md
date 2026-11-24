@@ -14,7 +14,7 @@ judged in its rotate part (once `./nodeInfo-rotate.js`), the sections below.
   `changeMyDescription.js`, `joinForm.js`, `faceForm.js`, `rowForm.js` and `panel.js`; `spirit/element/rotateKey/script.js` only
   when the dialog is opened. A part refused, it says *Info could not be loaded.*
 - **What it needs, it gets itself** (Andy: *"every fucking element gets the interfaces it needs"*): the spirit object's
-  families (`spirit.required.spirit.node.api.card`, `spirit.relay.status`, through `spirit.readyPromise` and `spirit.callOutcome`); no api, no
+  families (`spirit.required.spirit.node.api.card`, contact.search and contact.get, through `spirit.readyPromise` and `spirit.callOutcome`); no api, no
   `api.verb`, no `peerPost`.
 - **The page**: it empties its container and draws one fill box: the heading *What this node says about itself*, the
   note *Anybody who asks this node is told these two things, whether or not you have ever met. Nothing else about this
@@ -29,11 +29,11 @@ judged in its rotate part (once `./nodeInfo-rotate.js`), the sections below.
 - **No key is shown** (goal/G40.10; Andy: *"remove ANY indication of keys from all user interfaces"*): neither the
   node's nor a relay's.
 - **The two forms**: the email form (`joinForm.mount`) above the face form (`faceForm.mount`), each in its slot, over the
-  relays this node holds a seat on: from `spirit.relay.status('')`, only a row claimed or owned whose roll names the
+  relays this node holds a seat on: from contact.search and contact.get (goal/G49.11), only a row claimed or owned whose roll names the
   relay's key. The email form picks among them (`pick: 'seated'`); neither is handed an escape (each escapes with
   `spirit.escapeHtml` itself, goal/G43.24); the face form is
-  handed a `reload` that asks relay.status again and draws both forms again. The relays land when they land: the fields
-  and the card do not wait for them. relay.status refused, both forms are drawn over no relay and nothing throws.
+  handed a `reload` that asks contact.search again and draws both forms again. The relays land when they land: the fields
+  and the card do not wait for them. contact.search refused, both forms are drawn over no relay and nothing throws.
 - **"What each relay calls you" is dropped** (Andy, 2026-10-27): no relay table, no push of a saved name to every relay,
   no rename.
 - **Nothing ticks**: no timer; nothing changes without this element asking.
@@ -67,7 +67,7 @@ goal/G43.27, requirements 9 and 10, the forms part of `spirit/run/spirit/element
 
 Andy: "setting a star on a relay is what makes the face-form appear in \"info\", the email form must always show in \"info\"".
 
-nodeInfo.js runs on a bare window, with the real joinForm.js and faceForm.js. The rowForm is a stand-in. relay.status answers as the relay family's own `status` does: `{ status, text, body: { rows, ... } }`. Its rows are a seat on A (claimed), one on O (owned), and B, which is only listed. A star is a row's `mine`, the field faceForm reads (faceForm.js:33).
+nodeInfo.js runs on a bare window, with the real joinForm.js and faceForm.js. The rowForm is a stand-in. contact.search and contact.get answer as the contact family's own `status` does: `{ status, text, body: { rows, ... } }`. Its rows are a seat on A (claimed), one on O (owned), and B, which is only listed. A star is a row's `mine`, the field faceForm reads (faceForm.js:33).
 
 ### Requirements
 
@@ -87,7 +87,7 @@ Andy: *"i just moved them, didn't fix the manifest."*, *"no i want those apps to
 
 ### Requirements
 
-- Info's own parts move into `spirit/element/nodeInfo/script.js` (Q2: *"nodeInfo is fine."*): it is there, it asks relay.status and node.card, and it draws the rotate button.
+- Info's own parts move into `spirit/element/nodeInfo/script.js` (Q2: *"nodeInfo is fine."*): it is there, it asks contact.search, contact.get and node.card, and it draws the rotate button.
 
 ## The rotate key dialog, an element over Info
 
