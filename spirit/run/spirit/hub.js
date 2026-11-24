@@ -300,7 +300,8 @@ function searchPeople(people, q, filters) {
   if (/^\*+$/.test(words)) words = '';
   var f = filters || {};
   var wanted = SEARCH_FLAGS.filter(function (k) { return f[k] === true; });
-  var bucket = createProbabilityBucket(MAX_SEARCHED_PEOPLE);
+  // The bucket's one limit is bytes (goal/G49.8); the walk stops at MAX_SEARCHED_PEOPLE itself.
+  var bucket = createProbabilityBucket(Infinity);
   var seen = 0;
   var cut = false;
   for (var i = 0; i < (people || []).length; i += 1) {

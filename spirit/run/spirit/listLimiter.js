@@ -29,24 +29,48 @@ function utf8Bytes(text) { return unescape(encodeURIComponent(String(text))).len
 
 function scored(probability) { return typeof probability === 'number' && probability >= 0 && probability <= 1; }
 
+// ITS ONE LIMIT IS BYTES (goal/G49.8, box v12; Andy: "Disregard the seatlimit, because its DUMB", "limiting by row count is
+// wasteful on the wire, the actual byte size of each row is a variable"): capacity is the byte size of what it holds,
+// measured as serialize measures it (the objects as one JSON array), kept as a running total, each object measured once as
+// it is seated. Infinity holds everything.
 function createProbabilityBucket(capacity) {
-  var cap = typeof capacity === 'number' && capacity > 0 ? Math.floor(capacity) : 0;
-  var table = [];          // { probability, object }, highest first
+  var cap = typeof capacity === 'number' && capacity > 0 ? (capacity === Infinity ? Infinity : Math.floor(capacity)) : 0;
+  var table = [];          // { probability, object, bytes }, highest first, equals in arrival order
   var turnedAway = 0;
+  var held = 0;            // the objects' own bytes, summed
+  function size() { return table.length ? 2 + held + (table.length - 1) : 2; }
 
   return {
-    // SEATED BY PROBABILITY: highest at the top, an equal one behind those already in. Full, the lowest goes when a
-    // higher one comes, and a lower or equal one is turned away. Answers whether it got a seat. A probability is a
-    // number from 0 to 1; anything else gets none.
+    // SEATED BY PROBABILITY: highest at the top, an equal one behind those already in. Past the byte limit the longest
+    // held of the lowest goes, at once, until what it holds fits (Andy: "for some apps, the data.js will say, age
+    // determines shedding ... the bucket doesn't care"): so a newcomer of equal probability takes the room of the longest
+    // held of them, a higher one the room of the lowest, and a lower one is turned away. Answers false when the object
+    // got no seat, else the objects it pushed out to make room (an empty array when none). A probability is a number
+    // from 0 to 1; anything else gets none.
     seatFor: function (probability, object) {
       if (typeof probability !== 'number' || !(probability >= 0 && probability <= 1)) { turnedAway += 1; return false; }
       if (cap === 0) { turnedAway += 1; return false; }
-      if (table.length >= cap && !(probability > table[table.length - 1].probability)) { turnedAway += 1; return false; }
+      // With no limit nothing is measured: a page seats every row of its lists in an Infinity bucket, and measuring each
+      // write is what slowed the shell (goal/G49.8, twice).
+      var bytes = cap === Infinity ? 0 : utf8Bytes(JSON.stringify(object) === undefined ? 'null' : JSON.stringify(object));
+      var entry = { probability: probability, object: object, bytes: bytes };
       var at = table.length;
       while (at > 0 && table[at - 1].probability < probability) at -= 1;
-      table.splice(at, 0, { probability: probability, object: object });
-      if (table.length > cap) { table.pop(); turnedAway += 1; }
-      return true;
+      table.splice(at, 0, entry);
+      held += bytes;
+      var out = [];
+      var seated = true;
+      while (cap !== Infinity && table.length && size() > cap) {
+        // The lowest probability is at the end; the longest held of it is the first of that run.
+        var low = table[table.length - 1].probability;
+        var first = table.length - 1;
+        while (first > 0 && table[first - 1].probability === low) first -= 1;
+        var gone = table.splice(first, 1)[0];
+        held -= gone.bytes;
+        turnedAway += 1;
+        if (gone === entry) seated = false; else out.push(gone.object);
+      }
+      return seated ? out : false;
     },
 
     // THE OBJECTS ALONE, BEST FIRST, through map, measured in bytes against the ceiling; stopping at the first that
@@ -76,9 +100,9 @@ function createProbabilityBucket(capacity) {
     // later sort scores it again.
     sort: function (compare) {
       if (typeof compare !== 'function') return;
-      table = table.map(function (x, at) { var p = compare(x.object); return { probability: scored(p) ? p : -1, object: x.object, at: at }; })
+      table = table.map(function (x, at) { var p = compare(x.object); return { probability: scored(p) ? p : -1, object: x.object, bytes: x.bytes, at: at }; })
         .sort(function (a, b) { return b.probability - a.probability || a.at - b.at; })
-        .map(function (x) { return { probability: x.probability, object: x.object }; });
+        .map(function (x) { return { probability: x.probability, object: x.object, bytes: x.bytes }; });
     },
   };
 }

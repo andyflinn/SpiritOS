@@ -31,7 +31,8 @@ function ranker(q, slots) {
   var words = String(q == null ? '' : q).trim();
   var anyone = !words || words === '*';
   var room = typeof slots === 'number' && slots > 0 ? slots : SLOTS;
-  var bucket = createProbabilityBucket(room);
+  // The bucket's one limit is bytes (goal/G49.8): it holds every match, and the best room of them are answered.
+  var bucket = createProbabilityBucket(Infinity);
   var i = 0;
   return {
     add: function (rows) {
@@ -48,7 +49,7 @@ function ranker(q, slots) {
     },
     result: function () {
       var out = bucket.serialize();
-      return { rows: out.items, more: !!out.more };
+      return { rows: out.items.slice(0, room), more: !!out.more || out.items.length > room };
     },
   };
 }

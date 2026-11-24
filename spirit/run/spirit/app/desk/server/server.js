@@ -195,7 +195,8 @@ function itemProbability(text, row, lines) {
 // probability behind those already in, so that order stands among equals. One pair too big for the room alone is
 // skipped and said by more, as walked() does; past MAX_SCANNED_ITEMS the walk stops, and that is said by more too.
 function ranked(walk, room) {
-  const bucket = createProbabilityBucket(MAX_SCANNED_ITEMS);
+  // The bucket's one limit is bytes (goal/G49.8); the scan stops at MAX_SCANNED_ITEMS itself, and serialize cuts at room.
+  const bucket = createProbabilityBucket(Infinity);
   let scanned = 0;
   let more = false;
   for (const one of walk) {

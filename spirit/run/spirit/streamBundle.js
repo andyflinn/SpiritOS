@@ -25,7 +25,8 @@ function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArr
 function pack(entries) {
   const rows = Array.isArray(entries) ? entries : [];
   if (!rows.length) return [];
-  const bucket = createProbabilityBucket(rows.length);
+  // The bucket's one limit is bytes (goal/G49.8); serialize cuts at the room below.
+  const bucket = createProbabilityBucket(Infinity);
   // Every entry at probability 0, so the queue's order stands; measured as it travels, a string inside the request.
   rows.forEach(function (e) { bucket.seatFor(0, e); });
   const room = BUNDLE_ROOM - Buffer.byteLength(JSON.stringify({ json: '' }), 'utf8');
