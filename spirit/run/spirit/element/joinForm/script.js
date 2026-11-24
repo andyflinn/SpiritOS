@@ -83,7 +83,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         list.map(function (r) { return '<option value="' + escape(r.url) + '"' + (r === picked ? ' selected' : '') + '>' + escape(r.label || r.url) + '</option>'; }).join('') +
       '</select>' +
       '<input type="email" class="sp-join-email" placeholder="your email" autocomplete="email" value="' + escape(w.email) + '">';
-    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput/script.js'];
+    var FI = ANSWER['spirit/element/fieldInput/script.js'];
     if (FI) FI.attach(f.span.querySelector('.sp-join-email'), 'spirit.type.string.email');
   }
 
@@ -113,7 +113,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }, function (e) { return { ok: false, text: String((e && e.message) || e) }; });
   }
 
-  function emailType() { var r = window.spirit && window.spirit.required; return (r && r.spirit && r.spirit.type && r.spirit.type.string && r.spirit.type.string.email) || null; }
+  function emailType() { return ANSWER['spirit/type/string/email.js'] || null; }
   // The relays a place offers, out of relay.status' rows: 'seated' only those with a seat, else every one listed.
   function picking(rows, pick) {
     var list = Array.isArray(rows) ? rows : [];

@@ -14,6 +14,20 @@
 // app selector's open, its ✕ back to the list) or in one of its own, its keywords edited or the icon removed. It mounts as an app of spirit/app/ does, by the app selector's tile: no old shell's
 // activateApp any more (the box: "its tile opens no face").
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/armingButton/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/panel/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/icon/row/script.js');
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the
   // data they display", and spirit/test/app-child-browser.js for every element under spirit/app/; rule/26): icons's api.js and its
   // cache manager, data.js, which the page's one stream feeds; mounted alone, on a page nothing else loaded them on, it has them.
@@ -62,7 +76,7 @@
           '<div data-icons="said" class="job-manifest-note"></div></div>';
         var said = host.querySelector('[data-icons="said"]');
         var field = host.querySelector('[data-icons="keywords"]');
-        S.required.spirit.element.fieldInput.attach(field, 'spirit.type.string.description');
+        ANSWER['spirit/element/fieldInput/script.js'].attach(field, 'spirit.type.string.description');
         var close = function () { if (layer) layer.hide(); };
         var off = S.required.spirit.data.icons.data.watch(function (g, v) {
           if (g !== glyph) return;
@@ -75,7 +89,7 @@
         });
         // REMOVE ARMS FIRST (Andy: "icon detail, delete should be an armingButton."): the first press arms it and writes
         // nothing, the second removes the icon, a click elsewhere disarms it (spirit/element/armingButton/script.js).
-        S.required.spirit.element.armingButton.attach(host.querySelector('[data-icons="remove"]'), { label: 'Remove this icon', run: function () {
+        ANSWER['spirit/element/armingButton/script.js'].attach(host.querySelector('[data-icons="remove"]'), { label: 'Remove this icon', run: function () {
           icon({ op: 'delete', glyph: glyph }).then(function (r) { if (r && r.deleted) close(); else said.textContent = 'not removed'; },
             function (e) { said.textContent = 'not removed: ' + ((e && e.message) || e); });
         } });
@@ -85,22 +99,21 @@
 
     parts.then(function () {
       if (gone) return;
-      var E = S.required;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
-      if (typeof o.open !== 'function') stack = S.required.spirit.element.panel.create(container, container.firstElementChild);
+      if (typeof o.open !== 'function') stack = ANSWER['spirit/element/panel/script.js'].create(container, container.firstElementChild);
       // THE ADD ROW IS A ROWFORM (goal/G41.27; Andy: "icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]").
       // ITS PRESS IS ROWFORM'S (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer comes"):
       // add is handed as press, so Add is busy until the node answers; a listener of its own met a disabled button.
-      var form = E.spirit.element.rowForm.create(part('form'), { icon: '➕', button: 'Add', press: add });
+      var form = ANSWER['spirit/element/rowForm/script.js'].create(part('form'), { icon: '➕', button: 'Add', press: add });
       form.span.innerHTML =
         '<input type="text" data-icons="new-glyph" placeholder="an icon (paste it)" style="width:8em">' +
         '<input type="text" data-icons="new-keywords" placeholder="keywords, comma separated" style="flex:1">';
       form.button.setAttribute('data-icons', 'add');
       // The keywords to the description rule, the glyph to the glyph rule (goal/G41.27; Andy: "icon text follows description
       // rules.", "glyph field rule: max 1 char/glyph, 8-bytes maximum.").
-      window.spirit.required.spirit.element.fieldInput.attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'spirit.type.string.description');
-      window.spirit.required.spirit.element.fieldInput.attach(container.querySelector('[data-icons="new-glyph"]'), 'spirit.type.string.glyph');
-      list = E.spirit.element.search.create(part('pane'), {
+      ANSWER['spirit/element/fieldInput/script.js'].attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'spirit.type.string.description');
+      ANSWER['spirit/element/fieldInput/script.js'].attach(container.querySelector('[data-icons="new-glyph"]'), 'spirit.type.string.glyph');
+      list = ANSWER['spirit/element/search/script.js'].create(part('pane'), {
         // Its own data source: icon.search on its branch, the rows seated into the icons family's cache it is a view of.
         search: function (args) {
           return icon({ op: 'search', text: String((args && args.text) || '') }).then(function (b) {
@@ -115,7 +128,7 @@
         args: function (text) { return { text: text }; },
         name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
         columns: [{ field: 'glyph', label: '' }, { field: 'keywords', label: 'Keywords' }],
-        element: function (row, key) { return E.spirit.element.search.icon.row.create(Object.assign({ glyph: key }, row)); },
+        element: function (row, key) { return ANSWER['spirit/element/search/icon/row/script.js'].create(Object.assign({ glyph: key }, row)); },
         details: function (row, key) { openIcon(String(key || (row && row.glyph) || '')); },
         empty: 'No icon matches.',
       });
@@ -126,7 +139,7 @@
       var glyph = String((container.querySelector('[data-icons="new-glyph"]') || {}).value || '').trim();
       var kw = words((container.querySelector('[data-icons="new-keywords"]') || {}).value);
       if (!glyph) { say('paste an icon first'); return; }
-      if (!S.required.spirit.element.fieldInput.fits(kw.join(', '), 'spirit.type.string.description')) { say('too many keywords'); return; }
+      if (!ANSWER['spirit/element/fieldInput/script.js'].fits(kw.join(', '), 'spirit.type.string.description')) { say('too many keywords'); return; }
       // Its answer is rowForm's to wait for (the button busy until then).
       return icon({ op: 'add', glyph: glyph, keywords: JSON.stringify(kw) }).then(function (r) {
         if (gone) return;

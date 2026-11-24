@@ -18,8 +18,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/row/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
   // On spirit.required since goal/G43.18, as its file is in spirit/element/search/app/.
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   ['spirit/element/row/script.js', 'spirit/element/icon/script.js', 'spirit/element/search/app/rowFormAppActive/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   var appReady = Promise.resolve(keepAnswer('spirit/app/api.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
@@ -40,22 +42,22 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
-    apps = apps || window.spirit.required.spirit.element.row.index(dispatch);
+    apps = apps || ANSWER['spirit/element/row/script.js'].index(dispatch);
     return apps;
   }
 
   function esc(s) { return window.spirit.escapeHtml(s); }
   // THE ICON IS THE ICON ELEMENT (goal/G41.23), handed on as its markup, since a cell is painted as text.
   function iconHtml(glyph) {
-    if (!window.spirit.required.spirit.element.icon) return esc(glyph);
+    if (!ANSWER['spirit/element/icon/script.js']) return esc(glyph);
     var hold = document.createElement('span');
-    window.spirit.required.spirit.element.icon.create(hold, { glyph: glyph });
+    ANSWER['spirit/element/icon/script.js'].create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
 
   function create(row) {
     var r = row || {};
-    var el = window.spirit.required.spirit.element.row.create({
+    var el = ANSWER['spirit/element/row/script.js'].create({
       kind: 'app',
       key: String(r.key || ''),
       index: index(),

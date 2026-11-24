@@ -17,7 +17,6 @@
 // square is drawn smaller, evenly, so the square holds it whole and keeps what it holds inside (shell.css: overflow hidden).
 // Each glyph is measured once, on one canvas never in the page, before it is shown, and the answer kept.
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // THE ONE MEASURING SCREEN: a canvas never put in the page, the glyph measured on it at 100 px in the page's font, its
   // width against the 100 px of its square. A canvas measures text without laying out the page; a hidden box in the page
   // made the page lay itself out again for every new glyph, and the icon list, some 800 glyphs, hung its page (the -browser

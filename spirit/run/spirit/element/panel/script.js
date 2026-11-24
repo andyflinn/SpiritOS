@@ -39,7 +39,6 @@
     function cover(on) { if (under) under.style.display = on ? 'none' : ''; }
 
     function make(key, spec) {
-      var E = S.required;
       // THE ONE IT COVERS, shown again by its ✕ while that one is still in the stack.
       var back = open;
       var box = document.createElement('div');

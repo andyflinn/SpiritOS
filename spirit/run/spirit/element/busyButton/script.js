@@ -16,7 +16,6 @@
 // IT WAITS DOES NOTHING (Andy, goal/G41.23: "yes."), so no request is sent twice. A refusal goes no further than the
 // button: saying it is the app's, in its own request.
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
 
   function attach(button, options) {
     var o = options || {};

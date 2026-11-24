@@ -20,6 +20,12 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/search/testicle/row.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its row, testicle's interface and its cache manager.
   var parts = Promise.all(['spirit/app/testicle/element/search/testicle/row.js', 'spirit/app/testicle/api.js', 'spirit/element/rowForm/script.js', 'spirit/element/fieldInput/script.js']
@@ -75,7 +81,7 @@
       drawn.forEach(function (el) { if (el && typeof el.destroy === 'function') el.destroy(); });
       drawn = [];
       body.innerHTML = rows.map(function (r) {
-        var el = S.required.spirit.app.testicle.element.search.testicle.row.create(r);
+        var el = ANSWER['spirit/app/testicle/element/search/testicle/row.js'].create(r);
         drawn.push(el);
         // ONE DATE, THE LAST RUN (goal/G48.4, Andy: "a run that doesn't flip needs to update the run date in any event.", then
         // "who the fuck said it need two motherfucking dates?????"): every run sets the row's tested and publishes it, so a test
@@ -105,7 +111,7 @@
 
     function said(text) { var el = container.querySelector('[data-history="said"]'); if (el) el.textContent = text || ''; }
     function forms() {
-      var RF = S.required.spirit.element.rowForm;
+      var RF = ANSWER['spirit/element/rowForm/script.js'];
       var run = RF.create(container.querySelector('[data-history="runForm"]'), { icon: '🏃‍♂️', button: 'run',
         press: function () { return script && suite ? ANSWER['spirit/app/testicle/api.js'].run({ script: script, suite: suite }) : undefined; } });
       run.button.title = 'run this suite now';
@@ -119,13 +125,13 @@
       input.value = test;
       named.span.appendChild(document.createTextNode('Title '));
       named.span.appendChild(input);
-      S.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.description');
+      ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.description');
       function rename() {
         var to = input.value;
         said('');
         return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['testicle.title']({ script: script, suite: suite, oldTitle: test, title: to })).then(function () {
           if (gone) return;
-          test = (((S || {}).required || {}).spirit || {}).fieldRules ? (((S || {}).required || {}).spirit || {}).fieldRules.normalize(to) : String(to).trim();
+          test = ANSWER['spirit/fieldRules.js'] ? ANSWER['spirit/fieldRules.js'].normalize(to) : String(to).trim();
           prefix = script + '|' + suite + '|' + test + '|';
           input.value = test;
           titleLine.textContent = test;

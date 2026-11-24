@@ -20,7 +20,6 @@
 // for clicks on the document and disarms on any but the press that armed it; disarmed, it lets go. No shell hook is
 // handed to it. Its own second press reaches its own handler first, so the confirming press still runs.
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   var loaded = null;   // the one button armed now, if any
 
   function attach(button, options) {

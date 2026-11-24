@@ -24,6 +24,12 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/codeMirror.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/bundle/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/armingButton/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the tables' shared element, whose helpers it uses.
   keepAnswer('spirit/app/agent/element/table/tableElement.js');
   // And fieldInput, which holds a name or a description field to its rule (goal/G47.1: without it the label took 4096 bytes).
@@ -168,13 +174,13 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
         if (f.kind === 'icon') {
           needs(['spirit/element/search/icon/script.js']).then(function () {
             if (gone || !el.isConnected) return;
-            icons[f.field] = window.spirit.required.spirit.element.search.icon.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
+            icons[f.field] = ANSWER['spirit/element/search/icon/script.js'].create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
             if (icons[f.field] && typeof icons[f.field].addEventListener === 'function') icons[f.field].addEventListener('change', save);
           });
         }
         if (f.kind === 'code') {
           needs(['spirit/element/codeMirror.js']).then(function () {
-            return window.spirit.required.spirit.element.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
+            return ANSWER['spirit/element/codeMirror.js'].create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
           }).then(function (cm) { editors[f.field] = cm; });
         }
         // The field shows the row picked now, by its label from the other table's branch, until another is picked; only a
@@ -220,11 +226,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
         // selector, loaded here (rule/26); only a new pick is saved, as for a pick field.
         if (f.kind === 'bundle') {
           needs(['spirit/element/search/bundle/script.js']).then(function () {
-            if (gone || !(window.spirit.required.spirit.element.search && window.spirit.required.spirit.element.search.bundle && window.spirit.required.spirit.element.search.bundle.create)) return;
+            if (gone || !(ANSWER['spirit/element/search/script.js'] && ANSWER['spirit/element/search/bundle/script.js'] && ANSWER['spirit/element/search/bundle/script.js'].create)) return;
             // The bundle by its label, as the node has it (Andy: "why would the bundle picker show \"bundle 2\" for it's
             // selection instead of the fucking label?"); its number only once the node has no such bundle.
             var says = !row[f.field] ? 'Pick a bundle' : bundleLabel[row[f.field]] !== undefined ? bundleLabel[row[f.field]] : bundleHeld[row[f.field]] === false ? 'bundle ' + row[f.field] : '…';
-            bundles[f.field] = window.spirit.required.spirit.element.search.bundle.create(el, { placeholder: says });
+            bundles[f.field] = ANSWER['spirit/element/search/bundle/script.js'].create(el, { placeholder: says });
             if (bundles[f.field] && typeof bundles[f.field].addEventListener === 'function') bundles[f.field].addEventListener('change', save);
           });
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
@@ -249,8 +255,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
       if (adding) { container.querySelector('#' + pre + 'addnew').addEventListener('click', addNew); return; }
       var del = container.querySelector('#' + pre + 'delete');
       needs(['spirit/element/armingButton/script.js']).then(function () {
-        if (gone || !del.isConnected || !window.spirit.required.spirit.element.armingButton) return;
-        window.spirit.required.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove });
+        if (gone || !del.isConnected || !ANSWER['spirit/element/armingButton/script.js']) return;
+        ANSWER['spirit/element/armingButton/script.js'].attach(del, { label: 'Delete', run: remove });
       });
     }
     // THE WHOLE ROW, as the verb takes it (Andy, Q2: "yes, send the whole row for update"): every field as the editor shows

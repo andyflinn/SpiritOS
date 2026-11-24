@@ -28,6 +28,15 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/contact/list/script.js');
   function createContactSelector(options) {
     var o = options || {};
     var isPane = o.face === 'pane';
@@ -51,7 +60,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     Promise.all(['spirit/element/search/contact/list/script.js', 'spirit/element/search/script.js', 'spirit/element/row/script.js',
       'spirit/element/search/contact/row/script.js'].map(function (p) { return window.spirit.requireScript(p); }).concat([window.spirit.requireScript('spirit/contact/api.js')])).then(function () {
       if (gone) return;
-      made = window.spirit.required.spirit.element.search.contact.list.create(root, {
+      made = ANSWER['spirit/element/search/contact/list/script.js'].create(root, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (o.placeholder || 'choose a contact…'),
         all: isPane ? undefined : o.all,

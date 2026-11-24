@@ -17,7 +17,6 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   keepAnswer('spirit/element/icon/script.js');
 
@@ -30,7 +29,7 @@
     n.setAttribute('data-key', key);
     var icon = document.createElement('span');
     icon.className = 'icon';
-    var I = E.spirit && E.spirit.element && ANSWER['spirit/element/icon/script.js'];
+    var I = ANSWER['spirit/element/icon/script.js'];
     if (I && typeof I.create === 'function') I.create(icon, { glyph: String(r.icon || '') });
     else icon.textContent = String(r.icon || '');
     var bar = document.createElement('div');

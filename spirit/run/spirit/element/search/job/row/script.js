@@ -16,6 +16,17 @@
 //
 // The list watches the branch and draws its rows again from it (spirit/element/search/script.js), so a row has no dispatch.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/progressBar/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/row/script.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the shared row element, the icon element, the progress bar.
   ['spirit/element/row/script.js', 'spirit/element/icon/script.js', 'spirit/element/progressBar/script.js'].forEach(function (p) { S.requireScript(p); });
@@ -57,7 +68,7 @@
   // progress) draws it, an ended one or a terminal job none.
   function progressOf(job) {
     var c = job && job.app && typeof job.app === 'object' ? job.app.job : null;
-    var bar = S.required && S.required.spirit.element.progressBar;
+    var bar = ANSWER['spirit/element/progressBar/script.js'];
     if (!c || typeof c !== 'object' || TERMINAL.indexOf(job.status) !== -1 || typeof bar !== 'function') return '';
     if (c.state === 'start') return bar(0, 0, String(c.name || ''));
     if (c.state === 'progress') return bar(Number(c.done) || 0, Number(c.total) || 0, String(c.text || ''));
@@ -67,7 +78,7 @@
   // THE STATUS MARK IS THE ICON ELEMENT (goal/G41.23): made by icon.create and handed on as its markup, since a cell is
   // painted as text. Its word beside it stays text.
   function glyphOf(glyph) {
-    var I = S.required && S.required.spirit.element.icon;
+    var I = ANSWER['spirit/element/icon/script.js'];
     if (!I || typeof I.create !== 'function') return esc(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
@@ -82,7 +93,7 @@
   }
   function create(row, options) {
     var o = options || {};
-    var R = S.required.spirit.element.row;
+    var R = ANSWER['spirit/element/row/script.js'];
     var job = row || {};
     var latest = typeof o.latest === 'function' ? o.latest : function () { return ''; };
     index = index || R.index(function () {});

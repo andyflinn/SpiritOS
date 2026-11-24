@@ -18,6 +18,17 @@
 // owner-bundle (Andy: "Grants: <owner>-<bundle>."). Every change goes through the loopback verbs apiAuth.js answers, each
 // element asking them itself.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/tabContainer/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/grant/grantsPanel/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/bundleEditor/script.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/search/grant/grantsPanel/script.js', 'spirit/element/tabContainer/script.js', 'spirit/element/bundleEditor/script.js']
@@ -29,14 +40,13 @@
     container.innerHTML = '';
     parts.then(function () {
       if (gone) return;
-      var E = S.required;
-      tabs = E.spirit.element.tabContainer.create(container, {
+      tabs = ANSWER['spirit/element/tabContainer/script.js'].create(container, {
         tabs: [
           { name: 'grants', label: 'Grants', mount: function (box) {
-            return E.spirit.element.search.grant.grantsPanel.create(box, { ids: { table: 'loopback://api/contact/search' }, grants: E.spirit.element.search.grant.grantsPanel.nodeGrants });
+            return ANSWER['spirit/element/search/grant/grantsPanel/script.js'].create(box, { ids: { table: 'loopback://api/contact/search' }, grants: ANSWER['spirit/element/search/grant/grantsPanel/script.js'].nodeGrants });
           } },
           { name: 'bundles', label: 'Bundles', mount: function (box) {
-            return E.spirit.element.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) { return String(row.owner || 'node') + '-' + String(row.label || ''); } });
+            return ANSWER['spirit/element/bundleEditor/script.js'].create(box, { tabs: tabs, tabLabel: function (row) { return String(row.owner || 'node') + '-' + String(row.label || ''); } });
           } },
         ],
       });

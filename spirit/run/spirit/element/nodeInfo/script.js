@@ -37,10 +37,15 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/panel/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/changeMyLabel/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/changeMyDescription/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/changeMyLabel/script.js', 'spirit/element/changeMyDescription/script.js', 'spirit/element/joinForm/script.js',
-    'spirit/element/faceForm/script.js', 'spirit/element/rowForm/script.js', 'spirit/element/panel/script.js'].map(function (p) { return S.requireScript(p); }));
+    'spirit/element/faceForm/script.js', 'spirit/element/rowForm/script.js', 'spirit/element/panel/script.js'].map(function (p) { return keepAnswer(p); }));
 
   function create(container, opts) {
     var o = opts || {};
@@ -83,7 +88,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // only handed the relays again after.
     var forms = {};
     function drawForm(key, name, slotName, opts) {
-      var F = S.required.spirit.element[name];
+      var F = ANSWER['spirit/element/' + name + '/script.js'];
       if (!F) return;
       if (forms[key]) F.mount(slot(slotName), opts);
       else { forms[key] = F.create(slot(slotName), opts); made.push(forms[key]); }
@@ -114,11 +119,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
     var fields = parts.then(function () {
       if (gone) return null;
-      var E = S.required;
-      if (typeof o.open !== 'function') stack = S.required.spirit.element.panel.create(box, page);
-      made.push(E.spirit.element.changeMyLabel.create(slot('name')));
-      made.push(E.spirit.element.changeMyDescription.create(slot('description')));
-      var rotate = E.spirit.element.rowForm.create(slot('rotate'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
+      if (typeof o.open !== 'function') stack = ANSWER['spirit/element/panel/script.js'].create(box, page);
+      made.push(ANSWER['spirit/element/changeMyLabel/script.js'].create(slot('name')));
+      made.push(ANSWER['spirit/element/changeMyDescription/script.js'].create(slot('description')));
+      var rotate = ANSWER['spirit/element/rowForm/script.js'].create(slot('rotate'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
       rotate.button.addEventListener('click', function () { openRotate(); });
       // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.required.spirit.data.node.data, and each of
       // the two fields draws itself from it.

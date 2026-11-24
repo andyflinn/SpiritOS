@@ -10,6 +10,13 @@
 // uptime, event loop delay (p99), connections, jobs running. It reads nothing itself; each tile watches what it shows.
 // THE ELEMENTS IT LAYS OUT, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1): a require made while this file runs is part of its tree.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   var TILES = ['memory', 'cpu', 'uptime', 'delay', 'connections', 'running'];
   var parts = Promise.all(TILES.map(function (n) { return S.requireScript('spirit/element/monitor/job/' + n + '/script.js'); }));
@@ -24,7 +31,7 @@
     container.appendChild(root);
     parts.then(function () {
       if (gone) return;
-      var J = S.required.spirit.element.monitor.job;
+      var J = module.exports;
       made = TILES.map(function (n) { return J[n].create(root); });
     });
     return {

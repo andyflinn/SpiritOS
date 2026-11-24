@@ -18,6 +18,16 @@
 // search seats its rows there, and the stream keeps them current through the table's family's cache manager (the
 // node's grants: the auth family's, goal/G41.28), so one grant appears or goes and nothing is read again.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/grant/row/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/script.js', 'spirit/element/search/grant/row/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
 
@@ -41,7 +51,7 @@
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.required.spirit.element.search.create(host, {
+    var list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       data: String(g.branch),
@@ -57,7 +67,7 @@
         // edge so the button doesn't jump out my way when i try to revoke haiku's grants?"): a row going away moves no Revoke.
         { field: 'revoke', label: '', width: '6em', align: 'right' },
       ],
-      element: function (row) { return window.spirit.required.spirit.element.search.grant.row.create(row, { grants: g }); },
+      element: function (row) { return ANSWER['spirit/element/search/grant/row/script.js'].create(row, { grants: g }); },
       filters: o.filters,
       selectors: o.selectors,
       empty: o.empty || 'No grant matches.',

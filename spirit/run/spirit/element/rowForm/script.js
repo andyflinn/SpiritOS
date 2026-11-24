@@ -27,7 +27,6 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the icon element, asked as this file runs, so whoever requires the
   // form is answered once it is in.
   if (window.spirit && typeof window.spirit.requireScript === 'function') { keepAnswer('spirit/element/icon/script.js'); keepAnswer('spirit/element/busyButton/script.js'); }
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
 
   function create(container, options) {
     var o = options || {};

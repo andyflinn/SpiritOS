@@ -18,6 +18,16 @@
 // from there, not write a second one"). A press is the rowForm's, so the button is busy until the node answers; a refusal is
 // said below the bubble, the mounter's line. It follows its one job through the jobs family's cache (spirit/job/data.js).
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/job/row/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the row form, the jobs family's interface (which loads its cache), and the
   // job row element that holds the Cancel or Delete rule.
@@ -40,7 +50,7 @@
 
     function cache() { return S.required.spirit.data && S.required.spirit.data.job && S.required.spirit.data.job.data ? S.required.spirit.data.job.data : null; }
     function job() { var J = cache(); return J && typeof J.job === 'function' ? J.job(id) : null; }
-    function actionOf(j) { return j ? S.required.spirit.element.search.job.row.actionOf(j) : 'run'; }
+    function actionOf(j) { return j ? ANSWER['spirit/element/search/job/row/script.js'].actionOf(j) : 'run'; }
     function messageOf(j) {
       if (!j) return '';
       var a = actionOf(j);
@@ -80,7 +90,7 @@
         if (gone || !(j.node && j.node.run === true)) return;
         var identity = j.identity || {};
         label = String(identity.label || name);
-        form = S.required.spirit.element.rowForm.create(box, { icon: identity.icon || '▶️', button: 'Run', press: press });
+        form = ANSWER['spirit/element/rowForm/script.js'].create(box, { icon: identity.icon || '▶️', button: 'Run', press: press });
         said = document.createElement('div');
         box.appendChild(said);
         var J = cache();

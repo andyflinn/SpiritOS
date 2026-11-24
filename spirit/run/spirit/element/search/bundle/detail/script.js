@@ -28,13 +28,16 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/branch/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/api/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   var parts = Promise.all(['spirit/element/search/api/script.js', 'spirit/element/search/branch/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
   }).concat([window.spirit.requireScript ? keepAnswer('spirit/element/armingButton/script.js') : null, keepAnswer('spirit/auth/api.js')]));
 
   function mount(box, o) {
-    var E = window.spirit.required;
     box.innerHTML = '';
     var A = ((window.spirit.required.spirit.data || {}).auth || {}).data;
     // ITS DELETION HEARD, FROM THIS SCREEN OR ANY OTHER: the mounter closes it.
@@ -42,7 +45,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (String(key) === String(o.bundle) && !v) o.gone();
     }) : null;
     if ((o.owner || 'node') !== 'node') {
-      var shown = E.spirit.element.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb'] });
+      var shown = ANSWER['spirit/element/search/branch/script.js'].create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb'] });
       shown.className += ' fill';
       return { destroy: function () { if (typeof offBundle === 'function') offBundle(); shown.destroy(); } };
     }
@@ -51,16 +54,16 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // [All Verbs ▾] [Add]"): ➕, the family selector in its span, its verb half with it, Add its button.
     // ITS ADD IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, so Add is busy until the node answers.
-    var form = E.spirit.element.rowForm.create(box, { icon: '➕', button: 'Add', press: function () { return addBranch(); } });
+    var form = ANSWER['spirit/element/rowForm/script.js'].create(box, { icon: '➕', button: 'Add', press: function () { return addBranch(); } });
     form.root.className += ' branch-editor-add';
-    var family = E.spirit.element.search.api.create(form.span, { all: 'choose a family…' });
+    var family = ANSWER['spirit/element/search/api/script.js'].create(form.span, { all: 'choose a family…' });
     var said = document.createElement('div');
     said.className = 'job-manifest-note';
     // Each note keeps its words inside (spirit-sibling-browser.js: overflow not visible).
     if (said.style) said.style.overflow = 'hidden';
     box.appendChild(said);
     // THE BUNDLE'S BRANCHES, filling the rest (shell.css fill).
-    var branches = E.spirit.element.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'] });
+    var branches = ANSWER['spirit/element/search/branch/script.js'].create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'] });
     branches.className += ' fill';
 
     function say(text) { said.textContent = String(text || ''); }
@@ -84,7 +87,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // AT THE BOTTOM, THE BUNDLE'S DELETE (goal/G41.32; Andy: "i need the branchEditor to have a rowForm at the bottom: [❌]
     // "Delete <bundle-name> bundle and branches " [Delete (armingButton)]."): the bundle and every branch that names it, in one
     // transaction at the node, and what closes this is hearing it. A refusal is said below it, in the node's words.
-    var del = E.spirit.element.rowForm.create(box, { icon: '❌', button: 'Delete' });
+    var del = ANSWER['spirit/element/rowForm/script.js'].create(box, { icon: '❌', button: 'Delete' });
     del.root.className += ' branch-editor-delete';
     del.span.textContent = 'Delete ' + String(o.label || '') + ' bundle and branches';
     var delSaid = document.createElement('div');

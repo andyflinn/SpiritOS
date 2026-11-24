@@ -32,6 +32,10 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/row/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
 // Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
@@ -75,28 +79,19 @@ function deskHear(fn) {
 // first one's hidden parts and showed only its title bar. So every item opens in the one 'item' layer, and opening
 // another row fills that layer again with it.
 var deskPanes = {};
-// An element by its place, spirit.required.<its path> (goal/G43.32): undefined while any part of the path is not there yet.
-function deskElementAt(place) {
-  return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.required : undefined);
-}
-// A helper by its place, spirit.required.<its path> (Andy: helpers with no create "live in require"): undefined till it ran.
-function deskRequiredAt(place) {
-  return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, typeof window !== 'undefined' && window.spirit ? window.spirit.required : undefined);
-}
-function deskElementOf(file) { return deskElementAt(String(file).replace(/^\/+/, '').replace(/\.js$/, '').split('/').join('.')); }
 function deskDialog(key, label, file, element, params) {
   var S = window.spirit;
   return new Promise(function (resolve) {
     var layer = null;
     var made = null;
     function fillWith(pane) {
-      return S.requireScript(file).then(function () {
+      return S.requireScript(file).then(function (dialog) {
         // The dialog asks through the page's own way to the node; its close and its title are its layer's.
         var via = Object.assign({}, deskVia, {
           closeDialog: function (result) { if (layer && typeof layer.hide === 'function') layer.hide(); resolve(result || {}); },
           setScreenTitle: function (text) { if (layer && typeof layer.set === 'function') layer.set({ icon: '🗂️', label: String(text || label) }); },
         });
-        return deskElementOf(file).create(pane, Object.assign({}, params, { via: via }));
+        return dialog.create(pane, Object.assign({}, params, { via: via }));
       });
     }
     var spec = { icon: '🗂️', label: label, fill: function (pane, closed) {
@@ -378,7 +373,7 @@ function deskGlyph(glyph, title) {
 }
 var deskIconReady = null;
 function deskPaintIcons(root) {
-  var I = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.icon;
+  var I = typeof window !== 'undefined' && ANSWER['spirit/element/icon/script.js'];
   if (!I || !root || typeof root.querySelectorAll !== 'function') return;
   Array.prototype.forEach.call(root.querySelectorAll('[data-icon]'), function (p) {
     if (p.querySelector('.shell-icon')) return;
@@ -529,9 +524,8 @@ function deskAddGoal() {
 var deskList = null;
 var deskListIndex = null;
 function deskListElement(row, key) {
-  var E = window.spirit.required;
-  deskListIndex = deskListIndex || E.spirit.element.row.index(function () { /* a publish redraws the list; each element applies its row */ });
-  var el = E.spirit.element.row.create({
+  deskListIndex = deskListIndex || ANSWER['spirit/element/row/script.js'].index(function () { /* a publish redraws the list; each element applies its row */ });
+  var el = ANSWER['spirit/element/row/script.js'].create({
     kind: 'deskRow', key: key, index: deskListIndex, row: row,
     fields: DESK_LIST_FIELDS.map(function (name, i) { return { name: name, paint: function (r) { return deskRowCellParts(r)[i] || ''; } }; }),
   });
@@ -577,7 +571,7 @@ function deskMountList() {
   deskLoadSearch(function () {
     // The List is drawn once the cache manager is there, its branch the List's (goal/G41.28).
     deskNeed(DESK_DATA).then(function () {
-    var P = window.spirit && window.spirit.required && window.spirit.required.spirit.element.search && window.spirit.required.spirit.element.search.create ? window.spirit.required.spirit.element.search : null;
+    var P = ANSWER['spirit/element/search/script.js'] && ANSWER['spirit/element/search/script.js'].create ? ANSWER['spirit/element/search/script.js'] : null;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskList || !K) return;
     deskList = P.create(el, {
@@ -640,7 +634,7 @@ var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireS
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton/script.js'];
+    var A = typeof window !== 'undefined' && ANSWER['spirit/element/armingButton/script.js'];
     if (!A || typeof button.armed === 'function') return;
     A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run });
   }, function () { /* no armingButton, no second press */ });
@@ -754,7 +748,7 @@ function deskHeader() {
 }
 function deskHeaderMove() {
   var old = document.getElementById('desk-bars');
-  var AH = ((window.spirit.required.spirit.element.appHeader || {}).appHeader);
+  var AH = ANSWER['spirit/element/appHeader/appHeader/script.js'];
   if (!old || !old.parentNode || !AH) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
   var head = AH.create(old.parentNode);
@@ -817,7 +811,7 @@ module.exports = { create: function (container, opts) {
       '</div>' +
       '</div>';
     // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11).
-    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput/script.js'];
+    var FI = ANSWER['spirit/element/fieldInput/script.js'];
     // Held to its type (goal/G48.4, box v22), the label a goal title is.
     var goalTitle = FI ? container.querySelector('#desk-goal-title') : null;
     if (goalTitle) FI.attach(goalTitle, 'spirit.type.string.label');
@@ -882,7 +876,7 @@ module.exports = { create: function (container, opts) {
     deskLoad();
     }
     // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
-    if (typeof deskOpts.open !== 'function') keepAnswer('spirit/element/panel/script.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = ANSWER['spirit/element/panel/script.js'].create(container, container.firstElementChild); });
+    if (typeof deskOpts.open !== 'function') keepAnswer('spirit/element/panel/script.js').then(function () { if (!deskStack && container.firstElementChild && ANSWER['spirit/element/panel/script.js']) deskStack = ANSWER['spirit/element/panel/script.js'].create(container, container.firstElementChild); });
     return { destroy: function () {
       deskHeard = [];
       // Its watch let go (rule/8): the backup line's.

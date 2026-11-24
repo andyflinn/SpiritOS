@@ -28,6 +28,12 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/search/suite.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/file/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/words.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/search/testicle/row.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, the two selectors, testicle's interface and its cache manager.
   var parts = Promise.all(['spirit/element/search/script.js', 'spirit/app/testicle/element/search/testicle/row.js', 'spirit/element/search/file/script.js',
@@ -70,7 +76,7 @@
       suiteList = null;
       suiteSel.innerHTML = '';
       suiteSel.value = '';
-      suiteList = S.required.spirit.app.testicle.element.search.suite.create(suiteSel, {
+      suiteList = ANSWER['spirit/app/testicle/element/search/suite.js'].create(suiteSel, {
         script: scriptSel.value, face: 'dropdown', placeholder: 'all suites', all: 'all suites',
         pick: function (row) { suiteSel.value = row && row.suite ? String(row.suite) : ''; changed(suiteSel); },
       });
@@ -98,12 +104,12 @@
           return { items: (b && b.items) || [], more: !!(b && b.more) };
         });
       };
-      scriptList = S.required.spirit.element.search.file.create(scriptSel, {
+      scriptList = ANSWER['spirit/element/search/file/script.js'].create(scriptSel, {
         face: 'dropdown', accept: production, flat: true, placeholder: 'all scripts', all: 'all scripts',
         pick: function (row, key) { scriptSel.value = row && key ? String(key) : ''; drawSuites(); changed(scriptSel); },
       });
       drawSuites();
-      list = S.required.spirit.element.search.create(container.firstElementChild, {
+      list = ANSWER['spirit/element/search/script.js'].create(container.firstElementChild, {
         data: data.branch('testicle'),
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): testicle.testicle.search, every script.
         search: function (args) {
@@ -127,7 +133,7 @@
           // "the default setting for testicle search should be EQUAL the the RED verb of testicle. ALL scripts, ALL suites,
           // reds only, most SERVERE FIRST DAMMIT.").
           { name: 'result', multi: true, keepOne: true, off: ['green'],
-            choices: [{ value: 'red', icon: S.required.spirit.app.testicle.words.result(false), word: 'red' }, { value: 'green', icon: S.required.spirit.app.testicle.words.result(true), word: 'green' }],
+            choices: [{ value: 'red', icon: ANSWER['spirit/app/testicle/words.js'].result(false), word: 'red' }, { value: 'green', icon: ANSWER['spirit/app/testicle/words.js'].result(true), word: 'green' }],
             test: function (row, off) { var o2 = off || {}; return row && (row.verified ? !o2.green : !o2.red) ? 1 : 0; } },
         ],
         selectors: [
@@ -139,7 +145,7 @@
         // holds more than the answers did (each answer's rows, and every row the stream brings), so what is shown is cut there.
         order: function (a, b) { return (a.verified ? 1 : 0) - (b.verified ? 1 : 0) || Number(b.severity || 0) - Number(a.severity || 0); },
         most: HELD_MAX,
-        element: function (row) { return S.required.spirit.app.testicle.element.search.testicle.row.create(row); },
+        element: function (row) { return ANSWER['spirit/app/testicle/element/search/testicle/row.js'].create(row); },
         pick: function (row, key) { if (row && typeof o.pick === 'function') o.pick(row, key); },
         empty: 'No test matches.',
       });

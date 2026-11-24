@@ -46,6 +46,16 @@
 if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
 if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
   var AGENT = 'spirit/app/agent/api.js';
   var made = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -81,7 +91,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   // apps."): made by icon.create and written as the markup it made, since the row is text; the glyph as text only while
   // spirit/element/icon/script.js has not loaded (every pane that draws a title row loads it first, below).
   function iconHtml(glyph, size) {
-    var I = window.spirit.required && window.spirit.required.spirit.element.icon;
+    var I = ANSWER['spirit/element/icon/script.js'];
     if (!I || typeof I.create !== 'function') return '<span style="font-size:' + size + 'em">' + esc(glyph) + '</span>';
     var hold = document.createElement('span');
     I.create(hold, { glyph: String(glyph || ''), size: size });
@@ -123,7 +133,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   }
   function search(host, o, more) {
     var columns = o.columns || columnsOf(o.table);
-    var s = window.spirit.required.spirit.element.search.create(host, Object.assign({
+    var s = ANSWER['spirit/element/search/script.js'].create(host, Object.assign({
       // WHAT IT NEEDS, THE SEARCH REQUIRES ITSELF (goal/G43.24): it asks agent.<table> through the spirit object; no api.
       api: 'spirit/app/agent/api.js', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },

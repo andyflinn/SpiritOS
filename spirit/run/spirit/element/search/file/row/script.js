@@ -15,7 +15,19 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fstat/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/row/script.js');
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/word/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   // goal/G41.23: a file's icon is the icon element (spirit/element/icon/script.js), loaded here too.
   // goal/G43.17: a file's icon is its kind's, which fstat says.
@@ -38,13 +50,13 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // all shell elements and apps."): made by icon.create and handed on as its markup, since a cell is painted as text; the
   // glyph as plain text while icon.js has not loaded.
   function iconHtml(glyph) {
-    var I = E.spirit.element.icon;
+    var I = ANSWER['spirit/element/icon/script.js'];
     if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return esc(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
-  function iconOf(p) { return E.spirit.element.fstat && typeof E.spirit.element.fstat.iconOf === 'function' ? E.spirit.element.fstat.iconOf(p) : '❔'; }
+  function iconOf(p) { return ANSWER['spirit/element/fstat/script.js'] && typeof ANSWER['spirit/element/fstat/script.js'].iconOf === 'function' ? ANSWER['spirit/element/fstat/script.js'].iconOf(p) : '❔'; }
   function bytes(n) {
     var f = window.spirit && spirit.formatBytes;
     return typeof n !== 'number' ? '' : (f ? f(n) : n + ' B');
@@ -65,11 +77,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var WORD_COLOUR = { holds: '#87cefa', red: '#d8b4fe' };
   function wordColours(p) {
     var parts = String(p || '').split('/');
-    if (parts[0] !== 'spirit' || !((((window.spirit || {}).required || {}).spirit || {}).word || {}).script) return Promise.resolve({});
+    if (parts[0] !== 'spirit' || !(ANSWER['spirit/word/script.js'] || {}).script) return Promise.resolve({});
     var out = { spirit: WORD_COLOUR.holds };
     return Promise.all(parts.slice(1).map(function (part, i) {
       var stem = part.split('.')[0];
-      return ((((window.spirit || {}).required || {}).spirit || {}).word || {}).script.check(parts.slice(0, i + 1).join('.'), stem).then(function (word) {
+      return ANSWER['spirit/word/script.js'].script.check(parts.slice(0, i + 1).join('.'), stem).then(function (word) {
         if (!word) return;
         var at = window.spirit;
         parts.slice(1, i + 1).forEach(function (up) { at = at ? at[up.split('.')[0]] : undefined; });
@@ -109,13 +121,13 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return function () { gone = true; if (typeof off === 'function') off(); };
   }
 
-  function index() { files = files || E.spirit.element.row.index(dispatch); return files; }
+  function index() { files = files || ANSWER['spirit/element/row/script.js'].index(dispatch); return files; }
 
   function create(row) {
     var r = row || {};
     var p = String(r.path || '');
     var k = known(p) || {};
-    var el = E.spirit.element.row.create({
+    var el = ANSWER['spirit/element/row/script.js'].create({
       kind: 'file',
       key: p,
       index: index(),
@@ -158,11 +170,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var paintWords = function () { wordColours(p).then(function (words) { if (live) el.apply({ words: words }); }); };
     var offWords = null;
     var listen = function () {
-      if (!live || !((((window.spirit || {}).required || {}).spirit || {}).word || {}).script) return;
-      offWords = ((((window.spirit || {}).required || {}).spirit || {}).word || {}).script.changed(paintWords);
+      if (!live || !(ANSWER['spirit/word/script.js'] || {}).script) return;
+      offWords = ANSWER['spirit/word/script.js'].script.changed(paintWords);
       paintWords();
     };
-    if (((((window.spirit || {}).required || {}).spirit || {}).word || {}).script) listen();
+    if ((ANSWER['spirit/word/script.js'] || {}).script) listen();
     else if (window.spirit.requireScript) Promise.resolve(window.spirit.requireScript('spirit/word/script.js')).then(listen, function () { /* no colours */ });
     var destroy = el.destroy;
     el.destroy = function () { live = false; if (offWords) offWords(); return destroy.apply(el, arguments); };

@@ -15,6 +15,19 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/bundle/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript; and the auth family's cache manager, whose
   // bundles it adds to (goal/G41.28).
   var parts = Promise.all(['spirit/element/fieldInput/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
@@ -22,7 +35,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }).concat([window.spirit.requireScript('spirit/auth/api.js')]));
   // The label's rule, the one definition both sides use (spirit/fieldRules.js).
   function labelOf(text) {
-    var R = (((window.spirit || {}).required || {}).spirit || {}).fieldRules || {};
+    var R = ANSWER['spirit/fieldRules.js'] || {};
     var v = typeof R.normalize === 'function' ? R.normalize(text) : String(text == null ? '' : text).trim();
     var bad = !v ? 'a bundle needs a label' : (typeof R.problem === 'function' ? R.problem(v) : '');
     return { value: v, why: bad || '' };
@@ -35,7 +48,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var bundles = null;
     parts.then(function () {
       if (gone) return;
-      var E = window.spirit.required;
       box.innerHTML = '';
       // ITS OWN BOX, WHICH KEEPS WHAT IT HOLDS INSIDE (the general rules: the box an element puts into its container declares a
       // constraint, overflow not visible): the form, the line and the bundles go into it, not loose into the container.
@@ -47,18 +59,18 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // Add its button. What Add did is said below it.
       // ITS ADD IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
       // comes"): handed as press, so Add is busy until the node answers.
-      var form = E.spirit.element.rowForm.create(own, { icon: '➕', button: 'Add', press: function () { return addBundle(); } });
+      var form = ANSWER['spirit/element/rowForm/script.js'].create(own, { icon: '➕', button: 'Add', press: function () { return addBundle(); } });
       form.root.className += ' bundle-editor-add';
       var input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'label';
-      window.spirit.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.label');
+      ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.label');
       form.span.appendChild(input);
       var said = document.createElement('div');
       said.className = 'job-manifest-note';
       own.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are shown only.
-      bundles = E.spirit.element.search.bundle.create(own, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel });
+      bundles = ANSWER['spirit/element/search/bundle/script.js'].create(own, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }

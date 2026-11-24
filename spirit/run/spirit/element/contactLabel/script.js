@@ -98,8 +98,7 @@
     function save(typed) {
       var name = String(typed || '').trim();
       if (!name) return;
-      var R = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.type && window.spirit.required.spirit.type.string;
-      var L = R && R.label;
+      var L = ANSWER['spirit/type/string/label.js'];
       var bad = '';
       if (L) { try { L.isValid(name); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { why.textContent = bad; return; }
@@ -117,7 +116,7 @@
       editing.type = 'text';
       editing.className = 'contact-label-input';
       editing.value = caption;
-      var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput/script.js'];
+      var FI = ANSWER['spirit/element/fieldInput/script.js'];
       if (FI) FI.attach(editing, 'spirit.type.string.label');
       editing.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {

@@ -10,6 +10,13 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/ownerBadge.js');
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/faceForm/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/joinForm/script.js');
 // spirit/run/spirit/element/search/contact/detail/script.js
 // One row of the contacts, as its own panel, opened over the list that
 // mounted it (search/contact/row.js, openDetails): it shows that
@@ -165,7 +172,7 @@ function cdTitle() {
 // and keeps one armed at a time; this screen says only what each says and what its second press does.
 function cdArming(id, label, armedLabel, run) {
   var button = cdById(id);
-  var E = window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton/script.js'];
+  var E = ANSWER['spirit/element/armingButton/script.js'];
   if (!button || !E) return;
   E.attach(button, { label: label, armedLabel: armedLabel, run: run });
 }
@@ -332,7 +339,7 @@ var cdPage = ({
       // checks again (spirit/fieldRules.js; Andy, goal/G4.16: "the shell may
       // as well rule that inputs themselves implement constraints in
       // fieldRules.js"). Empty clears your name for them, and is asked.
-      var rule = (typeof window !== 'undefined' && window.spirit && (((window.spirit || {}).required || {}).spirit || {}).fieldRules) || null;
+      var rule = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/fieldRules.js']) || null;
       var bad = (typed && rule) ? rule.problem(typed) : '';
       if (bad) { cdStatus(bad); return; }
       cdPeerAction('label', { myLabel: typed });
@@ -403,7 +410,7 @@ var ndEscapeHtml = spirit.escapeHtml;
 // as text; plain text while spirit/element/icon/script.js has not loaded. A mark among words (a heading's) is text (Andy: "glyphs are
 // legal in labels and description true, and in that context they don't need special handling").
 function ndIconHtml(glyph) {
-  var I = window.spirit && window.spirit.required && window.spirit.required.spirit.element.icon;
+  var I = ANSWER['spirit/element/icon/script.js'];
   if (!I || typeof I.create !== 'function') return ndEscapeHtml(glyph);
   var hold = document.createElement('span');
   I.create(hold, { glyph: glyph });
@@ -449,7 +456,7 @@ function ndNoKey(out, cls) {
 }
 
 function ndLabelProblem(name) {
-  var rule = (typeof window !== 'undefined' && window.spirit && (((window.spirit || {}).required || {}).spirit || {}).fieldRules) || null;
+  var rule = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/fieldRules.js']) || null;
   return rule ? rule.problem(name) : '';
 }
 var ndLayer = {};       // the layer it is drawn in: close() and setTitle(text), the mounter's (options.layer)
@@ -755,7 +762,7 @@ function ndRefusedHtml(refused) {
 // WHETHER THIS RELAY MAY COME OFF THE LIST, asked here (goal/G30.7): the one rule the node enforces too,
 // ownerBadge.removalRefusal, over the list's rows as ndLoad holds them (owned, claimed). '' when it may.
 function ndRemoveRefusal() {
-  var badge = window.spirit && (((window.spirit || {}).required || {}).spirit || {}).ownerBadge;
+  var badge = window.spirit && ANSWER['spirit/ownerBadge.js'];
   if (!badge || typeof badge.removalRefusal !== 'function') return 'this page cannot tell whether it may be removed';
   return badge.removalRefusal(ndRows, ndUrl);
 }
@@ -1082,13 +1089,13 @@ function ndEmailHtml() {
 function ndFaceHtml() {
   // ONE RULE, THE FORM'S (goal/G41.32; Andy: "faceForm provides that check as a function"): since goal/G43.18 it shows only on a
   // starred relay. Drawn again once the form is on the page.
-  var form = window.spirit && window.spirit.required && window.spirit.required.spirit.element.faceForm;
+  var form = ANSWER['spirit/element/faceForm/script.js'];
   if (!ndBadge || !form || !form.offers([ndBadge])) return '';
   return ndPanel('face', '🌐', 'A face name', '<div class="nd-face-form"></div>', 'natter-face');
 }
 
 // THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): spirit/element/joinForm/script.js, which this file loads itself (iconReady).
-function ndJoinForm() { return (window.spirit && window.spirit.required && window.spirit.required.spirit.element.joinForm) || null; }
+function ndJoinForm() { return (ANSWER['spirit/element/joinForm/script.js']) || null; }
 
 // ── WHAT IS OUTSTANDING, AND TAKING ONE BACK ─────────────────────────
 //
@@ -1616,7 +1623,7 @@ function ndSetTitle() {
 // moves and keeps one armed at a time. This screen says only what each
 // says, armed and not, and what its second press does.
 function ndArming(body) {
-  var E = window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton/script.js'];
+  var E = ANSWER['spirit/element/armingButton/script.js'];
   if (!E) return;
   var each = function (selector, fn) { Array.prototype.forEach.call(body.querySelectorAll(selector), fn); };
   var attach = function (button, armedLabel, run) {
@@ -1672,11 +1679,10 @@ function ndRender() {
 // THE TWO FORMS, THE SAME EVERYWHERE (goal/G40.10, box v19; Andy: "on the relays detail page the picker CAN be shown as
 // a reminder, but unchangeable, with only one option"): drawn by their own mount into the panels, fixed to this relay.
 function ndMountForms(body) {
-  var el = (window.spirit && window.spirit.required) || {};
   var here = Object.assign({ url: ndUrl, label: (ndBadge && ndBadge.label) || ndUrl }, ndBadge || {});
-  Array.prototype.forEach.call(body.querySelectorAll('.nd-join-form'), function (box) { if (el.spirit.element.joinForm) el.spirit.element.joinForm.mount(box, { relays: [here], fixed: ndUrl }); });
+  Array.prototype.forEach.call(body.querySelectorAll('.nd-join-form'), function (box) { if (ANSWER['spirit/element/joinForm/script.js']) ANSWER['spirit/element/joinForm/script.js'].mount(box, { relays: [here], fixed: ndUrl }); });
   var face = body.querySelector('.nd-face-form');
-  if (face && el.spirit.element.faceForm) el.spirit.element.faceForm.mount(face, { relays: [here], fixed: ndUrl, reload: function () { return Promise.resolve(); } });
+  if (face && ANSWER['spirit/element/faceForm/script.js']) ANSWER['spirit/element/faceForm/script.js'].mount(face, { relays: [here], fixed: ndUrl, reload: function () { return Promise.resolve(); } });
 }
 
 // NOTHING REPAINTS THIS SCREEN except ndRender: on a press, when ndLoad
@@ -2100,7 +2106,7 @@ if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/arm
 // EVERY FIELD HELD BY ITS TYPE AS IT IS TYPED (goal/G48.4, box v22: "ever input field in every element must validate the input
 // with the new type checks."): fieldInput, asked as this file runs, and each field it draws handed to it with its type.
 if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/fieldInput/script.js');
-function typedField() { var r = window.spirit && window.spirit.required; return (r && r.spirit && r.spirit.element && r.spirit.element.fieldInput) || null; }
+function typedField() { return ANSWER['spirit/element/fieldInput/script.js'] || null; }
 // The contact's own name for it.
 function cdTypeFields(scope) {
   var FI = typedField();

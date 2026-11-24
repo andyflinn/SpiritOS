@@ -23,7 +23,6 @@
 
   function create(host, options) {
     var S = window.spirit;
-    var E = S.required;
     var key = String((options && options.key) || '');
     var gone = false;
     var picked = '';

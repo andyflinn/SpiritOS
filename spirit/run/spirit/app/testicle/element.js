@@ -27,6 +27,19 @@
 // script's tab; the script tabs stay closable". A test's tab is named by its full key without the flip, so a second click on
 // the same test makes its tab active and opens no second.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/workBench/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/file/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/tabContainer/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/scriptDetail.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/search/testicle/detail.js');
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
@@ -63,26 +76,25 @@
     var benchBox = container.querySelector('.testicle-bench');
     parts.then(function () {
       if (gone) return;
-      var E = window.spirit.required.spirit.element;
-      var T = window.spirit.required.spirit.app.testicle.element;
+      var T = module.exports;
       monitor = T.statusBox.create(container.querySelector('.testicle-monitor'));
-      bench = E.workBench.create(benchBox, {
+      bench = ANSWER['spirit/element/workBench/script.js'].create(benchBox, {
         // The left strip: the files, shown at start, then the configuration (box v79, 2); no right strip.
         left: [{ name: 'files', icon: '📁', title: 'Production scripts', mount: function (box) {
           box.className = 'fill';
           // goal/G47.1, the box: "testicle turns flat on.": the scripts, by path, no folders.
-          list = E.search.file.create(box, { face: 'pane', accept: production, flat: true, pick: function (row, key) { if (key) open(String(key)); } });
+          list = ANSWER['spirit/element/search/file/script.js'].create(box, { face: 'pane', accept: production, flat: true, pick: function (row, key) { if (key) open(String(key)); } });
         } }, { name: 'configuration', icon: '⚙', title: '⚙ Configuration', mount: function (box) { config = T.settingsPanel.create(box); } }],
         right: [],
       });
       // The centre: the testicle search first, never closed; then the file details and the test details, one tab each.
-      tabs = E.tabContainer.create(bench.center, { tabs: [{ name: 'testicle search', label: 'Testicle search', closable: false,
+      tabs = ANSWER['spirit/element/tabContainer/script.js'].create(bench.center, { tabs: [{ name: 'testicle search', label: 'Testicle search', closable: false,
         mount: function (box) { box.className = 'fill'; return T.search.testicle.create(box, { pick: function (row) { openTest(row); } }); } }] });
     }, function () { if (!gone) container.textContent = 'testicle could not be loaded.'; });
     // A CLICK ON A PRODUCTION FILE: its tab opened and made active, at once; its detail asks script.get from there.
     function open(file) {
       if (gone || !tabs) return;
-      tabs.add({ name: file, label: file.slice(file.lastIndexOf('/') + 1), closable: true, mount: function (box) { return window.spirit.required.spirit.app.testicle.element.scriptDetail.create(box, { script: file }); } });
+      tabs.add({ name: file, label: file.slice(file.lastIndexOf('/') + 1), closable: true, mount: function (box) { return ANSWER['spirit/app/testicle/element/scriptDetail.js'].create(box, { script: file }); } });
     }
     // A CLICK ON A TEST ROW: its history in a closable tab, opened and made active.
     function openTest(row) {
@@ -90,7 +102,7 @@
       var name = row.script + '|' + row.suite + '|' + row.test;
       tabs.add({ name: name, label: String(row.test || ''), closable: true, mount: function (box) {
         box.className = 'fill';
-        return window.spirit.required.spirit.app.testicle.element.search.testicle.detail.create(box, { script: row.script, suite: row.suite, test: row.test });
+        return ANSWER['spirit/app/testicle/element/search/testicle/detail.js'].create(box, { script: row.script, suite: row.suite, test: row.test });
       } });
     }
     return {

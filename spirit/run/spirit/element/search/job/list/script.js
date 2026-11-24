@@ -24,6 +24,17 @@
 // ID when no search term is active"): with no words the list keeps its rows in the order they came, and the stream hands the
 // jobs over in id order, a new job last; an update never moves a row.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/job/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/panel/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list, its row and its detail, the panel stack, and the job family's
   // cache manager.
@@ -31,7 +42,7 @@
     'spirit/element/search/job/detail/script.js']
     .map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/job/api.js')]));
 
-  function J() { return S.required.spirit.element.search.job; }
+  function J() { return ANSWER['spirit/element/search/job/script.js']; }
 
   function create(container, options) {
     var o = options || {};
@@ -66,10 +77,10 @@
       if (gone) return;
       var box = container.firstElementChild;
       // ITS OWN STACK when the mounter hands none, over its page (as contact.js).
-      if (typeof o.open !== 'function') stack = S.required.spirit.element.panel.create(container, box);
+      if (typeof o.open !== 'function') stack = ANSWER['spirit/element/panel/script.js'].create(container, box);
       var data = S.required.spirit.data.job.data;
       var kindOf = J().row.kindOf;
-      list = S.required.spirit.element.search.create(box, {
+      list = ANSWER['spirit/element/search/script.js'].create(box, {
         data: data.branch,
         columns: [
           { field: 'latest', label: '' },

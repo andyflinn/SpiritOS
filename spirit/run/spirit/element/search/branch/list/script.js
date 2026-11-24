@@ -16,6 +16,17 @@
 // stream keeps them current through the auth family's cache manager (spirit/auth/data.js), so a branch added or deleted
 // anywhere shows in every list.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/api/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/branch/row/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   // And the auth family's cache manager, whose branches branch the list is a view of (goal/G41.28). And the verb filter
   // (goal/G43.18, the box: "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too").
@@ -30,10 +41,9 @@
 
   function create(host, opts) {
     var o = opts || {};
-    var E = window.spirit.required;
     var list = null;
     // THE FILTER: the family selector, made here and mounted by the search in its 🪣 row.
-    var family = E.spirit.element.search.api.create(document.createElement('span'), { all: 'every family' });
+    var family = ANSWER['spirit/element/search/api/script.js'].create(document.createElement('span'), { all: 'every family' });
     var box = document.createElement('div');
     box.className = 'fill';
     // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
@@ -51,7 +61,7 @@
       });
     }
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['family', 'verb'];
-    list = E.spirit.element.search.create(box, {
+    list = ANSWER['spirit/element/search/script.js'].create(box, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's branches, the branch the auth family's manager keeps (spirit.required.spirit.data.auth.data.branches.branch).
@@ -64,7 +74,7 @@
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       args: function (text) { return { text: text }; },
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
-      element: function (row) { return E.spirit.element.search.branch.row.create(row); },
+      element: function (row) { return ANSWER['spirit/element/search/branch/row/script.js'].create(row); },
       // A pick shows the branch as family.verb, the family alone for (ALL), never its numbers.
       name: function (row) { return row ? (row.verb ? row.family + '.' + row.verb : row.family + ' (ALL)') : ''; },
       // THE VIEW HOLDS EVERY BRANCH THE PAGE KNOWS: this list shows its own bundle's, narrowed by the family selector, as

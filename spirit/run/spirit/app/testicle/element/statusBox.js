@@ -89,7 +89,7 @@
     var rows = container.querySelectorAll('.testicle-row');
     // Through the icon element, as every pictograph is drawn (spirit/element/icon/script.js; the general rules).
     function paint(box, glyph) {
-      var I = S.required && S.required.spirit && ANSWER['spirit/element/icon/script.js'];
+      var I = ANSWER['spirit/element/icon/script.js'];
       if (!I) return false;
       box.innerHTML = '';
       I.create(box, { glyph: glyph });

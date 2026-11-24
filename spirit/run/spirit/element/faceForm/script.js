@@ -85,7 +85,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       '<input type="text" class="sp-face-name" placeholder="face name: one word, letters and digits" value="' +
         escape(o.name != null ? o.name : ((picked && picked.face && picked.face.name) || '')) + '">';
     // A face name is one word (spirit.type.string.word).
-    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput/script.js'];
+    var FI = ANSWER['spirit/element/fieldInput/script.js'];
     if (FI) FI.attach(f.span.querySelector('.sp-face-name'), 'spirit.type.string.word');
     if (!picked) box.querySelector('.sp-face-out').textContent = String(o.none);
   }

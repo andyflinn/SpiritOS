@@ -45,6 +45,17 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/row/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/contact/row/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/contact/row/script.js', 'spirit/element/search/script.js', 'spirit/element/row/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
@@ -166,7 +177,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // A ROW OF AN ID TABLE: its label and the caller's mark, no contact's actions.
     var idIndex = null;
     function idElement(row, key) {
-      var R = window.spirit.required.spirit.element.row;
+      var R = ANSWER['spirit/element/row/script.js'];
       idIndex = idIndex || R.index(function () {});
       var el = R.create({ kind: 'id', key: String(key), index: idIndex, row: Object.assign({ mark: 0 }, row, { key: String(key) }),
         fields: [
@@ -178,7 +189,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       return el;
     }
     function contactElement(row, key) {
-      var el = window.spirit.required.spirit.element.search.contact.row.create(Object.assign({ key: key }, row), { open: o.open, mark: markOf });
+      var el = ANSWER['spirit/element/search/contact/row/script.js'].create(Object.assign({ key: key }, row), { open: o.open, mark: markOf });
       els[key] = el;
       return el;
     }
@@ -197,7 +208,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       el.act('open', {});
     };
 
-    list = window.spirit.required.spirit.element.search.create(host, {
+    list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's contacts, the branch the contact family's manager keeps (spirit.required.spirit.data.contact.data.branch); an

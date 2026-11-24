@@ -61,10 +61,10 @@
         // fstat only for a file neither opener takes (Andy: "let fstat pop up for unknows file types (❔) only"), through the
         // file search's detail, which draws it (goal/G43.32).
         if (!opener) return ANSWER['spirit/element/search/file/detail/script.js'].create(pane, { path: key });
-        return S.requireScript('spirit/app/' + opener + '/element.js').then(function () {
+        return S.requireScript('spirit/app/' + opener + '/element.js').then(function (made) {
           if (closed()) return null;
           // The opener's main element at the place of the file just loaded (goal/G43.32, rule 4).
-          return S.required.spirit.app[opener].element.create(pane, { path: key, words: words, line: line, title: title });
+          return made.create(pane, { path: key, words: words, line: line, title: title });
         });
       } })).then(function (l) {
         layer = l;

@@ -16,7 +16,6 @@
 //   fstat.mimeOf(path), fstat.kindOf(mime)   'image' | 'audio' | 'video' | 'code' | null
 //   fstat.iconOf(path)   the icon of its kind, the box: "text 📜, video 📹, image 🌇, audio 🔊", any other ❔
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
 
   function sp() { return window.spirit || {}; }
   function esc(s) {

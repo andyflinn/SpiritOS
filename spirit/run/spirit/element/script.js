@@ -37,13 +37,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  // AN APP'S MAIN ELEMENT BY THE APP'S NAME (goal/G43.32, rule 4): spirit/app/<name>/element.js, placed at
-  // spirit.required.spirit.app.<name>.element.
-  function appElementOf(name) {
-    var app = window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.app;
-    var e = app && app[String(name)] && app[String(name)].element;
-    return e && typeof e.create === 'function' ? e : null;
-  }
   function createAppSelector(options) {
     var o = options || { face: 'tiles' };
     var hide = ['app'].concat(Array.isArray(o.hide) ? o.hide : []);
@@ -105,11 +98,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var look = {};
       function title(t) { look.file = t && t.file; look.icon = t && t.icon; if (look.set) look.set(); }
       open('app', row, function (pane, closed) {
-        return S.requireScript('spirit/app/' + name + '/element.js').then(function () {
+        return S.requireScript('spirit/app/' + name + '/element.js').then(function (got) {
           if (closed()) return null;
           // What the app opens goes in this same stack, over all of it (panel.js: one stack, each ✕ one step back).
           var over = function (k, spec) { return stack ? stack.open('app/' + name + '/' + k, spec) : Promise.resolve(null); };
-          var made = appElementOf(name);
+          var made = got && typeof got.create === 'function' ? got : null;
           if (!made) throw new Error('spirit/app/' + name + '/element.js places no element with a create');
           return made.create(pane, { title: title, open: over });
         });

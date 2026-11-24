@@ -12,6 +12,16 @@
 //     grants   the grants table, as the list takes it: { key, label, revoke(id, path), watch(fn(id + newline + path, row)) }
 // What a press did is said below the bubble, the mounter's line (rowForm). Unconfigured, it draws a note and throws nothing.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/armingButton/script.js');
   var parts = Promise.all(['spirit/element/rowForm/script.js', 'spirit/element/armingButton/script.js'].map(function (p) { return window.spirit.requireScript(p); }));
   function create(host, opts) {
     var o = opts || {};
@@ -51,13 +61,12 @@
     }) : null;
     parts.then(function () {
       if (gone) return;
-      var E = window.spirit.required.spirit.element;
       // ONE ROW, as every rowForm: the icon, whose grant and its path, and Revoke the last.
-      form = E.rowForm.create(box, { icon: '🔒', button: 'Revoke' });
+      form = ANSWER['spirit/element/rowForm/script.js'].create(box, { icon: '🔒', button: 'Revoke' });
       paint();
       said = document.createElement('div');
       box.appendChild(said);
-      E.armingButton.attach(form.button, { label: 'Revoke', run: function () {
+      ANSWER['spirit/element/armingButton/script.js'].attach(form.button, { label: 'Revoke', run: function () {
         said.textContent = '';
         return Promise.resolve(g.revoke(id, path)).then(function () { if (!gone) said.textContent = 'revoked'; },
           function (e) { if (!gone) said.textContent = String((e && e.message) || e); });

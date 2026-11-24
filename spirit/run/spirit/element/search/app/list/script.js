@@ -12,6 +12,17 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/app/tile/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/app/row/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   ['spirit/element/search/script.js', 'spirit/element/search/app/row/script.js', 'spirit/element/search/app/tile/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   window.spirit.requireScript('spirit/app/api.js');
@@ -27,7 +38,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.required.spirit.element.search.create(host, {
+    var list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       data: window.spirit.required.spirit.data.app.data.branch,
@@ -36,7 +47,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       face: o.face,
       // ITS TILE PART (goal/G47.4): an app's tile, ../tile/script.js; a press on it picks the app, as a press on its row does. With it
       // the shared search shows the list or tiles switch by itself (the toggle option went).
-      tile: function (row, key) { return window.spirit.required.spirit.element.search.app.tile.create(row, { press: function (r, k) { if (typeof o.pick === 'function') o.pick(r, k); } }); },
+      tile: function (row, key) { return ANSWER['spirit/element/search/app/tile/script.js'].create(row, { press: function (r, k) { if (typeof o.pick === 'function') o.pick(r, k); } }); },
       onFace: function (f) { face = f; if (typeof o.onFace === 'function') o.onFace(f); },
       visible: o.visible,
       placeholder: 'choose an app…',
@@ -62,7 +73,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // Andy, box: "the appSelector will only show icon and label in the list."
       // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
       columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),
-      element: function (row) { return window.spirit.required.spirit.element.search.app.row.create(row); },
+      element: function (row) { return ANSWER['spirit/element/search/app/row/script.js'].create(row); },
       name: function (row) { return String((row && row.label) || ''); },
       empty: 'No app matches.',
     });

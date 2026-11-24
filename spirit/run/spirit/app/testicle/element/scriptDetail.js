@@ -22,6 +22,8 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/search/suite.js');
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
@@ -61,7 +63,7 @@
         return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['script.get']({ name: file }));
       }).then(function () {
         if (gone) return;
-        made = S.required.spirit.app.testicle.element.search.suite.create(below, { script: file });
+        made = ANSWER['spirit/app/testicle/element/search/suite.js'].create(below, { script: file });
       }, function (e) {
         if (gone) return;
         below.textContent = String((e && e.message) || e || 'script.get failed');

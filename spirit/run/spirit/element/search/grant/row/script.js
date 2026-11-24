@@ -19,7 +19,16 @@
 //   A grant shows as it is, whether a server serves its path today or not (goal/G47.4; Andy: "get rid of that deprecated
 //   filter ... what the hell is it even for?").
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/row/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/armingButton/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   var parts = Promise.all(['spirit/element/row/script.js', 'spirit/element/armingButton/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
@@ -45,7 +54,7 @@
   }
   function indexOf(g) {
     var t = tableOf(g);
-    t.index = t.index || E.spirit.element.row.index(t.dispatch);
+    t.index = t.index || ANSWER['spirit/element/row/script.js'].index(t.dispatch);
     return t.index;
   }
 
@@ -64,7 +73,7 @@
     var key = configured ? r[g.key] : '';
     var label = configured ? r[g.label] : '';
     var revoke = configured ? [{ name: 'revoke', paint: function () { return '<button type="button" class="gr-revoke" data-action="revoke">Revoke</button>'; } }] : [];
-    var el = E.spirit.element.row.create({
+    var el = ANSWER['spirit/element/row/script.js'].create({
       kind: 'grant',
       key: keyOf(key, r.path),
       index: configured ? indexOf(g) : null,
@@ -84,10 +93,10 @@
       mount(h);
       function controls() {
         var b = h.revoke && typeof h.revoke.querySelector === 'function' ? h.revoke.querySelector('[data-action="revoke"]') : null;
-        if (b) E.spirit.element.armingButton.attach(b, { label: 'Revoke', run: function () { return el.act('revoke', {}); } });
+        if (b) ANSWER['spirit/element/armingButton/script.js'].attach(b, { label: 'Revoke', run: function () { return el.act('revoke', {}); } });
       }
       // Its parts are on the page by the time a list draws a row; until then the control waits for them.
-      if (E.spirit.element.armingButton) controls(); else parts.then(controls);
+      if (ANSWER['spirit/element/armingButton/script.js']) controls(); else parts.then(controls);
       return el;
     };
     return el;

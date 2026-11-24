@@ -27,6 +27,9 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/search/suite/row.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, testicle's interface and its cache manager.
   var parts = Promise.all(['spirit/element/search/script.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/api.js']
@@ -54,7 +57,7 @@
           return b;
         });
       };
-      list = S.required.spirit.element.search.create(container.firstElementChild, {
+      list = ANSWER['spirit/element/search/script.js'].create(container.firstElementChild, {
         data: data.branch('suite'),
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): testicle.suite.search for this file.
         search: function (args) {
@@ -73,7 +76,7 @@
         // deleted, leaves the list by itself (goal/G47.1, the box: "Every element of testicle's face updates itself in
         // response to the server stream").
         filters: [{ name: 'script', when: function () { return false; }, test: function (row) { return row && row.script === script && !row.deleted ? 1 : 0; } }],
-        element: function (row) { return S.required.spirit.app.testicle.element.search.suite.row.create(row); },
+        element: function (row) { return ANSWER['spirit/app/testicle/element/search/suite/row.js'].create(row); },
         face: o.face,
         placeholder: o.placeholder,
         all: o.all,

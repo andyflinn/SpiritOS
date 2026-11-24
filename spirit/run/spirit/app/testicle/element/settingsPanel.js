@@ -20,6 +20,8 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/app/rowFormToggle/script.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the toggle row and testicle's interface.
   var parts = Promise.all(['spirit/element/search/app/rowFormToggle/script.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.requireScript(p); }));
@@ -44,7 +46,7 @@
     }
     parts.then(function () {
       if (gone) return;
-      toggle = S.required.spirit.element.search.app.rowFormToggle.create(container.querySelector('.testicle-config-form'), { on: true, words: '',
+      toggle = ANSWER['spirit/element/search/app/rowFormToggle/script.js'].create(container.querySelector('.testicle-config-form'), { on: true, words: '',
         press: function () {
           if (gone || typeof shown !== 'boolean') return;
           said.textContent = '';

@@ -33,7 +33,12 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fstat/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/file/tile/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/file/row/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/file/row/script.js', 'spirit/element/search/file/tile/script.js', 'spirit/element/search/script.js', 'spirit/element/fstat/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
@@ -44,7 +49,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (row.kind === 'folder' || accept == null) return true;
     if (typeof accept === 'function') return !!accept(row);
     var name = String(row.path || '').toLowerCase();
-    var mime = E.spirit.element.fstat ? String(E.spirit.element.fstat.mimeOf(name)) : '';
+    var mime = ANSWER['spirit/element/fstat/script.js'] ? String(ANSWER['spirit/element/fstat/script.js'].mimeOf(name)) : '';
     return (Array.isArray(accept) ? accept : [accept]).some(function (a) {
       a = String(a).toLowerCase();
       return a.charAt(0) === '.' ? name.slice(-a.length) === a : mime.indexOf(a) === 0;
@@ -91,7 +96,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var lines = Object.create(null);
     var made = Object.create(null);     // path -> its row element, so a folder's press can say it is open (goal/G43.17: 📂)
     var tiles = Object.create(null);    // path -> its tile, so a folder's press shows 📂 on its tile too
-    function tileIcon(row, p) { return row.kind === 'folder' ? (opened[p] ? '📂' : '📁') : (E.spirit.element.fstat ? E.spirit.element.fstat.iconOf(p) : '❔'); }
+    function tileIcon(row, p) { return row.kind === 'folder' ? (opened[p] ? '📂' : '📁') : (ANSWER['spirit/element/fstat/script.js'] ? ANSWER['spirit/element/fstat/script.js'].iconOf(p) : '❔'); }
     var list = null;
     // FLAT (goal/G47.1): no folder row and never the indented tree, so every row shows its path.
     var flat = o.flat === true;
@@ -101,7 +106,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
       '<div class="' + (flat ? 'fill' : 'files-tree fill') + '" style="overflow:hidden"></div>';
     var inner = host.lastChild;
-    list = E.spirit.element.search.create(inner, {
+    list = ANSWER['spirit/element/search/script.js'].create(inner, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: function (args) { return search(args, function (next, at) { scores = next; lines = at; }); },
       // A view of the node's file tree, the branch the fs family's manager keeps (spirit.required.spirit.data.fs.data.branch).
@@ -124,11 +129,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // list or tiles switch by itself (the toggle option went).
       tile: function (row, key) {
         var p = String(key || row.path || '');
-        var n = E.spirit.element.search.file.tile.create(Object.assign({ key: p }, row), { icon: tileIcon(row, p), press: function (r, k) { list.press(k); } });
+        var n = ANSWER['spirit/element/search/file/tile/script.js'].create(Object.assign({ key: p }, row), { icon: tileIcon(row, p), press: function (r, k) { list.press(k); } });
         tiles[p] = { node: n, row: row };
         return n;
       },
-      element: function (row, key) { var el = E.spirit.element.search.file.row.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
+      element: function (row, key) { var el = ANSWER['spirit/element/search/file/row/script.js'].create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
       // A file deleted on disc is held back from every draw: its row took itself out (../row/script.js, leave).
       visible: function (row) { var el = row ? made[row.key || row.path] : null; return !(el && el.row && el.row.gone); },
       score: function (row, values) { return values.in === 'contents' ? (scores[row.key || row.path] || 0) : null; },
@@ -151,7 +156,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         if (!list.words()) { if (opened[key]) delete opened[key]; else opened[key] = true; }
         if (made[key]) made[key].apply({ open: !!opened[key] });
         var t = tiles[key];
-        if (t && E.spirit.element.icon) { var ic = t.node.querySelector('.icon'); if (ic) { ic.innerHTML = ''; E.spirit.element.icon.create(ic, { glyph: tileIcon(t.row, key) }); } }
+        if (t && ANSWER['spirit/element/icon/script.js']) { var ic = t.node.querySelector('.icon'); if (ic) { ic.innerHTML = ''; ANSWER['spirit/element/icon/script.js'].create(ic, { glyph: tileIcon(t.row, key) }); } }
         return true;
       },
       // A contents match is picked with its line, from what the search said (lines above), whatever the row holds now.

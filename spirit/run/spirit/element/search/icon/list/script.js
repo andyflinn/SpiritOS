@@ -24,7 +24,16 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/icon/row/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   // goal/G41.23: each icon it lists is the icon element (spirit/element/icon/script.js), which its rows paint through.
   if (window.spirit.requireScript) ['spirit/element/search/icon/row/script.js', 'spirit/element/search/script.js', 'spirit/element/icon/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
@@ -89,7 +98,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (!held()) load();
     }, function () { if (!gone) host.textContent = 'The icons could not be loaded.'; });
     function make() {
-    list = E.spirit.element.search.create(host, {
+    list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24), which finds nothing: the rows are the fs cache's icons branch.
       search: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
       api: 'spirit/fs/api.js',
@@ -104,7 +113,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },
       ],
-      element: function (row, key) { return E.spirit.element.search.icon.row.create(Object.assign({ glyph: key }, row)); },
+      element: function (row, key) { return ANSWER['spirit/element/search/icon/row/script.js'].create(Object.assign({ glyph: key }, row)); },
       pick: function (row, key) { made.value = key; made.row = row; if (typeof o.pick === 'function') o.pick(row, key); },
       details: typeof o.details === 'function' ? function (row, key) { o.details(row, key); } : undefined,
       empty: o.empty || 'No icon matches.',

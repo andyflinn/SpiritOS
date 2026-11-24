@@ -79,7 +79,7 @@
     // Each strip button's glyph, through the icon element once it is there; as plain text until then, or if it never
     // comes, so a button is never empty.
     function paintIcons() {
-      var I = window.spirit && window.spirit.required && ANSWER['spirit/element/icon/script.js'];
+      var I = ANSWER['spirit/element/icon/script.js'];
       ['left', 'right'].forEach(function (side) {
         var s = part('strip-' + side);
         if (!s) return;

@@ -17,6 +17,8 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   keepAnswer('spirit/element/rowForm/script.js');
 
@@ -36,7 +38,7 @@
       var f = ANSWER['spirit/element/rowForm/script.js'].create(root, { icon: on ? '🟢' : '🔴', button: '', press: function () { return typeof o.press === 'function' ? o.press() : undefined; } });
       // THE BUTTON'S GLYPH IS AN ICON TOO (goal/G43.32; Andy: "fix the fucking elements/pages."): painted through the icon
       // element, which rowForm.js has loaded, as every pictograph the shell draws.
-      window.spirit.required.spirit.element.icon.create(f.button, { glyph: on ? '🔴' : '🟢' });
+      ANSWER['spirit/element/icon/script.js'].create(f.button, { glyph: on ? '🔴' : '🟢' });
       f.span.textContent = words;
     }
     draw();

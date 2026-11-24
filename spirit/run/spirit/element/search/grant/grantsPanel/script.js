@@ -27,7 +27,20 @@
 // made from, so the bundle's branches (auth.branch) are read here, and each becomes one grant through the grants table,
 // family.verb or the family alone for (ALL), a path already granted counted done.
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/contact/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/bundle/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/api/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/armingButton/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/grant/script.js');
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.requireScript, each element bringing its own.
   // And the auth family's cache manager, which nodeGrants (below) reads.
   var parts = Promise.all(['spirit/element/search/contact/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/search/api/script.js',
@@ -293,16 +306,15 @@
 
     parts.then(function () {
       if (gone) return;
-      var P = window.spirit.required;
       // THE GRANT FORM, ONE ROW (goal/G41.13, Andy: "the grants tab should have one-row grant form: \"grant\"
       // [idSelector] [bundleSelector] [grantButton]"). Both ID selectors search the ID table it was handed.
       var idTable = { table: ids.table, key: ids.key, label: ids.label };
       // Each made in a slot of its own; paint moves it into the line it stands in, each time it draws the form.
       var slot = function () { return document.createElement('span'); };
-      idSel = P.spirit.element.search.contact.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
-      bundleSel = P.spirit.element.search.bundle.create(slot(), { placeholder: 'choose a bundle…' });
-      filterId = P.spirit.element.search.contact.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
-      filterFamily = P.spirit.element.search.api.create(slot(), { all: 'every branch' });
+      idSel = ANSWER['spirit/element/search/contact/script.js'].create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
+      bundleSel = ANSWER['spirit/element/search/bundle/script.js'].create(slot(), { placeholder: 'choose a bundle…' });
+      filterId = ANSWER['spirit/element/search/contact/script.js'].create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
+      filterFamily = ANSWER['spirit/element/search/api/script.js'].create(slot(), { all: 'every branch' });
       [filterId, filterFamily].forEach(function (s) { if (s && typeof s.addEventListener === 'function') s.addEventListener('change', askAgain); });
       // THE GRANT FORM IS A ROWFORM (goal/G41.27; Andy: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]"):
       // ➕, the ID and the bundle selector in its span, Grant its button; made once, paint putting it back. What a press
@@ -311,21 +323,21 @@
       // requests"): greyed and turning until every grant of the bundle is answered. ITS PRESS IS THE ROWFORM'S TO HEAR (goal/G47.1,
       // Q20; Andy: "mark the button busy from press until the mounter's answer comes"): handed as press, the rowForm's own
       // busyButton waits on it; a second busyButton on the same button was cleared by the first at once.
-      form = P.spirit.element.rowForm.create(slot(), { icon: '➕', button: 'Grant', press: function () { return grantBundle(); } });
+      form = ANSWER['spirit/element/rowForm/script.js'].create(slot(), { icon: '➕', button: 'Grant', press: function () { return grantBundle(); } });
       form.span.appendChild(idSel);
       form.span.appendChild(bundleSel);
       // ❌ [ID] [branch] [verb] [Delete-armingButton] (goal/G47.4, the box): a rowForm with no press of its own, its span an
       // ID selector of the ID table it was handed and an api selector (the branch dropdown, its verb half once a branch is
       // chosen); its button arms on the first press, and the second revokes what is chosen in it (deleteChosen).
-      del = P.spirit.element.rowForm.create(slot(), { icon: '❌', button: 'Delete' });
-      delId = P.spirit.element.search.contact.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
-      delApi = P.spirit.element.search.api.create(slot(), { all: 'every branch' });
+      del = ANSWER['spirit/element/rowForm/script.js'].create(slot(), { icon: '❌', button: 'Delete' });
+      delId = ANSWER['spirit/element/search/contact/script.js'].create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
+      delApi = ANSWER['spirit/element/search/api/script.js'].create(slot(), { all: 'every branch' });
       del.span.appendChild(delId);
       del.span.appendChild(delApi);
-      P.spirit.element.armingButton.attach(del.button, { label: 'Delete', run: deleteChosen });
+      ANSWER['spirit/element/armingButton/script.js'].attach(del.button, { label: 'Delete', run: deleteChosen });
       paint();
       watchGrants();
-      list = P.spirit.element.search.grant.create(listHost, { grants: g, selectors: selectors() });
+      list = ANSWER['spirit/element/search/grant/script.js'].create(listHost, { grants: g, selectors: selectors() });
     });
 
     return {

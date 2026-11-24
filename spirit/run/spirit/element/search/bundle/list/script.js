@@ -18,6 +18,16 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/bundle/row/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/script.js', 'spirit/element/search/bundle/row/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // And the auth family's cache manager, whose bundles branch the list is a view of (goal/G41.28).
@@ -44,7 +54,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       });
     }
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['label', 'owner'];
-    list = window.spirit.required.spirit.element.search.create(host, {
+    list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       // A view of the node's bundles, the branch the auth family's manager keeps (spirit.required.spirit.data.auth.data.bundles.branch).
@@ -60,7 +70,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       filters: family ? [{ name: 'owner', when: function () { return false; }, test: function (r) { return r && (r.owner || 'node') === family ? 1 : 0; } }] : [],
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
       element: function (row, key) {
-        return window.spirit.required.spirit.element.search.bundle.row.create(row);
+        return ANSWER['spirit/element/search/bundle/row/script.js'].create(row);
       },
       // A pick shows the bundle's label, never its number (Andy: "the bundleSelector shows a fucking number is selected
       // instead of the fucking label"); the number is hidden (box: "a hidden numeric key").

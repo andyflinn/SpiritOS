@@ -47,7 +47,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   function create(container) {
       // The tables' shared element, asked once with the app, kept as spirit.requireScript hands it back (goal/G49.9).
       keepAnswer('spirit/app/agent/element/table/tableElement.js');
-      var E = (window.spirit && window.spirit.required) || {};
       var gone = false;
       var serverPanel = null;
 
@@ -60,7 +59,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
       // apps."), painted by the workBench's strip through spirit/element/icon/script.js, loaded here with it.
       var loaded = Promise.all([ANSWER['spirit/element/workBench/script.js'] ? null : keepAnswer('spirit/element/workBench/script.js'), keepAnswer('spirit/element/icon/script.js'), keepAnswer('spirit/element/tabContainer/script.js')]);
-      loaded.then(function () { if (gone) return; E = (window.spirit && window.spirit.required) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
+      loaded.then(function () { if (gone) return; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
       // THE WORKBENCH'S CENTRE IS CLOSABLE TABS (goal/G41.31; Andy: "i need a tabContainer permanently situated in the center pane of
       // the workBench.", "each panel, that the agent app placed into the center panel now becomes a closable tab in the
       // tabContainer, activated if it already exists, created if it doesn't have a tab yet."). They stay when the left tool

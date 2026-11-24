@@ -18,7 +18,6 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   var APP = /^spirit\/app\/([^/]+)\/\1\.js$/;
 
   function sp() { return window.spirit || {}; }

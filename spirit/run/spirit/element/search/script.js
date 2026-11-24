@@ -65,6 +65,16 @@
 // spirit.required.spirit.element.search.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, score }.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
   // and object matchers and the probability bucket, through spirit.requireScript. Asked as this file runs, so whoever requires
   // the list is answered once they are in. And fieldInput, which holds the search words to their rule.
@@ -72,13 +82,12 @@
   var fieldInputIn = null;
   if (window.spirit && typeof window.spirit.requireScript === 'function') {
     ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/icon/script.js',
-      'spirit/element/fieldInput/script.js', 'spirit/limits.js'].forEach(function (p) { var got = window.spirit.requireScript(p); if (p === 'spirit/element/fieldInput/script.js') fieldInputIn = got; });
+      'spirit/element/fieldInput/script.js', 'spirit/limits.js'].forEach(function (p) { var got = keepAnswer(p); if (p === 'spirit/element/fieldInput/script.js') fieldInputIn = got; });
   }
-  // The three ranking helpers, each at its one place, spirit.required.<its path> (goal/G49.4).
+  // The three ranking helpers, as their own spirit.requireScript calls hand them back (goal/G49.9).
   function P() {
-    var q = ((window.spirit && window.spirit.required) || {}).spirit || {};
-    var o = (q.search || {}).object || {};
-    return { probabilityStringObjectMatch: o.probabilityStringObjectMatch, measureObject: o.measureObject, createProbabilityBucket: (q.listLimiter || {}).createProbabilityBucket };
+    var o = ANSWER['spirit/search/object.js'] || {};
+    return { probabilityStringObjectMatch: o.probabilityStringObjectMatch, measureObject: o.measureObject, createProbabilityBucket: (ANSWER['spirit/listLimiter.js'] || {}).createProbabilityBucket };
   }
   // A VERB OF A BRANCH, REQUIRED BY ITS api.js PATH (goal/G43.24; goal/G49.6: never by a name): verb called on the branch
   // spirit.requireScript answers for that path, once the page is ready; a dotted verb is a path into it (a.b is f.a.b);
@@ -233,7 +242,7 @@
     // Every spacing of it is shell.css's, the ps-* classes (goal/G47.1, box v109: "style issues like margin, padding and gap do NOT belong in UI scripts").
     var ROW = 'display:flex;flex-wrap:wrap;align-items:center;';
     function iconHtml(glyph) {
-      var I = window.spirit.required && window.spirit.required.spirit.element.icon;
+      var I = ANSWER['spirit/element/icon/script.js'];
       if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return '<span>' + esc(glyph) + '</span>';
       var hold = document.createElement('span');
       I.create(hold, { glyph: glyph });
@@ -296,7 +305,7 @@
     // ITS PART, WAITED FOR (goal/G47.1; -browser: "every input it draws has a maxlength"): fieldInput was asked for as this file
     // ran; a search made before it is in attaches once it is, never left with its words unheld.
     function holdWords() {
-      var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+      var FI = ANSWER['spirit/element/fieldInput/script.js'];
       if (FI && live && el('text')) { FI.attach(el('text'), 'spirit.type.string.description'); return true; }
       return false;
     }

@@ -33,6 +33,9 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/contactLabel/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
 var chRoot = null;        // the app's root element, its look a class on it
 var chPane = null;        // the peer pane (contactSelector, face pane)
 var chPeer = '';          // the key of the chat shown
@@ -271,7 +274,7 @@ function chOpen(key) {
   var slot = chEl('ch-title-name');
   if (slot) {
     slot.innerHTML = '';
-    window.spirit.required.spirit.element.contactLabel.create(slot, { key: key, editable: true });
+    ANSWER['spirit/element/contactLabel/script.js'].create(slot, { key: key, editable: true });
   }
   // The count is said once, as the chat opens ("Andy: 35 new messages"), and the chat is then read.
   var row = chData() ? chData().chat(key) : null;
@@ -479,7 +482,7 @@ function chMount(container) {
     var input = make('textarea', 'ch-input', 'ch-input', { placeholder: 'Enter sends, Shift+Enter a new line' });
     input.disabled = true;
     // ITS LIMIT, fieldInput's chat line (1024 bytes; goal/G47.1, -browser: "every input it draws has a maxlength").
-    spirit.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.paragraph');
+    ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.paragraph');
     centre.appendChild(input);
     root.appendChild(centre);
     root.appendChild(make('div', 'ch-divider-right', 'ch-divider', { 'data-divider': 'right', title: 'drag to resize' }));
@@ -508,7 +511,7 @@ function chMount(container) {
       // through spirit/element/icon/script.js once it has loaded (chIconPart), its glyph as text until then.
       function paint() {
         var glyph = paneEl.hidden ? foldedGlyph : openGlyph;
-        var I = window.spirit && window.spirit.required && ANSWER['spirit/element/icon/script.js'];
+        var I = ANSWER['spirit/element/icon/script.js'];
         btn.textContent = '';
         if (I && typeof I.create === 'function') I.create(btn, { glyph: glyph }); else btn.textContent = glyph;
       }

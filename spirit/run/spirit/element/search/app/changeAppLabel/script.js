@@ -21,7 +21,6 @@
 
   function create(host, options) {
     var S = window.spirit;
-    var E = S.required;
     var key = String((options && options.key) || '');
     var gone = false;
     // NO APP NAMED, NOTHING TO FOLLOW (goal/G41.19, box v23: an element missing its options "mounts and says it is not

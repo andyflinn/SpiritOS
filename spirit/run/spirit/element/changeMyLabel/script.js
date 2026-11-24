@@ -19,7 +19,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  var E = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.requireScript.
   // And its type, spirit.type.string.label, which Save asks before the wire is troubled (goal/G48.4, the box: "fieldRules.js
   // dies").
@@ -28,7 +27,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // rowForm is in and create can draw it at once.
   if (root.spirit.requireScript) keepAnswer('spirit/element/rowForm/script.js');
 
-  function label() { var r = root.spirit && root.spirit.required; return (r && r.spirit && r.spirit.type && r.spirit.type.string && r.spirit.type.string.label) || null; }
+  function label() { return ANSWER['spirit/type/string/label.js'] || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
   // object's escapeHtml and the node family's setName, no api handed.
   function esc(s) { return root.spirit.escapeHtml ? root.spirit.escapeHtml(s) : String(s); }

@@ -45,7 +45,7 @@
   // job changing on the stream reads it again: one translator for every list. Another party's tree (options.tree:
   // introSpector's peer or relay) is that party's, and stays out of it.
   function keepTree(tree) {
-    ANSWER['spirit/data.js'].node.data.keepTree(tree, ((((window.spirit || {}).required || {}).spirit || {}).client || {}).apiTreeIndex);
+    ANSWER['spirit/data.js'].node.data.keepTree(tree, ANSWER['spirit/client/apiTreeIndex.js']);
   }
   var reading = null;
   function readOwnTree() {
@@ -94,15 +94,14 @@
     // THE LIST IS MADE FOR ITS SOURCE (goal/G47.1, wsl's red: a party's tree loaded later still drew the node's own branch):
     // the shared search takes its branch as it is made, so a load for another party makes the list again, on that party's.
     function makeList() {
-      var E = window.spirit.required.spirit.element;
-      list = E.search.create(host, {
+      list = ANSWER['spirit/element/search/script.js'].create(host, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a server…'),
         all: isPane ? undefined : options.all,
         data: ANSWER['spirit/data.js'].node.data.treeBranchOf(root.party),
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
-        element: function (row, key) { return E.search.api.row.create(Object.assign({ name: key }, row)); },
+        element: function (row, key) { return ANSWER['spirit/element/search/api/row/script.js'].create(Object.assign({ name: key }, row)); },
         pick: function (row, key) {
           root.value = row ? String(key || row.key || '') : '';
           root.dispatchEvent(new Event('change', { bubbles: true }));
@@ -110,7 +109,7 @@
         // A PANE'S PRESS: the family's verbs under the list, read from the tree it was painted from.
         details: isPane ? function (row, key) {
           clearDetail();
-          detail = E.search.api.detail.create(detailBox, { family: String(key || (row && row.name) || ''), tree: root.tree });
+          detail = ANSWER['spirit/element/search/api/detail/script.js'].create(detailBox, { family: String(key || (row && row.name) || ''), tree: root.tree });
         } : undefined,
         empty: 'No server matches.',
       });
@@ -136,7 +135,7 @@
       return Promise.all([got, made]).then(function (both) {
         var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
-        if (party) ANSWER['spirit/data.js'].node.data.keepTree(root.tree, ((((window.spirit || {}).required || {}).spirit || {}).client || {}).apiTreeIndex, party);
+        if (party) ANSWER['spirit/data.js'].node.data.keepTree(root.tree, ANSWER['spirit/client/apiTreeIndex.js'], party);
         list.redraw();
         root.dispatchEvent(new Event('tree', { bubbles: false }));
       }, function () { /* the list stays empty; the node says why elsewhere */ });

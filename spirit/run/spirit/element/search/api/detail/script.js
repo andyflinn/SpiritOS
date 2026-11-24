@@ -10,9 +10,16 @@
 //     family   the family's name
 //     tree     the api tree the list holds (root.tree): { <family>: { <verb>: { request, ... } } }
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the reader of the api tree.
-  var parts = Promise.resolve(S.requireScript('spirit/client/apiTreeIndex.js'));
+  var parts = Promise.resolve(keepAnswer('spirit/client/apiTreeIndex.js'));
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -30,7 +37,7 @@
     host.appendChild(box);
     parts.then(function () {
       if (gone) return;
-      var verbs = tree ? ((((S || {}).required || {}).spirit || {}).client || {}).apiTreeIndex.verbs(tree, family) : [];
+      var verbs = tree ? ANSWER['spirit/client/apiTreeIndex.js'].verbs(tree, family) : [];
       box.innerHTML = '<div class="api-family-detail-name">' + esc(family) + '</div>' + (verbs.length ? verbs.map(function (v) {
         var spec = tree[family][v];
         var req = spec && spec.request && typeof spec.request === 'object' ? Object.keys(spec.request) : [];

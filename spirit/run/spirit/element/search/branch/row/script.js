@@ -17,7 +17,16 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/row/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/armingButton/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   var parts = Promise.all(['spirit/element/row/script.js', 'spirit/element/armingButton/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
@@ -47,7 +56,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
-    branches = branches || E.spirit.element.row.index(dispatch);
+    branches = branches || ANSWER['spirit/element/row/script.js'].index(dispatch);
     return branches;
   }
 
@@ -59,7 +68,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   function create(row, opts) {
     var o = opts || {};
     var r = row || {};
-    var el = E.spirit.element.row.create({
+    var el = ANSWER['spirit/element/row/script.js'].create({
       kind: 'branch',
       key: String(Number(r.id)),
       index: index(),
@@ -81,10 +90,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       mount(h);
       function controls() {
         var del = h.delete && typeof h.delete.querySelector === 'function' ? h.delete.querySelector('[data-action="delete"]') : null;
-        if (del) E.spirit.element.armingButton.attach(del, { label: 'Delete', run: function () { return el.act('delete', {}); } });
+        if (del) ANSWER['spirit/element/armingButton/script.js'].attach(del, { label: 'Delete', run: function () { return el.act('delete', {}); } });
       }
       // Its parts are on the page by the time a list draws a row; until then the control waits for them.
-      if (E.spirit.element.armingButton) controls(); else parts.then(controls);
+      if (ANSWER['spirit/element/armingButton/script.js']) controls(); else parts.then(controls);
       return el;
     };
     return el;

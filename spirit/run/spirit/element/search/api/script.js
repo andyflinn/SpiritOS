@@ -21,6 +21,16 @@
 // Its contract and its test: ./test/script.md and ./test/api.js.
 
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/api/list/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/api/verb/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its two halves, the family list and
   // the verb half, its filter.
   var parts = Promise.all(['spirit/element/search/api/list/script.js', 'spirit/element/search/api/verb/script.js'].map(function (p) {
@@ -56,7 +66,7 @@
     var gone = false;
     parts.then(function () {
       if (gone) return;
-      families = window.spirit.required.spirit.element.search.api.list.create(root, { face: 'pane', tree: options.tree, party: options.party });
+      families = ANSWER['spirit/element/search/api/list/script.js'].create(root, { face: 'pane', tree: options.tree, party: options.party });
       families.addEventListener('change', function (event) {
         if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
         root.family = root.value = families.value || '';
@@ -94,9 +104,8 @@
     }
     function quiet(event) { if (event && typeof event.stopPropagation === 'function') event.stopPropagation(); }
     var made = parts.then(function () {
-      var E = window.spirit.required;
-      families = E.spirit.element.search.api.list.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree, party: options.party });
-      verbs = E.spirit.element.search.api.verb.create(root, { party: families.party });
+      families = ANSWER['spirit/element/search/api/list/script.js'].create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree, party: options.party });
+      verbs = ANSWER['spirit/element/search/api/verb/script.js'].create(root, { party: families.party });
       families.addEventListener('change', function (event) {
         quiet(event);
         if (families.value === root.family) return;

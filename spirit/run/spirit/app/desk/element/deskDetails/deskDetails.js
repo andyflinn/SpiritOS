@@ -27,6 +27,10 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/codeMirror.js');
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
 var ddApi = null;
 var ddId = '';
@@ -87,8 +91,8 @@ var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScr
   ? Promise.all([keepAnswer('spirit/element/armingButton/script.js'), keepAnswer('spirit/element/fieldInput/script.js')]) : null);
 function ddArming() {
   return ddParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton/script.js'];
-    var F = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/fieldInput/script.js'];
+    var A = typeof window !== 'undefined' && ANSWER['spirit/element/armingButton/script.js'];
+    var F = typeof window !== 'undefined' && ANSWER['spirit/element/fieldInput/script.js'];
     var say = document.getElementById('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'spirit.type.string.paragraph'); say.setAttribute('data-held', 'paragraph'); }
     // Your name for the item, a label (goal/G48.4, box v22).
@@ -194,8 +198,8 @@ var ddAddParts = typeof spirit !== 'undefined' && spirit.requireScript
   ? Promise.all([keepAnswer('spirit/element/rowForm/script.js'), keepAnswer('spirit/element/fieldInput/script.js')])
   : Promise.resolve(null);
 function ddMakeAdd(n) {
-  var R = window.spirit && window.spirit.required && window.spirit.required.spirit && ANSWER['spirit/element/rowForm/script.js'];
-  var F = window.spirit && window.spirit.required && window.spirit.required.spirit && ANSWER['spirit/element/fieldInput/script.js'];
+  var R = ANSWER['spirit/element/rowForm/script.js'];
+  var F = ANSWER['spirit/element/fieldInput/script.js'];
   var row = document.getElementById('dd-add-row');
   if (n !== ddFrameN || !R || typeof R.create !== 'function' || !row || row.firstChild) return;
   var form = R.create(row, { icon: '➕', button: 'Add', press: function () { return ddAdd(); } });
@@ -226,7 +230,7 @@ function ddShowLeft(name) {
   if (left && box && left.parentNode !== box) box.appendChild(left);
 }
 function ddMakeBench(n) {
-  var W = window.spirit && window.spirit.required && ANSWER['spirit/element/workBench/script.js'];
+  var W = ANSWER['spirit/element/workBench/script.js'];
   var host = document.getElementById('dd-bench');
   var hold = document.getElementById('dd-hold');
   var centre = document.getElementById('dd-centre');
@@ -421,7 +425,7 @@ function ddBoxMount() {
       el.innerHTML = '<div style="display:flex;gap:1em;align-items:center;margin-bottom:0.25em"><span class="job-manifest-note" data-box-version></span>' +
         // No find field over the box (goal/G43.22; Andy: "the codeMirror search works better for editing purposes.").
         '</div><div data-box-editor style="flex:1 1 0;min-height:0;position:relative"></div>';
-      return window.spirit.required.spirit.element.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
+      return ANSWER['spirit/element/codeMirror.js'].create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
         // He went into the textarea meanwhile, or left the item: it stays as it is, and the next item asks anew.
         if (ddId !== id || ddBoxFocused) { ddBoxViewAsked = ''; return; }
         // It fills what the version row leaves, and scrolls inside it (goal/G40.8: only a list or a viewer scrolls).
@@ -679,7 +683,7 @@ function ddSay() {
 // The title and the rename are labels. What is left, or over, shows beside each as it is typed; a value the rule
 // refuses is not sent, and the reason is said. The node checks again: this spares the wire, it never replaces that.
 var DD_FIELD_ACTION = { 'dd-name': 'dd-name-save' };
-function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spirit && (((window.spirit || {}).required || {}).spirit || {}).fieldRules) || null; }
+function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spirit && ANSWER['spirit/fieldRules.js']) || null; }
 function ddFieldWhy(id) {
   var rule = ddFieldRule();
   var el = document.getElementById(id);

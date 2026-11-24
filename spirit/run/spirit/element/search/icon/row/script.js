@@ -5,7 +5,16 @@
 // row.js does the shared work; this file says what an icon is. The set is one file, not a stream, so there is no
 // dispatch: a list built again from a changed set makes its rows again.
 (function () {
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/row/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   // goal/G41.23: the glyph is the icon element (spirit/element/icon/script.js), loaded here too.
   if (window.spirit.requireScript) ['spirit/element/row/script.js', 'spirit/element/icon/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
@@ -16,18 +25,18 @@
   // and apps."): made by icon.create and handed on as its markup, since a cell is painted as text; the glyph as plain text
   // while icon.js has not loaded.
   function iconHtml(glyph) {
-    var I = E.spirit.element.icon;
+    var I = ANSWER['spirit/element/icon/script.js'];
     if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return esc(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
-  function index() { icons = icons || E.spirit.element.row.index(function () {}); return icons; }
+  function index() { icons = icons || ANSWER['spirit/element/row/script.js'].index(function () {}); return icons; }
 
   function create(row) {
     var r = row || {};
     var glyph = String(r.glyph || r.key || '');
-    return E.spirit.element.row.create({
+    return ANSWER['spirit/element/row/script.js'].create({
       kind: 'icon',
       key: glyph,
       index: index(),

@@ -18,6 +18,19 @@
 //   - a relay: api by spirit.peerPost to its key, which the relay answers for every member, cut to the caller's verbs.
 // No families back: the dropdowns hide and the input pane says so. The party is the contacts list as a dropdown.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/client/apiTreeIndex.js');
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/api/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/contact/list/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/codeMirror.js');
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically through the fucking
   // apirit.require functionality"): the family selector, the contacts list as its party, and the reply's codeMirror.
@@ -137,7 +150,7 @@
       // EVERY FIELD STOPS AT ITS LIMIT (the general rules: every input it draws has a maxlength): a verb's declaration holds
       // an example, not a rule, so a text or a JSON field takes the longest standard rule, paragraph, through fieldInput; a
       // number field a number's length.
-      var FI = S.required && S.required.spirit && S.required.spirit.element && S.required.spirit.element.fieldInput;
+      var FI = ANSWER['spirit/element/fieldInput/script.js'];
       Array.prototype.forEach.call(form.querySelectorAll('[data-is-field]'), function (x) {
         if (x.type === 'checkbox') return;
         if (x.type === 'number') { x.maxLength = 32; return; }
@@ -163,10 +176,10 @@
       var line = part('line');
       var hold = document.createElement('span');
       line.appendChild(hold);
-      var branch = apiPick = S.required.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…' });
+      var branch = apiPick = ANSWER['spirit/element/search/api/script.js'].create(line, { familyPlaceholder: 'choose a family…' });
       // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/list/script.js), the book and
       // this node's relays; no pick is self, this node.
-      picker = S.required.spirit.element.search.contact.list.create(hold, {
+      picker = ANSWER['spirit/element/search/contact/list/script.js'].create(hold, {
         face: 'dropdown',
         placeholder: 'self (this node)',
         all: 'self (this node)',
@@ -182,12 +195,12 @@
         },
       });
       // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7), loaded with its parts.
-      Promise.resolve(S.required.spirit.element.codeMirror.create(part('reply'), { mode: 'read', text: '', path: 'reply.json' }))
+      Promise.resolve(ANSWER['spirit/element/codeMirror.js'].create(part('reply'), { mode: 'read', text: '', path: 'reply.json' }))
         .then(function (view) { if (!gone) reply = view; }, function () { /* the reply stays unshown */ });
       // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.
       branch.addEventListener('tree', function () {
         var tree = branch.tree;
-        var families = tree && tree.ok !== false ? ((((S || {}).required || {}).spirit || {}).client || {}).apiTreeIndex.servers(tree) : [];
+        var families = tree && tree.ok !== false ? ANSWER['spirit/client/apiTreeIndex.js'].servers(tree) : [];
         branch.hidden = !families.length;
         if (!families.length) {
           say('no verbs available' + (tree && tree.ok === false ? ': ' + (tree.error || tree.code || 'refused') : ''));

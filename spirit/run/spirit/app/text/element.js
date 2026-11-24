@@ -49,7 +49,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
     parts.then(function () {
       if (gone) return;
-      var E = S.required;
       // The row's icon is the editor's, until Andy names another.
       // Its press is set below, once the file it saves is known.
       var press = null;

@@ -19,6 +19,20 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/relay/api.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/joinSteps/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/joinForm/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/contact/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/contact/list/script.js');
   var S = window.spirit = window.spirit || {};
   var STEPS = 'spirit/app/join/join.json';
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
@@ -51,7 +65,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // A mark stands alone before its step's name, so it is an icon: a place naming its glyph, the icon element made there.
     function mark(glyph) { return '<span data-icon="' + glyph + '">' + glyph + '</span>'; }
     function icons() {
-      var I = S.required && S.required.spirit.element.icon;
+      var I = ANSWER['spirit/element/icon/script.js'];
       if (!I || typeof I.create !== 'function') return;
       Array.prototype.forEach.call(host.querySelectorAll('[data-icon]'), function (p) {
         if (p.querySelector('.shell-icon')) return;
@@ -60,7 +74,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       });
     }
     function where() {
-      var J = S.required && S.required.spirit.element.joinSteps;
+      var J = ANSWER['spirit/element/joinSteps/script.js'];
       if (!J || !job || !steps) return null;
       var facts = J.fromJob(job, false);
       var open = J.current(steps, facts);
@@ -108,17 +122,16 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     // The form each step draws, from the shell elements.
     function form(step, box, facts) {
-      var E = S.required || {};
       // Step 1 (box v41): the one join control, its words where the node stands: Join with no seat, Add on a seat taken
       // without a verified email (by invite), Change once verified. THE EMAIL FORM, THE SAME EVERYWHERE (goal/G40.10).
       // Made by its create and kept with what a redraw or destroy lets go (rule/8: the form holds a contact watch); a box a
       // redraw already replaced gets none.
-      if (step.until === 'email' && E.spirit.element.joinForm) {
-        withRelays(function () { if (host.contains(box)) made.push(E.spirit.element.joinForm.create(box, { relays: relays })); });
+      if (step.until === 'email' && ANSWER['spirit/element/joinForm/script.js']) {
+        withRelays(function () { if (host.contains(box)) made.push(ANSWER['spirit/element/joinForm/script.js'].create(box, { relays: relays })); });
         return;
       }
       // FIND SOMEONE: the same one list Contacts draws (goal/G30.19). The node republishes its join news once the contact is in.
-      var list = E.spirit.element.search && E.spirit.element.search.contact && E.spirit.element.search.contact.list;
+      var list = ANSWER['spirit/element/search/script.js'] && ANSWER['spirit/element/search/contact/script.js'] && ANSWER['spirit/element/search/contact/list/script.js'];
       if (step.until === 'contact' && list) {
         box.innerHTML = '<div class="join-find-list"></div><div class="job-manifest-note join-find-said"></div>';
         made.push(list.create(box.querySelector('.join-find-list'), {

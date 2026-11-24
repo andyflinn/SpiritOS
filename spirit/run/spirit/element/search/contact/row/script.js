@@ -23,7 +23,8 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   if (window.spirit.requireScript) keepAnswer('spirit/element/row/script.js');
   // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -68,7 +69,7 @@
   }
   // The label's rule, from the one definition (goal/G4.16).
   function nameRules() {
-    var R = (((window.spirit || {}).required || {}).spirit || {}).fieldRules || {};
+    var R = ANSWER['spirit/fieldRules.js'] || {};
     return { normalize: R.normalize, problem: R.problem, maxBytes: R.MAX_BYTES };
   }
 

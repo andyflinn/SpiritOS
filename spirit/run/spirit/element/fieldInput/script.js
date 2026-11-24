@@ -12,17 +12,17 @@
 //   spirit.required.spirit.element.fieldInput.attach(input, type) -> the input, its maxlength the type's bytes and the bytes
 //                                                     held as typed; type: a spirit.type.<...> path
 (function (root) {
-  var E = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
   // A TYPE'S FILE, ITS PATH (goal/G48.4): spirit.type.string.label is spirit/type/string/label.js, loaded through
-  // spirit.requireScript (rule/26) and held where spirit.required puts it.
+  // spirit.requireScript (rule/26) and kept as it hands it back (goal/G49.9), by the type's name.
+  var TYPES = {};
   function fileOf(type) { return /^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(String(type)) ? String(type).split('.').join('/') + '.js' : ''; }
   function typeOf(type) {
-    var at = String(type).split('.').reduce(function (o, k) { return o && o[k]; }, root.spirit && root.spirit.required);
+    var at = TYPES[String(type)];
     return at && typeof at.isValid === 'function' ? at : null;
   }
   function load(type) {
     var f = fileOf(type);
-    return f && root.spirit && typeof root.spirit.requireScript === 'function' ? Promise.resolve(root.spirit.requireScript(f)) : Promise.resolve();
+    return f && root.spirit && typeof root.spirit.requireScript === 'function' ? Promise.resolve(root.spirit.requireScript(f)).then(function (T) { TYPES[String(type)] = T; return T; }) : Promise.resolve();
   }
   function bytes(s) {
     if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(String(s)).length;

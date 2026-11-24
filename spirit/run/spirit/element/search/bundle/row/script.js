@@ -28,7 +28,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   if (window.spirit.requireScript) keepAnswer('spirit/element/row/script.js');
 
