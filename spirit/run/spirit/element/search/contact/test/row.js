@@ -63,7 +63,14 @@ test.run('the contact row runs on a window of its own, with the data set and the
     required.push(p);
     if (p === 'spirit/contact/api.js') { if (!contactData) { contactData = true; load(path.join(JS, '..', '..', 'spirit', 'contact', 'data.js')); } return Promise.resolve(BRANCHES.contact); }
     if (p === 'spirit/peer/api.js') return Promise.resolve(BRANCHES.peer);
-    return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
+    if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
+    // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
+    // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
+    // stands at its place, a stand-in above or a real file loaded, and a path with nothing there is refused.
+    const keys = String(p).replace(/\.js$/, '').split('/');
+    if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+    const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required);
+    return at && (typeof at === 'object' || typeof at === 'function') ? Promise.resolve(at) : Promise.reject(new Error('no stand-in for ' + p));
   };
   load(path.join(JS, '..', '..', 'spirit', 'data.js'));
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
@@ -367,7 +374,8 @@ const HELD_ROW = path.join(RUN, 'spirit', 'element', 'search', 'contact', 'row.j
 // The world: the file is there and its code, comments left out, still holds a line that is surely code.
 test.run('the file is read, and its code with comments left out still holds a line of code', 0.2, function () {
   const c = code(HELD_ROW);
-  const anchor = /row\.create\(/;
+  // Since goal/G49.9 the row calls the shared row element as requireScript answered it: ANSWER[...].create(.
+  const anchor = /\.create\(/;
   return c !== null && anchor.test(c) ? true : false;
 }, test.limit.quick);
 test.run('the contact row\'s code holds no heldActions, nothing held', 0.2, function () {

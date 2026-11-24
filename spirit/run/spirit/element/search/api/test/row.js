@@ -28,12 +28,17 @@ test.run('the row runs on a bare window, with a stand-in for the shared row elem
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(true); };
-  PAGE_LOAD.runAsPage(FILE);
+  // ITS STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never
+  // by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the shared row element, the one script it requires.
+  const ROW = { index: function () { indexes += 1; return { n: indexes }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
+  const STANDS = { 'spirit/element/row.js': ROW };
+  global.window.spirit.requireScript = function (p) {
+    required.push(String(p));
+    return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.reject(new Error('no stand-in for ' + p));
+  };
+  R = PAGE_LOAD.runAsPage(FILE);
   await settle();
-  const E = global.window.spirit.required.spirit.element;
-  E.row = { index: function () { indexes += 1; return { n: indexes }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
-  R = E.search && E.search.api && E.search.api.row;
   return true;
 }, test.limit.quick);
 test.run('it places itself on spirit.required at its path, with a create', 0.2, function () {

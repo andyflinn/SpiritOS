@@ -269,7 +269,10 @@ test.run('it requires no data script', 0.2, function () {
 // goal/G43.32: create() runs up to where the script places itself, as it ran up to E.grantsPanel = before.
 test.run('the panel names no grants or ID table: no auth grant verb, not nodeGrants, no agent verb, no loopback location, no branch', 0.2, function () {
   if (!code) return false;
-  const made = code.slice(code.indexOf('function create('), code.indexOf("window.spirit.requireScript('spirit/element/installSpiritElement.js')"));
+  // create's code ends where the script hands itself out, module.exports, as the loader places it (goal/G49.9, box v5;
+  // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw").
+  const end = code.indexOf('module.exports');
+  const made = end > code.indexOf('function create(') ? code.slice(code.indexOf('function create('), end) : '';
   return made.length > 0 && !/auth\.(grant|revoke|search)\b|nodeGrants|data\.auth|agent\.|loopback:\/\/|contact\.search|job_id|'grants'|"grants"/.test(made) ? true : false;
 }, test.limit.quick);
 // Andy: "every fucking element gets the interfaces it needs".

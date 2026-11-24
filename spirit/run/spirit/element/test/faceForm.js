@@ -22,7 +22,10 @@ let code, rPane, rFixed, of, n;
 test.run('it loads the rowForm itself', 0.2, function () {
   code = fs.readFileSync(path.join(__dirname, '..', 'faceForm.js'), 'utf8').replace(/\/\/.*$/gm, '');
   // The page loads the rowForm first, to keep what it makes; the form must still ask for it itself (rule/26).
-  return (/spirit\.requireScript\(\s*['"]spirit\/element\/rowForm\.js['"]/.test(code)) ? true : false;
+  // Since goal/G49.9 (box v5) it keeps requireScript's answer by one helper of its own, keepAnswer(path), which calls
+  // spirit.requireScript with it: asking that helper for the path is asking requireScript for it.
+  return (/spirit\.requireScript\(\s*['"]spirit\/element\/rowForm\.js['"]/.test(code) ||
+    (/function keepAnswer\(p\)[\s\S]*?spirit\.requireScript\(p\)/.test(code) && /keepAnswer\(\s*['"]spirit\/element\/rowForm\.js['"]\s*\)/.test(code))) ? true : false;
 }, test.limit.quick);
 test.run('Chrome is on this machine', 0.2, function () {
   W.chrome = H.findChrome();

@@ -193,16 +193,16 @@ function personWorld(person, relayRows) {
     formatBytes: function (n) { return String(n) + ' B'; },
     // The shell's fact rows, drawn as the shell draws them: each name with its value, so what the detail shows can be read.
     shell: { factRow: function (rows) { return '<div class="facts">' + (rows || []).map(function (r) { return '<div>' + String(r[0]) + ' ' + String(r[1]) + '</div>'; }).join('') + '</div>'; } },
-    requireScript: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve(branchAt(families, p) || {}); },
+    requireScript: function (p) { const at = String(p).replace(/^\/+/, ''); w.required.push(at); return Promise.resolve(at === 'spirit/element/armingButton.js' ? ARMING : (branchAt(families, p) || {})); },
     readyPromise: Promise.resolve({}),
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
-    // goal/G43.32: the armingButton stands where an element now finds it, spirit.required.spirit.element.
-    required: { spirit: { element: {
-      armingButton: {
-        attach: function (button, opts) { return record('attach', button, opts); },
-        create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
-      },
-    } } },
+  };
+  // ITS STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never
+  // by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the armingButton, handed when the element asks for it.
+  const ARMING = {
+    attach: function (button, opts) { return record('attach', button, opts); },
+    create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
   };
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
@@ -212,9 +212,10 @@ function personWorld(person, relayRows) {
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.required.spirit.element.search.contact.detail.create(box, { key: key, layer: layer }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return w.detail.create(box, { key: key, layer: layer }); };
   vm.createContext(win);
-  pageRequire(SUBJECT);
+  // The element by what its own require hands back (goal/G49.9, box v5), never read at its place.
+  pageRequire(SUBJECT).then(function (m) { w.detail = m; });
   w.win = win;
   return w;
 }
@@ -277,7 +278,7 @@ function relayWorld(rows, relayStatus) {
       const at = String(p).replace(/^\/+/, '');
       w.required.push(at);
       if (at === 'spirit/contact/api.js' && !(win.spirit.required.spirit.data && win.spirit.required.spirit.data.contact)) ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
-      return Promise.resolve(branchAt(families, at) || {});
+      return Promise.resolve(at === 'spirit/element/armingButton.js' ? ARMING : (branchAt(families, at) || {}));
     },
     readyPromise: Promise.resolve({}),
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
@@ -293,13 +294,13 @@ function relayWorld(rows, relayStatus) {
         return got;
       });
     },
-    // goal/G43.32: the armingButton stands where an element now finds it, spirit.required.spirit.element.
-    required: { spirit: { ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P }, data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } }, element: {
-      armingButton: {
-        attach: function (button, opts) { return record('attach', button, opts); },
-        create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
-      },
-    } } },
+    required: { spirit: { ownerBadge: { removalRefusal: function () { return ''; } }, client: { packet: P }, data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } } } },
+  };
+  // ITS STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object
+  // or a function... or fail/throw"): the armingButton, handed when the element asks for it.
+  const ARMING = {
+    attach: function (button, opts) { return record('attach', button, opts); },
+    create: function (opts) { const b = document.createElement('button'); b.type = 'button'; b.textContent = (opts && opts.label) || ''; return record('create', b, opts); },
   };
   // goal/G43.32: the element places itself by installSpiritElement; the recorder hands that helper to the page stand-in
   // (spirit/test/headLessChrome.js pageSpirit).
@@ -309,9 +310,10 @@ function relayWorld(rows, relayStatus) {
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : recorder(p); };
   // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/row.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.required.spirit.element.search.contact.detail.create(box, { key: key, layer: layer, relay: true }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return w.detail.create(box, { key: key, layer: layer, relay: true }); };
   vm.createContext(win);
-  pageRequire(SUBJECT);
+  // The element by what its own require hands back (goal/G49.9, box v5), never read at its place.
+  pageRequire(SUBJECT).then(function (m) { w.detail = m; });
   w.win = win;
   return w;
 }
@@ -582,7 +584,7 @@ test.run('A person\'s detail sends its title to the layer it is drawn in', 0.2, 
 test.run('mounted with its key alone, no layer, it reads the row and draws it', 0.2, async function () {
   const w8 = personWorld({ key: 'K8', publicLabel: 'carol' }, []);
   const box8 = w8.document.createElement('div'); w8.document.body.appendChild(box8); w8.box = box8;
-  w8.win.spirit.required.spirit.element.search.contact.detail.create(box8, { key: 'K8' });
+  w8.detail.create(box8, { key: 'K8' });
   await settle();
   P.w8 = w8;
   return (w8.calls.some(function (c) { return c.name === 'contact.get' && c.body.key === 'K8'; }) && /carol/.test(box8.innerHTML)) || false;
@@ -866,7 +868,7 @@ test.run('Holding a relay\'s row in the cache, the detail draws the relay\'s det
   const wr = relayWorld(OWNED, OWNED_SAID);
   held(wr, true);
   const boxR = wr.document.createElement('div'); wr.document.body.appendChild(boxR);
-  wr.win.spirit.required.spirit.element.search.contact.detail.create(boxR, { key: 'RK', layer: wr.layer });
+  wr.detail.create(boxR, { key: 'RK', layer: wr.layer });
   await settle();
   return (/nd-/.test(boxR.innerHTML) && !wr.calls.some(function (c) { return c.name === 'contact.get'; })) || false;
 }, test.limit.quick);
@@ -874,7 +876,7 @@ test.run('Holding a person\'s row in the cache, the detail draws a person\'s det
   const wp = relayWorld(OWNED, OWNED_SAID);
   held(wp, false);
   const boxP = wp.document.createElement('div'); wp.document.body.appendChild(boxP);
-  wp.win.spirit.required.spirit.element.search.contact.detail.create(boxP, { key: 'KP', layer: wp.layer });
+  wp.detail.create(boxP, { key: 'KP', layer: wp.layer });
   await settle();
   return wp.calls.some(function (c) { return c.name === 'contact.get' && c.body && c.body.key === 'KP'; }) || false;
 }, test.limit.quick);

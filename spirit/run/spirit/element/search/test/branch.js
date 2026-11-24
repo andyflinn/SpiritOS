@@ -15,6 +15,18 @@ const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
+// ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
+// Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
+// stands at its place (a folder's script.js at its folder's name), a stand-in or a real file loaded; nothing there is refused.
+function placedAnswer(p, w) {
+  const keys = String(p).replace(/\.js$/, '').split('/');
+  if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+  const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, ((w || global.window).spirit || {}).required);
+  if (at && (typeof at === 'object' || typeof at === 'function')) return Promise.resolve(at);
+  const no = Promise.reject(new Error('no stand-in for ' + p));
+  no.catch(function () {});
+  return no;
+}
 
 const FILE = path.join(__dirname, '..', 'branch.js');
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -53,7 +65,7 @@ test.run('the branch selector runs on a bare window', 0.2, async function () {
   global.window.spirit.requireScript = function (p) {
     required.push(String(p));
     if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); }
-    return Promise.resolve(true);
+    return placedAnswer(p);
   };
   PAGE_LOAD.runAsPage(FILE, null, SRC);
   // goal/G43.32: it places itself once installSpiritElement is in hand.

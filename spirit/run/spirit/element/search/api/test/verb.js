@@ -46,22 +46,24 @@ test.run('it names no shellCreateListSearch', 0.2, function () {
 }, test.limit.quick);
 
 // a shell element of its own, on probabilitySearch
-test.run('it adds apiVerbSelector with a create to window.spirit.required, and createApiVerbSelector no more', 0.2, function () {
+test.run('it adds apiVerbSelector with a create to window.spirit.required, and createApiVerbSelector no more', 0.2, async function () {
   if (!SRC) return false;
   // A BARE WINDOW (rule/26): probabilitySearch is on the page only once the selector requires it.
   w = { lists: [], required: [] };
-  // goal/G43.32: the stand-in search stands where an element now finds it, spirit.required.spirit.element.search.
-  const STAND = function (E) { E.search = Object.assign(E.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
-    redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); };
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+  // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): the search, its list part and the node branch's interface, each an object.
+  const SEARCH = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
+    redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } };
+  const STANDS = { 'spirit/element/search.js': SEARCH, 'spirit/element/search/api/list.js': {}, 'spirit/node/api.js': {} };
   win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
       requireScript: function (p) {
         w.required.push(String(p));
-        if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(((win.spirit.required.spirit = win.spirit.required.spirit || {}).element = win.spirit.required.spirit.element || {})); }
         // A family's cache (goal/G41.28): the node branch's interface brings its data.js, as the real api.js does; it runs
         // on this window over the real data set, from its path.
         if (p === 'spirit/node/api.js') win.spirit.requireScript('spirit/node/data.js');
-        return Promise.resolve(true);
+        return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.reject(new Error('no stand-in for ' + p));
       } },
     document: { createElement: function (t) { return node(t); } },
     Event: function (type) { this.type = type; },
@@ -83,10 +85,11 @@ test.run('it adds apiVerbSelector with a create to window.spirit.required, and c
   win.spirit.requireScript('spirit/data.js');
   win.spirit.nodeFacts = { key: 'KEY+VERB/SELECTOR==' };
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
-  pageRequire(SUBJECT);
-  // goal/G43.32: it stands at its path, spirit.required.spirit.element.search.api.verb.
+  made = await pageRequire(SUBJECT);
+  await settle();
+  // goal/G43.32: it stands at its path, spirit.required.spirit.element.search.api.verb, and is its require's answer.
   E = ((win.spirit.required.spirit || {}).element || {});
-  made = E.search && E.search.api && E.search.api.verb;
+  if (!(E.search && E.search.api && E.search.api.verb === made)) made = null;
   return made && typeof made.create === 'function' && !('createApiVerbSelector' in E) ? true : false;
 }, test.limit.quick);
 test.run('it loads probabilitySearch itself', 0.2, function () {

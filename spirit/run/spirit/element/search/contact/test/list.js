@@ -93,7 +93,14 @@ test.run('the contacts list runs on a window of its own, with its row element an
     // none.
     const b = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(String(p));
     if (b) return Promise.resolve(window.spirit.readyPromise).then(function (f) { if (!f || !f[b[1]]) throw new Error('not-found ' + p); return f[b[1]]; });
-    return /installSpiritElement\.js$/.test(p) ? pageRequire(p) : Promise.resolve({});
+    if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
+    // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
+    // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
+    // stands at its place, a stand-in above or a real file loaded, and a path with nothing there is refused.
+    const keys = String(p).replace(/\.js$/, '').split('/');
+    if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+    const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required);
+    return at && (typeof at === 'object' || typeof at === 'function') ? Promise.resolve(at) : Promise.reject(new Error('no stand-in for ' + p));
   };
   // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.required.spirit.data takes it itself).
   window.spirit.eventStream = { subscribe: function (h) { subscribers.push(h); return function () {}; } };

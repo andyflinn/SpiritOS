@@ -20,6 +20,18 @@ const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
+// ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
+// Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
+// stands at its place (a folder's script.js at its folder's name), a stand-in or a real file loaded; nothing there is refused.
+function placedAnswer(p, w) {
+  const keys = String(p).replace(/\.js$/, '').split('/');
+  if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+  const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, ((w || global.window).spirit || {}).required);
+  if (at && (typeof at === 'object' || typeof at === 'function')) return Promise.resolve(at);
+  const no = Promise.reject(new Error('no stand-in for ' + p));
+  no.catch(function () {});
+  return no;
+}
 const JS = path.join(__dirname, '..', '..');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/search/api.js';
@@ -68,7 +80,10 @@ function world() {
   // The node family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
   // itself to the data set; the api tree is the node family's (spirit.required.spirit.data.node.data).
   let ran = false;
-  win.spirit.requireScript = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; win.spirit.requireScript('spirit/node/data.js'); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } return Promise.resolve(true); };
+  win.spirit.requireScript = function (p) { w.required.push(String(p)); if (p === 'spirit/node/api.js' && !ran) { ran = true; win.spirit.requireScript('spirit/node/data.js'); } if (STANDS[p] && !w['done' + p]) { w['done' + p] = true; STANDS[p](win); } if (Object.prototype.hasOwnProperty.call(ANSWERS, p)) return Promise.resolve(ANSWERS[p]); return placedAnswer(p, win); };
+  // What the halves require and this world does not run, as requireScript answers them: the node branch's interface and its
+  // data (the api tree comes through readyPromise), and the list's row and detail, which no check here opens.
+  const ANSWERS = { 'spirit/node/api.js': {}, 'spirit/node/data.js': {}, 'spirit/element/search/api/row.js': { create: function () { return {}; } }, 'spirit/element/search/api/detail.js': { create: function () { return {}; } } };
   win.window = win;
   // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/data.js', 'spirit/client/apiTreeIndex.js', SUBJECT] });

@@ -91,12 +91,18 @@ function world(answer) {
     requireScript: function (p) {
       w.required.push(String(p));
       if (p === 'spirit/element/armingButton.js') {
-        // Loaded as it is, by its path, through the page stand-in (goal/G49.6), which runs it in this world at once.
-        pageRequire('spirit/element/armingButton.js');
-        // Every attach recorded, so what the button was handed is judged; the real attach does the arming.
-        // goal/G43.32: it places itself at its path, spirit.required.spirit.element.armingButton.
-        const real = win.spirit.required.spirit.element.armingButton.attach;
-        win.spirit.required.spirit.element.armingButton.attach = function (b, o) { w.attached.push({ button: b, opts: o || {} }); return real(b, o); };
+        // Loaded as it is, by its path, through the page stand-in (goal/G49.6), which runs it in this world at once, and handed
+        // back as requireScript's answer (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object or
+        // a function... or fail/throw"). Every attach recorded on that answer, so what the button was handed is judged; the real
+        // attach does the arming.
+        return Promise.resolve(pageRequire('spirit/element/armingButton.js')).then(function (M) {
+          if (M && !M.zzRecorded) {
+            const real = M.attach;
+            M.attach = function (b, o) { w.attached.push({ button: b, opts: o || {} }); return real(b, o); };
+            M.zzRecorded = true;
+          }
+          return M;
+        });
       }
       // The node branch by its api.js's path, the one place rotateKey reaches it (goal/G49.6: nothing hands out a branch by name).
       if (p === 'spirit/node/api.js') return Promise.resolve(win.spirit.node);
@@ -149,7 +155,11 @@ test.run('rotateKey asks the node through the spirit object, by spirit.required.
   // Andy: "every fucking element gets the interfaces it needs": the node's own verb, through the spirit object, no api.verb.
   // Since goal/G49.6 the node branch is required by its api.js's path, and its verb called on what that answers, the object
   // standing at spirit.required.spirit.node.api.
-  return (!/\.verb\s*\(/.test(CODE) && /requireScript\(\s*['"]spirit\/node\/api\.js['"]\s*\)/.test(CODE) && /\.rotateCipher\s*\(/.test(CODE)) ? true : false;
+  // Since goal/G49.9 (box v5) it keeps requireScript's answer by one helper of its own, keepAnswer(path), which calls
+  // spirit.requireScript with it: asking that helper for the path is asking requireScript for it.
+  const asks = /requireScript\(\s*['"]spirit\/node\/api\.js['"]\s*\)/.test(CODE) ||
+    (/function keepAnswer\(p\)[\s\S]*?requireScript\(p\)/.test(CODE) && /keepAnswer\(\s*['"]spirit\/node\/api\.js['"]\s*\)/.test(CODE));
+  return (!/\.verb\s*\(/.test(CODE) && asks && /\.rotateCipher\s*\(/.test(CODE)) ? true : false;
 }, test.limit.quick);
 test.run('rotateKey loads spirit/element/armingButton.js itself, through spirit.requireScript', 0.2, function () {
   return (w.required.indexOf('spirit/element/armingButton.js') !== -1) ? true : false;

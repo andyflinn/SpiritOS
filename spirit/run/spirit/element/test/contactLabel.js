@@ -49,12 +49,22 @@ const contactBranch = {
   label: function (b) { asked.push({ verb: 'contact.label', body: b });
     return labelRefuse ? Promise.reject(new Error(labelRefuse)) : Promise.resolve(labelAnswer); },
 };
+// ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
+// Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): the contact branch, and
+// the label type (goal/G48.4), a stand-in that refuses past 8. Any other path fails, as a script that is not there does:
+// fieldInput is not loaded here, so the label's input is drawn without it.
+const labelType = { isValid: function (t) { if (t.length > 8) throw new Error('too long'); return true; } };
+const STANDS = { 'spirit/contact/api.js': contactBranch, 'spirit/type/string/label.js': labelType };
 const pageRequire = window.spirit.requireScript;
-window.spirit.requireScript = function (p) { return String(p) === 'spirit/contact/api.js' ? Promise.resolve(contactBranch) : pageRequire.apply(this, arguments); };
-// The label type as it stands on a page (spirit.required.spirit.type.string.label, goal/G48.4): a stand-in that refuses past 8.
+window.spirit.requireScript = function (p) {
+  if (Object.prototype.hasOwnProperty.call(STANDS, String(p))) return Promise.resolve(STANDS[String(p)]);
+  if (/installSpiritElement\.js$/.test(String(p))) return pageRequire.apply(this, arguments);
+  return Promise.reject(new Error('no stand-in for ' + p));
+};
+// contactLabel.js still reads the label type at its spirit.required place (its save, not yet swept): the stand-in stands there too.
 window.spirit.required = window.spirit.required || {};
 window.spirit.required.spirit = window.spirit.required.spirit || {};
-window.spirit.required.spirit.type = { string: { label: { isValid: function (t) { if (t.length > 8) throw new Error('too long'); return true; } } } };
+window.spirit.required.spirit.type = { string: { label: labelType } };
 // The element, once the first test has run its file.
 let made = null;
 // Box v23: "every element gets a container and appends itself": each label here is made into a container of its own.
@@ -70,9 +80,8 @@ const rename = function (detail) { doc.fire('contact.rename', { detail: detail }
 let box, boxed, plain, edit, b1, b2, b3, a2, unknown, failed, placed, waiting, listening, input, n, lab;
 test.run('it registers spirit.required.spirit.element.contactLabel with a create, and createContactLabel no more', 0.2, function () {
   // the element
-  PAGE_LOAD.runAsPage(FILE);
-  made = window.spirit.required.spirit.element.contactLabel;
-  return (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.required)) ? true : false;
+  made = PAGE_LOAD.runAsPage(FILE);
+  return (made && typeof made.create === 'function' && window.spirit.required.spirit.element.contactLabel === made && !('createContactLabel' in window.spirit.required)) ? true : false;
 }, test.limit.quick);
 test.run('create appends the label to the container it is given and answers it', 0.2, function () {
   box = node('div');

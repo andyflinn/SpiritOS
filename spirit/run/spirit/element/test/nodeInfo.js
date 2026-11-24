@@ -140,9 +140,14 @@ function world(o) {
     // this window over the real data set, from its path.
     const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
     if (fam && !(S.required.spirit.data[fam[1]] && S.required.spirit.data[fam[1]].data)) pageRequire('spirit/' + fam[1] + '/data.js');
-    (FILES[p] || []).forEach(function (k) { els[k] = E[k]; });
-    if (p === 'spirit/element/panel.js') els.panel = panel;
-    if (p === 'spirit/element/rotateKey.js') els.rotateKey = rotateKey;
+    // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+    // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+    // function... or fail/throw"): each element part, the panel and rotateKey, answered as what their paths hand back.
+    // nodeInfo.js still reads its form parts and panel at their spirit.required places (spirit.required.spirit.element[name],
+    // .panel; not yet swept), so those two stand there too until it takes them from the answer.
+    if (FILES[p]) { els[FILES[p][0]] = E[FILES[p][0]]; return Promise.resolve(E[FILES[p][0]]); }
+    if (p === 'spirit/element/panel.js') { els.panel = panel; return Promise.resolve(panel); }
+    if (p === 'spirit/element/rotateKey.js') return Promise.resolve(rotateKey);
     // The node's branches by their api.js paths (goal/G49.6: never by a name): the relay and the node stand above.
     if (p === 'spirit/relay/api.js') return Promise.resolve(S.relay);
     if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
@@ -543,11 +548,18 @@ function formsPart() {
       // A branch's interface brings its data.js, as the real api.js does: run once on this window from its path.
       const fam = /^spirit\/([^/]+)\/api\.js$/.exec(String(p));
       if (fam && !(S.required.spirit.data[fam[1]] && S.required.spirit.data[fam[1]].data)) pageRequire('spirit/' + fam[1] + '/data.js');
-      if (p === 'spirit/element/panel.js') at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } };
-      if (p === 'spirit/element/rotateKey.js') at.rotateKey = { create: function () { return { destroy: function () {} }; } };
+      // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an
+      // object or a function... or fail/throw"): the rowForm the real forms ask for, the two fields, the panel and rotateKey.
+      // nodeInfo.js still reads the fields and the panel at their spirit.required places (not yet swept), so those stand there too.
+      if (p === 'spirit/element/rowForm.js') return Promise.resolve(at.rowForm);
+      if (p === 'spirit/element/changeMyLabel.js' || p === 'spirit/element/changeMyDescription.js') return Promise.resolve(field);
+      if (p === 'spirit/element/panel.js') { at.panel = { create: function () { return { open: function () { return Promise.resolve({}); }, destroy: function () {} }; } }; return Promise.resolve(at.panel); }
+      if (p === 'spirit/element/rotateKey.js') return Promise.resolve({ create: function () { return { destroy: function () {} }; } });
       // The node's branches by their api.js paths (goal/G49.6: never by a name): the relay and the node stand above.
       if (p === 'spirit/relay/api.js') return Promise.resolve(S.relay);
       if (p === 'spirit/node/api.js') return Promise.resolve(S.node);
+      // fieldInput is not loaded here, so the forms draw without it: its require fails, as a script that is not there does.
+      if (p === 'spirit/element/fieldInput.js') return Promise.reject(new Error('not loaded here: ' + p));
       return Promise.resolve({});
     };
     pageRequire(SUBJECT);
@@ -747,7 +759,9 @@ function rotatePart() {
     if (!where) return false;
     if (!c || c.error) return false;
     // NO KEY IS ROTATED: the page's node.rotateCipher records the ask and refuses it.
-    spy = await c.evaluate('window.spirit.readyPromise.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.nodeFacts || typeof S.required.spirit.node.api.rotateCipher !== "function") return false; S.required.spirit.node.api.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; })');
+    // The node branch's verb spied on what spirit.requireScript hands back for its api.js, never at a spirit.required place
+    // (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw").
+    spy = await c.evaluate('window.spirit.readyPromise.then(function () { var S = window.spirit; window.__rotations = 0; if (!S.nodeFacts) return false; return S.requireScript("spirit/node/api.js").then(function (N) { if (!N || typeof N.rotateCipher !== "function") return false; N.rotateCipher = function () { window.__rotations += 1; return Promise.resolve({ status: 403, body: { ok: false, error: "refused by the test" } }); }; return "spied"; }); })');
     return (spy === 'spied') ? true : false;
   }, test.limit.quick);
   const T = function (expr) { return c.evaluate('window.__t.' + expr); };
@@ -761,7 +775,7 @@ function rotatePart() {
     await c.evaluate(HANDS);
     await c.evaluate('window.__in = "zzBox"');
     // the box, 8: "nodeInfo's rotate button opens it as a layer over Info through panel.js ... its ✕ shows Info again"
-    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function () { window.__shell = spirit.required.spirit.element.create(b); return "made"; }, function () { return false; }); }())');
+    shell = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/element/script.js").then(function (shellAnswer) { window.__shell = shellAnswer.create(b); return "made"; }, function () { return false; }); }())');
     return (shell === 'made' && await waitFor('tiles().indexOf("file") !== -1', 10000)) ? true : false;
   }, test.limit.quick);
   test.run('Info opens from its tile, showing its name field and its rotate button', 0.2, async function () {

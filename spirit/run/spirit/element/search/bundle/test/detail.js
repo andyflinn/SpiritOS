@@ -52,20 +52,24 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   const auth = { branch: function (a) { asked.push(a); return answer(a); }, bundle: function (a) { asked.push(a); return Promise.resolve({ id: a.id }); } };
   armed = [];
   bundleWatches = [];
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+  // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): each path answers what stands for it, made once; any other path is refused.
   const STANDS = {
     // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
     // one does, its root appended to the container it is given, its button saying the words it was handed.
-    'spirit/element/rowForm.js': function (E) { E.rowForm = { create: function (c, o) {
+    'spirit/element/rowForm.js': function () { return { create: function (c, o) {
       const f = { container: c, opts: o || {}, root: node('div'), span: node('span'), button: node('button') };
       f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); forms.push(f);
       // A press calls press, the mounter's request, and keeps what it answered, as the real one's busyButton waits on it.
       f.button.addEventListener('click', function () { if (typeof f.opts.press === 'function') f.pressed = f.opts.press(); });
       return f;
     } }; },
-    'spirit/element/armingButton.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
+    'spirit/element/armingButton.js': function () { return { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
-    'spirit/element/search/api.js': function (E) { (E.search = E.search || {}).api = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; f.value = ''; families.push(f); c.appendChild(f); return f; } }; },
-    'spirit/element/search/branch.js': function (E) { (E.search = E.search || {}).branch = { create: function (c, o) { const b = node('branches'); b.o = o || {}; b.container = c; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); c.appendChild(b); return b; } }; },
+    'spirit/element/search/api.js': function () { return { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; f.value = ''; families.push(f); c.appendChild(f); return f; } }; },
+    'spirit/auth/api.js': function () { return auth; },
+    'spirit/element/search/branch.js': function () { return { create: function (c, o) { const b = node('branches'); b.o = o || {}; b.container = c; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); c.appendChild(b); return b; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
@@ -77,7 +81,21 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   ((global.window.spirit.required.spirit.data = global.window.spirit.required.spirit.data || {}).auth = {}).data = { bundles: { watch: function (fn) { bundleWatches.push(fn); return function () {}; } }, branches: { watch: function () { return function () {}; } } };
   // The auth branch is answered by its api.js path (goal/G49.6: never by a name).
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : true); };
+  const made = {};
+  // As the loader places what it loaded, at the path's place: the detail still reads its parts there (cw's half of the sweep).
+  const placeAsLoader = function (p, v) {
+    if (p.indexOf('spirit/element/') !== 0) return;
+    const keys = p.replace(/\.js$/, '').split('/');
+    let o = global.window.spirit.required;
+    keys.slice(0, -1).forEach(function (k) { o = o[k] = o[k] || {}; });
+    o[keys[keys.length - 1]] = Object.assign(v, o[keys[keys.length - 1]] || {});
+  };
+  global.window.spirit.requireScript = function (p) {
+    required.push(String(p));
+    if (!Object.prototype.hasOwnProperty.call(STANDS, p)) return Promise.reject(new Error('no stand-in for ' + p));
+    if (!Object.prototype.hasOwnProperty.call(made, p)) { made[p] = STANDS[p](); placeAsLoader(p, made[p]); }
+    return Promise.resolve(made[p]);
+  };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};

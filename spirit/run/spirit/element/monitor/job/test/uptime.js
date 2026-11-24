@@ -42,17 +42,21 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
 }, test.limit.slow);
 test.run('it loads through spirit.requireScript, at spirit.required.spirit.element.monitor.job.uptime, with a create', 0.2, async function () {
   if (!W.page) return false;
-  W.loaded = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/monitor/job/uptime.js"); }).then(function () { var m = window.spirit.required.spirit.element.monitor.job; return !!(m && m.uptime && typeof m.uptime.create === "function"); }, function () { return false; })');
+  // WHAT IT ASKS FOR, AND ITS OWN ANSWER, AS spirit.requireScript HANDS THEM (goal/G49.9, box v5; Andy: "spirit.requireScript must
+  // allways return either an object or a function... or fail/throw"): every path the page's requireScript is asked while it
+  // loads is kept, and the element is mounted by the answer its own require hands back.
+  W.loaded = await js('window.spirit.readyPromise.then(function () { var own = window.spirit.requireScript; window.__asked = []; window.spirit.requireScript = function (p) { window.__asked.push(String(p)); return own.apply(this, arguments); }; return window.spirit.requireScript("spirit/element/monitor/job/uptime.js"); }).then(function (answer) { window.__subject = answer; var m = window.spirit.required.spirit.element.monitor.job; return !!(m && m.uptime && typeof m.uptime.create === "function"); }, function () { return false; })');
   return W.loaded === true || false;
 }, test.limit.quick);
 // The box: "Each requires the jobs family's interface".
-test.run('it requires the jobs branch\'s interface and the value tile itself', 0.2, function () {
-  const code = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
-  return code.indexOf("S.requireScript('spirit/job/api.js')") !== -1 && code.indexOf("S.requireScript('spirit/element/monitor/value.js')") !== -1 ? true : false;
+test.run('it requires the jobs branch\'s interface and the value tile itself', 0.2, async function () {
+  if (!W.loaded) return false;
+  const asked = JSON.parse((await js('JSON.stringify(window.__asked || [])')) || '[]');
+  return asked.indexOf('spirit/job/api.js') !== -1 && asked.indexOf('spirit/element/monitor/value.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('mounted, it is a value tile: its icon ⏱️ drawn by the icon element, and its label Uptime', 0.4, async function () {
   if (!W.loaded) return false;
-  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:300px;height:200px"; window.__box = d; window.__made = window.spirit.required.spirit.element.monitor.job.uptime.create(d); return true; })()');
+  await js('(function () { var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:300px;height:200px"; window.__box = d; window.__made = window.__subject.create(d); return true; })()');
   W.made = !!(await until(function () { return read().then(function (r) { return r.icon; }); }, 8000));
   const r = await read();
   return W.made && r.glyph && r.label === "Uptime" && r.mode === 'tile' ? true : false;

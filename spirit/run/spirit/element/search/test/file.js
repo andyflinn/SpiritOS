@@ -16,6 +16,18 @@ const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
+// ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
+// Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
+// stands at its place (a folder's script.js at its folder's name), a stand-in or a real file loaded; nothing there is refused.
+function placedAnswer(p, w) {
+  const keys = String(p).replace(/\.js$/, '').split('/');
+  if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+  const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, ((w || global.window).spirit || {}).required);
+  if (at && (typeof at === 'object' || typeof at === 'function')) return Promise.resolve(at);
+  const no = Promise.reject(new Error('no stand-in for ' + p));
+  no.catch(function () {});
+  return no;
+}
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'file.js');
 const LIST = 'spirit/element/search/file/list.js';
 
@@ -30,7 +42,7 @@ test.run('the selector runs on a window of its own', 0.2, async function () {
     W.required.push(String(p));
     // Its list, a recorder in its place, placed where the real one places itself.
     if (p === LIST) LOADER.requireScript('spirit/element/installSpiritElement.js')(global.window.spirit, LIST, { create: function (host, opts) { W.made.push({ host: host, opts: opts }); return W.ANSWER; } });
-    return Promise.resolve({});
+    return placedAnswer(p);
   } } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);

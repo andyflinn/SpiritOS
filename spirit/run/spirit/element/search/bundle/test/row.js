@@ -69,13 +69,19 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   armed = [];
   opened = [];
   const auth = { bundle: function (a) { asked.push(a); return answer(a); } };
-  const load = function (p) { PAGE_LOAD.runAsPage(path.join(RUN, p)); };
+  const load = function (p) { return PAGE_LOAD.runAsPage(path.join(RUN, p)); };
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+  // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): each path answers what stands for it, made once; any other path is refused.
   const STANDS = {
-    'spirit/element/row.js': function () { load('spirit/element/row.js'); },
-    'spirit/element/fieldInput.js': function () { load('spirit/element/fieldInput.js'); },
-    'spirit/element/armingButton.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
-    'spirit/element/search/bundle/detail.js': function (E) { (E.search = E.search || {}).bundle = Object.assign((E.search || {}).bundle || {}, {}); E.search.bundle.detail = { open: function (o) { opened.push(o); return {}; } }; },
+    'spirit/element/row.js': function () { return load('spirit/element/row.js'); },
+    'spirit/element/fieldInput.js': function () { return load('spirit/element/fieldInput.js'); },
+    'spirit/element/armingButton.js': function () { return { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
+    'spirit/element/search/bundle/detail.js': function () { return { open: function (o) { opened.push(o); return {}; } }; },
+    // The auth branch's interface: its companion data.js run once, as the real api.js requires it.
+    'spirit/auth/api.js': function () { load('spirit/auth/data.js'); return { bundle: auth.bundle }; },
   };
+  const made = {};
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, addEventListener: function () {}, removeEventListener: function () {} };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
@@ -92,10 +98,14 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   DATA.homeNode(NODE_KEY);
   // The auth family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
   // itself to the data set; the bundles are the auth family's (goal/G41.28).
-  let ran = false;
   // The direct writes below are the auth family's own view of the home node, as its data.js files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; load('spirit/auth/data.js'); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  global.window.spirit.requireScript = function (p) {
+    required.push(String(p));
+    if (!Object.prototype.hasOwnProperty.call(STANDS, p)) return Promise.reject(new Error('no stand-in for ' + p));
+    if (!Object.prototype.hasOwnProperty.call(made, p)) made[p] = STANDS[p]();
+    return Promise.resolve(made[p]);
+  };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};

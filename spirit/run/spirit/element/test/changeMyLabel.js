@@ -49,19 +49,20 @@ function under(n) { const out = []; (function walk(x) { x.nodes.concat(x.kids).f
 function world(answer) {
   const w = { calls: [], attached: [], required: [], saved: [], forms: [], nodeApi: {} };
   const win = {
-    // goal/G43.32: the rowForm stands where an element now finds it, spirit.required.spirit.element; fieldInput, a helper
-    // with no create, at spirit.required.spirit.element (below).
-    spirit: { required: { spirit: { element: {
+    // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+    // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+    // function... or fail/throw"): the rowForm and fieldInput, kept in STANDS (below), answered by requireScript.
+    spirit: {
       // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the
       // real one does, its root appended to the container it is given, its button saying the words it was handed.
-      rowForm: { create: function (c, o) {
+      zzRowForm: { create: function (c, o) {
         const f = { container: c, opts: o || {}, root: node('<div>'), span: node('<span>'), button: node('<button>') };
         f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button);
         // A press calls press, the mounter's request, and keeps what it answered, as the real one's busyButton waits on it.
         f.button.addEventListener('click', function () { if (typeof f.opts.press === 'function') f.pressed = f.opts.press(); });
         if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
         w.forms.push(f); return f;
-      } } } } },
+      } },
       // A family's cache (goal/G41.28): a branch's api.js brings its companion data.js, as the real api.js does
       // (goal/G47.1: "every api.js requires it's companion data.js"); the stand-in runs that data.js on this window over
       // the real data set. A data.js asked for directly is only recorded.
@@ -73,7 +74,8 @@ function world(answer) {
         if (f && fs.existsSync(f)) pageRequire(b + '/data.js');
         // The node branch, required by its api.js's path, answers the stand-in's node verbs (goal/G49.6: one place, no branch by name).
         if (p === 'spirit/node/api.js') return Promise.resolve(w.nodeApi);
-        return Promise.resolve(true);
+        if (Object.prototype.hasOwnProperty.call(w.stands, String(p))) return Promise.resolve(w.stands[String(p)]);
+        return Promise.reject(new Error('no stand-in for ' + p));
       } },
     document: { createElement: function (t) { return node('<' + t + '>'); }, createTextNode: function (t) { const x = node('#text'); x.textContent = String(t); return x; } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
@@ -88,7 +90,11 @@ function world(answer) {
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/(?:app\/)?[^/]+\/data\.js$/.test(p); } });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
-  win.spirit.required.spirit.element.fieldInput = { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } };
+  w.stands = {
+    'spirit/element/rowForm.js': win.spirit.zzRowForm,
+    'spirit/element/fieldInput.js': { attach: function (input, rule) { w.attached.push({ input: input, rule: rule }); return input; } },
+  };
+  delete win.spirit.zzRowForm;
   vm.createContext(win);
   win.spirit.requireScript('spirit/type/string/label.js');
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
@@ -230,6 +236,9 @@ test.run('its Save is handed to the rowForm as press, and the press settles only
 test.run('the node\'s refusal is said beside the field', 0.2, async function () {
   // a refusal is said, and the field keeps what was typed
   r = world(function () { return { status: 200, body: { ok: false, error: 'name reserved' } }; });
+  // As on a page, where requireScript answers an element only once what it requires has answered (goal/G49.9): the world's
+  // stand-ins answer first.
+  await settle();
   h2 = node('host');
   r.E.changeMyLabel.create(h2);
   await settle();
