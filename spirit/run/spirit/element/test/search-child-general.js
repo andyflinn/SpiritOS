@@ -58,7 +58,10 @@ const askedName = (new RegExp('^' + SEARCH + '/([^/.]+)').exec(asked) || [])[1] 
 const TARGETS = askedName && askedName !== 'test' && askedName !== 'script' ? NAMES.filter(function (n) { return n === askedName; }) : NAMES;
 
 // An element: it places a create through installSpiritElement, by its own path.
-function placesItself(rel) { const c = code(rel); return /\binstallSpiritElement\s*\(/.test(c) && /\bcreate\b/.test(c) && c.indexOf("'" + rel + "'") !== -1; }
+// PLACED BY ITS PATH, AS THE LOADER PLACES IT (goal/G49.9, box v5: "the loader places that module.exports at the script's own place";
+// "a script never places itself: it sets module.exports, and the loader places it"): it sets module.exports, offers a create,
+// and puts nothing into spirit.required by hand.
+function placesItself(rel) { const c = code(rel); return /\bmodule\.exports\s*=/.test(c) && /\bcreate\b/.test(c) && !/\binstallSpiritElement\s*\(/.test(c) && !/\.required\b[^;\n]*=(?!=)/.test(c); }
 const PARTS = ['list', 'row', 'detail'];
 // A search's selector and its parts, at their places since goal/G49.5's element batch: ./<name>/script.js.
 function selectorOf(n) { return SEARCH + '/' + n + '/script.js'; }
@@ -113,7 +116,11 @@ if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) !== -1; })) {
 test.run('each search\'s selector draws its own list.js', 0.4, function () {
   return eachSearch(function (n) {
     const sel = selectorOf(n); const dir = SEARCH + '/' + n; const c = code(sel);
-    return !(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/list\\/script\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.list\\.create\\(').test(c));
+    // It requires its list by its path and creates through that require's answer (goal/G49.9: never through spirit.required).
+    const listPath = dir + '/list/script.js';
+    const asked = new RegExp("['\"]" + listPath.replace(/\//g, '\\/').replace(/\./g, '\\.') + "['\"]").test(c);
+    const viaAnswer = new RegExp("\\[['\"]" + listPath.replace(/\//g, '\\/').replace(/\./g, '\\.') + "['\"]\\]\\.create\\(").test(c) || /\b(list|L)\.create\(/.test(c);
+    return !(asked && viaAnswer);
   });
 }, test.limit.quick);
 test.run('each search\'s selector makes no list of its own', 0.4, function () {
