@@ -114,9 +114,14 @@ const SCRIPT = (function () {
 let testicle = null;
 let reportsOut = 0;
 const reportsLanded = [];
-// ONE AT A TIME, IN ORDER (goal/G47.1, box v129: a general test's success for one script comes before any result of the next):
-// every report waits for the one before it to land, or to give up.
+// EACH REPORT AT ONCE, NONE WAITING FOR THE ONE BEFORE (goal/G49.8; Andy: "make it smaller! make it faster! do it.", after the
+// timing of spirit-sibling-general.js: 41 checks a script, each waiting its report's round trip): a test's report goes out the
+// moment the test ends, and the next test starts without waiting for it to land. IN ORDER WHERE IT COUNTS (goal/G47.1, box
+// v129: a general test's success for one script comes before any result of the next): a script's success is sent only once
+// every report of its tests has landed (testicle erases a title a completed run did not report), and the run waits for that
+// success before the next script's tests start. reportChain is the last success sent.
 let reportChain = Promise.resolve();
+const pendingOf = Object.create(null);
 // NO NODE, NO REPORTS (a checkout with no node of its own, cw's build copy: every report was refused, tried three times a
 // second apart, and the suite then waited out RECORD_WAIT_MS, ten seconds on every run): once the node is found not there at
 // all, its door refused or no port named, the reports after are not sent. A refusal for any other cause (the testicle
@@ -127,7 +132,7 @@ function unreachable(e) { return !!e && (e.code === 'no-node' || (!!e.cause && e
 // own suite never counts them as that script's dependencies (requiresOfSuite).
 const reporterOwn = new Set();
 function loadedNow() { return Object.keys(require.cache); }
-function reportToTesticle(rec, verb) {
+function reportToTesticle(rec, verb, after) {
   const before = new Set(loadedNow());
   try {
     const own = globalThis.spirit;
@@ -154,12 +159,15 @@ function reportToTesticle(rec, verb) {
       return Promise.resolve(testicle).then(function (f) { return f[verb || 'testicle.set'](rec); }, function (e) { testicle = null; throw e; });
     };
     const wait = function () { return new Promise(function (r) { ownTimeout(r, 1000); }); };
-    reportChain = reportChain.then(function () {
+    const sent = Promise.resolve(after).then(function () {
       const again = function (e) { if (unreachable(e)) { nowhere = true; return undefined; } return wait().then(once); };
       return once().catch(again).catch(again)
         .catch(function () { /* a checkout with no node reports nowhere */ });
     }).then(function () { reportsOut -= 1; });
-    reportsLanded.push(reportChain);
+    reportsLanded.push(sent);
+    const key = String(rec.script || '');
+    (pendingOf[key] = pendingOf[key] || []).push(sent);
+    return sent;
   } catch (e) { /* the lines are printed whatever the node says */ }
 }
 
@@ -287,7 +295,8 @@ async function runAll() {
     if (!rec.success && dupTitles[script]) rec.reason = 'duplicateTitles';
     else if (!rec.success && reasonOf[script]) rec.reason = reasonOf[script];
     if (SUITE_FILE === ownSuiteOf(script)) rec.requires = JSON.stringify(requiresOfSuite(script));
-    reportToTesticle(rec, 'suite.success');
+    // After every report of its tests has landed (above).
+    reportChain = reportToTesticle(rec, 'suite.success', Promise.all(pendingOf[script] || [])) || reportChain;
   };
   for (let i = 0; ; i++) {
     while (i > lastOf() && holds > 0) await new Promise(function (r) { woken = r; });
@@ -329,10 +338,8 @@ async function runAll() {
     const testHash = require('crypto').createHash('sha256').update(String(t.body)).digest('hex').slice(0, 32);
     reportToTesticle({ script: script, suite: SUITE_FILE, test: title, verified: !!v.pass, severity: severity, testHash: testHash });
     // EVERY RESULT REACHES TESTICLE THE MOMENT ITS TEST IS DONE (goal/G49.5; Andy: "the testicle server gets a report
-    // IMMEDIATELY after completion of a test", "it is supposed to pick up there where it was interrupted", "suites are NOT
-    // allowed to fail. they must be FIXED!"): the next test starts only once this one's report has landed (or given up), so
-    // no result ever waits in a queue, and a run interrupted or killed has lost none it finished.
-    await reportChain;
+    // IMMEDIATELY after completion of a test"): it is sent now, and goes out at once, never behind another report; the next
+    // test no longer waits for it to land (goal/G49.8, Andy: "do it"), so 41 checks no longer cost 41 round trips.
   }
   if (doing !== null) { succeeded(doing); await reportChain; }
   // A cleanup that throws is no test and has no title: nothing of it is printed or reported.

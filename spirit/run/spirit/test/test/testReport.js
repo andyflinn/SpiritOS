@@ -391,6 +391,8 @@ function slowNode(ms) {
       const send = function (status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
       if (!msg) return send(404, { ok: false });
       if (msg.call === 'api' && msg.args && msg.args.branch === 'testicle') return send(200, { branch: 'testicle', interface: iface });
+      // When the suite's success came (goal/G49.8, below): after every report of its tests, or before some.
+      if (/(^|\.)suite\.success$/.test(String(msg.call)) && landed.success === undefined) landed.success = Date.now();
       if (msg.call === 'testicle.testicle.set' && msg.args && /^flood \d+$/.test(String(msg.args.test))) {
         if (landed[msg.args.test] === undefined) landed[msg.args.test] = Date.now();
         return setTimeout(function () { send(200, { ok: true }); }, ms);
@@ -418,6 +420,21 @@ test.run('every one of the 100 reports reaches the node within a second of its t
   if (!F.ended || Object.keys(F.ended).length !== 100) return false;
   const late = Object.keys(F.ended).filter(function (t) { return !(F.node.landed[t] !== undefined && F.node.landed[t] - F.ended[t] < 1000); });
   return late.length === 0 || false;
+}, test.limit.quick);
+// A TEST DOES NOT WAIT FOR THE REPORT BEFORE IT (goal/G49.8; Andy: "make it smaller! make it faster! do it.", after the timing
+// of -general: 41 checks a script, each waiting its report's round trip): 100 quick tests against a node taking 60 ms a report
+// would take 6 s if each waited; sent without waiting, they end long before. Every report still goes out at once (the check
+// above, a second at most), and a suite's success only after every report of its tests, as testicle erases a title a
+// completed run did not report.
+test.run('a test does not wait for the report of the one before it: 100 quick tests end within 3 s though each report takes 60 ms', 0.4, function () {
+  if (!F.ended || Object.keys(F.ended).length !== 100) return false;
+  const at = Object.keys(F.ended).map(function (t) { return F.ended[t]; });
+  return (Math.max.apply(null, at) - Math.min.apply(null, at) < 3000) || false;
+}, test.limit.quick);
+test.run('the suite\'s success reaches the node only after every report of its tests', 0.4, function () {
+  if (!F.ended || Object.keys(F.ended).length !== 100 || F.node.landed.success === undefined) return false;
+  const reports = Object.keys(F.ended).map(function (t) { return F.node.landed[t]; });
+  return (reports.every(function (x) { return x !== undefined; }) && F.node.landed.success >= Math.max.apply(null, reports)) || false;
 }, test.limit.quick);
 test.after(function () {
   try { if (F.node) F.node.close(); } catch (e) { /* closed */ }
