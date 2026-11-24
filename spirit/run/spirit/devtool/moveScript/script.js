@@ -11,8 +11,9 @@
 // WHAT ONE MOVE COVERS (the box): the file itself, its own test (test/<name>.js to ./test/<new name>.js), its .md, and the page
 // fixtures of its test named after it (test/<name>-<what>.html), each to its new place; the moved file's own relative
 // requires; every reference to it, as a run path ('spirit/element/x.js', with or without a leading slash), as a path
-// relative to the file naming it ('./x.js', '../x.js'), as path.join pieces, in its regex-escaped form, and as its dotted
-// name (a script stands at spirit.required.<its path>). Left alone: quoted words, generated reports, history, the vendored
+// relative to the file naming it ('./x.js', '../x.js'), as path.join pieces, in its regex-escaped form. Its dotted name is
+// never touched: a folder's script.js stands at the folder's name, so a move changes no dotted name (goal/G49.9; G49.5,
+// tried: rewriting it left 56 of 78 moved elements' tests redder). Left alone: quoted words, generated reports, history, the vendored
 // folders and every state folder. Refused: a target that already exists, or a move that would make a folder a branch.
 //
 // WHERE IT FINDS THE REFERENCES (the box): the loaders by testicle's dependency table (script, requires), read once a batch
@@ -108,8 +109,6 @@ function companions(from, to) {
   return out;
 }
 
-// The dotted name of a run path: spirit/element/busyButton.js -> spirit.element.busyButton.
-function dotted(rel) { return rel.replace(/\.js$/, '').split('/').join('.'); }
 function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'); }
 
 // A path relative to a file's folder, as the tree writes it: ./x.js beside it, ../x.js above.
@@ -121,7 +120,7 @@ function relFrom(dir, target) {
 
 // ONE FILE'S TEXT FIXED for a set of moves (map old run path -> new). ownOld is the file's own old path (its relative
 // references resolve against where it stood), ownNew where it stands now.
-function fixText(text, ownOld, ownNew, map, childrenOf) {
+function fixText(text, ownOld, ownNew, map) {
   let t = text;
   const oldDir = path.posix.dirname(ownOld), newDir = path.posix.dirname(ownNew);
   // 1. Relative references, resolved against where the file stood: './x.js', '../a/b.md', '../../spirit.js'.
@@ -160,41 +159,8 @@ function fixText(text, ownOld, ownNew, map, childrenOf) {
       const piecesRe = new RegExp(oldParts.map(function (p) { return "'" + escRe(p) + "'"; }).join('\\s*,\\s*'), 'g');
       t = t.replace(piecesRe, neu.split('/').map(function (p) { return "'" + p + "'"; }).join(', '));
     }
-    // 6. The dotted name, where a script stands at spirit.required.<its path>: spirit.element.x -> spirit.element.x.script,
-    // never where a child of its folder is read (spirit.element.search.api stays).
-    if (/\.js$/.test(old)) {
-      const d0 = dotted(old), d1 = dotted(neu);
-      if (d0 !== d1 && d1.indexOf(d0 + '.') === 0) {
-        const kids = (childrenOf[neu] || []).concat([d1.slice(d0.length + 1).split('.')[0]]);
-        t = t.replace(new RegExp('\\b' + escRe(d0) + '\\b(?!\\.(?:' + kids.map(escRe).join('|') + ')\\b)(?![\\w$/-])', 'g'), d1);
-        // 6b. THE SAME NAME READ IN STEPS (the element batch, tried: "(((spirit.required || {}).spirit || {}).element ||
-        // {}).busyButton", "E.spirit.element.busyButton"): the folder's last key, then the script's name, through any
-        // "|| {})" between them, or the name in brackets after that key.
-        const keys0 = d0.split('.'), name = keys0[keys0.length - 1], parent = keys0[keys0.length - 2];
-        const tail = d1.slice(d0.length + 1);
-        // 6c. ITS KEYS AS AN ARRAY, as a helper places itself (the element batch, tried: fieldInput's and joinSteps'
-        // ['spirit', 'element', 'fieldInput'].reduce(...)): the new keys after the old.
-        t = t.replace(new RegExp('\\[\\s*' + keys0.map(function (k) { return '([\'"])' + escRe(k) + '\\' + 1; }).join('\\s*,\\s*').replace(/\\1/g, '\\1') + '\\s*\\]', 'g'), function (all) {
-          const q = all.indexOf('"') !== -1 && all.indexOf("'") === -1 ? '"' : "'";
-          return all.replace(/\s*\]$/, ', ' + tail.split('.').map(function (k) { return q + k + q; }).join(', ') + ']');
-        });
-        if (parent) {
-          const notKid = '(?!\\s*\\.\\s*(?:' + kids.map(escRe).join('|') + ')\\b)(?![\\w$])';
-          t = t.replace(new RegExp('(\\b' + escRe(parent) + '\\b(?:\\s*\\|\\|\\s*\\{\\}\\s*\\))?\\s*\\.\\s*)' + escRe(name) + '\\b' + notKid, 'g'), function (all, pre) { return pre + name + '.' + tail; });
-          t = t.replace(new RegExp('(\\b' + escRe(parent) + '\\b(?:\\s*\\|\\|\\s*\\{\\}\\s*\\))?\\s*\\[\\s*)([\'"])' + escRe(name) + '\\2(\\s*\\])' + notKid, 'g'), function (all, pre, q, post) { return pre + q + name + q + post + '.' + tail; });
-        }
-      }
-    }
   });
   return t;
-}
-
-// What a folder holds that is read as a child: its scripts by name and its folders.
-function childNames(dirRel) {
-  let names = [];
-  try { names = fs.readdirSync(abs(dirRel), { withFileTypes: true }); } catch (e) { return []; }
-  return names.filter(function (d) { return d.name !== 'test' && (d.isDirectory() || /\.js$/.test(d.name)); })
-    .map(function (d) { return d.name.replace(/\.js$/, ''); }).filter(function (n) { return n !== 'script'; });
 }
 
 // ONE MOVE. Answers { moved: [[from, to]], edited: [files], unchanged: [dependents not touched] } or { refused: why }.
@@ -218,35 +184,22 @@ function moveOne(from, to, o) {
     fs.mkdirSync(path.dirname(abs(p[1])), { recursive: true });
     fs.renameSync(abs(p[0]), abs(p[1]));
   });
-  const childrenOf = {};
-  childrenOf[to] = childNames(path.posix.dirname(to));
   const edited = [];
   files.forEach(function (f) {
     const now = map[f] || f;
     const was = texts[f];
-    const fixed = fixText(was, f, now, map, childrenOf);
+    const fixed = fixText(was, f, now, map);
     if (fixed !== was) {
       edited.push(now);
       if (!opts.dry) fs.writeFileSync(abs(now), fixed);
     }
   });
-  // WHERE IT PLACES ITSELF, SEEN OR NOT: a moved script that names neither its new path, its new dotted name nor its new keys
-  // places itself in a way the text search cannot read (installSpiritElement's at.installSpiritElement =): printed, to be
-  // looked at by hand.
-  const placesUnseen = [];
-  if (/\.js$/.test(from) && !opts.dry && exists(to)) {
-    // Its code only: a header comment naming its own path places nothing.
-    const own = fs.readFileSync(abs(to), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
-    const keys = to.replace(/\.js$/, '').split('/');
-    const seen = own.indexOf(to) !== -1 || own.indexOf(dotted(to)) !== -1 || new RegExp(keys.map(function (k) { return '[\'"]' + escRe(k) + '[\'"]'; }).join('\\s*,\\s*')).test(own);
-    if (!seen) placesUnseen.push(to);
-  }
   // The dependents the table names, every one of which must have been fixed.
   const deps = (opts.dependencies || []).filter(function (r) { return r.requires === from; }).map(function (r) { return map[r.script] || r.script; });
   const unchanged = deps.filter(function (d) { return edited.indexOf(d) === -1 && exists(d); });
   // The copy in memory renamed, old path to new, in both columns.
   (opts.dependencies || []).forEach(function (r) { if (map[r.script]) r.script = map[r.script]; if (map[r.requires]) r.requires = map[r.requires]; });
-  return { moved: pairs, edited: edited, unchanged: unchanged, placesUnseen: placesUnseen };
+  return { moved: pairs, edited: edited, unchanged: unchanged };
 }
 
 // THE FIRST BATCH (the box): every script under the folder not named script.js, ./<name>.js to ./<name>/script.js, its
@@ -278,7 +231,6 @@ async function main(argv) {
       const r = moveOne(m[0], m[1], { dry: dry, dependencies: dependencies });
       if (r.refused) { refused += 1; console.log('refused  ' + m[0] + ': ' + r.refused); return; }
       console.log((dry ? 'would move ' : 'moved    ') + r.moved.map(function (p) { return p[0] + ' -> ' + p[1]; }).join(', ') + ' | ' + r.edited.length + ' files fixed');
-      r.placesUnseen.forEach(function (p) { console.log('  look by hand: ' + p + ' places itself in a way moveScript cannot read; give it its new dotted name'); });
       r.unchanged.forEach(function (d) { console.log('  look by hand: ' + d + ' needs ' + m[0] + ' by the table, and its text did not name it'); });
     });
   } finally { if (off) await testicleActive(true); }
