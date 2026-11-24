@@ -41,10 +41,9 @@
 //   recordPaths(fn)   the paths fn wrote (set, merge, del), so a stream's row can take what it wrote with it (goal/G41.12)
 //   byteCap(n?)         the byte cap: reads it, or sets it in a process
 //
-// ONE CAP, ON A PAGE AS IN A PROCESS (goal/G49.8, box v3; Andy: "the browser will need a cache limit. my testicle UI keeps
-// freezing up when it hold a few thousand rows", "I'd say 9000 rows are more than plenty"; replacing box v17's "no cache
-// bounding on the browser side"): a cache is a node store (goal/G41.3, Q2), past its 4 MB it sheds the oldest writes first,
-// each told as a delete, so a page drops the elements it drew for a shed row too. Only a process may set another cap.
+// A PROCESS'S CACHE IS A NODE STORE (goal/G41.3, Q2): past its 4 MB it sheds the oldest writes first, each told as a delete.
+// A page has no cap for now (below): goal/G49.8's page cap (Andy: "the browser will need a cache limit") shed the shell's
+// own first writes and is taken out until a shed keeps each family's share. Only a process may set another cap.
 (function (root) {
   var families = Object.create(null);  // name -> spirit.required.spirit.data.<name>
   var watchers = Object.create(null);   // path -> [fn]
@@ -52,7 +51,10 @@
   var quiet = Object.create(null);      // a type being filled without telling (the tree arriving)
   var onPage = !!(root.spirit && typeof root.spirit.isBrowser === 'function' && root.spirit.isBrowser());
   var CAP = 4 * 1024 * 1024;
-  var capBytes = CAP;
+  // NO CAP ON A PAGE, FOR NOW (goal/G49.8, point 1 reopened; Andy: "since 49.8 started the shell load takes FOREVER"): the cap
+  // shed the oldest writes of the whole page first, the shell's own file tree and apps among them, once testicle's rows passed
+  // 4 MB. A page's cap waits for a shed that keeps each family's own share.
+  var capBytes = onPage ? Infinity : CAP;
   var sizes = new Map();                // path -> bytes, oldest write first
   var total = 0;
 
