@@ -453,6 +453,43 @@ test.run('on a page the cache has the 4 MB cap, the same as a process', 0.4, fun
   const { P } = pageCopy();
   return typeof P.whole.byteCap === 'function' && P.whole.byteCap() === 4 * 1024 * 1024 && P.whole.byteCap() === CAP.was ? true : false;
 }, test.limit.quick);
+// THE PAGE IS A CACHE NODE OF ITS OWN (goal/G49.8, point 1, box v12; Andy: "a publish-stream-cache", "the bucket is stored (on
+// disc or RAM)", "it uses the exact same shedding logic as the intermediary cache. instead of disc it uses the caches
+// \"RAM-DRIVER\"", "for the bucket, the default is: arrival sequence.", "shedding: the longest held seat"; Q1: "Absolutely"):
+// one bucket per branch and remote, 4 MB each. A branch here is the data set's second step, its remote the node the rows are
+// filed under. Rows of about 1 KB are written until one branch holds some 5 MB.
+const PAGE_CAP = {};
+const KB_ROW = function (i) { return { body: 'x'.repeat(1000), n: i }; };
+const PAGE_ROWS = 5200;
+test.run('on a page, a branch written past 4 MB keeps its newest rows within 4 MB, its oldest gone first', 0.4, function () {
+  const { P } = pageCopy();
+  PAGE_CAP.P = P;
+  PAGE_CAP.gone = [];
+  PAGE_CAP.off = P.watch('big', function (at, v) { if (v === undefined) PAGE_CAP.gone.push(at); });
+  // Beside it, before it: another branch of the same node, and the same branch of another node.
+  PAGE_CAP.other = P.whole.viewAt(NODE, 'zzother');
+  PAGE_CAP.remote = P.whole.viewAt('OTHER+NODE/KEY==', FAMILY);
+  for (let i = 0; i < 20; i++) { PAGE_CAP.other.set('small/' + i, KB_ROW(i)); PAGE_CAP.remote.set('big/' + i, KB_ROW(i)); }
+  for (let i = 0; i < PAGE_ROWS; i++) P.set('big/' + i, KB_ROW(i));
+  const kept = Object.keys(P.branch('big') || {});
+  const bytes = kept.reduce(function (n, k) { return n + Buffer.byteLength(JSON.stringify(P.get('big/' + k))); }, 0);
+  PAGE_CAP.kept = kept;
+  return (kept.length > 0 && kept.length < PAGE_ROWS && kept.indexOf(String(PAGE_ROWS - 1)) !== -1 && kept.indexOf('0') === -1 && bytes <= 4 * 1024 * 1024) || false;
+}, test.limit.slow);
+test.run('on a page, a row its branch sheds is told as a delete', 0.4, function () {
+  if (!PAGE_CAP.P) return false;
+  return PAGE_CAP.gone.some(function (at) { return /\/big\/0$/.test(String(at)); }) || false;
+}, test.limit.quick);
+test.run('on a page, another branch of the same node keeps every row when one branch passes 4 MB', 0.4, function () {
+  if (!PAGE_CAP.other) return false;
+  return Object.keys(PAGE_CAP.other.branch('small') || {}).length === 20 || false;
+}, test.limit.quick);
+test.run('on a page, the same branch of another node keeps every row when this node\'s passes 4 MB', 0.4, function () {
+  if (!PAGE_CAP.remote) return false;
+  const fine = Object.keys(PAGE_CAP.remote.branch('big') || {}).length === 20;
+  if (PAGE_CAP.off) PAGE_CAP.off();
+  return fine || false;
+}, test.limit.quick);
 
 // THE CACHES PART, once data-caches.js.
 // Once spirit/run/spirit/test/data-caches.js.
