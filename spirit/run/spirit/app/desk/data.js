@@ -60,7 +60,8 @@
     // sends, every goal, no filtering on the client side"): another goal's rows stay; the cache's limit is the sender's
     // family's cache rules to keep (above, run by appServer).
     function rowOf(o, f) {
-      if (o.verb === 'goal.whole') V.set(STATE + '/current', goalOf(f));
+      // The current goal is the current row's alone (goal/G49.8, box v4): a goal.whole row keeps its item's facts and names
+      // no current goal, so an old goal's rows replayed from a cache never move it.
       V.set(ITEMS + '/' + f.id, f);
     }
 
