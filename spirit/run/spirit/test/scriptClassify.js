@@ -134,11 +134,46 @@ async function ownScratch() {
   if (up) await post('node.debug', { debug: { on: true } }).catch(function () { /* the page loads without it */ });
   return { root: root, base: base, child: child, up: up };
 }
+// THE NODE TESTICLE HANDS ITS RUNS, WHEN IT HANDS ONE (goal/G49.8; Andy: "make it smaller! make it faster!", "do it."; wsl's
+// point 3: each classifying run started its own scratch node and Chrome, about 3 s of its 3.8 s): named in SPIRIT_MOUNT_BASE
+// and SPIRIT_MOUNT_RUN, its Chrome in SPIRIT_CHROME_PORT (chromePage takes it). The scripts and the bare page are planted in
+// its tree as in an own one, and every app's server is switched on there by app.active, as its owner turns one on, testicle's
+// left off. Run by hand, with nothing handed, it boots its own as before.
+async function handedScratch() {
+  const base = process.env.SPIRIT_MOUNT_BASE;
+  const run = path.resolve(process.env.SPIRIT_MOUNT_RUN);
+  SCRIPTS.forEach(function (rel) {
+    const from = path.join(RUN, rel);
+    if (!fs.existsSync(from)) return;
+    const to = path.join(run, rel);
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    fs.copyFileSync(from, to);
+  });
+  fs.writeFileSync(path.join(run, 'spirit', 'test', BARE), '<!doctype html><html><head><meta charset="utf-8"><script>window.pageErrors = [];' +
+    ' window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });</script><script src="/spirit.js"></script></head><body></body></html>\n');
+  const post = function (call, args) {
+    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+      .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
+  };
+  const up = await until(function () { return post('api').then(function (r) { return r.status === 200; }); }, 30000);
+  if (!up) return { root: path.dirname(path.dirname(run)), base: base, child: null, up: false, handed: true };
+  const apps = fs.readdirSync(path.join(run, 'spirit', 'app'), { withFileTypes: true }).filter(function (d) {
+    if (!d.isDirectory() || d.name === 'testicle') return false;
+    let manifest = null;
+    try { manifest = JSON.parse(fs.readFileSync(path.join(run, 'spirit', 'app', d.name, d.name + '.json'), 'utf8')); } catch (e) { return false; }
+    return !!(manifest && manifest.node && manifest.node.mount === true);
+  }).map(function (d) { return d.name; });
+  await Promise.all(apps.map(async function (name) {
+    await post('app.active', { key: name, active: true });
+    await until(function () { return post('api', { branch: name }).then(function (r) { return !!(r.body && r.body.interface); }); }, 15000);
+  }));
+  return { root: path.dirname(path.dirname(run)), base: base, child: null, up: true, handed: true };
+}
 let W = null;
 async function world() {
   if (W) return W;
   W = { node: null, page: null, error: false };
-  W.node = await ownScratch();
+  W.node = process.env.SPIRIT_MOUNT_BASE && process.env.SPIRIT_MOUNT_RUN ? await handedScratch() : await ownScratch();
   if (!W.node.up) { W.error = true; return W; }
   const chrome = findChrome();
   if (!chrome) { W.error = true; return W; }
@@ -268,5 +303,6 @@ test.after(function () {
   try { if (W.page && W.page.kid) W.page.kid.kill(); } catch (e) { /* gone */ }
   try { if (W.page && W.page.profile) fs.rmSync(W.page.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   try { if (W.node && W.node.child) W.node.child.kill(); } catch (e) { /* gone */ }
-  try { if (W.node && W.node.root) setTimeout(function () { try { LABH.freeTree(W.node); } catch (e) { /* busy */ } }, 1000); } catch (e) { /* scratch */ }
+  // A handed node is testicle's, freed by testicle (its bare page and planted scripts go with the world's next reset).
+  try { if (W.node && W.node.root && !W.node.handed) setTimeout(function () { try { LABH.freeTree(W.node); } catch (e) { /* busy */ } }, 1000); } catch (e) { /* scratch */ }
 });

@@ -14,7 +14,9 @@ and this file.
   fresh bare page for each script (spirit.js alone, served by its scratch node from a test folder of the copy at
   /DEBUG/<path>; plain scripts share a page's top-level scope, so one page for all would let one break the next), of
   its own scratch node (*"it ... runs where all tests run, in its own scratch node (booted once per run)"*), in headless
-  Chrome. That node runs on a copy of the tree as it stands, every file under spirit/run but the state folders and
+  Chrome. Run by testicle, it takes the node and Chrome testicle hands every run in place of its own (goal/G49.8; wsl:
+  "handed testicle's world instead (as suites already are)"; Andy: "do it."): its scripts and bare page planted in that
+  node's tree, every app's server switched on there by app.active, testicle's left off. That node runs on a copy of the tree as it stands, every file under spirit/run but the state folders and
   .git: a script not yet committed is classified too, and a test's scratch tree, with no git, classifies as well.
 - The class from the two answers:
   - a crash on the node for lack of a browser function (`window`, `document`, ...), none in the page: browser-only;

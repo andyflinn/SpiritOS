@@ -522,8 +522,10 @@ function nextJob() {
   };
   // EVERY SUITE RUN HANDED ONE NODE AND ONE CHROME (goal/G47.1, Q10: testicle's UI tests "share one node and one Chrome that
   // testicle hands them"): named to the run in SPIRIT_MOUNT_BASE, SPIRIT_MOUNT_RUN and SPIRIT_CHROME_PORT; a test that asks
-  // for it (headLessChrome's scratchNode({ shared: true }), and every chromePage) takes them in place of booting its own. The
-  // classifier keeps its own. A job stopped or killed before its run has started ends there.
+  // for it (headLessChrome's scratchNode({ shared: true }), and every chromePage) takes them in place of booting its own. THE
+  // CLASSIFIER TOO (goal/G49.8; Andy: "make it smaller! make it faster!", "do it."): it plants its scripts there and switches
+  // every app's server on (spirit/test/scriptClassify.js handedScratch), a one-script run 1.5 s in place of 5.8 s, every class
+  // the same. A job stopped or killed before its run has started ends there.
   const launch = function (extra) {
     if (done) return;
     if (j.killed || j.stopped) { end(); return; }
@@ -535,8 +537,7 @@ function nextJob() {
     j.kid.on('error', end);
     j.kid.on('exit', function (code) { j.exitCode = code; end(); });
   };
-  if (j.classify) launch(null);
-  else handWorld().then(function (w) { launch(w.env); }, function () { launch(null); });
+  handWorld().then(function (w) { launch(w.env); }, function () { launch(null); });
   j.timer = setTimeout(function () { j.timedOut = true; killJob(j); }, JOB_LIMIT_MS);
 }
 // THE NODE AND THE CHROME TESTICLE HANDS ITS RUNS: booted at the first suite run, the two side by side, and let go when the
@@ -547,7 +548,7 @@ let worldBoot = null;
 // those 2000 bugs on linux/wsl????"): the world stands on a copy of the tree made when it boots, and was let go only when the
 // runner had nothing left to choose, so while the tree changed all evening every run judged new tests against the old copy.
 // A change after the world booted (onFile) lets it go at the next run's ask, and a new one is booted on the tree as it is.
-// One run at a time, so no run still stands on the world let go; the classifier keeps its own.
+// One run at a time, so no run still stands on the world let go.
 let treeChangedAt = 0;
 // The node and the Chrome are a test tool's, so they come as a process of it, never required (the box: "no production module
 // loads or requires any test file"): spirit/test/headLessChrome.js --world, which prints where they are and holds them until
