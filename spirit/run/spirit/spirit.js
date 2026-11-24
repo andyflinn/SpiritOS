@@ -605,8 +605,9 @@
       // A script that is not there refuses not-found, as it always has (spirit.js's own test); one that is answers at once.
       if (!require('fs').existsSync(file)) return Promise.reject(refusal('not-found', p + ' is not there'));
       var mod = require(file);
-      // A script.js exposes an object or a function, so its folder's other scripts can stand under it (goal/G49.9, box v5).
-      if (/(^|\/)script\.js$/.test(p) && !placeable(mod)) return Promise.reject(refusal('not-placeable', p + ' exposes ' + typeof mod + ': a script exposes an object or a function'));
+      // A SCRIPT ANSWERS AN OBJECT OR A FUNCTION, OR FAILS (goal/G49.9; Andy: "of course spirit.requireScript must allways
+      // return either an object or a function... or fail/throw."), so its folder's other scripts can stand under it.
+      if (!placeable(mod)) return Promise.reject(refusal('not-placeable', p + ' exposes ' + typeof mod + ': a script exposes an object or a function'));
       nodeOnce[p] = mod;
       placeAt(required, p, mod);
       return mod;
