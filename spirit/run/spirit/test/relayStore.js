@@ -17,7 +17,13 @@ const test = S.requireScript('spirit/test/testReport.js');
 const tempFolder = require('../tempFolder.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/relayStore/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/relayStore'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+// ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G49.7, Andy's Windows red "it leaves no temp folder behind"; cw's hand-over): on
+// Windows a folder holding an open relay.db cannot be removed, and this after, registered first, ran before the one that
+// closes them (below), so it removed nothing there.
+test.after(function () {
+  try { relayStore.closeAll(); } catch (e) { /* none open */ }
+  try { fs.rmSync(tempFolder.path('spirit/test/relayStore'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
+});
 const relayStore = S.requireScript('spirit/relayStore.js');
 
 const W = { roots: [], home: null, store: null, ro: null, roError: null, uniqueError: null, small: null, full: 0 };
