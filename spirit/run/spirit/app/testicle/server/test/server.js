@@ -2441,6 +2441,18 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   return (!!rest && !suites.length) || false;
 }, test.limit.long);
 
+// THE PLANTED -general TEST, A MICRO-SUITE (goal/G49.8; Andy: "it's the suite x suite problem. use suite x microbic-suite"):
+// a world judges testicle, never the general rules, so in place of a copy of testicle's own -general test (whose real checks
+// ran over every planted script and made each world wait minutes) its scratch copy gets this: for each script it is handed,
+// body, a line of test.run calls that use rel, the script.
+function MICRO_GENERAL(body) {
+  return "'use strict';\n" +
+    "const path = require('path');\n" +
+    "const test = require(path.join(__dirname, '..', '..', '..', 'test', 'testReport.js'));\n" +
+    "const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });\n" +
+    "GIVEN.forEach(function (rel) { test.forScript(rel, function () { " + body + " }); });\n";
+}
+
 // ── A RUN KILLED AT ITS TIME LIMIT (goal/G47.1, box v154, "testicle: a run killed at its time limit") ──
 // Andy: "make sure that a run aborted due to time-limit does not mark ALL assiciated suites as failed, andmust recompute the
 // run.", "I was talking about the 120 minute RUN limit. that is NOT the same as a hang in a test", "I'd agree to failing the
@@ -2452,8 +2464,8 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
 // first, so it is no hang in a test (cw). aOk.js reports before it; cLater.js is never reached.
 {
   const LIMIT_LINE = 'const JOB_LIMIT_MS = 120 * 60 * 1000;';
-  const SHORT_LIMIT_MS = 60000;
-  const GENERAL_LINE = 'else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });';
+  // Its planted suites answer at once (MICRO_GENERAL), so a run limit of 15 s still lets aOk.js finish before it.
+  const SHORT_LIMIT_MS = 15000;
   const AOK = 'spirit/app/testicle/temp/zzLimit/aOk.js';
   const BHANG = 'spirit/app/testicle/temp/zzLimit/bHang.js';
   const CLATER = 'spirit/app/testicle/temp/zzLimit/cLater.js';
@@ -2476,10 +2488,11 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     const serverSrc = fs.readFileSync(server, 'utf8');
     if (serverSrc.indexOf(LIMIT_LINE) === -1) return false;
     fs.writeFileSync(server, serverSrc.replace(LIMIT_LINE, 'const JOB_LIMIT_MS = ' + SHORT_LIMIT_MS + ';'));
-    const general = path.join(run, GENERAL);
-    const generalSrc = fs.readFileSync(general, 'utf8');
-    if (generalSrc.indexOf(GENERAL_LINE) === -1) return false;
-    fs.writeFileSync(general, generalSrc.replace(GENERAL_LINE, "else GIVEN.forEach(function (rel) { test.forScript(rel, function () { if (/zzLimit\\/bHang\\.js$/.test(rel)) test.run('it works on past the run limit', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 240000); }); }, test.limit.long); else { one(rel); two(rel); } }); });"));
+    // A MICRO-SUITE IN PLACE OF testicle's OWN -general TEST (goal/G49.8; Andy: "we only are testing \"suite\" and the (x suite)
+    // results are irrelevant ... so use microbic"): the run limit is judged, not the general rules, so each planted script
+    // gets one test that answers at once, and bHang.js one that works on past the run limit.
+    fs.writeFileSync(path.join(run, GENERAL), MICRO_GENERAL("if (/zzLimit\\/bHang\\.js$/.test(rel)) test.run('it works on past the run limit', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 240000); }); }, test.limit.long);" +
+      " else test.run('it holds', 0.2, function () { return true; }, test.limit.quick);"));
     [AOK, BHANG, CLATER].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the run limit\n'); });
     const on = path.join(run, 'spirit', 'state', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
@@ -2502,7 +2515,8 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
     if (!L.aOkBefore || !L.aOkBefore.row) return false;
     // Past the 60 s limit from the run's start, with a margin: bHang.js's test answers only after 240 s, so the run is
     // still on it when the limit fires. bHang.js reported no success before that.
-    await sleep(SHORT_LIMIT_MS + 15000);
+    // Watched, not slept: the kill shows as bHang.js's suite row turning red, at most the limit and a margin away.
+    await until(function () { const x = generalRow(tables(L.DB), BHANG); return Promise.resolve(!!x && x.outcome === 'red'); }, SHORT_LIMIT_MS + 15000);
     const r = generalRow(tables(L.DB), BHANG);
     L.killed = !(r && r.outcome === 'green');
     return L.killed || false;
