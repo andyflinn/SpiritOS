@@ -200,3 +200,47 @@ test.run('a node whose card names no owner has no star', 0.2, function () {
   const row = SPIRIT.requireScript('spirit/contact/script.js').byPublicKey(W.faceHome, W.freeNode.publicKey) || {};
   return row.mine !== true || false;
 }, test.limit.quick);
+
+// FORGETTING A RELAY (goal/G49.11, box v9: "contact.forget will be modified to implement the relay.remove part, if the contact
+// row is a relay"; "that part: the relay off the node's list and its seat record cleared, with remove's refusals: noderoutes.net
+// is never removed, nor your own relay, nor a relay still holding this node's seat, nor the node's last public relay"). On a
+// scratch node: noderoutes.net, a relay this node is seated on, and a plain public relay, each a row of seen, kept.
+const forgetRelay = function (key) {
+  return new Promise(function (resolve) {
+    const res = { status: 0, body: '', writeHead: function (s) { res.status = s; }, setHeader: function () {}, end: function (b) { res.body = String(b || ''); resolve(res); } };
+    try { W.relayHub.handlePeer({}, res, function () { return Promise.resolve({ publicKey: key }); }, 'forget'); } catch (e) { resolve(res); }
+    setTimeout(function () { resolve(res); }, 2000);
+  });
+};
+const listedKeys = function () { try { return SPIRIT.requireScript('spirit/relayKeys.js').listed(W.relayHome).map(function (r) { return r.key; }); } catch (e) { return []; } };
+test.run('on a scratch node with three relays listed, noderoutes.net, a seated one and a plain one', 0.2, function () {
+  try {
+    W.relayHome = ownTemp('forgetRelay');
+    fs.mkdirSync(path.join(W.relayHome, 'spirit', 'state'), { recursive: true });
+    const relayAuth = SPIRIT.requireScript('spirit/relayAuth.js');
+    relayAuth.saveIdentity(W.relayHome, relayAuth.generateIdentity());
+    const seen = SPIRIT.requireScript('spirit/seenPeers.js').createSeenPeers({ rootDir: W.relayHome });
+    W.kept = relayAuth.generateIdentity().publicKey; W.seatRelay = relayAuth.generateIdentity().publicKey; W.plainRelay = relayAuth.generateIdentity().publicKey;
+    seen.set(W.kept, { relay: true, keep: true, url: 'https://noderoutes.net', label: 'noderoutes' });
+    seen.set(W.seatRelay, { relay: true, keep: true, seated: true, url: 'https://seated.example', label: 'seated' });
+    seen.set(W.plainRelay, { relay: true, keep: true, url: 'https://plain.example', label: 'plain' });
+    W.relayHub = require(HUB).createHub(W.relayHome);
+  } catch (e) { return false; }
+  const keys = listedKeys();
+  return [W.kept, W.seatRelay, W.plainRelay].every(function (k) { return keys.indexOf(k) !== -1; }) || false;
+}, test.limit.quick);
+test.run('forgetting noderoutes.net is refused, and it stays on the list', 0.4, async function () {
+  if (!W.relayHub) return false;
+  const a = await forgetRelay(W.kept);
+  return (a.status >= 400 && a.status < 500 && listedKeys().indexOf(W.kept) !== -1) || false;
+}, test.limit.quick);
+test.run('forgetting a relay still holding this node\'s seat is refused, and it stays on the list', 0.4, async function () {
+  if (!W.relayHub) return false;
+  const a = await forgetRelay(W.seatRelay);
+  return (a.status >= 400 && a.status < 500 && listedKeys().indexOf(W.seatRelay) !== -1) || false;
+}, test.limit.quick);
+test.run('forgetting a plain relay, with noderoutes.net still listed, takes it off the list', 0.4, async function () {
+  if (!W.relayHub) return false;
+  const a = await forgetRelay(W.plainRelay);
+  return (a.status === 200 && listedKeys().indexOf(W.plainRelay) === -1 && listedKeys().indexOf(W.kept) !== -1) || false;
+}, test.limit.quick);

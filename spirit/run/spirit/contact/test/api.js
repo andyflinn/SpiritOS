@@ -53,7 +53,8 @@ function keysAt(src, open) {
   return null;
 }
 function mounted(family) {
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
+  // The node's server code, spirit/server/node.js since goal/G48.5 ("the servers move into spirit/server/").
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node.js'), 'utf8');
   const head = 'loopbackVerbs.mount(\'' + family + '\',';
   let at = src.indexOf(head);
   if (at === -1) return null;
@@ -170,4 +171,36 @@ test.run('faceable sets 😏 on a key or takes it off: a key, and true or false'
 test.run('own is gone', 0.2, function () {
   if (!W.api) return false;
   return !('own' in W.verbs) || false;
+}, test.limit.quick);
+
+// THE RELAY VERBS ARE CONTACT VERBS (goal/G49.11, box v9: "each one becomes a contact verb and names the relay by its row's
+// public key, as every contact verb does (today they name it by its url)"; Andy: "Get rid of the fucking relay branch").
+// The relay is named by key, as get and faceable name a row today; add alone takes the url, since it makes the row.
+test.run('add takes a relay\'s address, and a label it may be given', 0.4, function () {
+  if (!W.api) return false;
+  return (passes('add', { url: 'https://relay.example', label: 'Mine' }) && passes('add', { url: 'https://relay.example' }) && refusedAs('add', { url: 'not a url' }) === 'bad-request' && refusedAs('add', {}) === 'bad-request') || false;
+}, test.limit.quick);
+test.run('claim names the relay by its key and takes a name; an invite and its label may be left out', 0.4, function () {
+  if (!W.api) return false;
+  return (passes('claim', { key: KEY, name: 'andy' }) && passes('claim', { key: KEY, name: 'andy', invite: 'abc', inviteLabel: 'Bob' }) && refusedAs('claim', { key: NOT_KEY, name: 'andy' }) === 'bad-request' && refusedAs('claim', { url: 'https://relay.example', name: 'andy' }) === 'bad-request') || false;
+}, test.limit.quick);
+test.run('face names the relay by its key and takes a face name', 0.4, function () {
+  if (!W.api) return false;
+  return (passes('face', { key: KEY, name: 'andy' }) && refusedAs('face', { key: NOT_KEY, name: 'andy' }) === 'bad-request' && refusedAs('face', { url: 'https://relay.example', name: 'andy' }) === 'bad-request') || false;
+}, test.limit.quick);
+test.run('join names the relay by its key and takes an email; a code, and the link the relay mails, may be given', 0.4, function () {
+  if (!W.api) return false;
+  return (passes('join', { key: KEY, email: 'a@b.example' }) && passes('join', { key: KEY, email: 'a@b.example', code: '123456', link: 'https://relay.example/j' }) && refusedAs('join', { key: NOT_KEY, email: 'a@b.example' }) === 'bad-request' && refusedAs('join', { url: 'https://relay.example', email: 'a@b.example' }) === 'bad-request') || false;
+}, test.limit.quick);
+test.run('leave names the relay by its key alone', 0.4, function () {
+  if (!W.api) return false;
+  return (passes('leave', { key: KEY }) && refusedAs('leave', { key: NOT_KEY }) === 'bad-request' && refusedAs('leave', {}) === 'bad-request') || false;
+}, test.limit.quick);
+test.run('the node\'s relay branch is gone: no spirit/relay/ folder, and no product script names its api.js or data.js', 0.4, function () {
+  const files = require('child_process').execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
+  if (files.length < 100) return false;
+  const inRelay = files.filter(function (f) { return f.indexOf('spirit/relay/') === 0; });
+  const naming = files.filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f) && fs.existsSync(path.join(RUN, f)); })
+    .filter(function (f) { return /spirit\/relay\/(api|data)\.js/.test(fs.readFileSync(path.join(RUN, f), 'utf8')); });
+  return (!inRelay.length && !naming.length) || false;
 }, test.limit.quick);
