@@ -43,9 +43,13 @@ test.run('on a node its default is the node\'s loopback URL with its port, http:
 test.run('on a page its default is the page\'s own URL', 0.4, function () {
   if (!T) return false;
   const src = fs.readFileSync(FILE, 'utf8');
-  const win = { location: { href: 'https://face.example/spirit/shell/face.html' }, TextEncoder: TextEncoder, spirit: { required: {} } };
+  // A page world as the loader makes one (goal/G49.9, box v5: "it hands each of spirit's own scripts a module box there too"):
+  // the script run in a module box, and its answer what it set as module.exports, never a place it put itself.
+  const win = { location: { href: 'https://face.example/spirit/shell/face.html' }, TextEncoder: TextEncoder, spirit: {} };
   win.window = win;
-  require('vm').runInNewContext(src, win);
-  const P = win.spirit.required.spirit.type.string.URL;
+  const box = { exports: {} };
+  win.zzBox = box;
+  require('vm').runInNewContext('(function (module, exports) {' + src + '\n}(zzBox, zzBox.exports));', win);
+  const P = box.exports;
   return (!!P && P.defaultValue() === 'https://face.example/spirit/shell/face.html') || false;
 }, test.limit.quick);
