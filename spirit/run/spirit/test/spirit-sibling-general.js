@@ -995,6 +995,27 @@ if (WHOLE || MODULE) {
   }, test.limit.quick);
 }
 
+// THE ANSWER OF spirit.requireScript IS THE DOOR (goal/G49.9, box v5: "a general test in spirit-sibling-general: \"a script
+// reaches another only through what spirit.requireScript hands back\", red on every file that reads spirit.required.<path>,
+// spirit.js and spirit/data.js left out", "its severity is 0.81"; Andy: "call requireScript() and then assume where the result
+// lives???? ... just plain bad programming practice"). Its code read with its comments taken out: any .required in it is a
+// read of spirit.required, in one piece or in steps. Product scripts: a test still reads the places it checks.
+const PLACERS = ['spirit/spirit.js', 'spirit/data.js'];
+const readsRequired = function (rel) {
+  let code = '';
+  try { code = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return false; }
+  code = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  return /\.required\b/.test(code);
+};
+if (WHOLE || MODULE) {
+  test.run('a script reaches another only through what spirit.requireScript hands back', 0.81, function () {
+    const scripts = (WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed])
+      .filter(function (rel) { return PLACERS.indexOf(rel) === -1; });
+    if (!scripts.length) return PLACERS.indexOf(handed) !== -1 || false;
+    return !scripts.some(readsRequired) || false;
+  }, test.limit.quick);
+}
+
 // THE THREE KINDS OF GENERAL TEST (goal/G47.1, box v94, 2: "there will be, from now on only 3 types of general tests, at any
 // level of the tree: <file>-<child | sibling>-general.js, <file>-<child | sibling>-node.js, <file>-<child | sibling>-browser.js",
 // "existing general tests fold into the appropriate of the 3 new general test name-formats"). A general test is a script in

@@ -1356,3 +1356,96 @@ test.run('the page says the stream is down, onConnection false, before the new o
   if (!SIL.saidDown) return false;
   return SIL.saidDown.indexOf(false) !== -1 || false;
 }, test.limit.quick);
+
+
+// ── THE LOADER HANDS BACK, ON BOTH SIDES ALIKE (goal/G49.9, box v5: "in node a script hands back what it offers by
+// module.exports; on a page the loader already fetches the script's text and runs it (spirit.js, inject), so it hands each of
+// spirit's own scripts a module box there too, and the script ends with module.exports = what it offers, the same line on both
+// sides"; "the loader places that module.exports at the script's own place and answers spirit.requireScript with it"; "a
+// folder's script.js stands at its folder's own name"; "what a script exposes becomes its place itself, never copied in as
+// members"; "the folder's other scripts stand under it either way"; "a script.js exposes an object or a function, nothing
+// else ... so the loader refuses it"; "vendored scripts get no module box"). Planted in a scratch node's tree: an object, its
+// folder's other script, a function, a bare string, and a probe in the vendored CodeMirror folder. Node side in a process of
+// the scratch tree's own, page side on a page of that node.
+const LD = {};
+const LD_PLANT = {
+  'spirit/zzLoader/obj/script.js': "'use strict';\nmodule.exports = { a: 1 };\n",
+  'spirit/zzLoader/obj/other.js': "'use strict';\nmodule.exports = { b: 2 };\n",
+  'spirit/zzLoader/fn/script.js': "'use strict';\nmodule.exports = function () { return 7; };\n",
+  'spirit/zzLoader/str/script.js': "'use strict';\nmodule.exports = 'text';\n",
+  'spirit/zzLoader/stand/script.js': "'use strict';\nmodule.exports = { real: true };\n",
+  'spirit/element/codeMirror/zzProbe.js': "globalThis.zzProbeModule = typeof module;\n",
+};
+// What both sides answer, as one JSON object; run on the page as written, in node with spirit.js required first.
+const LD_ASK = "(async function () {\n" +
+  "  var S = globalThis.spirit; var out = {};\n" +
+  "  var obj = await Promise.resolve(S.requireScript('spirit/zzLoader/obj/script.js'));\n" +
+  "  out.objA = obj && obj.a; out.objAt = S.required.spirit.zzLoader.obj === obj;\n" +
+  "  var other = await Promise.resolve(S.requireScript('spirit/zzLoader/obj/other.js'));\n" +
+  "  out.otherB = other && other.b; out.otherUnder = !!(S.required.spirit.zzLoader.obj && S.required.spirit.zzLoader.obj.other === other);\n" +
+  "  out.objStill = S.required.spirit.zzLoader.obj === obj;\n" +
+  "  var fn = await Promise.resolve(S.requireScript('spirit/zzLoader/fn/script.js'));\n" +
+  "  out.fnCall = typeof S.required.spirit.zzLoader.fn === 'function' ? S.required.spirit.zzLoader.fn() : null; out.fnAnswer = typeof fn === 'function' ? fn() : null;\n" +
+  "  try { var str = await Promise.resolve(S.requireScript('spirit/zzLoader/str/script.js')); out.strRefused = false; out.strGot = typeof str; } catch (e) { out.strRefused = true; }\n" +
+  "  return JSON.stringify(out);\n" +
+  "})()";
+test.run('a scratch node with the loader\'s planted scripts comes up, with a page on it', 0.2, async function () {
+  await freeEarlierWorlds();
+  try { if (SIL.page && SIL.page.kid) SIL.page.kid.kill(); if (SIL.node && SIL.node.release) await SIL.node.release(); SIL.node = null; } catch (e) { /* gone */ }
+  LD.node = await H.scratchNode({ before: function (run) {
+    Object.keys(LD_PLANT).forEach(function (rel) { fs.mkdirSync(path.dirname(path.join(run, rel)), { recursive: true }); fs.writeFileSync(path.join(run, rel), LD_PLANT[rel]); });
+  } });
+  if (!LD.node.up) return false;
+  LD.page = await H.chromePage(H.findChrome());
+  if (!LD.page || LD.page.error) return false;
+  await LD.page.send('Page.navigate', { url: LD.node.base + '/face.html' });
+  return !!(await H.until(function () { return LD.page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 30000)) || false;
+}, test.limit.slow);
+test.after(async function () {
+  try { if (LD.page && LD.page.kid) LD.page.kid.kill(); } catch (e) { /* gone */ }
+  try { if (LD.node && LD.node.release) await LD.node.release(); } catch (e) { /* gone */ }
+});
+function ldNode() {
+  if (LD.inNode !== undefined) return LD.inNode;
+  LD.inNode = null;
+  if (!LD.node || !LD.node.run) return null;
+  const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); " + LD_ASK + ".then(function (s) { process.stdout.write(s); }, function (e) { process.stdout.write('{}'); })"], { cwd: LD.node.run, encoding: 'utf8', timeout: 20000 });
+  try { LD.inNode = JSON.parse(r.stdout || 'null'); } catch (e) { LD.inNode = null; }
+  return LD.inNode;
+}
+async function ldPage() {
+  if (LD.onPage !== undefined) return LD.onPage;
+  LD.onPage = null;
+  if (!LD.page) return null;
+  try { LD.onPage = JSON.parse(await LD.page.evaluate(LD_ASK)); } catch (e) { LD.onPage = null; }
+  return LD.onPage;
+}
+// in node
+test.run('in node, requireScript answers what a script.js sets as module.exports', 0.4, function () { const o = ldNode(); return !!o && o.objA === 1 || false; }, test.limit.slow);
+test.run('in node, a folder\'s script.js stands at its folder\'s own name, and is that answer itself', 0.4, function () { const o = ldNode(); return !!o && o.objAt === true || false; }, test.limit.slow);
+test.run('in node, the folder\'s other script stands under its script.js, which stays where it was', 0.4, function () { const o = ldNode(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.slow);
+test.run('in node, a script.js exposing a function stands as that function, callable at its folder\'s name', 0.4, function () { const o = ldNode(); return !!o && o.fnCall === 7 && o.fnAnswer === 7 || false; }, test.limit.slow);
+test.run('in node, a script.js exposing a bare string is refused', 0.4, function () { const o = ldNode(); return !!o && o.strRefused === true || false; }, test.limit.slow);
+// on a page
+test.run('on a page, requireScript answers what a script.js sets as module.exports', 0.4, async function () { const o = await ldPage(); return !!o && o.objA === 1 || false; }, test.limit.slow);
+test.run('on a page, a folder\'s script.js stands at its folder\'s own name, and is that answer itself', 0.4, async function () { const o = await ldPage(); return !!o && o.objAt === true || false; }, test.limit.slow);
+test.run('on a page, the folder\'s other script stands under its script.js, which stays where it was', 0.4, async function () { const o = await ldPage(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.slow);
+test.run('on a page, a script.js exposing a function stands as that function, callable at its folder\'s name', 0.4, async function () { const o = await ldPage(); return !!o && o.fnCall === 7 && o.fnAnswer === 7 || false; }, test.limit.slow);
+test.run('on a page, a script.js exposing a bare string is refused', 0.4, async function () { const o = await ldPage(); return !!o && o.strRefused === true || false; }, test.limit.slow);
+test.run('on a page, a vendored script is handed no module box', 0.4, async function () {
+  if (!LD.page) return false;
+  try { await LD.page.evaluate("window.spirit.requireScript('spirit/element/codeMirror/zzProbe.js').then(function () { return true; }, function () { return true; })"); } catch (e) { return false; }
+  return (await LD.page.evaluate('String(window.zzProbeModule)')) === 'undefined' || false;
+}, test.limit.slow);
+// A NODE TEST'S STAND-IN (box v5: "a node test hands its stand-in as requireScript's answer too: put into node's module cache
+// for that file before the subject loads"): a stand-in put in for a planted script is what requireScript answers, and where it stands.
+test.run('in node, a stand-in put into the module cache for a script is what requireScript answers, at that script\'s place', 0.4, function () {
+  if (!LD.node || !LD.node.run) return false;
+  const ask = "const path = require('path'); require('./spirit/spirit.js'); const file = path.join(process.cwd(), 'spirit/zzLoader/stand/script.js'); " +
+    "const stand = { stand: true }; require.cache[file] = { id: file, filename: file, loaded: true, exports: stand }; " +
+    "Promise.resolve(globalThis.spirit.requireScript('spirit/zzLoader/stand/script.js')).then(function (a) { process.stdout.write(JSON.stringify({ answer: a === stand, at: globalThis.spirit.required.spirit.zzLoader.stand === stand })); }, function () { process.stdout.write('{}'); });";
+  const r = spawnSync(process.execPath, ['-e', ask], { cwd: LD.node.run, encoding: 'utf8', timeout: 20000 });
+  let o = null;
+  try { o = JSON.parse(r.stdout || 'null'); } catch (e) { o = null; }
+  return !!o && o.answer === true && o.at === true || false;
+}, test.limit.slow);
