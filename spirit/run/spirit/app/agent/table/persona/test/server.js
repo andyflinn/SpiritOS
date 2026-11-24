@@ -160,14 +160,17 @@ test.run('the page files place spirit.required.spirit.app.agent.element.table.pe
   };
   global.window = { spirit: {} };
   global.spirit = global.window.spirit;
-  // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.required.<their path>.
-  global.window.spirit.required = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
+  const ANSWERS = { 'spirit/app/agent/element/table/tableElement.js': STAND.agentTable, 'spirit/app/agent/element/table/row.js': STAND.agentRow };
   // The agent branch's interface brings its data.js, as the real api.js does: given spirit/app/agent/api.js, its data.js
   // runs once, as the page runs it, into this page's spirit.required.spirit.data.
   global.window.spirit.requireScript = function (p) {
     made.required.push(String(p));
     if (p === 'spirit/app/agent/api.js' && !made.agentData) { made.agentData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'data.js'), 'utf8'), { filename: 'spirit/app/agent/data.js' }); }
-    return Promise.resolve(true);
+    // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+    // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+    // function... or fail/throw"): the shared table and row elements, the page files' own answers once they ran, and an
+    // object for anything else they ask (the agent branch's api.js).
+    return Promise.resolve(Object.prototype.hasOwnProperty.call(ANSWERS, p) ? ANSWERS[p] : {});
   };
   // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
@@ -181,7 +184,7 @@ test.run('the page files place spirit.required.spirit.app.agent.element.table.pe
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   // What the page files require is what is asked from here on; the runner's own asks come before it.
   made.from = made.required.length;
-  ['elementTable.js', 'elementRow.js'].forEach(function (f) { PAGE_LOAD.runAsPage(path.join(EL, f)); });
+  ['elementTable.js', 'elementRow.js'].forEach(function (f) { ANSWERS[path.relative(RUN, path.join(EL, f)).split(path.sep).join('/')] = PAGE_LOAD.runAsPage(path.join(EL, f)); });
   const T = global.window.spirit.required.spirit.app.agent.element.table.persona || {};
   X.E = { personaTable: T.elementTable, personaRow: T.elementRow };
   return X.E.personaTable && typeof X.E.personaTable.create === 'function' && X.E.personaRow && typeof X.E.personaRow.create === 'function' ? true : false;

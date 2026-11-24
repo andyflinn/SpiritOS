@@ -19,7 +19,7 @@ const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'elementRow.js');
 const ROW = 'spirit/app/agent/element/table/row.js';
 
-function load(file) { PAGE_LOAD.runAsPage(file); }
+function load(file) { return PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
 const at = function (place) { return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required); };
@@ -30,13 +30,15 @@ const W = { required: [], made: [], held: null };
 function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  const helper = S.requireScript('spirit/element/installSpiritElement.js');
-  // The tables' row element, as its own file places itself: by the one helper, at spirit.required.<its path>.
-  helper(global.window.spirit, ROW, { create: function (container, o) { const m = { container: container, o: o, destroyed: false, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });
+  // THE ROW ELEMENT'S STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's
+  // answers ... never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): the tables' row element for its path, the agent branch's interface an empty object.
+  W.row = { create: function (container, o) { const m = { container: container, o: o, destroyed: false, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } };
+  const STANDS = {}; STANDS[ROW] = W.row; STANDS['spirit/app/agent/api.js'] = {};
   global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
     if (p === ROW && W.held) return W.held.promise;
-    return Promise.resolve(true);
+    return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.reject(new Error('no stand-in for ' + p));
   };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
 }
@@ -137,7 +139,7 @@ test.run('destroyed before the row element has loaded, it makes none', 0.2, asyn
   const n = W.made.length;
   const early = E.row.create({ id: 'box3' }, 'ID3', false, detail);
   early.destroy();
-  open(true); W.held = null;
+  open(W.row); W.held = null;
   await settle();
   return W.made.length === n || false;
 }, test.limit.quick);

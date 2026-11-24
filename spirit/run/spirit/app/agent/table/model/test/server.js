@@ -207,13 +207,21 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   global.spirit = global.window.spirit;
   // The page's one loader: asked for a branch's api.js, it runs that branch's real data.js once, as the real api.js
   // requires its companion data.js; the data set (spirit/data.js) is run below.
+  const ANSWERS = { 'spirit/element/search.js': STAND.search, 'spirit/element/rowForm.js': STAND.rowForm, 'spirit/element/busyButton.js': STAND.busyButton,
+    'spirit/app/agent/element/table/tableElement.js': Object.assign({}, STAND.agentDetail, STAND.agentTable), 'spirit/app/agent/element/table/row.js': STAND.agentRow };
   const ran = {};
   global.window.spirit.requireScript = function (p) {
     made.required.push(String(p));
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
     const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
     if (companion && !ran[companion] && fs.existsSync(path.join(RUN, companion))) { ran[companion] = true; PAGE_LOAD.runAsPage(path.join(RUN, companion)); }
-    return Promise.resolve(p === AGENT ? made.family : true);
+    // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+    // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+    // function... or fail/throw"): the agent branch's api.js, the search, rowForm and busyButton, the shared table and row
+    // elements, the page files' own answers once they ran, an object for anything else. The stand-ins also stay at their
+    // places above, since the shared table stand-in's search reads the search element there.
+    if (p === AGENT) return Promise.resolve(made.family);
+    return Promise.resolve(Object.prototype.hasOwnProperty.call(ANSWERS, p) ? ANSWERS[p] : {});
   };
   // The page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it runs
   // (spirit/test/headLessChrome.js pageSpirit).
@@ -224,7 +232,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
-  ['elementTable.js', 'elementRow.js'].forEach(function (f) { PAGE_LOAD.runAsPage(path.join(EL, f)); });
+  ['elementTable.js', 'elementRow.js'].forEach(function (f) { ANSWERS[path.relative(RUN, path.join(EL, f)).split(path.sep).join('/')] = PAGE_LOAD.runAsPage(path.join(EL, f)); });
   const T = global.window.spirit.required.spirit.app.agent.element.table.model || {};
   X.E = { modelTable: T.elementTable, modelRow: T.elementRow };
   return X.E.modelTable && typeof X.E.modelTable.create === 'function' && X.E.modelRow && typeof X.E.modelRow.create === 'function' ? true : false;

@@ -391,15 +391,18 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.requi
   };
   global.window = { spirit: {} };
   global.spirit = global.window.spirit;
-  // goal/G43.32: the shared stand-ins stand where the page files read them, at spirit.required.<their path>.
-  global.window.spirit.required = { spirit: { app: { agent: { element: { table: { tableElement: STAND.agentTable, row: STAND.agentRow } } } } } };
+  const ANSWERS = { 'spirit/app/agent/element/table/tableElement.js': STAND.agentTable, 'spirit/app/agent/element/table/row.js': STAND.agentRow };
   // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once; anything
   // else is a stand-in.
   const ran = {};
   global.window.spirit.requireScript = function (p) {
     made.required.push(String(p));
     if (p === 'spirit/app/agent/api.js' && !ran[p]) { ran[p] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'data.js'), 'utf8'), { filename: 'spirit/app/agent/data.js' }); }
-    return Promise.resolve(true);
+    // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+    // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+    // function... or fail/throw"): the shared table and row elements, the page files' own answers once they ran, and an
+    // object for anything else they ask (the agent branch's api.js).
+    return Promise.resolve(Object.prototype.hasOwnProperty.call(ANSWERS, p) ? ANSWERS[p] : {});
   };
   // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
@@ -410,7 +413,7 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.requi
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
-  ['elementTable.js', 'elementRow.js'].forEach(function (f) { PAGE_LOAD.runAsPage(path.join(EL, f)); });
+  ['elementTable.js', 'elementRow.js'].forEach(function (f) { ANSWERS[path.relative(RUN, path.join(EL, f)).split(path.sep).join('/')] = PAGE_LOAD.runAsPage(path.join(EL, f)); });
   const T = global.window.spirit.required.spirit.app.agent.element.table.provider || {};
   P.E = { providerTable: T.elementTable, providerRow: T.elementRow };
   return P.E.providerTable && typeof P.E.providerTable.create === 'function' && P.E.providerRow && typeof P.E.providerRow.create === 'function' ? true : false;

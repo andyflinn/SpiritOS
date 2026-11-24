@@ -42,7 +42,7 @@ const AGENT = 'spirit/app/agent/api.js';
 // The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
 // base64url (spirit.required.spirit.data.nodeId).
 const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
-function load(file) { PAGE_LOAD.runAsPage(file); }
+function load(file) { return PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
 
@@ -160,8 +160,16 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;
     } };
-    return Promise.resolve(p === AGENT ? w.family : true);
+    // EACH PART'S ANSWER IS requireScript's (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
+    // "spirit.requireScript must allways return either an object or a function... or fail/throw"): the agent family, the real
+    // shared element as it loaded, fieldInput a stand-in that holds nothing to a rule (it is tested in its own folder), and any
+    // other part an empty object. The bundle selector and armingButton still stand at their places above, where row.js reads them.
+    if (p === AGENT) return Promise.resolve(w.family);
+    if (p === 'spirit/app/agent/element/table/tableElement.js') return Promise.resolve(w.shared || {});
+    if (p === 'spirit/element/fieldInput.js') return Promise.resolve(w.fieldInput);
+    return Promise.resolve({});
   };
+  w.fieldInput = { attach: function (el) { return el; } };
   // goal/G43.32: the page's own spirit.requireScript answers the helper, so each element places itself by installSpiritElement,
   // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
   // spirit.required.<their path>.
@@ -174,7 +182,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
   PE().search.icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   // Its tree as the page loads it: the shared element first, then this file.
-  load(SHARED);
+  w.shared = load(SHARED);
   await settle();
   AT = function () { return (((((global.window.spirit.required.spirit || {}).app || {}).agent || {}).element || {}).table || {}); };
   return true;

@@ -33,17 +33,20 @@ const W = { required: [], tables: [], rows: [], held: null };
 function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  const helper = S.requireScript('spirit/element/installSpiritElement.js');
-  // As their own files place themselves: by the one helper, at spirit.required.<their path>.
-  helper(global.window.spirit, SHARED, { create: function (container, o) {
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+  // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): the shared element and the row editor, each for its path; any other path an empty object.
+  const STANDS = {};
+  STANDS[SHARED] = { create: function (container, o) {
     const t = { container: container, o: o, refreshed: 0, destroyed: false, refresh: function () { t.refreshed += 1; }, destroy: function () { t.destroyed = true; } };
     W.tables.push(t); return t;
-  } });
-  helper(global.window.spirit, ROW, { create: function (box, id, added, detail) { const r = { box: box, id: id, added: added, detail: detail }; W.rows.push(r); return r; } });
+  } };
+  STANDS[ROW] = { create: function (box, id, added, detail) { const r = { box: box, id: id, added: added, detail: detail }; W.rows.push(r); return r; } };
+  const answerOf = function (p) { return Object.prototype.hasOwnProperty.call(STANDS, p) ? STANDS[p] : {}; };
   global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
-    if (W.held) return W.held.promise;
-    return Promise.resolve(true);
+    if (W.held) return W.held.promise.then(function () { return answerOf(p); });
+    return Promise.resolve(answerOf(p));
   };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
 }
@@ -63,6 +66,9 @@ test.run('before it runs, the page has no persona table element', 0.2, function 
 }, test.limit.quick);
 test.run('it places spirit.required.spirit.app.agent.element.table.persona.elementTable, with create', 0.2, async function () {
   if (!W.up) return false;
+  // Its row editor's file run first, as the page's loader runs it, so it stands at its own place by the loader's placing
+  // (goal/G49.9), never written there by this test; then this file, whose place sits beside it.
+  try { PAGE_LOAD.runAsPage(path.join(RUN, ROW)); } catch (e) { /* a row editor that throws as it loads stands nowhere: the place check says so */ }
   load(FILE);
   await settle();
   E.table = at('spirit.app.agent.element.table.persona.elementTable');

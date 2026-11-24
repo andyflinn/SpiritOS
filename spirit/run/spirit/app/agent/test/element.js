@@ -102,6 +102,10 @@ function world() {
   };
   // The agent server's interface, as spirit.requireScript hands it: its debug call recorded, answered as the server does.
   w.calls = []; w.required = [];
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+  // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): by path, what the app's requires answer; anything else answers an object.
+  w.stands = { 'spirit/element/workBench.js': w.workBench, 'spirit/element/tabContainer.js': w.tabContainer };
   w.provider = [];
   w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); },
     provider: function (args) { w.provider.push(args); return Promise.resolve({ ok: true, items: [{ key: 'KP', label: '{}' }], more: false }); } };
@@ -111,8 +115,8 @@ function world() {
 }
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
-  // goal/G43.32: the parts stand where the app reads them, at spirit.required.<their path>.
-  global.window = { spirit: { required: { spirit: { element: { workBench: w.workBench, tabContainer: w.tabContainer, search: { app: {} } }, app: { agent: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, isBrowser: function () { return true; },
+  // spirit/element/search/app/'s parts stand at their place too: the app still reads them there (element.js, its server tool).
+  global.window = { spirit: { required: { spirit: { element: { search: { app: {} } }, app: { agent: {} } } }, fs: w.fs, escapeHtml: function (s) { return String(s); }, isBrowser: function () { return true; },
     // A branch's api.js: its real companion data.js run on this window over the real data set, as the real api.js
     // requires it (goal/G47.1).
     requireScript: function (p) {
@@ -120,7 +124,8 @@ function load(w) {
       const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
       const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
       if (companion && fs.existsSync(path.join(RUN, companion))) PAGE_LOAD.runAsPage(path.join(RUN, companion));
-      return Promise.resolve(p === AGENT_FAMILY ? w.family : true);
+      if (p === AGENT_FAMILY) return Promise.resolve(w.family);
+      return Promise.resolve(Object.prototype.hasOwnProperty.call(w.stands, p) ? w.stands[p] : {});
     } } };
   global.window.spirit.readyPromise = Promise.resolve(Object.assign(Object.create(global.window.spirit), { agent: w.family }));
   global.spirit = global.window.spirit;
@@ -132,11 +137,8 @@ function load(w) {
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app places itself by installSpiritElement as it runs.
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  PAGE_LOAD.runAsPage(FILE);
-  // Its tables' elements stand under it, in spirit/app/agent/element/table/ (goal/G43.32, rule 5); the test hands its own there.
-  const placed = global.window.spirit.required.spirit.app.agent.element;
-  if (placed && !placed.table) placed.table = {};
-  return placed;
+  // The app's own answer, what it set as module.exports (goal/G49.9).
+  return PAGE_LOAD.runAsPage(FILE);
 }
 
 // What the tests make, for the tests after them.
@@ -221,7 +223,12 @@ async function mountTable(name) {
   const t = L.filter(function (x) { return x.name === name; })[0];
   const before = w.required.length;
   const made = [];
-  global.window.spirit.required.spirit.app.agent.element.table[name] = { elementTable: { create: function (into, detail) { made.push({ into: into, detail: detail, handed: arguments.length }); return { refresh: function () {}, destroy: function () {} }; } } };
+  const standIn = { create: function (into, detail) { made.push({ into: into, detail: detail, handed: arguments.length }); return { refresh: function () {}, destroy: function () {} }; } };
+  w.stands['spirit/app/agent/element/table/' + name + '/elementTable.js'] = standIn;
+  // At its place as well: the app still reads its tables' elements there (element.js, agentAt).
+  const placed = global.window.spirit.required.spirit.app.agent.element;
+  placed.table = placed.table || {};
+  placed.table[name] = { elementTable: standIn };
   const tb = box('table-' + name); t.mount(tb); await settle();
   const asked = w.required.slice(before);
   const d = made[0] && made[0].detail;
@@ -275,12 +282,12 @@ test.run('the Select Persona tool\'s mount loads the agent tables\' element itse
   if (X.R.length !== 2) return false;
   if (X.CHAT_TOOL.length !== 1) return false;
   const w = X.w;
-  C.prevDetail = global.window.spirit.required.spirit.app.agent.element.table.tableElement;
-  global.window.spirit.required.spirit.app.agent.element.table.tableElement = Object.assign({}, C.prevDetail || {}, { branchOf: function (table) { return 'agent/' + table; },
+  C.prevDetail = w.stands['spirit/app/agent/element/table/tableElement.js'];
+  w.stands['spirit/app/agent/element/table/tableElement.js'] = Object.assign({}, C.prevDetail || {}, { branchOf: function (table) { return 'agent/' + table; },
     titleRow: function (look, names) { return '<div class="agent-title"><span>' + (look && look.icon || '') + '</span> ' + (names || []).join(' ') + '</div>'; },
     search: function (host, o, more) { const s2 = { host: host, o: o, more: more || {}, refresh: function () {}, destroy: function () {} }; C.sels.push(s2); return s2; },
   });
-  global.window.spirit.required.spirit.app.agent.element.chatPane = { create: function (into, opts) { const c = { into: into, opts: opts || {}, destroy: function () { c.destroyed = true; } }; C.chats.push(c); return c; } };
+  w.stands['spirit/app/agent/element/chatPane.js'] = { create: function (into, opts) { const c = { into: into, opts: opts || {}, destroy: function () { c.destroyed = true; } }; C.chats.push(c); return c; } };
   const before = w.required.length;
   C.cb = box('chat'); X.CHAT_TOOL[0].mount(C.cb); await settle();
   C.asked = w.required.slice(before);
@@ -328,8 +335,8 @@ test.run('another persona picked opens its own chat in a tab beside the first', 
   const chats = C.chats;
   C.sel.more.pick({ id: 'KB', label: 'Bea' }, 'KB'); await settle();
   const verdict = chats.length === 2 && chats[0].destroyed !== true && chats[1].opts.persona.id === 'KB' ? true : false;
-  global.window.spirit.required.spirit.app.agent.element.table.tableElement = C.prevDetail;
-  delete global.window.spirit.required.spirit.app.agent.element.chatPane;
+  X.w.stands['spirit/app/agent/element/table/tableElement.js'] = C.prevDetail;
+  delete X.w.stands['spirit/app/agent/element/chatPane.js'];
   return verdict;
 }, test.limit.quick);
 
@@ -341,10 +348,10 @@ test.run('its mount requires spirit/element/bundleEditor.js', 0.2, async functio
   if (!X.BUNDLE_TOOL) return false;
   const w = X.w;
   const before = w.required.length;
-  global.window.spirit.required.spirit.element.bundleEditor = { create: function (into, cfg) { BE.editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
+  w.stands['spirit/element/bundleEditor.js'] = { create: function (into, cfg) { BE.editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
   BE.bb = box('bundles'); X.BUNDLE_TOOL.mount(BE.bb); await settle();
   BE.asked = w.required.slice(before);
-  delete global.window.spirit.required.spirit.element.bundleEditor;
+  delete w.stands['spirit/element/bundleEditor.js'];
   return BE.asked.indexOf('spirit/element/bundleEditor.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('the bundle tool makes the bundle editor in the box it is handed, handed no api', 0.2, function () {
@@ -422,9 +429,8 @@ test.run('with no workBench on the page it loads spirit/element/workBench.js thr
   const w3 = world();
   const required = [];
   const def3 = load(w3);
-  // No workBench on the page (goal/G43.32: an element stands at spirit.required.<its path>).
-  global.window.spirit.required.spirit.element = {};
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); global.window.spirit.required.spirit.element.workBench = w3.workBench; global.window.spirit.required.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
+  // No workBench on the page: none was loaded yet, so the app requires it; the stand-ins are what requireScript answers (goal/G49.9).
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(p === 'spirit/element/workBench.js' ? w3.workBench : p === 'spirit/element/tabContainer.js' ? w3.tabContainer : {}); };
   def3.create(box('app3')); await settle();
   return required.indexOf('spirit/element/workBench.js') !== -1 && w3.created.length === 1 ? true : false;
 }, test.limit.quick);
@@ -927,20 +933,27 @@ async function tabOpens(kind, row) {
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
         if (companion && !loaded[companion] && fs.existsSync(path.join(RUN, companion))) { loaded[companion] = true; PAGE_LOAD.runAsPage(path.join(RUN, companion), win); }
         if (rel === 'spirit/app/agent/api.js') return Promise.resolve(family);
-        if (REAL.indexOf(rel) !== -1 && !loaded[rel]) { loaded[rel] = true; PAGE_LOAD.runAsPage(path.join(RUN, rel), win); }
-        return Promise.resolve({});
+        // WHAT IT REQUIRES, requireScript ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
+        // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a real file its
+        // own answer, what it set as module.exports; a stand-in the one standing at that path's place (the elements still
+        // read the search's parts there); anything else an object.
+        if (REAL.indexOf(rel) !== -1) { if (!Object.prototype.hasOwnProperty.call(loaded, rel) || loaded[rel] === true) loaded[rel] = PAGE_LOAD.runAsPage(path.join(RUN, rel), win); return Promise.resolve(loaded[rel]); }
+        const keys = rel.replace(/\.js$/, '').split('/'); if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+        const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, win.spirit.required);
+        return Promise.resolve(at && (typeof at === 'object' || typeof at === 'function') ? at : {});
       },
     };
     win.spirit.readyPromise = Promise.resolve(win.spirit);
     // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file places itself by installSpiritElement as it runs.
     SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
     vm.createContext(win);
-    win.spirit.requireScript('spirit/data.js');
+    loaded['spirit/data.js'] = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit/data.js'), win);
     // Its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any app runs.
     win.spirit.nodeFacts = { key: 'KEY+AGENT/BOXES==' };
     win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
-    PAGE_LOAD.runAsPage(FILE, win);
-    return { document: document, win: win, panes: panes };
+    // The app's own answer, what it set as module.exports (goal/G49.9).
+    const appAnswer = PAGE_LOAD.runAsPage(FILE, win);
+    return { document: document, win: win, panes: panes, app: appAnswer };
   }
 
   const isFill = function (n) { return (' ' + String(n.className || '') + ' ').indexOf(' fill ') !== -1; };
@@ -990,7 +1003,7 @@ async function paneFills(t) {
       app = w.document.body.appendChild(w.document.createElement('div'));
       app.className = 'fill';
       // A tile hands it only its container (goal/G43.13).
-      w.win.spirit.required.spirit.app.agent.element.create(app);
+      w.app.create(app);
       await settle();
       modelOrder = null;
       // Where, in the app's order of elements, the Models title rows, the Ask row (its providerSelector:dropdown, since

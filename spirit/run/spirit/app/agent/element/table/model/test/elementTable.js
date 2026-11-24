@@ -76,9 +76,11 @@ const W = { required: [], tables: [], rows: [], forms: [], busy: [], drops: [], 
 function world() {
   global.window = { spirit: { elements: {}, get element() { return this.elements; }, set element(v) { this.elements = v; }, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  const helper = S.requireScript('spirit/element/installSpiritElement.js');
-  // As their own files place themselves: by the one helper, at spirit.required.<their path>.
-  helper(global.window.spirit, SHARED, {
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+  // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): each part for its path, the agent family for the agent branch's interface, any other {}.
+  const STANDS = {};
+  STANDS[SHARED] = {
     // The shared table draws its title row first in its container (../tableElement.js), then its list.
     create: function (container, o) {
       container.innerHTML = '<div class="agent-title"></div><div class="agent-list"></div>';
@@ -87,19 +89,20 @@ function world() {
     },
     search: function (host, o, face) { const d = { host: host, o: o, face: face, value: '', destroyed: false, destroy: function () { d.destroyed = true; } }; W.drops.push(d); return d; },
     whyOf: function (e) { return 'the reason: ' + String(e && e.message); },
-  });
-  helper(global.window.spirit, ROW, { create: function (box, id, added, detail) { const r = { box: box, id: id, added: added, detail: detail }; W.rows.push(r); return r; } });
-  helper(global.window.spirit, 'spirit/element/rowForm.js', { create: function (container, o) {
+  };
+  STANDS[ROW] = { create: function (box, id, added, detail) { const r = { box: box, id: id, added: added, detail: detail }; W.rows.push(r); return r; } };
+  STANDS['spirit/element/rowForm.js'] = { create: function (container, o) {
     const f = { container: container, o: o, span: node('span'), button: node('button') };
     W.forms.push(f); return f;
-  } });
-  helper(global.window.spirit, 'spirit/element/busyButton.js', { attach: function (button, o) { W.busy.push({ button: button, o: o }); return button; } });
+  } };
+  STANDS['spirit/element/busyButton.js'] = { attach: function (button, o) { W.busy.push({ button: button, o: o }); return button; } };
   // The agent server's family: provider(args), each ask kept, answering W.answer.
   W.family = { provider: function (a) { W.asks.push(a); const r = W.answer; return r instanceof Error ? Promise.reject(r) : Promise.resolve(r || {}); } };
   global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
-    if (W.held) return W.held.promise;
-    return Promise.resolve(p === AGENT ? W.family : true);
+    const answer = p === AGENT ? W.family : Object.prototype.hasOwnProperty.call(STANDS, p) ? STANDS[p] : {};
+    if (W.held) return W.held.promise.then(function () { return answer; });
+    return Promise.resolve(answer);
   };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
 }
