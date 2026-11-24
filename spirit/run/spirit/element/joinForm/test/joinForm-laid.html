@@ -26,7 +26,8 @@ window.laid = function () {
     var J = (((spirit.required || {}).spirit || {}).element || {}).joinForm;
     var out = { made: !!J && typeof J.mount === 'function' };
     if (!out.made) return JSON.stringify(out);
-    var RELAYS = [{ url: 'wss://a.example', label: 'Alpha' }, { url: 'wss://b.example', label: 'Beta', claimed: true }];
+    // Each relay with the key of its row, as contact names a relay (goal/G49.11, box v9: "names the relay by its row's public key").
+    var RELAYS = [{ key: 'MCowBQYDK2VwAyEAzzjoinFormAlphaAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', url: 'wss://a.example', label: 'Alpha' }, { key: 'MCowBQYDK2VwAyEAzzjoinFormBetaAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', url: 'wss://b.example', label: 'Beta', claimed: true }];
     function box() { var b = document.createElement('div'); b.style.cssText = 'width:600px;margin:10px'; document.body.appendChild(b); return b; }
     function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     // What a box shows now: its one bubble (a rowForm root still on the page in it), its icon, span and button.

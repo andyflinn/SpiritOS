@@ -182,15 +182,15 @@ test.run('add takes a relay\'s address, and a label it may be given', 0.4, funct
 }, test.limit.quick);
 test.run('claim names the relay by its key and takes a name; an invite and its label may be left out', 0.4, function () {
   if (!W.api) return false;
-  return (passes('claim', { key: KEY, name: 'andy' }) && passes('claim', { key: KEY, name: 'andy', invite: 'abc', inviteLabel: 'Bob' }) && refusedAs('claim', { key: NOT_KEY, name: 'andy' }) === 'bad-request' && refusedAs('claim', { url: 'https://relay.example', name: 'andy' }) === 'bad-request') || false;
+  return (passes('claim', { key: KEY, name: 'andy' }) && passes('claim', { key: KEY, name: 'andy', invite: 'abc', inviteLabel: 'Bob' }) && refusedAs('claim', { key: NOT_KEY, name: 'andy' }) === 'bad-request' && !!refusedAs('claim', { url: 'https://relay.example', name: 'andy' })) || false;
 }, test.limit.quick);
 test.run('face names the relay by its key and takes a face name', 0.4, function () {
   if (!W.api) return false;
-  return (passes('face', { key: KEY, name: 'andy' }) && refusedAs('face', { key: NOT_KEY, name: 'andy' }) === 'bad-request' && refusedAs('face', { url: 'https://relay.example', name: 'andy' }) === 'bad-request') || false;
+  return (passes('face', { key: KEY, name: 'andy' }) && refusedAs('face', { key: NOT_KEY, name: 'andy' }) === 'bad-request' && !!refusedAs('face', { url: 'https://relay.example', name: 'andy' })) || false;
 }, test.limit.quick);
 test.run('join names the relay by its key and takes an email; a code, and the link the relay mails, may be given', 0.4, function () {
   if (!W.api) return false;
-  return (passes('join', { key: KEY, email: 'a@b.example' }) && passes('join', { key: KEY, email: 'a@b.example', code: '123456', link: 'https://relay.example/j' }) && refusedAs('join', { key: NOT_KEY, email: 'a@b.example' }) === 'bad-request' && refusedAs('join', { url: 'https://relay.example', email: 'a@b.example' }) === 'bad-request') || false;
+  return (passes('join', { key: KEY, email: 'a@b.example' }) && passes('join', { key: KEY, email: 'a@b.example', code: '123456', link: 'https://relay.example/j' }) && refusedAs('join', { key: NOT_KEY, email: 'a@b.example' }) === 'bad-request' && !!refusedAs('join', { url: 'https://relay.example', email: 'a@b.example' })) || false;
 }, test.limit.quick);
 test.run('leave names the relay by its key alone', 0.4, function () {
   if (!W.api) return false;
