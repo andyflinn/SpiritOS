@@ -12,6 +12,8 @@ const http = require('http');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = S.requireScript('spirit/test/testReport.js');
@@ -408,7 +410,7 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.requi
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
-  ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
+  ['elementTable.js', 'elementRow.js'].forEach(function (f) { PAGE_LOAD.runAsPage(path.join(EL, f)); });
   const T = global.window.spirit.required.spirit.app.agent.element.table.provider || {};
   P.E = { providerTable: T.elementTable, providerRow: T.elementRow };
   return P.E.providerTable && typeof P.E.providerTable.create === 'function' && P.E.providerRow && typeof P.E.providerRow.create === 'function' ? true : false;

@@ -14,15 +14,22 @@
 // server's get and the rows its stream then brings, never what was typed.
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/agent/api.js')).catch(function () {});
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the tables' shared element, whose helpers it uses.
-  spirit.requireScript('spirit/app/agent/element/table/tableElement.js');
+  keepAnswer('spirit/app/agent/element/table/tableElement.js');
   // And fieldInput, which holds a name or a description field to its rule (goal/G47.1: without it the label took 4096 bytes).
-  spirit.requireScript('spirit/element/fieldInput.js');
+  keepAnswer('spirit/element/fieldInput.js');
   var made = 0;
-  function A() { return window.spirit.required.spirit.app.agent.element.table.tableElement; }
+  function A() { return ANSWER['spirit/app/agent/element/table/tableElement.js']; }
   function esc(s) { return A().esc(s); }
   function call(table, args) { return A().call(table, args); }
   function needs(paths) { return A().needs(paths); }
@@ -145,7 +152,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
         var el = input(f);
         // Every other typed field, a URL, a secret, a list, is a line (fieldRules' LINE_MAX_BYTES; goal/G47.1, -browser: every
         // input has a maxlength, and stops at it).
-        var FI = window.spirit.required.spirit.element.fieldInput;
+        var FI = ANSWER['spirit/element/fieldInput.js'];
         // Each field held to its type (goal/G48.4, box v22): a name a label, a description a description.
         if (f.kind === 'name' && FI) FI.attach(el, 'spirit.type.string.label');
         else if (f.kind === 'description' && FI) FI.attach(el, 'spirit.type.string.description');
@@ -223,7 +230,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
             bundleHeld[row[f.field]] = true;
             var named = row[f.field];
-            Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'get', id: Number(named) }); }).then(function (got) {
+            Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'get', id: Number(named) }); }).then(function (got) {
               if (gone || String(row[f.field]) !== String(named)) return;
               bundleLabel[named] = String((got && got.label) || named);
               paint();
@@ -341,5 +348,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     return { destroy: function () { gone = true; unwatch(); dropIcons(); Object.keys(picks).forEach(function (k) { picks[k].destroy(); }); Object.keys(bundles).forEach(function (k) { if (bundles[k] && typeof bundles[k].destroy === 'function') bundles[k].destroy(); }); container.innerHTML = ''; } };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/row.js', { create: createRow }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: createRow };
 }());

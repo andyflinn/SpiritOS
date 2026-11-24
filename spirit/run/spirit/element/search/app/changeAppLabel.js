@@ -6,7 +6,7 @@
 //   spirit.required.spirit.element.search.app.changeAppLabel.create(host, { key }) -> { destroy() }
 //
 // Its input holds the row's label in spirit.required.spirit.data.app and follows it while it is not being typed in; Change asks the node,
-// ANSWER['spirit/app/api.js'].labelApp, and the row the stream then brings redraws it.
+// spirit.requireScript('spirit/app/api.js')'s answer.labelApp, and the row the stream then brings redraws it.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};

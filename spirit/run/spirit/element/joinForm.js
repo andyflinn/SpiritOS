@@ -98,7 +98,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (T) { try { T.isValid(email); } catch (e) { bad = (e && e.message) || 'not an email address'; } } else if (!email) bad = 'an email address is needed';
     if (bad) return Promise.resolve({ ok: false, text: bad });
     if (!url) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
-    // Through the spirit object (goal/G32.2): ANSWER['spirit/relay/api.js'].join answers the reply's body, or refuses with the node's words.
+    // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/relay/api.js')'s answer.join answers the reply's body, or refuses with the node's words.
     // THE CALLER'S LINK (goal/G40.10, box v25): the link the shell wants the mail to open, which only the shell knows
     // (spirit.shell.joinLink); without a shell that says, the node puts its own face on the loopback.
     var shell = window.spirit && window.spirit.shell;

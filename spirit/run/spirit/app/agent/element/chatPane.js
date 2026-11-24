@@ -15,9 +15,16 @@
 //   spirit.required.spirit.app.agent.element.chatPane.create(container, { persona }) -> { destroy() }   persona: the row picked, { id, label }
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/agent/api.js')).catch(function () {});
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var made = 0;
 
   function create(container, options) {
@@ -39,16 +46,16 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
       '</div>';
     container.appendChild(root);
     var gone = false;
-    Promise.all([spirit.requireScript('spirit/app/agent/element/table/tableElement.js'), spirit.requireScript('spirit/element/icon.js')]).then(function () {
+    Promise.all([keepAnswer('spirit/app/agent/element/table/tableElement.js'), keepAnswer('spirit/element/icon.js')]).then(function () {
       if (gone) return;
-      root.querySelector('#' + pre + 'title').innerHTML = window.spirit.required.spirit.app.agent.element.table.tableElement.titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
+      root.querySelector('#' + pre + 'title').innerHTML = ANSWER['spirit/app/agent/element/table/tableElement.js'].titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
     });
     var line = root.querySelector('#' + pre + 'line');
     var sendButton = root.querySelector('#' + pre + 'send');
     // THE LINE STOPS AT ITS LIMIT (goal/G41.27: "any input field must be checked for size-limits"): fieldInput's line rule,
     // a chat line's, loaded here (rule/26).
-    spirit.requireScript('spirit/element/fieldInput.js').then(function () {
-      var F = window.spirit.required.spirit.element.fieldInput;
+    keepAnswer('spirit/element/fieldInput.js').then(function () {
+      var F = ANSWER['spirit/element/fieldInput.js'];
       if (!gone && F) F.attach(line, 'spirit.type.string.paragraph');
     }, function () { /* the line is unheld until it loads */ });
     // WHAT A SEND DOES IS OUT OF SCOPE (Andy, box: "how the chat will work, is oos for this item."): nothing yet.
@@ -65,5 +72,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/chatPane.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

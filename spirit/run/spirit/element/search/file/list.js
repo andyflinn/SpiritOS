@@ -54,7 +54,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // BY CONTENTS ONLY: fs.search labels a name match with its path and a contents match with json {path, score, line}.
   // found(next) is handed what the node scored, by path, for the list to rank by (goal/G29.11, taken from the file
   // selector): in contents a file ranks by the node's score alone.
-  // Through the spirit object (goal/G32.2): ANSWER['spirit/fs/api.js'].search answers the reply's body.
+  // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/fs/api.js')'s answer.search answers the reply's body.
   function search(args, found) {
     var a = args || {};
     if (!a.contents || !a.q) { found(Object.create(null), Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }

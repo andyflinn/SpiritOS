@@ -25,6 +25,13 @@
 // Each by its api.js path, never by a name (goal/G49.6): the app branch.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // one: the table's name as a detail pane's title row says it ("[Table-Icon] \"Add | Change\" [Table-name]").
   var TABLES = [
     { name: 'provider', icon: '🏢', title: 'Model providers', one: 'Provider' },
@@ -54,7 +61,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var benchBox = container.querySelector('#agent-bench');
       // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
       // apps."), painted by the workBench's strip through spirit/element/icon.js, loaded here with it.
-      var loaded = Promise.all([E.spirit.element.workBench ? null : spirit.requireScript('spirit/element/workBench.js'), spirit.requireScript('spirit/element/icon.js'), spirit.requireScript('spirit/element/tabContainer.js')]);
+      var loaded = Promise.all([ANSWER['spirit/element/workBench.js'] ? null : keepAnswer('spirit/element/workBench.js'), keepAnswer('spirit/element/icon.js'), keepAnswer('spirit/element/tabContainer.js')]);
       loaded.then(function () { if (gone) return; E = (window.spirit && window.spirit.required) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
       // THE WORKBENCH'S CENTRE IS CLOSABLE TABS (goal/G41.31; Andy: "i need a tabContainer permanently situated in the center pane of
       // the workBench.", "each panel, that the agent app placed into the center panel now becomes a closable tab in the
@@ -123,7 +130,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         },
       };
       function build() {
-      bench = E.spirit.element.workBench.create(benchBox, {
+      bench = ANSWER['spirit/element/workBench.js'].create(benchBox, {
         left: TABLES.map(function (t) {
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
@@ -138,8 +145,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           // pane shows up in the center pane of workBench"). The personaSelector:pane is the persona table's search in pane
           // mode (rule/29), the agent tables' own; a persona picked opens its chat in the centre, in place of what was there.
           box.className = 'fill';
-          Promise.resolve(spirit.requireScript('spirit/app/agent/element/table/tableElement.js')).then(function () {
-            var D = window.spirit.required.spirit.app.agent.element.table.tableElement;
+          Promise.resolve(keepAnswer('spirit/app/agent/element/table/tableElement.js')).then(function () {
+            var D = ANSWER['spirit/app/agent/element/table/tableElement.js'];
             box.innerHTML = '<div class="fill">' + D.titleRow({ icon: '💬' }, ['Select Persona']) + '<div id="agent-personas" class="fill" style="margin-top:1em"></div></div>';
             own(D.search(box.querySelector('#agent-personas'), { table: 'persona' }, { face: 'pane', pick: function (row, key) {
               var picked = { id: String((row && row.id) || key || ''), label: String((row && row.label) || '') };
@@ -147,8 +154,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
               detail.open(function (centre) {
                 var pane = null;
                 var closed = false;
-                Promise.resolve(spirit.requireScript('spirit/app/agent/element/chatPane.js')).then(function () {
-                  if (!closed) pane = window.spirit.required.spirit.app.agent.element.chatPane.create(centre, { persona: picked });
+                Promise.resolve(keepAnswer('spirit/app/agent/element/chatPane.js')).then(function () {
+                  if (!closed) pane = ANSWER['spirit/app/agent/element/chatPane.js'].create(centre, { persona: picked });
                 });
                 return { destroy: function () { closed = true; if (pane) pane.destroy(); } };
               }, { table: 'persona', id: picked.id, row: picked, chat: true });
@@ -175,15 +182,15 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           // open in this centre's tabs (goal/G41.31; Andy: "agent: <bundle-name>."; "if the bundle is not node-owned:
           // (<bundle-name>) in italic print.").
           box.className = 'fill';
-          Promise.resolve(spirit.requireScript('spirit/element/bundleEditor.js')).then(function () {
-            own(window.spirit.required.spirit.element.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) {
+          Promise.resolve(keepAnswer('spirit/element/bundleEditor.js')).then(function () {
+            own(ANSWER['spirit/element/bundleEditor.js'].create(box, { tabs: tabs, tabLabel: function (row) {
               var label = String(row.label || '');
               return String(row.owner || 'node') === 'node' ? label : { label: '(' + label + ')', italic: true };
             } }));
           }, function () { box.textContent = 'The bundle editor could not be loaded.'; });
         } }],
       });
-      tabs = E.spirit.element.tabContainer.create(bench.center, { tabs: [] });
+      tabs = ANSWER['spirit/element/tabContainer.js'].create(bench.center, { tabs: [] });
       }
 
       return {
@@ -200,5 +207,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

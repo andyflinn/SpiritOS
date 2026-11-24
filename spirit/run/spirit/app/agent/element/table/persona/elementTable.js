@@ -7,15 +7,23 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/agent/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/persona/elementTable.js', {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = {
     create: function (container, detail) {
       var made = null;
       var gone = false;
-      Promise.all([spirit.requireScript('spirit/app/agent/element/table/tableElement.js'), spirit.requireScript('spirit/app/agent/element/table/persona/elementRow.js')]).then(function () {
+      Promise.all([keepAnswer('spirit/app/agent/element/table/tableElement.js'), keepAnswer('spirit/app/agent/element/table/persona/elementRow.js')]).then(function () {
         if (gone) return;
-        made = window.spirit.required.spirit.app.agent.element.table.tableElement.create(container, {
+        made = ANSWER['spirit/app/agent/element/table/tableElement.js'].create(container, {
           table: 'persona', detail: detail,
-          row: function (box, id, added) { return window.spirit.required.spirit.app.agent.element.table.persona.elementRow.create(box, id, added, detail); },
+          row: function (box, id, added) { return ANSWER['spirit/app/agent/element/table/persona/elementRow.js'].create(box, id, added, detail); },
         });
       });
       return {
@@ -23,5 +31,5 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         destroy: function () { gone = true; if (made) made.destroy(); },
       };
     },
-  }); });
+  };
 }());

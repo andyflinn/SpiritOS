@@ -7,12 +7,12 @@
 //
 //   Andy: "the appServer selector (a subComponent of the api-path selector)", and the tree it reads: "the shell's api tree is
 //   a straight copy of the node's owner-api-tree ?" — "yes". So it fills itself from the verb api on the flat apiDoor
-//   (goal/G30.6), and lists ANSWER['spirit/client/apiTreeIndex.js'].servers(tree): sorted, a server that did not answer left out
+//   (goal/G30.6), and lists spirit.requireScript('spirit/client/apiTreeIndex.js')'s answer.servers(tree): sorted, a server that did not answer left out
 //   (apiTreeIndex.js decides; this paints). SINCE goal/G30.4 that answer is the whole flat table, the node's own families
 //   (fs, job, relay ...) beside the apps', so the list holds every family the grant system sees (Andy, 2026-10-20: "the grant
 //   system looks at apiDoors whole damn table of families and verbs").
 //
-//   ANSWER['spirit/element/search.js'].api.list.create(container, options) -> root
+//   spirit.requireScript('spirit/element/search.js')'s answer.api.list.create(container, options) -> root
 //     root.value   the chosen family's name; root.tree the api answer it was painted from, so the verb half can read one
 //                  family's verbs without asking again. One bubbling `change` once value is set; `tree` once a tree is in.
 //     root.load(fn, party)  lists another party's tree, fn() a promise of it, kept under party (a peer's key or a relay's
@@ -38,9 +38,9 @@
     keepAnswer('spirit/element/search/api/detail.js'), keepAnswer('spirit/client/apiTreeIndex.js'),
     keepAnswer('spirit/node/api.js')]);
 
-  // THE NODE'S API TREE IN ANSWER['spirit/data.js'] (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
-  // apiTree branch of ANSWER['spirit/data.js'], read again when a server job changes, and the family, verb and app-server selectors
-  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (ANSWER['spirit/data.js'].node.data:
+  // THE NODE'S API TREE IN spirit.requireScript('spirit/data.js')'s answer (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
+  // apiTree branch of spirit.requireScript('spirit/data.js')'s answer, read again when a server job changes, and the family, verb and app-server selectors
+  // draw from it?" "yes."): this list reads it, and the node family's cache manager keeps it (spirit.requireScript('spirit/data.js')'s answer.node.data:
   // families, and each family's verbs, as apiTreeIndex reads the tree). Read again, the tree replaces both whole. A server
   // job changing on the stream reads it again: one translator for every list. Another party's tree (options.tree:
   // introSpector's peer or relay) is that party's, and stays out of it.
@@ -83,7 +83,7 @@
     root.value = '';
     root.tree = null;
 
-    // EVERY TREE IS A ANSWER['spirit/data.js'] BRANCH (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
+    // EVERY TREE IS A spirit.requireScript('spirit/data.js')'s answer BRANCH (goal/G48.4; Andy: "fix the introSpector, too"): the node's own tree is its apiTree
     // branch, another party's the apiTree branch under that party's node (spirit/node/data.js keepTree's party); root.party
     // names whose it draws, '' for this node's own.
     root.party = typeof options.tree === 'function' ? partyOf(options.party) : '';

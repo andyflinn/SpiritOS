@@ -11,6 +11,13 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/agent/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var made = 0;
   window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/model/elementTable.js', {
     create: function (container, detail) {
@@ -19,8 +26,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var drop = null;
       var gone = false;
       // WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search and the rowForm.
-      Promise.all([spirit.requireScript('spirit/app/agent/element/table/tableElement.js'), spirit.requireScript('spirit/app/agent/element/table/model/elementRow.js'),
-        spirit.requireScript('spirit/element/search.js'), spirit.requireScript('spirit/element/rowForm.js')]).then(function () {
+      Promise.all([keepAnswer('spirit/app/agent/element/table/tableElement.js'), keepAnswer('spirit/app/agent/element/table/model/elementRow.js'),
+        keepAnswer('spirit/element/search.js'), keepAnswer('spirit/element/rowForm.js')]).then(function () {
         if (gone) return;
         // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
         container.innerHTML = '<div class="fill" style="overflow:hidden">' +
@@ -34,19 +41,19 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         // comes"): its request, the provider table's ask, which updates the model table, is the rowForm's press, so the
         // rowForm's own busy button waits on it. A second busy button of its own on that button would fight the first.
         var said = null;
-        var form = window.spirit.required.spirit.element.rowForm.create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask', press: function () {
+        var form = ANSWER['spirit/element/rowForm.js'].create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask', press: function () {
           var id = drop && drop.value ? String(drop.value) : '';
           if (!id) return null;
           said.textContent = '';
-          return Promise.resolve(spirit.requireScript('spirit/app/agent/api.js')).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
-            if (!gone) said.textContent = window.spirit.required.spirit.app.agent.element.table.tableElement.whyOf(e);
+          return Promise.resolve(keepAnswer('spirit/app/agent/api.js')).then(function (agent) { return agent.provider({ op: 'ask', id: id }); }).then(function () {}, function (e) {
+            if (!gone) said.textContent = ANSWER['spirit/app/agent/element/table/tableElement.js'].whyOf(e);
           });
         } });
-        drop = window.spirit.required.spirit.app.agent.element.table.tableElement.search(form.span, { table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
+        drop = ANSWER['spirit/app/agent/element/table/tableElement.js'].search(form.span, { table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
         said = container.querySelector('#' + pre + 'said');
-        table = window.spirit.required.spirit.app.agent.element.table.tableElement.create(container.querySelector('#' + pre + 'list'), {
+        table = ANSWER['spirit/app/agent/element/table/tableElement.js'].create(container.querySelector('#' + pre + 'list'), {
           table: 'model', detail: detail,
-          row: function (box, id, added) { return window.spirit.required.spirit.app.agent.element.table.model.elementRow.create(box, id, added, detail); },
+          row: function (box, id, added) { return ANSWER['spirit/app/agent/element/table/model/elementRow.js'].create(box, id, added, detail); },
           // NO ADD: a model comes from its provider's list (Andy, on G41.18: "get RID of [Add a Model] button in the left
           // panes model mode. NOT required.").
           add: false,

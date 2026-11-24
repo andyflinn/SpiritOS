@@ -10,6 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = S.requireScript('spirit/test/testReport.js');
@@ -188,7 +190,7 @@ test.run('the two element files place spirit.required.spirit.app.agent.element.t
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   // What the page files require is what is asked from here on.
   made.from = made.required.length;
-  ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
+  ['elementTable.js', 'elementRow.js'].forEach(function (f) { PAGE_LOAD.runAsPage(path.join(EL, f)); });
   const T = global.window.spirit.required.spirit.app.agent.element.table.job || {};
   X.E = { jobTable: T.elementTable, jobRow: T.elementRow };
   return X.E.jobTable && typeof X.E.jobTable.create === 'function' && X.E.jobRow && typeof X.E.jobRow.create === 'function' ? true : false;

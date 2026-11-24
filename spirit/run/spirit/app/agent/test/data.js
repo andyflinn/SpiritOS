@@ -13,6 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
@@ -36,9 +38,9 @@ test.run('loaded in a window beside the real data set, the agent branch\'s cache
   win.spirit = { isBrowser: function () { return true; } };
   try {
     vm.createContext(win);
-    vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
+    PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
     win.spirit.required.spirit.data.homeNode(HOME_KEY);
-    vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+    PAGE_LOAD.runAsPage(FILE, win);
   } catch (e) { return false; }
   W.D = win.spirit.required.spirit.data;
   W.A = ((W.D || {}).agent || {}).data;

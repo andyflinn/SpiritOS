@@ -10,6 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
@@ -117,7 +119,7 @@ function load(w) {
       w.required.push(String(p));
       const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
       const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
-      if (companion && fs.existsSync(path.join(RUN, companion))) vm.runInThisContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), { filename: companion });
+      if (companion && fs.existsSync(path.join(RUN, companion))) PAGE_LOAD.runAsPage(path.join(RUN, companion));
       return Promise.resolve(p === AGENT_FAMILY ? w.family : true);
     } } };
   global.window.spirit.readyPromise = Promise.resolve(Object.assign(Object.create(global.window.spirit), { agent: w.family }));
@@ -130,7 +132,7 @@ function load(w) {
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
   // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the app places itself by installSpiritElement as it runs.
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   // Its tables' elements stand under it, in spirit/app/agent/element/table/ (goal/G43.32, rule 5); the test hands its own there.
   const placed = global.window.spirit.required.spirit.app.agent.element;
   if (placed && !placed.table) placed.table = {};
@@ -923,9 +925,9 @@ async function tabOpens(kind, row) {
         const rel = String(p).replace(/^\/+/, '');
         const m = /^spirit\/(.+)\/api\.js$/.exec(rel);
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
-        if (companion && !loaded[companion] && fs.existsSync(path.join(RUN, companion))) { loaded[companion] = true; vm.runInContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), win, { filename: companion }); }
+        if (companion && !loaded[companion] && fs.existsSync(path.join(RUN, companion))) { loaded[companion] = true; PAGE_LOAD.runAsPage(path.join(RUN, companion), win); }
         if (rel === 'spirit/app/agent/api.js') return Promise.resolve(family);
-        if (REAL.indexOf(rel) !== -1 && !loaded[rel]) { loaded[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
+        if (REAL.indexOf(rel) !== -1 && !loaded[rel]) { loaded[rel] = true; PAGE_LOAD.runAsPage(path.join(RUN, rel), win); }
         return Promise.resolve({});
       },
     };
@@ -937,7 +939,7 @@ async function tabOpens(kind, row) {
     // Its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any app runs.
     win.spirit.nodeFacts = { key: 'KEY+AGENT/BOXES==' };
     win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
-    vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+    PAGE_LOAD.runAsPage(FILE, win);
     return { document: document, win: win, panes: panes };
   }
 

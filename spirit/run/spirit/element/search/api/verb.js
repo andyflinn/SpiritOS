@@ -6,7 +6,7 @@
 //   including test folders." The family half is the family list (./list.js, the app-server selector until
 //   goal/G43.32); this is the verb half, and the family selector (spirit/element/search/api.js) holds the two side by side.
 //
-// ANSWER['spirit/element/search.js'].api.verb.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
+// spirit.requireScript('spirit/element/search.js')'s answer.api.verb.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
 // Verbs, every verb (goal/G41.14; Andy: "the apiVerbSelector element MUST offer a (valid) All option at the top, which
 // results in an empty string as value"); a pick fires one bubbling `change`. root.show(tree, server) lists that family's verbs,
 // apiTreeIndex.verbs, so DEBUG is never offered (Andy: "DEBUG/... are owner only and will never be offered to peerPost

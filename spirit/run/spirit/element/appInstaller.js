@@ -6,7 +6,7 @@
 //
 //   create(host, { path }) -> { destroy() }; path is the app's script, spirit/app/<name>/<name>.js.
 //
-//   An app in spirit/app is on while its row says active: true; a press asks the node, ANSWER['spirit/app/api.js'].activeApp, and the
+//   An app in spirit/app is on while its row says active: true; a press asks the node, spirit.requireScript('spirit/app/api.js')'s answer.activeApp, and the
 //   button draws what the stream then brings (goal/G43.9). An intrinsic app gets no button: intrinsic is the
 //   development team's, by hand. Any other path gets nothing: the old shell's face parts, which switched a shell app,
 //   are gone (goal/G43.20; Andy: "drop the old shells face parts altogether.").

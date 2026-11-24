@@ -11,6 +11,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
@@ -210,7 +212,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     made.required.push(String(p));
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
     const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
-    if (companion && !ran[companion] && fs.existsSync(path.join(RUN, companion))) { ran[companion] = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, companion), 'utf8'), { filename: path.join(RUN, companion) }); }
+    if (companion && !ran[companion] && fs.existsSync(path.join(RUN, companion))) { ran[companion] = true; PAGE_LOAD.runAsPage(path.join(RUN, companion)); }
     return Promise.resolve(p === AGENT ? made.family : true);
   };
   // The page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it runs
@@ -222,7 +224,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
-  ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(EL, f), 'utf8'), { filename: path.join(EL, f) }); });
+  ['elementTable.js', 'elementRow.js'].forEach(function (f) { PAGE_LOAD.runAsPage(path.join(EL, f)); });
   const T = global.window.spirit.required.spirit.app.agent.element.table.model || {};
   X.E = { modelTable: T.elementTable, modelRow: T.elementRow };
   return X.E.modelTable && typeof X.E.modelTable.create === 'function' && X.E.modelRow && typeof X.E.modelRow.create === 'function' ? true : false;

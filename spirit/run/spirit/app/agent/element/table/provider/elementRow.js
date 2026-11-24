@@ -6,24 +6,32 @@
 //   page's detail pane, whose look(table) gives the title row its icon and name
 // ITS OWN APP'S api.js AND data.js, LOADED AS IT RUNS (goal/G47.1, the box: an element under spirit/app/ "is red unless it
 // loaded its own app's api.js and data.js").
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/agent/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/agent/api.js')).catch(function () {});
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
   // (spirit/app/agent/data.js) translates them into the table's branch; it is loaded here, with
   // this element.
-  window.spirit.requireScript('spirit/app/agent/api.js');
+  keepAnswer('spirit/app/agent/api.js');
   var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'url', label: 'URL', kind: 'url' }, { field: 'apiKey', label: 'API key', kind: 'secret' },
     // goal/G41.21, box v17: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is
     // this provider": of names the model table's field that holds this provider's id; hidden while it holds none.
     { field: 'model', label: 'Model', kind: 'pick', pick: 'model', of: 'providerId' }];
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/provider/elementRow.js', {
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = {
     create: function (container, id, added, detail) {
       var made = null;
       var gone = false;
-      Promise.resolve(spirit.requireScript('spirit/app/agent/element/table/row.js')).then(function () {
+      Promise.resolve(keepAnswer('spirit/app/agent/element/table/row.js')).then(function () {
         if (gone) return;
-        made = window.spirit.required.spirit.app.agent.element.table.row.create(container, {
+        made = ANSWER['spirit/app/agent/element/table/row.js'].create(container, {
           table: 'provider', id: id, added: added === true, look: detail && detail.look ? detail.look('provider') : null, fields: FIELDS,
           // Its mandatory fields, as its server names them (goal/G41.21: "# mandatory fields (server AND ui)").
           required: ['icon', 'label', 'url'],
@@ -31,5 +39,5 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
       });
       return { destroy: function () { gone = true; if (made) made.destroy(); } };
     },
-  }); });
+  };
 }());

@@ -6,7 +6,7 @@
 //
 //   spirit.required.spirit.element.search.app.changeAppIcon.create(host, { key }) -> { destroy() }
 //
-// It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, ANSWER['spirit/app/api.js'].iconApp,
+// It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, spirit.requireScript('spirit/app/api.js')'s answer.iconApp,
 // and the row the stream then brings redraws it.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
