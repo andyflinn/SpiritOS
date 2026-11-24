@@ -27,7 +27,6 @@
     leadTest: function (n, test, suite) { return [n + ':', ' ' + String(test || '') + ' (' + String(suite || '') + ')']; },
     leadScript: function (n, script) { return [n + ':', ' ' + String(script || '')]; },
   };
-  if (typeof module === 'object' && module && module.exports) module.exports = W;
-  const S = root && root.spirit;
-  if (S && S.required) ['spirit', 'app', 'testicle', 'words'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = W; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, S.required);
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = W;
 }(typeof window !== 'undefined' ? window : globalThis));

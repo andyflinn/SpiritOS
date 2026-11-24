@@ -61,5 +61,6 @@
     return input;
   }
 
-  window.spirit.required && ['spirit', 'element', 'fieldInput'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = { fits: fits, attach: attach }; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, window.spirit.required);
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { fits: fits, attach: attach };
 }(typeof window !== 'undefined' ? window : globalThis));

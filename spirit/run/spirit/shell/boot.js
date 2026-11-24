@@ -300,7 +300,8 @@
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
     Promise.all([window.spirit.requireScript('spirit/element/joinSteps.js'), Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (sp) { return sp.search({ q: '*', relay: true }); })]).then(function (got) {
-      var S = window.spirit.required && window.spirit.required.spirit.element.joinSteps;
+      // Join's steps as spirit.requireScript hands them back (goal/G49.9: never read at their spirit.required place).
+      var S = got[0];
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
       if (!url) throw new Error('this node lists no relay that sent this link');

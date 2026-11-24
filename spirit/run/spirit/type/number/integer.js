@@ -16,7 +16,6 @@
       return true;
     },
   };
-  if (typeof module === 'object' && module && module.exports) module.exports = T;
-  var S = root && root.spirit;
-  if (S && S.required) ["spirit", "type", "number", "integer"].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = T; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, S.required);
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = T;
 }(typeof window !== 'undefined' ? window : globalThis));
