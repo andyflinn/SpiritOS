@@ -769,11 +769,12 @@ test.run('on the node, spirit/relayUrl.js asked again answers the same module at
 test.run('on the node, spirit/relayUrl.js stands at spirit.required.spirit.relayUrl', 0.2, function () {
   return placeOf(s, COMPONENT) === real || false;
 }, test.limit.quick);
-// A FILE AND ITS FOLDER BOTH STAND (goal/G43.32): spirit/app.js takes spirit.required.spirit.app, a first level spirit.js
-// makes ahead, and keeps spirit/app/api.js placed under it; the verifier's general rules found it standing nowhere.
-test.run('on the node, spirit/app/script.js stands at spirit.required.spirit.app.script, and spirit/app/api.js beside it', 0.2, function () {
+// A FOLDER'S SCRIPT.JS AND THE FOLDER ARE ONE PLACE (goal/G49.9, box v5: "a folder's script.js stands at its folder's own
+// name ... and what the folder holds stands under it"; it was goal/G43.32's spirit.required.spirit.app.script): spirit/app/script.js
+// takes spirit.required.spirit.app, a first level spirit.js makes ahead, and keeps spirit/app/api.js placed under it.
+test.run('on the node, spirit/app/script.js stands at spirit.required.spirit.app, and spirit/app/api.js under it', 0.2, function () {
   const appJs = s.requireScript('spirit/app/script.js');
-  return (placeOf(s, 'spirit/app/script.js') === appJs && placeOf(s, 'spirit/app/api.js') === require(path.join(RUN, 'spirit/app/api.js'))) || false;
+  return (s.required.spirit.app === appJs && s.required.spirit.app.api === require(path.join(RUN, 'spirit/app/api.js'))) || false;
 }, test.limit.quick);
 test.run('on the node, an interface is still bound by asking a node, as a promise', 0.2, function () {
   const iface = s.requireScript('spirit/demo/api.js');
