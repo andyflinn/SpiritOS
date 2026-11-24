@@ -85,7 +85,9 @@ test.run('the editor runs on a bare window, with stand-ins for its parts', 0.2, 
   // As the loader places what it loaded, at the path's place: the detail still reads its parts there (cw's half of the sweep).
   const placeAsLoader = function (p, v) {
     if (p.indexOf('spirit/element/') !== 0) return;
+    // A folder's script.js at its folder's own name, as the loader places it (goal/G49.9, box v5).
     const keys = p.replace(/\.js$/, '').split('/');
+    if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
     let o = global.window.spirit.required;
     keys.slice(0, -1).forEach(function (k) { o = o[k] = o[k] || {}; });
     o[keys[keys.length - 1]] = Object.assign(v, o[keys[keys.length - 1]] || {});

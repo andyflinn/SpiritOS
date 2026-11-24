@@ -39,7 +39,7 @@ test.run('job.js is there, and the old spirit monitor is gone', 0.4, function ()
 }, test.limit.quick);
 test.run('it requires each of the six job tiles, and reads no stats itself', 0.4, function () {
   const code = readCode();
-  return code && NAMES.every(function (n) { return code.indexOf("'" + n + "'") !== -1; }) && code.indexOf("'spirit/element/monitor/job/' + n + '.js'") !== -1 && !/\.stats\b|job\.data\.job\(/.test(code) ? true : false;
+  return code && NAMES.every(function (n) { return code.indexOf("'" + n + "'") !== -1; }) && code.indexOf("'spirit/element/monitor/job/' + n + '/script.js'") !== -1 && !/\.stats\b|job\.data\.job\(/.test(code) ? true : false;
 }, test.limit.quick);
 
 test.run('a scratch node comes up with a Chrome page on its face', 0.2, async function () {

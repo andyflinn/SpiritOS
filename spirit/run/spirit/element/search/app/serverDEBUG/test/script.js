@@ -225,7 +225,7 @@ test.run('the detail of Zz Debug is made', 0.2, async function () {
 }, test.limit.quick);
 test.run('the detail loads changeAppIcon.js and changeAppLabel.js', 0.2, async function () {
   if (detail !== true) return false;
-  return (await until(function () { return Promise.resolve(['changeAppIcon.js', 'changeAppLabel.js'].every(function (f) { return asked().some(function (u) { return u.indexOf('spirit/element/search/app/' + f) !== -1; }); })); }, 10000)) ? true : false;
+  return (await until(function () { return Promise.resolve(['changeAppIcon', 'changeAppLabel'].every(function (f) { return asked().some(function (u) { return u.indexOf('spirit/element/search/app/' + f + '/script.js') !== -1; }); })); }, 10000)) ? true : false;
 }, test.limit.quick);
 test.run('the DEBUG row comes right after the Deactivate row', 0.2, async function () {
   if (detail !== true) return false;
