@@ -253,7 +253,7 @@ let sr = null, srRows = [], red = [], n1 = null, reach = [], seen = [], r1 = nul
 
 // THE PLANTED SUITES' LOG GOES WHEN THE TEST STARTS AND WHEN IT ENDS (goal/G48.4; Andy: "you better delete that fucking log
 // when the test starts AND especially when it ends.... NO POLLUTION! NO LITTERING!!!!"): a lab copy is released, not removed.
-const dropRunlog = function () { try { if (s) fs.rmSync(path.join(s.root, 'runlog.txt'), { force: true }); } catch (e) { /* gone */ } };
+const dropRunlog = function () { try { if (s) ['runlog.txt', 'zzEnvA.env.json', 'zzEnvB.env.json'].forEach(function (f) { fs.rmSync(path.join(s.root, f), { force: true }); }); } catch (e) { /* gone */ } };
 test.after(async function () {
   for (const k of live) await stop(k);
   dropRunlog();
@@ -2423,10 +2423,12 @@ test.run('testicle.suite.success with success false is what turns zzSucc red', 0
 const ENVA = Z + 'zzEnvA.js', ENVAS = Z + 'test/zzEnvA.js', ENVB = Z + 'zzEnvB.js', ENVBS = Z + 'test/zzEnvB.js';
 const envSuite = function (name) {
   return SUITE_HEAD + "require(path.join(__dirname, '..', '..', '..', '..', '..', 'test', 'headLessChrome.js'));\n" +
-    "require('fs').writeFileSync(path.join(__dirname, '" + name + ".env.json'), JSON.stringify({ base: process.env.SPIRIT_MOUNT_BASE || '', chrome: process.env.SPIRIT_CHROME_PORT || '' }));\n" +
+    // OUTSIDE THE TREE, beside runlog.txt (goal/G49.8): since goal/G49.5 a change in the tree lets the handed node and Chrome go
+    // at the next run, so a note written in the tree gave the second suite a new pair and ended the first's before it was asked.
+    "require('fs').writeFileSync(path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', '" + name + ".env.json'), JSON.stringify({ base: process.env.SPIRIT_MOUNT_BASE || '', chrome: process.env.SPIRIT_CHROME_PORT || '' }));\n" +
     "test.run('" + name + " answers', 0.2, function () { return true; }, test.limit.quick);\n";
 };
-const envOf = function (name) { try { return JSON.parse(fs.readFileSync(path.join(s.run, Z, 'test', name + '.env.json'), 'utf8')); } catch (e) { return null; } };
+const envOf = function (name) { try { return JSON.parse(fs.readFileSync(path.join(s.root, name + '.env.json'), 'utf8')); } catch (e) { return null; } };
 let handed = null;
 test.run('two planted UI suites, each pressed, write down what testicle handed them', 0.2, async function () {
   if (!up()) return false;
