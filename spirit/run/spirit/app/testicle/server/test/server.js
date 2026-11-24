@@ -62,9 +62,7 @@ const PLANT = {
   // zeta and its test are never changed: asked by testicle.script.get alone (goal/G47.1, the verbs cycle).
   'spirit/app/testicle/temp/zzTesticle/zeta.js': '\'use strict\';\n// zeta, asked for, never changed\n',
   'spirit/app/testicle/temp/zzTesticle/test/zeta.js': '\'use strict\';\n// the test of zeta\n',
-  // theta and its test: no row until a test of it is set (goal/G47.1, the test cycle).
-  'spirit/app/testicle/temp/zzTesticle/theta.js': '\'use strict\';\n// theta\n',
-  'spirit/app/testicle/temp/zzTesticle/test/theta.js': '\'use strict\';\n// the test of theta\n',
+  // theta and its test are planted later, under interactive, so the runner never runs them (ZFRESH, below).
   // kappa, lambda and mu, with suites that really run and report (goal/G47.1, the cycle "run a suite from the script tab"):
   // kappa's own test waits three seconds before its tests, lambda's has three tests in a row, mu's general test judges mu.
   'spirit/app/testicle/temp/zzTesticle/kappa.js': '\'use strict\';\n// kappa\n',
@@ -583,13 +581,32 @@ test.run('script.get of a production script that is not there answers the error 
   const nowhere = await call(N.base, 'testicle.script.get', { name: Z + 'nowhere.js' });
   return failed(nowhere, 'no such file') || false;
 }, test.limit.quick);
+// THE RUNNER HELD OFF FOR THE CHECKS OF ROWS AS THEY ARE MADE (goal/G49.8, Andy's 8 search reds): this file sets auto above, so
+// the runner runs every flagged suite by itself, and zeta's and theta's, planted at the start, had run before these checks
+// read them (zeta's suites no longer flagged, theta's search holding the rows its run wrote). From here to the suite
+// searches below testicle is interactive, and the two scripts the checks read are planted now, so nothing has run them.
+const ZF = Z + 'zetaFresh.js', ZFS = Z + 'test/zetaFresh.js', GF = Z + 'gammaFresh.js', GFS = Z + 'test/gammaFresh.js';
+test.run('interactive is set, and zetaFresh, gammaFresh and theta are planted, so the runner runs nothing under the checks that follow', 0.2, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.preferences', { interactive: true });
+  if (!(r.status === 200 && prefsOf(r).interactive === true)) return false;
+  await idle(240000);
+  put(ZF, '\'use strict\';\n// zetaFresh, asked for, never changed\n');
+  put(ZFS, '\'use strict\';\n// the test of zetaFresh\n');
+  put(GF, '\'use strict\';\n// gammaFresh\n');
+  put(GFS, '\'use strict\';\n// the test of gammaFresh\n');
+  put(TH, '\'use strict\';\n// theta\n');
+  put(THS, '\'use strict\';\n// the test of theta\n');
+  const ok = await until(function () { const t = tables(DB); return Promise.resolve(!!scriptRow(t, ZF) && suiteRows(t, ZF).length > 0 && !!scriptRow(t, GF) && !!scriptRow(t, TH)); }, 60000);
+  return !!ok || false;
+}, test.limit.long);
 // Since box v95, 5 every script on disc has its row from the start, zeta.js among them: script.get answers it.
 test.run('script.get of a production script never changed answers with its file row there', 0.2, async function () {
   if (!up()) return false;
   tz = Date.now();
-  zeta = await call(N.base, 'testicle.script.get', { name: Z + 'zeta.js' });
+  zeta = await call(N.base, 'testicle.script.get', { name: ZF });
   zt = tables(DB);
-  zrow = scriptRow(zt, Z + 'zeta.js');
+  zrow = scriptRow(zt, ZF);
   return (zeta.status === 200 && !!zrow) || false;
 }, test.limit.quick);
 test.run('script.get answers exactly that file row', 0.2, function () {
@@ -598,13 +615,13 @@ test.run('script.get answers exactly that file row', 0.2, function () {
 }, test.limit.quick);
 test.run('script.get makes a suite row for every suite that concerns the file', 0.2, function () {
   if (!zt) return false;
-  wantZeta = concerning(s.run, Z + 'zeta.js');
-  return (wantZeta.indexOf(Z + 'test/zeta.js') !== -1 && JSON.stringify(names(suiteRows(zt, Z + 'zeta.js'))) === JSON.stringify(wantZeta)) || false;
+  wantZeta = concerning(s.run, ZF);
+  return (wantZeta.indexOf(ZFS) !== -1 && JSON.stringify(names(suiteRows(zt, ZF))) === JSON.stringify(wantZeta)) || false;
 }, test.limit.quick);
 test.run('every suite row script.get makes is flagged needs testing', 0.2, function () {
   if (!zt) return false;
-  const zunflagged = suiteRows(zt, Z + 'zeta.js').filter(notClassifier).filter(function (r) { return !yes(r.test); });
-  return (suiteRows(zt, Z + 'zeta.js').length > 0 && !zunflagged.length) || false;
+  const zunflagged = suiteRows(zt, ZF).filter(notClassifier).filter(function (r) { return !yes(r.test); });
+  return (suiteRows(zt, ZF).length > 0 && !zunflagged.length) || false;
 }, test.limit.quick);
 test.run('script.get of a file with rows answers its row as it stands', 0.2, async function () {
   if (!up()) return false;
@@ -620,7 +637,7 @@ test.run('script.get of a file with rows answers its row as it stands', 0.2, asy
 // \"needs running\"". The standard answer: {items: [{key, label}], more}, each label the row as JSON.
 test.run('suite.search answers a standard table search: items and more', 0.2, async function () {
   if (!up()) return false;
-  all = await call(N.base, 'testicle.suite.search', { script: Z + 'zeta.js', text: '' });
+  all = await call(N.base, 'testicle.suite.search', { script: ZF, text: '' });
   got = items(all);
   return (all.status === 200 && !!all.body && Array.isArray(all.body.items) && typeof all.body.more === 'boolean') || false;
 }, test.limit.quick);
@@ -629,7 +646,7 @@ test.run('with no words, suite.search answers the file\'s suites, each once, and
   return JSON.stringify(gotNames) === JSON.stringify(wantZeta) || false;
 }, test.limit.quick);
 test.run('every row suite.search answers is the given script\'s', 0.2, function () {
-  return (got.length > 0 && got.every(function (i) { return i.row.script === Z + 'zeta.js'; })) || false;
+  return (got.length > 0 && got.every(function (i) { return i.row.script === ZF; })) || false;
 }, test.limit.quick);
 test.run('every suite that suite.search answers is a file whose final folder is test', 0.2, function () {
   return (got.length > 0 && got.every(function (i) { return path.posix.basename(path.posix.dirname(suiteOf(i))) === 'test'; })) || false;
@@ -639,13 +656,13 @@ test.run('every suite that suite.search answers carries its status: needs runnin
 }, test.limit.quick);
 test.run('the words narrow among the file\'s suites', 0.2, async function () {
   if (!up()) return false;
-  const narrow = items(await call(N.base, 'testicle.suite.search', { script: Z + 'zeta.js', text: 'sibling' })).map(suiteOf);
-  return (narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(Z + 'test/zeta.js') === -1) || false;
+  const narrow = items(await call(N.base, 'testicle.suite.search', { script: ZF, text: 'sibling' })).map(suiteOf);
+  return (narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(ZFS) === -1) || false;
 }, test.limit.quick);
 test.run('another file\'s search answers that file\'s rows, none of the first', 0.2, async function () {
   if (!up()) return false;
   const other = items(await call(N.base, 'testicle.suite.search', { script: Z + 'gamma.js', text: '' }));
-  return (other.length > 0 && other.every(function (i) { return i.row.script === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(Z + 'test/zeta.js') === -1) || false;
+  return (other.length > 0 && other.every(function (i) { return i.row.script === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(ZFS) === -1) || false;
 }, test.limit.quick);
 // goal/G47.1, the box: "with the script selector blank (all scripts), the suite selector lists every suite, each once, and
 // suite.search given no script answers that list". It replaces "suite.search keeps needing a script" (Andy: "There's
@@ -773,7 +790,7 @@ test.run('testicle.search answers a standard table search: items and more', 0.2,
   if (!up()) return false;
   await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its second question', verified: false, severity: 0.9 });
   await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its third question', verified: false, severity: 0.3 });
-  await call(N.base, 'testicle.testicle.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: 'gamma answers', verified: false, severity: 0.7 });
+  await call(N.base, 'testicle.testicle.set', { script: GF, suite: GFS, test: 'gamma answers', verified: false, severity: 0.7 });
   sr = await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, text: '' });
   srRows = found(sr);
   return (sr.status === 200 && !!sr.body && Array.isArray(sr.body.items) && typeof sr.body.more === 'boolean') || false;
@@ -823,9 +840,9 @@ test.run('with no script, testicle.search searches that suite\'s tests for any s
 }, test.limit.quick);
 test.run('with no suite, testicle.search searches that script\'s tests in any suite', 0.2, async function () {
   if (!up()) return false;
-  const anySuite = found(await call(N.base, 'testicle.testicle.search', { script: Z + 'gamma.js', text: '' }));
+  const anySuite = found(await call(N.base, 'testicle.testicle.search', { script: GF, text: '' }));
   // gamma's tests in any suite: its own test's, and the classifier's classifyable row beside it (box v94, 1).
-  return (anySuite.length >= 1 && anySuite.every(function (r) { return r.script === Z + 'gamma.js'; }) && anySuite.some(function (r) { return r.test === 'gamma answers'; }) && anySuite.every(function (r) { return r.test === 'gamma answers' || r.suite === 'spirit/test/scriptClassify.js'; })) || false;
+  return (anySuite.length >= 1 && anySuite.every(function (r) { return r.script === GF; }) && anySuite.some(function (r) { return r.test === 'gamma answers'; }) && anySuite.every(function (r) { return r.test === 'gamma answers' || r.suite === 'spirit/test/scriptClassify.js'; })) || false;
 }, test.limit.quick);
 test.run('with neither, testicle.search searches every current test', 0.2, async function () {
   if (!up()) return false;
@@ -1083,6 +1100,12 @@ test.run('suite.search, with and without a script and words, answers every match
   });
 }, test.limit.slow);
 
+// Auto again for the checks that follow, as above (goal/G49.8).
+test.run('auto is set again for the checks that follow, by preferences with interactive false', 0.2, async function () {
+  if (!up()) return false;
+  const r = await call(N.base, 'testicle.preferences', { interactive: false });
+  return (r.status === 200 && prefsOf(r).interactive === false) || false;
+}, test.limit.quick);
 // the box: "The verb red is testicle.red"
 test.run('testicle.red answers every failed current test, and no other', 0.2, async function () {
   if (!up()) return false;
