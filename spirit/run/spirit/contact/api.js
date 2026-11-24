@@ -21,5 +21,13 @@ module.exports = {
     // goal/G47.4, box v33: "😏 is the row field faceable, set by the new verb contact.faceable {key, faceable}, for a relay
     // this node holds a seat on only; it does what own did", "contact.own goes". Never from a face, never from a peer.
     faceable: { key: 'spirit.type.string.ID', faceable: 'spirit.type.boolean' },
+    // A RELAY ROW'S VERBS (goal/G49.11, box v9: the node's relay branch goes, each verb "moves to the contact branch"): each names
+    // the relay by its row's public key; add alone takes the url, since the relay is no row until its card answers.
+    add: { url: 'spirit.type.string.URL', label: 'spirit.type.string.label?' },
+    claim: { key: 'spirit.type.string.ID', name: 'spirit.type.string.label', invite: 'spirit.type.string.word?', inviteLabel: 'spirit.type.string.label?' },
+    face: { key: 'spirit.type.string.ID', name: 'spirit.type.string.label' },
+    // link: the caller's link the relay mails, its code and key added (goal/G40.10; Andy: "{email, URL, card}").
+    join: { key: 'spirit.type.string.ID', email: 'spirit.type.string.email', code: 'spirit.type.string.word?', link: 'spirit.type.string.URL?' },
+    leave: { key: 'spirit.type.string.ID' },
   },
 };

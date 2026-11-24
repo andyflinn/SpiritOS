@@ -17,7 +17,7 @@
 //     from the green shell for now).
 //   - JOIN IS AN APP (goal/G43.26; Andy: "the join icon sits next to all other icons on a shell (SO IT's A FCUKING APP,
 //     LIKE IT ALWAYS WAS)"): spirit/app/join/, a tile beside the others; boot does not load it. Boot keeps only the mailed
-//     join link's code, which it hands to relay.join.
+//     join link's code, which it hands to contact.join.
 //   - NO NAVIGATION FRAME (goal/G43.30): nothing opens as a page any more, every detail is a panel over its app, so
 //     shell/navigationWrapper.js and its title bar with Back and Home are gone.
 
@@ -289,7 +289,7 @@
   };
 
   // THE MAILED JOIN LINK (goal/G40.10): the relay mails /face.html?join=<code>&relay=<its key>&app=join. Read here, before
-  // the address is cleared; once the page is up the code goes to relay.join, at the relay this node lists under that key
+  // the address is cleared; once the page is up the code goes to contact.join, at the relay this node lists under that key
   // (joinSteps.linkRelay).
   var joinCode = '';
   var joinRelayKey = '';
@@ -305,7 +305,8 @@
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
       if (!url) throw new Error('this node lists no relay that sent this link');
-      return ask('relay.join', { url: url, email: '', code: code });
+      // contact.join names the relay by its row's public key (goal/G49.11), the key the link carries.
+      return ask('contact.join', { key: joinRelayKey, email: '', code: code });
     }).then(function (r) {
       var b = (r && r.body) || {};
       // 200 is an email change on a seat already held, 201 a new seat (goal/G30.1, box v31).

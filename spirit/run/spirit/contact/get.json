@@ -1,5 +1,5 @@
 {
-  "description": "One row of the one table that contact.search searches, by public key (key): {ok, key, person: {publicKey, publicLabel, caption, myLabel, keep, mine, relay, blocked, seated, present, url, bytesHeld, ambiguous?}}; 400 without a key, 404 when there is none.",
+  "description": "One row of the one table that contact.search searches, by public key (key): {ok, key, person: {publicKey, publicLabel, caption, myLabel, keep, mine, relay, blocked, seated, present, url, bytesHeld, ambiguous?}}; for a relay's row also relay (the relay's row as the node holds it: its connection, owned, claimed, services, owner label, face) and report (that relay's last stream report, or null); 400 without a key, 404 when there is none.",
   "request": {
     "key": "spirit.type.string.IDNew"
   }

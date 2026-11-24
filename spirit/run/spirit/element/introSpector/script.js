@@ -74,21 +74,11 @@
   function refusalOf(e) { return { ok: false, error: String((e && e.message) || e) }; }
   // A branch of this node, bound by the one loader by its api.js path (goal/G49.6: never by a name).
   function family(p) { return S.requireScript(p); }
-  // A relay row's key is its url; its key on the wire is the one its roll names (as Contacts reads it).
-  function relayKey(party) {
-    if (party.relayKey) return Promise.resolve(party.relayKey);
-    return family('spirit/relay/api.js').then(function (r) { return r.get({ key: party.key }); }).then(function (b) {
-      var r = (b && b.relay) || {};
-      party.relayKey = (r.roll && r.roll.relayKey) || (b && b.report && b.report.key) || '';
-      return party.relayKey;
-    }, function () { return ''; });
-  }
   // The tree a peer or a relay answers to api (self's is this node's own, which the family list reads itself).
   function treeOf(party) {
-    if (party.kind === 'relay') return relayKey(party).then(function (key) {
-      if (!key) return { ok: false, error: 'this relay has not said what its key is' };
-      return S.peerPost(key, 'relay', 'api').then(bodyOf);
-    });
+    // A RELAY IS ASKED BY ITS ROW'S PUBLIC KEY like any party (goal/G49.11, box v9); it still answers its tree as 'relay api'
+    // until the relay answers api like any peer (goal/G49.10's relay shape).
+    if (party.kind === 'relay') return S.peerPost(party.key, 'relay', 'api').then(bodyOf);
     return S.peerPost(party.key, 'api', 'api').then(bodyOf);
   }
   function call(party, fam, verb, args) {
@@ -99,7 +89,7 @@
     var body = {};
     if (party.kind === 'relay') {
       body[verb] = args;
-      return relayKey(party).then(function (key) { return S.peerPost(key, 'relay', body).then(bodyOf); });
+      return S.peerPost(party.key, 'relay', body).then(bodyOf);
     }
     body[fam] = {};
     body[fam][verb] = args;
@@ -186,7 +176,7 @@
         pick: function (row, key) {
           var relay = !!row && row.relay === true;
           party = !row ? { kind: 'self', key: '', name: 'self' }
-            : { kind: relay ? 'relay' : 'peer', key: relay ? String(row.url || key) : key, name: String(row.name || key) };
+            : { kind: relay ? 'relay' : 'peer', key: key, name: String(row.name || key) };
           show('');
           say('asking ' + party.name + ' for its api…');
           // EACH PARTY'S TREE IN spirit.required.spirit.data (goal/G48.4; Andy: "fix the introSpector, too"): self is this node's own branch,

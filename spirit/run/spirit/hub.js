@@ -1165,12 +1165,25 @@ function createHub(rootDir) {
       .then(function () { networkOut = false; });
   }
 
-  function contactGet(body) {
+  function contactGet(body, deps) {
     var key = String((body && body.key) || '');
     if (!key) return { ok: false, status: 400, error: 'key required' };
     var person = buildPeople(rootDir).filter(function (p) { return p.publicKey === key; })[0];
     if (!person) return { ok: false, status: 404, error: 'not in the book' };
-    return require('./spirit.js').requireScript('spirit/limits.js').boundedGet({ ok: true, status: 200, key: key, person: person });
+    var out = { ok: true, status: 200, key: key, person: person };
+    var bounded = function (o) { return require('./spirit.js').requireScript('spirit/limits.js').boundedGet(o); };
+    // A RELAY ROW, WHAT relay.get ANSWERED BESIDE IT (goal/G49.11, box v9: relay.get "will merge with contact.get"): the
+    // relay's row as the node holds it (its connection, owned, claimed, services, owner label, face), relay, and that
+    // relay's last stream report, held in the node's memory, report; null where there is none.
+    var row = relayKeys.byKey(rootDir, key);
+    if (!row) return bounded(out);
+    var router = deps && deps.router;
+    return relaySummary(router).then(function (summary) {
+      var reports = router && typeof router.relayStatus === 'function' ? (router.relayStatus() || {}) : {};
+      out.relay = (summary.rows || []).filter(function (r) { return r.url === row.url; })[0] || null;
+      out.report = reports[row.url] || null;
+      return bounded(out);
+    });
   }
 
   // ── peer.find STOOD HERE (handleHandle / findHandle), DELETED ──────
@@ -1229,7 +1242,7 @@ function createHub(rootDir) {
   // `accept` says listen to this person, `unblock` only takes the block
   // off. Somebody blocked while still waiting goes back to waiting, not
   // into the address book — undoing a no is not the same as saying yes.
-  function handlePeer(req, res, readJsonBody, action) {
+  function handlePeer(req, res, readJsonBody, action, deps) {
     readJsonBody(req).then(function (body) {
       var publicKey = String((body && body.publicKey) || '').trim();
       if (!publicKey) { fail(res, 400, 'publicKey required'); return; }
@@ -1280,7 +1293,18 @@ function createHub(rootDir) {
         // no longer asks whether a seat exists: contactsDetails removes the
         // key from every relay this node owns first, and "no such peer" is
         // simply the answer. We act on what we find (Andy).
-        var gone = contactBook.forget(rootDir, publicKey);
+        // A RELAY'S ROW, FORGOTTEN (goal/G49.11, box v9: "contact.forget will be modified to implement the relay.remove part, if
+        // the contact row is a relay"): first off the node's list and its seat record cleared, with remove's refusals
+        // (noderoutes.net, a relay this node owns, a relay still holding this node's seat, the node's last public relay).
+        var relayRow = relayKeys.byKey(rootDir, publicKey);
+        var relayOff = false;
+        if (relayRow && relayRow.keep) {
+          var off = relayRemove({ key: relayRow.url }, deps);
+          if (!off.ok) { fail(res, off.status || 409, off.error || 'that relay stays on the list'); return; }
+          relayOff = true;
+        }
+        // Off the list the relay's row is no longer kept, so the book may find nothing more to forget: it is forgotten all the same.
+        var gone = contactBook.forget(rootDir, publicKey) || (relayOff ? { publicKey: publicKey, forgotten: true } : null);
         if (!gone) { fail(res, 404, 'no row for that key'); return; }
         // EVERY GRANT OF THE KEY GOES WITH IT (goal/G47.4, Q3: "yes. it should."), one exact grant row at a time, each told.
         try {
@@ -2043,21 +2067,6 @@ function createHub(rootDir) {
     });
   }
 
-  // THE KEY IS THE RELAY'S ID OR ITS URL (goal/G40.11): contact.search hands out the ID, a relay row the url beside it.
-  function relayGet(body, deps) {
-    var asked = String((body && body.key) || '');
-    if (!asked) return Promise.resolve({ ok: false, status: 400, error: 'key required' });
-    var byId = relayKeys.byKey(rootDir, asked);
-    var key = byId && byId.url ? byId.url : asked;
-    return relaySummary(deps && deps.router).then(function (summary) {
-      var row = summary.rows.filter(function (r) { return r.url === key; })[0];
-      if (!row) return { ok: false, status: 404, error: 'no such relay' };
-      var reports = (deps && deps.router && deps.router.relayStatus) ? deps.router.relayStatus() : {};
-      return require('./spirit.js').requireScript('spirit/limits.js').boundedGet({ ok: true, status: 200, key: key, relay: row,
-        report: reports[key] || null });
-    });
-  }
-
   function statusFor(res, name, deps) {
     // THE KEY, and since R3 it is the only thing probe asks with.
     //
@@ -2120,7 +2129,6 @@ function createHub(rootDir) {
     relayFace: relayFace,
     relayJoin: relayJoin,
     joinAtStart: joinAtStart,
-    relayGet: relayGet,
     relayFacts: relayFacts,
     contactSearch: contactSearch,
     contactGet: contactGet,

@@ -1524,6 +1524,23 @@ catch (e) {
 
   // THE PROXY VERBS WENT WITH goal/G29.20 (proxy.search, get, allow, remove, close, open): the owner's list they kept
   // is gone. proxyVerb stays: it is the plain body-in, answer-out wrapper every group below uses.
+  // A RELAY ROW'S VERB, NAMED BY ITS KEY (goal/G49.11): the body as hub.js's relay work reads it, the url the row holds in
+  // place of the key. A key naming no relay row is refused here, 404, so no work falls back to a url of its own (join's
+  // relay asked last).
+  function relayBody(b) {
+    const out = Object.assign({}, b || {});
+    const row = relayKeys.byKey(ROOT_DIR, out.key || '');
+    delete out.key;
+    out.url = row ? row.url : '';
+    return out;
+  }
+  function onRelayRow(work) {
+    return proxyVerb(function (b) {
+      const body = relayBody(b);
+      if (!body.url) return { ok: false, status: 404, error: 'no relay on this node under that key' };
+      return work(body);
+    });
+  }
   function proxyVerb(work) {
     return function (rq, rs) {
       readJsonBody(rq).then((body) => {
@@ -1760,58 +1777,6 @@ catch (e) {
     } },
   }, { wire: true, by: 'ownerPost.js' });
 
-  // ── STAGE 4b — relay (2026-09-15) ──────────────────────────────────
-  //
-  // THE NODE'S RELATIONSHIP WITH A RELAY, which is a different subject
-  // from what it says to a peer THROUGH one. `relay.claim` asks a relay
-  // for a row; none of these is addressed to a person, which is what
-  // keeps them out of `peer.*` and `contact.*`.
-  //
-  // WIRE, on the namespace: claim, add, face, join and leave
-  // reach out, and an offline box fails them. (relay.status, which probed every configured
-  // relay through ownerBadge.probe, is gone; see relay.get below.) relay.get
-  // reads what the node holds, under the same flag.
-  //
-  // What a relay verb is NOT: a way to talk to the relay's owner. That
-  // goes through peer.post like anybody else's — the relay names itself
-  // on its own roster precisely so it has an ordinary address.
-  loopbackVerbs.mount('relay', path.join(__dirname, '..', 'relay'), {
-    // THE ROUTER IS HANDED IN so a claim can connect the node it just
-    // enrolled: the streams opened at boot were to the relays it was
-    // already on, and the new seat needs one of its own — see handleClaim.
-    // The relay's own claim answer comes back, `mine` beside it.
-    'claim': { request: { url: '', name: '', invite: '', inviteLabel: '' }, reply: { mine: false }, handler: function (rq, rs) {
-      hub.handleClaim(rq, rs, readJsonBody, {
-        router: peerRouter,
-        probe: spirit.requireScript('spirit/hub.js').relayKeyAsk(peerRouter),
-      });
-    } },
-    // `relay.roster` STOOD HERE — the public roll of a relay this node
-    // is not on, "what a partnership makes visible". Deleted 2026-09-17
-    // with the only screen that drew it; see the tombstone in hub.js.
-    // relay.status is gone: a list is a search (puppets/G2), and relay.search with it (goal/G40.11): contact.search
-    // lists the relays, one row each of the one table, and relay.get answers one, by its ID or its url, from what the
-    // node and its peerPost already hold, with no call to any relay (Andy's decision, goal/G22.4; hub.js relaySummary).
-    'get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { router: peerRouter }); }) },
-    // ONE RELAY OFF THIS NODE'S OWN LIST (goal/G16.3), keyed by its url. The list is node state and the node its only
-    // writer: a successful relay.claim adds one, and so does relay.add (below, goal/G28.1).
-    //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
-    //   list relays and remove relay, with a successful claim adding its
-    //   relay? yes."
-    'remove': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayRemove(b, { router: peerRouter }); }) },
-    // relay.leave {key} (goal/G40.10; Andy, 2026-10-25: "add the leave verb to node. and publish the \"leaving\"", "go"):
-    // this node gives up its seat on one relay; the shadow stream publishes the row's seated, as every change.
-    'leave': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayLeave(b, { router: peerRouter }); }) },
-    // relay.add {url, label} (goal/G28.1, Andy 2026-10-16): a relay goes on the node's list when its card answers.
-    'add': { request: { url: '', label: '' }, reply: { ok: true, url: '', relayKey: '' }, handler: proxyVerb(function (b) { return hub.relayAdd(b, { router: peerRouter }); }) },
-    // relay.face {url, name, email} (goal/G30.1, Andy 2026-10-19: "i agree to the node side verb as well."): this node
-    // applies to one relay for a face name; the relay's signed answer is kept whole on that relay's row.
-    'face': { request: { url: '', name: '' }, reply: { ok: true, url: '', name: '', email: '' }, handler: proxyVerb(function (b) { return hub.relayFace(b, { router: peerRouter }); }) },
-    // relay.join {url, email, code} (goal/G30.2, confirmed by Andy 2026-10-19): this node joins a relay by its user's
-    // email. With an email it asks; with the code from the mailed link it takes the seat.
-    'join': { request: { url: '', email: '', code: '', link: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.requireScript('spirit/hub.js').relayKeyAsk(peerRouter) }); }) },
-  }, { wire: true, by: 'hub.js' });
-
   // ── STAGE 4c — contact (2026-09-15) ────────────────────────────────
   //
   //   Andy: "The user sees it as contact: which is kind of what i
@@ -1832,14 +1797,43 @@ catch (e) {
     // The one table, searched (goal/G40.11): people and relays, with a yes-filter per flag. peer.list is gone
     // (puppets/G2); the network search it starts asks the relays.
     'search': { request: { q: '', keep: false, mine: false, relay: false, seated: false, blocked: false }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
-    'get': { request: { key: '' }, reply: { ok: true, key: '', person: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b); }) },
+    // A RELAY ROW TOO (goal/G49.11, box v9: "a semi-duplicate of contact.get. will merge with contact.get"): for a relay row it
+    // adds the one thing relay.get had more, that relay's last stream report, which the router holds in memory.
+    'get': { request: { key: '' }, reply: { ok: true, key: '', person: {}, relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b, { router: peerRouter }); }) },
     'block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
     'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },
     'accept': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); } },
     'label': { request: { publicKey: '', myLabel: '' }, reply: { publicKey: '', myLabel: '', caption: '' }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); } },
     // goal/G47.4, box v33: "contact.faceable {key, faceable}", "contact.own goes".
     'faceable': { request: { key: '', faceable: false }, reply: { key: '', faceable: false }, handler: function (rq, rs) { hub.handleFaceable(rq, rs, readJsonBody); } },
-    'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget'); } },
+    // THE RELAY ROW'S VERBS (goal/G49.11, box v9: the node's relay branch goes, each verb "moves to the contact branch"). Each
+    // names the relay by its row's public key, as every contact verb names its row; add alone takes the url, since the relay is
+    // no row until its card answers. The work is hub.js's as before, reached by the url the row holds.
+    'add': { request: { url: '', label: '' }, reply: { ok: true, url: '', relayKey: '' }, handler: proxyVerb(function (b) { return hub.relayAdd(b, { router: peerRouter }); }) },
+    // The relay's own claim, posted: the node then marks the relay its own and opens the stream to the new seat (handleClaim).
+    'claim': { request: { key: '', name: '', invite: '', inviteLabel: '' }, reply: { mine: false }, handler: function (rq, rs) {
+      readJsonBody(rq).then(function (got) {
+        const body = relayBody(got);
+        if (!body.url) {
+          rs.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          rs.end(JSON.stringify({ ok: false, error: 'no relay on this node under that key' }));
+          return;
+        }
+        hub.handleClaim(rq, rs, function () { return Promise.resolve(body); }, {
+          router: peerRouter,
+          probe: spirit.requireScript('spirit/hub.js').relayKeyAsk(peerRouter),
+        });
+      }).catch(function (e) { bodyRefused(rq, rs, e, true); });
+    } },
+    // A face name asked of the relay (goal/G30.1); its signed answer is kept on the row.
+    'face': { request: { key: '', name: '' }, reply: { ok: true, url: '', name: '', email: '' }, handler: onRelayRow(function (b) { return hub.relayFace(b, { router: peerRouter }); }) },
+    // Joining the relay by email, then by the mailed code (goal/G30.2): "becomes contact.join, only works for relay-rows", so
+    // the relay is added first.
+    'join': { request: { key: '', email: '', code: '', link: '' }, reply: { ok: true, url: '' }, handler: onRelayRow(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: spirit.requireScript('spirit/hub.js').relayKeyAsk(peerRouter) }); }) },
+    // Giving up this node's seat (goal/G40.10): the relay's removePeer posted, then the seat and the face cleared; the row stays.
+    'leave': { request: { key: '' }, reply: { ok: true, key: '' }, handler: onRelayRow(function (b) { return hub.relayLeave({ key: b.url }, { router: peerRouter }); }) },
+    // A relay's row is taken off the list first, with remove's refusals (goal/G49.11): hub.js's forget, handed the router.
+    'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget', { router: peerRouter }); } },
   }, { wire: false, by: 'hub.js' });
 
   // ── STAGE 4d — peer (2026-09-15), and the fold is done ─────────────

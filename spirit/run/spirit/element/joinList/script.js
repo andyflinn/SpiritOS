@@ -17,7 +17,7 @@
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9): the spirit object's families, no api handed.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/relay/api.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -25,6 +25,26 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var a = window.spirit.requireScript(p);
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
+  }
+  // THE RELAYS AS A SCREEN WANTS THEM, built from the contact branch (goal/G49.11, box v9: "what a page needs of them it builds
+  // from contact.search and contact.get"): the relays this node keeps, each got, { status, text, body: { name, rows, ownedUrls,
+  // claimedUrls, mustPick, relayStatus, more } }, relayStatus by each relay's url; a refused search answers its own body.
+  function relaysOf(c, name) {
+    function said(e) { return { status: (e && e.status) || 0, text: '', body: (e && e.body) || { ok: false, error: String((e && e.message) || e) } }; }
+    return Promise.resolve(c.search({ q: '*', relay: true, keep: true })).then(function (s) {
+      if (!s || !s.ok) return { status: 200, text: JSON.stringify(s || {}), body: s };
+      return Promise.all((s.items || []).map(function (i) { return Promise.resolve(c.get({ key: i.key })).then(null, function () { return null; }); })).then(function (gets) {
+        var rows = [];
+        var relayStatus = {};
+        gets.forEach(function (g) { if (!g || !g.ok || !g.relay) return; rows.push(g.relay); if (g.report) relayStatus[g.relay.url] = g.report; });
+        var ownedUrls = rows.filter(function (r) { return r.owned; }).map(function (r) { return r.url; });
+        var body = { name: name || '', rows: rows, ownedUrls: ownedUrls,
+          claimedUrls: rows.filter(function (r) { return r.owned || r.claimed; }).map(function (r) { return r.url; }),
+          // One fact about this node, never a row: it owns more than one relay and picks which one it is known by.
+          mustPick: ownedUrls.length > 1, relayStatus: relayStatus, more: !!s.more };
+        return { status: 200, text: JSON.stringify(body), body: body };
+      });
+    }, said);
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
@@ -112,11 +132,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         if (box) form(s, box, now.facts);
       });
     }
-    // THE RELAYS THE FORMS OFFER, read when a step is drawn (which is when the job changed): relay.status rows every relay
+    // THE RELAYS THE FORMS OFFER, read when a step is drawn (which is when the job changed): relaysOf() rows every relay
     // this node lists, its seat, email and face.
     function withRelays(then) {
-      // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
-      Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
+      // relaysOf() answers { status, text, body: { rows, ... } } itself (goal/G49.11), so it is read as it comes.
+      Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/contact/api.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
         relays = (r && r.body && Array.isArray(r.body.rows)) ? r.body.rows : [];
       }, function () { relays = []; }).then(function () { if (!gone) then(); });
     }

@@ -6,7 +6,7 @@
 //   spirit.required.spirit.app.contact.element.create(container, { open }) -> { destroy() }; open, the mounter's panel stack's (goal/G43.18)
 //
 // What it draws: the one contact list (spirit/element/search/contact/list/script.js, below), which does its own asking
-// and whose rows open a person's or a relay's details, and the Add a relay fold, whose one call is relay.add. Nothing
+// and whose rows open a person's or a relay's details, and the Add a relay fold, whose one call is contact.add. Nothing
 // else here calls the node.
 
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -81,7 +81,7 @@ function contactCreate(container, options) {
       // THE ONE LIST (goal/G30.19): the book, the shadow and the network, with a filter instead of two folds.
       '<div id="contacts-book" class="fill"></div>' +
       // ADD A RELAY (goal/G30.7; Andy, 2026-10-20: "putting the add-relay into contacts, in a
-      // folding-panel, right below \"Find someone on the network\""). relay.add lists it on its card's answer; the label
+      // folding-panel, right below \"Find someone on the network\""). contact.add lists it on its card's answer; the label
       // is this node's private caption, never on the wire.
       '<details class="stat-tile wide" name="contacts-panels" id="contacts-relay-add-section">' +
         '<summary id="contacts-relay-add-summary">Add a relay</summary>' +
@@ -95,7 +95,7 @@ function contactCreate(container, options) {
       '<div class="job-manifest-note" id="contacts-status"></div>' +
       '</div>';
 
-    // ADD A RELAY (goal/G30.7): relay.add asks the relay for its card and lists it; the node notes it as a
+    // ADD A RELAY (goal/G30.7): contact.add asks the relay for its card and lists it; the node notes it as a
     // relay peer, so the list above finds it. The rule on the address is the wire's (hub.assertRelayUrl), asked here so
     // a typo costs no round trip.
     // The private label holds to the label rule (goal/G47.1, -browser: every input has a maxlength).
@@ -115,7 +115,7 @@ function contactCreate(container, options) {
       } catch (e) { ok = false; }
       if (!ok) { out.textContent = 'a relay must be https — http is allowed only to 127.0.0.1'; return; }
       out.textContent = 'adding ' + url + '…';
-      spirit.readyPromise.then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.add({ url: url, label: label }); }).then(function (said) {
+      spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.add({ url: url, label: label }); }).then(function (said) {
         out.textContent = said && said.ok ? 'added ' + url : 'not added: ' + ((said && said.error) || 'no answer');
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });

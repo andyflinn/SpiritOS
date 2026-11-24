@@ -89,7 +89,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
   function send(opts) {
     var o = opts || {};
-    var url = String((typeof o.url === 'function' ? o.url() : o.url) || '');
+    var key = String((typeof o.key === 'function' ? o.key() : o.key) || '');
     var email = String(o.email || '').trim();
     // The one email rule, the email type (spirit/type/string/email.js; goal/G40.10, box v20): a malformed address is told
     // what is wrong.
@@ -97,15 +97,16 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var bad = '';
     if (T) { try { T.isValid(email); } catch (e) { bad = (e && e.message) || 'not an email address'; } } else if (!email) bad = 'an email address is needed';
     if (bad) return Promise.resolve({ ok: false, text: bad });
-    if (!url) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
-    // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/relay/api.js')'s answer.join answers the reply's body, or refuses with the node's words.
+    if (!key) return Promise.resolve({ ok: false, text: 'no relay to send it to' });
+    // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/contact/api.js')'s answer.join answers the reply's body, or refuses with
+    // the node's words; the relay named by its row's public key (goal/G49.11).
     // THE CALLER'S LINK (goal/G40.10, box v25): the link the shell wants the mail to open, which only the shell knows
     // (spirit.shell.joinLink); without a shell that says, the node puts its own face on the loopback.
     var shell = window.spirit && window.spirit.shell;
     var joinLink = shell && typeof shell.joinLink === 'function' ? String(shell.joinLink() || '') : '';
-    var args = { url: url, email: email, code: '' };
+    var args = { key: key, email: email, code: '' };
     if (joinLink) args.link = joinLink;
-    return spirit.readyPromise.then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.join(args); }).then(function (said) {
+    return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.join(args); }).then(function (said) {
       said = said || {};
       // Andy (goal/G30.1): "an email in your inbox contains a confirmation link for the entered email".
       if (said.ok) return { ok: true, text: 'An email in your inbox at ' + email + ' holds a confirmation link. Open it on this computer within 10 minutes.' };
@@ -137,6 +138,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (box._spJoinBound) return;
     box._spJoinBound = true;
     function relayUrl() { var p = box.querySelector('.sp-join-relay'); return p ? p.value : ''; }
+    // The picked relay's row key, the row the picked url is (goal/G49.11: contact.join names the relay by its key).
+    function relayKey() { var u = relayUrl(); return ((box._spJoin.relays || []).filter(function (r) { return r && r.url === u; })[0] || {}).key || ''; }
     // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row carries what this form reads
     // (goal/G41.32), so a seat taken or left anywhere is followed with no read, and the form redraws only when what it shows of
     // its own relays changed. It lets go once its box has left the page.
@@ -165,7 +168,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     function go() {
       var field = box.querySelector('.sp-join-email');
       var out = box.querySelector('.sp-join-out');
-      return send({ url: relayUrl(), email: field ? field.value : '' }).then(function (r) {
+      return send({ key: relayKey(), email: field ? field.value : '' }).then(function (r) {
         if (out) { out.className = 'job-manifest-note sp-join-out ' + (r.ok ? 'is-token' : 'is-error'); out.textContent = r.text; }
       });
     }

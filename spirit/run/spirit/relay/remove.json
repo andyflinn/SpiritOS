@@ -1,6 +1,0 @@
-{
-  "description": "Take one relay off this node's list by its url (key), giving up any seat left on it: {ok, key}. Refused 400 without a key, 404 when it is not listed, and 409 for noderoutes.net, which every node keeps, for a relay this node owns, for one it still holds a seat on, and when it would leave the node no public relay.",
-  "request": {
-    "key": "spirit.type.string.URL"
-  }
-}

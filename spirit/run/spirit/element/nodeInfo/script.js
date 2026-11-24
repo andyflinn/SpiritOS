@@ -13,7 +13,7 @@
 //   - the two things this node answers to anybody who asks (spirit/nodeCard.js), its name and its description: the elements
 //     changeMyLabel and changeMyDescription (goal/G41.6), each holding its field rule, its check as typed and its save. The
 //     card is read with node.card and kept in the node family's cache (goal/G41.28), from which each field draws itself.
-//   - the email form above the face form (joinForm, faceForm; goal/G30.1, G40.10), from relay.status: the email form always,
+//   - the email form above the face form (joinForm, faceForm; goal/G30.1, G40.10), from relaysOf(): the email form always,
 //     over every relay this node lists, the face form only for a seated, starred relay (goal/G43.27).
 //     Andy, 2026-10-19: "for this a little section in the info-app will be enough." and "this UI section in info will have
 //     to address ONE relay specifically." The relays are a probe of every configured mailbox and land when they land; the
@@ -28,7 +28,7 @@
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 // Each by its api.js path, never by a name (goal/G49.6): the relay and node branches.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/relay/api.js', 'spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js', 'spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -36,6 +36,26 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var a = window.spirit.requireScript(p);
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
+  }
+  // THE RELAYS AS A SCREEN WANTS THEM, built from the contact branch (goal/G49.11, box v9: "what a page needs of them it builds
+  // from contact.search and contact.get"): the relays this node keeps, each got, { status, text, body: { name, rows, ownedUrls,
+  // claimedUrls, mustPick, relayStatus, more } }, relayStatus by each relay's url; a refused search answers its own body.
+  function relaysOf(c, name) {
+    function said(e) { return { status: (e && e.status) || 0, text: '', body: (e && e.body) || { ok: false, error: String((e && e.message) || e) } }; }
+    return Promise.resolve(c.search({ q: '*', relay: true, keep: true })).then(function (s) {
+      if (!s || !s.ok) return { status: 200, text: JSON.stringify(s || {}), body: s };
+      return Promise.all((s.items || []).map(function (i) { return Promise.resolve(c.get({ key: i.key })).then(null, function () { return null; }); })).then(function (gets) {
+        var rows = [];
+        var relayStatus = {};
+        gets.forEach(function (g) { if (!g || !g.ok || !g.relay) return; rows.push(g.relay); if (g.report) relayStatus[g.relay.url] = g.report; });
+        var ownedUrls = rows.filter(function (r) { return r.owned; }).map(function (r) { return r.url; });
+        var body = { name: name || '', rows: rows, ownedUrls: ownedUrls,
+          claimedUrls: rows.filter(function (r) { return r.owned || r.claimed; }).map(function (r) { return r.url; }),
+          // One fact about this node, never a row: it owns more than one relay and picks which one it is known by.
+          mustPick: ownedUrls.length > 1, relayStatus: relayStatus, more: !!s.more };
+        return { status: 200, text: JSON.stringify(body), body: body };
+      });
+    }, said);
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/panel/script.js');
@@ -98,9 +118,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       drawForm('email', 'joinForm', 'email', { relays: relays });
       drawForm('face', 'faceForm', 'face', { relays: relays, reload: loadRelays });
     }
-    // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
+    // relaysOf() answers { status, text, body: { rows, ... } } itself (goal/G49.11), so it is read as it comes.
     function loadRelays() {
-      return Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
+      return Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
         var said = (r && r.body) || {};
         relays = Array.isArray(said.rows) ? said.rows : [];
       }, function () { relays = []; }).then(function () { return parts.then(drawForms, function () { /* a form missing is not drawn */ }); });

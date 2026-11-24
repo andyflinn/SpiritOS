@@ -159,8 +159,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (!name.value.trim()) { box._faceSaid = { text: 'a face name is needed', bad: true }; say(box._faceSaid.text, true); return Promise.resolve(); }
       busy = true;
       say('asking the relay…', false);
-      // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/relay/api.js')'s answer.face answers the reply's body, or refuses with the node's words.
-      return spirit.readyPromise.then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
+      // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/contact/api.js')'s answer.face answers the reply's body, or refuses with
+      // the node's words; the relay named by its row's public key (goal/G49.11), the row the picked url is.
+      var picked = (box._spFace.relays || []).filter(function (r) { return r && r.url === relay.value; })[0] || {};
+      return spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.face({ key: picked.key || '', name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
         box._faceSaid = said.ok
           ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
           : { text: said.error || 'the relay did not answer', bad: true };

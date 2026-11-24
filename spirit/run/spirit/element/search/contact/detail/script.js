@@ -10,6 +10,26 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
+  // THE RELAYS AS A SCREEN WANTS THEM, built from the contact branch (goal/G49.11, box v9: "what a page needs of them it builds
+  // from contact.search and contact.get"): the relays this node keeps, each got, { status, text, body: { name, rows, ownedUrls,
+  // claimedUrls, mustPick, relayStatus, more } }, relayStatus by each relay's url; a refused search answers its own body.
+  function relaysOf(c, name) {
+    function said(e) { return { status: (e && e.status) || 0, text: '', body: (e && e.body) || { ok: false, error: String((e && e.message) || e) } }; }
+    return Promise.resolve(c.search({ q: '*', relay: true, keep: true })).then(function (s) {
+      if (!s || !s.ok) return { status: 200, text: JSON.stringify(s || {}), body: s };
+      return Promise.all((s.items || []).map(function (i) { return Promise.resolve(c.get({ key: i.key })).then(null, function () { return null; }); })).then(function (gets) {
+        var rows = [];
+        var relayStatus = {};
+        gets.forEach(function (g) { if (!g || !g.ok || !g.relay) return; rows.push(g.relay); if (g.report) relayStatus[g.relay.url] = g.report; });
+        var ownedUrls = rows.filter(function (r) { return r.owned; }).map(function (r) { return r.url; });
+        var body = { name: name || '', rows: rows, ownedUrls: ownedUrls,
+          claimedUrls: rows.filter(function (r) { return r.owned || r.claimed; }).map(function (r) { return r.url; }),
+          // One fact about this node, never a row: it owns more than one relay and picks which one it is known by.
+          mustPick: ownedUrls.length > 1, relayStatus: relayStatus, more: !!s.more };
+        return { status: 200, text: JSON.stringify(body), body: body };
+      });
+    }, said);
+  }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/ownerBadge.js');
@@ -95,10 +115,10 @@ function cdStatus(text) {
 // only) 😏 will be an option to enable face related forms in the UI, and enable full face capability for this node in the
 // relay", "the star is ... not changeable"). For a relay, at home only: on a face the node refuses contact.faceable anyway.
 // What a relay says here is its own word: nothing it says sets 😏.
-var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relay.status
+var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relaysOf()
 function cdRelayClaim() {
   cdClaim = null;
-  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
+  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return relaysOf(s, ''); }).then(function (r) {
     ((r.body && r.body.rows) || []).forEach(function (row) {
       if (row && (row.key === cdKey || (row.roll && row.roll.relayKey === cdKey))) cdClaim = { owned: !!row.owned, ownerLabel: String(row.ownerLabel || '') };
     });
@@ -465,7 +485,7 @@ var ndKey = '';         // the relay's row this panel is configured with
 var ndUrl = '';         // which mailbox this screen is
 var ndBadge = null;     // what that relay last said about itself
 var ndRows = [];        // every configured relay's row — see ndLoad, and kept by ndHearRow
-var ndLabel = '';       // this node's own name, handed to relay.status (options.label; none is handed now)
+var ndLabel = '';       // this node's own name, handed to relaysOf() (options.label; none is handed now)
 var ndMinted = '';      // a label minted while this screen was open; nothing reads it now
 var ndChanged = false;  // has anything happened? Nothing reads it now: the list repaints from the stream
 var ndRelayLabel = '';  // what the LIST calls this relay, for the title (options.relayLabel; none is handed now)
@@ -592,7 +612,7 @@ function ndBody() { return ndContainer.querySelector('[id="nd-body"]'); }
 //
 // The options carry the relay's KEY and nothing else of its row, on
 // purpose. A badge captured at launch would sit here going stale while
-// you read it. The badge is the row of relay.status whose key is ndKey,
+// you read it. The badge is the row of relaysOf() whose key is ndKey,
 // and its url becomes ndUrl.
 // ── AN UNBOUND NODE ASKS TOO, AND IT IS THE ONE THAT MUST ────────────
 //
@@ -613,9 +633,9 @@ function ndBody() { return ndContainer.querySelector('[id="nd-body"]'); }
 function ndLoad() {
   ndAsked = false;
   ndUnlisted = false;
-// relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
-  // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
-  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.status(ndLabel || ''); }).then(function (r) { return r && r.body; })
+// THE RELAYS AS A SCREEN WANTS THEM: relaysOf() below, from the contact branch (goal/G49.11; the relay branch's status() before it)
+  // lists the relays by contact.search, gets each by contact.get, and hands back the same shape (goal/G40.11).
+  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return relaysOf(s, ndLabel || ''); }).then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];
@@ -629,7 +649,7 @@ function ndLoad() {
       //   Andy: "i can fetch the roll of all relays I'm connected to,
       //   and find potential partners that are not partners yet."
       //
-      // `relay.status` answers for EVERY configured relay (it carried each
+      // `relaysOf()` answers for EVERY configured relay (it carried each
       // roster too, until the roll went) — ownerBadge.probe walks the list —
       // and this kept one row and dropped the rest. Which is why finding a partner meant opening
       // who.json: the page already held the answer and discarded it one
@@ -643,7 +663,7 @@ function ndLoad() {
       // for (R3). The owner-only report used to ride on the badge row,
       // because the badge WAS a signed status GET and the report was its
       // body. That request is gone; the same report arrives unprompted on
-      // the stream this node already holds, and `relay.status` has
+      // the stream this node already holds, and `relaysOf()` has
       // been handing it over under `relayStatus` all along.
       //
       // Absent rather than empty for a relay that has not spoken, which
@@ -805,7 +825,7 @@ function ndRemoveHtml() {
 }
 
 // LEAVE THIS RELAY (goal/G40.10; Andy: "add the leave verb to node. and publish the \"leaving\""): only where this node
-// holds a seat and does not own the relay. Two presses (an armingButton), then relay.leave; the relay stays on the list
+// holds a seat and does not own the relay. Two presses (an armingButton), then contact.leave; the relay stays on the list
 // for a later join, and the shadow stream tells every screen, this one among them (goal/G40.11).
 function ndLeaveHtml() {
   if (!ndBadge || !ndBadge.claimed || ndBadge.owned) return '';
@@ -815,7 +835,7 @@ function ndLeaveHtml() {
 }
 function ndLeave(button) {
   button.disabled = true;
-  return ndPost('spirit/relay/api.js', 'leave', { key: ndUrl }).then(function (r) {
+  return ndPost('spirit/contact/api.js', 'leave', { key: ndKey }).then(function (r) {
     var said = (r && r.body) || {};
     var out = ndContainer.querySelector('.nd-leave-out');
     if (said.ok) { if (out) out.textContent = 'You left this relay.'; return; }
@@ -824,13 +844,13 @@ function ndLeave(button) {
   });
 }
 
-// Two presses (an armingButton), then relay.remove, here (goal/G30.7). The node
-// asks the same rule.
+// Two presses (an armingButton), then contact.forget, which for a relay's row does what relay.remove did (goal/G30.7,
+// goal/G49.11). The node asks the same rule.
 function ndRemove() {
   if (ndRemoveRefusal()) return;
-  return ndPost('spirit/relay/api.js', 'remove', { key: ndUrl }).then(function (r) {
+  return ndPost('spirit/contact/api.js', 'forget', { publicKey: ndKey }).then(function (r) {
     var said = (r && r.body) || {};
-    if (said.ok) { if (typeof ndLayer.close === 'function') ndLayer.close(); return; }
+    if (said.forgotten) { if (typeof ndLayer.close === 'function') ndLayer.close(); return; }
     var out = ndContainer.querySelector('.nd-remove-out');
     if (out) out.textContent = 'not removed: ' + (said.error || 'no answer');
   });
@@ -1748,11 +1768,11 @@ function ndClaim(button) {
     return;
   }
 
-  var body = { name: wanted, url: ndUrl };
+  var body = { name: wanted, key: ndKey };
   if (token) body.invite = token;
   if (onInvite) body.inviteLabel = onInvite;
 
-  ndPost('spirit/relay/api.js', 'claim', body).then(function (r) {
+  ndPost('spirit/contact/api.js', 'claim', body).then(function (r) {
     // 201 is a new seat. 409 is only us when the peer already on the
     // relay carries OUR key — the node sets `mine` for exactly that. Any
     // other 409 is somebody else's label, and claiming it would fail the
@@ -2050,7 +2070,7 @@ var ndPage = ({
 
 });
 
-// ITS OWN ROW AS IT CHANGED; ANOTHER RELAY'S, KEPT. A row's face is a name, the panel's a { name, email } as relay.get answers.
+// ITS OWN ROW AS IT CHANGED; ANOTHER RELAY'S, KEPT. A row's face is a name, the panel's a { name, email } as contact.get answers it for a relay row.
 var ndGone = false;
 var ndStops = [];
 function ndShown(badge) {
