@@ -55,7 +55,9 @@
   // oldest writes of the page first, the shell's own file tree and apps among them, once testicle's rows passed 4 MB, and the
   // shell loaded forever. So a page keeps one pool per branch (a path's second step), each shedding its own oldest rows only;
   // a process keeps one pool, as before.
-  var capBytes = CAP;
+  // ON A PAGE, NO CAP FOR NOW (Andy, after 6fea478f: "now the shell takes forever again to load"): counting every write a page
+  // makes, per branch, slowed the shell's load again; a page's cap waits until that cost is measured and gone.
+  var capBytes = onPage ? Infinity : CAP;
   var pools = Object.create(null);     // pool -> { sizes: path -> bytes, oldest write first, total }
   function poolOf(path) { var k = onPage ? split(path).family : ''; return pools[k] || (pools[k] = { sizes: new Map(), total: 0 }); }
 
