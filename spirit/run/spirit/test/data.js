@@ -305,7 +305,17 @@ function pageCopy() {
   const h = {};
   const win = { spirit: { nodeFacts: { key: NODE }, isBrowser: function () { return true; }, eventStream: { subscribe: function (x) { Object.assign(h, x); return function () {}; } } } };
   win.window = win;
-  vm.runInNewContext(require('fs').readFileSync(path.join(__dirname, '..', 'data.js'), 'utf8'), win, { filename: 'data.js' });
+  // THE PAGE'S LOADER, STOOD IN FOR (goal/G49.8, point 1): spirit.requireScript runs a file of the tree in this page once and
+  // answers what it placed, as the page's own loader does; nothing is loaded that the page does not ask for itself.
+  const ctx = vm.createContext(win);
+  const loaded = {};
+  win.spirit.requireScript = function (rel) {
+    const r = String(rel).replace(/^\//, '');
+    if (!loaded[r]) { loaded[r] = true; try { vm.runInContext(require('fs').readFileSync(path.join(__dirname, '..', '..', r), 'utf8'), ctx, { filename: r }); } catch (e) { return Promise.reject(e); } }
+    const at = r.replace(/\.js$/, '').split('/').reduce(function (o, k) { return o && o[k]; }, win.spirit.required || {});
+    return Promise.resolve(at);
+  };
+  vm.runInContext(require('fs').readFileSync(path.join(__dirname, '..', 'data.js'), 'utf8'), ctx, { filename: 'data.js' });
   // P is the page's view of the family, as its manager addresses it; P.whole the page's data set itself.
   const view = win.spirit.required.spirit.data.viewAt(NODE, FAMILY);
   view.whole = win.spirit.required.spirit.data;
@@ -453,24 +463,29 @@ test.run('on a page the cache has the 4 MB cap, the same as a process', 0.4, fun
   const { P } = pageCopy();
   return typeof P.whole.byteCap === 'function' && P.whole.byteCap() === 4 * 1024 * 1024 && P.whole.byteCap() === CAP.was ? true : false;
 }, test.limit.quick);
-// THE PAGE IS A CACHE NODE OF ITS OWN (goal/G49.8, point 1, box v12; Andy: "a publish-stream-cache", "the bucket is stored (on
-// disc or RAM)", "it uses the exact same shedding logic as the intermediary cache. instead of disc it uses the caches
-// \"RAM-DRIVER\"", "for the bucket, the default is: arrival sequence.", "shedding: the longest held seat"; Q1: "Absolutely"):
-// one bucket per branch and remote, 4 MB each. A branch here is the data set's second step, its remote the node the rows are
-// filed under. Rows of about 1 KB are written until one branch holds some 5 MB.
+// THE PAGE IS A CACHE NODE OF ITS OWN (goal/G49.8, point 1, box v12; Andy: "a publish-stream-cache. that's all it really is,
+// where the input is filtered by data.js", "it uses the exact same shedding logic as the intermediary cache. instead of disc it
+// uses the caches \"RAM-DRIVER\"", "for the bucket, the default is: arrival sequence.", "shedding: the longest held seat"; Q1:
+// "Absolutely"): one bucket per branch and remote, 4 MB each, of what the stream brings: each row a job taken on the page, with
+// what its branch's translator wrote for it. Rows of about 1 KB are fed until one branch holds some 5 MB. The translator here
+// files a job under the branch and table its app names: { fam, table }.
 const PAGE_CAP = {};
-const KB_ROW = function (i) { return { body: 'x'.repeat(1000), n: i }; };
+const KB_ROW = function (i, more) { return Object.assign({ body: 'x'.repeat(1000), n: i }, more || {}); };
 const PAGE_ROWS = 5200;
-test.run('on a page, a branch written past 4 MB keeps its newest rows within 4 MB, its oldest gone first', 0.4, function () {
+const OTHER_NODE = 'OTHER+NODE/KEY==';
+let pageJob = 0;
+const feed = function (P, fam, table, data, from) { pageJob += 1; P.whole.takeJob({ id: 'zz' + pageJob, module: 'spirit.app.zz', data: data, app: { fam: fam, table: table } }, from || NODE); };
+test.run('on a page, a branch fed past 4 MB by the stream keeps its newest rows within 4 MB, its oldest gone first', 0.4, async function () {
   const { P } = pageCopy();
+  // What the page loads for itself, loaded before the stream's first row comes.
+  await new Promise(function (r) { setTimeout(r, 50); });
   PAGE_CAP.P = P;
+  P.whole.addTranslator({ onJob: function (job, d) { if (job.app && job.app.fam) d.viewAt(job.fromNode, job.app.fam).set(job.app.table + '/' + job.data.n, job.data); } });
   PAGE_CAP.gone = [];
   PAGE_CAP.off = P.watch('big', function (at, v) { if (v === undefined) PAGE_CAP.gone.push(at); });
   // Beside it, before it: another branch of the same node, and the same branch of another node.
-  PAGE_CAP.other = P.whole.viewAt(NODE, 'zzother');
-  PAGE_CAP.remote = P.whole.viewAt('OTHER+NODE/KEY==', FAMILY);
-  for (let i = 0; i < 20; i++) { PAGE_CAP.other.set('small/' + i, KB_ROW(i)); PAGE_CAP.remote.set('big/' + i, KB_ROW(i)); }
-  for (let i = 0; i < PAGE_ROWS; i++) P.set('big/' + i, KB_ROW(i));
+  for (let i = 0; i < 20; i++) { feed(P, 'zzother', 'small', KB_ROW(i)); feed(P, FAMILY, 'big', KB_ROW(i), OTHER_NODE); }
+  for (let i = 0; i < PAGE_ROWS; i++) feed(P, FAMILY, 'big', KB_ROW(i));
   const kept = Object.keys(P.branch('big') || {});
   const bytes = kept.reduce(function (n, k) { return n + Buffer.byteLength(JSON.stringify(P.get('big/' + k))); }, 0);
   PAGE_CAP.kept = kept;
@@ -481,15 +496,27 @@ test.run('on a page, a row its branch sheds is told as a delete', 0.4, function 
   return PAGE_CAP.gone.some(function (at) { return /\/big\/0$/.test(String(at)); }) || false;
 }, test.limit.quick);
 test.run('on a page, another branch of the same node keeps every row when one branch passes 4 MB', 0.4, function () {
-  if (!PAGE_CAP.other) return false;
-  return Object.keys(PAGE_CAP.other.branch('small') || {}).length === 20 || false;
+  if (!PAGE_CAP.P) return false;
+  return Object.keys(PAGE_CAP.P.whole.viewAt(NODE, 'zzother').branch('small') || {}).length === 20 || false;
 }, test.limit.quick);
 test.run('on a page, the same branch of another node keeps every row when this node\'s passes 4 MB', 0.4, function () {
-  if (!PAGE_CAP.remote) return false;
-  const fine = Object.keys(PAGE_CAP.remote.branch('big') || {}).length === 20;
+  if (!PAGE_CAP.P) return false;
+  const fine = Object.keys(PAGE_CAP.P.whole.viewAt(OTHER_NODE, FAMILY).branch('big') || {}).length === 20;
   if (PAGE_CAP.off) PAGE_CAP.off();
   return fine || false;
 }, test.limit.quick);
+// Q1: "May each branch data.js export probability(row) ... ?" "Absolutely": the branch's own make() answers it (cw's build:
+// probability(job), the stream's job as it arrives). Here every tenth row is marked keep, at 1; every other at 0.1.
+test.run('on a page, a branch\'s probability decides what goes: past 4 MB its low rows go and its high ones stay', 0.4, async function () {
+  const { P } = pageCopy();
+  await new Promise(function (r) { setTimeout(r, 50); });
+  P.whole.makeFamily('zzweighed', function () { return { probability: function (job) { return job && job.data && job.data.keep ? 1 : 0.1; } }; });
+  P.whole.addTranslator({ onJob: function (job, d) { if (job.app && job.app.fam) d.viewAt(job.fromNode, job.app.fam).set(job.app.table + '/' + job.data.n, job.data); } });
+  for (let i = 0; i < PAGE_ROWS; i++) feed(P, 'zzweighed', 'rows', KB_ROW(i, i % 10 === 0 ? { keep: true } : {}));
+  const kept = Object.keys(P.whole.viewAt(NODE, 'zzweighed').branch('rows') || {});
+  const high = kept.filter(function (k) { return Number(k) % 10 === 0; }).length;
+  return (kept.length < PAGE_ROWS && high === PAGE_ROWS / 10 && kept.indexOf('0') !== -1) || false;
+}, test.limit.slow);
 
 // THE CACHES PART, once data-caches.js.
 // Once spirit/run/spirit/test/data-caches.js.
