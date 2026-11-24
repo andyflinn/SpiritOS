@@ -163,8 +163,10 @@
     }
   }
   function cap(n) {
+    // On a page the cap is each branch bucket's (cacheRow, below), CAP bytes; a page counts no writes of its own.
+    if (onPage) return CAP;
     if (n === undefined) return capBytes;
-    if (onPage || !(Number(n) > 0)) return capBytes;
+    if (!(Number(n) > 0)) return capBytes;
     capBytes = Number(n);
     Object.keys(pools).forEach(function (k) { shed(pools[k], null); });
     return capBytes;
@@ -308,14 +310,15 @@
       if (cmd.op === 'deleteFile' || cmd.op === 'deleteDirectory') {
         seenJobs.delete(at);
         if (cmd.op === 'deleteDirectory') Array.from(seenJobs.keys()).forEach(function (k) { if (k.indexOf(at + '/') === 0) seenJobs.delete(k); });
-        return;
+        return '';
       }
       seenJobs.set(at, job);
-      return;
+      return at;
     }
     var k = seenKey(job);
     seenJobs.delete(k);
     seenJobs.set(k, job);
+    return k;
   }
   // Every job is handed over, data or none: each translator reads what it needs (the jobs family keeps them whole).
   // EVERY SERVER'S remote ROW, FILED HERE ONCE (goal/G47.5; Andy: "all, agreed. spirit/data.js", not a server's own data.js,
@@ -333,8 +336,46 @@
   function onJob(job, from) {
     if (!job || typeof job !== 'object') return;
     remoteOf(job);
-    if (onPage && job.id) keep(job);
-    if (handing()) each('onJob', stamped(job, from));
+    var seen = onPage && job.id ? keep(job) : '';
+    if (!handing()) return;
+    if (!onPage) { each('onJob', stamped(job, from)); return; }
+    var paths = recording(function () { each('onJob', stamped(job, from)); });
+    cacheRow(job, seen, paths);
+  }
+  // A PAGE'S CACHE IS A PUBLISH-STREAM CACHE (goal/G49.8, point 1, box v12; Andy: "a publish-stream-cache. that's all it really
+  // is, where the input is filtered by data.js", "data.js decides how important a publish-item is with a probability number,
+  // and throws it into the bucket", "the bucket is stored (on disc or RAM)"): each row the stream brings is seated, with the
+  // paths it wrote, in one probabilityBucket per node and branch, of CAP bytes. Its probability is the branch's own
+  // (its data.js's probability(row), from 0 to 1); a branch that gives none puts every row at 1, so the bucket keeps the
+  // newest (Andy, Q1: "with the newest row highest where it gives none? Absolutely"). A row the bucket pushes out takes out
+  // what it wrote and is still the last to have written, each told as a delete, and its job is no longer replayed.
+  var pageCaches = Object.create(null);  // node/branch -> { bucket, last: path -> entry }
+  var makeBucket = null;
+  function rowBucket() { if (!makeBucket) { var r = ranking(); makeBucket = typeof r.bucket === 'function' ? r.bucket : null; } return makeBucket; }
+  // A path's node/branch: up to its second slash.
+  function branchKey(p) { var a = p.indexOf('/'); var b = a === -1 ? -1 : p.indexOf('/', a + 1); return b === -1 ? p : p.slice(0, b); }
+  function cacheRow(job, seen, paths) {
+    if (!paths.length) return;
+    var make = rowBucket();
+    if (!make) return;
+    var groups = Object.create(null);
+    paths.forEach(function (p) { var k = branchKey(p); (groups[k] = groups[k] || []).push(p); });
+    Object.keys(groups).forEach(function (k) {
+      var c = pageCaches[k] || (pageCaches[k] = { bucket: make(CAP), last: new Map() });
+      // The row is what is measured (the bucket measures the object it seats): the job as the stream brought it.
+      var entry = { job: job, paths: groups[k], seen: seen, toJSON: function () { return job; } };
+      entry.paths.forEach(function (p) { c.last.set(p, entry); });
+      var f = families[k.split('/')[1]];
+      var weigh = f && f.data && typeof f.data.probability === 'function' ? f.data.probability : null;
+      var p = 1;
+      if (weigh) { try { p = Number(weigh(job)); } catch (e) { p = 1; } if (!(p >= 0 && p <= 1)) p = 1; }
+      var out = c.bucket.seatFor(p, entry);
+      (out === false ? [entry] : out).forEach(function (gone) { dropRow(c, gone); });
+    });
+  }
+  function dropRow(c, gone) {
+    gone.paths.forEach(function (p) { if (c.last.get(p) === gone) { c.last.delete(p); del(p); } });
+    if (gone.seen && seenJobs.get(gone.seen) === gone.job) seenJobs.delete(gone.seen);
   }
   function onRename(d, from) {
     if (!d || !d.key) return;

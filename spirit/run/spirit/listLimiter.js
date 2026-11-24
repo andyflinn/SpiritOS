@@ -25,7 +25,20 @@ if (typeof require === 'function') require('./spirit.js'); // node only: a page 
 
 // THE BYTES, NOT THE CHARACTERS (Andy, 2026-10-10: every size check in bytes, never .length): UTF-8, in node and in a
 // page alike.
-function utf8Bytes(text) { return unescape(encodeURIComponent(String(text))).length; }
+// Counted character by character, as UTF-8 writes them (goal/G49.8: the encodeURIComponent round-trip this replaces was most
+// of a page cache's cost per row): below 0x80 one byte, below 0x800 two, a surrogate pair four, anything else three.
+function utf8Bytes(text) {
+  var s = String(text);
+  var n = 0;
+  for (var i = 0; i < s.length; i += 1) {
+    var c = s.charCodeAt(i);
+    if (c < 0x80) n += 1;
+    else if (c < 0x800) n += 2;
+    else if (c >= 0xD800 && c <= 0xDBFF && i + 1 < s.length && (s.charCodeAt(i + 1) & 0xFC00) === 0xDC00) { n += 4; i += 1; }
+    else n += 3;
+  }
+  return n;
+}
 
 function scored(probability) { return typeof probability === 'number' && probability >= 0 && probability <= 1; }
 
@@ -35,10 +48,36 @@ function scored(probability) { return typeof probability === 'number' && probabi
 // it is seated. Infinity holds everything.
 function createProbabilityBucket(capacity) {
   var cap = typeof capacity === 'number' && capacity > 0 ? (capacity === Infinity ? Infinity : Math.floor(capacity)) : 0;
-  var table = [];          // { probability, object, bytes }, highest first, equals in arrival order
+  // ONE QUEUE PER PROBABILITY (goal/G49.8: a page's cache of thousands, every row at 1, sheds the longest held at each row):
+  // levels, the probabilities held, highest first; each its queue of { object, bytes } in arrival order, read from its head.
+  // Seating appends to its level's queue, shedding takes the head of the lowest level, so neither walks nor shifts the rest.
+  var levels = [];
+  var queues = Object.create(null);  // String(probability) -> { p, items, head }
+  var count = 0;
   var turnedAway = 0;
   var held = 0;            // the objects' own bytes, summed
-  function size() { return table.length ? 2 + held + (table.length - 1) : 2; }
+  function size() { return count ? 2 + held + (count - 1) : 2; }
+  function queueOf(p) {
+    var k = String(p);
+    var q = queues[k];
+    if (q) return q;
+    q = queues[k] = { p: p, items: [], head: 0 };
+    var lo = 0, hi = levels.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (levels[mid] > p) lo = mid + 1; else hi = mid; }
+    levels.splice(lo, 0, p);
+    return q;
+  }
+  function dropLevel(q) { delete queues[String(q.p)]; levels.splice(levels.indexOf(q.p), 1); }
+  // Every held entry, highest first, equals in arrival order.
+  function table() {
+    var out = [];
+    levels.forEach(function (p) { var q = queues[String(p)]; for (var i = q.head; i < q.items.length; i += 1) out.push({ probability: p, object: q.items[i].object, bytes: q.items[i].bytes }); });
+    return out;
+  }
+  function refill(entries) {
+    levels = []; queues = Object.create(null); count = 0; held = 0;
+    entries.forEach(function (e) { var q = queueOf(e.probability); q.items.push({ object: e.object, bytes: e.bytes }); count += 1; held += e.bytes; });
+  }
 
   return {
     // SEATED BY PROBABILITY: highest at the top, an equal one behind those already in. Past the byte limit the longest
@@ -52,20 +91,21 @@ function createProbabilityBucket(capacity) {
       if (cap === 0) { turnedAway += 1; return false; }
       // With no limit nothing is measured: a page seats every row of its lists in an Infinity bucket, and measuring each
       // write is what slowed the shell (goal/G49.8, twice).
-      var bytes = cap === Infinity ? 0 : utf8Bytes(JSON.stringify(object) === undefined ? 'null' : JSON.stringify(object));
-      var entry = { probability: probability, object: object, bytes: bytes };
-      var at = table.length;
-      while (at > 0 && table[at - 1].probability < probability) at -= 1;
-      table.splice(at, 0, entry);
-      held += bytes;
+      var text = cap === Infinity ? '' : JSON.stringify(object);
+      var entry = { object: object, bytes: cap === Infinity ? 0 : utf8Bytes(text === undefined ? 'null' : text) };
+      queueOf(probability).items.push(entry);
+      count += 1;
+      held += entry.bytes;
       var out = [];
       var seated = true;
-      while (cap !== Infinity && table.length && size() > cap) {
-        // The lowest probability is at the end; the longest held of it is the first of that run.
-        var low = table[table.length - 1].probability;
-        var first = table.length - 1;
-        while (first > 0 && table[first - 1].probability === low) first -= 1;
-        var gone = table.splice(first, 1)[0];
+      while (cap !== Infinity && count && size() > cap) {
+        var q = queues[String(levels[levels.length - 1])];
+        var gone = q.items[q.head];
+        q.items[q.head] = null;
+        q.head += 1;
+        if (q.head > 64 && q.head * 2 > q.items.length) { q.items = q.items.slice(q.head); q.head = 0; }
+        if (q.head >= q.items.length) dropLevel(q);
+        count -= 1;
         held -= gone.bytes;
         turnedAway += 1;
         if (gone === entry) seated = false; else out.push(gone.object);
@@ -84,9 +124,10 @@ function createProbabilityBucket(capacity) {
       var ceiling = typeof maxBytes === 'number' && maxBytes > 0 ? maxBytes : 0;
       var out = [];
       var cut = false;
-      for (var i = 0; i < table.length; i += 1) {
-        if (!scored(table[i].probability)) continue;
-        var row = toWire(table[i].object);
+      var all = table();
+      for (var i = 0; i < all.length; i += 1) {
+        if (!scored(all[i].probability)) continue;
+        var row = toWire(all[i].object);
         if (ceiling && utf8Bytes(JSON.stringify(out.concat([row]))) > ceiling) { cut = true; break; }
         out.push(row);
       }
@@ -100,9 +141,8 @@ function createProbabilityBucket(capacity) {
     // later sort scores it again.
     sort: function (compare) {
       if (typeof compare !== 'function') return;
-      table = table.map(function (x, at) { var p = compare(x.object); return { probability: scored(p) ? p : -1, object: x.object, bytes: x.bytes, at: at }; })
-        .sort(function (a, b) { return b.probability - a.probability || a.at - b.at; })
-        .map(function (x) { return { probability: x.probability, object: x.object, bytes: x.bytes }; });
+      refill(table().map(function (x, at) { var p = compare(x.object); return { probability: scored(p) ? p : -1, object: x.object, bytes: x.bytes, at: at }; })
+        .sort(function (a, b) { return b.probability - a.probability || a.at - b.at; }));
     },
   };
 }
