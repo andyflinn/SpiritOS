@@ -9,6 +9,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -70,7 +72,7 @@ function world() {
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };
   pageData.homeNode('nOdE+key/one==');
   win.spirit.requireScript('spirit/client/apiTreeIndex.js');
-  vm.runInContext(SERVER_SRC, win, { filename: SERVER_FILE });
+  PAGE_LOAD.runAsPage(SERVER_FILE, win, SERVER_SRC);
   w.E = win.spirit.required.spirit.element;
   return w;
 }

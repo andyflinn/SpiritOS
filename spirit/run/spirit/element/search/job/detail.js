@@ -27,12 +27,19 @@
 // (spirit.required.spirit.data.job.data, spirit/job/data.js), which keeps every job's events whatever is on screen, so a reopen shows what
 // came meanwhile. It repaints when its job changes there.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the Extract box's codeMirror, the job row element whose actionOf picks its
   // button, and the jobs family's interface, spirit/job/api.js (it loads the cache manager), whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
   // branches are intrinsic doesn't fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT
   // REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS").
-  var parts = Promise.all([S.requireScript('spirit/element/codeMirror.js'), S.requireScript('spirit/job/api.js'), S.requireScript('spirit/element/search/job/row.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/job/api.js'), keepAnswer('spirit/element/search/job/row.js')]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -58,7 +65,7 @@
   // CANCEL OR DELETE, decided by the job row element's actionOf (goal/G47.1, one rule for this detail and the task row,
   // spirit/element/monitor/task.js): Cancel for a one-shot process and a user-operated server, Delete once the job is terminal.
   function buttonsHtml(job) {
-    var a = S.required.spirit.element.search.job.row.actionOf(job);
+    var a = ANSWER['spirit/element/search/job/row.js'].actionOf(job);
     if (a === 'cancel') return '<button type="button" class="cancel-btn" data-job="cancel">Cancel</button>';
     if (a === 'delete') return '<button type="button" class="cancel-btn" data-job="delete">Delete</button>';
     return '';
@@ -145,12 +152,12 @@
       function failed(word) { return function (e) { console.error(word + ' failed', e); }; }
       if (what === 'cancel') {
         // It stays open: the next event shows the job stop.
-        Promise.all([S.readyPromise, parts]).then(function () { return S.requireScript('spirit/job/api.js'); }).then(function (j) { return j.cancel({ id: id }); }).then(null, failed('cancel'));
+        Promise.all([S.readyPromise, parts]).then(function () { return keepAnswer('spirit/job/api.js'); }).then(function (j) { return j.cancel({ id: id }); }).then(null, failed('cancel'));
         return;
       }
       if (what === 'delete') {
         // IT GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the list.
-        Promise.all([S.readyPromise, parts]).then(function () { return S.requireScript('spirit/job/api.js'); }).then(function (j) { return j.delete({ id: id }); }).then(function () {
+        Promise.all([S.readyPromise, parts]).then(function () { return keepAnswer('spirit/job/api.js'); }).then(function (j) { return j.delete({ id: id }); }).then(function () {
           if (typeof o.close === 'function') o.close();
         }, failed('delete'));
       }
@@ -162,7 +169,7 @@
       var win = part('window');
       if (win) win.textContent = 'Events (the last ' + ((J && J.eventWindow) || 256) + ')';
       // THE EXTRACT BOX ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7).
-      Promise.resolve(S.required.spirit.element.codeMirror.create(part('extract'), { mode: 'read', text: '', path: 'event.json' })).then(function (v) {
+      Promise.resolve(ANSWER['spirit/element/codeMirror.js'].create(part('extract'), { mode: 'read', text: '', path: 'event.json' })).then(function (v) {
         if (gone) return;
         view = v;
         if (view && view.cm && typeof view.cm.setSize === 'function') view.cm.setSize('100%', '100%');
@@ -186,5 +193,6 @@
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job/detail.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

@@ -8,6 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -39,7 +41,7 @@ test.run('the detail runs on a bare window, the real api tree reader beside it',
   global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(true); };
   // In node apiTreeIndex.js answers its module; a page has it at spirit.required.spirit.client.apiTreeIndex, as here.
   ((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}); (global.window.spirit.required.spirit.client = global.window.spirit.required.spirit.client || {}); global.window.spirit.required.spirit.client.apiTreeIndex = LOADER.requireScript('spirit/client/apiTreeIndex.js');
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   await settle();
   D = global.window.spirit.required.spirit.element.search && global.window.spirit.required.spirit.element.search.api && global.window.spirit.required.spirit.element.search.api.detail;
   return true;

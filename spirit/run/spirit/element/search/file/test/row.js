@@ -11,6 +11,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -35,9 +37,9 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
     stat: function (a) { asked.push({ verb: 'fs.stat', args: a }); return Promise.resolve({ size: 9 }); },
     annotations: function (a) { asked.push({ verb: 'fs.annotations', args: a }); return Promise.resolve({ note: 'n' }); },
   };
-  const STANDS = { 'spirit/element/row.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'row.js'), 'utf8'), { filename: 'row.js' }); },
+  const STANDS = { 'spirit/element/row.js': function () { PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row.js')); },
     // What says a file's kind (goal/G43.17), the real one, should the row ask it.
-    'spirit/element/fstat.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat.js'); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: 'fstat.js' }); } };
+    'spirit/element/fstat.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat.js'); if (fs.existsSync(f)) PAGE_LOAD.runAsPage(f); } };
   // escapeHtml and formatBytes are the spirit object's own: spirit.js fills this object with them as the element helper
   // loads it, as on a page.
   // What readyPromise answers holds no branch (goal/G49.6); the fs branch is answered by its api.js path, below.
@@ -61,9 +63,9 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // companion data.js"): the stand-in runs that data.js once, attaching itself to the data set. A data.js asked for
   // directly is only recorded.
   const ran = {};
-  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: f }); } };
+  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; PAGE_LOAD.runAsPage(f); } };
   global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(p === 'spirit/fs/api.js' ? fsFamily : true); };
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   F = ((global.window.spirit.required.spirit.data || {}).fs || {}).data;

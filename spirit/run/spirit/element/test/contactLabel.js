@@ -9,6 +9,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -68,7 +70,7 @@ const rename = function (detail) { doc.fire('contact.rename', { detail: detail }
 let box, boxed, plain, edit, b1, b2, b3, a2, unknown, failed, placed, waiting, listening, input, n, lab;
 test.run('it registers spirit.required.spirit.element.contactLabel with a create, and createContactLabel no more', 0.2, function () {
   // the element
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   made = window.spirit.required.spirit.element.contactLabel;
   return (made && typeof made.create === 'function' && !('createContactLabel' in window.spirit.required)) ? true : false;
 }, test.limit.quick);

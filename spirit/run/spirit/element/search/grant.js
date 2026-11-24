@@ -10,10 +10,18 @@
 //     options        handed to the list as they are (grants, filters, selectors, empty); the list is drawn in the container itself, so a
 //                    pane fills the box it is given
 (function () {
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.
-  window.spirit.requireScript('spirit/element/search/grant/list.js');
-  function create(container, options) {
-    return window.spirit.required.spirit.element.search.grant.list.create(container, options);
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
   }
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant.js', { create: create }); });
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.
+  keepAnswer('spirit/element/search/grant/list.js');
+  function create(container, options) {
+    return ANSWER['spirit/element/search/grant/list.js'].create(container, options);
+  }
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

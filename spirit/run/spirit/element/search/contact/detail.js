@@ -3,6 +3,13 @@
 // contained in the motherfucking spirit objects"): a page loads this file through a script tag, so the whole of it runs
 // inside one function, and what it hands out goes onto the spirit object or module.exports, never the window.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
 // spirit/run/spirit/element/search/contact/detail.js
 // One row of the contacts, as its own panel, opened over the list that
 // mounted it (search/contact/row.js, openDetails): it shows that
@@ -84,7 +91,7 @@ function cdStatus(text) {
 var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relay.status
 function cdRelayClaim() {
   cdClaim = null;
-  return Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
+  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
     ((r.body && r.body.rows) || []).forEach(function (row) {
       if (row && (row.key === cdKey || (row.roll && row.roll.relayKey === cdKey))) cdClaim = { owned: !!row.owned, ownerLabel: String(row.ownerLabel || '') };
     });
@@ -158,7 +165,7 @@ function cdTitle() {
 // and keeps one armed at a time; this screen says only what each says and what its second press does.
 function cdArming(id, label, armedLabel, run) {
   var button = cdById(id);
-  var E = window.spirit && window.spirit.required && window.spirit.required.spirit.element.armingButton;
+  var E = window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton.js'];
   if (!button || !E) return;
   E.attach(button, { label: label, armedLabel: armedLabel, run: run });
 }
@@ -601,7 +608,7 @@ function ndLoad() {
   ndUnlisted = false;
 // relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
   // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
-  return Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.status(ndLabel || ''); }).then(function (r) { return r && r.body; })
+  return Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.status(ndLabel || ''); }).then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];
@@ -1609,7 +1616,7 @@ function ndSetTitle() {
 // moves and keeps one armed at a time. This screen says only what each
 // says, armed and not, and what its second press does.
 function ndArming(body) {
-  var E = window.spirit && window.spirit.required && window.spirit.required.spirit.element.armingButton;
+  var E = window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton.js'];
   if (!E) return;
   var each = function (selector, fn) { Array.prototype.forEach.call(body.querySelectorAll(selector), fn); };
   var attach = function (button, armedLabel, run) {
@@ -1898,7 +1905,7 @@ var ndPage = ({
     // ITS ROW, FROM THE ONE TABLE (goal/G40.11), THE CONTACT FAMILY'S CACHE (goal/G41.28): painted as it changes, with no
     // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
     // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
-    ndStops.push(Promise.resolve(spirit.requireScript('spirit/contact/api.js')).then(function () {
+    ndStops.push(Promise.resolve(keepAnswer('spirit/contact/api.js')).then(function () {
       if (ndGone || !((window.spirit.required.spirit.data || {}).contact || {}).data) return function () {};
       return window.spirit.required.spirit.data.contact.data.watch(ndHearRow);
     }));
@@ -2089,10 +2096,10 @@ return panel;
 }());
 
 // The armingButton it draws Block and Forget with, it loads itself (goal/G41.3), through spirit.requireScript.
-if (window.spirit && window.spirit.requireScript) window.spirit.requireScript('spirit/element/armingButton.js');
+if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/armingButton.js');
 // EVERY FIELD HELD BY ITS TYPE AS IT IS TYPED (goal/G48.4, box v22: "ever input field in every element must validate the input
 // with the new type checks."): fieldInput, asked as this file runs, and each field it draws handed to it with its type.
-if (window.spirit && window.spirit.requireScript) window.spirit.requireScript('spirit/element/fieldInput.js');
+if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/fieldInput.js');
 function typedField() { var r = window.spirit && window.spirit.required; return (r && r.spirit && r.spirit.element && r.spirit.element.fieldInput) || null; }
 // The contact's own name for it.
 function cdTypeFields(scope) {
@@ -2126,7 +2133,8 @@ function ndTypeFields(scope) {
 // create(container, options) draws the same screen into the container, options { key, layer }.
 // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "contactDetails.js should really be
 // spirit/run/spirit/element/search/contact/detail.js"): merged into, so the parts of search/contact/ load in any order.
-window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/contact/detail.js', {
+// What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = {
   create: function (container, options) {
     var o = options || {};
     var done = { destroy: function () { container.innerHTML = ''; } };
@@ -2154,5 +2162,5 @@ window.spirit.requireScript('spirit/element/installSpiritElement.js').then(funct
   },
   // NO open OF ITS OWN (goal/G43.18): it opens as a panel over what mounted its list (search/contact/row.js, openDetails),
   // never as a page on the navigation.
-}); });
+};
 }());

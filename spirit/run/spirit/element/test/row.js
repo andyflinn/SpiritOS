@@ -8,6 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -30,7 +32,7 @@ function counted() {
 let given, a, bare, b, cells, hn, ret, hName, hAge, hStatus, c, threw, unmounted, partial, hb, seen, d;
 test.run('kind and key are text', 0.2, function () {
   // create: what the element says of itself
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   R = window.spirit.required.spirit.element.row;
   given = { name: 'ann', age: 3 };
   a = R.create({ kind: 7, key: 42, row: given, fields: [{ name: 'name' }, { name: 'age' }],

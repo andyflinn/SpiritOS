@@ -13,6 +13,13 @@
 //     options.face, options.placeholder, options.pick   handed to the list: 'dropdown' a closed field (box v123), else the pane
 //     root.destroy() lets its list go, and takes itself out of its container
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   function createJobSelector(options) {
     var o = options || {};
     var root = document.createElement('div');
@@ -23,9 +30,9 @@
     var made = null;
     var gone = false;
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.resolve(window.spirit.requireScript('spirit/element/search/job/list.js')).then(function () {
+    Promise.resolve(keepAnswer('spirit/element/search/job/list.js')).then(function () {
       if (gone) return;
-      made = window.spirit.required.spirit.element.search.job.list.create(root, { open: o.open, face: o.face, placeholder: o.placeholder, pick: o.pick });
+      made = ANSWER['spirit/element/search/job/list.js'].create(root, { open: o.open, face: o.face, placeholder: o.placeholder, pick: o.pick });
     });
     root.destroy = function () {
       gone = true;
@@ -38,5 +45,6 @@
 
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself").
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/job.js', { create: function (container, options) { var root = createJobSelector(options); container.appendChild(root); return root; } }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: function (container, options) { var root = createJobSelector(options); container.appendChild(root); return root; } };
 })();

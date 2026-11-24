@@ -29,11 +29,18 @@
 // contact.rename").
 
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // WHAT IT USES, IT LOADS ITSELF (goal/G43.27): the label type, which mode 2 checks a name with, through spirit.requireScript
   // (goal/G48.4, the box: "fieldRules.js dies").
-  if (window.spirit && window.spirit.requireScript) window.spirit.requireScript('spirit/type/string/label.js');
+  if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/type/string/label.js');
   // And fieldInput, which holds the name typed in mode 2 to that type as it is typed.
-  if (window.spirit && window.spirit.requireScript) window.spirit.requireScript('spirit/element/fieldInput.js');
+  if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/fieldInput.js');
   // ONE NAME PER KEY FOR THE PAGE (Andy, goal/G4.10: "the pane and dropdown seem to still initialize with keys. this
   // makes the keys flashing briefly every time an update occurs"). A list redrawn makes new labels; a name already
   // known draws at once, and one key is asked of the node once, however many labels wait for it.
@@ -42,7 +49,7 @@
   function nameFor(key) {
     if (!asking[key]) {
       // Through the spirit object (goal/G32.2): a checked call answering the reply's body.
-      asking[key] = spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.get({ key: key }); }).then(function (body) {
+      asking[key] = spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.get({ key: key }); }).then(function (body) {
         var person = body && body.person;
         if (person && typeof person.caption === 'string') known[key] = person.caption;
         return known[key] || '';
@@ -96,7 +103,7 @@
       var bad = '';
       if (L) { try { L.isValid(name); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { why.textContent = bad; return; }
-      spirit.readyPromise.then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (s) { return s.label({ publicKey: key, myLabel: name }); }).then(function (body) {
+      spirit.readyPromise.then(function () { return keepAnswer('spirit/contact/api.js'); }).then(function (s) { return s.label({ publicKey: key, myLabel: name }); }).then(function (body) {
         caption = (body && typeof body.caption === 'string') ? body.caption : name;
         known[key] = caption;
         close();
@@ -110,7 +117,7 @@
       editing.type = 'text';
       editing.className = 'contact-label-input';
       editing.value = caption;
-      var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+      var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput.js'];
       if (FI) FI.attach(editing, 'spirit.type.string.label');
       editing.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
@@ -161,5 +168,6 @@
 
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/contactLabel.js', { create: function (container, options) { var root = createContactLabel(options); container.appendChild(root); return root; } }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: function (container, options) { var root = createContactLabel(options); container.appendChild(root); return root; } };
 })();

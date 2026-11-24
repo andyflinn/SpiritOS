@@ -30,6 +30,13 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // AN APP'S MAIN ELEMENT BY THE APP'S NAME (goal/G43.32, rule 4): spirit/app/<name>/element.js, placed at
   // spirit.required.spirit.app.<name>.element.
   function appElementOf(name) {
@@ -110,10 +117,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     // AN APP'S DETAIL COMES WHEN ONE OPENS (goal/G43.27; Andy: "make sure that spirit.js does NOT load all that shit!!!!!!!!!"):
     // detail.js and what it draws with are required then, once, and not as the list loads.
-    function detailReady() { return window.spirit.requireScript('spirit/element/search/app/detail.js'); }
+    function detailReady() { return keepAnswer('spirit/element/search/app/detail.js'); }
     function panel(row) {
       open('detail', row, function (pane, closed) {
-        return detailReady().then(function () { return closed() ? null : window.spirit.required.spirit.element.search.app.detail.create(pane, { row: row, panel: true }); });
+        return detailReady().then(function () { return closed() ? null : ANSWER['spirit/element/search/app/detail.js'].create(pane, { row: row, panel: true }); });
       });
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
@@ -129,7 +136,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       detailReady().then(function () {
         if (gone || root.row !== asked) return;
         clearDetail();
-        detail = window.spirit.required.spirit.element.search.app.detail.create(detailBox, { row: row });
+        detail = ANSWER['spirit/element/search/app/detail.js'].create(detailBox, { row: row });
       });
     }
     function onFace(now) {
@@ -138,11 +145,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (stack) stack.close();
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.all([window.spirit.requireScript('spirit/element/search/app.js'), window.spirit.requireScript('spirit/element/panel.js')]).then(function () {
+    Promise.all([keepAnswer('spirit/element/search/app.js'), keepAnswer('spirit/element/panel.js')]).then(function () {
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
-      stack = window.spirit.required.spirit.element.panel.create(root, listBox);
-      made = window.spirit.required.spirit.element.search.app.create(listBox, { face: face, onFace: onFace, pick: pick,
+      stack = ANSWER['spirit/element/panel.js'].create(root, listBox);
+      made = ANSWER['spirit/element/search/app.js'].create(listBox, { face: face, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
         // The keys left out of every face, app itself always (goal/G43.18; Andy: "the shell should exclude itself completely
         // from the app-list").
@@ -168,5 +175,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return root;
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/script.js', { create: function (container, options) { var root = createAppSelector(options); container.appendChild(root); return root; } }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: function (container, options) { var root = createAppSelector(options); container.appendChild(root); return root; } };
 })();

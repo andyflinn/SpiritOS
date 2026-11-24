@@ -21,10 +21,17 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   var parts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/branch.js', 'spirit/element/rowForm.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
-  }).concat([window.spirit.requireScript ? window.spirit.requireScript('spirit/element/armingButton.js') : null, window.spirit.requireScript('spirit/auth/api.js')]));
+  }).concat([window.spirit.requireScript ? keepAnswer('spirit/element/armingButton.js') : null, keepAnswer('spirit/auth/api.js')]));
 
   function mount(box, o) {
     var E = window.spirit.required;
@@ -70,7 +77,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       say('');
       var ask = { op: 'add', bundle: Number(o.bundle), family: family.family, verb: family.verb || '' };
       waiting = { bundle: ask.bundle, family: ask.family, verb: ask.verb };
-      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.branch(ask); }).then(function () {
+      return spirit.readyPromise.then(function () { return keepAnswer('spirit/auth/api.js'); }).then(function (s) { return s.branch(ask); }).then(function () {
         branches.refresh();
       }, function (e) { waiting = null; say((e && (e.message || e.refusal)) || 'not added'); });
     }
@@ -84,9 +91,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     delSaid.className = 'job-manifest-note';
     if (delSaid.style) delSaid.style.overflow = 'hidden';
     box.appendChild(delSaid);
-    E.spirit.element.armingButton.attach(del.button, { label: 'Delete', run: function () {
+    ANSWER['spirit/element/armingButton.js'].attach(del.button, { label: 'Delete', run: function () {
       delSaid.textContent = '';
-      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'delete', id: Number(o.bundle) }); }).then(null, function (e) {
+      return spirit.readyPromise.then(function () { return keepAnswer('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'delete', id: Number(o.bundle) }); }).then(null, function (e) {
         delSaid.textContent = (e && (e.message || e.refusal)) || 'not deleted';
       });
     } });
@@ -102,5 +109,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     parts.then(function () { if (!gone) mounted = mount(container, options || {}); });
     return { destroy: function () { gone = true; if (mounted) mounted.destroy(); mounted = null; container.innerHTML = ''; } };
   }
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/detail.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

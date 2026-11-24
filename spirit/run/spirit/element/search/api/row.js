@@ -8,16 +8,23 @@
 //
 //   spirit.required.spirit.element.search.api.row.create({ name }) -> the row element
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the shared row element.
-  S.requireScript('spirit/element/row.js');
+  keepAnswer('spirit/element/row.js');
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
   var index = null;
   function create(row) {
     var r = row || {};
-    var R = S.required.spirit.element.row;
+    var R = ANSWER['spirit/element/row.js'];
     var name = String(r.name || r.key || '');
     index = index || R.index(function () {});
     return R.create({
@@ -31,5 +38,6 @@
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api/row.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

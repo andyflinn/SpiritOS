@@ -21,14 +21,21 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
-  if (window.spirit.requireScript) window.spirit.requireScript('spirit/element/row.js');
+  if (window.spirit.requireScript) keepAnswer('spirit/element/row.js');
 
   // A NODE'S BUNDLES ARE THE auth FAMILY'S CACHE (goal/G41.28): what a bundle row on the stream means, and its branch,
   // are the family's own data.js's (spirit/auth/data.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.required.spirit.data.auth.data.bundles.
-  var authReady = Promise.resolve(window.spirit.requireScript('spirit/auth/api.js')).then(function () { return window.spirit.required.spirit.data.auth.data.bundles; });
+  var authReady = Promise.resolve(keepAnswer('spirit/auth/api.js')).then(function () { return window.spirit.required.spirit.data.auth.data.bundles; });
   // THE KIND'S INDEX: one watch on the bundles for every bundle row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var bundles = null;
@@ -48,7 +55,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
-    bundles = bundles || E.spirit.element.row.index(dispatch);
+    bundles = bundles || ANSWER['spirit/element/row.js'].index(dispatch);
     return bundles;
   }
 
@@ -60,7 +67,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   function create(row) {
     var r = row || {};
     var id = Number(r.id);
-    return E.spirit.element.row.create({
+    return ANSWER['spirit/element/row.js'].create({
       kind: 'bundle',
       key: String(id),
       index: index(),
@@ -75,5 +82,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle/row.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

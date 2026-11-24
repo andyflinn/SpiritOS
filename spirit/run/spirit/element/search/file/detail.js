@@ -8,7 +8,14 @@
 //   spirit.required.spirit.element.search.file.detail.create(host, { path }) -> { destroy() }
 //     path   the file's path on the home node; fstat shows its MIME type at once, then its size, changed and created
 (function () {
-  var parts = Promise.resolve(window.spirit.requireScript('spirit/element/fstat.js'));
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  var parts = Promise.resolve(keepAnswer('spirit/element/fstat.js'));
   function create(host, opts) {
     var gone = false;
     var path = String((opts && opts.path) || '');
@@ -17,12 +24,13 @@
     // fstat itself, shared with the viewers, is left as it is.
     parts.then(function () {
       if (gone) return;
-      window.spirit.required.spirit.element.fstat.create(host, { path: path });
+      ANSWER['spirit/element/fstat.js'].create(host, { path: path });
       var frame = host.firstElementChild;
       if (frame && frame.style) frame.style.overflow = 'auto';
     });
     // Destroy leaves its host empty, as every element.
     return { destroy: function () { gone = true; host.innerHTML = ''; } };
   }
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/detail.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

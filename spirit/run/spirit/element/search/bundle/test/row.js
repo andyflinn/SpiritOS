@@ -10,6 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -67,7 +69,7 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   armed = [];
   opened = [];
   const auth = { bundle: function (a) { asked.push(a); return answer(a); } };
-  const load = function (p) { vm.runInThisContext(fs.readFileSync(path.join(RUN, p), 'utf8'), { filename: p }); };
+  const load = function (p) { PAGE_LOAD.runAsPage(path.join(RUN, p)); };
   const STANDS = {
     'spirit/element/row.js': function () { load('spirit/element/row.js'); },
     'spirit/element/fieldInput.js': function () { load('spirit/element/fieldInput.js'); },
@@ -94,7 +96,7 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   // The direct writes below are the auth family's own view of the home node, as its data.js files them.
   V = DATA.viewAt(null, 'auth');
   global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !ran) { ran = true; load('spirit/auth/data.js'); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
   A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;

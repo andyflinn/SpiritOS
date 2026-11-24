@@ -14,8 +14,15 @@
 //     options.exclude  glyphs already spoken for, kept off the list (glyphs, not keys: what collides is the picture)
 //     options.face     'pane' or the default 'dropdown'; options.placeholder, options.all, options.empty as the list's
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its list, as this file runs, so a caller's require waits for it.
-  window.spirit.requireScript('spirit/element/search/icon/list.js');
+  keepAnswer('spirit/element/search/icon/list.js');
   function create(container, options) {
     var o = options || {};
     var exclude = Array.isArray(o.exclude) ? o.exclude.map(String) : [];
@@ -26,7 +33,7 @@
     root.value = String(o.value || '');
     root.row = null;
     container.appendChild(root);
-    var list = window.spirit.required.spirit.element.search.icon.list.create(root, {
+    var list = ANSWER['spirit/element/search/icon/list.js'].create(root, {
       face: o.face === 'pane' ? 'pane' : 'dropdown',
       // The glyph it holds shows in the closed field until a pick names another.
       placeholder: root.value || o.placeholder,
@@ -45,5 +52,6 @@
     root.destroy = function () { list.destroy(); if (root.parentNode) root.parentNode.removeChild(root); };
     return root;
   }
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/icon.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

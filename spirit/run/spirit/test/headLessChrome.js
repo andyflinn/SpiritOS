@@ -627,7 +627,38 @@ function pageSpirit(s, loaded, o) {
   return sp;
 }
 
-module.exports = { sharedChrome: sharedChrome, renewChrome: renewChrome, pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
+// A PAGE SCRIPT RUN BY A NODE TEST AS THE PAGE'S LOADER RUNS IT (goal/G49.9, box v5): the file (a run path, or absolute
+// under the run root) in a module box, in the context given (a vm context) or this one, and what it set as module.exports
+// placed at its place in that context's window.spirit.required (a folder's script.js at its folder's name). src, when
+// given, is the file's text as the test holds it. Answers what it exposed.
+function runAsPage(file, context, src) {
+  const vm = require('vm');
+  const abs = path.isAbsolute(String(file)) ? String(file) : path.join(RUN, String(file));
+  const rel = path.relative(RUN, abs).split(path.sep).join('/');
+  const text = typeof src === 'string' ? src : fs.readFileSync(abs, 'utf8');
+  const box = { exports: {} };
+  const start = box.exports;
+  const wrapped = '(function (module, exports) {' + text + '\n})';
+  const fn = context ? vm.runInContext(wrapped, context, { filename: abs }) : vm.runInThisContext(wrapped, { filename: abs });
+  fn(box, box.exports);
+  const set = box.exports !== start || Object.keys(start).length > 0;
+  const win = context ? context : (global.window || global);
+  if (set && box.exports && (typeof box.exports === 'object' || typeof box.exports === 'function')) {
+    win.spirit = win.spirit || {};
+    win.spirit.required = win.spirit.required || {};
+    const keys = rel.replace(/\.js$/, '').split('/').filter(Boolean);
+    if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+    let o = win.spirit.required;
+    for (let i = 0; i < keys.length - 1; i += 1) { if (o[keys[i]] == null) o[keys[i]] = {}; o = o[keys[i]]; }
+    const last = keys[keys.length - 1];
+    const was = o[last];
+    if (was && typeof was === 'object' && typeof was.create !== 'function') Object.keys(was).forEach(function (k) { if (!(k in box.exports)) box.exports[k] = was[k]; });
+    if (was === undefined || (was && typeof was === 'object' && typeof was.create !== 'function')) o[last] = box.exports;
+  }
+  return box.exports;
+}
+
+module.exports = { runAsPage: runAsPage, sharedChrome: sharedChrome, renewChrome: renewChrome, pageSpirit: pageSpirit, sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchTree: scratchTree, startNodeOn: startNodeOn, freeTree: freeTree, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
 
 // A WORLD TO HAND OUT, AS A PROCESS OF ITS OWN (goal/G47.1, Q10 1; the box: "no production module loads or requires any test
 // file"): `node spirit/test/headLessChrome.js --world` boots one lab node and one Chrome side by side, prints where they are on

@@ -12,6 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -306,7 +308,7 @@ test.run('destroyed before its arming button loads, rotateKey draws and attaches
   delete late.win.spirit.required.spirit.element.rotateKey;
   // Its text run here, not through spirit.requireScript (goal/G49.6): requireScript loads a file once and hands back the same
   // one, as a page does, and this check needs it run a second time on a window that ran it already.
-  vm.runInContext(SRC, late.win, { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE, late.win, SRC);
   h6 = node('<div>');
   m6 = late.win.spirit.required.spirit.element.rotateKey.create(h6, {});
   m6.destroy();

@@ -15,6 +15,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -45,7 +47,7 @@ function world() {
   const w = { lists: [], required: [] };
   // The two halves run by this stand-in itself, not through spirit.requireScript (goal/G49.6): it records every path the page
   // asks, and a check below judges that no data.js is asked; through requireScript it would not see those asks.
-  const real = function (file) { return function (win) { vm.runInContext(fs.readFileSync(path.join(JS, file), 'utf8'), win, { filename: file }); }; };
+  const real = function (file) { return function (win) { PAGE_LOAD.runAsPage(path.join(JS, file), win); }; };
   const STANDS = {
     'spirit/element/search.js': function (win) { const at = win.spirit.required.spirit.element; at.search = Object.assign(at.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
       redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); },

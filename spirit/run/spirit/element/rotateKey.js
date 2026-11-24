@@ -15,11 +15,18 @@
 // comes first, because pressing a red button twice only protects someone who knows what they are agreeing to. The button is
 // the shell's two-press one (armingButton): red when armed, disarmed the moment attention moves. Every create starts
 // disarmed and without an old result: two presses must mean two presses in this visit. The rotation is the node family's
-// own verb, spirit.required.spirit.node.api.rotateCipher.
+// own verb, ANSWER['spirit/node/api.js'].rotateCipher.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the arming button.
-  var parts = S.requireScript('spirit/element/armingButton.js');
+  var parts = keepAnswer('spirit/element/armingButton.js');
 
   function create(container) {
     var busy = false;
@@ -60,14 +67,14 @@
       var b = body.querySelector('[data-rotate]');
       if (b) parts.then(function () {
         if (gone) return;
-        S.required.spirit.element.armingButton.attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again', run: rotate });
+        ANSWER['spirit/element/armingButton.js'].attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again', run: rotate });
       });
     }
 
     function rotate() {
       busy = true;
       draw();
-      S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/node/api.js'); }).then(function (s) { return s.rotateCipher({}); })).then(function (r) {
+      S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/node/api.js'); }).then(function (s) { return s.rotateCipher({}); })).then(function (r) {
         busy = false;
         result = r && r.status === 200 && r.body ? r.body : { ok: false, error: (r && r.body && (r.body.error || r.body.code)) || 'no answer' };
         draw();
@@ -78,5 +85,6 @@
     return { destroy: function () { gone = true; container.innerHTML = ''; } };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/rotateKey.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

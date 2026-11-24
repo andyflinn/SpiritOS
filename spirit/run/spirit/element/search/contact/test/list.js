@@ -12,12 +12,14 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const JS = path.join(__dirname, '..', '..', '..');
-function load(file) { vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: file }); }
+function load(file) { PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.

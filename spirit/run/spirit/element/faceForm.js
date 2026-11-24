@@ -28,11 +28,18 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
-  if (window.spirit && typeof window.spirit.requireScript === 'function') window.spirit.requireScript('spirit/element/rowForm.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm.js');
   // And fieldInput, which holds the face name to its type as it is typed (goal/G48.4, box v22: "ever input field in every
   // element must validate the input with the new type checks.").
-  if (window.spirit && typeof window.spirit.requireScript === 'function') window.spirit.requireScript('spirit/element/fieldInput.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput.js');
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
@@ -65,7 +72,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       '<div class="job-start-error sp-face-out"></div>';
     // ITS ASK IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, the mount's save, so Ask is busy until the relay answers.
-    var f = window.spirit.required.spirit.element.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask', press: function () {
+    var f = ANSWER['spirit/element/rowForm.js'].create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask', press: function () {
       var go = box._spFace && box._spFace.press;
       return typeof go === 'function' ? go() : null;
     } });
@@ -78,7 +85,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       '<input type="text" class="sp-face-name" placeholder="face name: one word, letters and digits" value="' +
         escape(o.name != null ? o.name : ((picked && picked.face && picked.face.name) || '')) + '">';
     // A face name is one word (spirit.type.string.word).
-    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput.js'];
     if (FI) FI.attach(f.span.querySelector('.sp-face-name'), 'spirit.type.string.word');
     if (!picked) box.querySelector('.sp-face-out').textContent = String(o.none);
   }
@@ -139,7 +146,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
     }
     var left = false;
-    Promise.resolve(window.spirit.requireScript('spirit/contact/api.js')).then(function () {
+    Promise.resolve(keepAnswer('spirit/contact/api.js')).then(function () {
       if (!left && ((window.spirit.required.spirit.data || {}).contact || {}).data) stop = window.spirit.required.spirit.data.contact.data.watch(take);
     });
     box._spFaceStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
@@ -152,8 +159,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (!name.value.trim()) { box._faceSaid = { text: 'a face name is needed', bad: true }; say(box._faceSaid.text, true); return Promise.resolve(); }
       busy = true;
       say('asking the relay…', false);
-      // Through the spirit object (goal/G32.2): spirit.required.spirit.relay.api.face answers the reply's body, or refuses with the node's words.
-      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
+      // Through the spirit object (goal/G32.2): ANSWER['spirit/relay/api.js'].face answers the reply's body, or refuses with the node's words.
+      return spirit.readyPromise.then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.face({ url: relay.value, name: name.value }); }).then(function (said) { return said || {}; }, function (e) { return { ok: false, error: (e && e.message) || 'the relay did not answer' }; }).then(function (said) {
         box._faceSaid = said.ok
           ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
           : { text: said.error || 'the relay did not answer', bad: true };
@@ -179,5 +186,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     mount(container, options);
     return { destroy: function () { if (container && typeof container._spFaceStop === 'function') container._spFaceStop(); if (container) container.innerHTML = ''; } };
   }
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/faceForm.js', { create: create, mount: mount, offers: function (relays) { return offered(relays).length > 0; } }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create, mount: mount, offers: function (relays) { return offered(relays).length > 0; } };
 }());

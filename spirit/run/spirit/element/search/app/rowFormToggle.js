@@ -10,8 +10,15 @@
 // calls press, and the button is busy until what press answers settles: the state changes when its owner says so, by set
 // (rule/19: draw only what the server says).
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  window.spirit.requireScript('spirit/element/rowForm.js');
+  keepAnswer('spirit/element/rowForm.js');
 
   function create(host, options) {
     var o = options || {};
@@ -26,7 +33,7 @@
       root.innerHTML = '';
       // ITS PRESS IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
       // comes"): what the owner's press answers, the rowForm's button waits on, busy.
-      var f = window.spirit.required.spirit.element.rowForm.create(root, { icon: on ? '🟢' : '🔴', button: '', press: function () { return typeof o.press === 'function' ? o.press() : undefined; } });
+      var f = ANSWER['spirit/element/rowForm.js'].create(root, { icon: on ? '🟢' : '🔴', button: '', press: function () { return typeof o.press === 'function' ? o.press() : undefined; } });
       // THE BUTTON'S GLYPH IS AN ICON TOO (goal/G43.32; Andy: "fix the fucking elements/pages."): painted through the icon
       // element, which rowForm.js has loaded, as every pictograph the shell draws.
       window.spirit.required.spirit.element.icon.create(f.button, { glyph: on ? '🔴' : '🟢' });
@@ -49,5 +56,6 @@
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/rowFormToggle.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

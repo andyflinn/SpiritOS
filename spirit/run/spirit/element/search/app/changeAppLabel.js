@@ -6,11 +6,18 @@
 //   spirit.required.spirit.element.search.app.changeAppLabel.create(host, { key }) -> { destroy() }
 //
 // Its input holds the row's label in spirit.required.spirit.data.app and follows it while it is not being typed in; Change asks the node,
-// spirit.required.spirit.app.api.labelApp, and the row the stream then brings redraws it.
+// ANSWER['spirit/app/api.js'].labelApp, and the row the stream then brings redraws it.
 (function () {
-  window.spirit.requireScript('spirit/element/rowForm.js');
-  window.spirit.requireScript('spirit/element/fieldInput.js');
-  window.spirit.requireScript('spirit/app/api.js');
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  keepAnswer('spirit/element/rowForm.js');
+  keepAnswer('spirit/element/fieldInput.js');
+  keepAnswer('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -24,21 +31,21 @@
     // ITS CHANGE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, so Change is busy until the node answers.
     var input = null;
-    var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change', press: function () {
-      return S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
+    var form = ANSWER['spirit/element/rowForm.js'].create(host, { icon: '✏️', button: 'Change', press: function () {
+      return S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
     } });
     input = document.createElement('input');
     input.type = 'text';
     form.span.appendChild(document.createTextNode('Label '));
     form.span.appendChild(input);
-    if (window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.label');
+    if (ANSWER['spirit/element/fieldInput.js']) ANSWER['spirit/element/fieldInput.js'].attach(input, 'spirit.type.string.label');
     function paint() {
       if (gone) return;
       var r = row();
       if (r && document.activeElement !== input) input.value = String(r.label || '');
     }
     function ask() {
-      S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
@@ -49,5 +56,6 @@
     return { destroy: function () { gone = true; offRow(); offAll(); host.innerHTML = ''; } };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/changeAppLabel.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

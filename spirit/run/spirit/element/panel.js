@@ -21,9 +21,16 @@
 // "file" app...."; Q17, the outer ✕ line goes): a layer opened while another shows covers it, bar and all, and its ✕ shows
 // that one again; an element opened in a layer opens what it opens in the same stack (file, its viewers).
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.requireScript('spirit/element/rowForm.js'), S.requireScript('spirit/element/icon.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/rowForm.js'), keepAnswer('spirit/element/icon.js')]);
 
   function create(host, under) {
     var layers = Object.create(null);
@@ -38,7 +45,7 @@
       var box = document.createElement('div');
       box.className = 'app-container fill';
       // THE TITLE BAR OF ALL PANELS IS ONE rowForm (Andy: "rowForm: [app-icon] "<app-label> [x]").
-      var bar = E.spirit.element.rowForm.create(box, { icon: spec.icon || '', button: '✕' });
+      var bar = ANSWER['spirit/element/rowForm.js'].create(box, { icon: spec.icon || '', button: '✕' });
       bar.button.className = 'app-container-close';
       bar.button.title = 'Close';
       bar.span.textContent = String(spec.label || '');
@@ -79,7 +86,7 @@
         // WHAT LANDS IN spirit.required.spirit.data.<server>.remote IS WHAT IT SHOWS (Andy: "all, agreed. spirit/data.js"): the server's
         // published remote row, filed there by spirit/data.js, is followed as it comes.
         var unwatchRemote = S.required.spirit.data && typeof S.required.spirit.data.watchPath === 'function' ? S.required.spirit.data.watchPath('remote/' + server, function (p, r) { take(r); }) : null;
-        S.requireScript('spirit/element/search.js').then(function () {
+        keepAnswer('spirit/element/search.js').then(function () {
           if (dropped) return;
           take(S.required.spirit.data && S.required.spirit.data[server] && S.required.spirit.data[server].remote);
           var fam = function () { return Promise.resolve(S.requireScript('spirit/app/' + server + '/api.js')); };
@@ -112,7 +119,7 @@
             },
             empty: 'No remote.',
           };
-          remoteList = S.required.spirit.element.search.create(mid, opts);
+          remoteList = ANSWER['spirit/element/search.js'].create(mid, opts);
           mid.appendChild(said);
           // Its first ask now, as every list's (grant/list.js): the rows are there when the field opens. And again each time
           // the field is pressed: the server checks its peers in the background after an empty call (box v12), so a later
@@ -155,7 +162,7 @@
           if (look.label !== undefined) bar.span.textContent = String(look.label);
           if (look.icon !== undefined) {
             var hold = document.createElement('span');
-            E.spirit.element.icon.create(hold, { glyph: look.icon });
+            ANSWER['spirit/element/icon.js'].create(hold, { glyph: look.icon });
             if (hold.firstChild) bar.root.replaceChild(hold.firstChild, bar.root.firstChild);
           }
         },
@@ -202,5 +209,6 @@
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/panel.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

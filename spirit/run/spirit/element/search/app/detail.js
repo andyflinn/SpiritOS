@@ -8,15 +8,22 @@
 // Its icon and label, the same row element a list row is, so nothing has to keep the two in sync (G30.18), and its
 // (de)activate button (goal/G43.9, Q2: "in the detail as well.").
 (function () {
-  window.spirit.requireScript('spirit/element/search/app/row.js');
-  window.spirit.requireScript('spirit/element/appInstaller.js');
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  keepAnswer('spirit/element/search/app/row.js');
+  keepAnswer('spirit/element/appInstaller.js');
   // goal/G43.15: the switches are elements of their own, each hiding itself where it does not apply.
-  window.spirit.requireScript('spirit/element/search/app/rowFormAppActive.js');
-  window.spirit.requireScript('spirit/element/search/app/serverDEBUG.js');
-  window.spirit.requireScript('spirit/element/search/app/changeAppIcon.js');
-  window.spirit.requireScript('spirit/element/search/app/changeAppLabel.js');
+  keepAnswer('spirit/element/search/app/rowFormAppActive.js');
+  keepAnswer('spirit/element/search/app/serverDEBUG.js');
+  keepAnswer('spirit/element/search/app/changeAppIcon.js');
+  keepAnswer('spirit/element/search/app/changeAppLabel.js');
   // goal/G43.21, goal/G47.1: the Run row is the task row.
-  window.spirit.requireScript('spirit/element/monitor/task.js');
+  keepAnswer('spirit/element/monitor/task.js');
 
   // THE PANEL'S FORM (goal/G43.9, as Andy drew it), rowForms under the title bar. What the node chose comes on the row, and follows
   // it; what <name>.json describes, whether it mounts a face or a server, is read by the switch from the file, again each time its row changes, so it stays off the rows.
@@ -42,16 +49,16 @@
     box.appendChild(runBox);
     host.appendChild(box);
     // THE ICON AND THE LABEL (goal/G43.15, Q4): elements of their own, so an app's own face can show them too.
-    var icon = S.required.spirit.element.search.app.changeAppIcon.create(iconBox, { key: key });
-    var label = S.required.spirit.element.search.app.changeAppLabel.create(labelBox, { key: key });
+    var icon = ANSWER['spirit/element/search/app/changeAppIcon.js'].create(iconBox, { key: key });
+    var label = ANSWER['spirit/element/search/app/changeAppLabel.js'].create(labelBox, { key: key });
     // THE SWITCHES (goal/G43.15): Activate/Deactivate, DEBUG right after it (Q1); each hides itself. The allow-as-shell row went
     // (goal/G43.18, box v29: its element is deleted, <name>.json alone says whether an app may be a shell).
-    var active = S.required.spirit.element.search.app.rowFormAppActive.create(activeBox, { key: key });
-    var debug = S.required.spirit.element.search.app.serverDEBUG.create(debugBox, { key: key });
+    var active = ANSWER['spirit/element/search/app/rowFormAppActive.js'].create(activeBox, { key: key });
+    var debug = ANSWER['spirit/element/search/app/serverDEBUG.js'].create(debugBox, { key: key });
     // RUN IS THE TASK ROW (goal/G43.21; Andy, the box: "the app detail will show a run button."; goal/G47.1: "yes make it an
     // improvement on the current run-rowForm in app and isolate it as spirit/element/monitor/task.js"): it shows only for an app
     // whose <name>.json says node.run, and offers Run, Cancel or Delete as its job stands.
-    var task = S.required.spirit.element.monitor.task.create(runBox, { id: 'spirit.app.' + key });
+    var task = ANSWER['spirit/element/monitor/task.js'].create(runBox, { id: 'spirit.app.' + key });
     return { destroy: function () { task.destroy(); icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); host.innerHTML = ''; } };
   }
 
@@ -59,7 +66,7 @@
     // No app, no detail, and nothing to listen for.
     if (!opts || !opts.row) return { destroy: function () { host.innerHTML = ''; } };
     if (opts.panel) return createPanel(host, opts.row);
-    var row = window.spirit.required.spirit.element.search.app.row.create(opts.row);
+    var row = ANSWER['spirit/element/search/app/row.js'].create(opts.row);
     var box = document.createElement('div');
     box.className = 'app-detail';
     var hosts = {};
@@ -74,12 +81,13 @@
     var button = document.createElement('span');
     button.style.marginLeft = '0.5em';
     box.appendChild(button);
-    var installer = window.spirit.required.spirit.element.appInstaller.create(button, { path: 'spirit/app/' + key + '/' + key + '.js' });
+    var installer = ANSWER['spirit/element/appInstaller.js'].create(button, { path: 'spirit/app/' + key + '/' + key + '.js' });
     host.appendChild(box);
     return {
       destroy: function () { installer.destroy(); row.destroy(); host.innerHTML = ''; },
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/detail.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

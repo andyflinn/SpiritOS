@@ -19,6 +19,8 @@ const WORLDS = [];
 async function freeWorlds() { for (const free of WORLDS.splice(0)) { try { await free(); } catch (e) { /* freed when this process ends */ } } }
 
 const RUN = path.join(__dirname, '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
 const FILE = path.join(__dirname, '..', 'search.js');
@@ -188,7 +190,7 @@ let E, r, elRow, F, seenValue, W, C, S, cols, M;
 const keys = function (list) { return list.map(function (x) { return x.key; }).join(); };
 test.run('without words or sort the rows come in arrival order', 0.2, function () {
   // order: viewed, no words
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   PS = window.spirit.required.spirit.element.search;
   E = [{ key: 'c', row: { name: 'cy' }, at: 2 }, { key: 'a', row: { name: 'Al' }, at: 0 }, { key: 'b', row: { name: 'bo' }, at: 1 }];
   r = PS.order(E, {});
@@ -1088,12 +1090,12 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
     const delay = (wait = Math.max(0, wait - 20));
     return new Promise(function (resolve) {
       setTimeout(function () {
-        if (/^spirit\/(search\/(string|object)|listLimiter)\.js$/.test(rel)) vm.runInThisContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), { filename: rel });
+        if (/^spirit\/(search\/(string|object)|listLimiter)\.js$/.test(rel)) PAGE_LOAD.runAsPage(path.join(RUN, rel));
         resolve(true);
       }, delay);
     });
   };
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   await new Promise(function (r) { setTimeout(r, 300); });
   NEED = ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js'];
   return (NEED.every(function (n) { return asked10.indexOf(n) !== -1; })) ? true : false;

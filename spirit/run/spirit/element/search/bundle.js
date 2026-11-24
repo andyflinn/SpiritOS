@@ -24,6 +24,13 @@
 //     options.family     an app server's name: only the bundles it owns are listed (goal/G41.25)
 //     options.placeholder, options.all, options.empty   handed to the list
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   function createBundleSelector(options) {
     options = options || {};
     var isPane = options.face === 'pane';
@@ -47,19 +54,19 @@
     function openTab(row) {
       var tabs = options.tabs;
       var name = 'bundle-' + Number(row.id);
-      window.spirit.requireScript('spirit/element/search/bundle/detail.js').then(function () {
+      keepAnswer('spirit/element/search/bundle/detail.js').then(function () {
         var said = typeof options.tabLabel === 'function' ? options.tabLabel(row) : String(row.label || '');
         var header = said && typeof said === 'object' ? said : { label: String(said || '') };
         tabs.add({ name: name, label: String(header.label || ''), italic: header.italic === true, closable: true, mount: function (box) {
-          return window.spirit.required.spirit.element.search.bundle.detail.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
+          return ANSWER['spirit/element/search/bundle/detail.js'].create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
         } });
       });
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     var gone = false;
-    Promise.resolve(window.spirit.requireScript ? window.spirit.requireScript('spirit/element/search/bundle/list.js') : null).then(function () {
+    Promise.resolve(window.spirit.requireScript ? keepAnswer('spirit/element/search/bundle/list.js') : null).then(function () {
       if (gone) return;
-      made = window.spirit.required.spirit.element.search.bundle.list.create(root, {
+      made = ANSWER['spirit/element/search/bundle/list.js'].create(root, {
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a bundle…'),
         all: isPane ? undefined : options.all,
@@ -85,5 +92,6 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/bundle.js', { create: function (container, options) { var root = createBundleSelector(options); container.appendChild(root); return root; } }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: function (container, options) { var root = createBundleSelector(options); container.appendChild(root); return root; } };
 })();

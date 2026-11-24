@@ -6,14 +6,21 @@
 //
 //   spirit.required.spirit.element.search.app.rowFormAppActive.create(host, { key }) -> { destroy() }
 //
-// It follows the app's row in spirit.required.spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.required.spirit.app.api.activeApp, and
+// It follows the app's row in spirit.required.spirit.data.app (the row's active and intrinsic); a press asks the node, ANSWER['spirit/app/api.js'].activeApp, and
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  window.spirit.requireScript('spirit/element/search/app/rowFormToggle.js');
-  window.spirit.requireScript('spirit/app/api.js');
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  keepAnswer('spirit/element/search/app/rowFormToggle.js');
+  keepAnswer('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -25,9 +32,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var r = row();
       if (!r) return null;
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
-      return S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
+      return S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
     }
-    var t = S.required.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
+    var t = ANSWER['spirit/element/search/app/rowFormToggle.js'].create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
     // SHOWN OR HIDDEN ONLY WHEN THAT CHANGES (the -browser test's write watch: hidden set again to what it was is still a change of
     // the attribute, and it paints on every row change).
@@ -43,14 +50,14 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       shown(true);
     }
     function ask() {
-      S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
     // WHAT IT MOUNTS, read from <name>.json, again each time the row changes: a closed panel is kept, not made anew (goal/G43.17,
     // the box: "A closed layer is hidden, not destroyed"), so a read made once would show an old file when it is shown again.
     function readParts() {
-      S.readyPromise.then(function () { return S.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/fs/api.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
         var j = JSON.parse(String(text));
         parts = (j.shell && j.shell.mount === true ? ['face'] : []).concat(j.node && j.node.mount === true ? ['server'] : []);
         paint();
@@ -65,5 +72,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return { destroy: function () { gone = true; offRow(); offAll(); t.destroy(); } };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/rowFormAppActive.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

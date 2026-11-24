@@ -12,14 +12,21 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function (root) {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var E = ((root.spirit = root.spirit || {}).required = root.spirit.required || {});
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.requireScript.
   // And its type, spirit.type.string.label, which Save asks before the wire is troubled (goal/G48.4, the box: "fieldRules.js
   // dies").
-  var parts = root.spirit.requireScript ? Promise.all([root.spirit.requireScript('spirit/element/fieldInput.js'), root.spirit.requireScript('spirit/type/string/label.js')]) : Promise.resolve();
+  var parts = root.spirit.requireScript ? Promise.all([root.keepAnswer('spirit/element/fieldInput.js'), root.keepAnswer('spirit/type/string/label.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
-  if (root.spirit.requireScript) root.spirit.requireScript('spirit/element/rowForm.js');
+  if (root.spirit.requireScript) root.keepAnswer('spirit/element/rowForm.js');
 
   function label() { var r = root.spirit && root.spirit.required; return (r && r.spirit && r.spirit.type && r.spirit.type.string && r.spirit.type.string.label) || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
@@ -37,7 +44,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
       '<div class="stack" style="overflow:hidden"><div data-label="form"></div>' +
       '<div data-label="said" class="job-start-error"></div></div>';
-    var form = E.spirit.element.rowForm.create(host.querySelector('[data-label="form"]'), { icon: '✏️', button: 'Save', press: function () { return save(); } });
+    var form = ANSWER['spirit/element/rowForm.js'].create(host.querySelector('[data-label="form"]'), { icon: '✏️', button: 'Save', press: function () { return save(); } });
     // ITS SAVE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, so Save is busy until the node answers; Return presses it.
     form.span.innerHTML = 'Name' +
@@ -58,7 +65,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var bad = '';
       if (L) { try { L.isValid(input.value); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { say(bad, true); return Promise.resolve(); }
-      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function () { return root.spirit.requireScript('spirit/node/api.js'); }).then(function (s) { return s.setName({ name: input.value }); })).then(function (r) {
+      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function () { return root.keepAnswer('spirit/node/api.js'); }).then(function (s) { return s.setName({ name: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
         root.spirit.required.spirit.data.node.data.card.keep({ name: String(body.name == null ? '' : body.name) });
@@ -75,14 +82,14 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       input.defaultValue = name;
       input.value = name;
     }
-    root.spirit.requireScript('spirit/node/api.js').then(function () {
+    root.keepAnswer('spirit/node/api.js').then(function () {
       if (gone) return;
       stop = root.spirit.required.spirit.data.node.data.card.watch(show);
       show(root.spirit.required.spirit.data.node.data.card.get());
     });
 
     parts.then(function () {
-      if (!gone && window.spirit.required.spirit.element.fieldInput) window.spirit.required.spirit.element.fieldInput.attach(input, 'spirit.type.string.label');
+      if (!gone && ANSWER['spirit/element/fieldInput.js']) ANSWER['spirit/element/fieldInput.js'].attach(input, 'spirit.type.string.label');
     }, function () { /* the node still refuses what the rule refuses */ });
     // Return saves, as the button does: the hand that never leaves the keyboard.
     input.addEventListener('keydown', function (e) {
@@ -98,5 +105,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/changeMyLabel.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -10,9 +10,16 @@
 // through the icon element, a tile-bar the shared search draws the relevance into, and the app's label. A press on it is
 // press(row, key): the app search picks the app, as a press on its row does.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
-  window.spirit.requireScript('spirit/element/icon.js');
+  keepAnswer('spirit/element/icon.js');
 
   function create(row, opts) {
     var r = row || {};
@@ -23,7 +30,7 @@
     n.setAttribute('data-key', key);
     var icon = document.createElement('span');
     icon.className = 'icon';
-    var I = E.spirit && E.spirit.element && E.spirit.element.icon;
+    var I = E.spirit && E.spirit.element && ANSWER['spirit/element/icon.js'];
     if (I && typeof I.create === 'function') I.create(icon, { glyph: String(r.icon || '') });
     else icon.textContent = String(r.icon || '');
     var bar = document.createElement('div');
@@ -38,5 +45,6 @@
     return n;
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/tile.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

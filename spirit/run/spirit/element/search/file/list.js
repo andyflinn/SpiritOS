@@ -26,11 +26,18 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/file/row.js', 'spirit/element/search/file/tile.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
-  window.spirit.requireScript('spirit/fs/api.js');
+  keepAnswer('spirit/fs/api.js');
   function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
 
   function accepted(accept, row) {
@@ -47,11 +54,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // BY CONTENTS ONLY: fs.search labels a name match with its path and a contents match with json {path, score, line}.
   // found(next) is handed what the node scored, by path, for the list to rank by (goal/G29.11, taken from the file
   // selector): in contents a file ranks by the node's score alone.
-  // Through the spirit object (goal/G32.2): spirit.required.spirit.fs.api.search answers the reply's body.
+  // Through the spirit object (goal/G32.2): ANSWER['spirit/fs/api.js'].search answers the reply's body.
   function search(args, found) {
     var a = args || {};
     if (!a.contents || !a.q) { found(Object.create(null), Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
-    return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
+    return spirit.readyPromise.then(function () { return keepAnswer('spirit/fs/api.js'); }).then(function (s) { return s.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
       body = body || {};
       var F = fsReads();
       var next = Object.create(null);
@@ -164,5 +171,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/file/list.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

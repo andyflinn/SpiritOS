@@ -6,13 +6,20 @@
 //
 //   spirit.required.spirit.element.search.app.changeAppIcon.create(host, { key }) -> { destroy() }
 //
-// It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, spirit.required.spirit.app.api.iconApp,
+// It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, ANSWER['spirit/app/api.js'].iconApp,
 // and the row the stream then brings redraws it.
 (function () {
-  window.spirit.requireScript('spirit/element/rowForm.js');
-  window.spirit.requireScript('spirit/element/icon.js');
-  window.spirit.requireScript('spirit/element/search/icon/list.js');
-  window.spirit.requireScript('spirit/app/api.js');
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  keepAnswer('spirit/element/rowForm.js');
+  keepAnswer('spirit/element/icon.js');
+  keepAnswer('spirit/element/search/icon/list.js');
+  keepAnswer('spirit/app/api.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -26,24 +33,24 @@
     function row() { var A = S.required.spirit.data.app && S.required.spirit.data.app.data; return A ? A.rows()[key] || null : null; }
     // ITS CHANGE IS THE ROWFORM'S TO HEAR (goal/G47.1, Q20; Andy: "mark the button busy from press until the mounter's answer
     // comes"): handed as press, so Change is busy until the node answers.
-    var form = E.spirit.element.rowForm.create(host, { icon: '✏️', button: 'Change', press: function () {
+    var form = ANSWER['spirit/element/rowForm.js'].create(host, { icon: '✏️', button: 'Change', press: function () {
       if (!picked) return null;
-      return S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
+      return S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
     } });
     form.span.appendChild(document.createTextNode('Icon '));
     var shown = document.createElement('span');
     form.span.appendChild(shown);
     var listHost = document.createElement('span');
     form.span.appendChild(listHost);
-    var list = E.spirit.element.search.icon.list.create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
+    var list = ANSWER['spirit/element/search/icon/list.js'].create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
     function paint() {
       if (gone) return;
       var r = row();
       shown.innerHTML = '';
-      if (r) E.spirit.element.icon.create(shown, { glyph: r.icon });
+      if (r) ANSWER['spirit/element/icon.js'].create(shown, { glyph: r.icon });
     }
     function ask() {
-      S.readyPromise.then(function () { return S.requireScript('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
@@ -54,5 +61,6 @@
     return { destroy: function () { gone = true; offRow(); offAll(); list.destroy(); host.innerHTML = ''; } };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/changeAppIcon.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

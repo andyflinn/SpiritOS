@@ -6,19 +6,26 @@
 //   including test folders." The family half is the family list (./list.js, the app-server selector until
 //   goal/G43.32); this is the verb half, and the family selector (spirit/element/search/api.js) holds the two side by side.
 //
-// spirit.required.spirit.element.search.api.verb.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
+// ANSWER['spirit/element/search.js'].api.verb.create(container, options) -> root, the control: root.value is the chosen verb, '' for its first option, All
 // Verbs, every verb (goal/G41.14; Andy: "the apiVerbSelector element MUST offer a (valid) All option at the top, which
 // results in an empty string as value"); a pick fires one bubbling `change`. root.show(tree, server) lists that family's verbs,
 // apiTreeIndex.verbs, so DEBUG is never offered (Andy: "DEBUG/... are owner only and will never be offered to peerPost
 // clients."); with no server it hides, lists nothing and clears the choice.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
   // The family list too, the reader of the api tree (./list.js, goal/G43.32; it stood in ../api.js, which requires
   // this file), and with it the node family's cache manager, the keeper of the verbs it draws from (goal/G41.28).
-  var parts = Promise.all([window.spirit.requireScript ? window.spirit.requireScript('spirit/element/search.js') : null,
-    window.spirit.requireScript ? window.spirit.requireScript('spirit/element/search/api/list.js') : null,
-    window.spirit.requireScript ? window.spirit.requireScript('spirit/client/apiTreeIndex.js') : null,
-    window.spirit.requireScript('spirit/node/api.js')]);
+  var parts = Promise.all([window.spirit.requireScript ? keepAnswer('spirit/element/search.js') : null,
+    window.spirit.requireScript ? keepAnswer('spirit/element/search/api/list.js') : null,
+    window.spirit.requireScript ? keepAnswer('spirit/client/apiTreeIndex.js') : null,
+    keepAnswer('spirit/node/api.js')]);
 
   function createApiVerbSelector(options) {
     options = options || {};
@@ -40,7 +47,7 @@
     // A PROBABILITYSEARCH DROPDOWN (the old shell's list search is forbidden on the face, goal/G40.8), made on its party's branch.
     var made = parts.then(makeList);
     function makeList() {
-      list = window.spirit.required.spirit.element.search.create(root, {
+      list = ANSWER['spirit/element/search.js'].create(root, {
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
@@ -76,5 +83,6 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/api/verb.js', { create: function (container, options) { var root = createApiVerbSelector(options); container.appendChild(root); return root; } }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: function (container, options) { var root = createApiVerbSelector(options); container.appendChild(root); return root; } };
 })();

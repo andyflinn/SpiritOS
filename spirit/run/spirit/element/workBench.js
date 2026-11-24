@@ -34,6 +34,13 @@
 // lightly brighter background color"): on each strip the icon of the tool shown carries data-current, a brighter
 // background and a dark border, the others none; a collapsed side marks none.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var MIN_WIDTH = 120;
   var START_WIDTH = 240;
   var made = 0;
@@ -41,7 +48,7 @@
   // ITS ICONS ARE THE ICON ELEMENT'S (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
   // apps."): loaded through the one loader, once, as this file runs.
   var iconReady = window.spirit && typeof window.spirit.requireScript === 'function'
-    ? Promise.resolve(window.spirit.requireScript('spirit/element/icon.js')).then(null, function () { /* the glyph drawn as text, below */ })
+    ? Promise.resolve(keepAnswer('spirit/element/icon.js')).then(null, function () { /* the glyph drawn as text, below */ })
     : Promise.resolve();
 
   function create(container, opts) {
@@ -72,7 +79,7 @@
     // Each strip button's glyph, through the icon element once it is there; as plain text until then, or if it never
     // comes, so a button is never empty.
     function paintIcons() {
-      var I = window.spirit && window.spirit.required && window.spirit.required.spirit.element.icon;
+      var I = window.spirit && window.spirit.required && ANSWER['spirit/element/icon.js'];
       ['left', 'right'].forEach(function (side) {
         var s = part('strip-' + side);
         if (!s) return;
@@ -196,5 +203,6 @@
 
   var root = typeof window !== 'undefined' ? window : globalThis;
   root.spirit = root.spirit || {};
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/workBench.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

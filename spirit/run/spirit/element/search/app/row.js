@@ -11,11 +11,18 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // On spirit.required since goal/G43.18, as its file is in spirit/element/search/app/.
   var E = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   ['spirit/element/row.js', 'spirit/element/icon.js', 'spirit/element/search/app/rowFormAppActive.js'].forEach(function (p) { window.spirit.requireScript(p); });
-  var appReady = Promise.resolve(window.spirit.requireScript('spirit/app/api.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
+  var appReady = Promise.resolve(keepAnswer('spirit/app/api.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
 
   var apps = null;
   function dispatch(idx) {
@@ -74,9 +81,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         // A press on the switch is the switch's, never the row's pick (as the installer it replaced stopped it).
         cell.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('button')) e.stopPropagation(); });
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
-        var made = Promise.resolve(window.spirit.requireScript('spirit/element/search/app/rowFormAppActive.js')).then(function () {
+        var made = Promise.resolve(keepAnswer('spirit/element/search/app/rowFormAppActive.js')).then(function () {
           if (installer !== made) return;
-          installer = window.spirit.required.spirit.element.search.app.rowFormAppActive.create(cell, { key: key });
+          installer = ANSWER['spirit/element/search/app/rowFormAppActive.js'].create(cell, { key: key });
         });
         installer = made;
       }
@@ -87,5 +94,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
 
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/row.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

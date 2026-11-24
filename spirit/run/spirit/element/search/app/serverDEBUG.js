@@ -12,9 +12,16 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/app/api.js','spirit/job/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
-  window.spirit.requireScript('spirit/element/search/app/rowFormToggle.js');
-  window.spirit.requireScript('spirit/app/api.js');
-  window.spirit.requireScript('spirit/job/api.js');
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  keepAnswer('spirit/element/search/app/rowFormToggle.js');
+  keepAnswer('spirit/app/api.js');
+  keepAnswer('spirit/job/api.js');
 
   var LIVE = { running: true, pending: true };
 
@@ -39,7 +46,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
       return Promise.resolve(S.requireScript('spirit/app/' + key + '/api.js')).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
     }
-    var t = S.required.spirit.element.search.app.rowFormToggle.create(host, { on: false, words: '', press: press });
+    var t = ANSWER['spirit/element/search/app/rowFormToggle.js'].create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
     // SHOWN OR HIDDEN ONLY WHEN THAT CHANGES (the -browser test's write watch: hidden set again to what it was is still a change of
     // the attribute, and it paints on every row change).
@@ -51,13 +58,13 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       t.set(now, 'turn ' + (now ? 'off' : 'on') + ' DEBUG ' + label());
       shown(true);
     }
-    Promise.resolve(S.requireScript('spirit/job/api.js')).then(function () {
+    Promise.resolve(keepAnswer('spirit/job/api.js')).then(function () {
       if (gone) return;
       offJobs = S.required.spirit.data.job.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
       paint();
     }, function () { /* no jobs, no server to show */ });
     var offRow = S.required.spirit.data.app.data.watch(key, paint);
-    S.readyPromise.then(function () { return S.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+    S.readyPromise.then(function () { return keepAnswer('spirit/fs/api.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
       var j = JSON.parse(String(text));
       serves = !!(j.node && j.node.mount === true);
       paint();
@@ -69,5 +76,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return { destroy: function () { gone = true; offJobs(); offRow(); t.destroy(); } };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/app/serverDEBUG.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

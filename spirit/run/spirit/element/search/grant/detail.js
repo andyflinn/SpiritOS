@@ -66,5 +66,6 @@
     // Destroy leaves its host empty, as every element.
     return { destroy: function () { gone = true; if (typeof off === 'function') off(); host.innerHTML = ''; } };
   }
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/search/grant/detail.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

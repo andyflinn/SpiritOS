@@ -13,9 +13,16 @@
 //
 // Its look is the shared tile's: .stat-tile, its icon the icon element, then .value and .label.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the icon element, asked as this file runs.
-  var parts = Promise.resolve(S.requireScript('spirit/element/icon.js'));
+  var parts = Promise.resolve(keepAnswer('spirit/element/icon.js'));
 
   function create(container, options) {
     var o = options || {};
@@ -37,7 +44,7 @@
     parts.then(function () {
       if (gone) return;
       var holder = document.createElement('span');
-      S.required.spirit.element.icon.create(holder, { glyph: o.icon == null ? '' : String(o.icon), size: 1.5 });
+      ANSWER['spirit/element/icon.js'].create(holder, { glyph: o.icon == null ? '' : String(o.icon), size: 1.5 });
       while (holder.firstChild) tile.insertBefore(holder.firstChild, value);
     });
     return {

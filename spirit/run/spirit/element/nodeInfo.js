@@ -30,6 +30,13 @@
 // Each by its api.js path, never by a name (goal/G49.6): the relay and node branches.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/relay/api.js', 'spirit/node/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/changeMyLabel.js', 'spirit/element/changeMyDescription.js', 'spirit/element/joinForm.js',
@@ -88,7 +95,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
     function loadRelays() {
-      return Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
+      return Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.status(''); }).then(function (r) {
         var said = (r && r.body) || {};
         relays = Array.isArray(said.rows) ? said.rows : [];
       }, function () { relays = []; }).then(function () { return parts.then(drawForms, function () { /* a form missing is not drawn */ }); });
@@ -98,9 +105,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     function openRotate() {
       var into = typeof o.open === 'function' ? o.open : function (k, spec) { return stack.open(k, spec); };
       return into('rotateKey', { icon: '🆘', label: 'Rotate this node\'s cipher key', fill: function (pane, closed) {
-        return S.requireScript('spirit/element/rotateKey.js').then(function () {
+        return keepAnswer('spirit/element/rotateKey.js').then(function () {
           if (closed()) return null;
-          return S.required.spirit.element.rotateKey.create(pane, {});
+          return ANSWER['spirit/element/rotateKey.js'].create(pane, {});
         });
       } });
     }
@@ -115,8 +122,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       rotate.button.addEventListener('click', function () { openRotate(); });
       // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.required.spirit.data.node.data, and each of
       // the two fields draws itself from it.
-      return S.requireScript('spirit/node/api.js').then(function () {
-        return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/node/api.js'); }).then(function (s) { return s.card({}); }));
+      return keepAnswer('spirit/node/api.js').then(function () {
+        return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return keepAnswer('spirit/node/api.js'); }).then(function (s) { return s.card({}); }));
       }).then(function (r) {
         if (gone) return;
         var card = r && r.body;
@@ -141,5 +148,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/element/nodeInfo.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());
