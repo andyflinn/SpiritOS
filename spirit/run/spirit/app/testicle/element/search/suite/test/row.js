@@ -35,24 +35,26 @@ test.run('the row runs on a bare window', 0.2, async function () {
   global.window = { spirit: { escapeHtml: function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }, element: {} } };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  const own = global.window.spirit.requireScript;
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+  // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the shared row element, the busy button and testicle's interface, the three it requires.
+  const STANDS = {
+    'spirit/element/row.js': { index: function (sub) { indexes.push(sub); return { id: indexes.length }; },
+      create: function (spec) { specs.push(spec); return { spec: spec, mount: function () {} }; } },
+    'spirit/element/busyButton.js': { create: function (c, o) { const b = { cell: c, o: o }; buttons.push(b); return b; } },
+    'spirit/app/testicle/api.js': { run: function (a) { runs.push(a); return Promise.resolve({ ok: true }); } },
+  };
+  E = { row: STANDS['spirit/element/row.js'], busyButton: STANDS['spirit/element/busyButton.js'] };
   global.window.spirit.requireScript = function (p) {
     required.push(String(p));
     if (p === 'spirit/app/testicle/api.js' && refuseApi) return Promise.reject(new Error('no testicle on this node'));
-    return own.apply(this, arguments);
+    return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.reject(new Error('no stand-in for ' + p));
   };
-  (((((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}).app = global.window.spirit.required.spirit.app || {}).testicle = global.window.spirit.required.spirit.app.testicle || {})).api = { run: function (a) { runs.push(a); return Promise.resolve({ ok: true }); } };
-  PAGE_LOAD.runAsPage(FILE);
+  // The row's own answer, what the loader places at its place.
+  const answer = PAGE_LOAD.runAsPage(FILE);
   await settle();
-  // The intrinsic elements' place, where its stand-ins go; the row, an app's element since the move to spirit/app/testicle/, no longer
-  // makes it by placing itself under it.
-  const SE = global.window.spirit.required.spirit;
-  E = SE.element = SE.element || {};
-  E.row = { index: function (sub) { indexes.push(sub); return { id: indexes.length }; },
-    create: function (spec) { specs.push(spec); return { spec: spec, mount: function () {} }; } };
-  E.busyButton = { create: function (c, o) { const b = { cell: c, o: o }; buttons.push(b); return b; } };
-  const TE = (((global.window.spirit.required.spirit.app || {}).testicle || {}).element || {});
-  R = TE.search && TE.search.suite && TE.search.suite.row;
+  const TE = (((global.window.spirit.required.spirit || {}).app || {}).testicle || {}).element || {};
+  R = TE.search && TE.search.suite && TE.search.suite.row === answer ? answer : null;
   return true;
 }, test.limit.quick);
 test.run('it places itself at spirit.required.spirit.app.testicle.element.search.suite.row, with a create', 0.2, function () {
