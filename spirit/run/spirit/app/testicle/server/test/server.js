@@ -2559,7 +2559,6 @@ function MICRO_GENERAL(body) {
 // which aCrash.js's test throws, bHung.js's test never answers within its limit, and cFalse.js's test answers false. In auto
 // mode the run takes the three; each suite row ends red, and its reason says which.
 {
-  const GENERAL_LINE = 'else GIVEN.forEach(function (rel) { test.forScript(rel, function () { one(rel); two(rel); }); });';
   const ACRASH = 'spirit/app/testicle/temp/zzReason/aCrash.js';
   const BHUNG = 'spirit/app/testicle/temp/zzReason/bHung.js';
   const CFALSE = 'spirit/app/testicle/temp/zzReason/cFalse.js';
@@ -2585,17 +2584,15 @@ function MICRO_GENERAL(body) {
     const root = LABH.scratchTree().root;
     const run = path.join(root, 'spirit', 'run');
     R.s = { root: root, run: run };
-    const general = path.join(run, GENERAL);
-    const generalSrc = fs.readFileSync(general, 'utf8');
-    if (generalSrc.indexOf(GENERAL_LINE) === -1) return false;
-    fs.writeFileSync(general, generalSrc.replace(GENERAL_LINE, "else GIVEN.forEach(function (rel) { test.forScript(rel, function () {" +
+    // A micro-suite (MICRO_GENERAL): each planted script its one reason, the rest one quick test.
+    fs.writeFileSync(path.join(run, GENERAL), MICRO_GENERAL("" +
       " if (/zzReason\\/aCrash\\.js$/.test(rel)) test.run('it crashes', 0.2, function () { throw new Error('zzReason crash'); }, test.limit.quick);" +
       " else if (/zzReason\\/bHung\\.js$/.test(rel)) test.run('it never answers', 0.2, function () { return new Promise(function () {}); }, test.limit.quick);" +
       " else if (/zzReason\\/cFalse\\.js$/.test(rel)) test.run('it answers false', 0.2, function () { return false; }, test.limit.quick);" +
       " else if (/zzReason\\/dDup\\.js$/.test(rel)) { test.run('it is twice', 0.2, function () { return true; }, test.limit.quick); test.run('it is twice', 0.2, function () { return true; }, test.limit.quick); }" +
       " else if (/zzReason\\/eLong\\.js$/.test(rel)) test.run('" + LONG_CUT + "ü and the rest of a long title', 0.2, function () { return true; }, test.limit.quick);" +
       " else if (/zzReason\\/fCut\\.js$/.test(rel)) { test.run('" + 'b'.repeat(130) + " one', 0.2, function () { return true; }, test.limit.quick); test.run('" + 'b'.repeat(130) + " two', 0.2, function () { return true; }, test.limit.quick); }" +
-      " else { one(rel); two(rel); } }); });"));
+      " else test.run('it holds', 0.2, function () { return true; }, test.limit.quick);"));
     [ACRASH, BHUNG, CFALSE, DDUP, ELONG, FCUT].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the reason of a red\n'); });
     const on = path.join(run, 'spirit', 'state', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
