@@ -45,6 +45,9 @@ function world() {
 const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const it = function (id, goal, more) { return Object.assign({ id: id, goal: goal, title: id }, more || {}); };
 const whole = function (f) { return { verb: 'goal.whole', item: f }; };
+// THE CURRENT GOAL IS ITS OWN STREAMED ROW (goal/G49.8, point 2; Andy: "the \"current\" selection is just another streamed
+// item, that part of the apps (desks) state....that's all.", "go!"; the row's shape is cw's, { change, current: <goal id> }).
+const cur = function (g, change) { return { change: change || 0, current: g }; };
 
 
 // The one file holds what the desk knows of its rows at the receiving end: the translator, and the cache rules (keep,
@@ -74,16 +77,24 @@ test.run('with spirit.required.spirit.data it answers the desk branch\'s data wi
   return (!!w.X && typeof w.X.published === 'function' && typeof w.X.took === 'function') ? true : false;
 }, test.limit.quick);
 
-// a goal pushed whole: its rows kept, it is current
-test.run('goal.whole keeps the item\'s facts and makes its goal the current one', 0.2, function () {
+// a goal pushed whole: its rows kept; which goal is current, its own row says (goal/G49.8)
+test.run('goal.whole keeps the item\'s facts and leaves the current goal as it is', 0.2, function () {
   if (!w) return false;
   w.job(whole(it('goal/G9.1', 'goal/G9')));
-  return (w.item('goal/G9.1') && w.item('goal/G9.1').title === 'goal/G9.1' && w.current() === 'goal/G9') ? true : false;
+  return (w.item('goal/G9.1') && w.item('goal/G9.1').title === 'goal/G9.1' && w.current() === '') ? true : false;
 }, test.limit.quick);
-test.run('an item as a JSON string is read, and a goal, whose goal field is empty, is its own goal', 0.2, function () {
+test.run('a current row makes its goal the current one', 0.2, function () {
+  if (!w) return false;
+  // A goal no goal.whole named: only the current row can make it current.
+  w.job(cur('goal/G11', 1));
+  const named = w.current() === 'goal/G11';
+  w.job(cur('goal/G9', 1));
+  return (named && w.current() === 'goal/G9') ? true : false;
+}, test.limit.quick);
+test.run('an item as a JSON string is read', 0.2, function () {
   if (!w) return false;
   w.job({ verb: 'goal.whole', item: JSON.stringify(it('goal/G9', '')) });
-  return (w.item('goal/G9') && w.current() === 'goal/G9') ? true : false;
+  return (!!w.item('goal/G9')) ? true : false;
 }, test.limit.quick);
 test.run('facts with no id, broken JSON or a non-object keep nothing', 0.2, function () {
   if (!w) return false;
@@ -99,10 +110,11 @@ test.run('a row that is not goal.whole is kept and drops nothing', 0.2, function
 // another goal pushed whole: it is current, and nothing kept of others goes (goal/G41.12)
 // Andy, goal/G41.12, box v15: "The cache keeps everything the server sends, every goal, no filtering on the client
 // side"; goal/G41.24, his decision: "the three bundle checks go, and the other three assert my G41.12 words."
-test.run('a second goal pushed whole becomes current, and the first goal\'s items, parts and boxes stay in the cache', 0.2, function () {
+test.run('a second goal pushed whole and named by a current row becomes current, and the first goal\'s items, parts and boxes stay in the cache', 0.2, function () {
   if (!w) return false;
   w.X.took('item.box', { id: 'goal/G9.1' }, { box: 'the box', version: 3 });
   w.job(whole(it('goal/G8.1', 'goal/G8')));
+  w.job(cur('goal/G8', 2));
   return (w.current() === 'goal/G8' && !!w.item('goal/G9.1') && !!w.item('goal/G9') && !!w.part('goal/G9.1') && w.part('goal/G9.1').box === 'the box' && !!w.item('goal/G7.1')) ? true : false;
 }, test.limit.quick);
 test.run('the new goal\'s row is kept', 0.2, function () {
@@ -113,7 +125,21 @@ test.run('a row of the new goal that came before it was pushed stays', 0.2, func
   if (!w) return false;
   w.job({ verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
   w.job(whole(it('goal/G6', '')));
+  w.job(cur('goal/G6', 3));
   return (w.current() === 'goal/G6' && w.item('goal/G6.1') && w.item('goal/G6')) ? true : false;
+}, test.limit.quick);
+// A CACHE REPLAYED AT A PAGE'S CONNECT (goal/G49.8, point 2): a client node hands its whole cache, oldest first, and an old
+// goal's goal.whole rows came ahead of the current goal's, so the page went to the old goal and its List went blank.
+test.run('an old goal\'s goal.whole rows replayed after the current row leave the current goal as it is', 0.2, function () {
+  if (!w) return false;
+  w.job(whole(it('goal/G48.1', 'goal/G48', { status: 'closed' })));
+  w.job(whole(it('goal/G48.2', 'goal/G48', { status: 'closed' })));
+  return (w.current() === 'goal/G6' && !!w.item('goal/G48.1')) ? true : false;
+}, test.limit.quick);
+test.run('a current row with an empty goal, or one that is no string, changes nothing', 0.2, function () {
+  if (!w) return false;
+  w.job(cur('', 4)); w.job(cur(5, 4)); w.job(cur(null, 4));
+  return (w.current() === 'goal/G6') ? true : false;
 }, test.limit.quick);
 test.run('a goal.whole of the current goal drops nothing', 0.2, function () {
   if (!w) return false;
@@ -152,6 +178,7 @@ test.run('a single row is taken as it comes', 0.2, function () {
 test.run('item.box is kept as the box and its version, as a number', 0.2, function () {
   wt = world();
   wt.job(whole(it('goal/G9.1', 'goal/G9')));
+  wt.job(cur('goal/G9', 1));
   wt.job({ verb: 'item.row', item: it('goal/G5.1', 'goal/G5') });
   wt.X.took('item.box', { id: 'goal/G9.1' }, { box: 'B', version: '4' });
   return (wt.part('goal/G9.1').box === 'B' && wt.part('goal/G9.1').version === 4) ? true : false;
@@ -173,9 +200,9 @@ test.run('with no id, no answer, a box that is not a string, or another verb, no
   try { wt.X.took('item.box', {}, { box: 'x' }); wt.X.took('item.box', { id: 'goal/G9.1' }, null); wt.X.took('item.box', { id: 'goal/G9.1' }, { box: 5 }); wt.X.took('item.what', { id: 'goal/G9.1' }, { a: 1 }); } catch (e) { threw = e; }
   return (!threw && wt.part('goal/G9.1').box === 'B') ? true : false;
 }, test.limit.quick);
-test.run('before any goal was pushed nothing is kept', 0.2, function () {
+test.run('before any current row a part read is not kept, though its goal was pushed whole', 0.2, function () {
   wn = world();
-  wn.job({ verb: 'item.row', item: it('goal/G9.1', 'goal/G9') });
+  wn.job(whole(it('goal/G9.1', 'goal/G9')));
   wn.X.took('item.box', { id: 'goal/G9.1' }, { box: 'B' });
   return (!wn.part('goal/G9.1')) ? true : false;
 }, test.limit.quick);
@@ -185,6 +212,7 @@ test.run('a box the stream brings is kept though the item was never read', 0.2, 
   ws = world();
   ws.job(whole(it('goal/G9.1', 'goal/G9')));
   ws.job(whole(it('goal/G9.2', 'goal/G9')));
+  ws.job(cur('goal/G9', 1));
   ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'never read' } });
   // goal/G41.12: "The cache keeps everything the server sends": a box the stream brings is kept, read or not.
   return (!!ws.part('goal/G9.1') && ws.part('goal/G9.1').box === 'never read') ? true : false;
@@ -243,13 +271,15 @@ test.run('a cleared check goes, and so does a removed one, by its number at', 0.
 test.run('a job of another module, or an app that is no object, keeps nothing', 0.2, function () {
   wm = world();
   wm.job(whole(it('goal/G9.1', 'goal/G9')), 'spirit.app.files');
+  wm.job(cur('goal/G9', 1), 'spirit.app.files');
   wm.D.takeJob({ id: 'z', module: 'spirit.app.desk', data: {}, app: 'not an object' }, SENDER);
   return (!wm.item('goal/G9.1') && !wm.current()) ? true : false;
 }, test.limit.quick);
 test.run('published takes a row handed to it directly', 0.2, function () {
   if (!wm) return false;
   wm.X.published(whole(it('goal/G9.1', 'goal/G9')));
-  return (wm.item('goal/G9.1') && wm.current() === 'goal/G9') ? true : false;
+  wm.X.published(cur('goal/G12', 1));
+  return (wm.item('goal/G9.1') && wm.current() === 'goal/G12') ? true : false;
 }, test.limit.quick);
 
 // ── THE noTeamChat PART ──────────────────────────────────────────────────────────────────────────────────────────

@@ -256,10 +256,11 @@ function deskWorld(goal, items) {
   w.mount = async function () {
     win.spirit.required.spirit.app.desk.element.desk.desk.create(document.body.appendChild(document.createElement('div')), {});
     await settle();
-    // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, the one its last
-    // goal.whole named; the page reads it from there, never from a search answer.
+    // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, named by its own current row
+    // (goal/G49.8: "the \"current\" selection is just another streamed item"); the page reads it from there, never from a
+    // search answer.
     const K = ((win.spirit.required.spirit.data || {}).desk || {}).data;
-    if (K && typeof K.published === 'function') { [goal].concat(items).forEach(function (r) { K.published({ verb: 'goal.whole', item: r, change: 1 }); }); await settle(); }
+    if (K && typeof K.published === 'function') { [goal].concat(items).forEach(function (r) { K.published({ verb: 'goal.whole', item: r, change: 1 }); }); K.published({ change: 1, current: goal.id }); await settle(); }
     // The List's rows, drawn by the page's own element into the List's box, where its click listener hears them.
     if (listOpts) {
       const host = document.getElementById('desk-list');

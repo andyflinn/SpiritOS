@@ -65,6 +65,15 @@ test.run('a row of a part keep does not know takes nothing out', 0.2, function (
   const out = C.keep([side('weird', 1, 1, { a: 1 })], side('weird', 1, 1, { a: 1 }));
   return out.length === 2 || false;
 }, test.limit.quick);
+// THE CURRENT GOAL IS ITS OWN STREAMED ROW (goal/G49.8, point 2; Andy: "the \"current\" selection is just another streamed
+// item, that part of the apps (desks) state....that's all.", "go!"; cw: { change, current: <goal id> }, one identity, so
+// the cache keeps only its newest however often the goal is switched).
+test.run('a current row kept again takes the old current row out, and the other rows stay', 0.2, function () {
+  if (!C.keep) return false;
+  const out = C.keep(C.keep([facts(1, 1)], { change: 1, current: 'goal/G1' }), { change: 2, current: 'goal/G2' });
+  const currents = out.filter(function (r) { return r && 'current' in r; });
+  return (out.length === 2 && currents.length === 1 && currents[0].current === 'goal/G2' && out[out.length - 1] === currents[0]) || false;
+}, test.limit.quick);
 
 // ── shed: Andy's order (Q2) ──
 // "FIRST YOU shed the longest untouched goal, lock, stock and barrel / when there is only one goal, then you shed the

@@ -343,6 +343,16 @@ test.run('each post stays within one payload', 0.2, function () {
   if (!W.pushed) return false;
   return W.pushed.every(function (p) { return Buffer.byteLength(String(p.json), 'utf8') <= 16384; }) || false;
 }, test.limit.quick);
+// THE CURRENT GOAL IS ITS OWN STREAMED ROW (goal/G49.8, point 2; Andy: "the \"current\" selection is just another streamed
+// item, that part of the apps (desks) state....that's all.", "go!"; cw: { change, current: <goal id> }): the press above
+// made the other goal current, and that one row says so, to his pages and to a subscriber alike.
+const currentRows = function (rows) { return rows.filter(function (r) { return r && typeof r === 'object' && typeof r.current === 'string' && !r.verb && !r.table; }); };
+test.run('a goal made current is published as one current row naming it, to his pages and to a subscriber', 0.4, function () {
+  if (!W.up) return false;
+  const toPages = currentRows(W.node.pages).filter(function (r) { return r.current === OTHER.id; });
+  const toCw = currentRows(rowsTo(CW.key, 0)).filter(function (r) { return r.current === OTHER.id; });
+  return (toPages.length === 1 && toCw.length === 1 && typeof toCw[0].change === 'number') || false;
+}, test.limit.quick);
 test.run('the goal leaves design mode', 0.2, async function () {
   if (!W.up) return false;
   await call('press', { id: GOAL.id, what: 'make-current' }, ANDY);
@@ -424,6 +434,13 @@ test.run('the last entry of a push is its end mark, with full and end both true'
 test.run('the end mark comes once per push', 0.2, function () {
   if (!W.plainRows) return false;
   return W.plainRows.filter(isEnd).length === 1 || false;
+}, test.limit.quick);
+// goal/G49.8, point 2: a new subscriber learns the current goal from its row, not from the order its goal.whole rows come in.
+test.run('a subscribe with no since brings the current row, naming the goal it pushes whole', 0.4, function () {
+  if (!W.plainRows) return false;
+  const goalRow = wholeOf(W.plainRows).filter(function (r) { return r.item.goal === ''; })[0];
+  const cur = currentRows(W.plainRows);
+  return (!!goalRow && cur.length === 1 && cur[0].current === String(goalRow.item.id)) || false;
 }, test.limit.quick);
 
 
