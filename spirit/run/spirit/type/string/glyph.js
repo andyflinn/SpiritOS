@@ -26,6 +26,4 @@
     },
   };
   if (typeof module === 'object' && module && module.exports) module.exports = T;
-  var S = root && root.spirit;
-  if (S && S.required) ["spirit", "type", "string", "glyph"].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = T; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, S.required);
 }(typeof window !== 'undefined' ? window : globalThis));

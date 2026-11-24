@@ -10,9 +10,12 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   // The node's own limit, read where it is defined, through spirit.requireScript: on the node its module, on a page what
   // spirit.required holds once it is in.
   var S0 = root && root.spirit;
-  var L = S0 && typeof S0.requireScript === 'function' ? S0.requireScript('spirit/limits.js') : null;
+  // Kept from what spirit.requireScript hands back (goal/G49.9): on the node its module at once, on a page once it is loaded.
+  var L = null;
+  var askedL = S0 && typeof S0.requireScript === 'function' ? S0.requireScript('spirit/limits.js') : null;
+  if (askedL && typeof askedL.then === 'function') askedL.then(function (m) { L = m; }, function () { /* not loaded */ }); else L = askedL;
   function limit() {
-    var at = (L && typeof L.PAYLOAD_MAX === 'number') ? L : (S0 && S0.required && S0.required.spirit && S0.required.spirit.limits);
+    var at = L;
     return at && typeof at.PAYLOAD_MAX === 'number' ? at.PAYLOAD_MAX : 22528;
   }
   function bytes(s) { return new TextEncoder().encode(s).length; }
@@ -29,6 +32,4 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
     },
   };
   if (typeof module === 'object' && module && module.exports) module.exports = T;
-  var S = root && root.spirit;
-  if (S && S.required) ['spirit', 'type', 'string', 'json'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = T; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, S.required);
 }(typeof window !== 'undefined' ? window : globalThis));

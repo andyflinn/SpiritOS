@@ -568,15 +568,41 @@ function pageSpirit(s, loaded, o) {
   if (Array.isArray(opts.real)) opts.real.forEach(function (p) { listed[String(p).replace(/^\/+/, '')] = true; });
   const isReal = function (at) { return typeof opts.real === 'function' ? !!opts.real(at) : !!listed[at]; };
   const ran = Object.create(null);
+  // A path's keys as spirit.js places it: a folder's script.js at its folder's own name (goal/G49.9).
+  const keysOf = function (at) {
+    const keys = String(at).replace(/^\/+/, '').replace(/\.js$/, '').split('/').filter(Boolean);
+    if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop();
+    return keys;
+  };
   const placedAt = function (at) {
-    return String(at).replace(/\.js$/, '').split('/').filter(Boolean).reduce(function (x, k) { return x == null ? undefined : x[k]; }, sp.required);
+    return keysOf(at).reduce(function (x, k) { return x == null ? undefined : x[k]; }, sp.required);
+  };
+  // What a script exposed, placed at its place, the folder's other scripts kept on it.
+  const placeOn = function (spirit, at, value) {
+    spirit.required = spirit.required || {};
+    const keys = keysOf(at);
+    let o = spirit.required;
+    for (let i = 0; i < keys.length - 1; i += 1) { if (o[keys[i]] == null) o[keys[i]] = {}; o = o[keys[i]]; }
+    const last = keys[keys.length - 1];
+    const was = o[last];
+    if (was && typeof was === 'object' && typeof was.create !== 'function') Object.keys(was).forEach(function (k) { if (!(k in value)) value[k] = was[k]; });
+    if (was === undefined || (was && typeof was === 'object' && typeof was.create !== 'function')) o[last] = value;
   };
   const runReal = function (at) {
     if (!ran[at]) {
       const vm = require('vm');
       if (!vm.isContext(opts.window)) vm.createContext(opts.window);
       const file = path.join(RUN, at);
-      try { vm.runInContext(fs.readFileSync(file, 'utf8'), opts.window, { filename: file }); ran[at] = { ok: true }; } catch (e) { ran[at] = { ok: false, error: e }; }
+      // IN A MODULE BOX, AS THE PAGE'S LOADER RUNS IT (goal/G49.9, box v5): what the script sets as module.exports is placed at
+      // its place, a folder's script.js at its folder's name.
+      const box = { exports: {} };
+      const start = box.exports;
+      try {
+        vm.runInContext('(function (module, exports) {' + fs.readFileSync(file, 'utf8') + '\n})', opts.window, { filename: file })(box, box.exports);
+        const set = box.exports !== start || Object.keys(start).length > 0;
+        if (set && box.exports && (typeof box.exports === 'object' || typeof box.exports === 'function')) placeOn(sp, at, box.exports);
+        ran[at] = { ok: true };
+      } catch (e) { ran[at] = { ok: false, error: e }; }
     }
     const r = ran[at];
     return { then: function (f, g) {

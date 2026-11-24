@@ -10,12 +10,11 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
   // spirit.type.string.word, through spirit.requireScript: on the node its module at once, on a page what spirit.required
   // holds.
   var S0 = root && root.spirit;
-  var DESC = S0 && typeof S0.requireScript === 'function' ? S0.requireScript('spirit/type/string/word.js') : null;
-  function baseType() {
-    if (DESC && typeof DESC.isValid === 'function') return DESC;
-    var r = S0 && S0.required && S0.required.spirit && S0.required.spirit.type && S0.required.spirit.type.string;
-    return (r && r.word) || null;
-  }
+  // Kept from what spirit.requireScript hands back (goal/G49.9): on the node its module at once, on a page once it is loaded.
+  var DESC = null;
+  var asked = S0 && typeof S0.requireScript === 'function' ? S0.requireScript('spirit/type/string/word.js') : null;
+  if (asked && typeof asked.then === 'function') asked.then(function (m) { DESC = m; }, function () { /* not loaded: no base type */ }); else DESC = asked;
+  function baseType() { return DESC && typeof DESC.isValid === 'function' ? DESC : null; }
   function no(why) { throw new Error(why); }
   var T = {
     defaultValue: function () { return ''; },
@@ -28,6 +27,4 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
     },
   };
   if (typeof module === 'object' && module && module.exports) module.exports = T;
-  var S = root && root.spirit;
-  if (S && S.required) ['spirit', 'type', 'string', 'wordSelect'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = T; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, S.required);
 }(typeof window !== 'undefined' ? window : globalThis));

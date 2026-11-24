@@ -9,15 +9,16 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
 (function (root) {
   // IDNew and URL, through spirit.requireScript: on the node their modules at once, on a page what spirit.required holds.
   var S0 = root && root.spirit;
-  var loaded = {
-    IDNew: S0 && typeof S0.requireScript === 'function' ? S0.requireScript('spirit/type/string/IDNew.js') : null,
-    URL: S0 && typeof S0.requireScript === 'function' ? S0.requireScript('spirit/type/string/URL.js') : null,
-  };
-  function typeOf(name) {
-    if (loaded[name] && typeof loaded[name].isValid === 'function') return loaded[name];
-    var r = S0 && S0.required && S0.required.spirit && S0.required.spirit.type && S0.required.spirit.type.string;
-    return (r && r[name]) || null;
+  // Kept from what spirit.requireScript hands back (goal/G49.9): on the node its module at once, on a page once it is loaded.
+  var loaded = { IDNew: null, URL: null };
+  function keep(name, asked) {
+    if (asked && typeof asked.then === 'function') asked.then(function (m) { loaded[name] = m; }, function () { /* not loaded */ }); else loaded[name] = asked;
   }
+  if (S0 && typeof S0.requireScript === 'function') {
+    keep('IDNew', S0.requireScript('spirit/type/string/IDNew.js'));
+    keep('URL', S0.requireScript('spirit/type/string/URL.js'));
+  }
+  function typeOf(name) { return loaded[name] && typeof loaded[name].isValid === 'function' ? loaded[name] : null; }
   function takes(T, v) { try { return !!T && T.isValid(v) === true; } catch (e) { return false; } }
   function no(why) { throw new Error(why); }
   var T = {
@@ -32,6 +33,4 @@ if (typeof module === 'object' && module && module.exports && typeof require ===
     },
   };
   if (typeof module === 'object' && module && module.exports) module.exports = T;
-  var S = root && root.spirit;
-  if (S && S.required) ['spirit', 'type', 'string', 'relay'].reduce(function (o, k, i, all) { if (i === all.length - 1) { if (o[k] === undefined) o[k] = T; return o[k]; } return (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}); }, S.required);
 }(typeof window !== 'undefined' ? window : globalThis));
