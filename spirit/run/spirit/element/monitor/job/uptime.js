@@ -54,5 +54,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     };
   }
 
-  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/element/monitor/job/uptime.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

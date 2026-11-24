@@ -23,10 +23,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.requireScript.
   // And its type, spirit.type.string.label, which Save asks before the wire is troubled (goal/G48.4, the box: "fieldRules.js
   // dies").
-  var parts = root.spirit.requireScript ? Promise.all([root.keepAnswer('spirit/element/fieldInput.js'), root.keepAnswer('spirit/type/string/label.js')]) : Promise.resolve();
+  var parts = root.spirit.requireScript ? Promise.all([keepAnswer('spirit/element/fieldInput.js'), keepAnswer('spirit/type/string/label.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
-  if (root.spirit.requireScript) root.keepAnswer('spirit/element/rowForm.js');
+  if (root.spirit.requireScript) keepAnswer('spirit/element/rowForm.js');
 
   function label() { var r = root.spirit && root.spirit.required; return (r && r.spirit && r.spirit.type && r.spirit.type.string && r.spirit.type.string.label) || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
@@ -65,7 +65,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var bad = '';
       if (L) { try { L.isValid(input.value); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { say(bad, true); return Promise.resolve(); }
-      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function () { return root.keepAnswer('spirit/node/api.js'); }).then(function (s) { return s.setName({ name: input.value }); })).then(function (r) {
+      return root.spirit.callOutcome(Promise.resolve(root.spirit.readyPromise).then(function () { return keepAnswer('spirit/node/api.js'); }).then(function (s) { return s.setName({ name: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
         root.spirit.required.spirit.data.node.data.card.keep({ name: String(body.name == null ? '' : body.name) });
@@ -82,7 +82,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       input.defaultValue = name;
       input.value = name;
     }
-    root.keepAnswer('spirit/node/api.js').then(function () {
+    keepAnswer('spirit/node/api.js').then(function () {
       if (gone) return;
       stop = root.spirit.required.spirit.data.node.data.card.watch(show);
       show(root.spirit.required.spirit.data.node.data.card.get());
