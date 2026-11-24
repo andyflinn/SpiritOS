@@ -967,6 +967,37 @@ async function session() {
   P.loose = Object.keys(loose);
   P.spills = await page.evaluate('(function () { var b = window.spiritMount.box; return b.scrollHeight > b.clientHeight + 1 || document.documentElement.scrollWidth > document.documentElement.clientWidth + 1; }())');
 
+  // A ROW DETAIL HAS ITS OWN PANEL (goal/G49.8, point 4, box v7; Andy: "a row detail has it's own panel and doesn't share it
+  // with other row details of the same kind", "a test, general, hopefully, should enforce that", "a more general \"if-block\"
+  // in a spirit-child-browser test"; the panel rule, spirit/element/panel.js, Q2: "a closed layer is hidden, not destroyed"):
+  // for an app, spirit/app/<name>/element.js, mounted by itself and before anything is typed or pressed, two of its rows are pressed and each panel they open closed
+  // with its ✕, then the first row pressed again. An app whose row press opens no panel here has nothing to judge.
+  if (/^spirit\/app\/[^/]+\/element\.js$/.test(rel)) {
+    const ROWS = 'Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("[data-key]"), function (x) { return x.getClientRects().length && !x.closest(".app-container"); })';
+    const BOXES = 'Array.prototype.slice.call(window.spiritMount.box.querySelectorAll(".app-container"))';
+    const SHOWN = BOXES + '.filter(function (x) { return x.style.display !== "none" && x.getClientRects().length; }).pop()';
+    const press = function (i) { return page.evaluate('(function () { var r = ' + ROWS + '; if (!r[' + i + ']) return ""; r[' + i + '].click(); return String(r[' + i + '].getAttribute("data-key")); }())'); };
+    const closeShown = function () { return page.evaluate('(function () { var b = ' + SHOWN + '; var x = b && b.querySelector(".app-container-close"); if (x) x.click(); return !!x; }())'); };
+    const R = P.rowPanels = { judged: false };
+    const n0 = await page.evaluate(BOXES + '.length');
+    const k1 = await press(0);
+    await quiet();
+    const n1 = await page.evaluate(BOXES + '.length');
+    if (k1 && n1 > n0 && await page.evaluate('(function () { var b = ' + SHOWN + '; if (!b) return false; b.__zzFirstRow = true; return true; }())')) {
+      await closeShown(); await quiet();
+      const k2 = await press(1);
+      await quiet();
+      if (k2 && k2 !== k1) {
+        R.judged = true;
+        R.own = await page.evaluate('(function () { var b = ' + SHOWN + '; return !!b && b.__zzFirstRow !== true && ' + BOXES + '.length === ' + (n1 + 1) + '; }())');
+        await closeShown(); await quiet();
+        await press(0);
+        await quiet();
+        R.left = await page.evaluate('(function () { var b = ' + SHOWN + '; return !!b && b.__zzFirstRow === true; }())');
+        await closeShown(); await quiet();
+      }
+    }
+  }
   // EVERY INPUT HELD AT ITS LIMIT (goal/G41.27; Andy: "in the general UI tests (headless browser), any input field must
   // be checked for size-limits, and get a \"red\" if it violates that rule."): every text field it draws, as drawn and
   // after its tools are pressed, is typed far past the longest field the rules allow, as a hand would type it, and must
@@ -1284,6 +1315,11 @@ function oneFile(P) {
       const strays = outside.filter(function (x) { return x.outside.length; });
       return !strays.length || false;
     }, test.limit.quick);
+  }
+  // goal/G49.8, point 4: an app's row details, each in its own panel, shown again as left (the if-block in session()).
+  if (P.rowPanels && P.rowPanels.judged) {
+    test.run('a row pressed in it opens its detail in a panel of its own, not in another row\'s', 0.4, function () { return P.rowPanels.own === true || false; }, test.limit.quick);
+    test.run('a row pressed again shows its own panel as it was left, not a new one', 0.4, function () { return P.rowPanels.left === true || false; }, test.limit.quick);
   }
   // <address>: destroy leaves its box empty
   if (mounted && P.destroyed === 'none') test.run('it has no destroy of its own (an app is closed by the face)', 0.4, function () { return P.destroyed === 'none' || false; }, test.limit.quick);
