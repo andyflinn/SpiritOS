@@ -9,7 +9,8 @@ and this file.
 ## Requirements
 
 - Andy: *"the script MUST be classified by loading it."* Each script given (none given: every tracked product script of
-  `spirit/run/`) is loaded twice: once as a node script, in a process of its own (eight at a time), and once in a page, a
+  `spirit/run/`) is loaded twice: once as a node script, in a worker thread of its own (eight at a time;
+  goal/G49.8, a worker in place of a process: its own module cache and globals, twice as fast), and once in a page, a
   fresh bare page for each script (spirit.js alone, served by its scratch node from a test folder of the copy at
   /DEBUG/<path>; plain scripts share a page's top-level scope, so one page for all would let one break the next), of
   its own scratch node (*"it ... runs where all tests run, in its own scratch node (booted once per run)"*), in headless
@@ -29,8 +30,8 @@ and this file.
 - A file in a test folder (a tool of the test system with a test of its own, `testReport.js`, `testModule.js`, or a
   general test) is never loaded: loading a test runs it. Tests and their tools run on the node: node-only, as
   `server.js` is.
-- *"the node side counts only a thrown error, and reads its reason"*: the child loads the script inside a try and tells
-  what it caught; a process that ends with nothing caught has loaded, whatever its exit code (an app server that exits at
+- *"the node side counts only a thrown error, and reads its reason"*: the worker loads the script inside a try and tells
+  what it caught; a worker that ends with nothing caught has loaded, whatever its exit code (an app server that exits at
   once, *"no --state"*, has loaded).
 - *"a load that is not complete in 3 seconds counts as crash/hang: not classifyable"*, on either side.
 - *"classify hard-codes server.js and relayServer.js as node-only"*: `spirit/server.js` and `spirit/server/relay.js` are

@@ -18,7 +18,8 @@
 require('../spirit.js');
 const fs = require('fs');
 const path = require('path');
-const { spawn, execFileSync } = require('child_process');
+const { execFileSync } = require('child_process');
+const { Worker } = require('worker_threads');
 const test = require('./testReport.js');
 const { until, freePort, findChrome, chromePage, WAIT } = require('./headLessChrome.js');
 
@@ -51,33 +52,42 @@ const given = process.argv.slice(2).filter(function (a, i, all) { return a.index
   .map(function (a) { return posix(a).replace(/^\.?\//, ''); });
 const SCRIPTS = given.length ? given : productScripts();
 
-// THE NODE SIDE: the script required in a process of its own, inside a try; what it caught is told before it ends. Nothing
-// told and the process ended: it loaded, whatever its exit code. Still running at the limit: a hang.
+// THE NODE SIDE: the script required in a worker thread of its own, inside a try; what it caught is told to the classifier.
+// Nothing told and the worker ended: it loaded, whatever its exit code. Still running at the limit: a hang, and the worker
+// is stopped. A WORKER PER SCRIPT, NOT A PROCESS (goal/G49.8; andy-ubuntu: "cw, go", on cw's measurement: 311 scripts, 10.0 s
+// as processes, 5.0 s as workers, every answer the same): a worker has its own module cache and its own globals, so each
+// script still loads alone with its whole chain recorded (goal/G47.6, box point 3), and its exit, a late throw or a hang
+// ends only that worker.
 function loadOnNode(run, rel) {
   return new Promise(function (resolve) {
-    const probe = 'const path = require("path"); const s = require(path.join(process.cwd(), "spirit", "spirit.js"));' +
-      'const tell = function (o) { try { process.stdout.write("\\n@@" + JSON.stringify(o) + "\\n"); } catch (e) { /* gone */ } };' +
+    const src = 'const { parentPort } = require("worker_threads"); const path = require("path");' +
+      'const run = ' + JSON.stringify(run) + '; const s = require(path.join(run, "spirit", "spirit.js"));' +
+      'const tell = function (o) { try { parentPort.postMessage(o); } catch (e) { /* gone */ } };' +
       'process.on("uncaughtException", function (e) { tell({ err: String(e && e.message || e) }); process.exit(0); });' +
       // WHAT ITS LOAD PULLED IN (goal/G47.6, box point 3: "the classifier loads each script alone in its own process and
       // records everything that load pulled in, the whole chain"): the module cache's new entries, run paths of production
       // scripts, the script itself and test folders left out; sent with its class (script.classify's requires).
       'const before = new Set(Object.keys(require.cache));' +
-      'const pulled = function () { return Object.keys(require.cache).filter(function (k) { return !before.has(k); }).map(function (k) { return path.relative(process.cwd(), k).split(path.sep).join("/"); })' +
+      'const pulled = function () { return Object.keys(require.cache).filter(function (k) { return !before.has(k); }).map(function (k) { return path.relative(run, k).split(path.sep).join("/"); })' +
       '.filter(function (r) { return /\\.js$/.test(r) && r.indexOf("..") !== 0 && !path.isAbsolute(r) && !/(^|\\/)test\\//.test(r) && r !== ' + JSON.stringify(rel) + '; }); };' +
-      'try { s.requireScript(' + JSON.stringify(rel) + '); tell({ err: "", requires: pulled() }); } catch (e) { tell({ err: String(e && e.message || e) }); }' +
-      'setTimeout(function () { process.exit(0); }, 50);';
-    const kid = spawn(process.execPath, ['-e', probe], { cwd: run, stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
-    let out = '';
-    let hung = false;
-    kid.stdout.on('data', function (d) { out += d; });
-    const t = setTimeout(function () { hung = true; try { kid.kill('SIGKILL'); } catch (e) { /* gone */ } }, LOAD_MS);
-    kid.on('close', function () {
+      'try { s.requireScript(' + JSON.stringify(rel) + '); tell({ err: "", requires: pulled() }); } catch (e) { tell({ err: String(e && e.message || e) }); }';
+    let w = null;
+    try { w = new Worker(src, { eval: true, stdout: true, stderr: true }); } catch (e) { return resolve({ err: String(e && e.message || e) }); }
+    // Its output is not read: only what it tells counts.
+    w.stdout.resume(); w.stderr.resume();
+    let told = null;
+    let done = false;
+    const finish = function (r) {
+      if (done) return;
+      done = true;
       clearTimeout(t);
-      const m = /\n@@(.*)\n/.exec(out);
-      let r = null; try { r = m ? JSON.parse(m[1]) : null; } catch (e) { r = null; }
-      if (r) return resolve(r);
-      resolve(hung ? { err: true, hung: true } : { err: '' });
-    });
+      w.terminate().then(function () { resolve(r); }, function () { resolve(r); });
+    };
+    // A first answer wins; a throw within 50 ms after it (a timer the script left) replaces a clean one, as the process's did.
+    w.on('message', function (m) { if (told && told.err) return; told = m; if (!m.err) setTimeout(function () { finish(told); }, 50); else finish(m); });
+    w.on('error', function (e) { finish({ err: String(e && e.message || e) }); });
+    w.on('exit', function () { finish(told || { err: '' }); });
+    const t = setTimeout(function () { finish(told || { err: true, hung: true }); }, LOAD_MS);
   });
 }
 
@@ -134,7 +144,7 @@ async function world() {
   if (!chrome) { W.error = true; return W; }
   W.page = await chromePage(chrome);
   if (!W.page || W.page.error) { W.error = true; W.page = null; return W; }
-  // THE NODE SIDE FOR EVERY SCRIPT AT ONCE, EIGHT PROCESSES AT A TIME (each still a process of its own, each cut at
+  // THE NODE SIDE FOR EVERY SCRIPT AT ONCE, EIGHT WORKERS AT A TIME (each still a worker thread of its own, each cut at
   // LOAD_MS): a tree's first classifying run takes seconds, not minutes, so testing is not held back by it.
   W.nodeR = Object.create(null);
   const run = path.join(W.node.root, 'spirit', 'run');
