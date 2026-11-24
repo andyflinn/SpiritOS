@@ -24,8 +24,8 @@ decisions."*
 - The job branch has its search, `spirit/element/search/job/script.js`; `spirit/element/job.js` and `jobDetail.js` are gone
   from `spirit/element/` (the box: *"The job search is made from spirit/element/job.js and jobDetail.js."*).
 - For each search `<name>`:
-  - `search/<name>.js` is the selector, an element placing a create through installSpiritElement by its own path.
-  - `search/<name>/list.js`, `row.js` and `detail.js` are there, each an element placed by its path.
+  - `search/<name>/script.js` is the selector, an element placing a create through installSpiritElement by its own path.
+  - `search/<name>/list/script.js`, `row/script.js` and `detail/script.js` are there, each an element placed by its path.
     Branch and icon have no detail: none is ever opened (Andy: *"branch and icon: if no details are ever openened, there
     needs to be now detail panel."*).
     Nor has suite, testicle's suite search: a suite row opens nothing in the file detail (goal/G47.1, the UI cycle).
@@ -37,14 +37,14 @@ decisions."*
   search-system"*, *"it means that grant and relay \"panels\" move to their spot in the search-element-tree."*):
   - no list's panel or detail (`*Panel.js`, `*Detail.js`, `*Details.js`) stands in `spirit/element/` beside the searches;
     `panel.js`, the generic stack, is no list's;
-  - the grants panel is `search/grant/grantsPanel.js`, placed by its path;
+  - the grants panel is `search/grant/grantsPanel/script.js`, placed by its path;
   - one detail for every kind of contact (*"the contact list already knows the difference between contact types. so should
-    the detail panel."*): `search/contact/relayPanel.js` is gone into `contact/detail.js`, and a contact row opens
+    the detail panel."*): `search/contact/relayPanel/script.js` is gone into `contact/detail/script.js`, and a contact row opens
     the contact detail alone.
 
 ### What its test must try to break
 
-- A search whose list is its selector file (`search/<name>.js` holding the list), or whose folder lacks a list, a row
+- A search whose list is its selector file (`search/<name>/script.js` holding the list), or whose folder lacks a list, a row
   or a detail.
 - A selector beside a list it does not draw.
 - The job list or its detail left in `spirit/element/`.

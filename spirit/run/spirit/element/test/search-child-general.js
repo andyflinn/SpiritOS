@@ -47,18 +47,22 @@ const SEARCH = 'spirit/element/search';
 const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' })
   .split('\n').filter(Boolean).map(function (f) { return f.replace(/^spirit\/run\//, ''); }).filter(isFile);
 // Every search: a .js in search/ itself, or a folder there holding scripts (a folder with no selector beside it is a
-// search too, and red).
+// search too, and red). Since goal/G49.5's element batch each script is <name>/script.js: a search is search/<n>/script.js
+// and its parts search/<n>/<part>/script.js; search/script.js is the search element itself, no search.
 const NAMES = Array.from(new Set(TREE.map(function (f) {
   const m = new RegExp('^' + SEARCH + '/([^/]+?)(\\.js$|/(?!test/)[^/]+\\.js$)').exec(f);
   return m ? m[1] : '';
-}).filter(function (n) { return n && n !== 'test'; }))).sort();
+}).filter(function (n) { return n && n !== 'test' && n !== 'script'; }))).sort();
 const asked = ARGS[0] ? String(ARGS[0]).replace(/\\/g, '/').replace(/^\.\//, '').replace(/^spirit\/run\//, '') : '';
 const askedName = (new RegExp('^' + SEARCH + '/([^/.]+)').exec(asked) || [])[1] || '';
-const TARGETS = askedName && askedName !== 'test' ? NAMES.filter(function (n) { return n === askedName; }) : NAMES;
+const TARGETS = askedName && askedName !== 'test' && askedName !== 'script' ? NAMES.filter(function (n) { return n === askedName; }) : NAMES;
 
 // An element: it places a create through installSpiritElement, by its own path.
 function placesItself(rel) { const c = code(rel); return /\binstallSpiritElement\s*\(/.test(c) && /\bcreate\b/.test(c) && c.indexOf("'" + rel + "'") !== -1; }
 const PARTS = ['list', 'row', 'detail'];
+// A search's selector and its parts, at their places since goal/G49.5's element batch: ./<name>/script.js.
+function selectorOf(n) { return SEARCH + '/' + n + '/script.js'; }
+function partOf(n, part) { return SEARCH + '/' + n + '/' + part + '/script.js'; }
 // NO DETAIL WHERE NONE OPENS (Andy: "branch and icon: if no details are ever openened, there needs to be now detail panel.").
 // suite: a suite row in testicle's file detail opens nothing (goal/G47.1, the UI cycle), so by the same words it has none.
 const NO_DETAIL = ['branch', 'icon', 'suite'];
@@ -83,38 +87,38 @@ test.run('the job list and its detail no longer stand in spirit/element/', 0.4, 
   const astray = ['spirit/element/job.js', 'spirit/element/jobDetail.js'].filter(isFile);
   return !astray.length || false;
 }, test.limit.quick);
-// Each search: SEARCH/<n>.js, its selector, and SEARCH/<n>/ holding its list, row and detail.
+// Each search: SEARCH/<n>/script.js, its selector, and SEARCH/<n>/ holding its list, row and detail, each <part>/script.js.
 test.run('each search\'s selector is an element placed by its path', 0.4, function () {
-  return eachSearch(function (n) { const sel = SEARCH + '/' + n + '.js'; return !(isFile(sel) && placesItself(sel)); });
+  return eachSearch(function (n) { const sel = selectorOf(n); return !(isFile(sel) && placesItself(sel)); });
 }, test.limit.quick);
 test.run('each search\'s list is placed by its path', 0.4, function () {
-  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/list.js'; return !(isFile(f) && placesItself(f)); });
+  return eachSearch(function (n) { const f = partOf(n, 'list'); return !(isFile(f) && placesItself(f)); });
 }, test.limit.quick);
 test.run('each search\'s row is placed by its path', 0.4, function () {
-  return eachSearch(function (n) { const f = SEARCH + '/' + n + '/row.js'; return !(isFile(f) && placesItself(f)); });
+  return eachSearch(function (n) { const f = partOf(n, 'row'); return !(isFile(f) && placesItself(f)); });
 }, test.limit.quick);
 // Only where there is a search to judge by it: a detail where one opens, none where none does.
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) === -1; })) {
   test.run('each search that opens a detail has its detail placed by its path', 0.4, function () {
-    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detail.js'; return !(NO_DETAIL.indexOf(n) !== -1 || (isFile(f) && placesItself(f))); });
+    return eachSearch(function (n) { const f = partOf(n, 'detail'); return !(NO_DETAIL.indexOf(n) !== -1 || (isFile(f) && placesItself(f))); });
   }, test.limit.quick);
 }
 if (TARGETS.some(function (n) { return NO_DETAIL.indexOf(n) !== -1; })) {
   test.run('a search whose detail is never opened has no detail', 0.4, function () {
-    return eachSearch(function (n) { const f = SEARCH + '/' + n + '/detail.js'; return !(NO_DETAIL.indexOf(n) === -1 || !isFile(f)); });
+    return eachSearch(function (n) { const f = partOf(n, 'detail'); return !(NO_DETAIL.indexOf(n) === -1 || !isFile(f)); });
   }, test.limit.quick);
 }
 // ONE LIST, SHARED BY POPUP AND LIST MODES (Andy: "all, any search-unit has ONE list shared by popup and list modes."): the
 // selector requires its list and draws it, and makes no list of its own: no probabilitySearch, no rows.
 test.run('each search\'s selector draws its own list.js', 0.4, function () {
   return eachSearch(function (n) {
-    const sel = SEARCH + '/' + n + '.js'; const dir = SEARCH + '/' + n; const c = code(sel);
-    return !(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/list\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.list\\.create\\(').test(c));
+    const sel = selectorOf(n); const dir = SEARCH + '/' + n; const c = code(sel);
+    return !(new RegExp("['\"]" + dir.replace(/\//g, '\\/') + "\\/list\\/script\\.js['\"]").test(c) && new RegExp('\\.search\\.' + n + '\\.list\\.create\\(').test(c));
   });
 }, test.limit.quick);
 test.run('each search\'s selector makes no list of its own', 0.4, function () {
   return eachSearch(function (n) {
-    const sel = SEARCH + '/' + n + '.js';
+    const sel = selectorOf(n);
     return /\.element\.search\.create\(|createElement\(['"](button|tr|li)['"]\)/.test(code(sel));
   });
 }, test.limit.quick);
@@ -125,20 +129,20 @@ test.run('each search\'s selector makes no list of its own', 0.4, function () {
 // search-element-tree."). Judged on every search, whatever file was asked.
 // Beside the searches, in spirit/element/ itself, no panel and no detail of a list: panel.js is the generic stack, no list's.
 test.run('no list\'s panel or detail stands beside the searches in spirit/element/', 0.4, function () {
-  const loose = TREE.filter(function (f) { return (/^spirit\/element\/[^/]+\.js$/).test(f) && (/(Panel|Detail|Details)\.js$/).test(f); });
+  const loose = TREE.filter(function (f) { return ((/^spirit\/element\/[^/]+\.js$/).test(f) && (/(Panel|Detail|Details)\.js$/).test(f)) || (/^spirit\/element\/[^/]+(Panel|Detail|Details)\/script\.js$/).test(f); });
   return !loose.length || false;
 }, test.limit.quick);
-const GRANTS = SEARCH + '/grant/grantsPanel.js';
+const GRANTS = partOf('grant', 'grantsPanel');
 test.run('the grants panel stands in the grant search, placed by its path', 0.4, function () {
   return (isFile(GRANTS) && placesItself(GRANTS)) || false;
 }, test.limit.quick);
 // One detail for every kind of contact: a relay's blocks are drawn by the contact detail, and the row opens nothing else.
-const RELAY = SEARCH + '/contact/relayPanel.js';
+const RELAY = partOf('contact', 'relayPanel');
 test.run('there is no second contact detail: the relay panel is gone into the contact detail', 0.4, function () {
-  return !isFile(RELAY) || false;
+  return (!isFile(RELAY) && !isFile(SEARCH + '/contact/relayPanel.js')) || false;
 }, test.limit.quick);
 test.run('a contact row opens the contact detail alone, whatever the contact is', 0.4, function () {
-  return (!/relayPanel/.test(code(SEARCH + '/contact/row.js')) && /contact\/detail\.js/.test(code(SEARCH + '/contact/row.js'))) ||
+  return (!/relayPanel/.test(code(partOf('contact', 'row'))) && /contact\/detail\/script\.js/.test(code(partOf('contact', 'row')))) ||
     false;
 }, test.limit.quick);
 }

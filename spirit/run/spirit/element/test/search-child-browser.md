@@ -5,14 +5,14 @@ The -browser general test beside `spirit/element/search/script.js` (goal/G47.1, 
 
     node spirit/element/test/search-child-browser.js [<script> ...]
 
-Given scripts, the searches they are of (`search/<name>.js` or a file under `search/<name>/`); given none, or `search.js`
+Given scripts, the searches they are of (`search/<name>/script.js` or a file under `search/<name>/`); given none, or `search.js`
 itself, every search.
 
 ## Requirements (goal/G47.1, box v121)
 
 The box: *"new, the page twin of search-child-general.js: every search (selector, list, row, detail)
 mounted in a page on a scratch node, more rows than fit"*. Each check is said once per search it judges, reported for that
-search's own script, `spirit/element/search/<name>.js` (goal/G47.6: *"the search test runs each search inside test.forScript
+search's own script, `spirit/element/search/<name>/script.js` (goal/G47.6: *"the search test runs each search inside test.forScript
 for that search's script ... The key then names the item that failed; the title stays the same and greppable"*). A search a
 check has nothing to judge in (no list drawn, no detail, a detail that draws nothing for a planted row) gets no test for it,
 never a green; a check no search could be judged by is red, for this suite's own script.

@@ -36,10 +36,12 @@ const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.index
 const SEARCH = 'spirit/element/search';
 const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8' })
   .split('\n').filter(Boolean).map(function (f) { return f.replace(/^spirit\/run\//, ''); }).filter(isFile);
-// Every search: its selector, search/<name>.js.
-const NAMES = TREE.map(function (f) { const m = new RegExp('^' + SEARCH + '/([^/]+)\\.js$').exec(f); return m ? m[1] : ''; })
-  .filter(Boolean).sort();
-const nameOf = function (f) { return (new RegExp('^' + SEARCH + '/([^/.]+)').exec(f) || [])[1] || ''; };
+// Every search: its selector, search/<name>/script.js since goal/G49.5's element batch (search/script.js is the search element
+// itself, no search).
+const NAMES = TREE.map(function (f) { const m = new RegExp('^' + SEARCH + '/([^/]+)/script\\.js$').exec(f); return m ? m[1] : ''; })
+  .filter(function (n) { return n && n !== 'test'; }).sort();
+const selectorOf = function (n) { return SEARCH + '/' + n + '/script.js'; };
+const nameOf = function (f) { const n = (new RegExp('^' + SEARCH + '/([^/.]+)/').exec(f) || [])[1] || ''; return n === 'test' ? '' : n; };
 const ALL = !GIVEN.length || GIVEN.some(function (f) { return f === 'spirit/element/search/script.js'; });
 const TARGETS = ALL ? NAMES : NAMES.filter(function (n) { return GIVEN.some(function (f) { return nameOf(f) === n; }); });
 // Held open until each search's checks are said (judgeAll, after the searches are opened).
@@ -115,7 +117,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     var made = R.made = [];
     var f = S.required.spirit.element.search; var real = f.create;
     f.create = function (host, o) { var x = o || {}; made.push({ data: typeof x.data === 'string' ? x.data : '', host: host }); return real.apply(this, arguments); };
-    return S.requireScript('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.requireScript('spirit/element/search/' + name + '/list.js') : null; })
+    return S.requireScript('spirit/element/search/' + name + '/script.js').then(function () { return VIA_LIST[name] ? S.requireScript('spirit/element/search/' + name + '/list/script.js') : null; })
       // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/list/script.js: "opts.grants the grants table, required"):
       // the node's own, as the Grants app hands it (grantsPanel.nodeGrants).
       .then(function () { return name === 'grant' ? S.requireScript('spirit/element/search/grant/grantsPanel/script.js').then(function () { OPTIONS.grant = { grants: S.required.spirit.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
@@ -198,7 +200,7 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     });
   }).then(function () {
     // 5, 6, 8: the detail, by the search's detail, in a panel layer as the apps open one.
-    return S.requireScript('spirit/element/search/' + name + '/detail.js').then(function () { return true; }, function () { return false; });
+    return S.requireScript('spirit/element/search/' + name + '/detail/script.js').then(function () { return true; }, function () { return false; });
   }).then(function (has) {
     var D = has && S.required.spirit.element.search[name] && S.required.spirit.element.search[name].detail;
     if (!D || typeof D.create !== 'function') { R.noDetail = true; return R; }
@@ -330,7 +332,7 @@ const CHECKS = [];
 // said for the search's own script, a part (its list.js, row.js, detail.js) got no result at all, testicle called that run
 // crashed, and the part's old reds stood. Each part given says one line, green or red with its search; the faults stay said
 // once, on the search.
-const PARTS = GIVEN.filter(function (f) { const n = nameOf(f); return n && f !== SEARCH + '/' + n + '.js' && TARGETS.indexOf(n) !== -1; });
+const PARTS = GIVEN.filter(function (f) { const n = nameOf(f); return n && f !== selectorOf(n) && TARGETS.indexOf(n) !== -1; });
 function judgeAll() {
   const redIn = {};
   CHECKS.forEach(function (c) {
@@ -345,7 +347,7 @@ function judgeAll() {
       }
       judged = true;
       if (red) redIn[n] = true;
-      test.forScript(SEARCH + '/' + n + '.js', function () {
+      test.forScript(selectorOf(n), function () {
         test.run(c.title, 0.4, function () { return !red; }, test.limit.quick);
       });
     });
