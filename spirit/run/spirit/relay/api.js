@@ -11,7 +11,6 @@ if (typeof require === 'function') require('../spirit.js').requireScript('spirit
 module.exports = {
   verbs: {
     claim: { url: 'spirit.type.string.URL', name: 'spirit.type.string.label', invite: 'spirit.type.string.word?', inviteLabel: 'spirit.type.string.label?' },
-    partnerCheck: { publicKey: 'spirit.type.string.IDNew', url: 'spirit.type.string.URL' },
     get: { key: 'spirit.type.string.relay' },
     remove: { key: 'spirit.type.string.URL' },
     add: { url: 'spirit.type.string.URL', label: 'spirit.type.string.label?' },

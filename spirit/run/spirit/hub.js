@@ -1561,36 +1561,6 @@ function createHub(rootDir) {
   // as a missing query parameter did. Failing the whole probe over a
   // caption would take the relay list down for a reason that has
   // nothing to do with the relays.
-  // ── IS THIS PEER ELIGIBLE TO BE A PARTNER? ──────────────────────────
-  // (Of handlePartnerCheck, below. Partnering as a permission went with
-  // goal/G22.6; what that verb still answers is said there.)
-  //
-  //   Andy: "can peers get the public key of a relay's owner from the
-  //   relay, if they are on its ledger? this would make handshake on
-  //   partnership a breeze, because partnership eligibility would be
-  //   easier to determine."
-  //
-  // They can, and better than asked: not just peers on the ledger —
-  // ANYONE. The relay's card — the answer to a card ask on its one door,
-  // since goal/G22.6 closed `GET /api/relay/key` — carries the relay's own
-  // key beside `ownerKey` and `ownerLabel` (it took that job from the roll,
-  // deleted 2026-09-18). So eligibility is one ask and a comparison, with
-  // no membership.
-  //
-  // READ-ONLY, AND THAT IS THE DESIGN. This answers a question; it does
-  // not promote anybody. The promotion is an owner verb posted to the
-  // relay like every other one, so there is exactly one path that writes
-  // a peer row and this is not it.
-  //
-  // WHY THE NODE DOES THE FETCHING: a relay makes no outbound request of
-  // any kind and this does not change that. Nothing is being laundered —
-  // the key door is public, so a node reporting it hands over nothing the
-  // relay could not have read itself.
-  //
-  // TWO KEYS, TWO JOBS, and conflating them is the likeliest bug in this
-  // design: you verify OWNERSHIP against `ownerKey`, and you
-  // capture the RELAY's own key to pin for a later forward hop. On
-  // spirit-3 those are …fXD+0c= and …bCAsCR4=.
   // ── THE ONE DOOR ONTO THE WIRE ───────────────────────────────────────
   //
   // `router.post` is called here and nowhere else in this file, and
@@ -1761,80 +1731,6 @@ function createHub(rootDir) {
     }));
   }
 
-
-  // PARTNERING AS A PERMISSION IS GONE (Andy's decision, goal/G22.6): no
-  // relay keeps a partner roll any more, so what this answers promotes
-  // nothing. The verb stays until Andy rules on it — a node verb is not
-  // removed without his yes — and answers the same question it always did,
-  // who runs the relay at that url, now off the relay's card through
-  // peerPost (goal/G22.4's "the hub asks peerPost for a relay's key").
-  function handlePartnerCheck(req, res, readJsonBody, deps) {
-    var router = deps && deps.router;
-    readJsonBody(req).then(function (body) {
-      var peerKey = String((body && body.publicKey) || '').trim();
-      var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
-      if (!peerKey || !url) { fail(res, 400, 'publicKey and url required'); return; }
-
-      var answer = function (obj) {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(obj));
-      };
-
-      // ── IT ASKS WHO RUNS THE BOX, AND NOTHING ELSE (2026-09-18) ────
-      //
-      //   Andy: "when a cheat is identified, it must be eradicated."
-      //
-      // This read the whole roll of a relay this node has never been on
-      // — every member, every label, every join date — to answer one
-      // question about ONE key. It narrowed to `?key=` for a day, keeping
-      // a whole-roll read on the refusal path so it could still name
-      // the other owner.
-      //
-      // BOTH OF THOSE WERE THE ROLL. The relay's card carries `ownerKey`
-      // and `ownerLabel` — asked for without asking for any membership.
-      // One request, fixed cost, and this verb touches no roll on any path.
-      //
-      // THE CHECK IS UNCHANGED. "The key marked owner over there is the
-      // key of the peer here" — a referral has to be verifiable (Andy),
-      // and it still is, off the card the relay signs about itself.
-      if (!router || typeof router.relayKey !== 'function') {
-        answer({ ok: false, error: 'this node has no router to ask that relay with' });
-        return;
-      }
-      router.relayKey(url)
-        .then(function (said) {
-
-          var ownerKey = String(said.ownerKey || '');
-          if (!ownerKey) {
-            answer({ ok: false, error: 'that relay has no owner yet — nobody has claimed it' });
-            return;
-          }
-          if (ownerKey !== peerKey) {
-            answer({
-              ok: false,
-              error: 'that relay is owned by somebody else (' +
-                (said.ownerLabel || 'unlabelled') + ')',
-            });
-            return;
-          }
-
-          answer({
-            ok: true,
-            url: url,
-            relayKey: said.relayPublicKey || '',
-            relayLabel: said.relayLabel || '',
-            ownerLabel: said.ownerLabel || '',
-          });
-        })
-        .catch(function (err) {
-          // A relay too old to answer the card ask, or one that is down.
-          // Both are "this cannot be checked".
-          answer({ ok: false, error: 'that relay did not say who runs it: ' + String((err && err.message) || err) });
-        });
-    }).catch(function () {
-      fail(res, 400, 'bad body');
-    });
-  }
 
   function handleStatus(req, res, readJsonBody, deps) {
     Promise.resolve()
@@ -2226,7 +2122,6 @@ function createHub(rootDir) {
     joinAtStart: joinAtStart,
     relayGet: relayGet,
     relayFacts: relayFacts,
-    handlePartnerCheck: handlePartnerCheck,
     contactSearch: contactSearch,
     contactGet: contactGet,
     handleContact: handleContact,

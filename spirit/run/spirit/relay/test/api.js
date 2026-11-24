@@ -143,10 +143,6 @@ test.run('claim takes the relay\'s address and a name; an invite and its label m
   if (!W.api) return false;
   return (passes('claim', { url: 'https://relay.example', name: 'andy' }) && passes('claim', { url: 'https://relay.example', name: 'andy', invite: 'abc', inviteLabel: 'Bob' }) && refusedAs('claim', { url: 'relay.example', name: 'andy' }) === 'bad-request' && refusedAs('claim', { url: 'https://relay.example' }) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('partnerCheck takes a key and an address', 0.2, function () {
-  if (!W.api) return false;
-  return (passes('partnerCheck', { publicKey: KEY, url: 'https://relay.example' }) && refusedAs('partnerCheck', { publicKey: NOT_KEY, url: 'https://relay.example' }) === 'bad-request') || false;
-}, test.limit.quick);
 test.run('get and remove name the relay by its key, a text', 0.2, function () {
   if (!W.api) return false;
   return (passes('get', { key: 'https://relay.example' }) && passes('remove', { key: 'https://relay.example' }) && refusedAs('get', {}) === 'bad-request' && refusedAs('remove', { key: 1 }) === 'bad-request') || false;

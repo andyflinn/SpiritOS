@@ -1767,7 +1767,7 @@ catch (e) {
   // for a row; none of these is addressed to a person, which is what
   // keeps them out of `peer.*` and `contact.*`.
   //
-  // WIRE, on the namespace: claim, add, face, join, leave and partnerCheck
+  // WIRE, on the namespace: claim, add, face, join and leave
   // reach out, and an offline box fails them. (relay.status, which probed every configured
   // relay through ownerBadge.probe, is gone; see relay.get below.) relay.get
   // reads what the node holds, under the same flag.
@@ -1786,11 +1786,6 @@ catch (e) {
         probe: spirit.requireScript('spirit/hub.js').relayKeyAsk(peerRouter),
       });
     } },
-    // Read-only: does this peer own the relay at that url? Answered off the
-    // relay's card, through peerPost (goal/G22.6). Partnering as a
-    // permission is gone (goal/G22.6), so it promotes nothing; the verb
-    // stands until Andy rules on it.
-    'partnerCheck': { request: { publicKey: '', url: '' }, reply: { ok: true, url: '', relayKey: '', relayLabel: '', ownerLabel: '' }, handler: function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody, { router: peerRouter }); } },
     // `relay.roster` STOOD HERE — the public roll of a relay this node
     // is not on, "what a partnership makes visible". Deleted 2026-09-17
     // with the only screen that drew it; see the tombstone in hub.js.
