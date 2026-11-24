@@ -1,2 +1,262 @@
 'use strict';
-// this tool will help move javascript files from one folder to another, and update the references to them in other files
+// spirit/run/spirit/devtool/moveScript/script.js
+// MOVESCRIPT (goal/G49.5, box v5; Andy: "just a little bit of an accelerator"): one command moves a script and fixes
+// everything that names it, so a move is one command and never a sweep by hand again. A tool for the agents.
+//
+//   node spirit/devtool/moveScript/script.js <from.js> <to.js> [--dry]    one move
+//   node spirit/devtool/moveScript/script.js --batch <folder> [--dry]      every ./<name>.js under <folder> to ./<name>/script.js
+//
+// Paths are run paths (spirit/element/busyButton.js). --dry prints what it would do and changes nothing.
+//
+// WHAT ONE MOVE COVERS (the box): the file itself, its own test (test/<name>.js to ./test/<new name>.js), its .md, and the page
+// fixtures of its test named after it (test/<name>-<what>.html), each to its new place; the moved file's own relative
+// requires; every reference to it, as a run path ('spirit/element/x.js', with or without a leading slash), as a path
+// relative to the file naming it ('./x.js', '../x.js'), as path.join pieces, in its regex-escaped form, and as its dotted
+// name (a script stands at spirit.required.<its path>). Left alone: quoted words, generated reports, history, the vendored
+// folders and every state folder. Refused: a target that already exists, or a move that would make a folder a branch.
+//
+// WHERE IT FINDS THE REFERENCES (the box): the loaders by testicle's dependency table (script, requires), read once a batch
+// into memory and never written (testicle stays its one writer; each move renames its copy, old path to new in both
+// columns); everything the table never holds by a text search over the tree. A dependent the table names whose text the
+// move did not change is printed, to be looked at by hand.
+//
+// A BATCH (the box): testicle off at its start, on at its end, so it does not test a tree half moved; every move changed
+// the hashes of the files it edited, so testicle relearns and tests what changed by itself.
+require('../../spirit.js');
+const fs = require('fs');
+const path = require('path');
+const { execFileSync } = require('child_process');
+
+// The run root is the folder it is run in (spirit/run of a checkout, or a scratch root its test plants).
+const RUN = process.cwd();
+const posix = function (p) { return String(p).split(path.sep).join('/'); };
+const abs = function (rel) { return path.join(RUN, rel); };
+const exists = function (rel) { return fs.existsSync(abs(rel)); };
+
+// The files it reads and fixes: every file git keeps or would add, as text, the vendored, state and lab folders left out
+// ("left alone: ... generated reports, history").
+const TEXT = /\.(js|md|html|json|css|txt)$/;
+const SKIP = /(^|\/)(node_modules|codeMirror|vendor|state|app-state|lab|\.git)\//;
+function treeFiles() {
+  let all = null;
+  try { all = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: RUN, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\n'); }
+  catch (e) { all = null; }
+  // No git there (a scratch root): every file under it.
+  if (!all) {
+    all = [];
+    (function walk(d) {
+      let names = [];
+      try { names = fs.readdirSync(path.join(RUN, d), { withFileTypes: true }); } catch (e) { return; }
+      names.forEach(function (e) { const rel = d ? d + '/' + e.name : e.name; if (e.isDirectory()) { if (!SKIP.test(rel + '/')) walk(rel); } else all.push(rel); });
+    })('');
+  }
+  return all.filter(function (f) { return f && TEXT.test(f) && !SKIP.test(f) && exists(f); });
+}
+
+// TESTICLE'S DEPENDENCY TABLE, a copy in memory: script -> the files its load pulled in. Read only.
+function readDependencies() {
+  const file = path.join(RUN, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
+  const rows = [];
+  if (!fs.existsSync(file)) return rows;
+  try {
+    const { DatabaseSync } = require('node:sqlite');
+    const db = new DatabaseSync(file, { readOnly: true });
+    db.prepare('SELECT script, requires FROM dependency').all().forEach(function (r) { rows.push({ script: r.script, requires: r.requires }); });
+    db.close();
+  } catch (e) { /* no table yet: the text search alone */ }
+  return rows;
+}
+
+// TESTICLE OFF AND ON, by the node's own verb, as its owner turns an app off and on. No node: nothing to turn.
+async function testicleActive(on) {
+  try {
+    const app = await spirit.requireScript('spirit/app/api.js');
+    await spirit.callOutcome(app['app.active']({ key: 'testicle', active: on }));
+    return true;
+  } catch (e) { return false; }
+}
+
+// A BRANCH IS A FOLDER HOLDING AN api.js OR A data.js (Andy: "a branch is a path, anywhere in the node that satisfies the
+// condition of having an api.js file"): a move must not make one.
+// Refused both ways: a script moved into a folder that holds an api.js or a data.js, and an api.js or data.js moved into a
+// folder that holds neither.
+const BRANCH_FILES = ['api.js', 'data.js'];
+function makesBranch(to) {
+  const base = path.posix.basename(to);
+  const dir = path.posix.dirname(to);
+  const branchThere = BRANCH_FILES.some(function (b) { return exists(dir + '/' + b); });
+  if (BRANCH_FILES.indexOf(base) === -1) return branchThere;
+  return !branchThere;
+}
+
+// What moves with a script: its test, its .md and its test's fixtures named after it.
+function companions(from, to) {
+  const fd = path.posix.dirname(from), fn = path.posix.basename(from, '.js');
+  const td = path.posix.dirname(to), tn = path.posix.basename(to, '.js');
+  const out = [[from, to]];
+  [['.js', '.js'], ['.md', '.md']].forEach(function (x) {
+    const a = fd + '/test/' + fn + x[0];
+    if (exists(a)) out.push([a, td + '/test/' + tn + x[1]]);
+  });
+  let names = [];
+  try { names = fs.readdirSync(abs(fd + '/test')); } catch (e) { names = []; }
+  names.filter(function (n) { return n.indexOf(fn + '-') === 0 && /\.html$/.test(n); }).forEach(function (n) {
+    out.push([fd + '/test/' + n, td + '/test/' + n]);
+  });
+  // The .md beside the script itself, where one stands there.
+  if (exists(fd + '/' + fn + '.md')) out.push([fd + '/' + fn + '.md', td + '/' + tn + '.md']);
+  return out;
+}
+
+// The dotted name of a run path: spirit/element/busyButton.js -> spirit.element.busyButton.
+function dotted(rel) { return rel.replace(/\.js$/, '').split('/').join('.'); }
+function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'); }
+
+// A path relative to a file's folder, as the tree writes it: ./x.js beside it, ../x.js above.
+function relFrom(dir, target) {
+  let r = path.posix.relative(dir, target);
+  if (r.indexOf('.') !== 0) r = './' + r;
+  return r;
+}
+
+// ONE FILE'S TEXT FIXED for a set of moves (map old run path -> new). ownOld is the file's own old path (its relative
+// references resolve against where it stood), ownNew where it stands now.
+function fixText(text, ownOld, ownNew, map, childrenOf) {
+  let t = text;
+  const oldDir = path.posix.dirname(ownOld), newDir = path.posix.dirname(ownNew);
+  // 1. Relative references, resolved against where the file stood: './x.js', '../a/b.md', '../../spirit.js'.
+  t = t.replace(/(^|[\s'"`(=,\[])((?:\.\.?\/)(?:[\w@.-]+\/)*[\w@.-]+\.(?:js|md|html|json|css))(?=$|[\s'"`),;:\]#?])/gm, function (all, pre, ref) {
+    const target = path.posix.normalize(path.posix.join(oldDir, ref));
+    const moved = map[target];
+    if (!moved && oldDir === newDir) return all;
+    const now = moved || target;
+    if (!exists(now) && !Object.values(map).includes(now)) return all;
+    return pre + relFrom(newDir, now);
+  });
+  // 2. path.join / path.resolve pieces off __dirname: path.join(__dirname, '..', 'x.js').
+  t = t.replace(/path\.(join|resolve)\(\s*__dirname((?:\s*,\s*'[^'\n]*')+)\s*\)/g, function (all, fn, rest) {
+    const pieces = rest.split(',').map(function (s) { return s.trim(); }).filter(Boolean).map(function (s) { return s.replace(/^'|'$/g, ''); });
+    const target = path.posix.normalize(path.posix.join.apply(null, [oldDir].concat(pieces)));
+    const moved = map[target];
+    if (!moved && oldDir === newDir) return all;
+    const now = moved || target;
+    if (!/\.\w+$/.test(now) && !moved) { if (oldDir === newDir) return all; }
+    const r = path.posix.relative(newDir, now);
+    const parts = r ? r.split('/') : [];
+    if (!parts.length) return all;
+    return 'path.' + fn + '(__dirname, ' + parts.map(function (p) { return "'" + p + "'"; }).join(', ') + ')';
+  });
+  Object.keys(map).forEach(function (old) {
+    const neu = map[old];
+    // 3. The run path itself, with or without a leading slash or a run/ before it.
+    t = t.replace(new RegExp('(^|[^\\w.-])' + escRe(old) + '(?![\\w-])', 'gm'), function (all, pre) { return pre + neu; });
+    // 4. Its regex-escaped form: spirit\/element\/x\.js.
+    const escOld = old.replace(/\//g, '\\/').replace(/\./g, '\\.');
+    const escNew = neu.replace(/\//g, '\\/').replace(/\./g, '\\.');
+    t = t.split(escOld).join(escNew);
+    // 5. path.join pieces off any base: (RUN, 'spirit', 'element', 'x.js').
+    const oldParts = old.split('/');
+    if (oldParts.length > 1) {
+      const piecesRe = new RegExp(oldParts.map(function (p) { return "'" + escRe(p) + "'"; }).join('\\s*,\\s*'), 'g');
+      t = t.replace(piecesRe, neu.split('/').map(function (p) { return "'" + p + "'"; }).join(', '));
+    }
+    // 6. The dotted name, where a script stands at spirit.required.<its path>: spirit.element.x -> spirit.element.x.script,
+    // never where a child of its folder is read (spirit.element.search.api stays).
+    if (/\.js$/.test(old)) {
+      const d0 = dotted(old), d1 = dotted(neu);
+      if (d0 !== d1 && d1.indexOf(d0 + '.') === 0) {
+        const kids = (childrenOf[neu] || []).concat([d1.slice(d0.length + 1).split('.')[0]]);
+        t = t.replace(new RegExp('\\b' + escRe(d0) + '\\b(?!\\.(?:' + kids.map(escRe).join('|') + ')\\b)(?![\\w$/-])', 'g'), d1);
+      }
+    }
+  });
+  return t;
+}
+
+// What a folder holds that is read as a child: its scripts by name and its folders.
+function childNames(dirRel) {
+  let names = [];
+  try { names = fs.readdirSync(abs(dirRel), { withFileTypes: true }); } catch (e) { return []; }
+  return names.filter(function (d) { return d.name !== 'test' && (d.isDirectory() || /\.js$/.test(d.name)); })
+    .map(function (d) { return d.name.replace(/\.js$/, ''); }).filter(function (n) { return n !== 'script'; });
+}
+
+// ONE MOVE. Answers { moved: [[from, to]], edited: [files], unchanged: [dependents not touched] } or { refused: why }.
+function moveOne(from, to, o) {
+  const opts = o || {};
+  from = posix(from).replace(/^\.?\//, ''); to = posix(to).replace(/^\.?\//, '');
+  if (!exists(from)) return { refused: 'no such script: ' + from };
+  if (exists(to)) return { refused: 'the target exists: ' + to };
+  if (makesBranch(to)) return { refused: 'it would make ' + path.posix.dirname(to) + ' a branch' };
+  const pairs = companions(from, to);
+  const blocked = pairs.filter(function (p) { return exists(p[1]); });
+  if (blocked.length) return { refused: 'the target exists: ' + blocked[0][1] };
+  const map = {};
+  pairs.forEach(function (p) { map[p[0]] = p[1]; });
+  const files = treeFiles();
+  // Each file's text, read where it stands now.
+  const texts = {};
+  files.forEach(function (f) { texts[f] = fs.readFileSync(abs(f), 'utf8'); });
+  // The moves first, so a file fixed after reads what is there.
+  if (!opts.dry) pairs.forEach(function (p) {
+    fs.mkdirSync(path.dirname(abs(p[1])), { recursive: true });
+    fs.renameSync(abs(p[0]), abs(p[1]));
+  });
+  const childrenOf = {};
+  childrenOf[to] = childNames(path.posix.dirname(to));
+  const edited = [];
+  files.forEach(function (f) {
+    const now = map[f] || f;
+    const was = texts[f];
+    const fixed = fixText(was, f, now, map, childrenOf);
+    if (fixed !== was) {
+      edited.push(now);
+      if (!opts.dry) fs.writeFileSync(abs(now), fixed);
+    }
+  });
+  // The dependents the table names, every one of which must have been fixed.
+  const deps = (opts.dependencies || []).filter(function (r) { return r.requires === from; }).map(function (r) { return map[r.script] || r.script; });
+  const unchanged = deps.filter(function (d) { return edited.indexOf(d) === -1 && exists(d); });
+  // The copy in memory renamed, old path to new, in both columns.
+  (opts.dependencies || []).forEach(function (r) { if (map[r.script]) r.script = map[r.script]; if (map[r.requires]) r.requires = map[r.requires]; });
+  return { moved: pairs, edited: edited, unchanged: unchanged };
+}
+
+// THE FIRST BATCH (the box): every script under the folder not named script.js, ./<name>.js to ./<name>/script.js, its
+// tests' folders and the vendored ones left out.
+function batchOf(folder) {
+  const root = posix(folder).replace(/^\.?\//, '').replace(/\/$/, '');
+  return treeFiles().filter(function (f) {
+    return f.indexOf(root + '/') === 0 && /\.js$/.test(f) && path.posix.basename(f) !== 'script.js' && !/(^|\/)test\//.test(f);
+  }).map(function (f) { return [f, f.replace(/\.js$/, '') + '/script.js']; })
+    // A loader whose new place would be inside a vendored folder stays (spirit/element/codeMirror.js beside codeMirror/).
+    .filter(function (m) { return !SKIP.test(m[1]); })
+    // The deepest first, so a folder's own scripts have moved out of it (search/api.js to search/api/script.js) before
+    // the script beside that folder moves in (search.js to search/script.js).
+    .sort(function (a, b) { return b[0].split('/').length - a[0].split('/').length || (a[0] < b[0] ? -1 : 1); });
+}
+
+async function main(argv) {
+  const dry = argv.indexOf('--dry') !== -1;
+  const args = argv.filter(function (a) { return a !== '--dry'; });
+  let moves = [];
+  if (args[0] === '--batch' && args[1]) moves = batchOf(args[1]);
+  else if (args.length === 2) moves = [[args[0], args[1]]];
+  else { console.log('usage: moveScript <from.js> <to.js> [--dry] | --batch <folder> [--dry]'); return 2; }
+  const dependencies = readDependencies();
+  const off = !dry && moves.length > 1 ? await testicleActive(false) : false;
+  let refused = 0;
+  try {
+    moves.forEach(function (m) {
+      const r = moveOne(m[0], m[1], { dry: dry, dependencies: dependencies });
+      if (r.refused) { refused += 1; console.log('refused  ' + m[0] + ': ' + r.refused); return; }
+      console.log((dry ? 'would move ' : 'moved    ') + r.moved.map(function (p) { return p[0] + ' -> ' + p[1]; }).join(', ') + ' | ' + r.edited.length + ' files fixed');
+      r.unchanged.forEach(function (d) { console.log('  look by hand: ' + d + ' needs ' + m[0] + ' by the table, and its text did not name it'); });
+    });
+  } finally { if (off) await testicleActive(true); }
+  console.log(moves.length + ' moves, ' + refused + ' refused' + (dry ? ' (dry, nothing changed)' : ''));
+  return refused ? 1 : 0;
+}
+
+module.exports = { moveOne: moveOne, batchOf: batchOf, fixText: fixText, companions: companions, makesBranch: makesBranch };
+if (require.main === module) main(process.argv.slice(2)).then(function (code) { process.exit(code); }, function (e) { console.error(e && e.stack || e); process.exit(1); });

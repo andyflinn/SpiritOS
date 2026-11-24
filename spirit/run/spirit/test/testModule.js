@@ -90,7 +90,10 @@ function generalOf(t, has) {
   const m = /^(.*?)-(child|sibling)-[^/]+\.js$/.exec(path.posix.basename(t));
   if (!m) return null;
   const folder = dirOf(dirOf(t));
-  const module = join(folder, m[1] + '.js');
+  let module = join(folder, m[1] + '.js');
+  // A -CHILD- TEST ALSO COUNTS BESIDE A FOLDER ./<name>/ HOLDING script.js (goal/G49.5, box v5; Andy: "why would general tests
+  // move?", "b."): after the script.js move, ./<name>.js is ./<name>/script.js, and the general test stays where it stands.
+  if (!has(module) && m[2] === 'child' && has(join(folder, m[1] + '/script.js'))) module = join(folder, m[1] + '/script.js');
   if (!has(module)) return null;
   const own = path.posix.basename(folder) === m[1] ? folder : join(folder, m[1]);
   const judges = m[2] === 'child'

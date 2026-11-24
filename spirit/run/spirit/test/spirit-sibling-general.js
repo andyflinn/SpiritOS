@@ -921,7 +921,9 @@ function garbage(rel) {
   if (m) {
     if (!general && modules.indexOf(stem) === -1 && named && modules.indexOf(named) !== -1) return true;
     const of = general ? general[1] : stem;
-    if (modules.indexOf(of) === -1) return true;
+    // A -child- test also belongs beside a folder ./<name>/ holding script.js (goal/G49.5, box v5; Andy: "b.").
+    const childOfFolder = !!general && general[2] === 'child' && exists((dir ? dir + '/' : '') + of + '/script.js');
+    if (modules.indexOf(of) === -1 && !childOfFolder) return true;
     return !exists(twin);
   }
   // 6. A laid page or a fixture, named after a module beside the folder.
