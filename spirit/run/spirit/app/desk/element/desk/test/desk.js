@@ -465,6 +465,10 @@ test.run('with both filters off, the List shows every goal\'s items', 0.2, funct
 const F2 = W.f2 = {};
 const noF2 = function () { return !F2.ready; };
 const open2 = function (title) { return F2.page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
+// WHAT THE PAGE ASKS THE NODE (goal/G49.8, point 4): every verb its fetches name, kept from the mount on.
+const SPY2 = "(function () { if (window.__zzAsked) return true; window.__zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { var j = JSON.parse(String((o && o.body) || '')); if (j && j.call) window.__zzAsked.push({ call: String(j.call), id: String((j.args && j.args.id) || '') }); } catch (e) {} return f.apply(this, arguments); }; return true; })()";
+const asked2 = function () { return F2.page.evaluate('JSON.stringify(window.__zzAsked || [])').then(JSON.parse); };
+const itemGets2 = function (id, from) { return asked2().then(function (a) { return a.slice(from || 0).filter(function (x) { return /item\.get$/.test(x.call) && x.id === id; }).length; }); };
 const shown2 = function () { return F2.page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')); var b = all.filter(function (x) { return x.style.display !== 'none'; }).pop(); var body = b && b.querySelector('#dd-body'); return JSON.stringify({ layers: all.length, drawn: !!body && body.children.length > 0, text: b ? b.textContent : '' }); })()").then(JSON.parse); };
 test.run('a goal and two items are put on the scratch desk', 0.2, async function () {
   if (!(await bootPage(F2, false))) return false;
@@ -485,6 +489,7 @@ test.run('the first item\'s row is in the List', 0.2, async function () {
   if (noF2()) return false;
   const page = F2.page;
   await page.evaluate(MOUNT_DESK);
+  await page.evaluate(SPY2);
   await H.until(function () { return page.evaluate("document.getElementById('zzDesk').textContent.indexOf('Second opened item') !== -1"); }, H.WAIT);
   return (await open2('First opened item')) || false;
 }, test.limit.quick);
@@ -505,12 +510,29 @@ test.run('after it was closed, the second item opens with its own details, not i
   const second = F2.second = await shown2();
   return (second.drawn && second.text.indexOf(F2.two.id) !== -1) || false;
 }, test.limit.quick);
-test.run('every item opens in the one details layer', 0.2, function () {
-  stop(F2);
+// A ROW DETAIL HAS ITS OWN PANEL, AND OPENS FROM THE CACHE (goal/G49.8, point 4, box v5; Andy: "a row detail has it's own
+// panel and doesn't share it with other row details of the same kind", and "a row in a client is always fetched from the
+// cache, it the cache already has it"). This turns goal/G43.x's "every item opens in the one details layer" round.
+test.run('each item opens in its own details layer', 0.4, function () {
   const second = F2.second;
   if (!second) return false;
-  return second.layers === 1 || false;
+  return second.layers === 2 || false;
 }, test.limit.quick);
+test.run('an item the List shows opens without asking the server for item.get, its facts taken from the cache', 0.4, async function () {
+  if (noF2()) return false;
+  return (await itemGets2(F2.two.id, 0)) === 0 || false;
+}, test.limit.quick);
+test.run('the first item, opened again, is shown as it was left, in its own layer, with nothing asked', 0.4, async function () {
+  if (noF2()) return false;
+  await F2.page.evaluate("(function () { var b = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')).filter(function (x) { return x.style.display !== 'none'; }).pop(); if (b) b.querySelector('.app-container-close').click(); return true; })()");
+  const from = (await asked2()).length;
+  if (!(await open2('First opened item'))) return false;
+  await H.until(function () { return shown2().then(function (s) { return s.drawn && s.text.indexOf(F2.one.id) !== -1; }); }, H.WAIT);
+  const again = await shown2();
+  const newAsks = (await asked2()).slice(from).filter(function (x) { return /\.(item\.get|item\.box|item\.chat|item\.checks)$/.test(x.call) && x.id === F2.one.id; }).length;
+  stop(F2);
+  return (again.drawn && again.text.indexOf(F2.one.id) !== -1 && again.layers === 2 && newAsks === 0) || false;
+}, test.limit.slow);
 
 // ── goal/G43.30: ON THE REAL PAGE, A CLOSE PRESSED ONCE CLOSES NOTHING ─────────────────────────────────────────
 // The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk
