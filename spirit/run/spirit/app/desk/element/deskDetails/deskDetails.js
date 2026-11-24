@@ -750,9 +750,29 @@ function ddOpenItems(goalId) {
   var rows = K && typeof K.items === 'function' ? K.items() || {} : {};
   return Object.keys(rows).filter(function (id) { var r = rows[id]; return r && r.goal === goalId && r.status !== 'done' && r.status !== 'closed'; }).length;
 }
+// A ROW IS TAKEN FROM THE CACHE WHEN THE CACHE HAS IT (goal/G49.8, point 4; Andy: "a row in a client is always fetched from
+// the cache, it the cache already has it"): the desk branch's cache answers a read as the desk would (desk data.js, answer);
+// only what it lacks goes to the server.
+function ddCached(verb, args) {
+  var K = ddKept();
+  if (!K) return null;
+  // On a page the item's facts the List draws from: item.get as the desk answers it.
+  if (verb === 'item.get' && typeof K.item === 'function') {
+    var row = K.item(String((args && args.id) || ''));
+    // A List row leaves an empty value out (desk server, listRow), so a version of 0 is no field there; the box's own read
+    // brings its version (item.box, below).
+    if (row && row.id) return { item: JSON.stringify(row), version: Number(row.version) || 0, change: typeof K.change === 'function' ? K.change() : 0 };
+  }
+  if (typeof K.answer !== 'function') return null;
+  try { return K.answer(verb, args, 7865) || null; } catch (e) { return null; }
+}
+function ddRead(verb, args) {
+  var kept = ddCached(verb, args);
+  return kept ? Promise.resolve(kept) : ddAsk(verb, args);
+}
 function ddLoad() {
   var id = ddId;
-  return ddAsk('item.get', { id: id }).then(function (got) {
+  return ddRead('item.get', { id: id }).then(function (got) {
     if (ddId !== id) return null;
     try { ddFacts = JSON.parse(got.item); } catch (e) { ddFacts = null; }
     ddVersion = Number(got.version) || 0;
