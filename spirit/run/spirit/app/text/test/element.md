@@ -4,7 +4,7 @@ For goal/G43.17, whose box builds it first: *"Four elements: file, fstat, text a
 
 ## Requirements
 
-- `spirit/app/text/element.js` is there, names neither the old shell nor a `shell/` path, and loads `spirit/element/search/file.js`.
+- `spirit/app/text/element.js` is there, names neither the old shell nor a `shell/` path, and loads `spirit/element/search/file/script.js`.
 - `spirit.required.spirit.app.text.element.create(container)` answers `{ destroy }`; mounted with no file it shows the file picker, the files list as a dropdown; destroy leaves its container empty.
 - The picker sits in a bubble of the kind rowForm uses, `.shell-bubble`; in a pane 120px wide that row folds, nothing past its edge (*"Rows are inline, not boxes: they fold when the width gets smaller"*).
 - Save is the rowForm's press (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): mounted with a file, its save held unanswered, Save is disabled in the instant after the press, and plain again once the answer comes.

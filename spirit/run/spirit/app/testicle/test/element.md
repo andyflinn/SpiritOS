@@ -22,8 +22,8 @@ existing file list with a filter for production *.js files: no new list."*
 - `spirit/app/test/` stays the app branch's test folder: no `test.json` there.
 
 **No verbs, no list of its own.**
-- `element.js` draws with the workBench element (`spirit/element/workBench.js`) and the existing file list
-  (`spirit/element/search/file.js`), and makes no list of its own.
+- `element.js` draws with the workBench element (`spirit/element/workBench/script.js`) and the existing file list
+  (`spirit/element/search/file/script.js`), and makes no list of its own.
 - It asks the node only through spirit, never by itself: no `peerPost`, no `fetch` (goal/G47.1: a click asks
   `testicle.script.get`).
 
@@ -82,7 +82,7 @@ suite search is spirit/app/testicle/element/search/suite.js and its folder"*.
   tabs, which stay closable. A click on a test row there opens a new tab, active and closable: the test's history of
   flips, every row of it, the newest first.
 - Running a suite (goal/G47.1, the cycle "run a suite from the script tab"): every suite row of a script tab has a 🏃‍♂️ in
-  its first column, the busy button (`spirit/element/busyButton.js`). A press on iota's own suite is answered at once: the
+  its first column, the busy button (`spirit/element/busyButton/script.js`). A press on iota's own suite is answered at once: the
   button is no longer busy while the suite, which waits three seconds before its tests, still runs. The suite's tests then
   show in the permanent testicle search tab by themselves, once its green filter is on: they pass, and the search opens on
   the reds alone (*"The testicle search's default equals testicle.red"*).

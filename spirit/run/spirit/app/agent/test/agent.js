@@ -258,7 +258,7 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
     return (!/DEBUG state in the title bar/.test(page)) ? true : false;
   }, test.limit.quick);
   // ── the tile closes ──
-  // OUT OF VIEW, NOT DESTROYED (spirit/element/panel.js, the box: "HIDDEN, NOT DESTROYED (the box): what it drew stays,
+  // OUT OF VIEW, NOT DESTROYED (spirit/element/panel/script.js, the box: "HIDDEN, NOT DESTROYED (the box): what it drew stays,
   // out of view, until the stack goes"): the ✕ hides the app's panel, so its tools stay in the page, none of them shown.
   test.run('the app\'s close button puts the app out of view', 0.2, async function () {
     if (STOP) return false;

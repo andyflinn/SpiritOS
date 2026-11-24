@@ -92,7 +92,7 @@ const HANDS = '(function () {' +
   'function box() { return document.getElementById("zzBox"); }' +
   'function seen(e) { return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden"; }' +
   'function all(sel, from) { var b = from || box(); return b ? Array.prototype.slice.call(b.querySelectorAll(sel)).filter(seen) : []; }' +
-  // The workBench's strips and panes (spirit/element/workBench.js): a strip's tools are its buttons, data-side its side and
+  // The workBench's strips and panes (spirit/element/workBench/script.js): a strip's tools are its buttons, data-side its side and
   // data-tool its name, the glyph drawn in each; its panes are ids ending pane-left, center and pane-right.
   'window.__t = {' +
   '  icons: function (side) { return all("button[data-side=\\"" + side + "\\"][data-tool]").map(function (i) { return String(i.textContent || "").trim() || String(i.getAttribute("title") || ""); }); },' +
@@ -104,7 +104,7 @@ const HANDS = '(function () {' +
   // Whether the leftmost pane is there and shown.
   '  leftSays: function () { var l = window.__t.left(); return l ? { shown: seen(l) } : {}; },' +
   '  type: function (w) { var l = window.__t.left(); var i = l ? all("input[id$=text]", l)[0] : null; if (!i) return false; i.value = w; i.dispatchEvent(new Event("input", { bubbles: true })); return true; },' +
-  // goal/G47.1, the UI cycle: the centre's tabs (spirit/element/tabContainer.js: button.tab-button[data-tab], aria-selected,
+  // goal/G47.1, the UI cycle: the centre's tabs (spirit/element/tabContainer/script.js: button.tab-button[data-tab], aria-selected,
   // a close [data-tab-close]), the shown tab's content, and the rows a list draws there.
   '  center: function () { var b = box(); return b ? b.querySelector("[id$=\\"center\\"]") : null; },' +
   '  tabs: function () { var c = window.__t.center(); return c ? all("button[data-tab]", c).map(function (t) { return { name: t.getAttribute("data-tab"), label: String((t.firstChild && t.firstChild.textContent) || t.textContent || "").replace("✕", "").trim(), selected: t.getAttribute("aria-selected") === "true", closable: !!t.querySelector("[data-tab-close]") }; }) : []; },' +
@@ -115,7 +115,7 @@ const HANDS = '(function () {' +
   // A row of the testicle search in the centre, pressed by its key; the [data-key] elements of the shown tab, in order.
   '  pressCenter: function (k) { var c = window.__t.center(); var r = c ? all("tr[data-key]", c).filter(function (t) { return t.getAttribute("data-key") === k; })[0] : null; if (!r) return false; r.click(); return true; },' +
   '  shownKeys: function () { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; return t ? all("[data-key]", t).map(function (e) { return e.getAttribute("data-key"); }) : []; },' +
-  // A filter of the shown tab turned on: its button pressed when it is not bold (spirit/element/search.js draws a choice on bold).
+  // A filter of the shown tab turned on: its button pressed when it is not bold (spirit/element/search/script.js draws a choice on bold).
   '  filterOn: function (v) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var b = t ? all("button[data-filter][data-value]", t).filter(function (x) { return x.getAttribute("data-value") === v; })[0] : null; if (!b) return false; if (Number(getComputedStyle(b).fontWeight) < 600) b.click(); return true; },' +
   // Words typed into the shown tab's own search field.
   '  typeCenter: function (w) { var c = window.__t.center(); var t = c ? all(".tab-content", c)[0] : null; var i = t ? all("input[id$=text]", t)[0] : null; if (!i) return false; i.value = w; i.dispatchEvent(new Event("input", { bubbles: true })); return true; },' +
@@ -212,11 +212,11 @@ test.run('spirit/app/testicle/element.js is there', 0.2, function () {
   src = code(FACE);
   return src !== '' || false;
 }, test.limit.quick);
-test.run('it draws with the workBench element, spirit/element/workBench.js', 0.2, function () {
-  return (/['"]spirit\/element\/workBench\.js['"]/).test(src) || false;
+test.run('it draws with the workBench element, spirit/element/workBench/script.js', 0.2, function () {
+  return (/['"]spirit\/element\/workBench\/script\.js['"]/).test(src) || false;
 }, test.limit.quick);
-test.run('its file viewer is the existing file list, spirit/element/search/file.js', 0.2, function () {
-  return (/['"]spirit\/element\/search\/file\.js['"]/).test(src) || false;
+test.run('its file viewer is the existing file list, spirit/element/search/file/script.js', 0.2, function () {
+  return (/['"]spirit\/element\/search\/file\/script\.js['"]/).test(src) || false;
 }, test.limit.quick);
 test.run('it makes no list of its own', 0.2, function () {
   return (src !== '' && !/\.element\.search\.create\(|createElement\(['"](tr|li|table)['"]\)/.test(src)) || false;
@@ -602,7 +602,7 @@ test.run('the detail is the test\'s history of flips: both its rows, the newest 
 
 // goal/G47.1, the cycle "run a suite from the script tab", the box: "In the script detail's suite search, a 🏃‍♂️ run icon-button
 // runs that suite, for the script that was the argument for that closable tab", "The 🏃‍♂️ column is on every row of the script
-// detail tab, the first column", "The button is the busy button exactly as it is (spirit/element/busyButton.js) ... busy only
+// detail tab, the first column", "The button is the busy button exactly as it is (spirit/element/busyButton/script.js) ... busy only
 // for that answer, never for the suite's run", "the permanent testicle search tab shows more rows by itself as suites run".
 const F5 = 'spirit/zzTesticle/iota.js';
 const iotaOwn = 'spirit/zzTesticle/test/iota.js';
@@ -661,9 +661,9 @@ test.run('every suite row of the script detail has a run button in its first col
   const bad = cells.filter(function (x) { return !x || !x.button || !/🏃/.test(String(x.glyph || x.first)); });
   return (cells.length > 0 && !bad.length) || false;
 }, test.limit.quick);
-test.run('the run button is the busy button, spirit/element/busyButton.js, which the suite list loads', 0.2, function () {
+test.run('the run button is the busy button, spirit/element/busyButton/script.js, which the suite list loads', 0.2, function () {
   const files = ['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/suite/list.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/element.js'];
-  return files.some(function (f) { return /['"]spirit\/element\/busyButton\.js['"]/.test(code(path.join(RUN, f))); }) || false;
+  return files.some(function (f) { return /['"]spirit\/element\/busyButton\/script\.js['"]/.test(code(path.join(RUN, f))); }) || false;
 }, test.limit.quick);
 test.run('a press on iota\'s own suite\'s 🏃‍♂️ is answered at once: the button is no longer busy while the suite still runs', 0.2, async function () {
   if (!face()) return false;
@@ -738,7 +738,7 @@ test.run('a long message is ellipsed, never wrapped', 0.2, async function () {
 // The page's hands for it, markup-blind: the ⚙ button pressed; the left pane's text; the switch's two choices found by their
 // words; the one shown as chosen (a select's selected option, a checked radio, or the pressed, checked or bold choice).
 const GEAR = '(function () { var b = document.getElementById("zzBox"); var t = b ? Array.prototype.slice.call(b.querySelectorAll("button[data-side=\\"left\\"][data-tool]")).filter(function (i) { return /⚙/.test(String(i.textContent || "") + String(i.getAttribute("title") || "")); })[0] : null; if (!t) return false; t.click(); return true; }())';
-// The toggle (spirit/element/search/app/rowFormToggle.js, as the app list's): its state drawn 🟢 on or 🔴 off, the button
+// The toggle (spirit/element/search/app/rowFormToggle/script.js, as the app list's): its state drawn 🟢 on or 🔴 off, the button
 // the other, its words beside. On is interactive (box: "true is interactive, false is auto").
 const TOGGLE = '(function () { var l = window.__t.left(); if (!l) return { none: true };' +
   ' var seen = function (e) { return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden"; };' +

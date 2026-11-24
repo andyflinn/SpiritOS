@@ -58,7 +58,7 @@ function end(code, text) { (code ? console.error : console.log)(text); process.e
 function say(text) { console.log('publishData: ' + text); }
 // ITS STEPS ARE ITS JOB'S PROGRESS (goal/G47.1; Andy: "if \"one-shot-script-apps\" (node:run:true) actually publish what
 // they're doing, like publishData should"): each step published as spirit.processJob.progress(done, STEPS, text), the text the
-// app detail's task row (spirit/element/monitor/task.js) shows while it runs. Started by hand, with no job, the node
+// app detail's task row (spirit/element/monitor/task/script.js) shows while it runs. Started by hand, with no job, the node
 // refuses it, and the run goes on: a progress never stops a step.
 const STEPS = 4;
 function step(done, text) {

@@ -28,7 +28,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var gone = false;
       // WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search and the rowForm.
       Promise.all([keepAnswer('spirit/app/agent/element/table/tableElement.js'), keepAnswer('spirit/app/agent/element/table/model/elementRow.js'),
-        keepAnswer('spirit/element/search.js'), keepAnswer('spirit/element/rowForm.js')]).then(function () {
+        keepAnswer('spirit/element/search/script.js'), keepAnswer('spirit/element/rowForm/script.js')]).then(function () {
         if (gone) return;
         // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible).
         container.innerHTML = '<div class="fill" style="overflow:hidden">' +
@@ -42,7 +42,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         // comes"): its request, the provider table's ask, which updates the model table, is the rowForm's press, so the
         // rowForm's own busy button waits on it. A second busy button of its own on that button would fight the first.
         var said = null;
-        var form = ANSWER['spirit/element/rowForm.js'].create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask', press: function () {
+        var form = ANSWER['spirit/element/rowForm/script.js'].create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask', press: function () {
           var id = drop && drop.value ? String(drop.value) : '';
           if (!id) return null;
           said.textContent = '';

@@ -9,7 +9,7 @@
 //
 //   spirit.required.spirit.app.info.element.create(container, { open }) -> { destroy() }
 //
-// A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/file/element.js is: it loads nodeInfo (spirit/element/nodeInfo.js),
+// A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/file/element.js is: it loads nodeInfo (spirit/element/nodeInfo/script.js),
 // which holds all of Info, and mounts it, handing on the stack its mounter opens layers in.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -21,7 +21,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = keepAnswer('spirit/element/nodeInfo.js');
+  var parts = keepAnswer('spirit/element/nodeInfo/script.js');
 
   function create(container, opts) {
     var o = opts || {};
@@ -30,7 +30,7 @@
     container.innerHTML = '';
     parts.then(function () {
       if (gone) return;
-      made = ANSWER['spirit/element/nodeInfo.js'].create(container, { open: o.open });
+      made = ANSWER['spirit/element/nodeInfo/script.js'].create(container, { open: o.open });
     }, function () { if (!gone) container.textContent = 'Info could not be loaded.'; });
     return {
       destroy: function () {

@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/app/testicle/element/search/suite/row.js
 // A SUITE ROW, AN ELEMENT (goal/G47.1, the UI cycle): one suite row of testicle's suite table as ./list.js draws it, on
-// the shared row element (spirit/element/row.js). Its fields: the suite's filename, and its status, "needs running"
+// the shared row element (spirit/element/row/script.js). Its fields: the suite's filename, and its status, "needs running"
 // while the row is flagged, shown red (the box: "the filename AND its status \"needs running\", which will be shown as red
 // in the UI").
 //
@@ -24,8 +24,8 @@
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
-  keepAnswer('spirit/element/row.js');
-  keepAnswer('spirit/element/busyButton.js');
+  keepAnswer('spirit/element/row/script.js');
+  keepAnswer('spirit/element/busyButton/script.js');
   // A node with no testicle refuses its interface: the row draws no run button (below); the refusal is never left unhandled.
   Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
 
@@ -33,7 +33,7 @@
 
   var index = null;
   function create(row) {
-    var R = ANSWER['spirit/element/row.js'];
+    var R = ANSWER['spirit/element/row/script.js'];
     var r = row || {};
     index = index || R.index(function () {});
     var el = R.create({
@@ -61,9 +61,9 @@
         cell.innerHTML = '';
         cell.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('button')) e.stopPropagation(); });
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
-        var made = Promise.all([keepAnswer('spirit/element/busyButton.js'), keepAnswer('spirit/app/testicle/api.js')]).then(function () {
+        var made = Promise.all([keepAnswer('spirit/element/busyButton/script.js'), keepAnswer('spirit/app/testicle/api.js')]).then(function () {
           if (button !== made) return;
-          button = ANSWER['spirit/element/busyButton.js'].create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
+          button = ANSWER['spirit/element/busyButton/script.js'].create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
             run: function () { return ANSWER['spirit/app/testicle/api.js'].run({ script: String(r.script || ''), suite: String(r.suite || '') }); } });
         }, function () {
           // A node with no testicle refuses its interface: nothing to run the suite with, so no button.

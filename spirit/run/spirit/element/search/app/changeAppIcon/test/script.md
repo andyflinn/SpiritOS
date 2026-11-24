@@ -1,0 +1,14 @@
+# spirit/element/search/app/changeAppIcon/script.js
+
+One app's icon, as a rowForm (goal/G43.15). Its test is `./script.js`, in a real Chrome on a scratch node's face page.
+
+Andy: *"i thought you'd make the changeAppLabel and changeAppIcon form elements as well, in spirit/app/ then i can re-use them as is in the config right side panel of agent, both above the debug thinggie..."*
+
+## Requirements
+
+- `spirit.required.spirit.element.search.app.changeAppIcon.create(host, { key })`, loaded through `spirit.requireScript`, answers `{ destroy }`.
+- A rowForm as the detail draws it: ✏️, the word Icon, the app's icon, the icon dropdown, and a Change button.
+- Change with nothing picked changes nothing.
+- A glyph picked in the dropdown, then Change, writes it through the app family's `iconApp`, and the app's row says it. Change is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): pressed, it stays busy, disabled with its turning mark, while the node is asked.
+- An icon changed elsewhere shows, with no reload.
+- `destroy` empties its host.

@@ -81,7 +81,7 @@ const isOn = function (b) { return !!(b.inputs[0] && b.inputs[0].checked === tru
 
 function world() {
   const w = { created: [], loads: [], saves: [], def: null };
-  // The tabContainer in the centre (goal/G41.31), a stand-in: its contract and test are spirit/element/test/tabContainer.md. Each tab added
+  // The tabContainer in the centre (goal/G41.31), a stand-in: its contract and test are spirit/element/tabContainer/test/script.md. Each tab added
   // mounts at once in a box of its own; its real behaviour is judged in spirit/app/agent/test/agent.js, its centreTabs part.
   w.tabs = [];
   w.tabContainer = { create: function (into) {
@@ -105,7 +105,7 @@ function world() {
   // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
   // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
   // function... or fail/throw"): by path, what the app's requires answer; anything else answers an object.
-  w.stands = { 'spirit/element/workBench.js': w.workBench, 'spirit/element/tabContainer.js': w.tabContainer };
+  w.stands = { 'spirit/element/workBench/script.js': w.workBench, 'spirit/element/tabContainer/script.js': w.tabContainer };
   w.provider = [];
   w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); },
     provider: function (args) { w.provider.push(args); return Promise.resolve({ ok: true, items: [{ key: 'KP', label: '{}' }], more: false }); } };
@@ -342,17 +342,17 @@ test.run('another persona picked opens its own chat in a tab beside the first', 
 
 // ── the right strip's bundle editor (goal/G41.21) ──
 // Box v17: "the bundle editor (shell/js/bundleEditor.js, the shell element that lists, makes and edits bundles)"; it is
-// spirit/element/bundleEditor.js now.
+// spirit/element/bundleEditor/script.js now.
 const BE = { asked: [], editors: [], bb: null };
-test.run('its mount requires spirit/element/bundleEditor.js', 0.2, async function () {
+test.run('its mount requires spirit/element/bundleEditor/script.js', 0.2, async function () {
   if (!X.BUNDLE_TOOL) return false;
   const w = X.w;
   const before = w.required.length;
-  w.stands['spirit/element/bundleEditor.js'] = { create: function (into, cfg) { BE.editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
+  w.stands['spirit/element/bundleEditor/script.js'] = { create: function (into, cfg) { BE.editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
   BE.bb = box('bundles'); X.BUNDLE_TOOL.mount(BE.bb); await settle();
   BE.asked = w.required.slice(before);
-  delete w.stands['spirit/element/bundleEditor.js'];
-  return BE.asked.indexOf('spirit/element/bundleEditor.js') !== -1 ? true : false;
+  delete w.stands['spirit/element/bundleEditor/script.js'];
+  return BE.asked.indexOf('spirit/element/bundleEditor/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('the bundle tool makes the bundle editor in the box it is handed, handed no api', 0.2, function () {
   if (!BE.bb) return false;
@@ -384,7 +384,7 @@ test.run('the server\'s tool on the right strip takes ⚙', 0.2, function () {
   const SERVER_TOOL = X.SERVER_TOOL;
   return !!SERVER_TOOL && /⚙/.test(String(SERVER_TOOL.icon)) && !/🐞/.test(String(SERVER_TOOL.icon)) ? true : false;
 }, test.limit.quick);
-test.run('its mount loads spirit/element/search/app/serverDEBUG.js through spirit.requireScript', 0.2, async function () {
+test.run('its mount loads spirit/element/search/app/serverDEBUG/script.js through spirit.requireScript', 0.2, async function () {
   if (!X.SERVER_TOOL) return false;
   const w = X.w;
   global.window.spirit.required.spirit.element.search.app.serverDEBUG = { create: function (into, o) { SD.debugs.push({ into: into, o: o || {} }); SD.made.push('serverDEBUG'); return { destroy: function () {} }; } };
@@ -395,7 +395,7 @@ test.run('its mount loads spirit/element/search/app/serverDEBUG.js through spiri
   delete global.window.spirit.required.spirit.element.search.app.serverDEBUG;
   delete global.window.spirit.required.spirit.element.search.app.changeAppIcon;
   delete global.window.spirit.required.spirit.element.search.app.changeAppLabel;
-  return w.required.indexOf('spirit/element/search/app/serverDEBUG.js') !== -1 ? true : false;
+  return w.required.indexOf('spirit/element/search/app/serverDEBUG/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('the server tool makes serverDEBUG for the agent', 0.2, function () {
   if (!SD.rb) return false;
@@ -416,7 +416,7 @@ test.run('the app\'s code calls no agent debug verb', 0.2, function () {
 test.run('its mount loads changeAppIcon.js and changeAppLabel.js', 0.2, function () {
   if (!SD.rb) return false;
   const w = X.w;
-  return ['spirit/element/search/app/changeAppIcon.js', 'spirit/element/search/app/changeAppLabel.js'].every(function (p) { return w.required.indexOf(p) !== -1; }) ? true : false;
+  return ['spirit/element/search/app/changeAppIcon/script.js', 'spirit/element/search/app/changeAppLabel/script.js'].every(function (p) { return w.required.indexOf(p) !== -1; }) ? true : false;
 }, test.limit.quick);
 test.run('the server tool makes the icon, then the label, for the agent, above serverDEBUG', 0.2, function () {
   if (!SD.rb) return false;
@@ -424,15 +424,15 @@ test.run('the server tool makes the icon, then the label, for the agent, above s
 }, test.limit.quick);
 
 // ── it bootstraps its own components ──
-test.run('with no workBench on the page it loads spirit/element/workBench.js through spirit.requireScript, then builds one', 0.2, async function () {
+test.run('with no workBench on the page it loads spirit/element/workBench/script.js through spirit.requireScript, then builds one', 0.2, async function () {
   if (X.R.length !== 2) return false;
   const w3 = world();
   const required = [];
   const def3 = load(w3);
   // No workBench on the page: none was loaded yet, so the app requires it; the stand-ins are what requireScript answers (goal/G49.9).
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(p === 'spirit/element/workBench.js' ? w3.workBench : p === 'spirit/element/tabContainer.js' ? w3.tabContainer : {}); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(p === 'spirit/element/workBench/script.js' ? w3.workBench : p === 'spirit/element/tabContainer/script.js' ? w3.tabContainer : {}); };
   def3.create(box('app3')); await settle();
-  return required.indexOf('spirit/element/workBench.js') !== -1 && w3.created.length === 1 ? true : false;
+  return required.indexOf('spirit/element/workBench/script.js') !== -1 && w3.created.length === 1 ? true : false;
 }, test.limit.quick);
 
 // ── THE PARTS ON A REAL PAGE (goal/G47.1) ──────────────────────────────────────────────────────────────────────────────
@@ -887,11 +887,11 @@ async function tabOpens(kind, row) {
   // The real files the app and its elements load, run on the page when they are required; anything else is answered and
   // not run.
   const REAL = [
-    'spirit/data.js', 'spirit/element/workBench.js', 'spirit/element/tabContainer.js', 'spirit/app/agent/element/table/tableElement.js', 'spirit/app/agent/element/table/row.js',
+    'spirit/data.js', 'spirit/element/workBench/script.js', 'spirit/element/tabContainer/script.js', 'spirit/app/agent/element/table/tableElement.js', 'spirit/app/agent/element/table/row.js',
     'spirit/app/agent/element/table/provider/elementTable.js', 'spirit/app/agent/element/table/provider/elementRow.js',
-    'spirit/app/agent/element/table/model/elementTable.js', 'spirit/app/agent/element/table/model/elementRow.js', 'spirit/element/busyButton.js',
+    'spirit/app/agent/element/table/model/elementTable.js', 'spirit/app/agent/element/table/model/elementRow.js', 'spirit/element/busyButton/script.js',
     // The one-row form and the icon it draws with (goal/G41.27): the model table's Ask form is one.
-    'spirit/element/rowForm.js', 'spirit/element/icon.js',
+    'spirit/element/rowForm/script.js', 'spirit/element/icon/script.js',
     'spirit/app/agent/element/table/persona/elementTable.js', 'spirit/app/agent/element/table/persona/elementRow.js',
     'spirit/app/agent/element/table/job/elementTable.js', 'spirit/app/agent/element/table/job/elementRow.js',
   ];

@@ -5,7 +5,7 @@
 // since the rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // A suite row of testicle's suite table, with its 🏃‍♂️ (goal/G47.1, the UI and run cycles). The browser file runs in node on
-// a bare window, as the other rows' tests do (spirit/element/search/job/test/row.js): the shared row element is a
+// a bare window, as the other rows' tests do (spirit/element/search/job/row/test/script.js): the shared row element is a
 // stand-in that keeps the spec it is handed, the busy button a stand-in that keeps what it was made with, testicle's
 // interface a recorder of the runs asked.
 
@@ -39,12 +39,12 @@ test.run('the row runs on a bare window', 0.2, async function () {
   // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
   // fail/throw"): the shared row element, the busy button and testicle's interface, the three it requires.
   const STANDS = {
-    'spirit/element/row.js': { index: function (sub) { indexes.push(sub); return { id: indexes.length }; },
+    'spirit/element/row/script.js': { index: function (sub) { indexes.push(sub); return { id: indexes.length }; },
       create: function (spec) { specs.push(spec); return { spec: spec, mount: function () {} }; } },
-    'spirit/element/busyButton.js': { create: function (c, o) { const b = { cell: c, o: o }; buttons.push(b); return b; } },
+    'spirit/element/busyButton/script.js': { create: function (c, o) { const b = { cell: c, o: o }; buttons.push(b); return b; } },
     'spirit/app/testicle/api.js': { run: function (a) { runs.push(a); return Promise.resolve({ ok: true }); } },
   };
-  E = { row: STANDS['spirit/element/row.js'], busyButton: STANDS['spirit/element/busyButton.js'] };
+  E = { row: STANDS['spirit/element/row/script.js'], busyButton: STANDS['spirit/element/busyButton/script.js'] };
   global.window.spirit.requireScript = function (p) {
     required.push(String(p));
     if (p === 'spirit/app/testicle/api.js' && refuseApi) return Promise.reject(new Error('no testicle on this node'));
@@ -63,7 +63,7 @@ test.run('it places itself at spirit.required.spirit.app.testicle.element.search
 }, test.limit.quick);
 test.run('it loads what it draws with, the shared row element, the busy button and testicle\'s interface', 0.2, function () {
   if (!required) return false;
-  return ['spirit/element/row.js', 'spirit/element/busyButton.js', 'spirit/app/testicle/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) || false;
+  return ['spirit/element/row/script.js', 'spirit/element/busyButton/script.js', 'spirit/app/testicle/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) || false;
 }, test.limit.quick);
 test.run('create makes a row of kind suite, keyed by the row\'s key, with no actions', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;

@@ -611,12 +611,12 @@ function pageSpirit(s, loaded, o) {
       return Promise.resolve(typeof f === 'function' ? f(v) : v);
     } };
   };
-  const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js'));
+  const helper = require(path.join(RUN, 'spirit', 'element', 'installSpiritElement', 'script.js'));
   sp.required = sp.required || {};
   sp.required.spirit = sp.required.spirit || {};
   sp.required.spirit.element = sp.required.spirit.element || {};
   sp.required.spirit.element.installSpiritElement = helper;
-  const have = Object.assign({ 'spirit/element/installSpiritElement.js': helper }, loaded || {});
+  const have = Object.assign({ 'spirit/element/installSpiritElement/script.js': helper }, loaded || {});
   const own = sp.requireScript;
   sp.requireScript = function (p) {
     const at = String(p || '').replace(/^\/+/, '');

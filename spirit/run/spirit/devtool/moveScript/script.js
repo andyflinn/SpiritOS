@@ -6,7 +6,7 @@
 //   node spirit/devtool/moveScript/script.js <from.js> <to.js> [--dry]    one move
 //   node spirit/devtool/moveScript/script.js --batch <folder> [--dry]      every ./<name>.js under <folder> to ./<name>/script.js
 //
-// Paths are run paths (spirit/element/busyButton.js). --dry prints what it would do and changes nothing.
+// Paths are run paths (spirit/element/busyButton/script.js). --dry prints what it would do and changes nothing.
 //
 // WHAT ONE MOVE COVERS (the box): the file itself, its own test (test/<name>.js to ./test/<new name>.js), its .md, and the page
 // fixtures of its test named after it (test/<name>-<what>.html), each to its new place; the moved file's own relative
@@ -132,8 +132,9 @@ function fixText(text, ownOld, ownNew, map) {
     if (!exists(now) && !Object.values(map).includes(now)) return all;
     return pre + relFrom(newDir, now);
   });
-  // 2. path.join / path.resolve pieces off __dirname: path.join(__dirname, '..', 'x.js').
-  t = t.replace(/path\.(join|resolve)\(\s*__dirname((?:\s*,\s*'[^'\n]*')+)\s*\)/g, function (all, fn, rest) {
+  // 2. path.join / path.resolve pieces off __dirname: path.join(__dirname, '..', 'x.js'), and the same through
+  // require('path') (the element batch, missed: tabContainer's test, require('path').resolve(__dirname, '../../..')).
+  t = t.replace(/((?:require\('path'\)|path)\.)(join|resolve)\(\s*__dirname((?:\s*,\s*'[^'\n]*')+)\s*\)/g, function (all, via, fn, rest) {
     const pieces = rest.split(',').map(function (s) { return s.trim(); }).filter(Boolean).map(function (s) { return s.replace(/^'|'$/g, ''); });
     const target = path.posix.normalize(path.posix.join.apply(null, [oldDir].concat(pieces)));
     const moved = map[target];
@@ -143,7 +144,7 @@ function fixText(text, ownOld, ownNew, map) {
     const r = path.posix.relative(newDir, now);
     const parts = r ? r.split('/') : [];
     if (!parts.length) return all;
-    return 'path.' + fn + '(__dirname, ' + parts.map(function (p) { return "'" + p + "'"; }).join(', ') + ')';
+    return via + fn + '(__dirname, ' + parts.map(function (p) { return "'" + p + "'"; }).join(', ') + ')';
   });
   Object.keys(map).forEach(function (old) {
     const neu = map[old];

@@ -1,6 +1,6 @@
 # spirit/element/test/search-child-general.js
 
-The -general general test beside `spirit/element/search.js` (goal/G47.1, box v94, 2: *"existing general tests fold into the
+The -general general test beside `spirit/element/search/script.js` (goal/G47.1, box v94, 2: *"existing general tests fold into the
 appropriate of the 3 new general test name-formats"*). Its parts, each the test it was, every title kept, both read from
 the files: folderRules, listRowsOwnTheirPanel.
 
@@ -10,7 +10,7 @@ No argument, each part judges all it applies to; each argument, that one, its re
 
 ## folderRules (was search-child-folderRules.js)
 
-A `-child-` general test beside `spirit/element/search.js` (`../../test/TEST_SYSTEM.md`): it judges `search.js` and
+A `-child-` general test beside `spirit/element/search/script.js` (`../../test/TEST_SYSTEM.md`): it judges `search.js` and
 `search/` and below. Given a file, it judges the search that file belongs to; given none, every search. Judged on disc,
 from the files and their code with comments left out.
 
@@ -21,7 +21,7 @@ decisions."*
 ### Requirements
 
 - A search is a `.js` in `spirit/element/search/` or a folder there holding scripts; `test/` is none.
-- The job branch has its search, `spirit/element/search/job.js`; `spirit/element/job.js` and `jobDetail.js` are gone
+- The job branch has its search, `spirit/element/search/job/script.js`; `spirit/element/job.js` and `jobDetail.js` are gone
   from `spirit/element/` (the box: *"The job search is made from spirit/element/job.js and jobDetail.js."*).
 - For each search `<name>`:
   - `search/<name>.js` is the selector, an element placing a create through installSpiritElement by its own path.
@@ -66,7 +66,7 @@ details were mounted in a layer of their own, a closed layer is hidden and kept,
 
     node spirit/element/test/search-child-listRowsOwnTheirPanel.js [file]
 
-**Its name is its reach** (`../../../test/TEST_SYSTEM.md`): a `-child-` test beside `spirit/element/search.js` judges
+**Its name is its reach** (`../../../test/TEST_SYSTEM.md`): a `-child-` test beside `spirit/element/search/script.js` judges
 `search.js` and every module in `spirit/element/search/` and below. Given a file it judges that one, as `testModule.js`
 hands it; given none, all of them.
 

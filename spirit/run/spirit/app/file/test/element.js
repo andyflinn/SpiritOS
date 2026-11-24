@@ -107,10 +107,10 @@ const HANDS = '(function () {' +
   '  bars: function () { return all("button").filter(function (b) { return String(b.textContent).trim() === "✕" && !/clear$/.test(b.id || ""); }).map(function (b) { return String(b.parentElement.innerText || "").replace("✕", "").replace(/\\s+/g, " ").trim(); }); },' +
   '  close: function (label) { var b = all("button").filter(function (b) { return String(b.textContent).trim() === "✕" && !/clear$/.test(b.id || "") && String(b.parentElement.innerText || "").indexOf(label) !== -1; }); if (!b.length) return false; b[b.length - 1].click(); return true; },' +
   '  count: function (sel) { return all(sel).length; },' +
-  // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search.js).
+  // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search/script.js).
   '  pickers: function () { return all("button[id$=field]").length; },' +
   '  marked: function () { return all(".text-view-match").map(function (m) { return String(m.textContent); }); },' +
-  // The box: "That row is a bubble of the same kind as rowForm uses": rowForm's root is .shell-bubble (spirit/element/rowForm.js).
+  // The box: "That row is a bubble of the same kind as rowForm uses": rowForm's root is .shell-bubble (spirit/element/rowForm/script.js).
   '  inBubble: function (word) { var b = all("button").filter(function (x) { return String(x.textContent).indexOf(word) !== -1; })[0]; return b ? !!b.closest(".shell-bubble") : null; },' +
   // The pane made w by h; then what sel draws, its rect against the pane's, and the one bar still in view inside it.
   '  sized: function (sel, w, h) { var b = box(); b.style.width = w + "px"; b.style.height = h + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var e = all(sel)[0], o = b.getBoundingClientRect(); if (!e) return { none: true }; var r = e.getBoundingClientRect(), x = all("button").filter(function (k) { return String(k.textContent).trim() === "✕" && !/clear$/.test(k.id || ""); })[0]; var xr = x ? x.getBoundingClientRect() : null; return { left: r.left - o.left, top: r.top - o.top, right: o.right - r.right, bottom: o.bottom - r.bottom, w: r.width, h: r.height, fit: getComputedStyle(e).objectFit, bar: !!xr && xr.top >= o.top - 1 && xr.bottom <= o.bottom + 1 }; }); },' +
@@ -173,8 +173,8 @@ test.run('no script of spirit/app/file/ names the old shell or a shell/ path', 0
   const old = mine.filter(function (f) { return /shell\/|spirit\.shell\b|\.shell\./.test(code(f)); }).map(function (f) { return path.relative(RUN, f); });
   return mine.length > 0 && !old.length ? true : false;
 }, test.limit.quick);
-test.run('file.js draws with the shared list, spirit/element/search/file.js, which stays where it is', 0.2, function () {
-  return (/spirit\/element\/search\/file\.js/).test(code(path.join(APP, 'element.js'))) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'file.js'))
+test.run('file.js draws with the shared list, spirit/element/search/file/script.js, which stays where it is', 0.2, function () {
+  return (/spirit\/element\/search\/file\/script\.js/).test(code(path.join(APP, 'element.js'))) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'file', 'script.js'))
     ? true : false;
 }, test.limit.quick);
 

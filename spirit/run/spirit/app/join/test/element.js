@@ -2,8 +2,8 @@
 
 // spirit/run/spirit/app/join/test/element.js
 // The tests of spirit/app/join/element.js, and of no other module (spec: ./join.md; goal/G43.26). Since G43.26 the app is a
-// wrapper mounted the new shell's way: all of Join is joinList (spirit/element/joinList.js, tested in
-// spirit/element/test/joinList.js). The browser file runs in node on a BARE window (rule/26): joinList is put on the page
+// wrapper mounted the new shell's way: all of Join is joinList (spirit/element/joinList/script.js, tested in
+// spirit/element/joinList/test/script.js). The browser file runs in node on a BARE window (rule/26): joinList is put on the page
 // only once the app requires it, a stand-in that keeps what the app handed it.
 
 const fs = require('fs');
@@ -38,7 +38,7 @@ function world(o) {
     requireScript: function (p) {
       w.required.push(String(p));
       if (opt.refuse) return Promise.reject(new Error('not-found ' + p));
-      const put = function () { if (p === 'spirit/element/joinList.js') els.joinList = joinList; return {}; };
+      const put = function () { if (p === 'spirit/element/joinList/script.js') els.joinList = joinList; return {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
@@ -81,9 +81,9 @@ test.run('element.js sets spirit.required.spirit.app.join.element to an object w
 test.run('element.js does not use spirit.shell.activateApp, the old shell\'s way', 0.2, function () {
   return !(/\bactivateApp\b|\bspirit\.shell\b/).test(CODE) || false;
 }, test.limit.quick);
-test.run('element.js requires spirit/element/joinList.js, and only that', 0.2, function () {
+test.run('element.js requires spirit/element/joinList/script.js, and only that', 0.2, function () {
   if (!W.w || !W.w.J) return false;
-  return JSON.stringify(W.w.required) === '["spirit/element/joinList.js"]' || false;
+  return JSON.stringify(W.w.required) === '["spirit/element/joinList/script.js"]' || false;
 }, test.limit.quick);
 test.run('element.js names no icon table', 0.2, function () {
   return !(/iconIndex|\bICON\b/).test(CODE) || false;

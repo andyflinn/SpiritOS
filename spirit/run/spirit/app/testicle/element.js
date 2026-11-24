@@ -18,7 +18,7 @@
 // standard testicle.suite.search", "All tabs are closable", "The tab opens first, with its title line; then file.get runs,
 // and below the title line it shows either the error file.get gives (\"not a production script\", \"no such file\") or the
 // suite search for that file". A tab is named by the file's full path, so a second click on it makes its tab active and opens
-// no second (spirit/element/tabContainer.js add). It asks the node through spirit alone: testicle's branch, bound by its
+// no second (spirit/element/tabContainer/script.js add). It asks the node through spirit alone: testicle's branch, bound by its
 // api.js.
 //
 // THE TESTICLE SEARCH (goal/G47.1, the search cycle). The box: "The UI gets its first non-closable tab in the workbench centre
@@ -33,7 +33,7 @@
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the workBench and the file list.
-  var parts = Promise.all(['spirit/element/workBench.js', 'spirit/element/search/app/rowFormToggle.js', 'spirit/element/search/file.js', 'spirit/element/tabContainer.js',
+  var parts = Promise.all(['spirit/element/workBench/script.js', 'spirit/element/search/app/rowFormToggle/script.js', 'spirit/element/search/file/script.js', 'spirit/element/tabContainer/script.js',
     'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/element/search/testicle.js', 'spirit/app/testicle/element/search/testicle/detail.js',
     'spirit/app/testicle/api.js',
     // ITS OWN PARTS, EACH AN ELEMENT (goal/G47.1, box v134-135: "element.js keeps only the face: it mounts those elements and the

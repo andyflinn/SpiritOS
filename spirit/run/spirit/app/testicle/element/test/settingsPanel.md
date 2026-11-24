@@ -8,7 +8,7 @@ test: `./settingsPanel.js`.
 
 ## What it does
 
-- **It loads its own parts** (rule/26): the toggle row `spirit/element/search/app/rowFormToggle.js` and testicle's `api.js`,
+- **It loads its own parts** (rule/26): the toggle row `spirit/element/search/app/rowFormToggle/script.js` and testicle's `api.js`,
   then testicle's cache manager (`data.js`). A node with no testicle refuses the interface: the panel says so below its form;
   the refusal is never left unhandled.
 - **Its box:** one `.testicle-config` into its container, its overflow not visible, titled *"⚙ Configuration"* (box v79, 2:

@@ -22,7 +22,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([keepAnswer('spirit/element/search/file.js'), keepAnswer('spirit/element/search/file/detail.js'), keepAnswer('spirit/element/fstat.js'), keepAnswer('spirit/element/panel.js'), keepAnswer('spirit/app/api.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/search/file/script.js'), keepAnswer('spirit/element/search/file/detail/script.js'), keepAnswer('spirit/element/fstat/script.js'), keepAnswer('spirit/element/panel/script.js'), keepAnswer('spirit/app/api.js')]);
   var OPENERS = { code: 'text', image: 'media', audio: 'media', video: 'media' };
 
   function create(container, opts) {
@@ -49,7 +49,7 @@
       return { icon: (t && t.icon) || app.icon || '', label: (app.label ? app.label + ': ' : '') + name };
     }
     function open(key, words, line) {
-      var FS = ANSWER['spirit/element/fstat.js'];
+      var FS = ANSWER['spirit/element/fstat/script.js'];
       var name = String(key).split('/').pop();
       var opener = OPENERS[FS.kindOf(FS.mimeOf(key))];
       var layer = null;
@@ -60,7 +60,7 @@
       Promise.resolve(into(key, { icon: look.icon, label: look.label, fill: function (pane, closed) {
         // fstat only for a file neither opener takes (Andy: "let fstat pop up for unknows file types (❔) only"), through the
         // file search's detail, which draws it (goal/G43.32).
-        if (!opener) return ANSWER['spirit/element/search/file/detail.js'].create(pane, { path: key });
+        if (!opener) return ANSWER['spirit/element/search/file/detail/script.js'].create(pane, { path: key });
         return S.requireScript('spirit/app/' + opener + '/element.js').then(function () {
           if (closed()) return null;
           // The opener's main element at the place of the file just loaded (goal/G43.32, rule 4).
@@ -76,8 +76,8 @@
 
     parts.then(function () {
       if (gone) return;
-      stack = ANSWER['spirit/element/panel.js'].create(box, listBox);
-      list = ANSWER['spirit/element/search/file.js'].create(listBox, {
+      stack = ANSWER['spirit/element/panel/script.js'].create(box, listBox);
+      list = ANSWER['spirit/element/search/file/script.js'].create(listBox, {
         face: 'pane',
         pick: function (row, key) {
           if (!row || row.kind !== 'file') return;

@@ -1290,7 +1290,7 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 function kindOf(file) {
   const f = String(file || '');
   if (!/^spirit\/.+\.js$/.test(f) || /(^|\/)test\//.test(f)) return '';
-  if (f === 'spirit/element/installSpiritElement.js') return '';
+  if (f === 'spirit/element/installSpiritElement/script.js') return '';
   try { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)) ? 'element' : ''; } catch (e) { return ''; }
 }
 const WAIT = 20000;
@@ -1305,8 +1305,8 @@ const OWN_PROOF = {
   // Join draws only the join news on the spirit job, which a marked row in the jobs or the contacts cannot change (Andy,
   // goal/G43.32: "cw, yes", to "shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"). The
   // Join app is joinList mounted, so its page takes the same proof.
-  'spirit/element/joinList.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
-  'spirit/app/join/element.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
+  'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
+  'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
 };
 // THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
 const FIELD_RULES = SPIRIT.requireScript('spirit/fieldRules.js');
@@ -1522,26 +1522,26 @@ const { sleep, until, findChrome, scratchNode, chromePage } = SPIRIT.requireScri
 // like another inline character? ... glyphs are legal in labels and description true, and in that context they don't
 // need special handling", then "narrow the rules so."): a shell script (no test, no vendor code) whose code, comments
 // left out, holds a pictograph (Unicode Extended_Pictographic) alone in a string or alone between two tags, or that
-// paints icons it is handed (named below, read by hand), loads spirit/element/icon.js. A glyph among words is text. Each is
+// paints icons it is handed (named below, read by hand), loads spirit/element/icon/script.js. A glyph among words is text. Each is
 // its own check, named by its path. painters() reads only the files git tracks under shell/, so the spirit/ entries of
 // FROM_DATA and TEXT_ONLY are never read, and shell/boot.js (now spirit/shell/boot.js, goal/G43.18), shell/apps/apps.js
 // and shell/icons/icons.js are no longer in the tree.
-const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/element.js', 'spirit/element/search/icon/list.js',
-  'spirit/element/search/icon/row.js', 'spirit/element/search/icon.js', 'spirit/element/workBench.js'];
+const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/element.js', 'spirit/element/search/icon/list/script.js',
+  'spirit/element/search/icon/row/script.js', 'spirit/element/search/icon/script.js', 'spirit/element/workBench/script.js'];
 // A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
 const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]*)+\s*(['"`]|<)/u;
 // A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
 // (Andy: "glyphs are legal in labels and description true").
 const TEXT_ONLY = {
   // its blocked mark is drawn before the person's name
-  'spirit/element/search/contact/detail.js': true,
+  'spirit/element/search/contact/detail/script.js': true,
   // its filter icons are drawn before their words by the search element's chips
-  'spirit/element/search/contact/list.js': true,
+  'spirit/element/search/contact/list/script.js': true,
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
   return tracked.filter(function (f) {
-    if (!/\.js$/.test(f) || /\/test\//.test(f) || VENDORED_FOLDERS.holds(f) || f ==='spirit/element/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
+    if (!/\.js$/.test(f) || /\/test\//.test(f) || VENDORED_FOLDERS.holds(f) || f ==='spirit/element/icon/script.js' || !fs.existsSync(path.join(RUN, f))) return false;
     if (FROM_DATA.indexOf(f) !== -1) return true;
     if (TEXT_ONLY[f]) return false;
     const code = fs.readFileSync(path.join(RUN, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
@@ -1841,7 +1841,7 @@ function strayElementReaches(rel) {
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 // The helper itself defines installSpiritElement and places nothing: it is required, no element.
-function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement.js' && /\binstallSpiritElement\s*\(/.test(codeOf(readSource(rel), true)); }
+function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement/script.js' && /\binstallSpiritElement\s*\(/.test(codeOf(readSource(rel), true)); }
 // NOTHING ON THE NODE'S GLOBAL OBJECT OR ON process BUT spirit (goal/G47.1; Andy: "no developer will want to use a system
 // that pollutes global name-spaces.", "go on this"; judged in oneFile below). It took the place of requireOnNode, which
 // nothing called. Never loaded, as the classifier never loads them (spirit/test/scriptClassify.js): the node and the relay
@@ -1899,7 +1899,7 @@ function nodeGlobalsIn(run, rel, full) {
 // spirit.elements by hand.
 function placedByHand() {
   return productScripts().filter(function (f) {
-    if (f === 'spirit/element/installSpiritElement.js' || f === 'spirit/spirit.js') return false;
+    if (f === 'spirit/element/installSpiritElement/script.js' || f === 'spirit/spirit.js') return false;
     const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true);
     return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
   });
@@ -1919,8 +1919,8 @@ function every() {
   }, test.limit.quick);
 
   // elements are placed by installSpiritElement alone
-  test.run('spirit/element/installSpiritElement.js is there', 0.4, function () {
-    return fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement.js')) || false;
+  test.run('spirit/element/installSpiritElement/script.js is there', 0.4, function () {
+    return fs.existsSync(path.join(RUN, 'spirit', 'element', 'installSpiritElement', 'script.js')) || false;
   }, test.limit.quick);
   test.run('no product script puts an element on spirit.required or spirit.elements by hand', 0.4, function () {
     const hand = placedByHand();
@@ -1982,14 +1982,14 @@ function every() {
     const hits = [].concat.apply([], product.map(function (f) { return codeLinesMatching(f, BY_NAME_LOADER); }));
     return (product.length > 100 && !hits.length) || false;
   }, test.limit.quick);
-  // no warning on a grant (goal/G43.27, requirement 7; moved here from spirit/element/search/grant/test/grantsPanel.js,
+  // no warning on a grant (goal/G43.27, requirement 7; moved here from spirit/element/search/grant/grantsPanel/test/script.js,
   // goal/G47.1). Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our
   // problem.": no <verb>.warning.txt is left in the repository.
   test.run('no <verb>.warning.txt is left', 0.4, function () {
     const warns = gitIn(REPO, ['ls-files']).filter(function (f) { return /\.warning\.txt$/.test(f); });
     return !warns.length || false;
   }, test.limit.quick);
-  // the search elements' pattern (goal/G43.18; moved here from spirit/element/test/search.js, goal/G47.1). Andy: "all
+  // the search elements' pattern (goal/G43.18; moved here from spirit/element/search/test/script.js, goal/G47.1). Andy: "all
   // "probabilitySearch" elements follow the EXACT SAME PATTERN.", and the box: "Every search element in spirit/element/
   // becomes spirit/element/search/<name>.js, with its companion folder spirit/element/search/<name>/ holding its list and row
   // elements, the same pattern for all".
@@ -2097,7 +2097,7 @@ function every() {
         const src = fs.readFileSync(path.join(RUN, f), 'utf8');
         // A file that hands its glyphs to the one-row form (goal/G41.27) paints them through it: rowForm loads the icon element
         // itself (rule/26).
-        return src.indexOf('spirit/element/icon.js') === -1 && src.indexOf('spirit/element/rowForm.js') === -1;
+        return src.indexOf('spirit/element/icon/script.js') === -1 && src.indexOf('spirit/element/rowForm/script.js') === -1;
       });
     }, test.limit.quick);
   }
@@ -2295,7 +2295,7 @@ function oneFile(P) {
   // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
   // search the whole row, as cached in spirit.required.spirit.data."): no app or element hands a search a matched(row) of its own; the
   // search element itself matches the whole row.
-  if (rel !== 'spirit/element/search.js') {
+  if (rel !== 'spirit/element/search/script.js') {
     // <address>: its searches match the whole row
     test.run('it hands no search a matched() of its own', 0.4, function () {
       return !/\bmatched\s*:/.test(ownCode) || false;
@@ -2328,7 +2328,7 @@ function oneFile(P) {
           let c = ''; try { c = fs.readFileSync(path.join(RUN, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); } catch (e) { return false; }
           // The child's branch may be worked out from the name it is handed (data: branchOf(o.table)): any data: option, in a
           // child that loads the search element.
-          return /spirit\/element\/search\.js/.test(c) && /\bdata\s*:\s*[\w$'"]/.test(c);
+          return /spirit\/element\/search\/script\.js/.test(c) && /\bdata\s*:\s*[\w$'"]/.test(c);
         });
       };
       test.run('it sends writes and watches spirit.required.spirit.data', 0.4, function () {

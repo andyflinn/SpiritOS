@@ -155,7 +155,7 @@ function useScript(a) {
 function kindOf(file) {
   const f = String(file || '');
   if (!/^spirit\/.+\.js$/.test(f) || /(^|\/)test\//.test(f)) return '';
-  if (f === 'spirit/element/installSpiritElement.js') return '';
+  if (f === 'spirit/element/installSpiritElement/script.js') return '';
   try { return /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true)) ? 'element' : ''; } catch (e) { return ''; }
 }
 // A PAGE SCRIPT IT JUDGES (goal/G47.1, box v121: "it judges the scripts scriptClassify says load in a page"; testicle hands it
@@ -178,8 +178,8 @@ const OWN_PROOF = {
   // Join draws only the join news on the spirit job, which a marked row in the jobs or the contacts cannot change (Andy,
   // goal/G43.32: "cw, yes", to "shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"). The
   // Join app is joinList mounted, so its page takes the same proof.
-  'spirit/element/joinList.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
-  'spirit/app/join/element.js': { test: 'spirit/element/test/joinList.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
+  'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
+  'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
 };
 // THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
 const FIELD_RULES = SPIRIT.requireScript('spirit/fieldRules.js');
@@ -256,7 +256,7 @@ const WATCH = String.raw`(function () {
     if (!b) return false;
     // AN OPEN DROPDOWN SHUT FIRST, BEFORE THE WATCH (wsl, on the model row's red: "It presses the icon dropdown first, which
     // opens and stays open. Then it presses Add; that click closes the dropdown, and the close is counted as drawing while the
-    // add is out"): a press on the page outside every element shuts it, as a press elsewhere does (spirit/element/search.js).
+    // add is out"): a press on the page outside every element shuts it, as a press elsewhere does (spirit/element/search/script.js).
     try { document.body.click(); } catch (e) { /* nothing open */ }
     stop(); buf = []; w0 = W.writes.length;
     watching = new MutationObserver(function (list) { buf = buf.concat(list); });
@@ -365,7 +365,7 @@ const WATCH = String.raw`(function () {
       // A search mounted inside another's host (branch's family filter in its 🪣 row) draws its own rows: they are judged
       // against its own branch, not this one's.
       var inner = (window.spiritSearchHosts || []).filter(function (h, j) { return j !== i && h && h !== host && host.contains(h); });
-      // DRAWN MEANS SHOWN: a list hides a row its branch no longer holds where it stands (spirit/element/search.js), so a
+      // DRAWN MEANS SHOWN: a list hides a row its branch no longer holds where it stands (spirit/element/search/script.js), so a
       // row hidden is no row drawn.
       var keys = Array.prototype.filter.call(host.querySelectorAll('[data-key]'), function (el) { return !inner.some(function (h) { return h.contains(el); }) && el.getClientRects().length > 0; }).map(function (el) { return String(el.getAttribute('data-key')); });
       return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
@@ -456,26 +456,26 @@ const { sleep, until, findChrome, scratchNode, chromePage } = SPIRIT.requireScri
 // like another inline character? ... glyphs are legal in labels and description true, and in that context they don't
 // need special handling", then "narrow the rules so."): a shell script (no test, no vendor code) whose code, comments
 // left out, holds a pictograph (Unicode Extended_Pictographic) alone in a string or alone between two tags, or that
-// paints icons it is handed (named below, read by hand), loads spirit/element/icon.js. A glyph among words is text. Each is
+// paints icons it is handed (named below, read by hand), loads spirit/element/icon/script.js. A glyph among words is text. Each is
 // its own check, named by its path. painters() reads only the files git tracks under shell/, so the spirit/ entries of
 // FROM_DATA and TEXT_ONLY are never read, and shell/boot.js (now spirit/shell/boot.js, goal/G43.18), shell/apps/apps.js
 // and shell/icons/icons.js are no longer in the tree.
-const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/element.js', 'spirit/element/search/icon/list.js',
-  'spirit/element/search/icon/row.js', 'spirit/element/search/icon.js', 'spirit/element/workBench.js'];
+const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/element.js', 'spirit/element/search/icon/list/script.js',
+  'spirit/element/search/icon/row/script.js', 'spirit/element/search/icon/script.js', 'spirit/element/workBench/script.js'];
 // A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
 const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]*)+\s*(['"`]|<)/u;
 // A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
 // (Andy: "glyphs are legal in labels and description true").
 const TEXT_ONLY = {
   // its blocked mark is drawn before the person's name
-  'spirit/element/search/contact/detail.js': true,
+  'spirit/element/search/contact/detail/script.js': true,
   // its filter icons are drawn before their words by the search element's chips
-  'spirit/element/search/contact/list.js': true,
+  'spirit/element/search/contact/list/script.js': true,
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
   return tracked.filter(function (f) {
-    if (!/\.js$/.test(f) || /\/test\//.test(f) || VENDORED_FOLDERS.holds(f) || f ==='spirit/element/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
+    if (!/\.js$/.test(f) || /\/test\//.test(f) || VENDORED_FOLDERS.holds(f) || f ==='spirit/element/icon/script.js' || !fs.existsSync(path.join(RUN, f))) return false;
     if (FROM_DATA.indexOf(f) !== -1) return true;
     if (TEXT_ONLY[f]) return false;
     const code = fs.readFileSync(path.join(RUN, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
@@ -638,7 +638,7 @@ function productScripts() {
 // process of its own; the page side on the scratch node's face page, a fresh page each. Never Andy's tree or node.
 function placeKeys(rel) { return rel.replace(/\.js$/, '').split('/'); }
 // The helper itself defines installSpiritElement and places nothing: it is required, no element.
-function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement.js' && /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
+function isElementScript(rel) { return rel !== 'spirit/element/installSpiritElement/script.js' && /\binstallSpiritElement\s*\(/.test(codeOf(fs.readFileSync(path.join(RUN, rel), 'utf8'), true)); }
 function requireOnNode(run, rel) {
   return new Promise(function (resolve) {
     // A branch's api.js (decided 8) binds the branch, so it is waited on and judged by its place alone; every other script
@@ -667,7 +667,7 @@ function requireOnNode(run, rel) {
 // spirit.elements by hand.
 function placedByHand() {
   return productScripts().filter(function (f) {
-    if (f === 'spirit/element/installSpiritElement.js' || f === 'spirit/spirit.js') return false;
+    if (f === 'spirit/element/installSpiritElement/script.js' || f === 'spirit/spirit.js') return false;
     const code = codeOf(fs.readFileSync(path.join(RUN, f), 'utf8'), true);
     return /\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*=(?!=)|\bspirit\.elements?\s*(\.\s*[\w$]+\s*)*\[[^\]]*\]\s*=(?!=)|Object\.assign\s*\([^)]*\bspirit\.elements?\b/.test(code);
   });
@@ -948,7 +948,7 @@ async function session() {
     '  if (!el || el.textContent.replace(/[\\p{Extended_Pictographic}\\uFE0F\\u200D\\u{1F3FB}-\\u{1F3FF}\\s]/gu, "") !== "") continue;' +
     '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
     '  out.push(true); } return out; }())';
-  await page.evaluate('Promise.resolve().then(function () { return spirit.requireScript("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.required.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
+  await page.evaluate('Promise.resolve().then(function () { return spirit.requireScript("spirit/element/icon/script.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.required.spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
   P.iconMark = await page.evaluate('window.spiritIconMark || ""');
   const loose = {};
   const iconProbe = async function () { const s = await page.evaluate('JSON.stringify(' + ICONS + ')'); (s ? JSON.parse(s) : []).forEach(function (x) { loose[x] = true; }); };
@@ -969,7 +969,7 @@ async function session() {
 
   // A ROW DETAIL HAS ITS OWN PANEL (goal/G49.8, point 4, box v7; Andy: "a row detail has it's own panel and doesn't share it
   // with other row details of the same kind", "a test, general, hopefully, should enforce that", "a more general \"if-block\"
-  // in a spirit-child-browser test"; the panel rule, spirit/element/panel.js, Q2: "a closed layer is hidden, not destroyed"):
+  // in a spirit-child-browser test"; the panel rule, spirit/element/panel/script.js, Q2: "a closed layer is hidden, not destroyed"):
   // for an app, spirit/app/<name>/element.js, mounted by itself and before anything is typed or pressed, two of its rows are pressed and each panel they open closed
   // with its ✕, then the first row pressed again. An app whose row press opens no panel here has nothing to judge.
   if (/^spirit\/app\/[^/]+\/element\.js$/.test(rel)) {
@@ -1044,7 +1044,7 @@ async function session() {
   // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.required.spirit.data path it watches must change
   // its box. A watch that redraws nothing is not listening.
   let probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
-  // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (spirit/element/search.js, setOpen: "opened, ... draw()"): while
+  // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (spirit/element/search/script.js, setOpen: "opened, ... draw()"): while
   // nothing it watches has redrawn, each closed dropdown on the page is opened in turn, what it watches written again,
   // and shut. A path that redrew in any of them redrew.
   const DROPDOWNS = 'Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("button[id$=field]"), function (b) { var p = document.getElementById(b.id.replace(/field$/, "popup")); return p && p.hidden && b.getClientRects().length; })';
@@ -1227,7 +1227,7 @@ function oneFile(P) {
     // OUTSIDE goal/G41.28, AND STILL RED (Andy, G41.28: "WSL will drop Q23 from this item, and mark those two related reds as
     // outside it"): login fetches its steps file before the page has a link to its node, and the file viewer fetches a
     // file at home piece by piece. It is not met, so it is not green.
-    // shell/login/login.js is no longer in the tree; the file viewer's spirit/element/fstat.js is.
+    // shell/login/login.js is no longer in the tree; the file viewer's spirit/element/fstat/script.js is.
     return !own.length || false;
   }, test.limit.quick);
 
@@ -1292,7 +1292,7 @@ function oneFile(P) {
   // damn data is cached in spirit data.", and "every probabilitySearch on a page is made with a spirit.required.spirit.data branch (its
   // data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes red.").
   // <address>: every search it makes ranks spirit.required.spirit.data
-  // ITS searches: the ones the module makes. When the module handed is the search itself (spirit/element/search.js),
+  // ITS searches: the ones the module makes. When the module handed is the search itself (spirit/element/search/script.js),
   // the test's own mounts of it, bare in the mount box and once more in the create-and-destroy box, are the test's, not
   // searches the module made, and are not judged; every search the module makes inside them is.
   const made = (W.searches || []).filter(function (x) { return !x.mount; });

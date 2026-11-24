@@ -124,7 +124,7 @@ function makeDom() {
   return doc;
 }
 
-// A working armingButton, as its spec says (spirit/element/test/armingButton.md), that writes down every button it is handed.
+// A working armingButton, as its spec says (spirit/element/armingButton/test/script.md), that writes down every button it is handed.
 function armingStub(document, made) {
   var loaded = null;
   function attach(b, o) {
@@ -151,7 +151,7 @@ function armingStub(document, made) {
   return { attach: attach, create: create };
 }
 
-// A working workBench, as its spec says (spirit/element/test/workBench.md), that writes down every bench it makes: its strips
+// A working workBench, as its spec says (spirit/element/workBench/test/script.md), that writes down every bench it makes: its strips
 // are buttons by data-tool, a click shows that tool in its side's pane, a tool's mount is called once with a box of its own.
 function workBenchStub(document, benches) {
   function create(container, o) {
@@ -220,7 +220,7 @@ function ddWorld(facts, checks, o) {
     requireScript: function (p) {
       const q = String(p).replace(/^\/+/, '');
       required.push(q);
-      if (q === 'spirit/element/workBench.js') win.spirit.required.spirit.element.workBench = workBenchStub(document, benches);
+      if (q === 'spirit/element/workBench/script.js') win.spirit.required.spirit.element.workBench = workBenchStub(document, benches);
       return Promise.resolve({});
     },
     // goal/G43.32: the parts stand where the dialog reads them, the elements at spirit.required.<their path>, a helper at
@@ -329,9 +329,9 @@ test.run('deskDetails.js names no icon table', 0.2, function () {
 // strip is today's panels, each its icon, in order", on what the workBench is given, not on the source.
 
 // ── goal/G41.9: IT LOADS armingButton AND KEEPS NO ARMING OF ITS OWN ────────────────────────────────────────────────
-test.run('it requires spirit/element/armingButton.js through spirit.requireScript', 0.2, async function () {
+test.run('it requires spirit/element/armingButton/script.js through spirit.requireScript', 0.2, async function () {
   const w0 = await opened(GOAL);
-  return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || false;
+  return w0.required.indexOf('spirit/element/armingButton/script.js') !== -1 || false;
 }, test.limit.quick);
 test.run('nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 0.2, function () {
   const left = ['data-armed', 'armUntilElsewhere', 'ddArmed', 'ddDisarm', 'armedClose', 'armedAll', "classList.add('armed')"].filter(function (s) { return S.plain.indexOf(s) !== -1; });
@@ -450,7 +450,7 @@ const ruleWorld = function () {
   const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
   delete r.win.spirit.required.spirit.element.search;
   const req = r.win.spirit.requireScript;
-  r.win.spirit.requireScript = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.required.spirit.element.search = make; return req(p); };
+  r.win.spirit.requireScript = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search/script.js') r.win.spirit.required.spirit.element.search = make; return req(p); };
   return r;
 };
 // RULES GO OUT OF DESK (goal/G47.4, box v36: "The rules list on each goal and item goes"; Andy: "go!"): the details panel
@@ -486,10 +486,10 @@ test.run('the shell\'s title bar says the id, the title and the status', 0.2, as
   return (lastTitle.indexOf('goal/G9.7') !== -1 && lastTitle.indexOf('A titled item') !== -1 && lastTitle.indexOf('running') !== -1) || false;
 }, test.limit.quick);
 // goal/G41.22: one workBench, the button row above it.
-test.run('it requires spirit/element/workBench.js through spirit.requireScript', 0.2, async function () {
+test.run('it requires spirit/element/workBench/script.js through spirit.requireScript', 0.2, async function () {
   const wb = S.wb = await opened(ITEM);
   S.bench = wb.benches[0] || null;
-  return wb.required.indexOf('spirit/element/workBench.js') !== -1 || false;
+  return wb.required.indexOf('spirit/element/workBench/script.js') !== -1 || false;
 }, test.limit.quick);
 test.run('it makes one workBench, inside its own body', 0.2, function () {
   const wb = S.wb, bench = S.bench;

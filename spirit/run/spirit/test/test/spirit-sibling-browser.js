@@ -17,8 +17,8 @@ const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-const ELEMENTS = ['spirit/element/busyButton.js', 'spirit/element/progressBar.js', 'spirit/element/panel.js', 'spirit/element/icon.js',
-  'spirit/element/fieldInput.js', 'spirit/element/armingButton.js'];
+const ELEMENTS = ['spirit/element/busyButton/script.js', 'spirit/element/progressBar/script.js', 'spirit/element/panel/script.js', 'spirit/element/icon/script.js',
+  'spirit/element/fieldInput/script.js', 'spirit/element/armingButton/script.js'];
 const HANG = 'spirit/element/zzBrowserHang.js';
 // box v144: "measured before: spirit-sibling-browser.js ~10 s a script on cw's Windows ..., 3.7 s on wsl"; "the target: at
 // least 80% less test time".
@@ -174,7 +174,7 @@ test.run('a change written into a row of true or false fields alone redraws the 
     '    var un = V.watch(\'zz/flag\', paint); paint();',
     '    return { destroy: function () { if (typeof un === \'function\') un(); el.remove(); } };',
     '  }',
-    '  S.requireScript(\'spirit/element/installSpiritElement.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + FLAG + '\', { create: create }); });',
+    '  S.requireScript(\'spirit/element/installSpiritElement/script.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + FLAG + '\', { create: create }); });',
     '})();', ''].join('\n'));
   let out = '';
   const kid = spawn(process.execPath, [SUBJECT, FLAG], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -194,7 +194,7 @@ function planted(top, wrapped) {
   const body = [
     '  var S = window.spirit;',
     '  function create(container) { var el = document.createElement(\'div\'); el.style.overflow = \'hidden\'; container.appendChild(el); return { destroy: function () { el.remove(); } }; }',
-    '  S.requireScript(\'spirit/element/installSpiritElement.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + LEAK + '\', { create: create }); });'];
+    '  S.requireScript(\'spirit/element/installSpiritElement/script.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + LEAK + '\', { create: create }); });'];
   return ['\'use strict\';', '// planted by spirit/test/test/spirit-sibling-browser.js: what it leaves on the window', top]
     .concat(wrapped ? ['(function () {'].concat(body, ['}());']) : ['(function () {'].concat(body, ['}());'])).concat(['']).join('\n');
 }

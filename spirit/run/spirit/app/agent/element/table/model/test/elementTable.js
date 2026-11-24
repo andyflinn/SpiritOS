@@ -23,7 +23,7 @@ const FILE = path.join(__dirname, '..', 'elementTable.js');
 const SHARED = 'spirit/app/agent/element/table/tableElement.js';
 const ROW = 'spirit/app/agent/element/table/model/elementRow.js';
 const AGENT = 'spirit/app/agent/api.js';
-const PARTS = ['spirit/element/search.js', 'spirit/element/rowForm.js'];
+const PARTS = ['spirit/element/search/script.js', 'spirit/element/rowForm/script.js'];
 
 function load(file) { PAGE_LOAD.runAsPage(file); }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
@@ -91,11 +91,11 @@ function world() {
     whyOf: function (e) { return 'the reason: ' + String(e && e.message); },
   };
   STANDS[ROW] = { create: function (box, id, added, detail) { const r = { box: box, id: id, added: added, detail: detail }; W.rows.push(r); return r; } };
-  STANDS['spirit/element/rowForm.js'] = { create: function (container, o) {
+  STANDS['spirit/element/rowForm/script.js'] = { create: function (container, o) {
     const f = { container: container, o: o, span: node('span'), button: node('button') };
     W.forms.push(f); return f;
   } };
-  STANDS['spirit/element/busyButton.js'] = { attach: function (button, o) { W.busy.push({ button: button, o: o }); return button; } };
+  STANDS['spirit/element/busyButton/script.js'] = { attach: function (button, o) { W.busy.push({ button: button, o: o }); return button; } };
   // The agent server's family: provider(args), each ask kept, answering W.answer.
   W.family = { provider: function (a) { W.asks.push(a); const r = W.answer; return r instanceof Error ? Promise.reject(r) : Promise.resolve(r || {}); } };
   global.window.spirit.requireScript = function (p) {
@@ -108,7 +108,7 @@ function world() {
 }
 const detail = { look: function (t) { return { icon: '🧠', name: t }; } };
 const E = {};
-// Ask pressed as the real rowForm presses it: its press, called on a click (spirit/element/rowForm.js).
+// Ask pressed as the real rowForm presses it: its press, called on a click (spirit/element/rowForm/script.js).
 const ask = function () { const f = W.forms[W.forms.length - 1]; return f && f.o && typeof f.o.press === 'function' ? f.o.press() : false; };
 
 test.run('the file runs on a window of its own, with stand-ins for its parts placed as the page places them', 0.2, function () {

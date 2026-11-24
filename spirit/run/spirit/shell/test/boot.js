@@ -71,9 +71,9 @@ test.run('it reads no component but its own: spirit\'s libraries, the sheets and
   const paths = (boot.match(/['"](?:spirit|shell)\/[\w/.-]+\.(?:js|css|json)['"]|['"]shell\.css['"]/g) || []).map(function (s) { return s.slice(1, -1); });
   const allowed = function (p) {
     return p === 'shell.css' || p === 'shell/face.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) ||
-      p === 'spirit/element/joinSteps.js' ||
+      p === 'spirit/element/joinSteps/script.js' ||
       // goal/G41.19: the file tree's row element, which spirit.js does not load.
-      p === 'spirit/element/search/file/row.js' ||
+      p === 'spirit/element/search/file/row/script.js' ||
       // THE ONE SHELL (goal/G49.4, box v15: "spirit/element/script.js becomes the hard-coded only shell there is in SpiritOS").
       p === 'spirit/element/script.js' ||
       // A FAMILY'S INTERFACE, which brings its data with it (goal/G47.1; Andy's rule: "every api.js requires it's companion

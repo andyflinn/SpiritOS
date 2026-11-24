@@ -3,8 +3,8 @@
 // spirit/run/spirit/app/grants/test/element.js
 // The tests of spirit/app/grants/element.js, and of no other module (spec: ./grants.md; goal/G41.5, G41.13, G41.14, G41.16,
 // G41.32, G43.24). Since G43.24 the app is a wrapper mounted the new shell's way: its Grants tab is the grants panel
-// (spirit/element/search/grant/grantsPanel.js) configured with the contacts and the panel's own grantsPanel.nodeGrants, both tested in
-// spirit/element/search/grant/test/grantsPanel.js; its Bundles tab is the bundle editor. The browser file runs in node on a BARE window
+// (spirit/element/search/grant/grantsPanel/script.js) configured with the contacts and the panel's own grantsPanel.nodeGrants, both tested in
+// spirit/element/search/grant/grantsPanel/test/script.js; its Bundles tab is the bundle editor. The browser file runs in node on a BARE window
 // (rule/26): each element is put on the page only once the app requires it, a stand-in that keeps what the app handed it.
 // Then the bundle lines of goal/G41.32, judged by real clicks in the Grants app as the shell app opens it, on /face.html of
 // a real node on a scratch copy of the tree's files. Neither Andy's node nor an agent's is touched.
@@ -51,7 +51,7 @@ function world(o) {
     bundleEditor: { create: function (host, x) { const e = { host: host, opts: x, args: arguments.length }; w.editors.push(e); return e; } },
     grantsPanel: { nodeGrants: NODE_GRANTS, create: function (host, cfg) { const p = { host: host, cfg: cfg || {}, args: arguments.length }; w.panels.push(p); return p; } },
   };
-  const FILES = { 'spirit/element/tabContainer.js': 'tabContainer', 'spirit/element/bundleEditor.js': 'bundleEditor', 'spirit/element/search/grant/grantsPanel.js': 'grantsPanel' };
+  const FILES = { 'spirit/element/tabContainer/script.js': 'tabContainer', 'spirit/element/bundleEditor/script.js': 'bundleEditor', 'spirit/element/search/grant/grantsPanel/script.js': 'grantsPanel' };
   // Where each stands under spirit.required.spirit.element, by its path: the grants panel in the grant search (goal/G43.32).
   const AT = { grantsPanel: ['search', 'grant', 'grantsPanel'] };
   // goal/G43.32: the parts stand where grants.js reads them, at spirit.required.spirit.element.<name>; a page's spirit
@@ -114,17 +114,17 @@ test.run('it holds nothing of the old shell: no shellCreateListSearch, no api.ui
 }, test.limit.quick);
 
 // a wrapper: it loads the panel, the tabs and the bundle editor, and nothing of its own (requirement 6)
-test.run('it requires spirit/element/search/grant/grantsPanel.js', 0.2, function () {
+test.run('it requires spirit/element/search/grant/grantsPanel/script.js', 0.2, function () {
   if (!U.w) return false;
-  return U.w.required.indexOf('spirit/element/search/grant/grantsPanel.js') !== -1 || false;
+  return U.w.required.indexOf('spirit/element/search/grant/grantsPanel/script.js') !== -1 || false;
 }, test.limit.quick);
-test.run('it requires spirit/element/tabContainer.js', 0.2, function () {
+test.run('it requires spirit/element/tabContainer/script.js', 0.2, function () {
   if (!U.w) return false;
-  return U.w.required.indexOf('spirit/element/tabContainer.js') !== -1 || false;
+  return U.w.required.indexOf('spirit/element/tabContainer/script.js') !== -1 || false;
 }, test.limit.quick);
-test.run('it requires spirit/element/bundleEditor.js', 0.2, function () {
+test.run('it requires spirit/element/bundleEditor/script.js', 0.2, function () {
   if (!U.w) return false;
-  return U.w.required.indexOf('spirit/element/bundleEditor.js') !== -1 || false;
+  return U.w.required.indexOf('spirit/element/bundleEditor/script.js') !== -1 || false;
 }, test.limit.quick);
 test.run('it requires nothing else', 0.2, function () {
   if (!U.w) return false;
@@ -234,7 +234,7 @@ test.run('destroyed before its elements load, nothing is made', 0.2, async funct
 }, test.limit.quick);
 test.run('when an element is refused it says Grants could not be loaded.', 0.2, async function () {
   if (!SRC) return false;
-  const no = world({ refuse: ['spirit/element/bundleEditor.js'] });
+  const no = world({ refuse: ['spirit/element/bundleEditor/script.js'] });
   const box3 = node('<container>');
   no.els.grants.create(box3, {});
   await settle();
@@ -513,7 +513,7 @@ test.run('the node refuses the delete of a server\'s bundle at the door, with a 
 test.run('a bundle editor with no tabContainer configured lists the bundles with no Edit or Delete either', 0.2, async function () {
   if (!B.page) return false;
   B.mark = B.chrome.heard.length;
-  await B.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/bundleEditor.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.cssText = "position:absolute;left:0;top:0;width:100%;height:300px;background:#fff;z-index:10000"; document.body.appendChild(h); window.spirit.required.spirit.element.bundleEditor.create(h, {}); return true; })');
+  await B.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/bundleEditor/script.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.cssText = "position:absolute;left:0;top:0;width:100%;height:300px;background:#fff;z-index:10000"; document.body.appendChild(h); window.spirit.required.spirit.element.bundleEditor.create(h, {}); return true; })');
   await waitFor(function () { return B.chrome.evaluate('(function () { ' + LEAF + ' return !!leaf("zzOne", "#zzAgentLike"); }())'); }, 5000);
   const noBtn = await B.chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzAgentLike button")).filter(function (b) { return /^(Edit|Delete)$/.test(b.textContent.trim()); }).length');
   return noBtn === 0 || false;

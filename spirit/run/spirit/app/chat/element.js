@@ -9,7 +9,7 @@
 // The chat server is faceless and knows keys only; this element is everything a person sees. It asks its server through
 // the chat branch spirit.requireScript binds (spirit.chat.<verb>), and hears every kept line through the chat branch's cache
 // (spirit.required.spirit.data.chat.data); nothing is handed to it (goal/G43.24). It builds with the shell's elements: the peer pane is the contact
-// search (spirit/element/search/contact.js) in pane face, every name a contactLabel.
+// search (spirit/element/search/contact/script.js) in pane face, every name a contactLabel.
 //
 // THREE PANES (the objects pane on the right is empty until file transfer, goal/G4.12):
 //   LEFT, the contacts (G4.10, goal/G29.9): every contact the contact family's cache keeps, less this node and every
@@ -54,7 +54,7 @@ var chParts = {};
 function chEl(id) { return chParts[id] || null; }
 // THE ICON ELEMENT, LOADED BY THE APP ITSELF (goal/G41.23, rule/26): through the one loader, once.
 var chIconPart = window.spirit && typeof window.spirit.requireScript === 'function'
-  ? Promise.resolve(keepAnswer('spirit/element/icon.js')).then(null, function () { /* the arrows stay text */ })
+  ? Promise.resolve(keepAnswer('spirit/element/icon/script.js')).then(null, function () { /* the arrows stay text */ })
   : Promise.resolve();
 // THE INTERFACES IT USES, IT LOADS ITSELF (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING
 // NEEDS"; spirit/test/spirit-sibling-browser.js): chat's own, the node's (its card) and contacts' (the peers it lists), and
@@ -380,7 +380,7 @@ function chApplyStyle() {
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the contact selector (its peer pane) and the contact label, before it
 // mounts, so no shell has to have put them on the page.
-var chElements = Promise.all(['spirit/element/search/contact.js', 'spirit/element/contactLabel.js', 'spirit/element/fieldInput.js'].map(function (p) { return keepAnswer(p); }));
+var chElements = Promise.all(['spirit/element/search/contact/script.js', 'spirit/element/contactLabel/script.js', 'spirit/element/fieldInput/script.js'].map(function (p) { return keepAnswer(p); }));
 
 // AN ELEMENT (goal/G43.31): made in the pane the app selector's tile hands it; no old shell's activateApp.
 function chCreate(container) {
@@ -505,10 +505,10 @@ function chMount(container) {
       var paneEl = chEl(paneId);
       var divider = chEl(dividerId);
       // goal/G41.23: the arrow is an icon (Andy: "this element will replace icons painting all shell elements and apps."),
-      // through spirit/element/icon.js once it has loaded (chIconPart), its glyph as text until then.
+      // through spirit/element/icon/script.js once it has loaded (chIconPart), its glyph as text until then.
       function paint() {
         var glyph = paneEl.hidden ? foldedGlyph : openGlyph;
-        var I = window.spirit && window.spirit.required && ANSWER['spirit/element/icon.js'];
+        var I = window.spirit && window.spirit.required && ANSWER['spirit/element/icon/script.js'];
         btn.textContent = '';
         if (I && typeof I.create === 'function') I.create(btn, { glyph: glyph }); else btn.textContent = glyph;
       }
@@ -553,7 +553,7 @@ function chMount(container) {
     var left = document.createElement('div');
     left.className = 'fill';
     chEl('ch-left').appendChild(left);
-    chPane = ANSWER['spirit/element/search/contact.js'].create(left, {
+    chPane = ANSWER['spirit/element/search/contact/script.js'].create(left, {
       face: 'pane', filters: [CH_OFFERED],
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
       statuses: [{ status: 'none' }, { status: 'unanswered', glyph: '⌛' }],
@@ -573,7 +573,7 @@ function chMount(container) {
     // hurt"), each by its time.
     var chSearchRows = null;
     function chSearchRow(row) {
-      var R = ANSWER['spirit/element/row.js'];
+      var R = ANSWER['spirit/element/row/script.js'];
       var l = row || {};
       chSearchRows = chSearchRows || R.index(function () {});
       return R.create({
@@ -586,10 +586,10 @@ function chMount(container) {
         actions: [],
       });
     }
-    Promise.all([keepAnswer('spirit/element/search.js'), keepAnswer('spirit/element/row.js'), keepAnswer('spirit/app/chat/api.js')]).then(function () {
+    Promise.all([keepAnswer('spirit/element/search/script.js'), keepAnswer('spirit/element/row/script.js'), keepAnswer('spirit/app/chat/api.js')]).then(function () {
       var C = chData();
       if (!C) return;
-      chSearch = ANSWER['spirit/element/search.js'].create(chEl('ch-search'), {
+      chSearch = ANSWER['spirit/element/search/script.js'].create(chEl('ch-search'), {
         data: C.branch,
         // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): chat.search for the open peer.
         search: function (body) {

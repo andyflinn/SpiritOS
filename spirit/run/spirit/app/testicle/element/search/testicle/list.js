@@ -30,7 +30,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, the two selectors, testicle's interface and its cache manager.
-  var parts = Promise.all(['spirit/element/search.js', 'spirit/app/testicle/element/search/testicle/row.js', 'spirit/element/search/file.js',
+  var parts = Promise.all(['spirit/element/search/script.js', 'spirit/app/testicle/element/search/testicle/row.js', 'spirit/element/search/file/script.js',
     'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js', 'spirit/app/testicle/words.js'].map(function (p) { return S.requireScript(p); }).concat([keepAnswer('spirit/app/testicle/api.js')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the tests could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});

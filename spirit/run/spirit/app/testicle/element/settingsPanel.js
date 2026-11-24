@@ -22,7 +22,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the toggle row and testicle's interface.
-  var parts = Promise.all(['spirit/element/search/app/rowFormToggle.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.requireScript(p); }));
+  var parts = Promise.all(['spirit/element/search/app/rowFormToggle/script.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.requireScript(p); }));
   // A NODE WITH NO TESTICLE refuses its interface: the panel says so; the refusal is never left unhandled.
   parts.catch(function () {});
 

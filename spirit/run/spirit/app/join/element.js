@@ -6,7 +6,7 @@
 //
 //   spirit.required.spirit.app.join.element.create(container, {}) -> { destroy() }
 //
-// A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/info/element.js is: it loads joinList (spirit/element/joinList.js),
+// A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/info/element.js is: it loads joinList (spirit/element/joinList/script.js),
 // which holds all of Join, and mounts it. Its steps are its manifest's, join.json.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -18,7 +18,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = keepAnswer('spirit/element/joinList.js');
+  var parts = keepAnswer('spirit/element/joinList/script.js');
 
   function create(container) {
     var gone = false;
@@ -26,7 +26,7 @@
     container.innerHTML = '';
     parts.then(function () {
       if (gone) return;
-      made = ANSWER['spirit/element/joinList.js'].create(container, {});
+      made = ANSWER['spirit/element/joinList/script.js'].create(container, {});
     }, function () { if (!gone) container.textContent = 'Join could not be loaded.'; });
     return {
       destroy: function () {

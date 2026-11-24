@@ -5,7 +5,7 @@
 //
 //   spirit.required.spirit.app.contact.element.create(container, { open }) -> { destroy() }; open, the mounter's panel stack's (goal/G43.18)
 //
-// What it draws: the one contact list (spirit/element/search/contact/list.js, below), which does its own asking
+// What it draws: the one contact list (spirit/element/search/contact/list/script.js, below), which does its own asking
 // and whose rows open a person's or a relay's details, and the Add a relay fold, whose one call is relay.add. Nothing
 // else here calls the node.
 
@@ -27,7 +27,7 @@ var contactsEscapeHtml = spirit.escapeHtml;
 // NO CHOICE ABOUT STRANGERS (goal/G43.17): the node ignores them always, and keeps their id only in its log. Andy: "so NO,
 // we don't need a "held" "status"".
 
-// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, spirit/element/search/contact/list.js,
+// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, spirit/element/search/contact/list/script.js,
 // which Join draws too. Its rows are contactElements and keep themselves current; this app paints no presence. The
 // book's contactSelector pane and the Find someone on the network fold (peerFind) stood here and are deleted.
 var contactsList = null;
@@ -61,7 +61,7 @@ function contactsRefresh() {
 // through spirit.requireScript, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
 // replace icons painting all shell elements and apps."), so the icon element comes with the list.
 // And the panel stack, for a contact's or a relay's details when the mounter hands none (goal/G43.18).
-var contactsParts = Promise.all([keepAnswer('spirit/element/search/contact/list.js'), keepAnswer('spirit/element/icon.js'), keepAnswer('spirit/element/panel.js'), keepAnswer('spirit/element/fieldInput.js')]);
+var contactsParts = Promise.all([keepAnswer('spirit/element/search/contact/list/script.js'), keepAnswer('spirit/element/icon/script.js'), keepAnswer('spirit/element/panel/script.js'), keepAnswer('spirit/element/fieldInput/script.js')]);
 
 function contactCreate(container, options) {
     var gone = false;
@@ -99,9 +99,9 @@ function contactCreate(container, options) {
     // relay peer, so the list above finds it. The rule on the address is the wire's (hub.assertRelayUrl), asked here so
     // a typo costs no round trip.
     // The private label holds to the label rule (goal/G47.1, -browser: every input has a maxlength).
-    ANSWER['spirit/element/fieldInput.js'].attach(document.getElementById('contacts-relay-label'), 'spirit.type.string.label');
+    ANSWER['spirit/element/fieldInput/script.js'].attach(document.getElementById('contacts-relay-label'), 'spirit.type.string.label');
     // The address too, a line (fieldRules' LINE_MAX_BYTES): its maxlength and its own listener, so it is never deaf.
-    ANSWER['spirit/element/fieldInput.js'].attach(document.getElementById('contacts-relay-url'), 'spirit.type.string.URL');
+    ANSWER['spirit/element/fieldInput/script.js'].attach(document.getElementById('contacts-relay-url'), 'spirit.type.string.URL');
     document.getElementById('contacts-relay-add').addEventListener('click', function () {
       var out = document.getElementById('contacts-relay-add-out');
       var label = String(document.getElementById('contacts-relay-label').value || '').trim();
@@ -125,8 +125,8 @@ function contactCreate(container, options) {
     var book = document.getElementById('contacts-book');
     contactsParts.then(function () {
       if (gone) return;
-      if (typeof o.open !== 'function') stack = ANSWER['spirit/element/panel.js'].create(container, container.firstElementChild);
-      contactsList = ANSWER['spirit/element/search/contact/list.js'].create(book, {
+      if (typeof o.open !== 'function') stack = ANSWER['spirit/element/panel/script.js'].create(container, container.firstElementChild);
+      contactsList = ANSWER['spirit/element/search/contact/list/script.js'].create(book, {
         open: openOver,
         say: contactsStatus,
         empty: 'Nobody matches: the network is searched as you type.',

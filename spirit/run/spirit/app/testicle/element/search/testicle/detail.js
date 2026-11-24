@@ -22,7 +22,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its row, testicle's interface and its cache manager.
-  var parts = Promise.all(['spirit/app/testicle/element/search/testicle/row.js', 'spirit/app/testicle/api.js', 'spirit/element/rowForm.js', 'spirit/element/fieldInput.js']
+  var parts = Promise.all(['spirit/app/testicle/element/search/testicle/row.js', 'spirit/app/testicle/api.js', 'spirit/element/rowForm/script.js', 'spirit/element/fieldInput/script.js']
     .map(function (p) { return S.requireScript(p); }).concat([keepAnswer('spirit/app/testicle/api.js')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the history could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});
@@ -47,7 +47,7 @@
     // Title Bubble: presented as Row Form with a run button on the right side, like the ones in app for one-shot jobs - row 2:
     // rowForm for title change - row 3: script file name - fow 4: suite file name then the list"): row 1 the run form, its icon
     // 🏃 (a pictograph only in the icon element, the general rules), the title its line and run its button, as the app's task
-    // row (spirit/element/monitor/task.js) has its name and Run; row 2 the title form, an input bounded by the description
+    // row (spirit/element/monitor/task/script.js) has its name and Run; row 2 the title form, an input bounded by the description
     // rule ("new titles and the corresponding ui INPUT must be bounded by DESCRIPTION_MAX_BYTES"), its press asking
     // testicle.title; what a press refused is said below the bubbles.
     // THE SCRIPT AND THE SUITE EACH A ROW ON TOP, AND NONE OF THE THREE AS A COLUMN (Andy: "the list does NOT need to have a
@@ -111,7 +111,7 @@
       run.button.title = 'run this suite now';
       run.span.appendChild(titleLine);
       // A FIELD CHANGE'S ROW (Andy: "a row form for a field change should have: ✏️ (pinned to left edge) "text" [INPUT] [change
-      // button]"), as the app's label row (spirit/element/search/app/changeAppLabel.js) is.
+      // button]"), as the app's label row (spirit/element/search/app/changeAppLabel/script.js) is.
       var named = RF.create(container.querySelector('[data-history="titleForm"]'), { icon: '✏️', button: 'Change', press: rename });
       var input = document.createElement('input');
       input.type = 'text';

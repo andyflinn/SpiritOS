@@ -83,8 +83,8 @@ Box v20-v23: *"DEBUG.js will, if the generator implied by the URL does NOT exist
 implied by the URL, Leaving \"DEBUG/\" out"*, so an element's own test can open several pages of its own,
 `./test/<element>-<case>.html`.
 
-- `/DEBUG/spirit/element/test/workBench.md` answers 200 with that file as it is.
-- Only a file inside a `test/` folder: `/DEBUG/spirit/element/workBench.js` (the element's own script) and
+- `/DEBUG/spirit/element/workBench/test/script.md` answers 200 with that file as it is.
+- Only a file inside a `test/` folder: `/DEBUG/spirit/element/workBench/script.js` (the element's own script) and
   `/DEBUG/spirit/server/serveCommon.js` are refused.
 - Refused: no such generator and no such file (`/DEBUG/spirit/element/test/noSuchPage.html`); a test file asked with a
   forwarded-from header.

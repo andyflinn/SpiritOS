@@ -672,7 +672,7 @@ test.run('the origin\'s platform/README.md then lists every platform folder the 
 
 // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
 // ITS STEPS ARE ITS JOB'S PROGRESS (goal/G47.1; Andy: "if \"one-shot-script-apps\" (node:run:true) actually publish what
-// they're doing, like publishData should"; the task row, spirit/element/monitor/task.js, shows the text its job last
+// they're doing, like publishData should"; the task row, spirit/element/monitor/task/script.js, shows the text its job last
 // published): each step published as spirit.processJob.progress(done, total, text), in order, four steps in all.
 test.run('the whole run publishes its four steps as its job\'s progress, in order, each with words', 0.2, function () {
   if (!WR.ready || !w) return false;

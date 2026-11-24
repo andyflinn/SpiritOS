@@ -27,7 +27,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the tables' shared element, whose helpers it uses.
   keepAnswer('spirit/app/agent/element/table/tableElement.js');
   // And fieldInput, which holds a name or a description field to its rule (goal/G47.1: without it the label took 4096 bytes).
-  keepAnswer('spirit/element/fieldInput.js');
+  keepAnswer('spirit/element/fieldInput/script.js');
   var made = 0;
   function A() { return ANSWER['spirit/app/agent/element/table/tableElement.js']; }
   function esc(s) { return A().esc(s); }
@@ -42,7 +42,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   function D() { return window.spirit.required.spirit.data; }
   var STRETCH = 'width:100%;box-sizing:border-box';
   // EVERY ROW'S EDITOR OPENS ON ITS ICON (Andy: "the detail panel's first input will be the icon i choose for that row"),
-  // chosen with the shell's icon selector (spirit/element/search/icon.js).
+  // chosen with the shell's icon selector (spirit/element/search/icon/script.js).
   var ICON_FIELD = { field: 'icon', label: 'Icon', kind: 'icon' };
 
   function createRow(container, options) {
@@ -138,7 +138,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
       // THE CODE FIELD TAKES THE FREE HEIGHT (Andy: "the codeMirror pane in details must not be allowed to move the
       // pane-dividers of workBench. it's width must be constrained by the middle workbench pane, it is allowed to take up
       // free vertical space"): a fill box whose CodeMirror takes the height left and scrolls inside it (shell.css
-      // .text-view.fill). Its width is the centre's, which the workBench holds (spirit/element/workBench.js).
+      // .text-view.fill). Its width is the centre's, which the workBench holds (spirit/element/workBench/script.js).
       // ITS BOX KEEPS WHAT IT HOLDS INSIDE IT (goal/G47.1, -browser: the box declares overflow not visible): it scrolls when the pane is short.
       container.innerHTML = '<div class="fill" style="overflow:auto">' + head() +
         simple.map(function (f) {
@@ -152,7 +152,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
         var el = input(f);
         // Every other typed field, a URL, a secret, a list, is a line (fieldRules' LINE_MAX_BYTES; goal/G47.1, -browser: every
         // input has a maxlength, and stops at it).
-        var FI = ANSWER['spirit/element/fieldInput.js'];
+        var FI = ANSWER['spirit/element/fieldInput/script.js'];
         // Each field held to its type (goal/G48.4, box v22): a name a label, a description a description.
         if (f.kind === 'name' && FI) FI.attach(el, 'spirit.type.string.label');
         else if (f.kind === 'description' && FI) FI.attach(el, 'spirit.type.string.description');
@@ -166,7 +166,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
         if (el && f.kind !== 'pick' && f.kind !== 'icon' && f.kind !== 'bundle' && f.kind !== 'code') el.addEventListener('change', save);
         // The row's icon, or its table's while it has none.
         if (f.kind === 'icon') {
-          needs(['spirit/element/search/icon.js']).then(function () {
+          needs(['spirit/element/search/icon/script.js']).then(function () {
             if (gone || !el.isConnected) return;
             icons[f.field] = window.spirit.required.spirit.element.search.icon.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
             if (icons[f.field] && typeof icons[f.field].addEventListener === 'function') icons[f.field].addEventListener('change', save);
@@ -194,7 +194,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
             }(f.pick, row[f.field]));
           }
           var current = other ? nameOf(Object.assign({ key: row[f.field] }, other), columnsOf(f.pick)) : '';
-          needs(['spirit/element/search.js', 'spirit/element/icon.js']).then(function () {
+          needs(['spirit/element/search/script.js', 'spirit/element/icon/script.js']).then(function () {
             if (gone) return;
             picks[f.field] = search(el, { table: f.pick }, Object.assign({
               face: 'dropdown', placeholder: current || 'Pick a ' + f.pick, pick: function () { save(); },
@@ -219,7 +219,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
         // A BUNDLE FIELD (goal/G41.21; Andy, box v17: "sets it with a bundleSelector in dropdown mode"): the shell's bundle
         // selector, loaded here (rule/26); only a new pick is saved, as for a pick field.
         if (f.kind === 'bundle') {
-          needs(['spirit/element/search/bundle.js']).then(function () {
+          needs(['spirit/element/search/bundle/script.js']).then(function () {
             if (gone || !(window.spirit.required.spirit.element.search && window.spirit.required.spirit.element.search.bundle && window.spirit.required.spirit.element.search.bundle.create)) return;
             // The bundle by its label, as the node has it (Andy: "why would the bundle picker show \"bundle 2\" for it's
             // selection instead of the fucking label?"); its number only once the node has no such bundle.
@@ -248,7 +248,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
       // shell's arming button, loaded here (rule/26); the first press arms, the second deletes.
       if (adding) { container.querySelector('#' + pre + 'addnew').addEventListener('click', addNew); return; }
       var del = container.querySelector('#' + pre + 'delete');
-      needs(['spirit/element/armingButton.js']).then(function () {
+      needs(['spirit/element/armingButton/script.js']).then(function () {
         if (gone || !del.isConnected || !window.spirit.required.spirit.element.armingButton) return;
         window.spirit.required.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove });
       });

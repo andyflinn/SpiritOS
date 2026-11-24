@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/app/testicle/element/search/testicle/row.js
 // A TEST ROW, AN ELEMENT (goal/G47.1, the search cycle): one row of testicle's test table as ./list.js and
-// ./detail.js draw it, on the shared row element (spirit/element/row.js).
+// ./detail.js draw it, on the shared row element (spirit/element/row/script.js).
 //
 //   spirit.required.spirit.app.testicle.element.search.testicle.row.create(row) -> the row element
 //
@@ -24,7 +24,7 @@
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
-  keepAnswer('spirit/element/row.js');
+  keepAnswer('spirit/element/row/script.js');
   // A result's icon worded by testicle's words (goal/G47.1; ../../../words.js), loaded as this file runs (rule/26).
   keepAnswer('spirit/app/testicle/words.js');
 
@@ -34,7 +34,7 @@
 
   var index = null;
   function create(row) {
-    var R = ANSWER['spirit/element/row.js'];
+    var R = ANSWER['spirit/element/row/script.js'];
     var r = row || {};
     index = index || R.index(function () {});
     return R.create({

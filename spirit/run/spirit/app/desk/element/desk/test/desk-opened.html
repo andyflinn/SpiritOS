@@ -33,7 +33,7 @@ var api = {
 function button(name) { return document.querySelector('#desk-list button[data-filter="' + name + '"]'); }
 function on(name) { var b = button(name); return !!b && /font-weight:\s*bold/.test(b.getAttribute('style') || ''); }
 // THE ROWS THAT SHOW, NOT THE ROWS KEPT (goal/G47.1, the cycle "the search keeps its rows": "a filter or a selector hides
-// and shows rows"; spirit/element/search.js keep): a row a filter leaves out stays in the table, hidden, so the list's
+// and shows rows"; spirit/element/search/script.js keep): a row a filter leaves out stays in the table, hidden, so the list's
 // whole text would still name it. Read the rows not hidden alone.
 function shownText(list) {
   if (!list) return '';

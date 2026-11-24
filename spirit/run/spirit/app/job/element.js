@@ -6,7 +6,7 @@
 //   spirit.required.spirit.app.job.element.create(container, { open }) -> { destroy() }
 //
 // A WRAPPER (Andy: "a wrapper for separate spirit/element/ files"): it only mounts. What it draws is the job search,
-// spirit/element/search/job.js (goal/G43.32), whose list's rows open the job's detail over it; it loads that and draws it
+// spirit/element/search/job/script.js (goal/G43.32), whose list's rows open the job's detail over it; it loads that and draws it
 // once it is here, so a tile pressed while it is on its way waits for it. The app selector's tile opens it, handing its
 // stack's open.
 (function () {
@@ -18,13 +18,13 @@
     return a;
   }
   var S = window.spirit = window.spirit || {};
-  var face = keepAnswer('spirit/element/search/job.js');
+  var face = keepAnswer('spirit/element/search/job/script.js');
   // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
   module.exports = {
     create: function (container, options) {
       var made = null;
       var gone = false;
-      Promise.resolve(face).then(function () { if (!gone) made = ANSWER['spirit/element/search/job.js'].create(container, { open: (options || {}).open }); });
+      Promise.resolve(face).then(function () { if (!gone) made = ANSWER['spirit/element/search/job/script.js'].create(container, { open: (options || {}).open }); });
       return { destroy: function () { gone = true; if (made) made.destroy(); made = null; } };
     },
   };

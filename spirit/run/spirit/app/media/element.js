@@ -28,13 +28,13 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([keepAnswer('spirit/element/fstat.js'), keepAnswer('spirit/element/search/file.js'), keepAnswer('spirit/element/icon.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/fstat/script.js'), keepAnswer('spirit/element/search/file/script.js'), keepAnswer('spirit/element/icon/script.js')]);
 
   function tagFor(kind) { return kind === 'audio' ? 'audio' : kind === 'video' ? 'video' : 'img'; }
 
   // ONE FILE, FILLING ITS BOX.
   function view(host, path) {
-    var FS = ANSWER['spirit/element/fstat.js'];
+    var FS = ANSWER['spirit/element/fstat/script.js'];
     var body = host;
     var mime = FS.mimeOf(path);
     var tag = tagFor(FS.kindOf(mime));
@@ -106,7 +106,7 @@
     container.appendChild(box);
     parts.then(function () {
       if (gone) return;
-      var FS = ANSWER['spirit/element/fstat.js'];
+      var FS = ANSWER['spirit/element/fstat/script.js'];
       // THE FILE PICKER, the files list as a dropdown showing only what it plays, and under it the file
       // picked; a pick drops the one shown before. The picker sits in a row of rowForm's bubble (the box: "That row is a bubble
       // of the same kind as rowForm uses"), the viewer's icon first; it has nothing to press, so no button, and it folds as
@@ -114,7 +114,7 @@
       // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var row = document.createElement('div');
       row.className = 'shell-bubble shell-row-form';
-      ANSWER['spirit/element/icon.js'].create(row, { glyph: '🎬' });
+      ANSWER['spirit/element/icon/script.js'].create(row, { glyph: '🎬' });
       var pick = document.createElement('span');
       pick.className = 'shell-row-form-span';
       row.appendChild(pick);
@@ -122,7 +122,7 @@
       area.className = 'fill';
       box.appendChild(row);
       box.appendChild(area);
-      picker = ANSWER['spirit/element/search/file.js'].create(pick, {
+      picker = ANSWER['spirit/element/search/file/script.js'].create(pick, {
         face: 'dropdown',
         placeholder: 'choose a picture, song or video…',
         // Its field names no file: the title bar does.

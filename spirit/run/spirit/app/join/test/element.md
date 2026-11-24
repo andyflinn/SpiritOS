@@ -1,7 +1,7 @@
 # spirit/app/join/element.js
 
 The Join app (goal/G43.26; Andy: *"JOIN IS A FUCKING APP"*): a wrapper mounted the new shell's way, as Info is. All of
-Join is joinList (`spirit/element/joinList.js`, tested in `spirit/element/test/joinList.js`, which draws the steps); its
+Join is joinList (`spirit/element/joinList/script.js`, tested in `spirit/element/joinList/test/script.js`, which draws the steps); its
 steps are its manifest's, `join.json`.
 
     spirit.required.spirit.app.join.element.create(container, {}) -> { destroy() }
@@ -13,7 +13,7 @@ Its test is `./join.js`, on a bare window: joinList is a stand-in put on the pag
 - **Icons are glyphs** (goal/G41.1): `join.json` names every step's icon as the glyph itself, and its own icon
   (`identity.icon`) too; no key into a table, and join.js names no icon table (`iconIndex`, `ICON`).
 - It places itself at `spirit.required.spirit.app.join.element`; no `spirit.shell.activateApp`, the old shell's way.
-- It requires `spirit/element/joinList.js` and nothing else, empties its container and makes joinList in it.
+- It requires `spirit/element/joinList/script.js` and nothing else, empties its container and makes joinList in it.
 - Destroy destroys joinList and empties its container; destroyed before joinList loads, nothing is made.
 - joinList refused, it says "Join could not be loaded."
 

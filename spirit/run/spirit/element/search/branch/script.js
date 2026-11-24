@@ -1,0 +1,73 @@
+'use strict';
+// spirit/run/spirit/element/search/branch/script.js
+// ONE SHELL ELEMENT: the branch selector, a bundle's branches picked or listed (goal/G41.14; Andy, box: "branchSelector.js
+// and branchSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting branch rows"). Its
+// contract and its test: ./test/script.md and ./test/branch.js.
+//
+// A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/branch/list/script.js, WHICH IT LOADS ITSELF (rule/26: "every
+// shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
+// the family selector as its filter, the bundle's branches (auth.branch search) and each row
+// (branch/row.js).
+//
+//   spirit.required.spirit.element.search.branch.create(container, options) -> root
+//     root.value   the chosen branch's id, a number, '' while none is
+//     root.row     the chosen branch, { id, bundle, family, verb }, null while none is
+//     one bubbling `change` on a pick; refresh() asks again
+//     options.bundle     the bundle whose branches it lists
+//     options.face       'pane' is the list itself; the default is the dropdown
+//     options.columns    the list's fields, of family, verb and delete
+//     options.placeholder, options.all, options.empty   handed to the list
+(function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+  function createBranchSelector(options) {
+    options = options || {};
+    var isPane = options.face === 'pane';
+    var root = document.createElement('div');
+    // A PANE FILLS THE BOX IT IS GIVEN, as the contact selector's (rule/16: "a box that states its size: class fill ... inside a
+    // pane that fills its app"), so its list's size is its pane's, not its rows' (search-child-browser.js).
+    root.className = 'branch-selector ' + (isPane ? 'branch-selector-face-pane fill' : 'branch-selector-face-dropdown') +
+      (options.className ? ' ' + options.className : '');
+    // Its box declares its constraint (goal/G47.1, -browser): what it holds stays inside; a dropdown's list is a popover, above it.
+    if (root.style) root.style.overflow = 'hidden';
+    root.value = '';
+    root.row = null;
+    var made = null;
+    var gone = false;
+
+    function pick(row) {
+      root.value = row && row.id !== undefined ? Number(row.id) : '';
+      root.row = row || null;
+      root.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
+    Promise.resolve(window.spirit.requireScript ? keepAnswer('spirit/element/search/branch/list/script.js') : null).then(function () {
+      if (gone) return;
+      made = ANSWER['spirit/element/search/branch/list/script.js'].create(root, {
+        bundle: options.bundle,
+        face: isPane ? 'pane' : 'dropdown',
+        placeholder: isPane ? '' : (options.placeholder || 'choose a branch…'),
+        all: isPane ? undefined : options.all,
+        columns: options.columns,
+        empty: options.empty,
+        pick: function (row) { pick(row); },
+      });
+    });
+
+    root.refresh = function () { if (made) made.refresh(); };
+    // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go), and it takes itself out of its container, which it leaves empty (goal/G41.19, box v23).
+    root.destroy = function () { gone = true; if (made) made.destroy(); made = null; if (root.parentNode) root.parentNode.removeChild(root); };
+    return root;
+  }
+
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
+  // options) appends the control to the container and answers it.
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: function (container, options) { var root = createBranchSelector(options); container.appendChild(root); return root; } };
+})();

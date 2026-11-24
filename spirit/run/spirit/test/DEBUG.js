@@ -497,7 +497,7 @@ test.run('a request carrying Forwarded is refused', 0.8, async function () {
 // inside a test/ folder: an element's own test pages, ./test/<element>-<case>.html.
 test.run('a file inside a test/ folder is served as it is', 0.2, async function () {
   if (!node || !node.up) return false;
-  PAGE_FILE = 'spirit/element/test/workBench.md';
+  PAGE_FILE = 'spirit/element/workBench/test/script.md';
   own = fs.readFileSync(path.join(RUN, PAGE_FILE), 'utf8');
   // /PAGE_FILE, the node, DEBUG on: the file itself.
   served = await ask('127.0.0.1', N, '/DEBUG/' + PAGE_FILE);
@@ -506,7 +506,7 @@ test.run('a file inside a test/ folder is served as it is', 0.2, async function 
 
 test.run('a file outside a test/ folder, the element\'s own script, is refused', 0.8, async function () {
   if (!node || !node.up) return false;
-  rd = await refused('/DEBUG/spirit/element/workBench.js', {});
+  rd = await refused('/DEBUG/spirit/element/workBench/script.js', {});
   return (rd.fine) ? true : false;
 }, test.limit.quick);
 

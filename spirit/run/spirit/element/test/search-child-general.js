@@ -1,6 +1,6 @@
 'use strict';
 // spirit/run/spirit/element/test/search-child-general.js [<script> ...]
-// THE -general GENERAL TEST BESIDE spirit/element/search.js (goal/G47.1, box v94, 2: "there will be, from now on only 3 types
+// THE -general GENERAL TEST BESIDE spirit/element/search/script.js (goal/G47.1, box v94, 2: "there will be, from now on only 3 types
 // of general tests, at any level of the tree", "existing general tests fold into the appropriate of the 3 new general test
 // name-formats"). Its contract: ./search-child-general.md. Its parts, each the test it was, every title kept, both read from
 // the files: folderRules, listRowsOwnTheirPanel. No argument, each part judges all it applies to; each argument, that one, reported for it.
@@ -24,9 +24,9 @@ function folderRules(ARGS) {
 // EVERY SEARCH, THE SAME SHAPE (goal/G43.32; spec: ./search-child-folderRules.md). Andy: "cw, we certainly want, in this
 // item, uniformity, in the search elements and their folders, contain list, row an detail elements.", "all the others
 // should adhere to the directory structure, as implied by MANY design decisions.". A -child- general test beside
-// spirit/element/search.js (../../test/TEST_SYSTEM.md): it judges search.js and search/ and below.
+// spirit/element/search/script.js (../../test/TEST_SYSTEM.md): it judges search.js and search/ and below.
 //
-//   node spirit/element/test/search-child-folderRules.js spirit/element/search/contact.js     the search the file is of
+//   node spirit/element/test/search-child-folderRules.js spirit/element/search/contact/script.js     the search the file is of
 //   node spirit/element/test/search-child-folderRules.js                                      every search
 //
 // Judged on disc, from the files and their code with comments left out. What each element places on a page is judged by
@@ -76,7 +76,7 @@ function eachSearch(broken) {
 test.run('there are eight or more searches, the values search not counted', 0.2, function () {
   return NAMES.length >= 8 || false;
 }, test.limit.quick);
-test.run('the job branch has its search, spirit/element/search/job.js', 0.4, function () {
+test.run('the job branch has its search, spirit/element/search/job/script.js', 0.4, function () {
   return NAMES.indexOf('job') !== -1 || false;
 }, test.limit.quick);
 test.run('the job list and its detail no longer stand in spirit/element/', 0.4, function () {
@@ -152,7 +152,7 @@ function listRowsOwnTheirPanel(ARGS) {
 // and "wsl? can you please add such a test now?". What cw fixed at 19329f1d: a second item's details, mounted in a layer
 // of their own, found their parts with document.getElementById and drew into the first item's hidden layer. The rule:
 // an element finds its parts inside its own container, never by id across the page.
-// Its name is its reach (../../../test/TEST_SYSTEM.md): a -child- test beside spirit/element/search.js judges search.js
+// Its name is its reach (../../../test/TEST_SYSTEM.md): a -child- test beside spirit/element/search/script.js judges search.js
 // and every module in spirit/element/search/ and below. Judged in the code, comments left out: no document.getElementById,
 // document.querySelector, document.querySelectorAll or document.getElementsBy*: each one named, by file and line, in its one red.
 //
@@ -166,7 +166,7 @@ const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const arg = String(ARGS[0] || '');
-const MODULE = 'spirit/element/search.js';
+const MODULE = 'spirit/element/search/script.js';
 const BELOW = 'spirit/element/search/';
 
 // The code with its comments blanked, line breaks kept, so a line number stays a line number. Strings are kept whole.

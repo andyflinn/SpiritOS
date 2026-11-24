@@ -21,10 +21,10 @@
   if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/icons/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/icon/row.js', 'spirit/element/rowForm.js',
+  var parts = Promise.all(['spirit/element/search/script.js', 'spirit/element/search/icon/row/script.js', 'spirit/element/rowForm/script.js',
     // Its own cache manager by its own path, beside it: asked by name, a page whose app list has not yet reached icons (or
     // holds it switched off) looks for spirit/icons/data.js, which is no file (wsl's verify, the general rules' page).
-    'spirit/element/fieldInput.js', 'spirit/element/icon.js', 'spirit/element/panel.js', 'spirit/element/armingButton.js', 'spirit/app/icons/data.js'].map(function (p) { return S.requireScript(p); }));
+    'spirit/element/fieldInput/script.js', 'spirit/element/icon/script.js', 'spirit/element/panel/script.js', 'spirit/element/armingButton/script.js', 'spirit/app/icons/data.js'].map(function (p) { return S.requireScript(p); }));
 
   function esc(s) { return S.escapeHtml ? S.escapeHtml(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function words(text) { return String(text || '').split(',').map(function (w) { return w.trim(); }).filter(Boolean); }
@@ -74,7 +74,7 @@
             function (e) { said.textContent = 'not saved: ' + ((e && e.message) || e); });
         });
         // REMOVE ARMS FIRST (Andy: "icon detail, delete should be an armingButton."): the first press arms it and writes
-        // nothing, the second removes the icon, a click elsewhere disarms it (spirit/element/armingButton.js).
+        // nothing, the second removes the icon, a click elsewhere disarms it (spirit/element/armingButton/script.js).
         S.required.spirit.element.armingButton.attach(host.querySelector('[data-icons="remove"]'), { label: 'Remove this icon', run: function () {
           icon({ op: 'delete', glyph: glyph }).then(function (r) { if (r && r.deleted) close(); else said.textContent = 'not removed'; },
             function (e) { said.textContent = 'not removed: ' + ((e && e.message) || e); });

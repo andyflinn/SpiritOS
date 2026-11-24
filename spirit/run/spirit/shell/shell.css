@@ -484,7 +484,7 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 #app-content button.desk-design-end:not([data-armed]) { background: #c00; color: #fff; font-weight: bold; box-shadow: inset 0 0 0 2px #600; }
 #app-content button.desk-design-start:not([data-armed]) { background: #1a7f37; color: #fff; font-weight: bold; box-shadow: inset 0 0 0 2px #0b4a1e; }
 
-/* THE ICON ELEMENT (goal/G41.23; spirit/element/icon.js; Andy: "it centers the glyph, in a square box, the size of which
+/* THE ICON ELEMENT (goal/G41.23; spirit/element/icon/script.js; Andy: "it centers the glyph, in a square box, the size of which
    follows font-size", "like like text characters, it follows, its container in most attributes"): a square of its own
    font size, which is its container's times its size; the glyph centred; never shrinking in a row. A glyph wider than its
    square is drawn smaller to fit it (icon.js, Q22: "proportionally scale-to-fit"), so the square keeps what it holds inside. */
@@ -493,11 +493,11 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 
 /* THE BUBBLE (goal/G41.27; Andy, box: "they form a bubble with transparent background, and a border with the color of
    the type-face. The bubble is one shared style, the same probabilitySearch's search bubble uses."): the one style, the
-   rowForm's (spirit/element/rowForm.js) and probabilitySearch's search bubble alike. */
+   rowForm's (spirit/element/rowForm/script.js) and probabilitySearch's search bubble alike. */
 .shell-bubble { background: transparent; border: 1px solid currentColor; border-radius: 1em; padding: 0.3em 0.6em;
   box-sizing: border-box; }
 
-/* THE ONE-ROW FORM (goal/G41.27; spirit/element/rowForm.js; Andy, box: "one row forms show as blocks taking up the full width of
+/* THE ONE-ROW FORM (goal/G41.27; spirit/element/rowForm/script.js; Andy, box: "one row forms show as blocks taking up the full width of
    their container, and wrap", "the first element is always an icon shell-element, and takes the (top-) left position",
    "the last element is always a button that is positioned at the (bottom-) right", "between the icon and the button is
    a span, into which the form elements can be dropped."): a block the container's width; the span takes what is left
@@ -516,7 +516,7 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 .shell-row-form > .shell-row-form-span > input[type="text"] { flex: 1 1 8em; min-width: 8em; }
 .shell-row-form > button { flex: none; align-self: flex-end; margin-left: auto; }
 
-/* THE BUSY BUTTON'S TURN (goal/G41.23; spirit/element/busyButton.js; Andy: "an animated icon showing to the left of the
+/* THE BUSY BUTTON'S TURN (goal/G41.23; spirit/element/busyButton/script.js; Andy: "an animated icon showing to the left of the
    buttons label, when the button is waiting"): one turn for every app, here in the one sheet. */
 .shell-busy { display: inline-block; flex: none; width: 0.8em; height: 0.8em; margin-right: 0.4em; box-sizing: border-box;
   border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -0.1em;
@@ -594,14 +594,14 @@ select option { background: var(--shell-pane); color: #eee; }
    line, and nothing has to count how many fields are in the row. */
 .icon-selector { position: relative; min-width: 260px; }
 
-/* The contact selector (spirit/element/search/contact.js) draws through the
+/* The contact selector (spirit/element/search/contact/script.js) draws through the
    shared list (shell/shared/js/listSearch.js), which lays out its own
    field, pane and popup. A dropdown stands inline like any input control;
    only its pane pops up (goal/G29.8). */
 .contact-selector { position: relative; }
 .contact-selector-face-dropdown { display: inline-block; }
 
-/* The contact label (spirit/element/contactLabel.js, goal/G4.13). It takes
+/* The contact label (spirit/element/contactLabel/script.js, goal/G4.13). It takes
    the style of its container, so nothing here sets its face or size;
    only the editable one says it can be clicked, and a refusal shows
    beside it. */
@@ -1144,14 +1144,14 @@ details.stat-tile > summary {
 /* THE SHARED ELEMENTS' SPACING, HERE AND NOT IN THEIR SCRIPTS (goal/G47.1, box v109: "style issues like margin, padding and gap
    do NOT belong in UI scripts: no UI script sets them"; Andy: "IF YOUR ELEMENTS DONT PASS, FIX THE FUCKING CAUSE"). Each was a
    style attribute of its element's script, the same values. */
-/* spirit/element/workBench.js: a strip, its tool buttons, a pane's and the centre's sides. */
+/* spirit/element/workBench/script.js: a strip, its tool buttons, a pane's and the centre's sides. */
 .wb-strip { gap: 6px; padding: 4px; }
 /* As heavy as #app-content's and the face's button rules, which a style attribute used to beat. */
 .wb-tool, #app-content button.wb-tool, #desktop button.wb-tool { padding: 0; }
 .wb-pad { padding-left: 0.5em; padding-right: 0.5em; }
-/* spirit/element/tabContainer.js: the row of tabs. */
+/* spirit/element/tabContainer/script.js: the row of tabs. */
 .tc-tabs { gap: 6px; }
-/* spirit/element/search.js: its rows, a filter's buttons, the bubble and the list below it, the search words, the dropdown,
+/* spirit/element/search/script.js: its rows, a filter's buttons, the bubble and the list below it, the search words, the dropdown,
    the match bar, None and the tiles. */
 .ps-row { gap: 1em; }
 .ps-below { margin-bottom: 0.5em; }
@@ -1163,7 +1163,7 @@ details.stat-tile > summary {
 .ps-rank-centre { margin: 0 auto; }
 .ps-none { margin-top: 0.5em; }
 .ps-tiles { gap: 16px; }
-/* spirit/element/search/file/list.js: the tree's indent and its hidden path. */
+/* spirit/element/search/file/list/script.js: the tree's indent and its hidden path. */
 .files-tree .file-depth { display: inline-block; padding-left: calc(var(--depth) * 2em); }
 .files-tree .path-dir { display: none; }
 /* spirit/app/chat/element.js: its panes, the title, the lines, a quote and a line's meta (goal/G47.1, box v109, as above). */
@@ -1183,13 +1183,13 @@ details.stat-tile > summary {
 .agent-title { gap: 1em; }
 .agent-line { margin-top: 1em; gap: 1em; }
 .agent-block { margin-top: 1em; }
-/* spirit/element/search/api.js: the server and verb selectors side by side (goal/G47.1, box v109). */
+/* spirit/element/search/api/script.js: the server and verb selectors side by side (goal/G47.1, box v109). */
 .api-family-selector { gap: 1em; }
 /* The agent chat's line and its Send, side by side (spirit/app/agent/element/chatPane.js, goal/G47.1). */
 .agent-chat-row { flex: none; display: flex; align-items: flex-end; gap: 1em; }
-/* introSpector's line, the party and the api path side by side (spirit/element/introSpector.js, goal/G47.1, box v109). */
+/* introSpector's line, the party and the api path side by side (spirit/element/introSpector/script.js, goal/G47.1, box v109). */
 .introspector-line { display: flex; flex-wrap: wrap; align-items: center; gap: 1em; }
-/* A TAB CONTAINER'S CONTENT (spirit/element/tabContainer.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy
+/* A TAB CONTAINER'S CONTENT (spirit/element/tabContainer/script.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy
    all remaining vertical space, that it must be constrained to", "a bubble of of darker green than already is on the
    page"): the height left, scrolling inside itself, in a rounded well. */
 .tab-content { padding: 0.5em; min-height: 0; overflow: auto; border-radius: 8px; background: var(--shell-well); }

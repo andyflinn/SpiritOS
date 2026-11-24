@@ -5,7 +5,7 @@
 // v3): introSpector in spirit/app/introSpector/, "as Contacts and Icons did". Andy: "fill in the box, same icons, shell:mount
 // only.", "a wrapper for separate spirit/element/ files", "both apps will be intrinsic". Its json read from the disc; the
 // app on a real Chrome on a scratch node's face page, through the app selector's tile as a user opens it. What it draws is
-// spirit/element/introSpector.js's, judged in its own test.
+// spirit/element/introSpector/script.js's, judged in its own test.
 
 const fs = require('fs');
 const path = require('path');
@@ -61,8 +61,8 @@ test.run('introSpector\'s folder holds element.js but no api.js and no data.js',
 }, test.limit.quick);
 
 // "a wrapper for separate spirit/element/ files": introSpector.js only mounts
-test.run('introSpector\'s element.js brings in spirit/element/introSpector.js', 0.2, function () {
-  return (/spirit\/element\/introSpector\.js/).test(code(path.join(APP, 'element.js'))) || false;
+test.run('introSpector\'s element.js brings in spirit/element/introSpector/script.js', 0.2, function () {
+  return (/spirit\/element\/introSpector\/script\.js/).test(code(path.join(APP, 'element.js'))) || false;
 }, test.limit.quick);
 test.run('introSpector\'s element.js draws nothing itself, using neither innerHTML nor an old shell helper', 0.2, function () {
   const src = code(path.join(APP, 'element.js'));

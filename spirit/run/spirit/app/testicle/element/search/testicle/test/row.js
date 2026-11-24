@@ -5,7 +5,7 @@
 // owed since the rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // A test row of testicle's test table (goal/G47.1, the search cycle). The browser file runs in node on a bare window, as
-// the other rows' tests do (spirit/element/search/job/test/row.js): the shared row element is a stand-in that keeps
+// the other rows' tests do (spirit/element/search/job/row/test/script.js): the shared row element is a stand-in that keeps
 // the spec it is handed, so what is judged is what this file says a test row is.
 
 const fs = require('fs');
@@ -35,7 +35,7 @@ test.run('the testicle row element runs on a bare window', 0.2, async function (
   // fail/throw"): the shared row element a stand-in; testicle's words the real file, run as the page's loader runs it, its answer
   // handed as the require's (goal/G47.1, spirit/app/testicle/words.js).
   const STANDS = {
-    'spirit/element/row.js': { index: function (sub) { indexes.push(sub); return { id: indexes.length }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } },
+    'spirit/element/row/script.js': { index: function (sub) { indexes.push(sub); return { id: indexes.length }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } },
     'spirit/app/testicle/words.js': PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'app', 'testicle', 'words.js')),
   };
   global.window.spirit.requireScript = function (p) {
@@ -55,7 +55,7 @@ test.run('it places itself at spirit.required.spirit.app.testicle.element.search
 }, test.limit.quick);
 test.run('it loads what it draws with: the shared row element', 0.2, function () {
   if (!required) return false;
-  return required.indexOf('spirit/element/row.js') !== -1 || false;
+  return required.indexOf('spirit/element/row/script.js') !== -1 || false;
 }, test.limit.quick);
 test.run('create makes a row of kind testicle, keyed by the row\'s full key, with no actions', 0.2, function () {
   if (!R || typeof R.create !== 'function') return false;

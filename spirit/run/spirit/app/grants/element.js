@@ -11,16 +11,16 @@
 //   spirit.required.spirit.app.grants.element.create(container, opts) -> { destroy() }
 //
 // A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/file/element.js is: it loads its elements and mounts them, nothing of
-// its own. Two tabs (goal/G41.13), in the tab container: Grants, the grants panel (spirit/element/search/grant/grantsPanel.js) configured
+// its own. Two tabs (goal/G41.13), in the tab container: Grants, the grants panel (spirit/element/search/grant/grantsPanel/script.js) configured
 // with the contacts as its IDs and the node's own grants table, grantsPanel.nodeGrants (the callers configure the panel,
-// Andy, G41.16); Bundles, the bundle editor (spirit/element/bundleEditor.js), which opens each bundle's branchEditor as a
+// Andy, G41.16); Bundles, the bundle editor (spirit/element/bundleEditor/script.js), which opens each bundle's branchEditor as a
 // closable tab of this row (goal/G41.32; Andy: "in the Grants app, this will be the grant app's tabContainer."), each named
 // owner-bundle (Andy: "Grants: <owner>-<bundle>."). Every change goes through the loopback verbs apiAuth.js answers, each
 // element asking them itself.
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all(['spirit/element/search/grant/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js']
+  var parts = Promise.all(['spirit/element/search/grant/grantsPanel/script.js', 'spirit/element/tabContainer/script.js', 'spirit/element/bundleEditor/script.js']
     .map(function (p) { return S.requireScript(p); }));
 
   function create(container) {

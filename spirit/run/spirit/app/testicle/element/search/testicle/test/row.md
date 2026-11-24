@@ -5,7 +5,7 @@ shared row element. Owed since the rule *"every production script has its own te
 file runs in node on a bare window; the shared row element is a stand-in keeping the spec it is handed.
 
 - It stands at `spirit.required.spirit.app.testicle.element.search.testicle.row` with a `create`, and loads
-  `spirit/element/row.js` itself.
+  `spirit/element/row/script.js` itself.
 - `create(row)`: kind `testicle`, keyed by the row's full key, no actions; rows share one index.
 - The box: *"The columns, in this order: the result first, as an icon, ❌ for a failure, ✅ for a success; severity second;
   the title third; then the script name (no path), then the suite name (no path)"*.

@@ -1,6 +1,6 @@
 # spirit/app/testicle/element/search/testicle.js — the testicle search
 
-goal/G47.1, the cycle "the testicle search". testicle's list of tests: the standard search (`spirit/element/search.js`) over
+goal/G47.1, the cycle "the testicle search". testicle's list of tests: the standard search (`spirit/element/search/script.js`) over
 `testicle.testicle.search`, a view of the testicle branch `spirit/app/testicle/data.js` keeps, the current rows shown. Its
 folder `spirit/app/testicle/element/search/testicle/` holds its `row.js` and its `detail.js`. testicle's face mounts it in
 the first, non-closable tab of its centre pane (`spirit/app/testicle/test/element.js` judges that, and the detail a test row
@@ -9,7 +9,7 @@ opens).
 ## Its requirements (the box)
 
 - *"The search has a script selector, unselected (all) the default."* The script selector is the file search
-  (`spirit/element/search/file.js`) as a dropdown, production scripts only.
+  (`spirit/element/search/file/script.js`) as a dropdown, production scripts only.
 - *"The search has a suite selector, unselected (all) the default."* *"With the script selector blank (all scripts),
   the suite selector lists every suite, each once ... a suite chosen with the script blank shows every test of that suite,
   whichever script it ran for."* The suites of every script are listed; a suite of two scripts is listed once; chosen, its

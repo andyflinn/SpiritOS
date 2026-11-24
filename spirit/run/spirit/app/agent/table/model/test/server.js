@@ -207,7 +207,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   global.spirit = global.window.spirit;
   // The page's one loader: asked for a branch's api.js, it runs that branch's real data.js once, as the real api.js
   // requires its companion data.js; the data set (spirit/data.js) is run below.
-  const ANSWERS = { 'spirit/element/search.js': STAND.search, 'spirit/element/rowForm.js': STAND.rowForm, 'spirit/element/busyButton.js': STAND.busyButton,
+  const ANSWERS = { 'spirit/element/search/script.js': STAND.search, 'spirit/element/rowForm/script.js': STAND.rowForm, 'spirit/element/busyButton/script.js': STAND.busyButton,
     'spirit/app/agent/element/table/tableElement.js': Object.assign({}, STAND.agentDetail, STAND.agentTable), 'spirit/app/agent/element/table/row.js': STAND.agentRow };
   const ran = {};
   global.window.spirit.requireScript = function (p) {
@@ -278,7 +278,7 @@ test.run('nothing loads the Update model list pane', 0.2, function () {
 test.run('the model list loads what its Ask form uses itself: the search element and the rowForm', 0.2, function () {
   if (!X.made) return false;
   const made = X.made;
-  return made.required.indexOf('spirit/element/search.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1 ? true : false;
+  return made.required.indexOf('spirit/element/search/script.js') !== -1 && made.required.indexOf('spirit/element/rowForm/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 // goal/G41.27, Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]": the form is a rowForm, ❓, the
 // providerSelector:dropdown in its span, Ask its button; the word from at its start goes, as new and grant did.

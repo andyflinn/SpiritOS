@@ -30,7 +30,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26; Andy: "the fucking status box must require the fucking api and make sure the
   // fucking data.js is installed"): the icon element, spirit.required.spirit.data, testicle's interface and testicle's cache manager, its
   // data.js, which the page's one stream feeds. Mounted alone, it gets its data by itself.
-  var parts = Promise.all([keepAnswer('spirit/element/icon.js'), keepAnswer('spirit/data.js'), keepAnswer('spirit/app/testicle/api.js'), keepAnswer('spirit/app/testicle/words.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/icon/script.js'), keepAnswer('spirit/data.js'), keepAnswer('spirit/app/testicle/api.js'), keepAnswer('spirit/app/testicle/words.js')]);
   // Its words testicle's own (goal/G47.1; ../words.js): every line it shows worded there, none here.
   function W() { return ANSWER['spirit/app/testicle/words.js']; }
   parts.catch(function () {});
@@ -87,9 +87,9 @@
     var mode = container.querySelector('.testicle-mode');
     var icon = container.querySelector('.testicle-busy');
     var rows = container.querySelectorAll('.testicle-row');
-    // Through the icon element, as every pictograph is drawn (spirit/element/icon.js; the general rules).
+    // Through the icon element, as every pictograph is drawn (spirit/element/icon/script.js; the general rules).
     function paint(box, glyph) {
-      var I = S.required && S.required.spirit && ANSWER['spirit/element/icon.js'];
+      var I = S.required && S.required.spirit && ANSWER['spirit/element/icon/script.js'];
       if (!I) return false;
       box.innerHTML = '';
       I.create(box, { glyph: glyph });

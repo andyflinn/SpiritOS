@@ -21,7 +21,7 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   - Its title row says Add while the row is new, and Change once saved or when opened from the list.
   - The icon is its first field (*"the detail panel's first input will be the icon i choose for that row"*). It is
     chosen with the shell's icon selector, `spirit.required.spirit.element.search.icon.create(the icon field, …)`
-    (`spirit/element/search/icon.js`, the shell's element shape, goal/G41.19), on the table's icon while the row has none.
+    (`spirit/element/search/icon/script.js`, the shell's element shape, goal/G41.19), on the table's icon while the row has none.
   - Each field shows the row: a line its value, a bool its tick, a list its words split by commas. A secret is an
     empty password box that says only whether it is set.
   - **It follows its row by itself** (Andy: *"make sure that all element LISTEN to what needs listening to, by
@@ -49,7 +49,7 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   `{ op: 'search', text, <field>: <this row's id> }`, and it asks the table the same narrowed search. While that search
   answers no row, the field is hidden (*"The Model field is hidden while the model table holds no model of this
   provider"*); with one, it is shown.
-- **A bundle field: kind `bundle`.** The editor loads `spirit/element/search/bundle.js` itself and makes a bundle selector in
+- **A bundle field: kind `bundle`.** The editor loads `spirit/element/search/bundle/script.js` itself and makes a bundle selector in
   the field, in dropdown mode; the bundle picked is saved as the field (`{ op: 'set', id, bundle }`). It lists every
   bundle, whoever owns it (goal/G41.25, Andy: *"so the bundle pickers in the persona and job details will always list ALL
   bundles"*): the selector is mounted for no app server.
@@ -63,7 +63,7 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   itself, a secret only when typed so an untyped key is kept. A refused save says the server's reason. The editor still
   draws only what the stream brings (rule/19).
 - **Delete is an are-you-sure button** (Andy: *"and why are the 'Delete' buttons in the detail panels not
-  armingButtons?"*): the editor loads `spirit/element/armingButton.js` itself and attaches its Delete button; a first press
+  armingButtons?"*): the editor loads `spirit/element/armingButton/script.js` itself and attaches its Delete button; a first press
   deletes nothing, the second calls `{ op: delete, id }` once.
 - **A bundle gone is said** (*"A bundle deleted while a job names it leaves that job with no grant, and the job says so
   in its detail panel, never silently."*): a row naming a bundle asks the node for it (`auth.bundle { op: get, id }`);

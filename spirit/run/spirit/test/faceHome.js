@@ -848,7 +848,7 @@ test.run('no job ran through any of this', 0.8, async function () {
 // Chrome reads it: a real scratch node, a real relay, a real face and its login, at home and on the face. What a face is
 // handed, by its relay's star, is spirit/faceHome.js's, so it is judged beside it (goal/G43.28; Andy: "you WILL FUCKING PLACE
 // TESTS WHERE THEY FUCKING BELONG"; moved from shell/test/navigationWrapper-faceStarApps.js, its relay row section beside
-// the contact row, spirit/element/search/contact/test/row.js, its relayOnFace part). A face at
+// the contact row, spirit/element/search/contact/row/test/script.js, its relayOnFace part). A face at
 // <name>.localhost is a secure context, as a face over https is. A step that could not run is red, never skipped.
 
 const DOMAIN = 'localhost';

@@ -54,14 +54,14 @@ test.run('pageSpirit runs a path it was told to load in the world, at once, and 
   PS.world = { console: { log: function () {}, error: function () {} }, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String };
   PS.world.window = PS.world;
   PS.world.spirit = { requireScript: function (p) { PS.other = String(p); return Promise.resolve('own'); } };
-  require(HELPER).pageSpirit(PS.world.spirit, null, { window: PS.world, real: ['spirit/element/fstat.js'] });
-  PS.world.spirit.requireScript('spirit/element/fstat.js').then(function (v) { PS.got = v; });
+  require(HELPER).pageSpirit(PS.world.spirit, null, { window: PS.world, real: ['spirit/element/fstat/script.js'] });
+  PS.world.spirit.requireScript('spirit/element/fstat/script.js').then(function (v) { PS.got = v; });
   return (!!PS.got && typeof PS.got.create === 'function' && PS.got === PS.world.spirit.required.spirit.element.fstat) || false;
 }, test.limit.quick);
 test.run('asked for the same path again, pageSpirit answers the same object and runs the file no second time', 0.4, function () {
   if (!PS.got) return false;
   const before = PS.world.spirit.required.spirit.element.fstat;
-  PS.world.spirit.requireScript('spirit/element/fstat.js').then(function (v) { PS.again = v; });
+  PS.world.spirit.requireScript('spirit/element/fstat/script.js').then(function (v) { PS.again = v; });
   return (PS.again === PS.got && PS.world.spirit.required.spirit.element.fstat === before) || false;
 }, test.limit.quick);
 test.run('a path pageSpirit was not told to load goes to the test\'s own requireScript', 0.4, async function () {

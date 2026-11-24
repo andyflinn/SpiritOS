@@ -46,7 +46,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
       '</div>';
     container.appendChild(root);
     var gone = false;
-    Promise.all([keepAnswer('spirit/app/agent/element/table/tableElement.js'), keepAnswer('spirit/element/icon.js')]).then(function () {
+    Promise.all([keepAnswer('spirit/app/agent/element/table/tableElement.js'), keepAnswer('spirit/element/icon/script.js')]).then(function () {
       if (gone) return;
       root.querySelector('#' + pre + 'title').innerHTML = ANSWER['spirit/app/agent/element/table/tableElement.js'].titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
     });
@@ -54,8 +54,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     var sendButton = root.querySelector('#' + pre + 'send');
     // THE LINE STOPS AT ITS LIMIT (goal/G41.27: "any input field must be checked for size-limits"): fieldInput's line rule,
     // a chat line's, loaded here (rule/26).
-    keepAnswer('spirit/element/fieldInput.js').then(function () {
-      var F = ANSWER['spirit/element/fieldInput.js'];
+    keepAnswer('spirit/element/fieldInput/script.js').then(function () {
+      var F = ANSWER['spirit/element/fieldInput/script.js'];
       if (!gone && F) F.attach(line, 'spirit.type.string.paragraph');
     }, function () { /* the line is unheld until it loads */ });
     // WHAT A SEND DOES IS OUT OF SCOPE (Andy, box: "how the chat will work, is oos for this item."): nothing yet.

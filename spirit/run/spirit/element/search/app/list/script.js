@@ -1,0 +1,84 @@
+'use strict';
+// spirit/run/spirit/element/search/app/list/script.js
+// THE APP LIST, A DROP-IN ELEMENT (goal/G43.2), as spirit/element/search/bundle/list/script.js is the bundle list: the
+// probabilitySearch the selector, ../script.js, draws (goal/G43.32: it was search/app.js). Its test: ../test/script.js, through the selector.
+//
+//   create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers (the server filter shown),
+//     opts.shells (only the apps that may be a shell, goal/G43.18)
+//
+// A VIEW OF THE app FAMILY'S CACHE (spirit.required.spirit.data.app.data): app.search seats its rows there, and the node's stream keeps them
+// current through the family's manager and the row element.
+// THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
+// INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+(function () {
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
+  ['spirit/element/search/script.js', 'spirit/element/search/app/row/script.js', 'spirit/element/search/app/tile/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
+  window.spirit.requireScript('spirit/app/api.js');
+
+  function create(host, opts) {
+    var o = opts || {};
+    // THE FACE IT SHOWS NOW, told by the list itself on a toggle (onFace), for the filter of run apps below.
+    var face = o.face || 'pane';
+    // THE SOURCE: app.search, with a search string and nothing more (Andy, box: "no filters, just a search string").
+    function search(args) {
+      var q = String((args && args.text) || '').trim();
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: q }); }).then(function (got) {
+        return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
+      });
+    }
+    var list = window.spirit.required.spirit.element.search.create(host, {
+      // Its own data source (goal/G43.24): the search asks it, and is handed no api.
+      search: search,
+      data: window.spirit.required.spirit.data.app.data.branch,
+      api: 'spirit/app/api.js',
+      verb: 'search',
+      face: o.face,
+      // ITS TILE PART (goal/G47.4): an app's tile, ../tile/script.js; a press on it picks the app, as a press on its row does. With it
+      // the shared search shows the list or tiles switch by itself (the toggle option went).
+      tile: function (row, key) { return window.spirit.required.spirit.element.search.app.tile.create(row, { press: function (r, k) { if (typeof o.pick === 'function') o.pick(r, k); } }); },
+      onFace: function (f) { face = f; if (typeof o.onFace === 'function') o.onFace(f); },
+      visible: o.visible,
+      placeholder: 'choose an app…',
+      pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
+      args: function (text) { return { text: text }; },
+      // THE SERVER FILTER (goal/G43.18; Andy, box: "The app search gains a server filter, node.mount true and active: new code, and
+      // it never names api, this filter is hidden by default."; Q4: the caller of the app search makes it visible): opts.servers.
+      // Pressed, it leaves only the active apps that run on the node.
+      filters: (o.servers === true ? [{ name: 'servers', word: 'servers', toggle: true,
+        test: function (row, on) { return !on || (row && row.active === true && row.nodeMount === true) ? 1 : 0; } }] : [])
+        // RUN APPS IN THE PANE ONLY (goal/G43.21; Andy, the box: "spirit app search will list these jobs (node:run) only in pane
+        // mode, bacause it they have no shell-mount."): a filter with no button, the row as the family's cache holds it.
+        .concat([{ name: 'runs', when: function () { return false; }, test: function (row) {
+          var held = row && window.spirit.required.spirit.data.app.data.rows()[row.key];
+          return face === 'pane' || !(held && held.run === true) ? 1 : 0;
+        } }])
+        // NO TILE WITHOUT shell.mount (goal/G43.20; Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"): as tiles, only the apps
+        // whose <name>.json says shell.mount true; the pane and the dropdown list every app.
+        .concat([{ name: 'tiles', when: function () { return false; }, test: function (row) {
+          var held = row && window.spirit.required.spirit.data.app.data.rows()[row.key];
+          return face !== 'tiles' || !!(held && held.shellMount === true) ? 1 : 0;
+        } }]),
+      // Andy, box: "the appSelector will only show icon and label in the list."
+      // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
+      columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),
+      element: function (row) { return window.spirit.required.spirit.element.search.app.row.create(row); },
+      name: function (row) { return String((row && row.label) || ''); },
+      empty: 'No app matches.',
+    });
+    list.refresh();
+    // A CONNECT FORGETS WHAT IS KEPT (spirit/data.js's forget, goal/G41.3). A face with no star hears no 'apps' job to fill it
+    // again (spirit/app/script.js), so a forgotten branch, told with no row, asks again, or its list would stay empty.
+    var off = window.spirit.required.spirit.data.app.data.watch(function (key) { if (!key) list.refresh(); });
+    return {
+      list: list,
+      refresh: function () { list.refresh(); },
+      // Destroy leaves its host empty, as every list, and lets its watch go.
+      destroy: function () { off(); list.destroy(); host.innerHTML = ''; },
+    };
+  }
+
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
+}());

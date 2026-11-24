@@ -79,7 +79,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   //   table's name, a list pane's the table's name alone.
   // ITS ICON IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
   // apps."): made by icon.create and written as the markup it made, since the row is text; the glyph as text only while
-  // spirit/element/icon.js has not loaded (every pane that draws a title row loads it first, below).
+  // spirit/element/icon/script.js has not loaded (every pane that draws a title row loads it first, below).
   function iconHtml(glyph, size) {
     var I = window.spirit.required && window.spirit.required.spirit.element.icon;
     if (!I || typeof I.create !== 'function') return '<span style="font-size:' + size + 'em">' + esc(glyph) + '</span>';
@@ -174,7 +174,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
       // it opens the detail in Add mode, an editor with no row of its own; the row is made there, whole.
       open('', true);
     });
-    needs(['spirit/element/search.js', 'spirit/element/icon.js']).then(function () {
+    needs(['spirit/element/search/script.js', 'spirit/element/icon/script.js']).then(function () {
       if (gone) return;
       // The title's icon, drawn before icon.js was there, through the icon element now (goal/G41.23).
       var title = container.querySelector('.agent-title');

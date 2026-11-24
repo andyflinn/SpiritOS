@@ -111,15 +111,15 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     if (p === AGENT && !ran[p]) { ran[p] = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
-    // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and
+    // The are-you-sure button (spirit/element/armingButton/script.js), tested in its own folder: a stand-in whose first press arms and
     // whose second runs, as the real one does.
-    if (p === 'spirit/element/armingButton.js') PE().armingButton = { attach: function (button, opts) {
+    if (p === 'spirit/element/armingButton/script.js') PE().armingButton = { attach: function (button, opts) {
       const a = { button: button, opts: opts || {}, armed: false };
       w.arming.push(a);
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
     } };
-    if (p === 'spirit/element/search/bundle.js') (PE().search = PE().search || {}).bundle = { create: function (c, opts) {
+    if (p === 'spirit/element/search/bundle/script.js') (PE().search = PE().search || {}).bundle = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;

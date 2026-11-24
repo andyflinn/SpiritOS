@@ -5,7 +5,7 @@
 // spirit/app/job/, "as Contacts and Icons did". Andy: "fill in the box, same icons, shell:mount only.", "a wrapper for
 // separate spirit/element/ files", "both apps will be intrinsic"; Q1: "a job row opens detail panel overtop of jobs." Its
 // json read from the disc; the app on a real Chrome on a scratch node's face page, through the app selector's tile as a
-// user opens it. What it draws is the job search's, spirit/element/search/job.js and its folder (goal/G43.32), judged in their own tests.
+// user opens it. What it draws is the job search's, spirit/element/search/job/script.js and its folder (goal/G43.32), judged in their own tests.
 
 const fs = require('fs');
 const path = require('path');
@@ -62,8 +62,8 @@ test.run('no api.js and no data.js in its folder: the jobs branch stays spirit/j
 }, test.limit.quick);
 
 // "a wrapper for separate spirit/element/ files": job.js only mounts
-test.run('element.js brings the job search, spirit/element/search/job.js', 0.2, function () {
-  return (/spirit\/element\/search\/job\.js/).test(code(path.join(APP, 'element.js'))) || false;
+test.run('element.js brings the job search, spirit/element/search/job/script.js', 0.2, function () {
+  return (/spirit\/element\/search\/job\/script\.js/).test(code(path.join(APP, 'element.js'))) || false;
 }, test.limit.quick);
 test.run('element.js draws nothing itself: no innerHTML, no old shell helper', 0.2, function () {
   const src = code(path.join(APP, 'element.js'));

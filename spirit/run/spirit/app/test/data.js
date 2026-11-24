@@ -73,7 +73,7 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
 }, test.limit.slow);
 test.run('the app search and the app detail load', 0.2, async function () {
   if (!W.up) return false;
-  const loaded = await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return Promise.all([spirit.requireScript("spirit/element/search/app.js"), spirit.requireScript("spirit/element/search/app/detail.js")]); }).then(function () { return "loaded"; }, function () { return false; })');
+  const loaded = await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return Promise.all([spirit.requireScript("spirit/element/search/app/script.js"), spirit.requireScript("spirit/element/search/app/detail/script.js")]); }).then(function () { return "loaded"; }, function () { return false; })');
   W.loaded = loaded === 'loaded';
   return W.loaded || false;
 }, test.limit.quick);

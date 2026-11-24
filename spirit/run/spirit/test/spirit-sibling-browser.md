@@ -186,7 +186,7 @@ box is its own check, named by the element's path and the box's id chain."*
   all shell elements and apps."*; box v5: *"new-face apps will be updated to use the new "icon" element."*; Q1: *"plus
   the intrinsic apps, plus the icons app. all apps that use icons."*): every glyph it draws that is a pictograph
   (Unicode `Extended_Pictographic`, as its icons are), is shown and **stands alone**, its element's whole text, lies
-  inside an element of the class the icon element (`spirit/element/icon.js`) carries. A glyph among words is a character of
+  inside an element of the class the icon element (`spirit/element/icon/script.js`) carries. A glyph among words is a character of
   the text and is left as it is (Andy: *"isn't a glyph inside flowing text just like another inline character? ...
   glyphs are legal in labels and description true, and in that context they don't need special handling"*, then
   *"narrow the rules so."*). The class is read from an icon made after the mount, so nothing is preloaded. Judged as
@@ -196,7 +196,7 @@ box is its own check, named by the element's path and the box's id chain."*
   mounts: a bare mount draws no data, so most icons are seen only in the code). A shell script, no test and no vendor
   code, whose code (comments left out) holds a pictograph alone in a string or alone between two tags, or that paints
   icons it is handed (`FROM_DATA`, named by hand: the shell frame, Apps, Icons, Contacts, the Icons list and row, the
-  icon selector, the workBench), names `spirit/element/icon.js`, or hands them to the one-row form, `spirit/element/rowForm.js`,
+  icon selector, the workBench), names `spirit/element/icon/script.js`, or hands them to the one-row form, `spirit/element/rowForm/script.js`,
   which paints them through the icon element and loads it itself (goal/G41.27). Each is its own check, named by its path. Two files whose lone glyph strings are drawn only
   before words are left out by hand (`TEXT_ONLY`, each with its reason): contactDetails' blocked mark, and the contacts
   list's filter icons, drawn before their words. The files read are only those git
@@ -217,7 +217,7 @@ box is its own check, named by the element's path and the box's id chain."*
   exception is `boot.js`, the face's own transport, now `spirit/shell/boot.js` (Andy: *"boot.js MUST be an exception to
   the rules."*).
   **Two reds outside goal/G41.28, still red** (Andy: *"WSL will drop Q23 from this item, and mark those two related reds
-  as outside it"*): login fetching its steps file and the file viewer (`spirit/element/fstat.js`) fetching a file at
+  as outside it"*): login fetching its steps file and the file viewer (`spirit/element/fstat/script.js`) fetching a file at
   home. Each red says so. `shell/login/login.js` is no longer in the tree.
 - **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
   since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
@@ -267,8 +267,8 @@ box is its own check, named by the element's path and the box's id chain."*
     the verifier's run only for an item open, which a bare mount never has; its own test is run, and the check is green
     only when its check *"a verifier publish taken into spirit.required.spirit.data redraws the run"* passed. So for Join (Andy,
     goal/G43.32: *"cw, yes"*, to *"shall join's own test prove that it redraws, as you ruled for deskDetails in Q24?"*):
-    `spirit/element/joinList.js` and the Join app that mounts it, `spirit/app/join/element.js`, draw only the join news on
-    the spirit job, which a marked row cannot change; `spirit/element/test/joinList.js` is run, and the check is green only
+    `spirit/element/joinList/script.js` and the Join app that mounts it, `spirit/app/join/element.js`, draw only the join news on
+    the spirit job, which a marked row cannot change; `spirit/element/joinList/test/script.js` is run, and the check is green only
     when its check *"a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps"* passed;
   - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
     row, a setting verb named as a string such as `'node.setName'`, a relay `join` or `face`, a `grant`, a `saveFile`)
@@ -377,7 +377,7 @@ vendored code left out; with no file, all of them in one check; with a file, tha
   at once, not a promise; a branch's `api.js` binds its branch (decided 8), so it is waited on and judged by its place. Where it does not load nothing is judged; that some load on each side is itself checked.
 - **An element script**, one that calls `installSpiritElement`, has a factory with a `create` at
   `spirit.required.<its path>` once required on a page.
-- **One helper places elements**: `spirit/element/installSpiritElement.js` is there, and no other product script puts
+- **One helper places elements**: `spirit/element/installSpiritElement/script.js` is there, and no other product script puts
   an element on `spirit.required` or `spirit.elements` by hand (an assignment, or an `Object.assign` into them);
   `spirit/spirit.js`, which makes the spirit object, excepted.
 - **The old place is gone** (decided 6: an app's element is placed like every element, and *"the shell, the app selector,

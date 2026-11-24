@@ -10,7 +10,7 @@ Andy, box: *"i will track nameSpace claims."*
 - `check('path.in.words', 'word')` compares case-insensitively and answers the lower-case word, else null. It looks at the `word.json` of each level on its path below the root, and at the hard-coded words. It reads no `run://spirit/word/script.json`. It sees nothing lower down and nothing in another branch.
 - A word an object inherits, like `constructor`, is not reserved. A missing `word.json` counts as empty. A `word.json` is an object of word to `true`.
 - A changed `word.json` is seen by the next `check`.
-- On a page `spirit.required.spirit.word.script.check` answers through a promise, since a page asks its node for each `word.json`, kept until the node's file stream says it changed; `spirit.required.spirit.word.script.changed(fn)` tells a listener when one does. `spirit/element/search/file/row.js` paints from these; its test judges them.
+- On a page `spirit.required.spirit.word.script.check` answers through a promise, since a page asks its node for each `word.json`, kept until the node's file stream says it changed; `spirit.required.spirit.word.script.changed(fn)` tells a listener when one does. `spirit/element/search/file/row/script.js` paints from these; its test judges them.
 - **No ask for a `word.json` that is not there** (goal/G43.32; cw measured on Andy's node 1821 requests on opening Files,
   1818 of them 404, all `fs.load` of a `word.json`; Andy: *"wsl, add a test to test/word.js to make sure this won't
   happend again."*): on a page `word.js` asks only for a `word.json` the node's file list (`spirit.required.spirit.data.fs`) holds, and

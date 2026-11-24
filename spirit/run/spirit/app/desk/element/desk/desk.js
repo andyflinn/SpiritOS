@@ -35,7 +35,7 @@
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
 // Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/element/fieldInput.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/element/fieldInput/script.js')).catch(function () {});
 var deskOpts = {};
 var deskStack = null;
 // A verb of the branch at its api.js path (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"),
@@ -369,7 +369,7 @@ function deskNeed(p) {
 // AN ICON THAT STANDS ALONE IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell
 // elements and apps.", and "isn't a glyph inside flowing text just like another inline character? ... they don't need
 // special handling"): the row's type, the sword, a rule's status. Written as a placeholder holding its glyph, so the
-// markup is never empty; once spirit/element/icon.js is on the page each one in the container is made the icon element
+// markup is never empty; once spirit/element/icon/script.js is on the page each one in the container is made the icon element
 // (deskPaintIcons, watching the container). A glyph among words stays text.
 // Its own escape: the sword is made as the file loads, before deskVia is there.
 function deskGlyph(glyph, title) {
@@ -387,7 +387,7 @@ function deskPaintIcons(root) {
   });
 }
 function deskWatchIcons(root) {
-  if (!deskIconReady) deskIconReady = deskNeed('/spirit/element/icon.js').then(null, function () { /* the glyphs stay text */ });
+  if (!deskIconReady) deskIconReady = deskNeed('/spirit/element/icon/script.js').then(null, function () { /* the glyphs stay text */ });
   deskIconReady.then(function () { deskPaintIcons(root); });
   if (typeof MutationObserver === 'function' && root) new MutationObserver(function () { deskPaintIcons(root); }).observe(root, { childList: true, subtree: true });
 }
@@ -517,10 +517,10 @@ function deskAddGoal() {
 }
 // ── THE LIST, ON THE PROBABILITY SEARCH (goal/G40.12) ─────────────────
 //
-// The element in its pane face (spirit/element/search.js): the search box, the filters in the row above it, its
+// The element in its pane face (spirit/element/search/script.js): the search box, the filters in the row above it, its
 // one call on the wire. IT IS A VIEW OF THE DESK'S BRANCH OF spirit.required.spirit.data (goal/G41.28), the cache manager's (its data
 // option, deskKept().branch), which every publish keeps current; items.search's answers to the words are seated in it. Each row is a row element
-// (spirit/element/row.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
+// (spirit/element/row/script.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
 // repaints the cells that changed. A press in a row is the page's (data-press), a press on the row opens it.
 //
 // THE TOGGLES (goal/G9.2, goal/G4.20 point 1): Current Goal Only, on when Desk opens (a multi filter: on until pressed
@@ -633,14 +633,14 @@ function deskTime(at) {
 // neither should be an accident." The first press arms the button and asks
 // "sure?"; only a second press fires it.
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button on the page is an
-// armingButton (spirit/element/armingButton.js), which the page loads itself. It arms, says so, and disarms
+// armingButton (spirit/element/armingButton/script.js), which the page loads itself. It arms, says so, and disarms
 // itself the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
 var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScript
-  ? keepAnswer('spirit/element/armingButton.js') : null);
+  ? keepAnswer('spirit/element/armingButton/script.js') : null);
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton.js'];
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton/script.js'];
     if (!A || typeof button.armed === 'function') return;
     A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run });
   }, function () { /* no armingButton, no second press */ });
@@ -679,8 +679,8 @@ function deskDraw() {
 }
 
 // The List's search element and the row it draws rows with, through the one loader (it loads each once).
-var DESK_SEARCH = '/spirit/element/search.js';
-var DESK_ROW_ELEMENT = '/spirit/element/row.js';
+var DESK_SEARCH = '/spirit/element/search/script.js';
+var DESK_ROW_ELEMENT = '/spirit/element/row/script.js';
 function deskLoadSearch(done) {
   Promise.all([deskNeed(DESK_ROW_ELEMENT), deskNeed(DESK_SEARCH)]).then(function () { done(); }, function () { /* no search on this page */ });
 }
@@ -750,7 +750,7 @@ function deskBackupHtml() {
 // under the titlebar, and takes its id.
 function deskHeader() {
   // What it draws with, it loads itself (rule/26).
-  keepAnswer('spirit/element/appHeader/appHeader.js').then(deskHeaderMove, function () { /* the bars stay plain */ });
+  keepAnswer('spirit/element/appHeader/appHeader/script.js').then(deskHeaderMove, function () { /* the bars stay plain */ });
 }
 function deskHeaderMove() {
   var old = document.getElementById('desk-bars');
@@ -810,14 +810,14 @@ module.exports = { create: function (container, opts) {
             '<input type="text" id="desk-goal-title" placeholder="title"></label>' +
             '<button type="button" id="desk-goal-add">Add</button></div>' +
           // THE LIST IS THE PROBABILITY SEARCH (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
-          // same. That is part of the whole probability search frame work"): spirit/element/search.js in its pane
+          // same. That is part of the whole probability search frame work"): spirit/element/search/script.js in its pane
           // face over items.search, its toggles the element's filters in the row above the box, each row a row element
           // (deskMountList). The error line above it.
           '<div id="desk-top" class="fill"><div id="desk-list-error"></div><div id="desk-list" class="fill"></div></div></div>' +
       '</div>' +
       '</div>';
     // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11).
-    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput.js'];
+    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput/script.js'];
     // Held to its type (goal/G48.4, box v22), the label a goal title is.
     var goalTitle = FI ? container.querySelector('#desk-goal-title') : null;
     if (goalTitle) FI.attach(goalTitle, 'spirit.type.string.label');
@@ -882,7 +882,7 @@ module.exports = { create: function (container, opts) {
     deskLoad();
     }
     // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
-    if (typeof deskOpts.open !== 'function') keepAnswer('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = ANSWER['spirit/element/panel.js'].create(container, container.firstElementChild); });
+    if (typeof deskOpts.open !== 'function') keepAnswer('spirit/element/panel/script.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = ANSWER['spirit/element/panel/script.js'].create(container, container.firstElementChild); });
     return { destroy: function () {
       deskHeard = [];
       // Its watch let go (rule/8): the backup line's.

@@ -3,9 +3,9 @@
 // THE ONE SHELL OF SpiritOS (goal/G49.4; Andy: "spirit/element/script.js becomes the hard-coded only shell there is in SpiritOS"):
 // moved here from spirit/app/app/element.js, the app app gone with every shell choice.
 // THE APP SELECTOR (goal/G43.2; Andy, box: "the face part of this api will be an probabilitySearch derivative"), following
-// spirit/element/search/bundle.js.
+// spirit/element/search/bundle/script.js.
 //
-// A THIN SELECTOR OVER THE APP LIST, spirit/element/search/app.js, WHICH IT LOADS ITSELF (rule/26).
+// A THIN SELECTOR OVER THE APP LIST, spirit/element/search/app/script.js, WHICH IT LOADS ITSELF (rule/26).
 //
 //   spirit.required.spirit.element.create(container, options) -> root
 //     root.value   the chosen app's key, '' while none is
@@ -23,7 +23,7 @@
 // button brings the list back. A launched app is its main element, spirit/app/<key>/element.js (goal/G43.32, rule 4: "if the
 // application has a face, its main screen element must be spirit/app/[name]/element.js"), made with (pane, { title, open }).
 //
-// THROUGH panel (goal/G43.17, spirit/element/panel.js): a closed app or detail is hidden, not destroyed, so pressing it again
+// THROUGH panel (goal/G43.17, spirit/element/panel/script.js): a closed app or detail is hidden, not destroyed, so pressing it again
 // shows it as it was left (Q3: "yes."). A launched app switched off leaves the view and stays loaded until the shell boots
 // again (Q11: "it only must disappear from view. it won't be loaded on the next shell-boot.").
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -117,10 +117,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     // AN APP'S DETAIL COMES WHEN ONE OPENS (goal/G43.27; Andy: "make sure that spirit.js does NOT load all that shit!!!!!!!!!"):
     // detail.js and what it draws with are required then, once, and not as the list loads.
-    function detailReady() { return keepAnswer('spirit/element/search/app/detail.js'); }
+    function detailReady() { return keepAnswer('spirit/element/search/app/detail/script.js'); }
     function panel(row) {
       open('detail', row, function (pane, closed) {
-        return detailReady().then(function () { return closed() ? null : ANSWER['spirit/element/search/app/detail.js'].create(pane, { row: row, panel: true }); });
+        return detailReady().then(function () { return closed() ? null : ANSWER['spirit/element/search/app/detail/script.js'].create(pane, { row: row, panel: true }); });
       });
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
@@ -136,7 +136,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       detailReady().then(function () {
         if (gone || root.row !== asked) return;
         clearDetail();
-        detail = ANSWER['spirit/element/search/app/detail.js'].create(detailBox, { row: row });
+        detail = ANSWER['spirit/element/search/app/detail/script.js'].create(detailBox, { row: row });
       });
     }
     function onFace(now) {
@@ -145,11 +145,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       if (stack) stack.close();
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.all([keepAnswer('spirit/element/search/app.js'), keepAnswer('spirit/element/panel.js')]).then(function () {
+    Promise.all([keepAnswer('spirit/element/search/app/script.js'), keepAnswer('spirit/element/panel/script.js')]).then(function () {
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
-      stack = ANSWER['spirit/element/panel.js'].create(root, listBox);
-      made = ANSWER['spirit/element/search/app.js'].create(listBox, { face: face, onFace: onFace, pick: pick,
+      stack = ANSWER['spirit/element/panel/script.js'].create(root, listBox);
+      made = ANSWER['spirit/element/search/app/script.js'].create(listBox, { face: face, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
         // The keys left out of every face, app itself always (goal/G43.18; Andy: "the shell should exclude itself completely
         // from the app-list").

@@ -79,16 +79,16 @@ function ddWrite(verb, args) {
 function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
 
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button here is an armingButton
-// (spirit/element/armingButton.js), which the dialog loads itself. A button drawn with data-arming="<what it says armed>" is
+// (spirit/element/armingButton/script.js), which the dialog loads itself. A button drawn with data-arming="<what it says armed>" is
 // made one after each paint; it arms, says so, and disarms itself on a click elsewhere; its second press is ddSecondPress.
 // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the say box
 // held to fieldRules' line rule by fieldInput, loaded here with the armingButton and attached after each paint.
 var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScript
-  ? Promise.all([keepAnswer('spirit/element/armingButton.js'), keepAnswer('spirit/element/fieldInput.js')]) : null);
+  ? Promise.all([keepAnswer('spirit/element/armingButton/script.js'), keepAnswer('spirit/element/fieldInput/script.js')]) : null);
 function ddArming() {
   return ddParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton.js'];
-    var F = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/fieldInput.js'];
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton/script.js'];
+    var F = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/fieldInput/script.js'];
     var say = document.getElementById('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'spirit.type.string.paragraph'); say.setAttribute('data-held', 'paragraph'); }
     // Your name for the item, a label (goal/G48.4, box v22).
@@ -141,7 +141,7 @@ function ddSecondPress(b) {
 // loads that element too, as it draws with it (Andy: "this element will replace icons painting all shell elements and
 // apps.").
 var ddBenchParts = typeof spirit !== 'undefined' && spirit.requireScript
-  ? Promise.all([keepAnswer('spirit/element/workBench.js'), keepAnswer('spirit/element/icon.js')])
+  ? Promise.all([keepAnswer('spirit/element/workBench/script.js'), keepAnswer('spirit/element/icon/script.js')])
   : Promise.resolve(null);
 var ddBench = null;
 var ddBenchBoxes = {};
@@ -191,11 +191,11 @@ function ddFrame() {
 // the words and the title input (a label, fieldInput), its Add busy until the desk answers (busyButton). On a goal the new
 // item is the goal's; on an item it is of the same goal and blocks that item (item.add blocks).
 var ddAddParts = typeof spirit !== 'undefined' && spirit.requireScript
-  ? Promise.all([keepAnswer('spirit/element/rowForm.js'), keepAnswer('spirit/element/fieldInput.js')])
+  ? Promise.all([keepAnswer('spirit/element/rowForm/script.js'), keepAnswer('spirit/element/fieldInput/script.js')])
   : Promise.resolve(null);
 function ddMakeAdd(n) {
-  var R = window.spirit && window.spirit.required && window.spirit.required.spirit && ANSWER['spirit/element/rowForm.js'];
-  var F = window.spirit && window.spirit.required && window.spirit.required.spirit && ANSWER['spirit/element/fieldInput.js'];
+  var R = window.spirit && window.spirit.required && window.spirit.required.spirit && ANSWER['spirit/element/rowForm/script.js'];
+  var F = window.spirit && window.spirit.required && window.spirit.required.spirit && ANSWER['spirit/element/fieldInput/script.js'];
   var row = document.getElementById('dd-add-row');
   if (n !== ddFrameN || !R || typeof R.create !== 'function' || !row || row.firstChild) return;
   var form = R.create(row, { icon: '➕', button: 'Add', press: function () { return ddAdd(); } });
@@ -226,7 +226,7 @@ function ddShowLeft(name) {
   if (left && box && left.parentNode !== box) box.appendChild(left);
 }
 function ddMakeBench(n) {
-  var W = window.spirit && window.spirit.required && ANSWER['spirit/element/workBench.js'];
+  var W = window.spirit && window.spirit.required && ANSWER['spirit/element/workBench/script.js'];
   var host = document.getElementById('dd-bench');
   var hold = document.getElementById('dd-hold');
   var centre = document.getElementById('dd-centre');

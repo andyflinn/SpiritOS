@@ -1,6 +1,6 @@
 'use strict';
 // spirit/run/spirit/element/test/search-child-browser.js [<script> ...]
-// THE -browser GENERAL TEST BESIDE spirit/element/search.js (goal/G47.1, box v121, its section
+// THE -browser GENERAL TEST BESIDE spirit/element/search/script.js (goal/G47.1, box v121, its section
 // "spirit/element/test/search-child-browser.js": "new, the page twin of search-child-general.js: every search (selector,
 // list, row, detail) mounted in a page on a scratch node, more rows than fit"). Its contract:
 // ./search-child-browser.md. A -child- test beside search.js (../../test/TEST_SYSTEM.md): it judges search.js and search/ and
@@ -10,7 +10,7 @@
 // mounted in a pane of a stated size; the probabilitySearch it makes is watched (spirit.required.spirit.element.search.create,
 // as spirit/test/spirit-sibling-browser.js's WATCH does) to learn the spirit.required.spirit.data branch it is a view of, and more rows than
 // fit are planted in that branch, each a copy of a row the branch holds (or the plain fields alone), its text a long value
-// with no place to break. The detail is mounted by the search's detail in a panel layer (spirit/element/panel.js), as
+// with no place to break. The detail is mounted by the search's detail in a panel layer (spirit/element/panel/script.js), as
 // the apps open one. EACH CHECK ONCE PER SEARCH (goal/G47.6), reported for that search's script: a search a check has nothing
 // to judge in gets no test, never a green; a check no search could be judged by is red.
 require('../../spirit.js');
@@ -40,7 +40,7 @@ const TREE = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude
 const NAMES = TREE.map(function (f) { const m = new RegExp('^' + SEARCH + '/([^/]+)\\.js$').exec(f); return m ? m[1] : ''; })
   .filter(Boolean).sort();
 const nameOf = function (f) { return (new RegExp('^' + SEARCH + '/([^/.]+)').exec(f) || [])[1] || ''; };
-const ALL = !GIVEN.length || GIVEN.some(function (f) { return f === 'spirit/element/search.js'; });
+const ALL = !GIVEN.length || GIVEN.some(function (f) { return f === 'spirit/element/search/script.js'; });
 const TARGETS = ALL ? NAMES : NAMES.filter(function (n) { return GIVEN.some(function (f) { return nameOf(f) === n; }); });
 // Held open until each search's checks are said (judgeAll, after the searches are opened).
 test.hold();
@@ -65,7 +65,7 @@ const KEEP = { suite: ['script'] };
 // What a planted row must say to be shown at all: testicle's list shows current reds alone at the start (Andy: "reds only").
 // The contact list opens on People with Search Network off (goal/G47.4, box v29: "The default is \"People\""): it shows a row
 // that is no relay, not blocked, and decided about (kept); a planted copy of a fresh node's relay row showed nothing, and
-// every check judged an empty list (goal/G47.1, Andy's reds on spirit/element/search/contact.js).
+// every check judged an empty list (goal/G47.1, Andy's reds on spirit/element/search/contact/script.js).
 const FORCE = { testicle: { current: true, verified: false }, suite: { script: OPTIONS.suite.script }, contact: { relay: false, blocked: false, keep: true } };
 // A long value with no place to break: a row and a detail must wrap or clip it.
 const LONG = 'zzLongValue' + 'W'.repeat(300);
@@ -109,16 +109,16 @@ const PAGE = String.raw`(function (name, ROWS, LONG, PANE_W, PANE_H, VIA_LIST, O
     return row;
   }
   return Promise.resolve(S.readyPromise).then(function () {
-    return Promise.all([S.requireScript('spirit/element/search.js'), S.requireScript('spirit/element/panel.js')]);
+    return Promise.all([S.requireScript('spirit/element/search/script.js'), S.requireScript('spirit/element/panel/script.js')]);
   }).then(function () {
     // The probabilitySearch watched: the spirit.required.spirit.data branch each one is made with.
     var made = R.made = [];
     var f = S.required.spirit.element.search; var real = f.create;
     f.create = function (host, o) { var x = o || {}; made.push({ data: typeof x.data === 'string' ? x.data : '', host: host }); return real.apply(this, arguments); };
     return S.requireScript('spirit/element/search/' + name + '.js').then(function () { return VIA_LIST[name] ? S.requireScript('spirit/element/search/' + name + '/list.js') : null; })
-      // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/list.js: "opts.grants the grants table, required"):
+      // THE GRANT LIST NEEDS ITS TABLE (spirit/element/search/grant/list/script.js: "opts.grants the grants table, required"):
       // the node's own, as the Grants app hands it (grantsPanel.nodeGrants).
-      .then(function () { return name === 'grant' ? S.requireScript('spirit/element/search/grant/grantsPanel.js').then(function () { OPTIONS.grant = { grants: S.required.spirit.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
+      .then(function () { return name === 'grant' ? S.requireScript('spirit/element/search/grant/grantsPanel/script.js').then(function () { OPTIONS.grant = { grants: S.required.spirit.element.search.grant.grantsPanel.nodeGrants }; }) : null; });
   }).then(function () {
     var box = document.createElement('div');
     box.id = 'zz-host';

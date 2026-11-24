@@ -60,7 +60,7 @@ test.run('it names neither the old shell nor a shell/ path', 0.2, function () {
 }, test.limit.quick);
 test.run('it loads the files list it draws its picker with', 0.2, function () {
   const own = code(path.join(APP, 'element.js'));
-  return !!own && /spirit\/element\/search\/file\.js/.test(own) ? true : false;
+  return !!own && /spirit\/element\/search\/file\/script\.js/.test(own) ? true : false;
 }, test.limit.quick);
 
 test.run('a scratch node comes up for this suite', 0.2, async function () {
@@ -89,13 +89,13 @@ test.run('its element\'s create, handed a container, answers an object with a de
   const made = await W.c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.requireScript("spirit/app/' + NAME + '/element.js").then(function () { var E = ((spirit.required.spirit.app || {})[' + JSON.stringify(NAME) + '] || {}).element; if (!E || typeof E.create !== "function") return false; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : false; }, function () { return false; }); }())');
   return made === 'ok' || false;
 }, test.limit.quick);
-// A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search.js).
+// A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search/script.js).
 test.run('mounted with no file, it shows the file picker', 0.2, async function () {
   if (!W.page) return false;
   W.picker = await until(function () { return W.c.evaluate('Array.prototype.some.call(document.querySelectorAll("#zzBox button[id$=field]"), function (b) { return b.getClientRects().length > 0; })'); }, 10000);
   return !!W.picker || false;
 }, test.limit.quick);
-// The box: "That row is a bubble of the same kind as rowForm uses": rowForm's root is .shell-bubble (spirit/element/rowForm.js).
+// The box: "That row is a bubble of the same kind as rowForm uses": rowForm's root is .shell-bubble (spirit/element/rowForm/script.js).
 test.run('the picker sits in a bubble of the kind rowForm uses', 0.2, async function () {
   if (!W.page) return false;
   const bubbled = await W.c.evaluate('Array.prototype.filter.call(document.querySelectorAll("#zzBox button[id$=field]"), function (b) { return b.getClientRects().length > 0; }).every(function (b) { return !!b.closest(".shell-bubble"); })');

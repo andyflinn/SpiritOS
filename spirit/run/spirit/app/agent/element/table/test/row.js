@@ -147,15 +147,15 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     if (p === 'spirit/auth/api.js') return Promise.resolve(w.auth);
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
-    // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and
+    // The are-you-sure button (spirit/element/armingButton/script.js), tested in its own folder: a stand-in whose first press arms and
     // whose second runs, as the real one does.
-    if (p === 'spirit/element/armingButton.js') PE().armingButton = { attach: function (button, opts) {
+    if (p === 'spirit/element/armingButton/script.js') PE().armingButton = { attach: function (button, opts) {
       const a = { button: button, opts: opts || {}, armed: false };
       w.arming.push(a);
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
     } };
-    if (p === 'spirit/element/search/bundle.js') (PE().search = PE().search || {}).bundle = { create: function (c, opts) {
+    if (p === 'spirit/element/search/bundle/script.js') (PE().search = PE().search || {}).bundle = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;
@@ -166,7 +166,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     // other part an empty object. The bundle selector and armingButton still stand at their places above, where row.js reads them.
     if (p === AGENT) return Promise.resolve(w.family);
     if (p === 'spirit/app/agent/element/table/tableElement.js') return Promise.resolve(w.shared || {});
-    if (p === 'spirit/element/fieldInput.js') return Promise.resolve(w.fieldInput);
+    if (p === 'spirit/element/fieldInput/script.js') return Promise.resolve(w.fieldInput);
     return Promise.resolve({});
   };
   w.fieldInput = { attach: function (el) { return el; } };
@@ -393,7 +393,7 @@ test.run('the editor\'s Delete button is an armingButton, loaded by the editor i
   if (!ed) return false;
   w.calls.length = 0;
   w.answer = function () { return { id: 'KR' }; };
-  return w.required.indexOf('spirit/element/armingButton.js') !== -1 && w.arming.some(function (a) { return a.button === the(ed, 'delete'); })
+  return w.required.indexOf('spirit/element/armingButton/script.js') !== -1 && w.arming.some(function (a) { return a.button === the(ed, 'delete'); })
     ? true : false;
 }, test.limit.quick);
 test.run('a first press of Delete deletes nothing: it arms', 0.2, async function () {
@@ -498,7 +498,7 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
     const win = { window: null, spirit: S.requireScript('spirit/test/headLessChrome.js').pageSpirit({ element: {} }), console: console };
     win.window = win;
     vm.createContext(win);
-    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search.js'].forEach(function (rel) {
+    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search/script.js'].forEach(function (rel) {
       PAGE_LOAD.runAsPage(path.join(RUN, rel), win);
     });
     return ((win.spirit.required.spirit || {}).element || {}).search;
@@ -661,7 +661,7 @@ test.run('the editor loads the bundle selector itself', 0.2, async function () {
   B.r4 = E.agentRow.create(B.ed4, { table: 'job', id: 'KJ', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
   await settle(); await settle();
   B.bsel = w.bundles[w.bundles.length - 1];
-  return w.required.indexOf('spirit/element/search/bundle.js') !== -1 ? true : false;
+  return w.required.indexOf('spirit/element/search/bundle/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 // Andy: "why would the bundle picker show "bundle 2" for it's selection instead of the fucking label?": the field says
 // the bundle by its label, as the node has it (auth.bundle get: 7 is Reader).
@@ -676,7 +676,7 @@ test.run('a bundle selector is made in the bundle field, in dropdown mode', 0.2,
     ? true : false;
 }, test.limit.quick);
 // goal/G41.25, Andy, box: "so the bundle pickers in the persona and job details will always list ALL bundles": the
-// selector is mounted for no app server (spirit/element/search/bundle.js, options.family).
+// selector is mounted for no app server (spirit/element/search/bundle/script.js, options.family).
 test.run('the bundle field lists every bundle, as its selector is mounted for no app server', 0.2, function () {
   if (!B.ed4) return false;
   return !!B.bsel && (B.bsel.opts.family === undefined || B.bsel.opts.family === '') ? true : false;

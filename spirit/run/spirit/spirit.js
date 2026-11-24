@@ -532,7 +532,7 @@
   required.spirit.app = holder();
   // THE ELEMENTS STAND HERE TOO (goal/G49.5; Andy, of his G43.32 Q5: "that ruling is reversed, since the element factory is
   // fine where it is loaded"): an element's factory is at spirit.required.<its path>, put there by
-  // spirit/element/installSpiritElement.js as the script runs; there is no spirit.element.
+  // spirit/element/installSpiritElement/script.js as the script runs; there is no spirit.element.
   // A PATH'S PLACE, ITS KEYS (goal/G49.9, box v5; Andy: "every single script into it's own named folder, is exactly so that
   // anything exposed by the script has a private (own) contained inside of the spirit object"): one key per folder, the
   // file's name without .js the last, and a folder's script.js at its folder's own name: spirit/element/busyButton/script.js

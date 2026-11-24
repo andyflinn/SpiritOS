@@ -106,7 +106,7 @@ function generalFor(run, name) {
 function base(p) { return p.slice(p.lastIndexOf('/') + 1); }
 
 // THE PAGE'S HANDS: what shows in #zzBox. The list's rows are tr[data-key] outside the selector row; a cell is a td; a header
-// that sorts is th[data-sort] (spirit/element/search.js); a filter's choice is button[data-filter][data-value], drawn bold
+// that sorts is th[data-sort] (spirit/element/search/script.js); a filter's choice is button[data-filter][data-value], drawn bold
 // when on; a selector is the span ending selector<i> in the row ending selectors, a dropdown there opened by its button
 // ending field, its rows in its popup, its None button ending none.
 const HANDS = '(function () {' +
@@ -158,9 +158,9 @@ test.run('its folder spirit/app/testicle/element/search/testicle/ holds its row.
   return (held.indexOf('row.js') !== -1 && held.indexOf('detail.js') !== -1) || false;
 }, test.limit.quick);
 // the box: "The script selector: the file search as a dropdown"
-test.run('its script selector is the file search, spirit/element/search/file.js, which it loads', 0.2, function () {
+test.run('its script selector is the file search, spirit/element/search/file/script.js, which it loads', 0.2, function () {
   const src = [MODULE].concat(fs.existsSync(FOLDER) ? fs.readdirSync(FOLDER).map(function (f) { return path.join(FOLDER, f); }) : []).map(code).join('\n');
-  return /['"]spirit\/element\/search\/file\.js['"]/.test(src) || false;
+  return /['"]spirit\/element\/search\/file\/script\.js['"]/.test(src) || false;
 }, test.limit.quick);
 
 test.run('a scratch node comes up with testicle on', 0.2, async function () {
@@ -274,7 +274,7 @@ test.run('typed words show the tests they find, the best match first', 0.2, asyn
   if (mounted()) return false;
   if (!gammaPlanted) return false;
   if (!(await T('typeMain(' + JSON.stringify('gamma fails its question ' + GAMMA_REDS) + ')'))) return false;
-  // While words are typed the list draws its match column first (spirit/element/search.js headHtml): the title is
+  // While words are typed the list draws its match column first (spirit/element/search/script.js headHtml): the title is
   // looked for among the row's cells.
   const titled = function (row) { return !!row && row.cells.some(function (cl) { return cl.text === 'gamma fails its question ' + GAMMA_REDS; }); };
   const ok = await until(function () { return T('cells()').then(function (rows) { return !!rows && rows.length > 0 && titled(rows[0]); }); }, 10000);

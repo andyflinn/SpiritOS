@@ -48,11 +48,11 @@ const rows = function (page) { return page.evaluate('Array.prototype.map.call(do
 const add = function (page, glyph, words) { return page.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + ', b = ' + button('Add') + '; if (!g || !k || !b) return false; g.value = ' + JSON.stringify(glyph) + '; g.dispatchEvent(new Event("input", { bubbles: true })); k.value = ' + JSON.stringify(words) + '; k.dispatchEvent(new Event("input", { bubbles: true })); b.click(); return true; }())'); };
 const posts = async function () { return JSON.parse(await W.chrome.evaluate('JSON.stringify(window.__posts || [])')); };
 // OVER THE APP, AS CONTACT'S DETAIL (Andy: "the icon detail panel is supposed to open overtop of the icon app..... like
-// contact detail etc."): a panel layer (spirit/element/panel.js) covering the whole face, the icon's glyph on it, the
+// contact detail etc."): a panel layer (spirit/element/panel/script.js) covering the whole face, the icon's glyph on it, the
 // add row and the list out of sight under it; its close brings the list back. Judged by what is on top where the add
 // row stands.
 const OVER = function () { return '(function () { var box = document.getElementById("box"); var b = box.getBoundingClientRect(); var l = Array.prototype.filter.call(box.querySelectorAll(".app-container"), function (c) { return c.offsetParent !== null; }).pop(); if (!l) return false; var r = l.getBoundingClientRect(); if (r.width < b.width - 4 || r.height < b.height - 4) return false; if (String(l.textContent).indexOf(' + JSON.stringify(W.fresh[0]) + ') === -1) return false; var g = ' + field('glyph') + '; if (g) { var gr = g.getBoundingClientRect(); var top = document.elementFromPoint(gr.left + 2, gr.top + 2); if (top && !l.contains(top)) return false; } return "over"; }())'; };
-// REMOVE IS AN ARMING BUTTON (Andy: "icon detail, delete should be an armingButton."; spirit/element/armingButton.js):
+// REMOVE IS AN ARMING BUTTON (Andy: "icon detail, delete should be an armingButton."; spirit/element/armingButton/script.js):
 // a first press only arms it, a click anywhere else disarms it, and only a second press removes.
 const REMOVE = '(function () { return Array.prototype.filter.call(document.querySelectorAll("#box button"), function (b) { return b.getClientRects().length && /^Remove/.test(String(b.textContent).trim()); }).pop() || null; }())';
 const armed = function () { return W.chrome.evaluate('(function () { var b = ' + REMOVE + '; return !!b && b.hasAttribute("data-armed"); }())'); };

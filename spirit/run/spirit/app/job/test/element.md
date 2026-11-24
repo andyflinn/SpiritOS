@@ -5,7 +5,7 @@ Its test is `./job.js`. The box (goal/G43.29, v3): *"spirit/app/jobs/ holds the 
 ## Requirements
 
 - `job.json`: an icon, today 📋 (an icon; which one is Andy's and not tested, goal/G47.1), its name Job Monitor; intrinsic; shell mount true, tile true; node mount false, nothing run. Its folder holds `job.js`, no `api.js` and no `data.js`.
-- `element.js` brings the job search, `spirit/element/search/job.js` (goal/G43.32), and draws nothing itself: no innerHTML, no old shell helper (activateApp, callDialog, factRow).
+- `element.js` brings the job search, `spirit/element/search/job/script.js` (goal/G43.32), and draws nothing itself: no innerHTML, no old shell helper (activateApp, callDialog, factRow).
 - It registers `spirit.required.spirit.app.job.element.create(container, { open })`, which draws its element and answers `{ destroy }`; destroy empties its container.
 - Its tile is there, intrinsic and on, and opens it.
 - The page finds the jobs cache at `spirit/job/data.js`, never `spirit/app/job/data.js`.

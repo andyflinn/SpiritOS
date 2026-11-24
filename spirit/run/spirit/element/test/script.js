@@ -743,7 +743,7 @@ test.after(stopAll);
   }, test.limit.quick);
   test.run('the shell wraps the app search: the app search is on the page, with Contacts listed', 0.2, async function () {
     if (!first) return false;
-    return (first.some(function (n) { return (/^\/spirit\/element\/search\/app\.js(\?|$)/).test(n); }) && /\bContacts\b/.test(await text())) ? true : false;
+    return (first.some(function (n) { return (/^\/spirit\/element\/search\/app\/script\.js(\?|$)/).test(n); }) && /\bContacts\b/.test(await text())) ? true : false;
   }, test.limit.quick);
   // goal/G43.18, Andy: "the shell should exclude itself completely from the app-list, haha..."; since goal/G49.4 the shell is
   // no app at all, so the list holds no row of it.

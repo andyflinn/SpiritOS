@@ -249,7 +249,7 @@
     // there; then what boot.js draws with, each required by it: the file tree's row element and the jobs family's cache
     // manager (goal/G41.28).
     var parts = function () {
-      return loadParts().then(function () { return Promise.all([window.spirit.requireScript('spirit/element/search/file/row.js'), window.spirit.requireScript('spirit/job/api.js')]); })
+      return loadParts().then(function () { return Promise.all([window.spirit.requireScript('spirit/element/search/file/row/script.js'), window.spirit.requireScript('spirit/job/api.js')]); })
         .then(null, function () { /* a part missing is said by what needs it */ });
     };
     return Promise.resolve(window.spirit.startPage()).then(parts, parts).then(function () {
@@ -299,7 +299,7 @@
     var code = joinCode;
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
-    Promise.all([window.spirit.requireScript('spirit/element/joinSteps.js'), Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (sp) { return sp.search({ q: '*', relay: true }); })]).then(function (got) {
+    Promise.all([window.spirit.requireScript('spirit/element/joinSteps/script.js'), Promise.resolve(spirit.readyPromise).then(function () { return spirit.requireScript('spirit/contact/api.js'); }).then(function (sp) { return sp.search({ q: '*', relay: true }); })]).then(function (got) {
       // Join's steps as spirit.requireScript hands them back (goal/G49.9: never read at their spirit.required place).
       var S = got[0];
       var s = got[1];

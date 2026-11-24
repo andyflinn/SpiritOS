@@ -255,7 +255,7 @@
   }
 
   // ── THE TRANSLATORS ARE THE TYPES' (goal/G30.20) ─────────────────────────────────────────────────────────────
-  // Each type's row element (spirit/element/search/file/row.js, spirit/element/search/contact/row.js; goal/G41.16) registers here what it
+  // Each type's row element (spirit/element/search/file/row/script.js, spirit/element/search/contact/row/script.js; goal/G41.16) registers here what it
   // makes of the stream's events: addTranslator({ onJob(job, D), onRename(d, D), onDelete(gone, D), onRelay(event) }). This
   // file knows no type.
   // A TYPE LOADED LATE IS HANDED ITS DATA WHOLE (goal/G41.3, Q4: the translators are lazy, each loading with its app):
@@ -324,7 +324,7 @@
   // EVERY SERVER'S remote ROW, FILED HERE ONCE (goal/G47.5; Andy: "all, agreed. spirit/data.js", not a server's own data.js,
   // which "would have to be duplicated for all servers"): a server publishes { remote: { current, items, more } } as a job of
   // its module, spirit.app.<name>; it is kept as spirit.required.spirit.data.<name>.remote, a later row replacing it, and told to whoever
-  // watches remote/<name> (the title bar's Remote dropdown, spirit/element/panel.js).
+  // watches remote/<name> (the title bar's Remote dropdown, spirit/element/panel/script.js).
   function remoteOf(job) {
     var r = job && job.app && job.app.remote;
     if (!r || typeof r !== 'object' || Array.isArray(r)) return;

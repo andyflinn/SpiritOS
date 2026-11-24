@@ -19,7 +19,7 @@
 //   a list is edited in the workBench's centre, the one detail pane of the app.
 //   NO GRANT TOOL (goal/G41.21, box v17: "agent.grant is removed altogether: its table, its server, and the Grants tool
 //   in the left strip. A job's grant is its bundle"). THE BUNDLE EDITOR IN THE RIGHT STRIP ("The right strip gets its
-//   first real tool: the bundle editor"): spirit/element/bundleEditor.js, beside the agent server's DEBUG box.
+//   first real tool: the bundle editor"): spirit/element/bundleEditor/script.js, beside the agent server's DEBUG box.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 // Each by its api.js path, never by a name (goal/G49.6): the app branch.
@@ -58,8 +58,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       container.innerHTML = '<div id="agent-bench" class="fill" style="overflow:hidden"></div>';
       var benchBox = container.querySelector('#agent-bench');
       // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
-      // apps."), painted by the workBench's strip through spirit/element/icon.js, loaded here with it.
-      var loaded = Promise.all([ANSWER['spirit/element/workBench.js'] ? null : keepAnswer('spirit/element/workBench.js'), keepAnswer('spirit/element/icon.js'), keepAnswer('spirit/element/tabContainer.js')]);
+      // apps."), painted by the workBench's strip through spirit/element/icon/script.js, loaded here with it.
+      var loaded = Promise.all([ANSWER['spirit/element/workBench/script.js'] ? null : keepAnswer('spirit/element/workBench/script.js'), keepAnswer('spirit/element/icon/script.js'), keepAnswer('spirit/element/tabContainer/script.js')]);
       loaded.then(function () { if (gone) return; E = (window.spirit && window.spirit.required) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
       // THE WORKBENCH'S CENTRE IS CLOSABLE TABS (goal/G41.31; Andy: "i need a tabContainer permanently situated in the center pane of
       // the workBench.", "each panel, that the agent app placed into the center panel now becomes a closable tab in the
@@ -128,7 +128,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         },
       };
       function build() {
-      bench = ANSWER['spirit/element/workBench.js'].create(benchBox, {
+      bench = ANSWER['spirit/element/workBench/script.js'].create(benchBox, {
         left: TABLES.map(function (t) {
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
@@ -177,15 +177,15 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           // open in this centre's tabs (goal/G41.31; Andy: "agent: <bundle-name>."; "if the bundle is not node-owned:
           // (<bundle-name>) in italic print.").
           box.className = 'fill';
-          Promise.resolve(keepAnswer('spirit/element/bundleEditor.js')).then(function () {
-            own(ANSWER['spirit/element/bundleEditor.js'].create(box, { tabs: tabs, tabLabel: function (row) {
+          Promise.resolve(keepAnswer('spirit/element/bundleEditor/script.js')).then(function () {
+            own(ANSWER['spirit/element/bundleEditor/script.js'].create(box, { tabs: tabs, tabLabel: function (row) {
               var label = String(row.label || '');
               return String(row.owner || 'node') === 'node' ? label : { label: '(' + label + ')', italic: true };
             } }));
           }, function () { box.textContent = 'The bundle editor could not be loaded.'; });
         } }],
       });
-      tabs = ANSWER['spirit/element/tabContainer.js'].create(bench.center, { tabs: [] });
+      tabs = ANSWER['spirit/element/tabContainer/script.js'].create(bench.center, { tabs: [] });
       }
 
       return {

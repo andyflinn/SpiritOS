@@ -161,7 +161,7 @@ function makeDom() {
   return doc;
 }
 
-// A working armingButton, as its spec says (spirit/element/test/armingButton.md), that writes down every button it is handed.
+// A working armingButton, as its spec says (spirit/element/armingButton/test/script.md), that writes down every button it is handed.
 function armingStub(document, made) {
   var loaded = null;
   function attach(b, o) {
@@ -252,7 +252,7 @@ function deskWorld(goal, items) {
   // the key kept on spirit.nodeFacts and handed to the data set, so the cache files the page's rows under its node.
   win.spirit.nodeFacts = { key: PAGE_NODE_KEY };
   win.spirit.required.spirit.data.homeNode(PAGE_NODE_KEY);
-  PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row.js'), win);
+  PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js'), win);
   PAGE_LOAD.runAsPage(FILE, win, raw);
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
   w.mount = async function () {
@@ -300,10 +300,10 @@ async function twoPress(w, find, armedSays, wantPress) {
 }
 
 // goal/G41.9: it loads armingButton and keeps no arming of its own
-test.run('it requires spirit/element/armingButton.js through spirit.requireScript', 0.2, async function () {
+test.run('it requires spirit/element/armingButton/script.js through spirit.requireScript', 0.2, async function () {
   const w0 = deskWorld({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], design: false }, []);
   await w0.mount();
-  return w0.required.indexOf('spirit/element/armingButton.js') !== -1 || false;
+  return w0.required.indexOf('spirit/element/armingButton/script.js') !== -1 || false;
 }, test.limit.quick);
 test.run('nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 0.2, function () {
   const plain = raw.replace(/\/\/[^\n]*/g, '');

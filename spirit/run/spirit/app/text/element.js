@@ -29,7 +29,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26). fstat for reading a file only.
-  var parts = Promise.all([keepAnswer('spirit/element/fstat.js'), keepAnswer('spirit/element/rowForm.js'), keepAnswer('spirit/element/search/file.js'),
+  var parts = Promise.all([keepAnswer('spirit/element/fstat/script.js'), keepAnswer('spirit/element/rowForm/script.js'), keepAnswer('spirit/element/search/file/script.js'),
     keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/fs/api.js')]);
 
   function create(container, opts) {
@@ -53,7 +53,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // The row's icon is the editor's, until Andy names another.
       // Its press is set below, once the file it saves is known.
       var press = null;
-      var row = ANSWER['spirit/element/rowForm.js'].create(box, { icon: '✏️', button: 'Save', press: function () { return press ? press() : null; } });
+      var row = ANSWER['spirit/element/rowForm/script.js'].create(box, { icon: '✏️', button: 'Save', press: function () { return press ? press() : null; } });
       var status = document.createElement('div');
       status.className = 'job-manifest-note';
       status.setAttribute('data-text', 'status');
@@ -85,7 +85,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         shown = mine;
         mine.path = path;
         mine.destroy = function () { if (mine.view && typeof mine.view.destroy === 'function') mine.view.destroy(); };
-        ANSWER['spirit/element/fstat.js'].read(path).then(function (r) {
+        ANSWER['spirit/element/fstat/script.js'].read(path).then(function (r) {
           if (gone || shown !== mine) return null;
           if (r.status !== 200) { status.textContent = 'not loaded: ' + r.status; return null; }
           return ANSWER['spirit/element/codeMirror.js'].create(place, { mode: 'edit', text: new TextDecoder().decode(r.bytes), words: words || '', line: line || 0, path: path });
@@ -108,7 +108,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // ALWAYS WHOLE (Andy: "i changed my mind. please show the full media viewer or text editor (including the file picker) even when
       // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var placeholder = 'open a file…';
-      picker = ANSWER['spirit/element/search/file.js'].create(row.span, {
+      picker = ANSWER['spirit/element/search/file/script.js'].create(row.span, {
         face: 'dropdown',
         placeholder: placeholder,
         name: function () { return placeholder; },

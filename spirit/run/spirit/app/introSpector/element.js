@@ -6,7 +6,7 @@
 //   spirit.required.spirit.app.introSpector.element.create(container, { open }) -> { destroy() }
 //
 // A WRAPPER (Andy: "a wrapper for separate spirit/element/ files"): it only mounts. What it draws is
-// spirit/element/introSpector.js; it loads that and draws it once it is here, so a tile pressed while it is on its way
+// spirit/element/introSpector/script.js; it loads that and draws it once it is here, so a tile pressed while it is on its way
 // waits for it. The app selector's tile opens it.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -17,13 +17,13 @@
     return a;
   }
   var S = window.spirit = window.spirit || {};
-  var face = keepAnswer('spirit/element/introSpector.js');
+  var face = keepAnswer('spirit/element/introSpector/script.js');
   // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
   module.exports = {
     create: function (container, options) {
       var made = null;
       var gone = false;
-      Promise.resolve(face).then(function () { if (!gone) made = ANSWER['spirit/element/introSpector.js'].create(container, options); });
+      Promise.resolve(face).then(function () { if (!gone) made = ANSWER['spirit/element/introSpector/script.js'].create(container, options); });
       return { destroy: function () { gone = true; if (made) made.destroy(); made = null; } };
     },
   };

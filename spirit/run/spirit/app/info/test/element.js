@@ -2,8 +2,8 @@
 
 // spirit/run/spirit/app/info/test/element.js
 // The tests of spirit/app/info/element.js, and of no other module (spec: ./info.md; goal/G43.24, requirements 6 and 7). Since
-// G43.24 the app is a wrapper mounted the new shell's way: all of Info is nodeInfo (spirit/element/nodeInfo.js, tested in
-// spirit/element/test/nodeInfo.js). The browser file runs in node on a BARE window (rule/26): nodeInfo is put on the page
+// G43.24 the app is a wrapper mounted the new shell's way: all of Info is nodeInfo (spirit/element/nodeInfo/script.js, tested in
+// spirit/element/nodeInfo/test/script.js). The browser file runs in node on a BARE window (rule/26): nodeInfo is put on the page
 // only once the app requires it, a stand-in that keeps what the app handed it. Its manifest, its tile and its opening in a
 // real Chrome are judged in its wrapper part, below.
 // This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the wrapper part, once a file of its own, is a
@@ -54,7 +54,7 @@ function world(o) {
     requireScript: function (p) {
       w.required.push(String(p));
       if (opt.refuse) return Promise.reject(new Error());
-      const put = function () { if (p === 'spirit/element/nodeInfo.js') els.nodeInfo = nodeInfo; return {}; };
+      const put = function () { if (p === 'spirit/element/nodeInfo/script.js') els.nodeInfo = nodeInfo; return {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
@@ -83,9 +83,9 @@ test.run('it uses no spirit.shell.activateApp, the old shell\'s way', 0.2, funct
 }, test.limit.quick);
 
 // a wrapper: it loads nodeInfo, and nothing of its own (requirement 6)
-test.run('it requires spirit/element/nodeInfo.js, and only that', 0.2, function () {
+test.run('it requires spirit/element/nodeInfo/script.js, and only that', 0.2, function () {
   if (!U.w) return false;
-  return JSON.stringify(U.w.required) === '["spirit/element/nodeInfo.js"]' || false;
+  return JSON.stringify(U.w.required) === '["spirit/element/nodeInfo/script.js"]' || false;
 }, test.limit.quick);
 test.run('it asks nothing itself: no verb, no api, no cache, no relay, no card', 0.2, function () {
   if (!SRC) return false;
@@ -291,9 +291,9 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
     const markup = R.c0.match(/['"][^'"\n]*<(div|span|button|input|table|b)\b[^'"\n]*['"]/g) || [];
     return !markup.length || false;
   }, test.limit.quick);
-  // Info: "They move into one new element, spirit/element/nodeInfo.js (Q2)".
-  test.run('info.js loads spirit/element/nodeInfo.js', 0.2, function () {
-    const LOADS = /['"]spirit\/element\/nodeInfo\.js['"]/;
+  // Info: "They move into one new element, spirit/element/nodeInfo/script.js (Q2)".
+  test.run('info.js loads spirit/element/nodeInfo/script.js', 0.2, function () {
+    const LOADS = /['"]spirit\/element\/nodeInfo\/script\.js['"]/;
     return LOADS.test(R.c0 || '') || false;
   }, test.limit.quick);
 

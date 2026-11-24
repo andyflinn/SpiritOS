@@ -18,7 +18,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - It keeps no state of its own: no `showDebug`, no `relay-state`, no title of the old shell, and opening it saves no file.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
 - It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own
-  components."): with no workBench on the page, it loads `spirit/element/workBench.js` through `spirit.requireScript`, then builds.
+  components."): with no workBench on the page, it loads `spirit/element/workBench/script.js` through `spirit.requireScript`, then builds.
 - The workBench has two tools on its right strip (the server's and the bundle editor, below), and on its left one per table of `agent.db`,
   in the order provider, model, persona, job, each with an icon of its own (goal/G41.4, box v22: "every one of
   these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI
@@ -27,13 +27,13 @@ No agents talk to each other through it: each agent sees itself as the only agen
   box of the shell's `fill` class.
 - The server's tool on the right strip takes ⚙, not 🐞, and its panel shows serverDEBUG for the agent (goal/G43.15; Andy:
   *"agent will in the server-config, on the right icon strip the ⚙ icon instead of 🐞"*): its mount loads
-  `spirit/element/search/app/serverDEBUG.js` and makes it in its box. It draws no checkbox and calls no debug verb of the agent's.
+  `spirit/element/search/app/serverDEBUG/script.js` and makes it in its box. It draws no checkbox and calls no debug verb of the agent's.
   Above serverDEBUG it shows the agent's icon and label, through changeAppIcon and changeAppLabel (goal/G43.15).
 
 ## Requirements (goal/G41.21, box v17)
 
 - **The right strip gets its first real tool: the bundle editor.** Two right tools: the agent server's DEBUG box
-  (`server`) and the bundle editor, whose mount requires `spirit/element/bundleEditor.js` and makes it in the box it is
+  (`server`) and the bundle editor, whose mount requires `spirit/element/bundleEditor/script.js` and makes it in the box it is
   handed.
 - **The Grants tool goes**: the left strip holds one tool per table, provider, model, persona and job; the
   app names no grants panel and no grant table.
@@ -96,7 +96,7 @@ Andy, on G41.18:
 
 rule/16: every probabilitySearch is mounted in a box of class `fill`, inside a pane that fills its app. The search
 element's own pane already holds the filters and the search row at their height and gives the list the rest
-(`spirit/element/search.js`). What it needs is that its box, and every box above it, states its size. This suite
+(`spirit/element/search/script.js`). What it needs is that its box, and every box above it, states its size. This suite
 asks that of the app as a whole, the way Desk's does (`spirit/app/desk/element/desk/test/desk.md`, goal/G41.11).
 
 ### Requirements
