@@ -2684,7 +2684,8 @@ function MICRO_GENERAL(body) {
 // scratch node (the one line that boots it, in the copy alone), and two planted scripts, one that does not compile and one
 // that does. In auto mode the classifier runs on both.
 {
-  const BOOT_LINE = '  W.node = await ownScratch();';
+  // The one line that gets its node, its own or the one testicle hands (goal/G49.8, 0349ec1a).
+  const BOOT_LINE = '  W.node = process.env.SPIRIT_MOUNT_BASE && process.env.SPIRIT_MOUNT_RUN ? await handedScratch() : await ownScratch();';
   const BAD = 'spirit/app/testicle/temp/zzCompile/bad.js';
   const GOOD = 'spirit/app/testicle/temp/zzCompile/good.js';
   const C = { s: null, N: null, DB: '', judged: false };
