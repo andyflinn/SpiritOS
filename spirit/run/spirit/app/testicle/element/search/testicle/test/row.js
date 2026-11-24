@@ -12,6 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'row.js');
@@ -33,8 +35,8 @@ test.run('the testicle row element runs on a bare window', 0.2, async function (
   // TESTICLE'S WORDS, AS THE ROW'S OWN REQUIRE LOADS THEM ON A PAGE (goal/G47.1, spirit/app/testicle/words.js): the stand-in
   // require answers only what it is handed, so the file is run here into this window, where it places itself.
   const WORDS = path.join(RUN, 'spirit', 'app', 'testicle', 'words.js');
-  vm.runInThisContext(fs.readFileSync(WORDS, 'utf8'), { filename: WORDS });
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(WORDS);
+  PAGE_LOAD.runAsPage(FILE);
   await settle();
   // The intrinsic elements' place, where its stand-ins go; the row, an app's element since the move to spirit/app/testicle/, no longer
   // makes it by placing itself under it.

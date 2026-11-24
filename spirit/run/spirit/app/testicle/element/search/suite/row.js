@@ -11,22 +11,29 @@
 //
 //   spirit.required.spirit.app.testicle.element.search.suite.row.create(row) -> the row element
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
-  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
-  S.requireScript('spirit/element/row.js');
-  S.requireScript('spirit/element/busyButton.js');
+  keepAnswer('spirit/element/row.js');
+  keepAnswer('spirit/element/busyButton.js');
   // A node with no testicle refuses its interface: the row draws no run button (below); the refusal is never left unhandled.
-  Promise.resolve(S.requireScript('spirit/app/testicle/api.js')).catch(function () {});
+  Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
   var index = null;
   function create(row) {
-    var R = S.required.spirit.element.row;
+    var R = ANSWER['spirit/element/row.js'];
     var r = row || {};
     index = index || R.index(function () {});
     var el = R.create({
@@ -54,10 +61,10 @@
         cell.innerHTML = '';
         cell.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('button')) e.stopPropagation(); });
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
-        var made = Promise.all([S.requireScript('spirit/element/busyButton.js'), S.requireScript('spirit/app/testicle/api.js')]).then(function () {
+        var made = Promise.all([keepAnswer('spirit/element/busyButton.js'), keepAnswer('spirit/app/testicle/api.js')]).then(function () {
           if (button !== made) return;
-          button = S.required.spirit.element.busyButton.create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
-            run: function () { return S.required.spirit.app.testicle.api.run({ script: String(r.script || ''), suite: String(r.suite || '') }); } });
+          button = ANSWER['spirit/element/busyButton.js'].create(cell, { label: '🏃‍♂️', title: 'run this suite', className: 'suite-run',
+            run: function () { return ANSWER['spirit/app/testicle/api.js'].run({ script: String(r.script || ''), suite: String(r.suite || '') }); } });
         }, function () {
           // A node with no testicle refuses its interface: nothing to run the suite with, so no button.
           if (button === made) button = null;
@@ -69,5 +76,6 @@
     return el;
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/suite/row.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

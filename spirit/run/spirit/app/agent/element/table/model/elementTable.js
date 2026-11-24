@@ -19,7 +19,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   var made = 0;
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/agent/element/table/model/elementTable.js', {
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = {
     create: function (container, detail) {
       var pre = 'mt' + (++made) + '-';
       var table = null;
@@ -72,5 +73,5 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         destroy: function () { gone = true; if (drop) drop.destroy(); if (table) table.destroy(); container.innerHTML = ''; },
       };
     },
-  }); });
+  };
 }());

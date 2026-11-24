@@ -44,11 +44,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // each table's list is a probabilitySearch that asks agent.<table> through the spirit object, the agent's own family
   // bound by spirit.requireScript by its api.js path. So the app hands its tables no api: their box and its detail pane.
 
-  // An element by its place, spirit.required.<its path> (goal/G43.32): undefined while any part of the path is not there yet.
-  function agentAt(place) {
-    return String(place).split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit && window.spirit.required);
-  }
   function create(container) {
+      // The tables' shared element, asked once with the app, kept as spirit.requireScript hands it back (goal/G49.9).
+      keepAnswer('spirit/app/agent/element/table/tableElement.js');
       var E = (window.spirit && window.spirit.required) || {};
       var gone = false;
       var serverPanel = null;
@@ -103,7 +101,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           var s = spec || {};
           var adding = !s.id;
           var name = adding ? s.table + '/new' + (++unsaved) : (s.chat ? 'chat/' : s.table + '/') + s.id;
-          var T = agentAt('spirit.app.agent.element.table.tableElement');
+          var T = ANSWER['spirit/app/agent/element/table/tableElement.js'];
           var kept = !adding && T && window.spirit.required.spirit.data ? window.spirit.required.spirit.data.getPath(T.branchOf(s.table) + '/' + s.id) : null;
           var off = null;
           tabs.add({ name: name, label: adding ? 'new ' + s.table + '*' : header(s, Object.assign({}, s.row || {}, kept || {})), closable: true, mount: function (box) {
@@ -134,8 +132,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         left: TABLES.map(function (t) {
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
-            Promise.resolve(spirit.requireScript('spirit/app/agent/element/table/' + t.name + '/elementTable.js')).then(function () {
-              own(agentAt('spirit.app.agent.element.table.' + t.name + '.elementTable').create(box, detail));
+            Promise.resolve(spirit.requireScript('spirit/app/agent/element/table/' + t.name + '/elementTable.js')).then(function (table) {
+              own(table.create(box, detail));
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
           } };
         }).concat([{ name: 'chat', icon: '💬', title: 'Select Persona', mount: function (box) {
@@ -167,14 +165,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         // icon and label, as the appSelector's detail shows them (Q4; Andy: "both above the debug thinggie...").
         right: [{ name: 'server', icon: '⚙', title: 'The agent server', mount: function (box) {
           var A = 'spirit/element/search/app/';
-          Promise.all([spirit.requireScript(A + 'changeAppIcon.js'), spirit.requireScript(A + 'changeAppLabel.js'), spirit.requireScript(A + 'serverDEBUG.js')]).then(function () {
+          // Each part as spirit.requireScript hands it back (goal/G49.9), never read at its spirit.required place.
+          Promise.all([spirit.requireScript(A + 'changeAppIcon.js'), spirit.requireScript(A + 'changeAppLabel.js'), spirit.requireScript(A + 'serverDEBUG.js')]).then(function (parts) {
             if (gone) return;
             var hosts = [0, 1, 2].map(function () { var d = document.createElement('div'); box.appendChild(d); return d; });
-            var made = [
-              window.spirit.required.spirit.element.search.app.changeAppIcon.create(hosts[0], { key: 'agent' }),
-              window.spirit.required.spirit.element.search.app.changeAppLabel.create(hosts[1], { key: 'agent' }),
-              window.spirit.required.spirit.element.search.app.serverDEBUG.create(hosts[2], { key: 'agent' }),
-            ];
+            var made = parts.map(function (part, i) { return part.create(hosts[i], { key: 'agent' }); });
             serverPanel = { destroy: function () { made.forEach(function (m) { m.destroy(); }); } };
           }, function () { box.textContent = 'The server panel could not be loaded.'; });
         } }, { name: 'bundles', icon: '📦', title: 'Bundles', mount: function (box) {

@@ -19,13 +19,20 @@
 // last-change line, the doing text, "<x> of <n> reported" and the ⏳ count (wsl's red: "The ⏳ count goes; suites owed
 // replaces it").
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26; Andy: "the fucking status box must require the fucking api and make sure the
   // fucking data.js is installed"): the icon element, spirit.required.spirit.data, testicle's interface and testicle's cache manager, its
   // data.js, which the page's one stream feeds. Mounted alone, it gets its data by itself.
-  var parts = Promise.all([S.requireScript('spirit/element/icon.js'), S.requireScript('spirit/data.js'), S.requireScript('spirit/app/testicle/api.js'), S.requireScript('spirit/app/testicle/words.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/icon.js'), keepAnswer('spirit/data.js'), keepAnswer('spirit/app/testicle/api.js'), keepAnswer('spirit/app/testicle/words.js')]);
   // Its words testicle's own (goal/G47.1; ../words.js): every line it shows worded there, none here.
-  function W() { return S.required.spirit.app.testicle.words; }
+  function W() { return ANSWER['spirit/app/testicle/words.js']; }
   parts.catch(function () {});
 
   function runningOf(m) {
@@ -82,7 +89,7 @@
     var rows = container.querySelectorAll('.testicle-row');
     // Through the icon element, as every pictograph is drawn (spirit/element/icon.js; the general rules).
     function paint(box, glyph) {
-      var I = S.required && S.required.spirit && S.required.spirit.element.icon;
+      var I = S.required && S.required.spirit && ANSWER['spirit/element/icon.js'];
       if (!I) return false;
       box.innerHTML = '';
       I.create(box, { glyph: glyph });
@@ -90,7 +97,7 @@
     }
     function draw() {
       if (gone) return;
-      var m = S.required.spirit.data.testicle.data.monitor.get();
+      var m = ANSWER['spirit/data.js'].testicle.data.monitor.get();
       var busy = !!(m && m.busy);
       var glyph = busy ? '🚶‍➡️' : '🛌';
       if (glyph !== shown && paint(icon, glyph)) shown = glyph;
@@ -119,9 +126,9 @@
     }
     parts.then(function () {
       if (gone) return;
-      var D = S.required.spirit.data.testicle.data;
+      var D = ANSWER['spirit/data.js'].testicle.data;
       // The mode it stands at, asked once; the stream keeps it after.
-      Promise.resolve(S.required.spirit.app.testicle.api.preferences({})).then(function (p) { if (!gone) D.preferences.keep(p); }, function () {});
+      Promise.resolve(ANSWER['spirit/app/testicle/api.js'].preferences({})).then(function (p) { if (!gone) D.preferences.keep(p); }, function () {});
       draw();
       release = D.monitor.watch(draw);
       drawMode(D.preferences.get());
@@ -137,5 +144,6 @@
     };
   }
 
-  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/statusBox.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

@@ -15,11 +15,18 @@
 // is there, nothing shows in that place"), read from the fs family's mirror of the tree, and only once the tree is whole.
 // Mounted with no script it draws its empty box and asks nothing.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
-  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the suite search and testicle's interface.
   var parts = Promise.all(['spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.requireScript(p); }));
@@ -45,13 +52,13 @@
         if (gone || !F) return;
         ownLine.textContent = F.ready() && !F.file(own) ? own : '';
       };
-      Promise.resolve(S.requireScript('spirit/fs/api.js')).then(function () {
+      Promise.resolve(keepAnswer('spirit/fs/api.js')).then(function () {
         if (gone) return;
         drawOwn();
         release = S.required.spirit.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });
       }, function () {});
       parts.then(function () {
-        return Promise.resolve(S.required.spirit.app.testicle.api['script.get']({ name: file }));
+        return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['script.get']({ name: file }));
       }).then(function () {
         if (gone) return;
         made = S.required.spirit.app.testicle.element.search.suite.create(below, { script: file });
@@ -72,5 +79,6 @@
     };
   }
 
-  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/scriptDetail.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

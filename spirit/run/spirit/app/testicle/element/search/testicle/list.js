@@ -21,10 +21,17 @@
 // first, and kept there; words, a filter or a selector ask it again, sent with what is chosen, so the server narrows before
 // it cuts; answer after answer while it says more, up to 100 tests. The page narrows the branch by the same choices.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, the two selectors, testicle's interface and its cache manager.
   var parts = Promise.all(['spirit/element/search.js', 'spirit/app/testicle/element/search/testicle/row.js', 'spirit/element/search/file.js',
-    'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js', 'spirit/app/testicle/words.js'].map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/app/testicle/api.js')]));
+    'spirit/app/testicle/element/search/suite.js', 'spirit/app/testicle/api.js', 'spirit/app/testicle/words.js'].map(function (p) { return S.requireScript(p); }).concat([keepAnswer('spirit/app/testicle/api.js')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the tests could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});
 
@@ -86,7 +93,7 @@
       };
       // One ask, one answer (Andy: no paging): what fits, more saying the search can be narrowed.
       var ask = function (args) {
-        return Promise.resolve(S.required.spirit.app.testicle.api['testicle.search'](Object.assign({}, args))).then(function (b) {
+        return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['testicle.search'](Object.assign({}, args))).then(function (b) {
           data.keep('testicle', rowsOf(b));
           return { items: (b && b.items) || [], more: !!(b && b.more) };
         });
@@ -154,5 +161,6 @@
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle/list.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

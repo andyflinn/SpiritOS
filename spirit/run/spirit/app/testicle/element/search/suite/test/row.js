@@ -13,6 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'row.js');
@@ -40,7 +42,7 @@ test.run('the row runs on a bare window', 0.2, async function () {
     return own.apply(this, arguments);
   };
   (((((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}).app = global.window.spirit.required.spirit.app || {}).testicle = global.window.spirit.required.spirit.app.testicle || {})).api = { run: function (a) { runs.push(a); return Promise.resolve({ ok: true }); } };
-  vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE);
   await settle();
   // The intrinsic elements' place, where its stand-ins go; the row, an app's element since the move to spirit/app/testicle/, no longer
   // makes it by placing itself under it.

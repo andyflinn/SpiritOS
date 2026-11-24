@@ -13,6 +13,13 @@
 // form. NO SAVE (box v80, 2: "the switch is the same style form the app uses for toggles (rowFormToggle); a change is sent to
 // the server at once, and the server streams it back, which sets the switch"): on is interactive, off auto.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the toggle row and testicle's interface.
   var parts = Promise.all(['spirit/element/search/app/rowFormToggle.js', 'spirit/app/testicle/api.js'].map(function (p) { return S.requireScript(p); }));
@@ -41,17 +48,17 @@
         press: function () {
           if (gone || typeof shown !== 'boolean') return;
           said.textContent = '';
-          Promise.resolve(S.required.spirit.app.testicle.api.preferences({ interactive: !shown })).then(null, function (e) {
+          Promise.resolve(ANSWER['spirit/app/testicle/api.js'].preferences({ interactive: !shown })).then(null, function (e) {
             if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed');
           });
         } });
-      return Promise.resolve(S.requireScript('spirit/app/testicle/api.js')).then(function () {
+      return Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).then(function () {
         if (gone) return;
         var P = S.required.spirit.data.testicle.data.preferences;
         draw(P.get());
         release = P.watch(draw);
         // What it stands at before anything streamed: asked once, kept in the branch the switch follows.
-        return Promise.resolve(S.required.spirit.app.testicle.api.preferences({})).then(function (p) { if (!gone) P.keep(p); });
+        return Promise.resolve(ANSWER['spirit/app/testicle/api.js'].preferences({})).then(function (p) { if (!gone) P.keep(p); });
       });
     }).then(null, function (e) { if (!gone) said.textContent = String((e && e.message) || e || 'preferences failed'); });
     return {
@@ -64,5 +71,6 @@
     };
   }
 
-  S.requireScript('spirit/element/installSpiritElement.js').then(function () { S.required.spirit.element.installSpiritElement(S, 'spirit/app/testicle/element/settingsPanel.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

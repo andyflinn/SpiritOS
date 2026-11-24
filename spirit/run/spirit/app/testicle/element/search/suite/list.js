@@ -20,10 +20,17 @@
 // not drawn. The server publishes every row it writes, so a suite written for the file shows by itself. What the branch
 // does not hold yet is asked once, of testicle.suite.search with no words, and kept there; words ask it again.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list and its row, testicle's interface and its cache manager.
   var parts = Promise.all(['spirit/element/search.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/api.js']
-    .map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/app/testicle/api.js')]));
+    .map(function (p) { return S.requireScript(p); }).concat([keepAnswer('spirit/app/testicle/api.js')]));
   // A NODE WITH NO TESTICLE refuses its interface: create says the suites could not be loaded; the refusal is never left unhandled.
   parts.catch(function () {});
 
@@ -42,7 +49,7 @@
       if (gone) return;
       var data = S.required.spirit.data.testicle.data;
       var ask = function (text) {
-        return Promise.resolve(S.required.spirit.app.testicle.api['suite.search']({ script: script, text: String(text || '') })).then(function (b) {
+        return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['suite.search']({ script: script, text: String(text || '') })).then(function (b) {
           data.keep('suite', rowsOf(b));
           return b;
         });
@@ -90,5 +97,6 @@
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/suite/list.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

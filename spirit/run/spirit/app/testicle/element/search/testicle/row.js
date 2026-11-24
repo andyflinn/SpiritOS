@@ -11,15 +11,22 @@
 // name only, no path; hovering over a script or a suite shows its full name as a tooltip", "The test title is shown in
 // full."
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   // ITS APP'S INTERFACE AND DATA, IT LOADS ITSELF (goal/G47.1, box v142: "all of testicle's elements must subscribe to the data they
   // display"; box v140; rule 26): testicle's api.js and its cache manager, data.js, which the page's one stream feeds; mounted
   // alone, on a page nothing else loaded them on, it has them.
-  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
-  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
+  if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/testicle/api.js')).catch(function () {});
   var S = window.spirit = window.spirit || {};
-  S.requireScript('spirit/element/row.js');
+  keepAnswer('spirit/element/row.js');
   // A result's icon worded by testicle's words (goal/G47.1; ../../../words.js), loaded as this file runs (rule/26).
-  S.requireScript('spirit/app/testicle/words.js');
+  keepAnswer('spirit/app/testicle/words.js');
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
   function nameOf(p) { var s = String(p == null ? '' : p); return s.slice(s.lastIndexOf('/') + 1); }
@@ -27,7 +34,7 @@
 
   var index = null;
   function create(row) {
-    var R = S.required.spirit.element.row;
+    var R = ANSWER['spirit/element/row.js'];
     var r = row || {};
     index = index || R.index(function () {});
     return R.create({
@@ -36,7 +43,7 @@
       index: index,
       row: r,
       fields: [
-        { name: 'verified', paint: function (v) { return S.required.spirit.app.testicle.words.result(!!v.verified); } },
+        { name: 'verified', paint: function (v) { return ANSWER['spirit/app/testicle/words.js'].result(!!v.verified); } },
         { name: 'severity', paint: function (v) { return esc((Number(v.severity) || 0).toFixed(2)); } },
         { name: 'test', paint: function (v) { return esc(v.test); } },
         { name: 'script', paint: function (v) { return fileCell(v.script); } },
@@ -46,5 +53,6 @@
     });
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/testicle/element/search/testicle/row.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());
