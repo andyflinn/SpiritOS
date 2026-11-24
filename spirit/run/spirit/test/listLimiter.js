@@ -39,14 +39,30 @@ test.run('the bucket fills with objects of probability 0 until higher ones push 
   b.seatFor(0, { n: 'z1' }); b.seatFor(0, { n: 'z2' });
   const both = short(names(b)) === short(['z1', 'z2']);
   b.seatFor(0.4, { n: 'hi' });
-  return (both && short(names(b)) === short(['hi', 'z1'])) || false;
+  // Of the two of the lowest probability, the longest held goes ("shedding: the longest held seat").
+  return (both && short(names(b)) === short(['hi', 'z2'])) || false;
 }, test.limit.quick);
-test.run('full, a lower or equal probability is turned away; a higher one takes the room of the lowest', 0.2, function () {
+test.run('full, a lower probability is turned away; a higher one takes the room of the lowest', 0.2, function () {
   // [{"n":"a"},{"n":"b"}] is 21 bytes, [{"n":"a"},{"n":"higher"}] 26: the limit holds the second, never three.
   const b = B.createProbabilityBucket(26);
   b.seatFor(0.6, { n: 'a' }); b.seatFor(0.4, { n: 'b' });
-  b.seatFor(0.4, { n: 'equal' }); b.seatFor(0.2, { n: 'lower' }); b.seatFor(0.5, { n: 'higher' });
+  b.seatFor(0.2, { n: 'lower' }); b.seatFor(0.5, { n: 'higher' });
   return short(names(b)) === short(['a', 'higher']) || false;
+}, test.limit.quick);
+// THE LONGEST HELD GOES (goal/G49.8, point 1; Andy: "for the bucket, the default is: arrival sequence.", "default arrival
+// sequence, shedding: the longest held seat"): among equal probabilities, full, the one seated first goes and the newcomer
+// is kept, so a branch that gives every row the same probability keeps its newest.
+test.run('full, a newcomer of equal probability takes the room of the longest held of them', 0.2, function () {
+  // [{"n":"a"},{"n":"b"}] is 21 bytes: a third of 9 does not fit.
+  const b = B.createProbabilityBucket(21);
+  b.seatFor(0.5, { n: 'a' }); b.seatFor(0.5, { n: 'b' }); b.seatFor(0.5, { n: 'c' });
+  return short(names(b)) === short(['b', 'c']) || false;
+}, test.limit.quick);
+test.run('all of one probability, the bucket keeps the newest that fit, in arrival order', 0.2, function () {
+  // Each ["n"] item is 5 bytes alone; ten of them in turn, a limit of 13 holds the last three: ["7","8","9"] is 13.
+  const b = B.createProbabilityBucket(13);
+  for (let i = 0; i < 10; i += 1) b.seatFor(1, String(i));
+  return short(b.serialize().items) === short(['7', '8', '9']) || false;
 }, test.limit.quick);
 test.run('its one limit is bytes: past it the lowest go at once, however few the objects', 0.2, function () {
   // ["xxxxxxxxxx","xxxxxxxxxx"] is 27 bytes; a third makes 40.
