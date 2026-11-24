@@ -18,7 +18,7 @@ test `test/foo-laid.html`, and the files that name it: a relative require, a `sp
 - its test is at `foo/test/script.js`, its `.md` at `foo/test/script.md`, the fixture in `foo/test/`
 - every reference names the new path: the moved test's require, the regex-escaped form, the relative require, the
   `spirit.requireScript`, the `path.join`, the script tag, the doc
-- the dotted name is `spirit.required.spirit.element.foo.script`, where it is read and where the script places itself
+- every dotted name is left as it was: a folder's `script.js` stands at its folder's name, `spirit.required.spirit.element.foo`
 - no file of the tree names the old path
 
 Refused, with nothing moved and nothing changed: a target that already exists, and a move into a folder holding an

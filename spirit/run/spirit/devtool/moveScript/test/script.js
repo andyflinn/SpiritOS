@@ -116,13 +116,16 @@ test.run('a spirit.requireScript of it names its new path', 0.4, function () {
   const t = read(moved(), 'spirit/element/bar.js') || '';
   return (t.indexOf(rs('spirit/element/foo/script.js')) !== -1 && t.indexOf(rs('spirit/element/foo.js')) === -1) || false;
 }, test.limit.slow);
-test.run('its dotted name is changed where it is read: spirit.required.<its new path>', 0.4, function () {
+// PATHS ONLY (goal/G49.9, box v5: "a move then changes only paths: G49.5's element batch becomes paths only, and moveScript drops
+// its dotted-name rewriting"; "a folder's script.js stands at its folder's own name"): spirit/element/foo/script.js stands where
+// spirit/element/foo.js stood, so the move leaves every dotted name as it was.
+test.run('its dotted name is left as it was where it is read, since a folder\'s script.js stands at its folder\'s name', 0.4, function () {
   const t = read(moved(), 'spirit/element/bar.js') || '';
-  return t.indexOf('spirit.required.spirit.element.foo.script.create') !== -1 || false;
+  return (t.indexOf('spirit.required.spirit.element.foo.create') !== -1 && t.indexOf('foo.script') === -1) || false;
 }, test.limit.slow);
-test.run('its dotted name is changed where the script places itself', 0.4, function () {
+test.run('its dotted name is left as it was in the moved script itself', 0.4, function () {
   const t = read(moved(), NEW) || '';
-  return t.indexOf('spirit.required.spirit.element.foo.script =') !== -1 || false;
+  return (t.indexOf('spirit.required.spirit.element.foo =') !== -1 && t.indexOf('foo.script') === -1) || false;
 }, test.limit.slow);
 test.run('a path.join of its pieces names its new path', 0.4, function () {
   const t = read(moved(), 'spirit/server/where.js') || '';
