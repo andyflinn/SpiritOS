@@ -2613,17 +2613,21 @@ test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only 
   }, test.limit.quick);
   test.run('a suite with two tests of one title is red with the reason duplicate titles', 0.8, async function () {
     if (!reasonUp()) return false;
-    const r = await until(function () { const x = rowOf(DDUP); return Promise.resolve(!!x && no(x.test) && x.outcome ? x : null); }, 280000);
+    // until answers true or false, never what it found (spirit/test/headLessChrome.js): the row is read again once it has come.
+    await until(function () { const x = rowOf(DDUP); return Promise.resolve(!!x && no(x.test) && !!x.outcome); }, 280000);
+    const r = rowOf(DDUP);
     return (!!r && r.outcome === 'red' && r.reason === 'duplicate titles') || false;
   }, test.limit.long);
   test.run('a title past 128 bytes is stored cut before the character that overflows, and judged', 0.6, async function () {
     if (!reasonUp()) return false;
-    const r = await until(function () { const x = currentOf(tables(R.DB), ELONG, GENERAL, LONG_CUT)[0]; return Promise.resolve(x || null); }, 280000);
+    await until(function () { return Promise.resolve(!!currentOf(tables(R.DB), ELONG, GENERAL, LONG_CUT)[0]); }, 280000);
+    const r = currentOf(tables(R.DB), ELONG, GENERAL, LONG_CUT)[0];
     return (!!r && yes(r.verified) && Buffer.byteLength(r.test) === 127) || false;
   }, test.limit.long);
   test.run('two titles the same once cut make the suite red with the reason duplicate titles', 0.6, async function () {
     if (!reasonUp()) return false;
-    const r = await until(function () { const x = rowOf(FCUT); return Promise.resolve(!!x && no(x.test) && x.outcome ? x : null); }, 280000);
+    await until(function () { const x = rowOf(FCUT); return Promise.resolve(!!x && no(x.test) && !!x.outcome); }, 280000);
+    const r = rowOf(FCUT);
     return (!!r && r.outcome === 'red' && r.reason === 'duplicate titles') || false;
   }, test.limit.long);
   test.run('a suite whose test answered false is red with no reason: its verdict was reached', 0.8, async function () {
