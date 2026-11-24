@@ -127,6 +127,22 @@ test.run('on the blast radius of spirit/app/desk/desk.js, spirit-sibling-general
   const desk = testsFor('spirit/app/desk/desk.js').filter(function (e) { return e.test === 'spirit/test/spirit-sibling-general.js'; }).map(function (e) { return e.file; });
   return desk.join() === 'spirit/app/desk/desk.js' || false;
 }, test.limit.quick);
+// A -CHILD- TEST BESIDE A FOLDER HOLDING SCRIPT.JS (goal/G49.5, box v5: "the test system's rule widens by one case, so they
+// still count: a -child- test is a general test beside ./<name>.js, or beside a folder ./<name>/ holding script.js; it judges
+// that script and everything in ./<name>/"; Andy: "b."). On this tree: spirit/test/app-child-general.js stands beside
+// spirit/app/, which holds spirit/app/script.js and no spirit/app.js.
+test.run('a -child- test beside a folder holding script.js judges a script in that folder, on its blast radius', 0.2, function () {
+  if (fs.existsSync(path.join(RUN, 'spirit', 'app.js')) || !fs.existsSync(path.join(RUN, 'spirit', 'app', 'script.js'))) return false;
+  const hit = testsFor('spirit/app/desk/desk.js').filter(function (e) { return e.test === 'spirit/test/app-child-general.js'; }).map(function (e) { return e.file; });
+  return hit.join() === 'spirit/app/desk/desk.js' || false;
+}, test.limit.quick);
+test.run('a -child- test beside a folder holding script.js judges that script.js, on the whole list', 0.2, function () {
+  return all().some(function (e) { return e.test === 'spirit/test/app-child-general.js' && e.file === 'spirit/app/script.js'; }) || false;
+}, test.limit.quick);
+test.run('a -child- test beside a folder holding script.js judges nothing outside that folder, on the whole list', 0.2, function () {
+  const files = all().filter(function (e) { return e.test === 'spirit/test/app-child-general.js'; }).map(function (e) { return e.file; });
+  return (files.length > 0 && files.every(function (f) { return f === 'spirit/app/script.js' || f.indexOf('spirit/app/') === 0; })) || false;
+}, test.limit.quick);
 // THE SPECIAL GENERAL TESTS (goal/G47.1, box v94, 1): testicle runs spirit/test/scriptClassify.js itself; it is no test here.
 test.run('spirit/test/scriptClassify.js, the classifier, is listed as no test and handed no module', 0.2, function () {
   const listed = all().filter(function (e) { return e.test === 'spirit/test/scriptClassify.js' || e.file === 'spirit/test/scriptClassify.js'; });

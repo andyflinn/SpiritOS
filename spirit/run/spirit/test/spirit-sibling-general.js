@@ -980,6 +980,19 @@ if (WHOLE || MODULE) {
   }, test.limit.quick);
 }
 
+// THE SCRIPT.JS NAME (goal/G49.5, "before we start": "a new test is added to spirit-sibling-general: \"a product script is
+// called <name>/script.js\" severity: 0.81, This must happen so we can measure our progress in namespace consolidation, and
+// assert the rule for all future additions to the system"; Andy: "the suggested test in spirit-sibling-general counts ALL
+// product scripts"). Red on purpose, over the whole tree, until the last ./<name>.js has become ./<name>/script.js: no name
+// is left out, api.js and data.js included. Handed one script, that one; handed a file in a test folder, not made.
+if (WHOLE || MODULE) {
+  test.run('a product script is called <name>/script.js', 0.81, function () {
+    const scripts = WHOLE ? execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean).filter(isProduction) : [handed];
+    if (!scripts.length) return false;
+    return scripts.every(function (rel) { return path.posix.basename(rel) === 'script.js'; }) || false;
+  }, test.limit.quick);
+}
+
 // THE THREE KINDS OF GENERAL TEST (goal/G47.1, box v94, 2: "there will be, from now on only 3 types of general tests, at any
 // level of the tree: <file>-<child | sibling>-general.js, <file>-<child | sibling>-node.js, <file>-<child | sibling>-browser.js",
 // "existing general tests fold into the appropriate of the 3 new general test name-formats"). A general test is a script in
