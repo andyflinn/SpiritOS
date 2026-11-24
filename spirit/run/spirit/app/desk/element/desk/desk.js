@@ -308,6 +308,9 @@ function deskOnPublished(obj) {
   // (spirit/app/desk/data.js, goal/G33.3), so the page does not feed it again.
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: ask again for what is shown.
   if (obj.dropped) { deskSearchItems(); return; }
+  // THE CURRENT SELECTION (goal/G49.8, box v4): the desk family's data.js keeps it, so the List, filtered to the current goal
+  // by default, is drawn again now, from what is kept, without waiting for any answer.
+  if (typeof obj.current === 'string' && !obj.item && !obj.table) { deskDraw(); if (deskList) deskList.redraw(); return; }
   var change = Number(obj.change) || 0;
   // AN OLDER UPDATE CHANGES NOTHING (goal/G2.1 note 7). Andy: "let desk worry about its problems": publishes
   // travel as their own requests and can overtake each other; a row is never painted over by what came before.

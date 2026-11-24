@@ -108,6 +108,9 @@
       if (!o || typeof o !== 'object') return;
       // The newest change heard, as item.get answers it. No position: the stream keeps its own (appServer, goal/G41.12).
       if (typeof o.change === 'number' && o.change > (Number(V.get(STATE + '/change')) || 0)) V.set(STATE + '/change', o.change);
+      // THE CURRENT SELECTION (goal/G49.8, box v4; Andy: "the \"current\" selection is just another streamed item"): the
+      // desk's row {current}, kept by a client's cache and streamed to a page at its connect, names the current goal.
+      if (typeof o.current === 'string' && !o.item && !o.table) { if (o.current) V.set(STATE + '/current', o.current); return; }
       // A STACK-FRAME DOOR CHANGED (a publish naming plugin stackFrameChecks, { what, id }, carries no row): its run kept is
       // dropped, and for any change but a run the door kept too, so whoever watches them reads them again.
       // DISCREPANCY WITH ANDY's RULES: goal/G43.22, Andy: "the apps and plugin system goes.", "removal of plugin support.".

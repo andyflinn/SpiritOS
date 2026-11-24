@@ -41,9 +41,9 @@
 //   recordPaths(fn)   the paths fn wrote (set, merge, del), so a stream's row can take what it wrote with it (goal/G41.12)
 //   byteCap(n?)         the byte cap: reads it, or sets it in a process
 //
-// A PROCESS'S CACHE IS A NODE STORE (goal/G41.3, Q2): past its 4 MB it sheds the oldest writes first, each told as a delete.
-// A page has no cap for now (below): goal/G49.8's page cap (Andy: "the browser will need a cache limit") shed the shell's
-// own first writes and is taken out until a shed keeps each family's share. Only a process may set another cap.
+// A CACHE IS A NODE STORE (goal/G41.3, Q2): past its 4 MB it sheds the oldest writes first, each told as a delete; a process as
+// one pool, a page one pool per branch (goal/G49.8, below; Andy: "the browser will need a cache limit", "each BRANCH"). Only a
+// process may set another cap.
 (function (root) {
   var families = Object.create(null);  // name -> spirit.required.spirit.data.<name>
   var watchers = Object.create(null);   // path -> [fn]
@@ -51,12 +51,13 @@
   var quiet = Object.create(null);      // a type being filled without telling (the tree arriving)
   var onPage = !!(root.spirit && typeof root.spirit.isBrowser === 'function' && root.spirit.isBrowser());
   var CAP = 4 * 1024 * 1024;
-  // NO CAP ON A PAGE, FOR NOW (goal/G49.8, point 1 reopened; Andy: "since 49.8 started the shell load takes FOREVER"): the cap
-  // shed the oldest writes of the whole page first, the shell's own file tree and apps among them, once testicle's rows passed
-  // 4 MB. A page's cap waits for a shed that keeps each family's own share.
-  var capBytes = onPage ? Infinity : CAP;
-  var sizes = new Map();                // path -> bytes, oldest write first
-  var total = 0;
+  // EACH BRANCH ON A PAGE HAS ITS OWN 4 MB (goal/G49.8, box v4; Andy: "each BRANCH"): one cap over the whole page shed the
+  // oldest writes of the page first, the shell's own file tree and apps among them, once testicle's rows passed 4 MB, and the
+  // shell loaded forever. So a page keeps one pool per branch (a path's second step), each shedding its own oldest rows only;
+  // a process keeps one pool, as before.
+  var capBytes = CAP;
+  var pools = Object.create(null);     // pool -> { sizes: path -> bytes, oldest write first, total }
+  function poolOf(path) { var k = onPage ? split(path).family : ''; return pools[k] || (pools[k] = { sizes: new Map(), total: 0 }); }
 
   // A path cut where the tree is: node, family, branch, and the row, which may hold slashes. type is the branch's whole
   // path, the unit every watch, ready and quiet is kept by.
@@ -139,20 +140,21 @@
     Object.keys(families).forEach(function (f) { Object.keys(families[f].cache).forEach(function (n) { Object.keys(families[f].cache[n]).forEach(function (b) { out.push(n + '/' + f + '/' + b); }); }); });
     return out;
   }
-  // THE BYTES KEPT, IN A PROCESS: each write counted as its path and its JSON, and made the newest; past the cap the
-  // oldest go, the one just written last of all.
+  // THE BYTES KEPT, PER POOL: each write counted as its path and its JSON in its pool, and made the newest; past the cap the
+  // pool's oldest go, the one just written last of all.
   function counted(path, value) {
     if (capBytes === Infinity) return;
-    if (sizes.has(path)) { total -= sizes.get(path); sizes.delete(path); }
+    var pl = poolOf(path);
+    if (pl.sizes.has(path)) { pl.total -= pl.sizes.get(path); pl.sizes.delete(path); }
     if (value === undefined) return;
     var n = utf8Bytes(path) + utf8Bytes(JSON.stringify(value) || '');
-    sizes.set(path, n);
-    total += n;
-    shed(path);
+    pl.sizes.set(path, n);
+    pl.total += n;
+    shed(pl, path);
   }
-  function shed(keep) {
-    var oldest = sizes.keys();
-    while (total > capBytes) {
+  function shed(pl, keep) {
+    var oldest = pl.sizes.keys();
+    while (pl.total > capBytes) {
       var p = oldest.next();
       if (p.done) break;
       if (p.value !== keep) del(p.value);
@@ -162,7 +164,7 @@
     if (n === undefined) return capBytes;
     if (onPage || !(Number(n) > 0)) return capBytes;
     capBytes = Number(n);
-    shed(null);
+    Object.keys(pools).forEach(function (k) { shed(pools[k], null); });
     return capBytes;
   }
   // EVERYTHING KEPT GOES, ASKED (forgetAll): the branches stay the same objects, emptied; each type that held anything is told
@@ -176,8 +178,7 @@
       quiet[type] = false;
       if (had) heard(type).forEach(function (fn) { try { fn(type, undefined); } catch (e) { /* one reader's fault */ } });
     });
-    sizes.clear();
-    total = 0;
+    pools = Object.create(null);
   }
   // WHAT A WRITE TOUCHED (goal/G41.12): a stream's client keeps each row with the paths it wrote, so a row its cache
   // sheds, or a full push replaces, takes those with it (appServer). recordPaths(fn) answers every path fn set, merged or

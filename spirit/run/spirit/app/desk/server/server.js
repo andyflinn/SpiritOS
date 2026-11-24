@@ -1003,8 +1003,8 @@ const CLIENT_WAIT_MS = 10000;
 function deskBootstrap() {
   if (!S || !S.current || !S.goals[S.current]) return [];
   const ids = [S.current].concat(S.goals[S.current].members).filter(function (id) { return !!S.items[id]; });
-  // goal/G41.12: one row each; appServer bundles what it hands.
-  return ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); });
+  // goal/G41.12: one row each; appServer bundles what it hands. The current selection first (goal/G49.8, currentRow).
+  return [currentRow(S)].concat(ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }));
 }
 // An item's facts as a List row publish.
 function rowPublish(s, id, verb, change) {
@@ -1038,10 +1038,16 @@ function sidePublish(s, id, ch, change) {
 // when needed and stay". An item's box, chat, checks and files are each read by the client that needs them, each its own
 // answer under the payload, and kept current by the side rows every write pushes. Also at start, the current goal: every
 // client was away from a desk that was not there.
+// THE CURRENT SELECTION, ONE ROW OF THE DESK'S STATE (goal/G49.8, box v4; Andy: "the \"current\" selection is just another
+// streamed item, that part of the apps (desks) state....that's all."): {current, change}, published as the current goal
+// changes and handed with the bootstrap, so a client's cache, keeping its newest, always names the current goal and a page in
+// client mode draws its List from the cache alone.
+function currentRow(s) { return { current: String(s.current || ''), change: s.change }; }
 function pushGoalWhole(gid) {
   const s = S;
   const g = s.goals[gid];
   if (!g) return;
+  publishOne(currentRow(s));
   [gid].concat(g.members).filter(function (id) { return !!s.items[id]; })
     .forEach(function (id) { publishOne(rowPublish(s, id, 'goal.whole', s.change)); });
 }

@@ -38,6 +38,8 @@ module.exports = function rules(N) {
   }
   function identity(row) {
     if (!row || typeof row !== 'object') return '';
+    // The current selection (goal/G49.8, box v4): one row of the desk's state, its newest kept.
+    if (typeof row.current === 'string' && !row.item && !row.table) return 'current';
     if (row.table) { var k = sideKey(row); return k === null ? '' : 'side ' + row.table + ' ' + String(row.id || '') + ' ' + k; }
     if (row.item && row.item.id) return 'item ' + row.item.id;
     return '';
