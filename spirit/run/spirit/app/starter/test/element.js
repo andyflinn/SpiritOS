@@ -10,6 +10,8 @@ const path = require('path');
 const vm = require('vm');
 // spirit/app/starter/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const S = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'element.js');
@@ -58,7 +60,7 @@ function world(card, hold) {
   // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so starter.js places itself by
   // installSpiritElement at spirit.required.spirit.app.starter.element as it runs.
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
-  if (SRC) vm.runInContext(SRC, win, { filename: FILE });
+  if (SRC) PAGE_LOAD.runAsPage(FILE, win, SRC);
   w.win = win;
   return w;
 }

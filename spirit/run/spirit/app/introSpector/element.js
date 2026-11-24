@@ -9,14 +9,22 @@
 // spirit/element/introSpector.js; it loads that and draws it once it is here, so a tile pressed while it is on its way
 // waits for it. The app selector's tile opens it.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
-  var face = S.requireScript('spirit/element/introSpector.js');
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/introSpector/element.js', {
+  var face = keepAnswer('spirit/element/introSpector.js');
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = {
     create: function (container, options) {
       var made = null;
       var gone = false;
-      Promise.resolve(face).then(function () { if (!gone) made = S.required.spirit.element.introSpector.create(container, options); });
+      Promise.resolve(face).then(function () { if (!gone) made = ANSWER['spirit/element/introSpector.js'].create(container, options); });
       return { destroy: function () { gone = true; if (made) made.destroy(); made = null; } };
     },
-  }); });
+  };
 }());

@@ -13,6 +13,8 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'desk.js');
@@ -225,7 +227,7 @@ function deskWorld(goal, items) {
       const rel = String(p).replace(/^\/+/, '');
       required.push(rel);
       const run = Object.prototype.hasOwnProperty.call(REAL, rel) ? REAL[rel] : '';
-      if (run && !ran[run]) { ran[run] = true; vm.runInContext(fs.readFileSync(path.join(RUN, run), 'utf8'), win, { filename: run }); }
+      if (run && !ran[run]) { ran[run] = true; PAGE_LOAD.runAsPage(path.join(RUN, run), win); }
       // A branch by its api.js path (goal/G49.6: never by a name): every verb of it reaches the recorder as <branch>.<verb>.
       const b = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(String(rel));
       if (b) return Promise.resolve(new Proxy({}, { get: function (t2, rest) { return rest === 'then' ? undefined : function (args) { return api.verb(b[1] + '.' + String(rest), args); }; } }));
@@ -250,8 +252,8 @@ function deskWorld(goal, items) {
   // the key kept on spirit.nodeFacts and handed to the data set, so the cache files the page's rows under its node.
   win.spirit.nodeFacts = { key: PAGE_NODE_KEY };
   win.spirit.required.spirit.data.homeNode(PAGE_NODE_KEY);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'row.js'), 'utf8'), win, { filename: 'row.js' });
-  vm.runInContext(raw, win, { filename: FILE });
+  PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row.js'), win);
+  PAGE_LOAD.runAsPage(FILE, win, raw);
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
   w.mount = async function () {
     win.spirit.required.spirit.app.desk.element.desk.desk.create(document.body.appendChild(document.createElement('div')), {});

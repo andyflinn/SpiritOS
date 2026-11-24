@@ -14,6 +14,8 @@ const path = require('path');
 const vm = require('vm');
 // spirit/app/info/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
@@ -56,7 +58,7 @@ function world(o) {
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
-  if (SRC) vm.runInContext(SRC, win, { filename: FILE });
+  if (SRC) PAGE_LOAD.runAsPage(FILE, win, SRC);
   w.win = win; w.els = { info: (win.spirit.required.spirit.app.info || {}).element };
   return w;
 }

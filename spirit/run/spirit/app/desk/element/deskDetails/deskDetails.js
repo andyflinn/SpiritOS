@@ -20,7 +20,14 @@
 // IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
 // file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
 (function () {
-if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/desk/api.js')).catch(function () {});
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
+if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
 var ddApi = null;
 var ddId = '';
 var ddFacts = null;          // the item's facts, as the server last said them
@@ -77,11 +84,11 @@ function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
 // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the say box
 // held to fieldRules' line rule by fieldInput, loaded here with the armingButton and attached after each paint.
 var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScript
-  ? Promise.all([spirit.requireScript('spirit/element/armingButton.js'), spirit.requireScript('spirit/element/fieldInput.js')]) : null);
+  ? Promise.all([keepAnswer('spirit/element/armingButton.js'), keepAnswer('spirit/element/fieldInput.js')]) : null);
 function ddArming() {
   return ddParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.armingButton;
-    var F = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.fieldInput;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton.js'];
+    var F = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/fieldInput.js'];
     var say = document.getElementById('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'spirit.type.string.paragraph'); say.setAttribute('data-held', 'paragraph'); }
     // Your name for the item, a label (goal/G48.4, box v22).
@@ -134,7 +141,7 @@ function ddSecondPress(b) {
 // loads that element too, as it draws with it (Andy: "this element will replace icons painting all shell elements and
 // apps.").
 var ddBenchParts = typeof spirit !== 'undefined' && spirit.requireScript
-  ? Promise.all([spirit.requireScript('spirit/element/workBench.js'), spirit.requireScript('spirit/element/icon.js')])
+  ? Promise.all([keepAnswer('spirit/element/workBench.js'), keepAnswer('spirit/element/icon.js')])
   : Promise.resolve(null);
 var ddBench = null;
 var ddBenchBoxes = {};
@@ -184,11 +191,11 @@ function ddFrame() {
 // the words and the title input (a label, fieldInput), its Add busy until the desk answers (busyButton). On a goal the new
 // item is the goal's; on an item it is of the same goal and blocks that item (item.add blocks).
 var ddAddParts = typeof spirit !== 'undefined' && spirit.requireScript
-  ? Promise.all([spirit.requireScript('spirit/element/rowForm.js'), spirit.requireScript('spirit/element/fieldInput.js')])
+  ? Promise.all([keepAnswer('spirit/element/rowForm.js'), keepAnswer('spirit/element/fieldInput.js')])
   : Promise.resolve(null);
 function ddMakeAdd(n) {
-  var R = window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element.rowForm;
-  var F = window.spirit && window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element.fieldInput;
+  var R = window.spirit && window.spirit.required && window.spirit.required.spirit && ANSWER['spirit/element/rowForm.js'];
+  var F = window.spirit && window.spirit.required && window.spirit.required.spirit && ANSWER['spirit/element/fieldInput.js'];
   var row = document.getElementById('dd-add-row');
   if (n !== ddFrameN || !R || typeof R.create !== 'function' || !row || row.firstChild) return;
   var form = R.create(row, { icon: '➕', button: 'Add', press: function () { return ddAdd(); } });
@@ -219,7 +226,7 @@ function ddShowLeft(name) {
   if (left && box && left.parentNode !== box) box.appendChild(left);
 }
 function ddMakeBench(n) {
-  var W = window.spirit && window.spirit.required && window.spirit.required.spirit.element.workBench;
+  var W = window.spirit && window.spirit.required && ANSWER['spirit/element/workBench.js'];
   var host = document.getElementById('dd-bench');
   var hold = document.getElementById('dd-hold');
   var centre = document.getElementById('dd-centre');
@@ -886,12 +893,13 @@ var ddApp = {
     return ddLoad();
   },
 };
-window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/deskDetails/deskDetails.js', { create: function (container, opts) {
+// What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+module.exports = { create: function (container, opts) {
   // MOUNTED EMPTY, NO THROW (goal/G47.1, the box: "an element that throws when mounted empty is a red at 0.8"): with no
   // page's way to the node (opts.via) or no item, it draws its empty body and opens nothing.
   var o = opts || {};
   ddApp.mount(container, o.via || null);
   if (o.via && o.id) ddApp.open(o);
   return { destroy: function () { container.innerHTML = ''; } };
-} }); });
+} };
 }());

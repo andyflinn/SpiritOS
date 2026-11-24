@@ -25,10 +25,17 @@
 // IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
 // file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/backup/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/app/desk/api.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
 // Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
-if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(window.spirit.requireScript('spirit/element/fieldInput.js')).catch(function () {});
+if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/element/fieldInput.js')).catch(function () {});
 var deskOpts = {};
 var deskStack = null;
 // A verb of the branch at its api.js path (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"),
@@ -50,7 +57,7 @@ function deskHear(fn) {
   var S = window.spirit;
   deskHeard.push(fn);
   if (!deskHearing) {
-    deskHearing = Promise.resolve(S.requireScript('spirit/app/desk/api.js')).then(function () {
+    deskHearing = Promise.resolve(keepAnswer('spirit/app/desk/api.js')).then(function () {
       S.required.spirit.data.addTranslator({
         onJob: function (job) {
           if (!(job && job.module === 'spirit.app.desk' && job.app && typeof job.app === 'object')) return;
@@ -629,11 +636,11 @@ function deskTime(at) {
 // armingButton (spirit/element/armingButton.js), which the page loads itself. It arms, says so, and disarms
 // itself the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
 var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScript
-  ? spirit.requireScript('spirit/element/armingButton.js') : null);
+  ? keepAnswer('spirit/element/armingButton.js') : null);
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && window.spirit.required.spirit.element.armingButton;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.required && ANSWER['spirit/element/armingButton.js'];
     if (!A || typeof button.armed === 'function') return;
     A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run });
   }, function () { /* no armingButton, no second press */ });
@@ -743,7 +750,7 @@ function deskBackupHtml() {
 // under the titlebar, and takes its id.
 function deskHeader() {
   // What it draws with, it loads itself (rule/26).
-  window.spirit.requireScript('spirit/element/appHeader/appHeader.js').then(deskHeaderMove, function () { /* the bars stay plain */ });
+  keepAnswer('spirit/element/appHeader/appHeader.js').then(deskHeaderMove, function () { /* the bars stay plain */ });
 }
 function deskHeaderMove() {
   var old = document.getElementById('desk-bars');
@@ -760,7 +767,8 @@ function deskHeaderMove() {
   old.parentNode.removeChild(old);
 }
 
-window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/desk/element/desk/desk.js', { create: function (container, opts) {
+// What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+module.exports = { create: function (container, opts) {
     deskOpts = opts || {};
     {
     // ── THE TABS ───────────────────────────────────────────────────
@@ -809,7 +817,7 @@ window.spirit.requireScript('spirit/element/installSpiritElement.js').then(funct
       '</div>' +
       '</div>';
     // EVERY FIELD STOPS AT ITS LIMIT (goal/G47.1, -browser): the goal title "subject to label rules" (goal/G9.11).
-    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && window.spirit.required.spirit.element.fieldInput;
+    var FI = window.spirit.required && window.spirit.required.spirit && window.spirit.required.spirit.element && ANSWER['spirit/element/fieldInput.js'];
     // Held to its type (goal/G48.4, box v22), the label a goal title is.
     var goalTitle = FI ? container.querySelector('#desk-goal-title') : null;
     if (goalTitle) FI.attach(goalTitle, 'spirit.type.string.label');
@@ -874,7 +882,7 @@ window.spirit.requireScript('spirit/element/installSpiritElement.js').then(funct
     deskLoad();
     }
     // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
-    if (typeof deskOpts.open !== 'function') window.spirit.requireScript('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = window.spirit.required.spirit.element.panel.create(container, container.firstElementChild); });
+    if (typeof deskOpts.open !== 'function') keepAnswer('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && deskElementAt('spirit.element.panel')) deskStack = ANSWER['spirit/element/panel.js'].create(container, container.firstElementChild); });
     return { destroy: function () {
       deskHeard = [];
       // Its watch let go (rule/8): the backup line's.
@@ -882,5 +890,5 @@ window.spirit.requireScript('spirit/element/installSpiritElement.js').then(funct
       deskBackupWatched = null;
       container.innerHTML = '';
     } };
-} }); });
+} };
 }());

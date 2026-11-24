@@ -12,9 +12,16 @@
 // A WRAPPER, MOUNTED THE NEW SHELL'S WAY, as spirit/app/file/element.js is: it loads nodeInfo (spirit/element/nodeInfo.js),
 // which holds all of Info, and mounts it, handing on the stack its mounter opens layers in.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = S.requireScript('spirit/element/nodeInfo.js');
+  var parts = keepAnswer('spirit/element/nodeInfo.js');
 
   function create(container, opts) {
     var o = opts || {};
@@ -23,7 +30,7 @@
     container.innerHTML = '';
     parts.then(function () {
       if (gone) return;
-      made = S.required.spirit.element.nodeInfo.create(container, { open: o.open });
+      made = ANSWER['spirit/element/nodeInfo.js'].create(container, { open: o.open });
     }, function () { if (!gone) container.textContent = 'Info could not be loaded.'; });
     return {
       destroy: function () {
@@ -35,5 +42,6 @@
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/info/element.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

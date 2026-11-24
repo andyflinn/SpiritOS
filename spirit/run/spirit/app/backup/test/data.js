@@ -12,6 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+// A page script run as the page's loader runs it, in a module box (goal/G49.9).
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
 const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
@@ -26,9 +28,9 @@ function world() {
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
+  PAGE_LOAD.runAsPage(SPIRIT_DATA, win);
   win.spirit.required.spirit.data.homeNode(HOME_KEY);
-  vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  PAGE_LOAD.runAsPage(FILE, win);
   return { win: win, D: win.spirit.required.spirit.data, B: ((win.spirit.required.spirit.data || {}).backup || {}).data };
 }
 const STATUS = { lastCheck: '2026-11-13T09:00:00.000Z', lastCopy: '2026-11-13T08:00:00.000Z', lastError: '' };

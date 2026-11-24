@@ -14,6 +14,13 @@
 // IT PUTS NO NAME ON THE WINDOW (goal/G47.1; Andy: "a test \"does NOT pullute the windows namespace\" NOW!!!!"): the whole
 // file runs inside one function, so its names stay its own; what it shares is its element, on the spirit object.
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 var contactsEscapeHtml = spirit.escapeHtml;
 
@@ -54,7 +61,7 @@ function contactsRefresh() {
 // through spirit.requireScript, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
 // replace icons painting all shell elements and apps."), so the icon element comes with the list.
 // And the panel stack, for a contact's or a relay's details when the mounter hands none (goal/G43.18).
-var contactsParts = Promise.all([spirit.requireScript('spirit/element/search/contact/list.js'), spirit.requireScript('spirit/element/icon.js'), spirit.requireScript('spirit/element/panel.js'), spirit.requireScript('spirit/element/fieldInput.js')]);
+var contactsParts = Promise.all([keepAnswer('spirit/element/search/contact/list.js'), keepAnswer('spirit/element/icon.js'), keepAnswer('spirit/element/panel.js'), keepAnswer('spirit/element/fieldInput.js')]);
 
 function contactCreate(container, options) {
     var gone = false;
@@ -92,9 +99,9 @@ function contactCreate(container, options) {
     // relay peer, so the list above finds it. The rule on the address is the wire's (hub.assertRelayUrl), asked here so
     // a typo costs no round trip.
     // The private label holds to the label rule (goal/G47.1, -browser: every input has a maxlength).
-    window.spirit.required.spirit.element.fieldInput.attach(document.getElementById('contacts-relay-label'), 'spirit.type.string.label');
+    ANSWER['spirit/element/fieldInput.js'].attach(document.getElementById('contacts-relay-label'), 'spirit.type.string.label');
     // The address too, a line (fieldRules' LINE_MAX_BYTES): its maxlength and its own listener, so it is never deaf.
-    window.spirit.required.spirit.element.fieldInput.attach(document.getElementById('contacts-relay-url'), 'spirit.type.string.URL');
+    ANSWER['spirit/element/fieldInput.js'].attach(document.getElementById('contacts-relay-url'), 'spirit.type.string.URL');
     document.getElementById('contacts-relay-add').addEventListener('click', function () {
       var out = document.getElementById('contacts-relay-add-out');
       var label = String(document.getElementById('contacts-relay-label').value || '').trim();
@@ -108,7 +115,7 @@ function contactCreate(container, options) {
       } catch (e) { ok = false; }
       if (!ok) { out.textContent = 'a relay must be https — http is allowed only to 127.0.0.1'; return; }
       out.textContent = 'adding ' + url + '…';
-      spirit.readyPromise.then(function () { return spirit.requireScript('spirit/relay/api.js'); }).then(function (s) { return s.add({ url: url, label: label }); }).then(function (said) {
+      spirit.readyPromise.then(function () { return keepAnswer('spirit/relay/api.js'); }).then(function (s) { return s.add({ url: url, label: label }); }).then(function (said) {
         out.textContent = said && said.ok ? 'added ' + url : 'not added: ' + ((said && said.error) || 'no answer');
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });
@@ -118,8 +125,8 @@ function contactCreate(container, options) {
     var book = document.getElementById('contacts-book');
     contactsParts.then(function () {
       if (gone) return;
-      if (typeof o.open !== 'function') stack = window.spirit.required.spirit.element.panel.create(container, container.firstElementChild);
-      contactsList = window.spirit.required.spirit.element.search.contact.list.create(book, {
+      if (typeof o.open !== 'function') stack = ANSWER['spirit/element/panel.js'].create(container, container.firstElementChild);
+      contactsList = ANSWER['spirit/element/search/contact/list.js'].create(book, {
         open: openOver,
         say: contactsStatus,
         empty: 'Nobody matches: the network is searched as you type.',
@@ -137,5 +144,6 @@ function contactCreate(container, options) {
     };
 }
 
-window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/contact/element.js', { create: contactCreate }); });
+// What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: contactCreate };
 }());

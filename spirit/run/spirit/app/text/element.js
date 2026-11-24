@@ -20,10 +20,17 @@
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
 if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
+  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
+  var ANSWER = {};
+  function keepAnswer(p) {
+    var a = window.spirit.requireScript(p);
+    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
+    return a;
+  }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26). fstat for reading a file only.
-  var parts = Promise.all([S.requireScript('spirit/element/fstat.js'), S.requireScript('spirit/element/rowForm.js'), S.requireScript('spirit/element/search/file.js'),
-    S.requireScript('spirit/element/codeMirror.js'), S.requireScript('spirit/fs/api.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/fstat.js'), keepAnswer('spirit/element/rowForm.js'), keepAnswer('spirit/element/search/file.js'),
+    keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/fs/api.js')]);
 
   function create(container, opts) {
     var o = opts || {};
@@ -46,7 +53,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // The row's icon is the editor's, until Andy names another.
       // Its press is set below, once the file it saves is known.
       var press = null;
-      var row = E.spirit.element.rowForm.create(box, { icon: '✏️', button: 'Save', press: function () { return press ? press() : null; } });
+      var row = ANSWER['spirit/element/rowForm.js'].create(box, { icon: '✏️', button: 'Save', press: function () { return press ? press() : null; } });
       var status = document.createElement('div');
       status.className = 'job-manifest-note';
       status.setAttribute('data-text', 'status');
@@ -78,10 +85,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         shown = mine;
         mine.path = path;
         mine.destroy = function () { if (mine.view && typeof mine.view.destroy === 'function') mine.view.destroy(); };
-        E.spirit.element.fstat.read(path).then(function (r) {
+        ANSWER['spirit/element/fstat.js'].read(path).then(function (r) {
           if (gone || shown !== mine) return null;
           if (r.status !== 200) { status.textContent = 'not loaded: ' + r.status; return null; }
-          return E.spirit.element.codeMirror.create(place, { mode: 'edit', text: new TextDecoder().decode(r.bytes), words: words || '', line: line || 0, path: path });
+          return ANSWER['spirit/element/codeMirror.js'].create(place, { mode: 'edit', text: new TextDecoder().decode(r.bytes), words: words || '', line: line || 0, path: path });
         }).then(function (v) { if (v && shown === mine) { mine.view = v; status.textContent = 'loaded'; } }, function (e) {
           status.textContent = 'not loaded: ' + ((e && e.message) || e);
         });
@@ -93,7 +100,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         if (!shown || !shown.view) return null;
         status.textContent = 'saving…';
         saving = true;
-        return Promise.resolve(S.required.spirit.fs.api.saveFile(shown.path, shown.view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
+        return Promise.resolve(ANSWER['spirit/fs/api.js'].saveFile(shown.path, shown.view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
           function (e) { saving = false; status.textContent = 'save failed: ' + ((e && e.message) || e); });
       };
 
@@ -101,7 +108,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // ALWAYS WHOLE (Andy: "i changed my mind. please show the full media viewer or text editor (including the file picker) even when
       // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var placeholder = 'open a file…';
-      picker = S.required.spirit.element.search.file.create(row.span, {
+      picker = ANSWER['spirit/element/search/file.js'].create(row.span, {
         face: 'dropdown',
         placeholder: placeholder,
         name: function () { return placeholder; },
@@ -129,5 +136,6 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     };
   }
 
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/text/element.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());

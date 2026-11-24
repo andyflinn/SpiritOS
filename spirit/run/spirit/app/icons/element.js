@@ -150,5 +150,6 @@
 
   // Under both names: icons.js stands spirit.required.spirit.app.icons.icons up at once and waits for this file; once here, the face itself.
   // At its own path (goal/G43.32): icons.js, the app's element, draws through it from there.
-  window.spirit.requireScript('spirit/element/installSpiritElement.js').then(function () { window.spirit.required.spirit.element.installSpiritElement(window.spirit, 'spirit/app/icons/element.js', { create: create }); });
+  // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
+  module.exports = { create: create };
 }());
