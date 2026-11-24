@@ -3034,15 +3034,16 @@ function MICRO_GENERAL(body) {
   }, test.limit.long);
   // BEFORE EVERY SUITE'S RUN, NOT ONLY A BUSY STRETCH'S FIRST (goal/G47.1; Andy's lab on 2026-11-19: classifiers stopped
   // mid-run at 08:36-08:46 held four of its six nodes until past noon, because the runner, busy all along, never swept again,
-  // and testicle's own suite starved on the lab). Auto, two planted suites of 25 seconds each run one after the other, the
-  // runner busy throughout; a stray left on a lab node while the first runs is ended before the second goes on.
+  // and testicle's own suite starved on the lab). Auto, two planted suites of 8 seconds each (goal/G49.8: once 25, enough to
+  // plant the stray while the first runs) run one after the other, the runner busy throughout; a stray left on a lab node
+  // while the first runs is ended before the second goes on.
   const SB = S0 + 'sB.js', SC = S0 + 'sC.js';
   // Each marks its start in the copy's root, outside its run folder (run/spirit/app/testicle/temp/zzStray/test is eight
   // folders below the root); no verb says which suite runs now.
   const STARTED = function (rel) { return 'started-' + path.posix.basename(rel, '.js'); };
   const SLOW = function (rel) {
     return "require('fs').writeFileSync(path.join(__dirname, '..', '..', '..', '..', '..', '..', '..', '..', '" + STARTED(rel) + "'), '');\n" +
-      "test.run('it waits 25 seconds', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 25000); }); }, test.limit.long);\n";
+      "test.run('it waits 8 seconds', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 8000); }); }, test.limit.long);\n";
   };
   const running = function (rel) { return fs.existsSync(path.join(ST.s.root, STARTED(rel))); };
   test.run('while the runner stays busy, a stray left on a lab node during one suite is ended before the next suite runs', 0.8, async function () {
@@ -3098,7 +3099,7 @@ test.run('testicle\'s treeScripts walks no folder on the disc', 0.2, function ()
 // were testicle's world: the node and Chrome it hands every run (SPIRIT_MOUNT_BASE, SPIRIT_MOUNT_RUN) stand on a copy of the
 // tree made when the world starts, and the world is let go only when the runner has nothing left to choose. While the tree
 // changed all evening the runner was never idle, so every run judged new tests against the old copy. A planted script,
-// zzWorld.js, and its suite, which writes what the world's copy of zzWorld.js holds; a 60 s suite keeps the runner busy
+// zzWorld.js, and its suite, which writes what the world's copy of zzWorld.js holds; a 10 s suite (goal/G49.8: once 60 s) keeps the runner busy
 // while zzWorld.js changes; the run after the change must find the changed text in the world it is handed.
 const WZ = 'spirit/app/testicle/temp/zzWorld/';
 const WPROD = WZ + 'zzWorld.js', WSUITE = WZ + 'test/zzWorld.js', WBUSY = WZ + 'zzBusy.js', WBUSYS = WZ + 'test/zzBusy.js';
@@ -3115,7 +3116,7 @@ test.run('spirit/app/testicle/temp/zzWorld/ is planted, and its run reads "v1" f
     "  let text = ''; try { text = require('fs').readFileSync(path.join(process.env.SPIRIT_MOUNT_RUN || '', 'spirit', 'app', 'testicle', 'temp', 'zzWorld', 'zzWorld.js'), 'utf8'); } catch (e) { text = ''; }\n" +
     "  require('fs').appendFileSync(SEEN, JSON.stringify({ v: (/\\/\\/ (v\\d+)/.exec(text) || [])[1] || '', run: process.env.SPIRIT_MOUNT_RUN || '', at: Date.now() }) + '\\n');\n" +
     "  return true;\n}, test.limit.quick);\n");
-  put(WBUSYS, SUITE_HEAD + "test.run('zzBusy keeps the runner busy for 60 s', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 60000); }); }, test.limit.slow);\n");
+  put(WBUSYS, SUITE_HEAD + "test.run('zzBusy keeps the runner busy for 10 s', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 10000); }); }, test.limit.slow);\n");
   worldOne = !!(await until(function () { return Promise.resolve(seenWorld().some(function (x) { return x.v === 'v1'; })); }, 240000));
   return worldOne || false;
 }, test.limit.long);
