@@ -123,8 +123,12 @@ function garbageFor(request) {
 
 function make(o) {
   if (o.ext !== 'json' || !o.server || typeof o.server.api !== 'function') return Promise.resolve(null);
-  const family = o.module.slice(o.module.lastIndexOf('/') + 1);
+  const named = o.module.slice(o.module.lastIndexOf('/') + 1);
   return Promise.resolve(o.server.api()).then(function (tree) {
+    // A RELAY'S ONE GROUP, AS ITS TREE NAMES IT (goal/G49.12): its module is spirit/relay/processor since the flag day, and
+    // its tree still calls its one group relay; a node's server is named by its module's last part, as before.
+    const groups = tree && typeof tree === 'object' ? Object.keys(tree) : [];
+    const family = o.server.kind === 'relay' && groups.length === 1 ? groups[0] : named;
     const verbs = tree && tree[family] && typeof tree[family] === 'object' ? tree[family] : null;
     if (!verbs || !Object.keys(verbs).length) return null;
     const list = [];
