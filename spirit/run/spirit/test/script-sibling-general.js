@@ -2577,6 +2577,15 @@ if (!GIVEN.length) {
       return false;
     }) || false;
   }, test.limit.quick);
+  // NO WORD MADE INTO A BRANCH PATH (goal/G49.13; Andy: "WSL, AND NO FUCKING PATH TRANSLATORS FROM SINGLE BRANCH-WORD TO FUCKING BRANCH
+  // PATH EITHER!!!!!!!!!!!!!!!"): anywhere in product code, not only in a requireScript, no path is made by joining 'spirit/' or
+  // 'spirit/app/' with a name, nor by path.join of 'spirit' (and 'app') with one; a branch is always held by its full path.
+  const WORD_TO_PATH = /['"`]spirit\/(?:app\/)?['"`]\s*\+|path\.join\([^)]*['"]spirit['"]\s*,\s*(?:['"]app['"]\s*,\s*)?(?!['"])[A-Za-z_$][\w$.()]*/;
+  test.run('no product script makes a branch path from a single word: nothing joins spirit/ or spirit/app/ with a name', 0.6, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return !files.some(function (f) { return codeText(f).split('\n').some(function (l) { return WORD_TO_PATH.test(l); }); }) || false;
+  }, test.limit.quick);
   test.run('the face page loads the spirit object by its own path, /spirit/script.js', 0.6, function () {
     let t = '';
     try { t = shFs.readFileSync(shPath.join(SH.run, 'spirit', 'shell', 'face.html'), 'utf8'); } catch (e) { return false; }
