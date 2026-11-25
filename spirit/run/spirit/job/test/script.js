@@ -621,7 +621,7 @@ const answersApi = function (name) {
   return H.until(function () { return sask('api', { branch: name }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
 };
 
-// stateLayout: spirit/state/<name>/ holds node.json, cache/, data/ and door.sock, and nothing else; no relay-state, no process (goal/G43.20)
+// stateLayout: spirit/state/app/<name>/ (spirit.statePath, goal/G49.17) holds node.json, cache/, data/ and door.sock, and nothing else; no relay-state, no process (goal/G43.20)
 test.run('the node starts on a tree with no run:/process folder', 0.2, async function () {
   if (RT.node) { LABH.freeTree(RT.node); RT.node = null; }
   SL.servers = fs.readdirSync(APPS).filter(function (n) {
@@ -631,6 +631,8 @@ test.run('the node starts on a tree with no run:/process folder', 0.2, async fun
   SL.root = LABH.scratchTree().root;
   SL.run = path.join(SL.root, 'spirit', 'run');
   SL.state = path.join(SL.run, 'spirit', 'state');
+  // The apps' state folders, by the formula (goal/G49.17): spirit.statePath('spirit/app/<name>') is spirit/state/app/<name>.
+  SL.apps = path.join(SL.state, 'app');
   fs.rmSync(path.join(SL.run, 'process'), { recursive: true, force: true });
   fs.rmSync(path.join(SL.run, 'relay-state'), { recursive: true, force: true });
   SL.port = await H.freePort();
@@ -654,9 +656,9 @@ test.run('there are apps that say node.mount true', 0.2, async function () {
 // are judged per app from its own manifest in spirit/test/app-child-browser.js (goal/G47.4; Andy: "you make bloody well sure
 // that such stupid hard-coded tests move to app-child-* immediately"). This file keeps what is about the job system.
 
-// spirit/state/<name>/ holds node.json, cache/, data/ and on Linux door.sock, nothing else
-const stateFolders = function () { return fs.readdirSync(SL.state).filter(function (n) { return fs.statSync(path.join(SL.state, n)).isDirectory(); }); };
-test.run('each app switched on has its folder in spirit/state/', 0.2, function () {
+// spirit/state/app/<name>/ holds node.json, cache/, data/ and on Linux door.sock, nothing else
+const stateFolders = function () { if (!fs.existsSync(SL.apps)) return []; return fs.readdirSync(SL.apps).filter(function (n) { return fs.statSync(path.join(SL.apps, n)).isDirectory(); }); };
+test.run('each app switched on has its folder in spirit/state/app/', 0.2, function () {
   const folders = stateFolders();
   return SL.servers.every(function (n) { return folders.indexOf(n) !== -1; }) ? true : false;
 }, test.limit.quick);
@@ -672,16 +674,16 @@ const MOUNTED = fs.readdirSync(APPS).filter(function (n) {
 });
 MOUNTED.forEach(function (n) {
   test.forScript('spirit/app/' + n + '/' + n + '.js', function () {
-    test.run('each app server\'s door.sock is spirit/state/<name>/door.sock', 0.2, async function () {
+    test.run('each app server\'s door.sock is spirit/state/app/<name>/door.sock', 0.2, async function () {
       if (process.platform === 'win32') return true;
       if (!SL.state) return false;
-      return (await H.until(function () { return Promise.resolve(fs.existsSync(path.join(SL.state, n, 'door.sock'))); }, 10000)) ? true : false;
+      return (await H.until(function () { return Promise.resolve(fs.existsSync(path.join(SL.apps, n, 'door.sock'))); }, 10000)) ? true : false;
     }, test.limit.quick);
   });
 });
 
-// an app's data in spirit/state/<name>/data/: the folder the node hands it as --state
-test.run('every server is handed spirit/state/<name>/data as its --state', 0.2, async function () {
+// an app's data in spirit/state/app/<name>/data/: the folder the node hands it as --state
+test.run('every server is handed spirit/state/app/<name>/data as its --state', 0.2, async function () {
   const handed = [];
   const list = await sask('job.search', { q: '' });
   for (const it of ((list.body && list.body.items) || [])) {
@@ -691,7 +693,7 @@ test.run('every server is handed spirit/state/<name>/data as its --state', 0.2, 
     const i = args.indexOf('--state');
     if (i !== -1) handed.push(path.relative(SL.run, String(args[i + 1])).split(path.sep).join('/'));
   }
-  const wrong = handed.filter(function (p) { return !/^spirit\/state\/[^/]+\/data$/.test(p); });
+  const wrong = handed.filter(function (p) { return !/^spirit\/state\/app\/[^/]+\/data$/.test(p); });
   return handed.length >= SL.servers.length && !wrong.length ? true : false;
 }, test.limit.quick);
 
@@ -708,8 +710,10 @@ test.run('no spirit/run/process/ is made', 0.2, function () {
 const layoutHolds = function () {
   let bad = 0;
   stateFolders().forEach(function (n) {
-    bad += fs.readdirSync(path.join(SL.state, n)).filter(function (e) { return MAY.indexOf(e) === -1; }).length;
+    bad += fs.readdirSync(path.join(SL.apps, n)).filter(function (e) { return MAY.indexOf(e) === -1; }).length;
   });
+  // No app keeps a folder at the old place, spirit/state/<name>/ (goal/G49.17).
+  SL.servers.forEach(function (n) { if (fs.existsSync(path.join(SL.state, n))) bad++; });
   if (fs.existsSync(path.join(SL.run, 'relay-state'))) bad++;
   if (fs.existsSync(path.join(SL.run, 'process'))) bad++;
   return !bad ? true : false;
@@ -904,7 +908,7 @@ function mountPart() {
   let s = null;
   let N = { up: false, base: 'http://127.0.0.1:0' };
   let ranHelper = '', ranElsewhere = '', elsewhere = '', first = {}, job = null, before = 0;
-  const state = function () { return path.join(s.run, 'spirit', 'state', NAME); };
+  const state = function () { return path.join(s.run, 'spirit', 'state', 'app', NAME); };
   const nodeJson = function () { return readJson(path.join(state(), 'node.json')); };
   const started = function () { return path.join(state(), 'data', 'started.txt'); };
   const startIt = function (script, arg) { return call(N.base, 'job.create', { command: 'node', args: [script].concat(arg ? [arg] : []), type: 'red' }); };
@@ -953,7 +957,7 @@ function mountPart() {
   // Its DEBUG state is the one thing written there, by the server itself (goal/G43.15); no active switch is.
   test.run('no active flag was written to the intrinsic server\'s node.json', 0.2, function () {
     if (noNode()) return false;
-    return !('active' in (readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json')) || {})) || false;
+    return !('active' in (readJson(path.join(s.run, 'spirit', 'state', 'app', 'always', 'node.json')) || {})) || false;
   }, test.limit.quick);
   test.run('app.active false does not stop the intrinsic server', 0.2, async function () {
     if (noNode()) return false;
@@ -1025,7 +1029,7 @@ function mountPart() {
   // What a client kept of a sender comes back only when that sender's family has a data.js here.
   const SENDER = 'MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=';
   const kept = async function (family) {
-    const folder = path.join(s.run, 'spirit', 'state', 'follower', 'cache');
+    const folder = path.join(s.run, 'spirit', 'state', 'app', 'follower', 'cache');
     fs.rmSync(folder, { recursive: true, force: true });
     fs.mkdirSync(folder, { recursive: true });
     const id = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./spirit/data/script.js').nodeId(" + JSON.stringify(SENDER) + "))"], { cwd: s.run, encoding: 'utf8' }).stdout;
@@ -1034,7 +1038,7 @@ function mountPart() {
     fs.rmSync(seen, { force: true });
     const pipe = require(path.join(s.run, 'spirit', 'appClient', 'script.js')).pipePathFor(s.root, 'follower', process.platform);
     if (POSIX) fs.mkdirSync(path.dirname(pipe), { recursive: true });
-    const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, 'follower.js'), '--pipe', pipe], { cwd: s.run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen }) });
+    const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, 'follower.js'), '--pipe', pipe, '--state', path.join(s.run, 'spirit', 'state', 'app', 'follower', 'data')], { cwd: s.run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen }) });
     live.push(kid);
     await until(function () { return Promise.resolve(fs.existsSync(seen)); }, 6000);
     await stop(kid);
@@ -1118,7 +1122,7 @@ function mountPart() {
   // the box: "Its door.sock lives in spirit/state/<name>/", and its state stays in data/
   if (POSIX) {
     // Where the door lies is the requirement here, so its path is read and never connected to: a call goes through the node.
-    test.run('its door is a socket in spirit/state/probe/', 0.2, function () {
+    test.run('its door is a socket in spirit/state/app/probe/', 0.2, function () {
       if (!s) return false;
       const door = path.join(state(), 'door.sock');
       return (fs.existsSync(door) && fs.statSync(door).isSocket()) || false;
@@ -1128,7 +1132,7 @@ function mountPart() {
       return !fs.existsSync(path.join(state(), 'data', 'door.sock')) || false;
     }, test.limit.quick);
   }
-  test.run('the node hands it spirit/state/probe/data as --state', 0.2, function () {
+  test.run('the node hands it spirit/state/app/probe/data as --state', 0.2, function () {
     if (!s) return false;
     return path.resolve(String(first.state)) === path.join(state(), 'data') || false;
   }, test.limit.quick);
