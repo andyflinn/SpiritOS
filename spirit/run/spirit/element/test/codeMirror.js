@@ -15,7 +15,7 @@ const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/codeMirror.js';
 const FILE = path.join(RUN, SUBJECT);
@@ -269,7 +269,7 @@ test.run('the library\'s 15 files, licence included, stand in spirit/element/cod
 // tag", which ends G43.5's "only access to codeMirror library is through the element!"): face.html, which loads it, and
 // fileSystem.js's one list of vendored folders; no other product file, the element included.
 test.run('no product file but face.html and fileSystem.js names the library\'s folder', 0.2, function () {
-  const allowed = ['spirit/run/spirit/shell/face.html', 'spirit/run/spirit/fs/fileSystem.js'];
+  const allowed = ['spirit/run/spirit/shell/face.html', 'spirit/run/spirit/fs/fileSystem/script.js'];
   const asking = L.tracked.filter(function (f) { return /\.(js|html|css)$/.test(f) && f.indexOf('spirit/run/') === 0 && !/\/test\//.test(f) && allowed.indexOf(f) === -1 && f.indexOf('spirit/run/spirit/element/codeMirror/') !== 0; }).filter(function (f) {
     return fs.existsSync(path.join(REPO, f)) && /element\/codeMirror\//.test(fs.readFileSync(path.join(REPO, f), 'utf8').split('\n').map(function (l) { const cut = l.search(/(^|[^:'"])\/\//); return cut === -1 ? l : l.slice(0, cut + 1); }).join('\n'));
   });

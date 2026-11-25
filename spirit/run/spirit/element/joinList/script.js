@@ -17,7 +17,7 @@
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9): the spirit object's families, no api handed.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -163,7 +163,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
 
     // The steps, read once from the Join app's manifest; the job, from the jobs family's cache, watched.
-    Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile(STEPS); }).then(function (text) {
+    Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/fs/script.js'); }).then(function (s) { return s.loadFile(STEPS); }).then(function (text) {
       try { steps = (JSON.parse(text) || {}).steps || []; } catch (e) { steps = []; }
     }, function () { steps = []; }).then(function () { return parts; }).then(function () {
       return S.requireScript('spirit/job/api.js');

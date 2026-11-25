@@ -23,7 +23,7 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test
 // Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
 const appClient = SPIRIT.requireScript('spirit/appClient/script.js');
 const packet = SPIRIT.requireScript('spirit/client/packet.js');
-const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 // THE DESK RUNS FROM A COPY OF THE RUN TREE (never this checkout's own): spirit.js finds its node by the run tree's
 // spirit/state/environment.json, so a desk started from this tree would publish to the real node beside it. The copy's
 // environment.json names the pretend node below, and nothing reaches a real one.

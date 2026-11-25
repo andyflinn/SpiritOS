@@ -387,7 +387,7 @@ function jsonFiles(dir, out) {
   return out;
 }
 function codeFiles(dir, out) {
-  const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+  const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
   let names = [];
   try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   names.forEach(function (d) {

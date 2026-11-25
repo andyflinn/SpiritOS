@@ -1,9 +1,9 @@
 'use strict';
-// spirit/run/spirit/fs/data.js
+// spirit/run/spirit/fs/client/script.js
 // WHAT A CLIENT KNOWS OF A NODE'S FILES, IN THE fs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until every
 // family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.required.spirit.data", and the box:
 // "the clientCacheManager stores the in-RAM cache EXACTLY the same in spirit.required.spirit.data, in the browser AND in an appServer
-// running in client mode." A page loads it through its api.js (spirit/fs/api.js), the one file that requires it; it runs the translator into that page's
+// running in client mode." A page loads it through its api.js (spirit/fs/script.js), the one file that requires it; it runs the translator into that page's
 // spirit.required.spirit.data, under the node that served the tree.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the files rows and list, the Apps, the Icons, the
@@ -17,7 +17,7 @@
 (function family() {
   var FILES = 'files';
   var ICONS = 'icons';
-  var D = typeof require === 'function' ? require('../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }

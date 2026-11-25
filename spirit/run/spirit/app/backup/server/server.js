@@ -81,8 +81,8 @@ function isDb(name) { return /\.(db|sqlite|sqlite3)$/i.test(name); }
 
 // THE NODE'S STATE FROM ITS ONE TREE, NO FOLDER WALK OF ITS OWN (goal/G49.2; Andy: "go on the five!", "the shared dataset
 // needs to be complete, period.", "it would be weird to deny a node process like backup knowledge of all files"): the files
-// under SOURCE as spirit/fs/script.js holds them, relative to SOURCE.
-const tree = spirit.requireScript('spirit/fs/script.js');
+// under SOURCE as spirit/fs/dataset/script.js holds them, relative to SOURCE.
+const tree = spirit.requireScript('spirit/fs/dataset/script.js');
 // SOURCE relative to the run folder, as the tree's paths are: spirit/state.
 const SOURCE_REL = path.relative(path.resolve(__dirname, '..', '..', '..', '..'), SOURCE).split(path.sep).join('/');
 function sourceFiles() {

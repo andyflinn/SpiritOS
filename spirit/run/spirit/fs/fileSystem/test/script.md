@@ -2,7 +2,7 @@
 
 ## The noPreferences part: the node writes no preferences.json
 
-goal/G43.17. Its test, once `./fileSystem-noPreferences.js` (in spirit/test/ then), is a section of `./fileSystem.js`: a real node on a scratch copy of the tracked files.
+goal/G43.17. Its test, once `./fileSystem-noPreferences.js` (in spirit/test/ then), is a section of `./script.js`: a real node on a scratch copy of the tracked files.
 `spirit/fileSystem.js` held `preferences.json` as the node's one writable root file (`WRITABLE_ROOT_FILES`) until 7bfb9514,
 so what the node writes is judged beside it (goal/G43.28; moved from `spirit/test/nodeSettings-noPreferences.js`).
 

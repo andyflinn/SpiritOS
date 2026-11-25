@@ -10,7 +10,7 @@
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js','spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -57,7 +57,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // WHAT IT MOUNTS, read from <name>.json, again each time the row changes: a closed panel is kept, not made anew (goal/G43.17,
     // the box: "A closed layer is hidden, not destroyed"), so a read made once would show an old file when it is shown again.
     function readParts() {
-      S.readyPromise.then(function () { return keepAnswer('spirit/fs/api.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/fs/script.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
         var j = JSON.parse(String(text));
         parts = (j.shell && j.shell.mount === true ? ['face'] : []).concat(j.node && j.node.mount === true ? ['server'] : []);
         paint();

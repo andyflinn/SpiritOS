@@ -1302,7 +1302,7 @@ function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').repla
 
 // ── job.js's app checks read the common file/folder cache (goal/G49.2) ──
 // Andy: "portion to use the common file/folder cache?", "fix job.js"; G49.1's box: "job.js's manifest and api.js checks"
-// move onto spirit/fs/script.js, and "each disc scan goes in the same commit that moves its client onto spirit/fs/script.js". job.js's
+// move onto spirit/fs/dataset/script.js, and "each disc scan goes in the same commit that moves its client onto spirit/fs/dataset/script.js". job.js's
 // code, comments left out, asks the dataset whether an app's files are there and which folders spirit/app/ holds: no
 // readdirSync of spirit/app/ and no existsSync of an app's <name>.js, api.js or data.js. Its statSync stays: it is the
 // watcher's own, which feeds the dataset. A manifest's or a node.json's content is no row of the cache, so those reads stay.
@@ -1315,9 +1315,9 @@ test.run('spirit/job/script.js asks the disc for no file: no existsSync', 0.2, f
 }, test.limit.quick);
 
 // ── job.js keeps no file tree of its own for others (goal/G49.2; Andy: "go on the five!") ──
-// G49.1's box: "Once every client reads spirit/fs/script.js, job.js's fsTreeCommands and fsTreeEntries go, and event.js,
+// G49.1's box: "Once every client reads spirit/fs/dataset/script.js, job.js's fsTreeCommands and fsTreeEntries go, and event.js,
 // faceHome.js and nodeSearches.js read spirit.required.spirit.data.fs". job.js's code holds neither, and each of the three reaches the
-// dataset through spirit/fs/script.js, naming neither. The two names are written in pieces, so this check does not count itself.
+// dataset through spirit/fs/dataset/script.js, naming neither. The two names are written in pieces, so this check does not count itself.
 const TREE_NAMES = ['fsTree' + 'Commands', 'fsTree' + 'Entries'];
 function codeOf(rel) { try { return code(fs.readFileSync(path.join(RUN, rel), 'utf8')); } catch (e) { return ''; } }
 test.run('spirit/job/script.js holds neither of its old tree reads', 0.2, function () {
@@ -1325,8 +1325,8 @@ test.run('spirit/job/script.js holds neither of its old tree reads', 0.2, functi
   return (c.length > 0 && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
 }, test.limit.quick);
 ['spirit/event/event.js', 'spirit/faceHome/script.js', 'spirit/nodeSearches/script.js'].forEach(function (rel) {
-  test.run(rel + ' reads the tree through spirit/fs/script.js, not through job.js', 0.2, function () {
+  test.run(rel + ' reads the tree through spirit/fs/dataset/script.js, not through job.js', 0.2, function () {
     const c = codeOf(rel);
-    return (c.length > 0 && /require(?:Script)?\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(c) && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
+    return (c.length > 0 && /require(?:Script)?\(\s*['"][^'"]*spirit\/fs\/dataset\/script\.js['"]\s*\)/.test(c) && TREE_NAMES.every(function (n) { return c.indexOf(n) === -1; })) || false;
   }, test.limit.quick);
 });

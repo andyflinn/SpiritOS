@@ -1,17 +1,17 @@
 'use strict';
-// spirit/run/spirit/fs/node.js
+// spirit/run/spirit/fs/node/script.js
 // THE NODE HALF OF spirit.fs (goal/G49.2; Andy: "fix spirit.fs NOW", "the architechture in the old kernel.js was exactly that
 // it would insert different versions of spirit.fs functions depending on isNode() and isBrowser()", "THE REASON that
 // spirit.fs was conceived in the first place was so many modules can live unchanged on both node and browser"): in a node
 // process, spirit.fs does the work on its own disc, through this branch's fileSystem.js, the same functions the node's own
-// fs verbs call; no node needs to run. On a page spirit.fs stays the call to the node. spirit/fs/api.js names this file,
+// fs verbs call; no node needs to run. On a page spirit.fs stays the call to the node. spirit/fs/script.js names this file,
 // and spirit.js uses it in node only.
 //
 // answer(verb, args) -> { status, body }, exactly what the node's verb answers (server/node.js handleFsStat, handleFsLoad,
 // handleFsSave, handleFsDelete), so spirit.js hands back the same answers and the same refusals on both sides; or
 // undefined for a verb this half does not answer, which then goes to the node as before. search is such a verb: it ranks
 // the node's file tree, which the node holds.
-const FS = require('./fileSystem.js');
+const FS = require('../fileSystem/script.js');
 
 function path(args) { return String((args && args.path) || ''); }
 function written(r) {

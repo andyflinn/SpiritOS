@@ -1,69 +1,53 @@
 'use strict';
 // spirit/run/spirit/fs/script.js
-// THE FS DATASET'S ONE ENTRY IN A NODE PROCESS (goal/G49.1, box v17: "spirit/fs/script.js is the one entry for a node process
-// that wants the fs dataset: it wraps spirit/fs/data.js and, in a child process, adds the followStream call opaquely. A
-// caller never knows how the dataset is created or updated"). It answers spirit.required.spirit.data.fs's reads: file(path), files(),
-// ready(), watch(fn) / watch(path, fn), branch.
-//
-// WHO FEEDS IT: in the node's main process the file watcher (spirit/job/script.js) writes every change into spirit.required.spirit.data.fs and
-// says so with FedHere(); in any other process nothing does, so spirit.required.spirit.data follows the node's stream, which hands the
-// whole tree and then each change into the same fs/data.js translator a page uses.
-//
-// Node only. It changes no caller (box v17, "OUT OF SCOPE OF THIS ITEM: changing any future client of spirit/fs/script.js").
-require('../script.js');
-// The branch's api.js, which brings its companion spirit/fs/data.js, which makes spirit.required.spirit.data.fs. In node spirit.requireScript
-// loads the file at once and then binds spirit.fs; a process with no port to bind to (the node's own main process on a
-// fresh tree) is refused the binding, never the file, so that refusal is let go.
-Promise.resolve(spirit.requireScript('spirit/fs/api.js')).then(null, function () { /* the binding; the dataset is here */ });
-const D = spirit.requireScript('spirit/data/script.js');
-
-let fed = false;
-let following = false;
-function fill() {
-  if (fed || following) return;
-  following = true;
-  D.followStream();
-}
-function reads() { return D.fs.data; }
-// Required is asked: a process that only requires this file holds the dataset. The writer says FedHere in the same turn it
-// requires this file, so the stream is followed on the next turn only where no watcher writes.
-setImmediate(fill);
-
-// ONE FILE ROW AS A TREE COMMAND (goal/G4.25, G29.8, G49.1, G49.15): {op, path, at} with the row's size, modified, and core, api, branch, app and live
-// when true; the watcher sends each change so, and a connect is handed the whole tree so.
-function CommandOf(op, p, at, row) {
-  const c = { op: op, path: p, at: at };
-  if (row && row.size !== undefined) c.size = row.size;
-  if (row && row.modified !== undefined) c.modified = row.modified;
-  if (row && row.core === true) c.core = true;
-  if (row && row.api === true) c.api = true;
-  if (row && row.branch === true) c.branch = true;
-  if (row && row.app === true) c.app = true;
-  if (row && row.live === true) c.live = true;
-  return c;
-}
-
+// THE fs FAMILY ON THE SPIRIT OBJECT (goal/G32.1): the files under the node's run folder. Written to spirit.js's standard: every verb the
+// node mounts for this family, each argument with its rule ('?' optional); the spirit object makes each one a checked
+// async call, spirit.fs.<verb>(args). A verb added to the family is added here, in the same commit.
+// It names no family of its own: the node maps it (goal/G32.3), answering this text to api {family}.
+// ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
+// data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
+// (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
+if (typeof require === 'function') require('../script.js').requireScript('spirit/fs/client/script.js'); else window.spirit.requireScript('spirit/fs/client/script.js');
 module.exports = {
-  file: function (p) { fill(); return reads().file(p); },
-  files: function () { fill(); return reads().files(); },
-  ready: function () { fill(); return reads().ready(); },
-  watch: function (p, fn) { fill(); return reads().watch(p, fn); },
-  get branch() { fill(); return reads().branch; },
-  // THE WHOLE TREE, READ FROM THE DATASET (goal/G49.2; Andy: "go on the five!"; G49.1's box: "event.js, faceHome.js and
-  // nodeSearches.js read spirit.required.spirit.data.fs"): as create commands for a connect, a folder before what is inside it, and as
-  // entries { name, relativePath, kind } for the counts and fs.search.
-  commands: function () {
-    fill();
-    const files = reads().files();
-    const at = new Date().toISOString();
-    return Object.keys(files).sort().map(function (p) { return CommandOf(files[p].kind === 'folder' ? 'createDirectory' : 'createFile', p, at, files[p]); });
+  // THE NODE HALF (goal/G49.2; Andy: "fix spirit.fs NOW"): in a node process spirit.js answers these verbs through this
+  // file, on the process's own disc, and sends only what it does not answer to the node.
+  node: 'spirit/fs/node/script.js',
+  verbs: {
+    search: { q: 'spirit/type/string/descriptionSelect/script.js?', contents: 'spirit/type/boolean/script.js?' },
+    stat: { path: 'spirit/type/string/file/script.js' },
+    load: { path: 'spirit/type/string/file/script.js' },
+    save: { path: 'spirit/type/string/file/script.js', content: 'spirit/type/string/fileContent/script.js' },
+    delete: { path: 'spirit/type/string/file/script.js' },
   },
-  entries: function () {
-    fill();
-    const files = reads().files();
-    return Object.keys(files).sort().map(function (p) { return { name: p.slice(p.lastIndexOf('/') + 1), relativePath: p, kind: files[p].kind }; });
+  // THE KERNEL'S NAMES, async (Andy listed them): what the old shell's apps call, so an app ports by adding await.
+  // loadFile and statFile answer null where the node refuses, as the kernel's did; a malformed call still refuses.
+  // saveFile and deleteFile answer {ok: false, reason} with the refusal's own words (goal/G33.1), never a bare code.
+  names: function (call, tools) {
+    function orNull(p) { return p.then(function (b) { return b; }, function (e) { if (e && e.status) return null; throw e; }); }
+    return {
+      // A REFUSAL IS NOT "NOTHING THERE" (goal/G41.30; Andy, of a face with no star: "not found (or empty) — you can still Save to
+      // create it"): only a file that is not there answers null; any other refusal rejects, in the node's own words.
+      loadFile: function (path) {
+        return call('load', { path: path }).then(function (b) { return b && typeof b.text === 'string' ? b.text : null; }, function (e) {
+          if (e && e.status === 404) return null;
+          throw e;
+        });
+      },
+      statFile: function (path) { return orNull(call('stat', { path: path })); },
+      saveFile: function (path, content) { return call('save', { path: path, content: content }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
+      deleteFile: function (path) { return call('delete', { path: path }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
+      // A data: url of the file, read as the page reads a file (on the face, in its sealed pieces); null if refused.
+      loadDataUrl: function (path) {
+        var bad = tools.check('spirit.fs.loadDataUrl', { path: 'spirit/type/string/file/script.js' }, { path: path });
+        if (bad) return Promise.reject(bad);
+        return tools.file(path).then(function (r) {
+          if (!r || r.status !== 200) return null;
+          var bin = '';
+          for (var i = 0; i < r.bytes.length; i++) bin += String.fromCharCode(r.bytes[i]);
+          var b64 = typeof btoa === 'function' ? btoa(bin) : Buffer.from(r.bytes).toString('base64');
+          return 'data:' + (r.type || 'application/octet-stream') + ';base64,' + b64;
+        }, function () { return null; });
+      },
+    };
   },
-  CommandOf: CommandOf,
-  // The writer's word, said once by the node's file watcher before it writes: this process is fed here, not by a stream.
-  FedHere: function () { fed = true; },
 };

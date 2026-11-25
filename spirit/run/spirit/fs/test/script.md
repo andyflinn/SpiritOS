@@ -1,24 +1,23 @@
-# spirit/fs/script.js — its tests (goal/G49.1, step 1)
+# spirit/fs/script.js
 
-The box: step 1 is migration scaffolding only; *"spirit/fs/script.js is the one entry for a node process that wants the fs
-dataset: it wraps spirit/fs/data.js and, in a child process, adds the followStream call opaquely. A caller never knows how
-the dataset is created or updated"*; *"on the node's main process, chokidar writes straight into spirit.required.spirit.data.fs; job.js's
-own tree (fsTree) goes"*; *"spirit.js knows nothing about fs streaming"*; and of the rows, *"api folders are marked with a
-boolean api:true, if they contain api.js and data.js, api:false for all files and folders without data.js or api.js"*,
-app folders *"app:true if they contain a manifest ... <name>/<name>.json AND <name>/<name>.js"*, files always app:false,
-and *"both flags are set by the one writer of the dataset ... on the folder's row, whenever api.js, data.js or a manifest
-in it comes or goes"*.
+The fs family's declaration and its kernel names. This test holds one part of it (goal/G41.30).
 
-On a scratch node of lab's. A caller in a child process of that node requires spirit/fs/script.js and nothing else:
+## Requirements
 
-- spirit/fs/script.js exists;
-- the caller holds the whole tree in spirit.required.spirit.data.fs, marked complete, without calling followStream itself;
-- spirit/app/desk (api.js, data.js, desk.json, desk.js) is a row with api true and app true;
-- spirit/fs (api.js, data.js, no manifest) is a row with api true and app false;
-- spirit/app/job (job.json, no job.js) is a row with app true: a folder is an app by its manifest alone (Q1, Andy:
-  *"yes. testicle already checks validity of an app.json"*);
-- a file, spirit/app/desk/desk.js, is a row with api false and app false;
-- a folder planted while the caller follows, gaining api.js and data.js, turns api true in its dataset, and turns api
-  false again when its data.js goes;
-- job.js keeps no tree of its own (no fsTree in its code);
-- spirit.js names neither followStream, spirit/fs/data.js nor spirit/fs/script.js.
+- **A refusal is not "nothing there"** (Andy, of a face with no star, its editor saying *"not found (or empty) — you can still
+  Save to create it"*): `loadFile` refused by the node, such as `not-from-the-face`, rejects with the node's own code and words.
+  A file that is not there still answers null; a file that is there answers its text.
+
+## goal/G43.20: annotations are the node's only
+
+Andy: *"ANNOTATIONS WILL BE NODE ONLY."* The branch has no `fs.annotations` and no `fs.annotate`, and no `getAnnotations`
+among its kernel names.
+
+## What its test must try to break
+
+- A refusal read as an empty file.
+- An annotation verb or name left on the family.
+- A file verb climbing out of the run folder (goal/G47.6, box: *"a peer asking a file verb for ../, a full path or a drive
+  letter is refused by the spirit object's path rule at the door"*): stat, load, save and delete, each asked for `../x`,
+  `a/../../x`, `..\x`, `/etc/passwd`, `\x`, `C:/x`, `c:\x` and a path with a NUL, are refused by spirit.checkArgs against the verbs
+  declared here; a plain path inside the run folder passes.

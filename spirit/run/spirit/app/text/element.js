@@ -18,7 +18,7 @@
 // WHAT THE NODE SAYS, AND ONLY THAT (rule/19): a refused load is no empty file, and a refused save says the node's words.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -30,7 +30,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26). fstat for reading a file only.
   var parts = Promise.all([keepAnswer('spirit/element/fstat/script.js'), keepAnswer('spirit/element/rowForm/script.js'), keepAnswer('spirit/element/search/file/script.js'),
-    keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/fs/api.js')]);
+    keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/fs/script.js')]);
 
   function create(container, opts) {
     var o = opts || {};
@@ -75,7 +75,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         // WHAT IT SAVES, IT LISTENS FOR (goal/G41.27, as the old editor did): the file's row in the node's tree, as the fs
         // family's cache keeps it. Its own save is "saved" once the tree has it; any other change of the file is "changed on
         // disk".
-        // Asked of the fs family's cache, which alone names its addresses: the tree's watch(path, fn) (spirit/fs/data.js).
+        // Asked of the fs family's cache, which alone names its addresses: the tree's watch(path, fn) (spirit/fs/client/script.js).
         off = S.required.spirit.data && S.required.spirit.data.fs && S.required.spirit.data.fs.data ? S.required.spirit.data.fs.data.watch(path, function (r) {
           if (!r || gone || shown !== mine) return;
           status.textContent = saving ? 'saved' : 'changed on disk';
@@ -99,7 +99,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         if (!shown || !shown.view) return null;
         status.textContent = 'saving…';
         saving = true;
-        return Promise.resolve(ANSWER['spirit/fs/api.js'].saveFile(shown.path, shown.view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
+        return Promise.resolve(ANSWER['spirit/fs/script.js'].saveFile(shown.path, shown.view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
           function (e) { saving = false; status.textContent = 'save failed: ' + ((e && e.message) || e); });
       };
 

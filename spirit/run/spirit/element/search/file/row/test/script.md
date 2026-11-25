@@ -4,9 +4,9 @@
 to goal/G41.28 it was also what the fs-watcher's stream means for the page's mirror of the node's tree. Its test is `./script.js`.
 
 Since goal/G41.28 the tree is the fs family's cache: its translator and its branch are
-`spirit/run/spirit/fs/data.js`'s, filed in `spirit.required.spirit.data` under the serving node
+`spirit/run/spirit/fs/client/script.js`'s, filed in `spirit.required.spirit.data` under the serving node
 (`<node>/fs/files/<path>`), and read through `spirit.required.spirit.data.fs.data`. The element requires the fs family's interface
-(`spirit.requireScript('spirit/fs/api.js')`), which brings that data.js (goal/G47.1: *"every api.js requires it's companion
+(`spirit.requireScript('spirit/fs/script.js')`), which brings that data.js (goal/G47.1: *"every api.js requires it's companion
 data.js"*); the test brings it as a page does, the page's node known (`spirit.nodeFacts.key`, `data.homeNode`).
 
 Andy, goal/G41.16: *"get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"*: the
@@ -16,7 +16,7 @@ a subject needs), and is since goal/G41.28 the fs family's data.js's, which the 
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/row/script.js`, `spirit/element/icon/script.js`, `spirit/word/script.js`,
-  `spirit/element/fstat/script.js` and the fs family's interface, `spirit/fs/api.js`; no data script, since only an api.js
+  `spirit/element/fstat/script.js` and the fs family's interface, `spirit/fs/script.js`; no data script, since only an api.js
   requires its data.js.
 - It registers `spirit.required.search.file.row.create(row)`.
 - **What the stream means for the file tree** (`spirit.required.spirit.data.fs.data`) (fs-watcher jobs, `data.command { op, path, size, modified, core }`):

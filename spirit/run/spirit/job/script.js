@@ -179,8 +179,8 @@ function installJobs(port) {
     return true;
   }
 
-  // THE FS DATASET (goal/G49.1): spirit/fs/script.js, which the watcher fills (spirit/fs/server/script.js since goal/G49.15).
-  function fsDataset() { return spirit.requireScript('spirit/fs/script.js'); }
+  // THE FS DATASET (goal/G49.1): spirit/fs/dataset/script.js, which the watcher fills (spirit/fs/server/script.js since goal/G49.15).
+  function fsDataset() { return spirit.requireScript('spirit/fs/dataset/script.js'); }
 
   // THE ONE LAUNCHER (desk/G2.2). Andy: "if a server is a process, it should
   // get the perks of a process, that's no stretch." and "can those not
@@ -524,7 +524,7 @@ function installJobs(port) {
 
   // THE APPS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
   // "fix job.js"): the folders directly in spirit/app/ and the files in them, as this process's spirit.required.spirit.data.fs holds them
-  // (spirit/fs/script.js), fed by the watcher the node starts first (spirit/fs/server/script.js). A <name>.json is still read for what it says.
+  // (spirit/fs/dataset/script.js), fed by the watcher the node starts first (spirit/fs/server/script.js). A <name>.json is still read for what it says.
   function inTree(rel) { return !!fsDataset().file(rel); }
   function appFolders() {
     const files = fsDataset().files();

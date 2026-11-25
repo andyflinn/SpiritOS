@@ -51,6 +51,6 @@ goal/G43.5: `spirit/element/codeMirror.js`'s part of the element move. Its test 
 
 - *"ALL move the fucking library inside run::/spirit/element/codeMirror/"*. CodeMirror's 15 files, licence included, stand there (that no file names its old place is `spirit/test/script-sibling-general.js`'s). On a real page the element draws from there with its sheet and search, and asks no other place.
 - Since goal/G49.15 (box v16): the page starts with `window.CodeMirror` on it, from face.html's tags, and no product file but
-  `spirit/shell/face.html` and `spirit/fs/fileSystem.js` (its one list of vendored folders) names the library's folder.
+  `spirit/shell/face.html` and `spirit/fs/fileSystem/script.js` (its one list of vendored folders) names the library's folder.
 
 The rest of the element move is the elementMove part of `spirit/test/script.md`.

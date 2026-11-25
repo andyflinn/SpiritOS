@@ -21,7 +21,7 @@ let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/word/test/script/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/word/test/script'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const H = LOADER.requireScript('spirit/test/headLessChrome.js');
-const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 
 // THE HARD-CODED WORDS, READ FROM word.js ITSELF, NEVER A COPY HERE (Andy, 2026-11-17, of a copy twelve days behind it:
 // "WHY WOULD A TEST HARD-CODE reserved words?", "IT's like hardcoded apps! IDIOTIC!"). The box: "word.js will have hardcoded
@@ -367,7 +367,7 @@ test.run('the planted spirit/app/word.json is read, and its word is found at spi
   fs.writeFileSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'app', 'word.json'), JSON.stringify({ zzword: true }));
   await page.send('Page.navigate', { url: W.node.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
-  const asked = await page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/fs/api.js"); }).then(function () {' +
+  const asked = await page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/fs/script.js"); }).then(function () {' +
     ' return new Promise(function (r) { setTimeout(r, 3000); }); }).then(function () {' +
     ' window.sentWord = []; var keep = function (b) { try { var s = String(b || ""); if (/word\\.json/.test(s)) window.sentWord.push(s); } catch (e) {} };' +
     ' var f = window.fetch; window.fetch = function (u, o) { keep(String(u) + " " + (o && o.body || "")); return f.apply(this, arguments); };' +

@@ -3,7 +3,7 @@
 // The list the file selector, ../script.js, draws (goal/G43.32: it was search/file.js). Its test: ../test/script.js, through the selector.
 // THE FILES LIST, A DROP-IN SHELL ELEMENT (goal/G30.20): the node's files on the standard list-tool
 // (spirit/element/search/script.js), each row a file row element (file/row.js), the list a view of the fs family's
-// cache (spirit/fs/data.js, spirit.required.spirit.data.fs.data: the faceless layer's mirror of the node's tree). The Files app draws it as a pane, an app picking a file as a
+// cache (spirit/fs/client/script.js, spirit.required.spirit.data.fs.data: the faceless layer's mirror of the node's tree). The Files app draws it as a pane, an app picking a file as a
 // dropdown; it replaced the legacy file selector, deleted with it.
 //   - Names are ranked from the mirror at once; fs.search is asked only by contents, what the page cannot answer.
 //   - No words: the tree, in path order, every folder folded at first, 2em of indent per slash; a folder's press opens
@@ -24,7 +24,7 @@
 //     opts.pick(row, key)   a file chosen; row.line is the first matched line of a file found by its contents
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -42,7 +42,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/file/row/script.js', 'spirit/element/search/file/tile/script.js', 'spirit/element/search/script.js', 'spirit/element/fstat/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
-  keepAnswer('spirit/fs/api.js');
+  keepAnswer('spirit/fs/script.js');
   function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
 
   function accepted(accept, row) {
@@ -59,11 +59,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // BY CONTENTS ONLY: fs.search labels a name match with its path and a contents match with json {path, score, line}.
   // found(next) is handed what the node scored, by path, for the list to rank by (goal/G29.11, taken from the file
   // selector): in contents a file ranks by the node's score alone.
-  // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/fs/api.js')'s answer.search answers the reply's body.
+  // Through the spirit object (goal/G32.2): spirit.requireScript('spirit/fs/script.js')'s answer.search answers the reply's body.
   function search(args, found) {
     var a = args || {};
     if (!a.contents || !a.q) { found(Object.create(null), Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
-    return spirit.readyPromise.then(function () { return keepAnswer('spirit/fs/api.js'); }).then(function (s) { return s.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
+    return spirit.readyPromise.then(function () { return keepAnswer('spirit/fs/script.js'); }).then(function (s) { return s.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
       body = body || {};
       var F = fsReads();
       var next = Object.create(null);
@@ -91,7 +91,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var opened = Object.create(null);   // the folders open in the tree, by path
     var scores = Object.create(null);   // path -> the node's contents score, from the last contents search
     // path -> the line of the first match, from the same search. BOTH KEPT HERE, BY PATH: a row is the tree's, and the node's
-    // next word on that file (spirit.fs's set, spirit/fs/data.js) writes it anew without what the search said, so a list that
+    // next word on that file (spirit.fs's set, spirit/fs/client/script.js) writes it anew without what the search said, so a list that
     // read the score or the line off the row lost both while the tree was still arriving (goal/G43.17).
     var lines = Object.create(null);
     var made = Object.create(null);     // path -> its row element, so a folder's press can say it is open (goal/G43.17: 📂)
@@ -111,7 +111,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       search: function (args) { return search(args, function (next, at) { scores = next; lines = at; }); },
       // A view of the node's file tree, the branch the fs family's manager keeps (spirit.required.spirit.data.fs.data.branch).
       data: fsReads().branch,
-      api: 'spirit/fs/api.js',
+      api: 'spirit/fs/script.js',
       verb: 'search',
       face: o.face,
       placeholder: o.placeholder || 'choose a file…',

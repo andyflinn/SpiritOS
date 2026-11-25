@@ -508,8 +508,8 @@ test.run('the verbs that act took the whole garbage, bad strings, missing, extra
 }, test.limit.long);
 
 // ── node.js reads the common file/folder cache (goal/G49.2; Andy: "go on node.js") ──
-// G49.1's box: "node.js's branch folder lookup" moves onto spirit/fs/script.js, and "each disc scan goes in the same commit that
-// moves its client onto spirit/fs/script.js". node.js's code, comments left out, asks the disc for no file: the lookup of where a
+// G49.1's box: "node.js's branch folder lookup" moves onto spirit/fs/dataset/script.js, and "each disc scan goes in the same commit that
+// moves its client onto spirit/fs/dataset/script.js". node.js's code, comments left out, asks the disc for no file: the lookup of where a
 // served app's api.js is reads the dataset, which the node's own watcher keeps whole in this, its main process.
 const NODE_CODE = (function () {
   try { return fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { return ''; }

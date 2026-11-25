@@ -11,7 +11,7 @@ the same day as the nodes (no backward compatibility before alpha).
   exact same on the relay as it is on the node"*; *"the relay list goes."*): no FACE_FILES. Each address asked is answered
   as the node answers it, the same status and the same bytes where it serves: `/spirit/script.js`, the seal, the boot,
   `spirit/shell/shell.css` and codeMirror's library served; `spirit/state/identity.json`, the relay's own code,
-  `spirit/fs/fileSystem.js` and the relay's own `spirit/state/face.json` refused; face.html at `/`.
+  `spirit/fs/fileSystem/script.js` and the relay's own `spirit/state/face.json` refused; face.html at `/`.
 - **The face page takes no token from its address** (goal/G41.29; the box: *"The login-email must not carry a link"*):
   asked with `/?<token>`, the page at `/` serves face.html and sets no login cookie. The token is pasted into the Log in field only.
 - **Only the face's own page posts to its /face/ routes** (goal/G41.30, the review, RC2: *"on every /face/* POST, require

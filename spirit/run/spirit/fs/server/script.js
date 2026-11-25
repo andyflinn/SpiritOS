@@ -12,7 +12,7 @@
 // The watcher keeps the tree (path -> {kind, size, modified}) and sends what changed, one command per job-updated:
 // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
 // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
-// commands read from spirit/fs/script.js (commands(), in event/event.js and faceHome.js). THE TREE IS COMPLETE (goal/G49.2;
+// commands read from spirit/fs/dataset/script.js (commands(), in event/event.js and faceHome.js). THE TREE IS COMPLETE (goal/G49.2;
 // Andy: "the shared dataset needs to be complete, period", "it is at publish-to-clients time that !fileServable be the
 // filter"): seeded from scanFolder's whole walk and watched whole, .git alone left out; only what is published to a page is
 // cut by fileServable (event/event.js, faceHome.js). chokidar reports at startup what the seed already holds, which sends
@@ -28,7 +28,7 @@ require('../../script.js');
 
 const fs = require('fs');
 const path = require('path');
-const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
+const fileSystem = spirit.requireScript('spirit/fs/fileSystem/script.js');
 const FLAG_API = spirit.requireScript('spirit/fs/filter/api/script.js').api;
 const FLAG_BRANCH = spirit.requireScript('spirit/fs/filter/branch/script.js').branch;
 const FLAG_APP = spirit.requireScript('spirit/fs/filter/app/script.js').app;
@@ -38,11 +38,11 @@ const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFi
 const RUN_ROOT = path.join(__dirname, '..', '..', '..');
 // THE TREE IS spirit.required.spirit.data.fs (goal/G49.1, box v17: "chokidar --> (node: spirit.required.spirit.data.fs) -->
 // spirit.eventStream --> browsers and node processes"): the watcher writes each command into this process's
-// spirit.required.spirit.data, where spirit/fs/data.js files it as it does a page's stream, and reads it back from there.
+// spirit.required.spirit.data, where spirit/fs/client/script.js files it as it does a page's stream, and reads it back from there.
 // fsWatching is the watcher whose tree it is, null once it stopped.
 const FS_HOME = 'local'; // the node's own name in its spirit.required.spirit.data, as a child that follows the stream names it (spirit/data/script.js)
 let fsWatching = null;
-function fsDataset() { return spirit.requireScript('spirit/fs/script.js'); }
+function fsDataset() { return spirit.requireScript('spirit/fs/dataset/script.js'); }
 function fsWrite(command) {
   spirit.requireScript('spirit/data/script.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
 }
@@ -77,7 +77,7 @@ function heldOf(p, full, kind) {
   if (kind === 'file' && spirit.requireScript('spirit/coreFiles/script.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
   return held;
 }
-// A file row as a tree command: spirit/fs/script.js's, where a connect's whole tree is read too (goal/G49.2).
+// A file row as a tree command: spirit/fs/dataset/script.js's, where a connect's whole tree is read too (goal/G49.2).
 function commandOf(op, p, at, held) { return fsDataset().CommandOf(op, p, at, held); }
 function mapEntry(entry, rootDir) {
   const full = path.join(entry.parentPath, entry.name);

@@ -22,7 +22,7 @@
 //     opts.details(row, glyph)   a pane's press, when the app opens the icon itself
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -41,7 +41,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var SET = 'spirit/iconSet.json';
 
   // The fs family's cache, where the set is kept and the file followed.
-  var cache = window.spirit.requireScript('spirit/fs/api.js');
+  var cache = window.spirit.requireScript('spirit/fs/script.js');
   function F() { return ((window.spirit.required.spirit.data || {}).fs || {}).data || null; }
 
   // A read that is refused keeps nothing, so a face that gets its star can read it later. Lists read together read once.
@@ -62,7 +62,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     if (reading) return reading;
     // Through the spirit object (goal/G32.2).
     var stamp = '';
-    reading = Promise.resolve(cache).then(function () { stamp = F() ? stampOf(F().file(SET)) : ''; return spirit.readyPromise; }).then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (f) { return f.loadFile(SET); }).then(function (text) {
+    reading = Promise.resolve(cache).then(function () { stamp = F() ? stampOf(F().file(SET)) : ''; return spirit.readyPromise; }).then(function () { return spirit.requireScript('spirit/fs/script.js'); }).then(function (f) { return f.loadFile(SET); }).then(function (text) {
       reading = null;
       readStamp = stamp;
       var set = JSON.parse(text);
@@ -101,7 +101,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24), which finds nothing: the rows are the fs cache's icons branch.
       search: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
-      api: 'spirit/fs/api.js',
+      api: 'spirit/fs/script.js',
       verb: 'search',
       data: F().icons.branch,
       face: o.face,

@@ -374,7 +374,7 @@ test.run('the node lists the verbs testicle.set and testicle.search', 0.2, async
 
 // goal/G47.1, box v95, 5: "the server on start, before even classifying, must make sure that script, suite and testicle
 // tables reflect the current state" (it replaces "nothing is read at start"). Read once the start has done its work.
-const VENDORED = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 test.run('at start every product script on disc has its row in script', 0.2, async function () {
   if (!start) return false;
   // The scratch tree holds no git of its own: its files are the repo's list, as scratch() copied them, plus the planted.
@@ -3101,9 +3101,9 @@ function MICRO_GENERAL(body) {
 }
 
 // ── testicle reads the common file/folder cache (goal/G49.2) ──
-// Andy: "go on the five!"; G49.1's box: "testicle's and backup's watchers go as each moves" onto spirit/fs/script.js, and "each
-// disc scan goes in the same commit that moves its client onto spirit/fs/script.js". The server's code, comments left out, keeps
-// no chokidar watcher of its own and reaches the tree through spirit/fs/script.js; treeScripts, its listing of the tree's scripts
+// Andy: "go on the five!"; G49.1's box: "testicle's and backup's watchers go as each moves" onto spirit/fs/dataset/script.js, and "each
+// disc scan goes in the same commit that moves its client onto spirit/fs/dataset/script.js". The server's code, comments left out, keeps
+// no chokidar watcher of its own and reaches the tree through spirit/fs/dataset/script.js; treeScripts, its listing of the tree's scripts
 // at start, walks no folder on the disc. Its reads of /proc and of its own lab folders stay: they are no part of the tree.
 const TESTICLE_CODE = (function () {
   try { return fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'server', 'server.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { return ''; }
@@ -3111,8 +3111,8 @@ const TESTICLE_CODE = (function () {
 test.run('testicle\'s server keeps no chokidar watcher of its own', 0.2, function () {
   return (TESTICLE_CODE.length > 0 && !/chokidar/.test(TESTICLE_CODE)) || false;
 }, test.limit.quick);
-test.run('testicle\'s server reaches the tree through spirit/fs/script.js', 0.2, function () {
-  return /require(?:Script)?\(\s*['"][^'"]*spirit\/fs\/script\.js['"]\s*\)/.test(TESTICLE_CODE) || false;
+test.run('testicle\'s server reaches the tree through spirit/fs/dataset/script.js', 0.2, function () {
+  return /require(?:Script)?\(\s*['"][^'"]*spirit\/fs\/dataset\/script\.js['"]\s*\)/.test(TESTICLE_CODE) || false;
 }, test.limit.quick);
 test.run('testicle\'s treeScripts walks no folder on the disc', 0.2, function () {
   const at = TESTICLE_CODE.indexOf('function treeScripts(');

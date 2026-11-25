@@ -40,8 +40,9 @@ function ownerPath(app, verb) { return OWNER_PATHS.indexOf(String(app) + '.' + S
 // THE fs FAMILY IS THE OWNER'S, hard-coded, granted or not (goal/G33.10). Andy, 2026-10-24: "would i allow a peer fs
 // access, ever? it could un-install apps from my face etc...", and "i want fs to be hard-coded owner only". A grant
 // naming it cannot be made (apiAuth.grant), and one left in the table from before is read as nothing here.
-const OWNER_FAMILIES = ['fs'];
-function ownerFamily(app) { return OWNER_FAMILIES.indexOf(String(app || '').split('.')[0]) !== -1; }
+// spirit.fs, by its path's name since goal/G49.15: the branch, any of its verbs.
+const OWNER_FAMILIES = ['spirit.fs'];
+function ownerFamily(app) { const a = String(app || ''); return OWNER_FAMILIES.some(function (f) { return a === f || a.indexOf(f + '.') === 0; }); }
 
 function refusal(code, error) {
   return { status: 403, body: { ok: false, code: code, error: error } };

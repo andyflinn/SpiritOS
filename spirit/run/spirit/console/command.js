@@ -54,7 +54,7 @@ function shown(p) { return p ? 'spirit.' + p : 'spirit'; }
 
 // Whether spirit/<the path's folders> is there, as the node's fs stat answers.
 function there(p) {
-  return spirit.requireScript('spirit/fs/api.js').then(function (f) { return f.stat({ path: 'spirit/' + p.split('.').join('/') }); })
+  return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: 'spirit/' + p.split('.').join('/') }); })
     .then(function () { return true; }, function () { return false; });
 }
 
@@ -102,7 +102,7 @@ function apiFile(p) { return 'spirit/' + p.split('.').join('/') + '/api.js'; }
 function apiAt(p) {
   if (!p) return Promise.resolve(null);
   const file = apiFile(p);
-  return spirit.requireScript('spirit/fs/api.js').then(function (f) { return f.stat({ path: file }); }).then(function () {
+  return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: file }); }).then(function () {
     spirit.requireScript(file);
     const at = file.replace(/\.js$/, '').split('/').reduce(function (o, k) { return o && o[k]; }, spirit.required);
     return at && at.verbs && typeof at.verbs === 'object' ? at : null;
@@ -118,7 +118,7 @@ function served(p) {
   const m = /^app\.([A-Za-z0-9_-]+)$/.exec(p);
   if (!m) return Promise.resolve(false);
   const file = 'spirit/app/' + m[1] + '/' + m[1] + '.json';
-  return spirit.requireScript('spirit/fs/api.js').then(function (f) { return f.load({ path: file }); }).then(function (r) {
+  return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.load({ path: file }); }).then(function (r) {
     let manifest = null;
     try { manifest = JSON.parse(String((r && r.text) || '')); } catch (e) { manifest = null; }
     return !!(manifest && manifest.node && manifest.node.mount === true);
@@ -143,7 +143,7 @@ function apiCommand(s, verb, line) {
     if (!verb) { logged(s, line); return { ok: true, out: JSON.stringify(Object.keys(verbs).sort(), null, 2), path: s.path }; }
     if (!Object.prototype.hasOwnProperty.call(verbs, verb)) return refused(s, 'no-such-verb', 'no such verb at ' + shown(s.path) + ': ' + verb);
     const file = 'spirit/' + s.path.split('.').join('/') + '/' + verb + '.json';
-    return spirit.requireScript('spirit/fs/api.js').then(function (f) { return f.load({ path: file }); }).then(function (r) {
+    return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.load({ path: file }); }).then(function (r) {
       const j = JSON.parse(String((r && r.text) || ''));
       const out = Object.assign({}, j, { usage: usageOf(verb, verbs[verb]) });
       logged(s, line);

@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/fs/test/fileSystem.js
-// The tests of spirit/fs/fileSystem.js, and of no other module (spec: ./fileSystem.md). This file holds its two gates,
+// spirit/run/spirit/fs/fileSystem/test/script.js
+// The tests of spirit/fs/fileSystem/script.js, and of no other module (spec: ./script.md). This file holds its two gates,
 // fileServable (can a path be read) and fileWritable (can it be written), against a path spelled in another case
 // (goal/G41.30; Andy, 2026-11-02: "Path gates are case-sensitive, so on Windows and macOS GET /Relay-State/identity.json
 // serves the private keys"). On those disks a name in any case opens the same file, so a gate that refuses
@@ -11,25 +11,25 @@
 // fileSystem-vendoredFolders.js, are sections of it, run after its own checks.
 
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
-// THE FILE MOVED (goal/G49.1; Andy: "spirit/fileSystem.js moves to spirit/fs/fileSystem.js", "THEN FUCKING MOVE IT!"): read at
+// THE FILE MOVED (goal/G49.1; Andy: "spirit/fileSystem.js moves to spirit/fs/fileSystem/script.js", "THEN FUCKING MOVE IT!"): read at
 // its new place, and every check below red, never a crash, while it does not stand there.
 let FS = {};
-try { FS = LOADER.requireScript('spirit/fs/fileSystem.js'); } catch (e) { FS = {}; }
-test.run('spirit/fs/fileSystem.js stands, and spirit/fileSystem.js is gone', 0.8, function () {
+try { FS = LOADER.requireScript('spirit/fs/fileSystem/script.js'); } catch (e) { FS = {}; }
+test.run('spirit/fs/fileSystem/script.js stands, and spirit/fileSystem.js is gone', 0.8, function () {
   // The old place written in two pieces, so a sweep of the old path over the tree leaves this check alone.
   const oldPlace = path.join(RUN, 'spirit', 'file' + 'System.js');
-  return (fs.existsSync(path.join(RUN, 'spirit', 'fs', 'fileSystem.js')) && !fs.existsSync(oldPlace)) || false;
+  return (fs.existsSync(path.join(RUN, 'spirit', 'fs', 'fileSystem', 'script.js')) && !fs.existsSync(oldPlace)) || false;
 }, test.limit.quick);
-test.run('fileServable refuses spirit/fs/fileSystem.js at its new place, in any case', 0.8, function () {
-  const p = 'spirit/fs/fileSystem.js';
+test.run('fileServable refuses spirit/fs/fileSystem/script.js at its new place, in any case', 0.8, function () {
+  const p = 'spirit/fs/fileSystem/script.js';
   return (typeof FS.fileServable === 'function' && FS.fileServable(p) === false && FS.fileServable(p.toUpperCase()) === false) || false;
 }, test.limit.quick);
 test.run('fileServable still serves the fs branch\'s api.js and data.js beside it, which pages load', 0.8, function () {
-  return (typeof FS.fileServable === 'function' && FS.fileServable('spirit/fs/api.js') === true && FS.fileServable('spirit/fs/data.js') === true) || false;
+  return (typeof FS.fileServable === 'function' && FS.fileServable('spirit/fs/script.js') === true && FS.fileServable('spirit/fs/client/script.js') === true) || false;
 }, test.limit.quick);
 
 function ask(fn, p) { try { return FS[fn](p); } catch (e) { return null; } }
@@ -138,7 +138,7 @@ test.run('fileServable keeps spirit/element/icon/script.js open', 0.2, function 
 
 // THE NOPREFERENCES PART, once fileSystem-noPreferences.js.
 // Once spirit/run/spirit/test/fileSystem-noPreferences.js.
-// THE NODE WRITES NO preferences.json (goal/G43.17; spec: ./fileSystem.md). Andy: "i want to remove that
+// THE NODE WRITES NO preferences.json (goal/G43.17; spec: ./script.md). Andy: "i want to remove that
 // information and all the code that references it, gone.", "go do it!". spirit/fileSystem.js held preferences.json as the
 // node's one writable root file (WRITABLE_ROOT_FILES) until 7bfb9514, so what the node writes is judged beside it
 // (goal/G43.28; Andy: "you WILL FUCKING PLACE TESTS WHERE THEY FUCKING BELONG"; moved from
@@ -165,7 +165,7 @@ test.run('the node writes no preferences.json', 0.2, function () {
 
 // THE VENDOREDFOLDERS PART, once fileSystem-vendoredFolders.js.
 // Once spirit/run/spirit/test/fileSystem-vendoredFolders.js.
-// ONE LIST OF VENDORED FOLDERS, IN fileSystem.js (goal/G43.25; spec: ./fileSystem.md). Andy: "can we hide those
+// ONE LIST OF VENDORED FOLDERS, IN fileSystem.js (goal/G43.25; spec: ./script.md). Andy: "can we hide those
 // suckers in spirit/jobs/ for now? without the damn node_modules container?". fileSystem.js keeps the one list of vendored
 // folders that every walker reads; the node's file scan lists nothing of them; vendor code is servable, never writable. The
 // move of chokidar and readdirp itself is ./job.js, its vendoredLibraries part. The tree read as it is. No node, no port.
@@ -185,9 +185,9 @@ test.run('it exports the vendored folders, spirit/fs/chokidar, spirit/fs/readdir
   return V.listName ? true : false;
 }, test.limit.quick);
 // Not listed in Files: the node's file scan, from spirit/run.
-test.run('the node\'s file scan lists spirit/fs/api.js', 0.2, function () {
+test.run('the node\'s file scan lists spirit/fs/script.js', 0.2, function () {
   V.scanned = typeof fsm.scanFolder === 'function' ? fsm.scanFolder(RUN, []).map(function (e) { return path.relative(RUN, path.join(e.parentPath, e.name)).split(path.sep).join('/'); }) : [];
-  return V.scanned.indexOf('spirit/fs/api.js') !== -1 ? true : false;
+  return V.scanned.indexOf('spirit/fs/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 const scanOf = function (v) {
   const inside = V.scanned.filter(function (s) { return s === v || s.indexOf(v + '/') === 0; });

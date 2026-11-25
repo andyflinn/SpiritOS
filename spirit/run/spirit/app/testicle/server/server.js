@@ -16,7 +16,7 @@ require('../../../script.js');
 // verb, \"busy\": it returns true if it is doing any work, false if it is idle." The columns are goal/G45.1's box.
 //
 // WHAT IT DOES:
-//   - it follows run:// through the node's one file tree (spirit/fs/script.js, goal/G49.2), no watcher of its own;
+//   - it follows run:// through the node's one file tree (spirit/fs/dataset/script.js, goal/G49.2), no watcher of its own;
 //   - a changed .js in a test/ folder is a suite, any other .js a product file; the node's state, .git and vendored
 //     code are never watched, and a file that is no script is let go;
 //   - the changes of one moment are taken together: testModule.js is run once, as its own process (a test file is run,
@@ -29,7 +29,7 @@ const { execFile, execFileSync, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 // Every status line and every result's icon, worded in one place (goal/G47.1; ./words.js).
 const appServer = spirit.requireScript('spirit/server/app/script.js');
-const { VENDORED_FOLDERS } = spirit.requireScript('spirit/fs/fileSystem.js');
+const { VENDORED_FOLDERS } = spirit.requireScript('spirit/fs/fileSystem/script.js');
 const { createProbabilityBucket } = spirit.requireScript('spirit/listLimiter/script.js');
 const { probabilityStringObjectMatch } = spirit.requireScript('spirit/search/object.js');
 const limits = spirit.requireScript('spirit/limits/script.js');
@@ -1222,9 +1222,9 @@ function kick() {
 }
 
 // THE NODE'S ONE TREE, NO WATCHER OF ITS OWN (goal/G49.2; Andy: "go on the five!", "the shared dataset needs to be complete,
-// period."): every change of the run folder comes from spirit/fs/script.js, the node's file tree as this process receives it, and
+// period."): every change of the run folder comes from spirit/fs/dataset/script.js, the node's file tree as this process receives it, and
 // is passed on as the watcher passed it: add, change or unlink of a file, a path the server does not ignore.
-const tree = spirit.requireScript('spirit/fs/script.js');
+const tree = spirit.requireScript('spirit/fs/dataset/script.js');
 const held = new Set();
 function onFile(event, rel) {
   if (!rel || ignored(path.join(RUN, rel))) return;

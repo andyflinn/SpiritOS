@@ -114,7 +114,7 @@ test.run('spirit/app/grants/grants.json says intrinsic true', 0.2, function () {
 // tags, a script's require of a file beside it, and spirit.requireScript of a literal path. A test folder, a vendored folder
 // (fileSystem.js's list) and a require by package name (node's own) are not files of the run, and are not asked.
 const REPO = path.join(RUN, '..', '..');
-const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 const D = {};
 const depIsCore = function (rel) { return core.isCore('spirit/run/' + rel, REPO); };
 const exists = function (rel) { return fsx.existsSync(path.join(RUN, rel)) && fsx.statSync(path.join(RUN, rel)).isFile(); };

@@ -10,7 +10,7 @@
 //
 // WHAT IT IS
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
-//   - The rest comes from the api.js every branch folder holds (spirit/fs/api.js, spirit/contact/api.js ...; a server's in
+//   - The rest comes from the api.js every branch folder holds (spirit/fs/script.js, spirit/contact/api.js ...; a server's in
 //     its app folder, spirit/app/<name>/api.js), written to this file's standard: module.exports = { verbs: { <verb>:
 //     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per branch: spirit.required.spirit.fs.api.load({path}),
 //     spirit.required.spirit.contact.api.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
@@ -503,7 +503,7 @@
   // "spirit.branchPath() must die."): no function makes a branch's path from its name; asked by its name, a page placed it at
   // a guessed place, and the app's own elements, asking by its path, found nothing there.
   // The fs branch's node processor, the one place in node that reads the disc for spirit.fs (goal/G49.2).
-  function nodeFiles() { return require(require('path').join(RUN_ROOT, 'spirit', 'fs', 'fileSystem.js')); }
+  function nodeFiles() { return require(require('path').join(RUN_ROOT, 'spirit', 'fs', 'fileSystem', 'script.js')); }
   function interfaceName(p) {
     // An app's branch sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27).
     var m = /^spirit\/app\/([^/]+)\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
@@ -587,9 +587,29 @@
   // THE NODE'S MODULES, KEPT AT ONCE (Andy: "box that spirit.require() on the node is just a path-translating wrapper."):
   // a script's module.exports, the same one every time, no promise. An interface is still bound by asking a node.
   var nodeOnce = Object.create(null);
+  // A BRANCH OF THE NEW SHAPE IS NAMED BY ITS PATH (goal/G49.15; Andy: "THE NAME ON THE MOTHERCUKING WIRE IS \"spirit.fs\"",
+  // "BRANCHES ARE NAMED BY THEIR FUCKING PATH AND BY NOTHING ELSE"): spirit/fs/script.js is the branch spirit.fs, its folder's
+  // path in dots, and a call to it is spirit.fs.<verb>. Which script.js is a branch's is said by what it hands out: an object
+  // holding verbs. On the node that is known before it is bound; on a page, once the file has run.
+  function branchNameOf(p) {
+    var m = /^spirit\/(.+)\/script\.js$/.exec(p);
+    return m ? 'spirit.' + m[1].split('/').join('.') : '';
+  }
+  function isInterface(v) { return !!v && typeof v === 'object' && !!v.verbs && typeof v.verbs === 'object'; }
+  function nodeBranchName(p) {
+    var name = branchNameOf(p);
+    if (!name || !isNode() || !nodeFiles().statFile(p)) return '';
+    if (!Object.prototype.hasOwnProperty.call(nodeOnce, p)) {
+      var mod = require(require('path').join(RUN_ROOT, p));
+      if (!placeable(mod)) return '';
+      nodeOnce[p] = mod;
+      placeAt(required, p, mod);
+    }
+    return isInterface(nodeOnce[p]) ? name : '';
+  }
   function requireOne(path, key, how) {
     var p = String(path || '').replace(/^\/+/, '');
-    var fam = interfaceName(p);
+    var fam = interfaceName(p) || nodeBranchName(p);
     // A BRANCH'S api.js STANDS AT spirit.required.spirit.<branch-path>.api (goal/G43.32; Andy: "i agree: thing
     // spirit.required.spirit.<branch-path>.api is where it should land"): on the node it is the file as it is, loaded and
     // placed at once, before the branch is bound, so an app server checks its calls by it without asking a node.
@@ -643,6 +663,15 @@
       if (box && box.set) {
         if (!placeable(box.exports)) throw refusal('not-placeable', p + ' exposes ' + typeof box.exports + ': a script exposes an object');
         placeAt(required, p, box.exports);
+      }
+      // A NEW-SHAPE BRANCH'S script.js (goal/G49.15), once it has run: bound by its path's name, as an api.js is.
+      var named = box && box.set && isInterface(box.exports) ? branchNameOf(p) : '';
+      if (named) {
+        pathOf[named] = pathOf[named] || p;
+        return Promise.all(tree).then(function () {
+          if (key) return bindPeer(key, named, how);
+          return bindOwn(named).then(function (m) { if (m && required !== m) standAt(required, p, m); return m; });
+        });
       }
       return Promise.all(tree).then(function () { return keptAt(p); });
     });
@@ -1262,7 +1291,7 @@
   }
   // A verb of the home node: { status, text, body }. The name and the arguments apart (goal/G41.15).
   function linkAsk(verb, args) {
-    if (String(verb) === 'fs.save' && args && typeof args.content === 'string' && new TextEncoder().encode(args.content).length > UPLOAD_PART) {
+    if (String(verb) === 'spirit.fs.save' && args && typeof args.content === 'string' && new TextEncoder().encode(args.content).length > UPLOAD_PART) {
       return uploadSave(args).then(asAnswer);
     }
     return linkCall({ call: String(verb), args: args || {} }).then(asAnswer);

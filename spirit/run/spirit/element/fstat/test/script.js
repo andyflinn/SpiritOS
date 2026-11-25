@@ -14,7 +14,7 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // files"): spirit.js alone by node's require, being the loader; each other file through it, answered at once in node.
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
-const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 const H = S.requireScript('spirit/test/headLessChrome.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/fstat/script.js';
@@ -67,7 +67,7 @@ function world(o) {
     spirit: { readyPromise: Promise.resolve({}), MIME_TYPES: { '.md': 'text/markdown', '.png': 'image/png', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.js': 'application/javascript', '.json': 'application/json' },
       formatBytes: function (n) { return (n / 1024) + ' KB'; },
       // The fs branch by its api.js path (goal/G49.6: never by a name); any other part answers nothing.
-      requireScript: function (p) { return Promise.resolve(p === 'spirit/fs/api.js' ? fsApi : undefined); },
+      requireScript: function (p) { return Promise.resolve(p === 'spirit/fs/script.js' ? fsApi : undefined); },
       transport: opts.link ? { file: function (p, each) { w.fetched.push(['link', p]); each(new Uint8Array([1])); return Promise.resolve({ status: 200, type: 'text/plain', bytes: new Uint8Array([1]) }); } } : null,
       // An old shell on the page: fstat asks nothing of it (Q9).
       shell: { renderAppOfFile: function (h, p) { w.shell.push(['owner', p]); }, renderOpenWith: function (h, id, p) { w.shell.push(['open-with', id, p]); }, launchApp: function () { w.shell.push(['launch']); } } },

@@ -16,7 +16,7 @@ const https = require('https');
 const path = require('path');
 
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
-const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
+const fileSystem = spirit.requireScript('spirit/fs/fileSystem/script.js');
 // The helpers this node shares with the relay's startup module — body
 // reading, file sending, the 413 and malformed-path guards.
 const common = spirit.requireScript('spirit/server/serveCommon/script.js');
@@ -248,7 +248,9 @@ const loopbackVerbs = (function nodeBranches() {
       const served = apps && typeof apps.apps === 'function' && apps.apps().indexOf(fam) !== -1;
       const dir = folders[fam] || (served ? branchDirOf(fam) : '');
       let text = null;
-      if (dir) { try { text = require('fs').readFileSync(path.join(dir, 'api.js'), 'utf8'); } catch (e) { text = null; } }
+      // A new-shape branch's interface is its script.js, beside its client/script.js (goal/G49.15); an old one's its api.js.
+      const fileOf = function (d) { return require('fs').existsSync(path.join(d, 'client', 'script.js')) && require('fs').existsSync(path.join(d, 'script.js')) ? 'script.js' : 'api.js'; };
+      if (dir) { try { text = require('fs').readFileSync(path.join(dir, fileOf(dir)), 'utf8'); } catch (e) { text = null; } }
       if (text === null) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-interface', error: 'no interface for the branch ' + fam } });
       return Promise.resolve({ status: 200, body: { branch: fam, interface: text } });
     }
@@ -1030,7 +1032,7 @@ const server = http.createServer((req, res) => {
           return;
         }
         // Every verb but the proxy and the owner's fs.save and fs.load keeps the packet's bound (goal/G33.10).
-        if (['net.fetch', 'fs.save', 'fs.load'].indexOf(verb) === -1 && common.bodyBytes(req) > spirit.requireScript('spirit/limits/script.js').BODY_MAX) {
+        if (['net.fetch', 'spirit.fs.save', 'spirit.fs.load'].indexOf(verb) === -1 && common.bodyBytes(req) > spirit.requireScript('spirit/limits/script.js').BODY_MAX) {
           res.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8' });
           res.end('Body too large: ' + common.bodyBytes(req) + ' of ' + spirit.requireScript('spirit/limits/script.js').BODY_MAX);
           return;
@@ -1389,10 +1391,10 @@ catch (e) {
     // An app of spirit/app/ has it at its top, beside <name>.js, as spirit/<family>/ has it (goal/G43.27); the node finds the
     // folder, so a page binds by the name alone.
     // FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2; Andy: "go on node.js"): whether spirit/app/<name>/api.js is
-    // there is asked of spirit/fs/script.js, whole in this, the node's main process, since its watcher started at boot.
+    // there is asked of spirit/fs/dataset/script.js, whole in this, the node's main process, since its watcher started at boot.
     branchDir: function (name) {
       const app = path.join(ROOT_DIR, 'spirit', 'app', String(name));
-      return spirit.requireScript('spirit/fs/script.js').file('spirit/app/' + String(name) + '/api.js') ? app : path.join(ROOT_DIR, 'spirit', String(name));
+      return spirit.requireScript('spirit/fs/dataset/script.js').file('spirit/app/' + String(name) + '/api.js') ? app : path.join(ROOT_DIR, 'spirit', String(name));
     },
   });
   jobs.startNodeServers(ROOT_DIR, appClient);
@@ -1789,18 +1791,38 @@ catch (e) {
   // moved where a path COMES FROM and changed nothing about what may be
   // reached with it. serverSurface's traversal checks are untouched and
   // still red-green the same way.
-  loopbackVerbs.mount('fs', path.join(__dirname, '..', '..', 'fs'), {
-    // The node's files by path (puppets/G2). fs.stat stays the "get".
-    'search': { request: { q: '', contents: false }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.fsSearch(b); }) },
-    'stat': { request: { path: '' }, reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: handleFsStat },
+  // THE spirit.fs BRANCH, BY ITS OWN SCRIPT (goal/G49.15, box v23: "the node must use this same script as require to validate
+  // incoming requests."; Andy: "THE NAME ON THE MOTHERCUKING WIRE IS \"spirit.fs\""): mounted under its path's name,
+  // spirit.fs; each verb's arguments are spirit/fs/script.js's, and every call is checked with spirit.checkArgs against them
+  // before its handler runs, refused 400 with the check's code. The handlers are the node's own (fs needs no server part).
+  // Bound by spirit.requireScript, which answers the branch once it is bound; the mount waits for it.
+  Promise.resolve(spirit.requireScript('spirit/fs/script.js')).then(function (FS_BRANCH) {
+  const checkedBy = function (verb, handler) {
+    return function (req, res) {
+      return readJsonBody(req).then(function (body) {
+        const bad = spirit.checkArgs('spirit.fs.' + verb, FS_BRANCH.verbs[verb], body && typeof body === 'object' && !Array.isArray(body) ? body : {});
+        if (bad) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, code: bad.code, error: bad.message, argument: bad.argument }));
+          return null;
+        }
+        return handler(req, res);
+      }, function () { return handler(req, res); });
+    };
+  };
+  loopbackVerbs.mount('spirit.fs', path.join(__dirname, '..', '..', 'fs'), {
+    // The node's files by path (puppets/G2). spirit.fs.stat stays the "get".
+    'search': { request: FS_BRANCH.verbs.search, reply: LIST, handler: checkedBy('search', proxyVerb(function (b) { return nodeSearches.fsSearch(b); })) },
+    'stat': { request: FS_BRANCH.verbs.stat, reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: checkedBy('stat', handleFsStat) },
     // The file's text (goal/G14.8), the same read as the static route.
-    'load': { request: { path: '' }, reply: { path: '', text: '' }, handler: handleFsLoad },
+    'load': { request: FS_BRANCH.verbs.load, reply: { path: '', text: '' }, handler: checkedBy('load', handleFsLoad) },
     // No annotations and no annotate: ANNOTATIONS ARE THE NODE'S ONLY (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY."), so no caller reads or writes a sidecar.
     // The two writes answer 204, no body.
-    'save': { request: { path: '', content: '' }, reply: {}, handler: handleFsSave },
-    'delete': { request: { path: '' }, reply: {}, handler: handleFsDelete },
+    'save': { request: FS_BRANCH.verbs.save, reply: {}, handler: checkedBy('save', handleFsSave) },
+    'delete': { request: FS_BRANCH.verbs.delete, reply: {}, handler: checkedBy('delete', handleFsDelete) },
     // LOCAL: this node's own disk.
   });
+  }, function (e) { console.error('the spirit.fs branch could not be bound: ' + ((e && e.message) || e)); });
 
   // THE `device` NAMESPACE STOOD HERE and was removed by goal/G16.2 with
   // the device enrolment (Andy: "device WILL be KILLED. that's a decision.").

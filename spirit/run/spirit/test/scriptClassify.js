@@ -43,7 +43,7 @@ const LACKS_BROWSER = /\b(window|document|navigator|location|localStorage|sessio
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
 // Every product script, vendored code left out, as testicle leaves it out (it never watches it).
-const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 function productScripts() {
   return execFileSync('git', ['ls-files'], { cwd: RUN, encoding: 'utf8' }).split('\n')
     .filter(function (f) { return /^spirit\/.+\.js$/.test(f) && !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)); });

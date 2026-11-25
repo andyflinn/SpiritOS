@@ -363,7 +363,7 @@ function createFaceHome(opts) {
     // the app servers' priority.
     // A tree change of a path no page may see is not sent (goal/G49.2).
     const c = job && job.id === 'spirit.fs' && job.data ? job.data.command : null;
-    if (c && c.path && !spirit.requireScript('spirit/fs/fileSystem.js').fileServable(String(c.path))) return;
+    if (c && c.path && !spirit.requireScript('spirit/fs/fileSystem/script.js').fileServable(String(c.path))) return;
     toFaces(priorityOf(job) || FACE_PRIORITY.app, { event: 'job-updated', data: job });
   }
   // ONE SUBSCRIBER OF THE NODE'S EVENTS (goal/G40.6): the face's home side hears the events family, as the loopback
@@ -408,8 +408,8 @@ function createFaceHome(opts) {
     if (fsJob) {
       // A face is a page: the servable tree only (goal/G49.2; Andy: "it is at publish-to-clients time that !fileServable be the
       // filter").
-      const servable = spirit.requireScript('spirit/fs/fileSystem.js').fileServable;
-      spirit.requireScript('spirit/fs/script.js').commands().forEach(function (command) {
+      const servable = spirit.requireScript('spirit/fs/fileSystem/script.js').fileServable;
+      spirit.requireScript('spirit/fs/dataset/script.js').commands().forEach(function (command) {
         if (!servable(String(command.path))) return;
         face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { command: command } }) });
       });

@@ -103,7 +103,7 @@ function emailFromArgs(argv) {
 const HOME_PAGE = 'spirit/shell/face.html';
 const BOOT_ASSETS = ['spirit/shell/ghost.svg'];
 function serveStatic(rootDir, pathname, res) {
-  const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
+  const fileSystem = spirit.requireScript('spirit/fs/fileSystem/script.js');
   const relativePath = pathname === '/' ? HOME_PAGE : String(pathname).replace(/^\/+/, '');
   const filePath = fileSystem.fsPath(rootDir, '/' + relativePath);
   if (!filePath) {

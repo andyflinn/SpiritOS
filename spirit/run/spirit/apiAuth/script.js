@@ -196,7 +196,7 @@ function createApiAuth(opts) {
       if (!text(a.key) || !text(a.path)) return Promise.resolve(refuse('bad-request'));
       if (!PATH.test(a.path)) return Promise.resolve(refuse('not-a-path'));
       // THE fs FAMILY IS THE OWNER'S (goal/G33.10, Andy: "i want fs to be hard-coded owner only"): never granted.
-      if (a.path.split('.')[0] === 'fs') return Promise.resolve(refuse('owner-only'));
+      if (a.path === 'spirit.fs' || a.path.indexOf('spirit.fs.') === 0) return Promise.resolve(refuse('owner-only'));
       // 😏 IS THE OWNER'S (goal/G41.30; goal/G47.4, box v33: contact.faceable "does what own did"): a faceable relay opens
       // this node's face. Never granted.
       if (a.path === 'contact.faceable') return Promise.resolve(refuse('owner-only'));

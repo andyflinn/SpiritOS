@@ -26,7 +26,7 @@ const S = require(path.join(RUN, 'spirit', 'script.js'));
 // Never walked: node state, git, and the vendored folders, the libraries we carry but did not write (fileSystem.js's
 // one list, goal/G43.25).
 const SKIP = ['state', 'app-state', '.git'];
-const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 // THE TOOLS OF spirit/test/ (goal/G43.32, Q2; Andy: "We need special rules for run://spirit/test/  it will be where
 // run://spirit/app/test/ finds it's main tools."): tools, not tests, and no module either; their own tests stay in
 // spirit/test/test/.

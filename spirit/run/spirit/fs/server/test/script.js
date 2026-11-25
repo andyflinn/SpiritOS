@@ -183,8 +183,8 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
     "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
     "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
     "const job = W.start(dir, jobs);",
-    // goal/G49.2: the tree is spirit.required.spirit.data.fs, through spirit/fs/script.js, which this process's watcher fills; read once it is whole.
-    "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'script.js')) + ");",
+    // goal/G49.2: the tree is spirit.required.spirit.data.fs, through spirit/fs/dataset/script.js, which this process's watcher fills; read once it is whole.
+    "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'dataset', 'script.js')) + ");",
     "const rowsOf = function () { const all = F.files(); return Object.keys(all).map(function (p) { return Object.assign({ path: p }, all[p]); }); };",
     "const end = Date.now() + 40000;",
     "(function tick() {",
@@ -243,8 +243,8 @@ test.run('a scratch tree holds an app zzKept whose json turns intrinsic true and
       "const W = require(path.join(run, 'spirit', 'fs', 'server', 'script.js'));",
       "const job = W.start(run, jobs);",
       "const json = path.join(run, 'spirit', 'app', 'zzKept', 'zzKept.json');",
-      // goal/G49.2: the row is spirit.required.spirit.data.fs's, through spirit/fs/script.js, which this process's watcher fills.
-      "const F = require(path.join(run, 'spirit', 'fs', 'script.js'));",
+      // goal/G49.2: the row is spirit.required.spirit.data.fs's, through spirit/fs/dataset/script.js, which this process's watcher fills.
+      "const F = require(path.join(run, 'spirit', 'fs', 'dataset', 'script.js'));",
       "const core = function () { const c = F.file('spirit/app/zzKept/zzKept.js'); return c ? c.core === true : null; };",
       "const wait = function (want, ms) { const end = Date.now() + ms; return new Promise(function (r) { (function tick() { const now = core(); if (now === want || Date.now() > end) return r(now); setTimeout(tick, 100); })(); }); };",
       "const out = { before: null, turned: null, back: null };",
@@ -282,7 +282,7 @@ test.run('with its json changed back to intrinsic false, zzKept.js comes without
 // The watcher on a scratch folder inside spirit/run: an old-shape branch (api.js and data.js), a new-shape branch
 // (script.js and client/script.js), a folder with script.js alone, an app (<name>/<name>.json) and that app's
 // spirit/state/<name>/node.json, its active turned true and then false. Each row is read from the fs dataset
-// (spirit/fs/script.js), which this process's watcher fills.
+// (spirit/fs/dataset/script.js), which this process's watcher fills.
 let rows = null;
 test.run('the watcher runs on a scratch folder holding an old branch, a new branch, a script.js alone and an app, and its rows are read', 0.2, function () {
   const dir = path.join(RUN, 'fsServer-flags-test');
@@ -298,7 +298,7 @@ test.run('the watcher runs on a scratch folder holding an old branch, a new bran
       "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
       "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
       "const job = W.start(dir, jobs);",
-      "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'script.js')) + ");",
+      "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'dataset', 'script.js')) + ");",
       "const row = function (p) { const r = F.file(p); return r ? { api: r.api === true, branch: r.branch === true, app: r.app === true, live: r.live === true } : null; };",
       "const state = path.join(dir, 'spirit', 'state', 'zzApp', 'node.json');",
       "const wait = function (want, ms) { const end = Date.now() + ms; return new Promise(function (r) { (function tick() { const a = row('spirit/app/zzApp'); if ((a && a.live === want) || Date.now() > end) return r(a ? a.live : null); setTimeout(tick, 100); })(); }); };",

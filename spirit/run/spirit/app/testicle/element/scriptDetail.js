@@ -54,7 +54,7 @@
         if (gone || !F) return;
         ownLine.textContent = F.ready() && !F.file(own) ? own : '';
       };
-      Promise.resolve(keepAnswer('spirit/fs/api.js')).then(function () {
+      Promise.resolve(keepAnswer('spirit/fs/script.js')).then(function () {
         if (gone) return;
         drawOwn();
         release = S.required.spirit.data.fs.data.watch(function (p) { if (!p || p === own) drawOwn(); });

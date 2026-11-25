@@ -1,22 +1,22 @@
 'use strict';
 
-// spirit/run/spirit/fs/test/data.js
-// The tests of spirit/fs/data.js, and of no other module (spec: ./data.md). Its own test, owed since the rule "every
+// spirit/run/spirit/fs/client/test/script.js
+// The tests of spirit/fs/client/script.js, and of no other module (spec: ./script.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of a node's files (goal/G41.28): the tree the spirit.fs job streams (goal/G30.18), and the icon set.
 // It runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data/script.js), which it writes into, the
 // stream's events handed in as spirit.required.spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
-// it comes with the family's api.js (spirit.requireScript('spirit/fs/api.js')), the one script that requires it. The reads alone are read, never a branch.
+// it comes with the family's api.js (spirit.requireScript('spirit/fs/script.js')), the one script that requires it. The reads alone are read, never a branch.
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
 const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
-const SUBJECT = 'spirit/fs/data.js';
+const SUBJECT = 'spirit/fs/client/script.js';
 const FILE = path.join(RUN, SUBJECT);
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
 
@@ -63,11 +63,11 @@ function pageWorld() {
 // What the tests make, each in order, read by the tests after it.
 let w = null;
 
-test.run('in node, requiring spirit/fs/api.js brings its data.js, which stands at spirit.required.spirit.data.fs.data', 0.2, async function () {
+test.run('in node, requiring spirit/fs/script.js brings its data.js, which stands at spirit.required.spirit.data.fs.data', 0.2, async function () {
   require(path.join(RUN, 'spirit', 'script.js'));
   const S = globalThis.spirit;
   let threw = null;
-  try { await Promise.resolve(S.requireScript('spirit/fs/api.js')); } catch (e) { threw = e; }
+  try { await Promise.resolve(S.requireScript('spirit/fs/script.js')); } catch (e) { threw = e; }
   const X = S.required.spirit.data && S.required.spirit.data['fs'] && S.required.spirit.data['fs'].data;
   return (!threw && !!X && typeof X === 'object') || false;
 }, test.limit.quick);

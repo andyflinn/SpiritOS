@@ -71,7 +71,7 @@ const MAKE = '(function () {' +
   // The fs branch bound first, by its api.js's path as the list binds it (goal/G49.6: nothing hands out a branch by its name,
   // so what readyPromise answers holds no fs), and its loadFile kept at its one place, the object every require of it answers.
   ' return window.spirit.readyPromise.then(function () { if (window.__asks) return null; window.__asks = []; window.__watches = [];' +
-  '  return Promise.resolve(window.spirit.requireScript("spirit/fs/api.js")).then(function (f) {' +
+  '  return Promise.resolve(window.spirit.requireScript("spirit/fs/script.js")).then(function (f) {' +
   '  var read = f.loadFile; f.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); }).then(function () {' +
   '  return window.spirit.requireScript("spirit/element/search/icon/list/script.js"); }).then(function () { var F = window.spirit.required.spirit.data.fs.data;' +
   '   if (!F.__kept) { F.__kept = true; var watch = F.watch; F.watch = function (p) { window.__watches.push(typeof p === "function" ? "the tree" : String(p)); return watch.apply(this, arguments); }; }' +
@@ -262,7 +262,7 @@ test.run('a face with no star reads no set file', 0.8, async function () {
   await chrome.send('Network.setCookie', { name: 'spirit_face', value: F.sid, url: FACE, path: '/' });
   await open(FACE);
   await sleep(2000);
-  const got = await chrome.evaluate('Promise.race([window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/api.js"); }).then(function (f) { return f.loadFile(' + JSON.stringify(SET) + '); }).then(function (t) { return typeof t === "string" ? "read" : "none"; }, function () { return "none"; }), new Promise(function (r) { setTimeout(function () { r("none"); }, 10000); })])');
+  const got = await chrome.evaluate('Promise.race([window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/script.js"); }).then(function (f) { return f.loadFile(' + JSON.stringify(SET) + '); }).then(function (t) { return typeof t === "string" ? "read" : "none"; }, function () { return "none"; }), new Promise(function (r) { setTimeout(function () { r("none"); }, 10000); })])');
   return got === 'none' ? true : false;
 }, test.limit.slow);
 

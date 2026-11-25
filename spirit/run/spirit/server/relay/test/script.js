@@ -69,7 +69,7 @@ test.run('the relay serves /spirit/element/codeMirror/lib/codemirror.js as the n
 // Refused by both: the state, the servers' own code, the file system's own script.
 test.run('the relay refuses /spirit/state/identity.json as the node does', 0.8, function () { return sameAsNode('/spirit/state/identity.json'); }, test.limit.quick);
 test.run('the relay refuses /spirit/server/relay/script.js as the node does', 0.8, function () { return sameAsNode('/spirit/server/relay/script.js'); }, test.limit.quick);
-test.run('the relay refuses /spirit/fs/fileSystem.js as the node does', 0.8, function () { return sameAsNode('/spirit/fs/fileSystem.js'); }, test.limit.quick);
+test.run('the relay refuses /spirit/fs/fileSystem/script.js as the node does', 0.8, function () { return sameAsNode('/spirit/fs/fileSystem/script.js'); }, test.limit.quick);
 test.run('the relay refuses /spirit/state/face.json, its own state, as the node does', 0.8, function () { return sameAsNode('/spirit/state/face.json'); }, test.limit.quick);
 // Served by both as a page of the face: face.html at /.
 test.run('the relay serves face.html at / as the node does', 0.2, function () { return sameAsNode('/'); }, test.limit.quick);

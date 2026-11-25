@@ -5,7 +5,7 @@
 // The browser file runs in node on a BARE window (rule/26): nothing is on the page until the list requires it. Then the
 // search element is a recorder in its place, so this tests the list and not the search under it; the row element and
 // the file viewer are stand-ins; the page's data set is real, and so is the fs family's data.js (goal/G41.28),
-// loaded with the fs family's api.js, as a page's spirit.requireScript('spirit/fs/api.js') loads it, the page's node known as spirit.startPage makes it known
+// loaded with the fs family's api.js, as a page's spirit.requireScript('spirit/fs/script.js') loads it, the page's node known as spirit.startPage makes it known
 // (spirit.nodeFacts.key, then data.homeNode). The node's fs family is the spirit object's.
 
 const fs = require('fs');
@@ -67,7 +67,7 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   // The fs family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
   // itself to the data set. It answers the fs branch by that path (goal/G49.6: never by a name).
   let ran = false;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'data.js'), 'utf8'), { filename: 'spirit/fs/data.js' }); } if (p === 'spirit/fs/api.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/script.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'client', 'script.js'), 'utf8'), { filename: 'spirit/fs/client/script.js' }); } if (p === 'spirit/fs/script.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};
@@ -89,9 +89,9 @@ test.run('as it loads, it requires no data script, as only an api.js requires it
   if (!loaded) return false;
   return !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it requires the fs branch\'s interface, spirit/fs/api.js, which puts the fs branch\'s data on the page', 0.2, function () {
+test.run('it requires the fs branch\'s interface, spirit/fs/script.js, which puts the fs branch\'s data on the page', 0.2, function () {
   if (!loaded) return false;
-  return loaded.indexOf('spirit/fs/api.js') !== -1 && F && typeof F.file === 'function' ? true : false;
+  return loaded.indexOf('spirit/fs/script.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.required.spirit.element.search.file.list.create', 0.2, function () {
   if (!F || typeof F.file !== 'function') return false;

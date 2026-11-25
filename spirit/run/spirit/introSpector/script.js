@@ -22,7 +22,7 @@ require('../script.js');
 const fs = require('fs');
 const path = require('path');
 // The node's file system: its write gate for a path under spirit/run (goal/G40.6).
-const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
+const fileSystem = spirit.requireScript('spirit/fs/fileSystem/script.js');
 // The probability modules (goal/G29.19): FS.search ranks with them.
 const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;

@@ -102,7 +102,7 @@ suite search is spirit/app/testicle/element/search/suite.js and its folder"*.
   overwritten by the new.
 
 Vendored libraries' scripts are no production scripts either; the fs family's mirror never holds them
-(`spirit/fs/fileSystem.js`, `VENDORED_FOLDERS`), so the list cannot show them and the test does not ask.
+(`spirit/fs/fileSystem/script.js`, `VENDORED_FOLDERS`), so the list cannot show them and the test does not ask.
 
 ## Box v79/v80, 2 and 4: the ⚙ Configuration panel, and the mode in the monitor row
 

@@ -16,7 +16,7 @@ const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REPO = path.resolve(RUN, '..', '..');
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
 const { freePort, until, sleep, chromePage, findChrome } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }

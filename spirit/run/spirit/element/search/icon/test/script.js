@@ -19,7 +19,7 @@ function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let set = {}, glyphs = [], N, chrome, left, made, rows, offered, want;
-const ASKS = 'window.spirit.readyPromise.then(function () { window.__asks = []; return Promise.resolve(window.spirit.requireScript("spirit/fs/api.js")).then(function (f) { var read = f.loadFile; f.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); })';
+const ASKS = 'window.spirit.readyPromise.then(function () { window.__asks = []; return Promise.resolve(window.spirit.requireScript("spirit/fs/script.js")).then(function (f) { var read = f.loadFile; f.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); }; }); })';
 
 test.after(function () {
   if (chrome && chrome.kid) chrome.kid.kill();

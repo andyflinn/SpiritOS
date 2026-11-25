@@ -246,7 +246,7 @@ test.run('two runs of icons.js never happen at once', 0.2, function () {
 }, test.limit.quick);
 test.run('a page writing spirit/state/icons/data/iconSet.json itself is refused, and the set stands', 0.8, async function () {
   if (!W.drew) return false;
-  await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/api.js"); }).then(function (s) { return s.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
+  await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/script.js"); }).then(function (s) { return s.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
   await sleep(800);
   return W.G1 in (json(W.SET) || {}) ? true : false;
 }, test.limit.slow);

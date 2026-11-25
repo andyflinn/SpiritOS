@@ -26,7 +26,7 @@
   function ask(verb, args) {
     var name = String(verb).replace(/^fs\./, '');
     return (window.spirit && window.spirit.readyPromise ? window.spirit.readyPromise : Promise.reject(new Error('no spirit object')))
-      .then(function () { return window.spirit.requireScript('spirit/fs/api.js'); }).then(function (f) { return f[name](args); }).then(function (body) { return body; }, function () { return null; });
+      .then(function () { return window.spirit.requireScript('spirit/fs/script.js'); }).then(function (f) { return f[name](args); }).then(function (body) { return body; }, function () { return null; });
   }
 
   function mimeOf(path) {
@@ -90,7 +90,7 @@
     var facts = [['MIME type', mimeOf(path)]];
     function draw() { host.innerHTML = factRow(facts); }
     draw();
-    return ask('fs.stat', { path: path }).then(function (s) {
+    return ask('spirit.fs.stat', { path: path }).then(function (s) {
       if (!s || typeof s.size !== 'number') return;
       var bytes = sp().formatBytes ? sp().formatBytes(s.size) : s.size + ' B';
       facts.push(['Size', bytes], ['Changed', new Date(s.mtimeMs).toLocaleString()], ['Created', new Date(s.birthtimeMs).toLocaleString()]);

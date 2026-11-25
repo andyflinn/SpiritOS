@@ -67,7 +67,7 @@
     var fs = require('fs');
     var path = require('path');
     // Through spirit.requireScript (goal/G43.32; Andy allowed word.js to be changed to the rules).
-    var VENDORED_FOLDERS = spirit.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+    var VENDORED_FOLDERS = spirit.requireScript('spirit/fs/fileSystem/script.js').VENDORED_FOLDERS;
     var readOr = function (file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { return null; } };
     var check = function (at, word) {
       var w = wordOf(word);
@@ -119,7 +119,7 @@
   var told = [];
   var unwatch = null;
   var watching = 0;
-  function ask(rel) { return window.spirit.readyPromise.then(function () { return window.spirit.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.loadFile(rel); }).then(null, function () { return null; }); }
+  function ask(rel) { return window.spirit.readyPromise.then(function () { return window.spirit.requireScript('spirit/fs/script.js'); }).then(function (s) { return s.loadFile(rel); }).then(null, function () { return null; }); }
   // A word.json IS ASKED ONLY WHEN THE PAGE'S FILE LIST HOLDS IT (goal/G43.32; Andy: "it there WAS a word.json anywhere, it
   // would already be in the damn file list?", and "yes cw, change it so"): the fs family's mirror, spirit.required.spirit.data.fs.data, is the
   // node's whole tree; a word.json it does not list is not there, and is not asked for. Until the whole tree has come, a
@@ -127,7 +127,7 @@
   // other word.json and that one at most once"), and asked again only once the stream-fed row differs: nothing is watched
   // for it.
   function rowOf(rel) {
-    return Promise.resolve(window.spirit.requireScript('spirit/fs/api.js')).then(function () {
+    return Promise.resolve(window.spirit.requireScript('spirit/fs/script.js')).then(function () {
       var F = window.spirit.required.spirit.data && window.spirit.required.spirit.data.fs && window.spirit.required.spirit.data.fs.data;
       if (!F) return null;
       if (F.ready()) return F.file(rel);
@@ -154,7 +154,7 @@
   }
   function watch() {
     var turn = ++watching;
-    Promise.resolve(window.spirit.requireScript('spirit/fs/api.js')).then(function () {
+    Promise.resolve(window.spirit.requireScript('spirit/fs/script.js')).then(function () {
       if (turn !== watching || !told.length) return;
       unwatch = window.spirit.required.spirit.data.fs.data.watch(function (p) {
         if (!/(^|\/)word\.json$/.test(String(p || ''))) return;

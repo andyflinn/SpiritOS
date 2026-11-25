@@ -47,7 +47,7 @@ function world(rows) {
     getAnnotations: function () { w.fsAsked += 1; return Promise.resolve({}); },
     annotate: function () { w.fsAsked += 1; return Promise.resolve({ ok: true }); },
   };
-  const BRANCHES = { 'spirit/fs/api.js': fsApi,
+  const BRANCHES = { 'spirit/fs/script.js': fsApi,
     'spirit/app/api.js': { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } };
   const win = { spirit: {
     // What readyPromise answers holds no branch (goal/G49.6); a branch is answered by its api.js path.

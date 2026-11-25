@@ -66,8 +66,8 @@ test.run('asked for the same path again, pageSpirit answers the same object and 
 }, test.limit.quick);
 test.run('a path pageSpirit was not told to load goes to the test\'s own requireScript', 0.4, async function () {
   if (!PS.world) return false;
-  const v = await PS.world.spirit.requireScript('spirit/fs/api.js');
-  return (v === 'own' && PS.other === 'spirit/fs/api.js') || false;
+  const v = await PS.world.spirit.requireScript('spirit/fs/script.js');
+  return (v === 'own' && PS.other === 'spirit/fs/script.js') || false;
 }, test.limit.quick);
 
 // "headLessChrome.js scratchNode hands out a reset lab node instead of a fresh copy"

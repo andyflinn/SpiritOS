@@ -13,7 +13,7 @@
 // no annotations, which are the node's only (goal/G43.20).
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -35,11 +35,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var files = null;
 
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
-  // data.js's (spirit/fs/data.js), which this element loads itself (rule/26), with the data set
+  // data.js's (spirit/fs/client/script.js), which this element loads itself (rule/26), with the data set
   // it fills; a row reads spirit.required.spirit.data.fs.data.
   function fsReads() { return (window.spirit && ((window.spirit.required.spirit.data || {}).fs || {}).data) || null; }
   // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
-  var fsReady = Promise.resolve(window.spirit.requireScript('spirit/fs/api.js')).then(function () { return fsReads(); });
+  var fsReady = Promise.resolve(window.spirit.requireScript('spirit/fs/script.js')).then(function () { return fsReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
@@ -157,10 +157,10 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           return null;
         } },
         // Through the spirit object (goal/G32.2): checked calls answering the reply's body.
-        { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (s) { return s.delete({ path: el.row.path }); }); } },
+        { name: 'remove', label: 'Remove', run: function (el) { return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/script.js'); }).then(function (s) { return s.delete({ path: el.row.path }); }); } },
       ],
       expand: function (el) {
-        return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/api.js'); }).then(function (f) {
+        return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/fs/script.js'); }).then(function (f) {
           return f.stat({ path: el.row.path });
         }).then(function (stat) { return { stat: stat }; });
       },

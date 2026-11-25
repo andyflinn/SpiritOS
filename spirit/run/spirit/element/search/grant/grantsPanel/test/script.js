@@ -184,7 +184,7 @@ function world() {
         const server = Object.keys(servers).filter(function (k) { return appApi(k) === p; })[0];
         if (server) return Promise.resolve(servers[server]);
         // The node's own branches by their api.js paths (goal/G49.6: never by a name): auth, and fs.
-        if (p === 'spirit/fs/api.js') return Promise.resolve(families.fs);
+        if (p === 'spirit/fs/script.js') return Promise.resolve(families.fs);
         if (p === 'spirit/auth/api.js') { companionOf(p); return Promise.resolve(auth); }
         // A branch's api.js: its real companion data.js run once on this window over the real data set, as the real api.js
         // requires it (goal/G47.1), so the server jobs the test hands spirit.required.spirit.data reach the panel as the page's would, and
