@@ -33,18 +33,15 @@ fs.mkdirSync(STATE, { recursive: true });
 const DB_FILE = path.join(STATE, 'agent.db');
 const db = new DatabaseSync(DB_FILE);
 // Each table's server by its full path, written out (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
-const TABLES = {
-  provider: 'spirit/app/agent/table/provider/server.js',
-  model: 'spirit/app/agent/table/model/server.js',
-  persona: 'spirit/app/agent/table/persona/server.js',
-  job: 'spirit/app/agent/table/job/server.js',
-};
 const tables = {};
 const ctx = { db: db, dbFile: DB_FILE, tables: tables, publish: function (x) { appServer.publish(x); } };
-Object.keys(TABLES).forEach(function (name) { tables[name] = spirit.requireScript(TABLES[name])(ctx); });
+tables.provider = spirit.requireScript('spirit/app/agent/table/provider/server.js')(ctx);
+tables.model = spirit.requireScript('spirit/app/agent/table/model/server.js')(ctx);
+tables.persona = spirit.requireScript('spirit/app/agent/table/persona/server.js')(ctx);
+tables.job = spirit.requireScript('spirit/app/agent/table/job/server.js')(ctx);
 
 const verbs = {};
-Object.keys(TABLES).forEach(function (name) { verbs[name] = tables[name].verb; });
+Object.keys(tables).forEach(function (name) { verbs[name] = tables[name].verb; });
 
 appServer.serve(verbs, {
   // provider-failed: a provider's ask that got no model list (goal/G41.18); its extra.why says what the provider did. A

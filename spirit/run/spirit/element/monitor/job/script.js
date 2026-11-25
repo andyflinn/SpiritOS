@@ -19,9 +19,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // Each tile by its full path, written out (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
-  var TILES = ['spirit/element/monitor/job/memory/script.js', 'spirit/element/monitor/job/cpu/script.js', 'spirit/element/monitor/job/uptime/script.js',
-    'spirit/element/monitor/job/delay/script.js', 'spirit/element/monitor/job/connections/script.js', 'spirit/element/monitor/job/running/script.js'];
-  var parts = Promise.all(TILES.map(function (p) { return S.requireScript(p); }));
+  var parts = Promise.all(['spirit/element/monitor/job/memory/script.js', 'spirit/element/monitor/job/cpu/script.js', 'spirit/element/monitor/job/uptime/script.js', 'spirit/element/monitor/job/delay/script.js', 'spirit/element/monitor/job/connections/script.js', 'spirit/element/monitor/job/running/script.js'].map(function (p) { return S.requireScript(p); }));
 
   function create(container) {
     var gone = false;

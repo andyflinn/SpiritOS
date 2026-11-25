@@ -40,5 +40,6 @@ if (args[0] === '--app') {
   if (unknown.length) refuse('no such mode or option: ' + unknown.join(' '));
   // The mode word itself is the launcher's; the module reads the rest as it always read its arguments.
   if (modes.length) process.argv.splice(2 + args.indexOf(modes[0]), 1);
-  spirit.requireScript(modes[0] === '--relay' ? 'spirit/server/relay/script.js' : 'spirit/server/node/script.js');
+  if (modes[0] === '--relay') spirit.requireScript('spirit/server/relay/script.js');
+  else spirit.requireScript('spirit/server/node/script.js');
 }
