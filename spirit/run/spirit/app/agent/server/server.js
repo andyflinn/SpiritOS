@@ -32,13 +32,19 @@ fs.mkdirSync(STATE, { recursive: true });
 // SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"); an old agent.db is deleted by hand, on his word.
 const DB_FILE = path.join(STATE, 'agent.db');
 const db = new DatabaseSync(DB_FILE);
-const TABLES = ['provider', 'model', 'persona', 'job'];
+// Each table's server by its full path, written out (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
+const TABLES = {
+  provider: 'spirit/app/agent/table/provider/server.js',
+  model: 'spirit/app/agent/table/model/server.js',
+  persona: 'spirit/app/agent/table/persona/server.js',
+  job: 'spirit/app/agent/table/job/server.js',
+};
 const tables = {};
 const ctx = { db: db, dbFile: DB_FILE, tables: tables, publish: function (x) { appServer.publish(x); } };
-TABLES.forEach(function (name) { tables[name] = spirit.requireScript('spirit/app/agent/table/' + name + '/server.js')(ctx); });
+Object.keys(TABLES).forEach(function (name) { tables[name] = spirit.requireScript(TABLES[name])(ctx); });
 
 const verbs = {};
-TABLES.forEach(function (name) { verbs[name] = tables[name].verb; });
+Object.keys(TABLES).forEach(function (name) { verbs[name] = tables[name].verb; });
 
 appServer.serve(verbs, {
   // provider-failed: a provider's ask that got no model list (goal/G41.18); its extra.why says what the provider did. A

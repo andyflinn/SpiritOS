@@ -34,10 +34,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
   // one: the table's name as a detail pane's title row says it ("[Table-Icon] \"Add | Change\" [Table-name]").
   var TABLES = [
-    { name: 'provider', icon: '🏢', title: 'Model providers', one: 'Provider' },
-    { name: 'model', icon: '🧠', title: 'Models', one: 'Model' },
-    { name: 'persona', icon: '🎭', title: 'Personas', one: 'Persona' },
-    { name: 'job', icon: '📋', title: 'Jobs', one: 'Job' },
+    // Each table's element by its full path, written out (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
+    { name: 'provider', icon: '🏢', title: 'Model providers', one: 'Provider', file: 'spirit/app/agent/element/table/provider/elementTable.js' },
+    { name: 'model', icon: '🧠', title: 'Models', one: 'Model', file: 'spirit/app/agent/element/table/model/elementTable.js' },
+    { name: 'persona', icon: '🎭', title: 'Personas', one: 'Persona', file: 'spirit/app/agent/element/table/persona/elementTable.js' },
+    { name: 'job', icon: '📋', title: 'Jobs', one: 'Job', file: 'spirit/app/agent/element/table/job/elementTable.js' },
   ];
 
   // ITS TABLES ASK FOR THEMSELVES (goal/G43.24; Andy: "every element that accesses ANY api must require them themselves"):
@@ -131,7 +132,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         left: TABLES.map(function (t) {
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
-            Promise.resolve(spirit.requireScript('spirit/app/agent/element/table/' + t.name + '/elementTable.js')).then(function (table) {
+            Promise.resolve(spirit.requireScript(t.file)).then(function (table) {
               own(table.create(box, detail));
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
           } };
