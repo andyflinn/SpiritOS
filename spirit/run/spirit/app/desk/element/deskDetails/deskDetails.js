@@ -89,6 +89,9 @@ function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
 // held to its type by fieldInput, loaded here with the armingButton and attached after each paint.
 var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScript
   ? Promise.all([keepAnswer('spirit/element/armingButton/script.js'), keepAnswer('spirit/element/fieldInput/script.js')]) : null);
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/paragraph/script.js'); window.spirit.requireScript('spirit/type/string/label/script.js'); window.spirit.requireScript('spirit/type/string/box/script.js'); }
 function ddArming() {
   return ddParts.then(function () {
     var A = typeof window !== 'undefined' && ANSWER['spirit/element/armingButton/script.js'];

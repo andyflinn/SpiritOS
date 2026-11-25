@@ -17,6 +17,9 @@
   }
   keepAnswer('spirit/element/rowForm/script.js');
   keepAnswer('spirit/element/fieldInput/script.js');
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); }
   keepAnswer('spirit/app/api.js');
 
   function create(host, options) {

@@ -34,6 +34,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   keepAnswer('spirit/app/agent/element/table/tableElement.js');
   // And fieldInput, which holds a name or a description field to its rule (goal/G47.1: without it the label took 4096 bytes).
   keepAnswer('spirit/element/fieldInput/script.js');
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); window.spirit.requireScript('spirit/type/string/description/script.js'); window.spirit.requireScript('spirit/type/string/secret/script.js'); }
   var made = 0;
   function A() { return ANSWER['spirit/app/agent/element/table/tableElement.js']; }
   function esc(s) { return A().esc(s); }

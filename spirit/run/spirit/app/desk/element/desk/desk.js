@@ -40,6 +40,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
 // Its fields' limits, fieldInput's (rule/26: what it draws with, it loads itself), in its tree so it is in before create.
 if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/element/fieldInput/script.js')).catch(function () {});
+// ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+// their fields are and require that type"): the types fieldInput holds its fields to.
+if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); }
 var deskOpts = {};
 var deskStack = null;
 // A verb of the branch at its api.js path (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN"),

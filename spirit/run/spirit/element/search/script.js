@@ -75,6 +75,9 @@
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/description/script.js'); }
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
   // and object matchers and the probability bucket, through spirit.requireScript. Asked as this file runs, so whoever requires
   // the list is answered once they are in. And fieldInput, which holds the search words to their rule.

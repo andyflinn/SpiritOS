@@ -25,6 +25,9 @@
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/search/testicle/row.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/description/script.js'); }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): its row, testicle's interface and its cache manager.
   var parts = Promise.all(['spirit/app/testicle/element/search/testicle/row.js', 'spirit/app/testicle/api.js', 'spirit/element/rowForm/script.js', 'spirit/element/fieldInput/script.js']

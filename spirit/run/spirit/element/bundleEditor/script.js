@@ -27,6 +27,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); }
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/bundle/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript; and the auth family's cache manager, whose
   // bundles it adds to (goal/G41.28).

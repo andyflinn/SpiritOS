@@ -40,6 +40,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // And fieldInput, which holds the face name to its type as it is typed (goal/G48.4, box v22: "ever input field in every
   // element must validate the input with the new type checks.").
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/word/script.js'); }
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }

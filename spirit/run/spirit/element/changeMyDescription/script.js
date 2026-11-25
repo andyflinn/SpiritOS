@@ -23,6 +23,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput and its type, through spirit.requireScript (goal/G48.4: the types
   // replace the old rules file).
   var parts = root.spirit.requireScript ? Promise.all([keepAnswer('spirit/element/fieldInput/script.js'), keepAnswer('spirit/type/string/description/script.js')]) : Promise.resolve();
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/description/script.js'); }
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
   if (root.spirit.requireScript) keepAnswer('spirit/element/rowForm/script.js');

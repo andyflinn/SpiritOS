@@ -56,6 +56,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     // a chat line's, loaded here (rule/26).
     keepAnswer('spirit/element/fieldInput/script.js').then(function () {
       var F = ANSWER['spirit/element/fieldInput/script.js'];
+      // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+      // their fields are and require that type"): the types fieldInput holds its fields to.
+      if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/paragraph/script.js'); }
       if (!gone && F) F.attach(line, 'spirit/type/string/paragraph/script.js');
     }, function () { /* the line is unheld until it loads */ });
     // WHAT A SEND DOES IS OUT OF SCOPE (Andy, box: "how the chat will work, is oos for this item."): nothing yet.

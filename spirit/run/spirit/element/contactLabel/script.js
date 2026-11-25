@@ -41,6 +41,9 @@
   if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/type/string/label/script.js');
   // And fieldInput, which holds the name typed in mode 2 to that type as it is typed.
   if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/fieldInput/script.js');
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); }
   // ONE NAME PER KEY FOR THE PAGE (Andy, goal/G4.10: "the pane and dropdown seem to still initialize with keys. this
   // makes the keys flashing briefly every time an update occurs"). A list redrawn makes new labels; a name already
   // known draws at once, and one key is asked of the node once, however many labels wait for it.

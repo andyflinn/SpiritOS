@@ -2125,6 +2125,9 @@ if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/arm
 // EVERY FIELD HELD BY ITS TYPE AS IT IS TYPED (goal/G48.4, box v22: "ever input field in every element must validate the input
 // with the new type checks."): fieldInput, asked as this file runs, and each field it draws handed to it with its type.
 if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/fieldInput/script.js');
+// ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+// their fields are and require that type"): the types fieldInput holds its fields to.
+if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); window.spirit.requireScript('spirit/type/string/word/script.js'); window.spirit.requireScript('spirit/type/number/integer/script.js'); window.spirit.requireScript('spirit/type/number/float/script.js'); }
 function typedField() { return ANSWER['spirit/element/fieldInput/script.js'] || null; }
 // The contact's own name for it.
 function cdTypeFields(scope) {

@@ -28,6 +28,9 @@
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/client/apiTreeIndex.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
+  // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+  // their fields are and require that type"): the types fieldInput holds its fields to.
+  if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/paragraph/script.js'); }
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/api/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/contact/list/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/codeMirror.js');

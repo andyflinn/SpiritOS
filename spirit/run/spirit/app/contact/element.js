@@ -62,6 +62,9 @@ function contactsRefresh() {
 // replace icons painting all shell elements and apps."), so the icon element comes with the list.
 // And the panel stack, for a contact's or a relay's details when the mounter hands none (goal/G43.18).
 var contactsParts = Promise.all([keepAnswer('spirit/element/search/contact/list/script.js'), keepAnswer('spirit/element/icon/script.js'), keepAnswer('spirit/element/panel/script.js'), keepAnswer('spirit/element/fieldInput/script.js')]);
+// ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+// their fields are and require that type"): the types fieldInput holds its fields to.
+if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); window.spirit.requireScript('spirit/type/string/URL/script.js'); }
 
 function contactCreate(container, options) {
     var gone = false;
