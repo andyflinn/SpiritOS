@@ -2586,6 +2586,14 @@ if (!GIVEN.length) {
     if (files.length < 100) return false;
     return !files.some(function (f) { return codeText(f).split('\n').some(function (l) { return WORD_TO_PATH.test(l); }); }) || false;
   }, test.limit.quick);
+  // NO DOTTED NAME MADE INTO A PATH (goal/G49.13; Andy: "WHAT A FUCKING CHEAT, AND WHAT ABOUT THOSE DYNAMICALLY CREATED TYPE
+  // SCRIPTS????????"): a type named spirit.type.string.label, or a branch named by dots, is never turned into a file path by
+  // .split('.') and .join('/'); a file is always held by its full path.
+  test.run('no product script turns a dotted name into a path: no .split(\'.\') joined with \'/\'', 0.6, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return !files.some(function (f) { return /\.split\(\s*['"]\.['"]\s*\)(?:\.slice\([^)]*\))?\.join\(\s*['"]\/['"]\s*\)/.test(codeText(f)); }) || false;
+  }, test.limit.quick);
   test.run('the face page loads the spirit object by its own path, /spirit/script.js', 0.6, function () {
     let t = '';
     try { t = shFs.readFileSync(shPath.join(SH.run, 'spirit', 'shell', 'face.html'), 'utf8'); } catch (e) { return false; }
