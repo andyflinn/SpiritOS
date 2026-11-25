@@ -72,7 +72,7 @@ test.run('a file verb asked for a plain path inside the run folder passes the pa
 // Andy: "THE REASON that spirit.fs was conceived in the first place was so many modules can live unchanged on both node
 // and browser", "the old kernel.js ... would insert different versions of spirit.fs functions depending on isNode() and
 // isBrowser()", the node versions async "like the are in the browser"; "agreed. fix spirit.fs NOW". In a node process
-// whose run root names no node at all (no spirit/state/environment.json), spirit.required.spirit.fs.api.stat, load, save and delete still
+// whose run root names no node at all (no spirit/state/environment.json), the spirit.fs branch, as spirit.requireScript('spirit/fs/script.js') answers it, still has stat, load, save and delete
 // answer, from that process's own disc, as promises in the shapes the node's verbs answer: stat {size, mtimeMs,
 // birthtimeMs}, load {path, text}; a file that is not there is refused with status 404, as the node refuses it. The files
 // sit in media/, which the node's write rules let a caller write; spirit/ holds core files, refused alike on both sides.
@@ -92,8 +92,9 @@ test.run('the world: a run root with no node, and a process asking its spirit.fs
     const out = {};
     function settle(p) { return Promise.resolve(p).then(function (v) { return { ok: v }; }, function (e) { return { no: { status: e && e.status, code: e && e.code } }; }); }
     (async function () {
-      await settle(s.requireScript('spirit/fs/script.js'));
-      const f = ((s.required.spirit || {}).fs || {}).api || {};
+      // The branch as spirit.requireScript answers it (goal/G49.9: never read at a spirit.required place).
+      const got = await settle(s.requireScript('spirit/fs/script.js'));
+      const f = (got && got.ok) || {};
       const st = f.stat ? f.stat({ path: 'media/zzLocal/hello.txt' }) : null;
       out.statIsPromise = !!st && typeof st.then === 'function';
       out.stat = await settle(st);
@@ -109,27 +110,27 @@ test.run('the world: a run root with no node, and a process asking its spirit.fs
   try { LOCAL.o = JSON.parse(r.stdout); } catch (e) { LOCAL.o = null; }
   return !!LOCAL.o && !LOCAL.o.threw;
 }, test.limit.slow);
-test.run('with no node, spirit.required.spirit.fs.api.stat answers a promise of {size, mtimeMs, birthtimeMs} from the process\'s own disc', 0.2, function () {
+test.run('with no node, the spirit.fs branch\'s stat answers a promise of {size, mtimeMs, birthtimeMs} from the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   const v = o.stat && o.stat.ok;
   return (o.statIsPromise === true && !!v && v.size === Buffer.byteLength('hello local') && typeof v.mtimeMs === 'number' && typeof v.birthtimeMs === 'number') || false;
 }, test.limit.quick);
-test.run('with no node, spirit.required.spirit.fs.api.load answers {path, text} from the process\'s own disc', 0.2, function () {
+test.run('with no node, the spirit.fs branch\'s load answers {path, text} from the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   const v = o.load && o.load.ok;
   return (!!v && v.text === 'hello local' && v.path === 'media/zzLocal/hello.txt') || false;
 }, test.limit.quick);
-test.run('with no node, spirit.required.spirit.fs.api.save writes the file on the process\'s own disc', 0.2, function () {
+test.run('with no node, the spirit.fs branch\'s save writes the file on the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   let text = null;
   try { text = fsNode.readFileSync(path.join(LOCAL.root, 'media', 'zzLocal', 'saved.txt'), 'utf8'); } catch (e) { text = null; }
   return (!!o.save && 'ok' in o.save && text === 'saved here') || false;
 }, test.limit.quick);
-test.run('with no node, spirit.required.spirit.fs.api.delete removes the file from the process\'s own disc', 0.2, function () {
+test.run('with no node, the spirit.fs branch\'s delete removes the file from the process\'s own disc', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   return (!!o.del && 'ok' in o.del && !fsNode.existsSync(path.join(LOCAL.root, 'media', 'zzLocal', 'hello.txt'))) || false;
 }, test.limit.quick);
-test.run('with no node, spirit.required.spirit.fs.api.stat of a file that is not there is refused with status 404', 0.2, function () {
+test.run('with no node, the spirit.fs branch\'s stat of a file that is not there is refused with status 404', 0.2, function () {
   const o = LOCAL.o; if (!o) return false;
   return (!!o.missing && !!o.missing.no && o.missing.no.status === 404) || false;
 }, test.limit.quick);
@@ -159,8 +160,8 @@ test.run('the file cache marks spirit/fs a branch, and neither the old api nor a
 // spirit/fs/script.js: one validator per verb, each its <verb>.json's, each argument a type file.
 const VERBS = ['search', 'stat', 'load', 'save', 'delete'];
 let branchScript = null;
-test.run('spirit/fs/script.js is required as the branch, an object holding a validator for each of its verbs', 0.2, function () {
-  try { branchScript = LOADER.requireScript('spirit/fs/script.js'); } catch (e) { branchScript = null; }
+test.run('spirit/fs/script.js is required as the branch, an object holding a validator for each of its verbs', 0.2, async function () {
+  try { branchScript = await LOADER.requireScript('spirit/fs/script.js'); } catch (e) { branchScript = null; }
   const v = branchScript && branchScript.verbs;
   return (!!v && typeof v === 'object' && VERBS.every(function (n) { return !!v[n] && typeof v[n] === 'object'; })) || false;
 }, test.limit.quick);

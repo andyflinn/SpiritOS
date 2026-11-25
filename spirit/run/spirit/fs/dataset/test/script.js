@@ -31,7 +31,7 @@ test.after(async function () {
 
 // A caller in a child process of the scratch node: it requires spirit/fs/dataset/script.js and nothing else, and prints, every half second,
 // the rows asked about (null while there is none) and whether the tree is whole.
-const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', 'spirit/app/desk/desk.js', 'spirit/zzfsflag', 'spirit/server/node/script.js', 'spirit/state'];
+const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', 'spirit/node', 'spirit/app/desk/desk.js', 'spirit/zzfsflag', 'spirit/server/node/script.js', 'spirit/state'];
 function caller() {
   const script = [
     "require('./spirit/script.js');",
@@ -83,9 +83,15 @@ test.run('spirit/app/desk, holding desk.json and desk.js, is a row with app true
   const r = row('spirit/app/desk');
   return (!!r && r.app === true) || false;
 }, test.limit.quick);
-test.run('spirit/fs, holding api.js and data.js and no manifest, is a row with api true and app false', 0.4, function () {
+// THE OLD SHAPE AND THE NEW SIDE BY SIDE (goal/G49.15; Andy: "does not the interim cache handle both old and new"): spirit/fs
+// is a branch of the new shape since step 3, spirit/node still of the old.
+test.run('spirit/fs, holding script.js and client/script.js and no manifest, is a row with branch true, api false and app false', 0.4, function () {
   const r = row('spirit/fs');
-  return (!!r && r.api === true && r.app === false) || false;
+  return (!!r && r.branch === true && r.api === false && r.app === false) || false;
+}, test.limit.quick);
+test.run('spirit/node, holding api.js and data.js and no manifest, is a row with api true, branch false and app false', 0.4, function () {
+  const r = row('spirit/node');
+  return (!!r && r.api === true && r.branch === false && r.app === false) || false;
 }, test.limit.quick);
 // Q1 (Andy: "yes. testicle already checks validity of an app.json"): a folder is app:true by its <name>.json alone; job has
 // job.json and no job.js.
