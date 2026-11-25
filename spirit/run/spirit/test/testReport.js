@@ -30,7 +30,9 @@
 
 const path = require('path');
 // The rule a test's title keeps (goal/G47.4): product code, which a test may load.
-const TITLE_RULE = require(path.join(__dirname, '..', 'fieldRules', 'script.js'));
+// The description's type since goal/G49.13, when the old rules file went: '' when it takes the title, else why.
+const TITLE_TYPE = require('../type/string/description/script.js');
+function titleProblem(v) { try { TITLE_TYPE.isValid(v); return ''; } catch (e) { return (e && e.message) || 'not a valid title'; } }
 
 const STARS = '**************************************************************************';
 const LINE_LENGTH = STARS.length;
@@ -322,7 +324,7 @@ async function runAll() {
     // failure. then you can have a new status for suites \"duplicate titles\"", "rule one wins": every test is still run and
     // reported as it ends): the suite's success for the script goes out false, its reason duplicateTitles.
     if (seen[once]) { dupTitles[script] = true; held[script] = false; }
-    if (TITLE_RULE.describeProblem(title) || typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1) || typeof t.body !== 'function') t.verdict = { pass: false, crash: true };
+    if (titleProblem(title) || typeof t.severity !== 'number' || !(sev >= 0 && sev <= 1) || typeof t.body !== 'function') t.verdict = { pass: false, crash: true };
     else await one(t);
     seen[once] = true;
     const v = t.verdict || { pass: false };
