@@ -564,7 +564,8 @@ function shapeBreaks(rel) {
     const arg = (/^\s*([^)]*)\)/.exec(code.slice(open)) || ['', ''])[1].trim();
     const lit = /^(['"])([^'"]*)\1$/.exec(arg);
     const named = lit ? lit[2] : '';
-    const spiritJs = /(^|\/)spirit\.js$/.test(named) || /['"]spirit\.js['"]\s*\)?$/.test(arg);
+    // The spirit object by where it resolves, spirit/script.js since goal/G49.12's flag day, never by its file's name.
+    const spiritJs = (!!named && path.resolve(path.dirname(path.join(RUN, rel)), named) === path.join(RUN, 'spirit', 'script.js')) || /['"]spirit['"]\s*,\s*['"]script\.js['"]\s*\)\s*\)?$/.test(arg);
     if (spiritJs) { first = false; continue; }
     if (!first && lit && (BUILTIN.indexOf(named) !== -1 || BUILTIN.indexOf(named.replace(/^node:/, '')) !== -1)) continue;
     // its first load is not spirit.js, or it loads a module not through spirit.requireScript
@@ -604,12 +605,12 @@ function moduleRules(full) {
     const sets = code.search(/\broot\.spirit\s*=|\bglobalThis\.spirit\s*=|\bglobal\.spirit\s*=/);
     // it sets the global spirit nowhere, or only after its first require
     if (sets === -1 || (first && sets > first.at)) early = true;
-  } else if (!(/(^|\/)spirit\.js$/.test(first.path) && path.resolve(path.dirname(full), first.path) === path.join(RUN, 'spirit', 'script.js'))) {
+  } else if (path.resolve(path.dirname(full), first.path) !== path.join(RUN, 'spirit', 'script.js')) {
     // it does not require spirit.js first
     early = true;
   } else {
     const native = function (p) { return BUILTIN.indexOf(p) !== -1 || BUILTIN.indexOf(p.replace(/^node:/, '')) !== -1; };
-    const other = requires.slice(1).filter(function (r) { return !native(r.path) && !/(^|\/)spirit\.js$/.test(r.path); })[0];
+    const other = requires.slice(1).filter(function (r) { return !native(r.path) && path.resolve(path.dirname(full), r.path) !== path.join(RUN, 'spirit', 'script.js'); })[0];
     // it requires another module plainly, not through spirit.requireScript(): only node's own modules are required plainly
     if (other) early = true;
   }
