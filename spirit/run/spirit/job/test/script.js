@@ -1052,7 +1052,7 @@ function mountPart() {
     fs.writeFileSync(path.join(dir, OLD_FOLDER, 'note.txt'), 'the decoy');
     fs.writeFileSync(path.join(dir, 'data.js'), [
       '(function family() {',
-      "  var D = typeof window !== 'undefined' ? window.spirit.required.spirit.data : require('../../data.js');",
+      "  var D = typeof window !== 'undefined' ? window.spirit.required.spirit.data : require('../../data/script.js');",
       "  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(family); return; }",
       "  D.makeFamily('" + name + "');",
       "  (typeof window !== 'undefined' ? window : global).__appData = '" + name + "';",
@@ -1073,13 +1073,13 @@ function mountPart() {
     // data.js on this node (appServer.js, familyApi), and its translator says so by a file. Named by its own script, as a server is.
     const follow = path.join(run, 'spirit', 'app', NAME);
     fs.writeFileSync(path.join(follow, 'followerRows.js'), [
-      "const D = require('../../data.js');",
+      "const D = require('../../data/script.js');",
       "D.addTranslator({ onJob: function (job) { if (job && job.app) require('fs').writeFileSync(process.env.ROW_SEEN, JSON.stringify(job.app)); } });",
     ].join('\n') + '\n');
     fs.writeFileSync(path.join(follow, 'follower.js'), [
       "require('../../script.js');",
       "const path = require('path');",
-      "require('../../server/app/script.js').serve({}, { stream: { translator: path.join(__dirname, '..', '..', 'test', 'followerRows.js'), cache: true, module: 'a.test' } });",
+      "require('../../server/app/script.js').serve({}, { stream: { translator: path.join(__dirname, 'followerRows.js'), cache: true, module: 'a.test' } });",
     ].join('\n') + '\n');
     return { root: root, run: run };
   }

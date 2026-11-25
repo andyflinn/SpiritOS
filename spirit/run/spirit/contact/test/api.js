@@ -196,10 +196,12 @@ test.run('leave names the relay by its key alone', 0.4, function () {
   if (!W.api) return false;
   return (passes('leave', { key: KEY }) && refusedAs('leave', { key: NOT_KEY }) === 'bad-request' && refusedAs('leave', {}) === 'bad-request') || false;
 }, test.limit.quick);
-test.run('the node\'s relay branch is gone: no spirit/relay/ folder, and no product script names its api.js or data.js', 0.4, function () {
+// spirit/relay/ holds the relay's own program since goal/G49.12 (box v17: "spirit/relay.js --> spirit/relay/processor/script.js"), so
+// the node's relay branch being gone is its api.js and data.js gone, never the folder.
+test.run('the node\'s relay branch is gone: no spirit/relay/api.js or data.js, and no product script names them', 0.4, function () {
   const files = require('child_process').execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean);
   if (files.length < 100) return false;
-  const inRelay = files.filter(function (f) { return f.indexOf('spirit/relay/') === 0; });
+  const inRelay = files.filter(function (f) { return f === 'spirit/relay/api.js' || f === 'spirit/relay/data.js'; });
   const naming = files.filter(function (f) { return /\.(js|html)$/.test(f) && !/(^|\/)test\//.test(f) && fs.existsSync(path.join(RUN, f)); })
     .filter(function (f) { return /spirit\/relay\/(api|data)\.js/.test(fs.readFileSync(path.join(RUN, f), 'utf8')); });
   return (!inRelay.length && !naming.length) || false;

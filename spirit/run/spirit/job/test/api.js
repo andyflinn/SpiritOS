@@ -51,7 +51,8 @@ function keysAt(src, open) {
   return null;
 }
 function mounted(family) {
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8');
+  // The node's server code, where the branches are mounted: spirit/server/node/script.js since goal/G49.12.
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8');
   const head = 'loopbackVerbs.mount(\'' + family + '\',';
   let at = src.indexOf(head);
   if (at === -1) return null;
