@@ -393,27 +393,6 @@ function parseRequestPath(req, res) {
   }
 }
 
-// Answers in both modes and needs nothing. `startedAt` rides along
-// because "which commit" and "since when" are the two halves of the
-// same question: a matching commit with an old start time means the
-// code landed and nothing picked it up.
-function sendVersion(res, build, startedAt, isRelay) {
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({
-    version: spirit.VERSION,
-    commit: build.commit,
-    dirty: build.dirty,
-    committedAt: build.at,
-    source: build.source,
-    // Only ever non-zero on a COPIED tree, and then it is a warning
-    // about this very process: files existed that a copy could not
-    // carry, so something it needs may simply not be here.
-    untracked: build.untracked || 0,
-    startedAt: startedAt,
-    relay: !!isRelay,
-  }));
-}
-
 // Without this, a failed listen() (most commonly EADDRINUSE — another
 // SpiritOS instance, or anything else, already on this port) surfaces as
 // a raw unhandled 'error' event and a Node internals stack trace, same
@@ -500,7 +479,6 @@ module.exports = {
   refuseTooBig: refuseTooBig,
   parseRequestPath: parseRequestPath,
   answerClientErrors: answerClientErrors,
-  sendVersion: sendVersion,
   refuseListenError: refuseListenError,
   // debugFirst(req, res, server): true when DEBUG.js answered, and the caller must stop. server.api() answers the
   // server's api tree, { <family>: { <verb>: { request, reply } } }.

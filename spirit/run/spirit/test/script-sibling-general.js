@@ -2637,6 +2637,13 @@ if (!GIVEN.length) {
         /path\.join\([^)]*,\s*['"]script\.js['"]\s*\)/.test(c);
     }) || false;
   }, test.limit.quick);
+  // NO BUILD STAMP IN THE PRODUCT (goal/G49.13; Andy: "THAT KIND OF SHIT IS NOT PART OF THE PRODUCT!!!"): spirit/buildStamp/
+  // is gone, and no product script names it.
+  test.run('spirit/buildStamp/ is gone, and no product script names it', 0.6, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return (!shFs.existsSync(shPath.join(SH.run, 'spirit', 'buildStamp')) && !files.some(function (f) { return /buildStamp/.test(rawText(f)); })) || false;
+  }, test.limit.quick);
   test.run('the face page loads the spirit object by its own path, /spirit/script.js', 0.6, function () {
     let t = '';
     try { t = shFs.readFileSync(shPath.join(SH.run, 'spirit', 'shell', 'face.html'), 'utf8'); } catch (e) { return false; }

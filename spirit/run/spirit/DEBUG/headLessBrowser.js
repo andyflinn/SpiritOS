@@ -5,7 +5,7 @@ require('../script.js');
 // be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit/script.js"> and the most minimal
 // mount for armingButton.js". Its first user is the shell's general rules (spirit/test/script-sibling-browser.md).
 //
-// The page loads /spirit.js, then the module through spirit.requireScript, alone (rule/26). An app (it calls
+// The page loads /spirit/script.js, then the module through spirit.requireScript, alone (rule/26). An app (it calls
 // spirit.shell.activateApp) is mounted into the box with an api as the face
 // gives one (shell/boot.js apiFor). An element
 // is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled

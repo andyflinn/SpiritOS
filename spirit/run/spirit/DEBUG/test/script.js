@@ -370,16 +370,16 @@ test.run('the node\'s DEBUG page has no comments', 0.2, async function () {
   return (pageR.status === 200 && pageR.text.indexOf('<!--') === -1) ? true : false;
 }, test.limit.quick);
 
-test.run('on the node\'s DEBUG page one script tag loads a file, and it loads /spirit.js', 0.2, async function () {
+test.run('on the node\'s DEBUG page one script tag loads a file, and it loads /spirit/script.js', 0.2, async function () {
   if (!node || !node.up) return false;
   pageTags = pageR.text.match(/<script\b[^>]*>/gi) || [];
   pageLoading = pageTags.filter(function (t) { return /\bsrc\s*=/.test(t); });
-  return (pageR.status === 200 && pageLoading.length === 1 && /src\s*=\s*["']\/spirit\.js["']/.test(pageLoading[0])) ? true : false;
+  return (pageR.status === 200 && pageLoading.length === 1 && /src\s*=\s*["']\/spirit\/script\.js["']/.test(pageLoading[0])) ? true : false;
 }, test.limit.quick);
 
-test.run('on the node\'s DEBUG page /spirit.js comes before any other script', 0.2, async function () {
+test.run('on the node\'s DEBUG page /spirit/script.js comes before any other script', 0.2, async function () {
   if (!node || !node.up) return false;
-  return (pageR.status === 200 && pageTags.length && /src\s*=\s*["']\/spirit\.js["']/.test(pageTags[0])) ? true : false;
+  return (pageR.status === 200 && pageTags.length && /src\s*=\s*["']\/spirit\/script\.js["']/.test(pageTags[0])) ? true : false;
 }, test.limit.quick);
 
 test.run('the node\'s DEBUG page names the module it mounts, spirit/element/workBench', 0.2, async function () {
@@ -575,9 +575,9 @@ test.run('the scratch relay comes up with DEBUG on', 0.2, async function () {
 test.run('the relay answers its own api\'s garbage, a JSON list', 0.2, async function () {
   if (!relay || !relay.up) return false;
   R = relay.port;
-  loginPage = '/DEBUG/spirit/relay/garbageArguments.json';
-  // /spirit/relay/garbageArguments.json, a relay, DEBUG on.
-  rg = await ask('127.0.0.1', R, '/DEBUG/spirit/relay/garbageArguments.json');
+  loginPage = '/DEBUG/spirit/relay/processor/garbageArguments.json';
+  // the relay's processor, spirit/relay/processor/script.js since goal/G49.12, its garbage list, a relay, DEBUG on.
+  rg = await ask('127.0.0.1', R, '/DEBUG/spirit/relay/processor/garbageArguments.json');
   rlist = json(rg);
   return (rg.status === 200 && /json/.test(rg.type) && Array.isArray(rlist) && rlist.length > 0) ? true : false;
 }, test.limit.quick);

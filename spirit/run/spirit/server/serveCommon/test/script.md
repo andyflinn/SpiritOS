@@ -20,12 +20,11 @@ socket, a scratch home for what it writes, and process.exit planted where it wou
   `node-not-now`, the status varying and the string never; 400 and null for `/%zz`, `/%` and `/%00` (goal/G41.30); an
   unparseable request answered 400 in order, a reset only destroyed.
 - `clientKeyFor` (goal/G22.7): from the loopback the last X-Forwarded-For entry; elsewhere the socket address.
-- `sendVersion`: version, commit, startedAt, relay.
+- no `sendVersion`: the product hands out no build stamp (goal/G49.13).
 - `firstDescription`, `ensureFirstRun` (goal/G30.7): to the second, UTC; written only into a blank; a relay named
   nothing or `relay` becomes `relay <hostname>`, a name of its own stays (rule/13).
 - `writeEnvironment` (goal/G40.6): the port in spirit/state/environment.json, the folder made.
-- `pageFile`, `PAGE_FILES` (goal/G43.18): the addresses served from their files under spirit/, the ghost favicon
-  (Q26); every named file exists; anything else is itself.
+- no `pageFile` and no `PAGE_FILES` (goal/G49.13): every page file is asked and served at its own run path.
 - `debugFirst` is DEBUG.js's `answer` (goal/G41.19).
 
 ## What its test must try to break

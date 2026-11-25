@@ -234,13 +234,9 @@ test.run('from the loopback with no header, clientKeyFor is the socket address, 
   return (got[0] === '::1' && got[1] === '198.51.100.8') || false;
 }, test.limit.quick);
 
-// ── sendVersion ──
-test.run('sendVersion answers the version, the commit and since when it started, and whether it is a relay', 0.2, function () {
-  const r = plantedRes();
-  C.sendVersion(r, { commit: 'abc123', dirty: false, at: '2026-11-13', source: 'git' }, 1234, true);
-  let v = null;
-  try { v = JSON.parse(r.body); } catch (e) { return false; }
-  return (r.status === 200 && v.version === spirit.VERSION && v.commit === 'abc123' && v.startedAt === 1234 && v.relay === true && v.untracked === 0) || false;
+// ── no build stamp (goal/G49.13; Andy: "THAT KIND OF SHIT IS NOT PART OF THE PRODUCT!!!") ──
+test.run('it hands out no build stamp: no sendVersion', 0.2, function () {
+  return (!!C && typeof C.writeEnvironment === 'function' && C.sendVersion === undefined) || false;
 }, test.limit.quick);
 
 // ── first-run defaults (goal/G30.7) ──
@@ -281,18 +277,9 @@ test.run('writeEnvironment writes the port to spirit/state/environment.json, mak
   return (v.PORT === 45999) || false;
 }, test.limit.quick);
 
-// ── the pages' files (goal/G43.18) ──
-test.run('pageFile serves the browser\'s addresses from their files under spirit/, and the favicon from the ghost on the loopback', 0.2, function () {
-  const got = [C.pageFile('face.html'), C.pageFile('/spirit.js'), C.pageFile('favicon.svg'), C.pageFile('shell/boot.js')];
-  return (got[0] === 'spirit/shell/face.html' && got[1] === 'spirit/script.js' && got[2] === 'spirit/shell/ghost.svg' && got[3] === 'spirit/shell/boot/script.js') || false;
-}, test.limit.quick);
-test.run('pageFile leaves any other address as it is, with its leading slash left off', 0.2, function () {
-  const got = [C.pageFile('/spirit/app/desk/desk.html'), C.pageFile('toString')];
-  return (got[0] === 'spirit/app/desk/desk.html' && got[1] === 'toString') || false;
-}, test.limit.quick);
-test.run('every file PAGE_FILES names is there in the tree', 0.2, function () {
-  const missing = Object.keys(C.PAGE_FILES).filter(function (a) { return !fs.existsSync(path.join(RUN, C.PAGE_FILES[a])); });
-  return (Object.keys(C.PAGE_FILES).length > 0 && missing.length === 0) || false;
+// ── no page address map (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM") ──
+test.run('it holds no page address map: no PAGE_FILES and no pageFile', 0.2, function () {
+  return (!!C && typeof C.writeEnvironment === 'function' && C.PAGE_FILES === undefined && C.pageFile === undefined) || false;
 }, test.limit.quick);
 
 // ── debugFirst (goal/G41.19) ──

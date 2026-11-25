@@ -39,7 +39,7 @@ the module's name without extension; the generator script's name without `.js`, 
 
 - **headLessBrowser**, a page: status 200, an HTML type. The most minimal page:
   - no comments;
-  - one script tag that loads a file, and it loads `/spirit.js`, before any other script;
+  - one script tag that loads a file, and it loads `/spirit/script.js`, before any other script;
   - it names the module it mounts (its run path), and mounts that one module alone.
   - What the page does when it runs is judged by the first user, the shell's general rules
     (`spirit/run/spirit/test/script-sibling-browser.md`).
@@ -133,7 +133,7 @@ delete things, so neither Andy's node nor an agent's is touched.
 ## What its test must try to break
 
 - A DEBUG address answered while DEBUG is off.
-- A page with a comment, a second script file, or a script before `/spirit.js`.
+- A page with a comment, a second script file, or a script before `/spirit/script.js`.
 - A `..`, a forwarded-from header, or a request from outside answered.
 - A garbage entry that crashes a handler, answers 500, or is accepted.
 - An argument never given one of the six types, never left out; no extraneous argument; a string never empty, huge or

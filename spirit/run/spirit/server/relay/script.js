@@ -31,8 +31,8 @@ const relayLimits = spirit.requireScript('spirit/relayLimits/script.js');
 const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
 const createRelay = spirit.requireScript('spirit/relay/processor/script.js');
 // The build stamp for GET /api/version stood here; that route is closed
-// (goal/G22.6), and a relay's version reaches its owner in relay-status
-// (relay.js, RUNNING).
+// (goal/G22.6), and a relay's VERSION reaches its owner in relay-status;
+// the product reads no build stamp (goal/G49.13).
 const common = spirit.requireScript('spirit/server/serveCommon/script.js');
 const streamSink = spirit.requireScript('spirit/streamSink/script.js');
 // R36 phase B: a refusal carries the catalogue's code beside its sentence.

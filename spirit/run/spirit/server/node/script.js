@@ -18,7 +18,7 @@ const path = require('path');
 // The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
 const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
 // The helpers this node shares with the relay's startup module — body
-// reading, file sending, the 413 and malformed-path guards, /api/version.
+// reading, file sending, the 413 and malformed-path guards.
 const common = spirit.requireScript('spirit/server/serveCommon/script.js');
 // What this node answers about itself, and the one thing it writes there
 // unasked — see the boot call in the personal-node block.
@@ -35,12 +35,8 @@ const relayKeys = spirit.requireScript('spirit/relayKeys/script.js');
 // a node with no relay is given the kept one (ensureRelays, a relay row
 // of node.db's one table through relayKeys).
 const ownerBadge = spirit.requireScript('spirit/ownerBadge/script.js');
-// Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
-// again later would report whatever is on disk now, which is the lie
-// this is meant to catch.
-const buildStamp = spirit.requireScript('spirit/buildStamp/script.js');
-const BUILD = buildStamp.resolve(fileSystem.ROOT_DIR);
-const STARTED_AT = new Date().toISOString();
+// THE BUILD STAMP AND GET /api/version STOOD HERE: the product reads no git and no stamp file of its tree
+// (goal/G49.13; Andy: "THAT KIND OF SHIT IS NOT PART OF THE PRODUCT!!!").
 
 //console.log(JSON.stringify(spirit,null,2));
 
@@ -890,11 +886,6 @@ const server = http.createServer((req, res) => {
   // A node no longer answers any relay route (cycle 0, Andy 2026-09-19);
   // they are relayServer.js.
 
-  if (req.method === 'GET' && pathname === '/api/version') {
-    common.sendVersion(res, BUILD, STARTED_AT, false);
-    return;
-  }
-
   // SIX GET ROUTES STOOD HERE — status, who, device, handle,
   // unknown-senders, and arrivals. Five are verbs at the one door now
   // (the map is beside the POST block below); arrivals is the one that
@@ -1022,11 +1013,7 @@ const server = http.createServer((req, res) => {
     // event stream too, as the events family's subscribe (its handler keeps
     // the response open; Andy: "it's a severe violation, that there is some
     // stupid api/events door, that is not part of the an actual api"). WHAT
-    // DOES NOT, and it is technical rather than taste —
-    //
-    //   GET /api/version  must answer a client that knows nothing,
-    //                     including one running older code, which is the
-    //                     case it exists for.
+    // DOES NOT: nothing since GET /api/version went (goal/G49.13).
     //
     // NAMESPACE.VERB, so which side of this node a verb lives on is
     // readable in the verb itself: `fs.*` and `jobs.*` are this machine,

@@ -176,7 +176,7 @@ No arguments; true or false. The only place anything asks where it runs.
 
 The node's and the relay's too, in node and on a page alike:
 
-- `VERSION`: the SpiritOS version, `'0.0.1'`; the relay and `/api/version` report it.
+- `VERSION`: the SpiritOS version, `'0.0.1'`; the relay's status reports it.
 - `DEFAULT_SPIRIT_PORT`: 65432, the port a node listens on when it is started without one. spirit.js never guesses its
   own node's port from it (above).
 - `MIME_TYPES`: the content type of a file by its extension, `'.js'` to `'application/javascript; charset=utf-8'`.

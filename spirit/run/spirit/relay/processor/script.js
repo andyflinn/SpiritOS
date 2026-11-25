@@ -29,9 +29,7 @@ const nodeCard = spirit.requireScript('spirit/nodeCard/script.js');
 // The ceilings the owner's read reports — what this box could give — from
 // the same module the installer and first start use.
 const relayLimits = spirit.requireScript('spirit/relayLimits/script.js');
-// Once, at load, for the same reason server.js does it: the answer must
-// describe the code that is running, not the code on disk.
-const RUNNING = spirit.requireScript('spirit/buildStamp/script.js').resolve(path.join(__dirname, '..', '..', '..'));
+// THE BUILD STAMP STOOD HERE: the product reads no git and no stamp file of its tree (goal/G49.13; Andy: "THAT KIND OF SHIT IS NOT PART OF THE PRODUCT!!!").
 
 // NO STORE-AND-FORWARD (decision 0006). Andy: "the ring was a lie all
 // along. it was unable to promise reliable delivery anyways, because it
@@ -3781,8 +3779,7 @@ function createRelay(rootDir, deps) {
         invites.sweepExpired(rootDir);
         return invites.load(rootDir);
       }()),
-      version: require('../../script.js').VERSION + ' ' + RUNNING.commit +
-        (RUNNING.dirty ? '+dirty' : ''),
+      version: require('../../script.js').VERSION,
       proc: {
         rss: mem.rss,
         heapUsed: mem.heapUsed,
