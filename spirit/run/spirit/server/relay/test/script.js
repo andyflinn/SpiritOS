@@ -241,7 +241,8 @@ test.run('a scratch relay comes up and hands its garbage list', 0.2, async funct
   // 1) INTROSPECT: the relay's own api, as its garbage list (its DEBUG route: spirit/DEBUG/garbageArguments.js over the
   // relay's api tree), each entry the ask's body { body: { <verb>: args } }.
   let list = null;
-  try { list = await fetch(base + '/DEBUG/spirit/relay/garbageArguments.json').then(function (r) { return r.json(); }); } catch (e) { list = null; }
+  // The relay is spirit/relay/processor/script.js since goal/G49.12's flag day (box v17: "spirit/relay.js --> spirit/relay/processor/script.js").
+  try { list = await fetch(base + '/DEBUG/spirit/relay/processor/garbageArguments.json').then(function (r) { return r.json(); }); } catch (e) { list = null; }
   if (!Array.isArray(list) || !list.length) return false;
   G.list = list;
   const verbs = G.verbs;

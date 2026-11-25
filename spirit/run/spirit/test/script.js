@@ -757,7 +757,8 @@ test.run('on a face, requiring shell/boot.js after the boot loaded it runs nothi
 // already loaded.", and "box that spirit.requireScript() on the node is just a path-translating wrapper": on the node it
 // answers the module at once, as require does; an interface is still bound by asking a node.
 // 7c. spirit.required.<path>, and on the node spirit.requireScript answers the module at once
-function placeOf(sp, p) { return String(p).replace(/\.js$/, '').split('/').reduce(function (o, k) { return o == null ? undefined : o[k]; }, sp && sp.required); }
+// A folder's script.js stands at its folder's own name (goal/G49.9, box v5), so its last key is dropped.
+function placeOf(sp, p) { const keys = String(p).replace(/\.js$/, '').split('/'); if (keys.length > 1 && keys[keys.length - 1] === 'script') keys.pop(); return keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, sp && sp.required); }
 const real = require(path.join(RUN, COMPONENT));
 test.run('on the node, spirit.requireScript of spirit/relayUrl/script.js answers its module.exports at once, not a promise', 0.2, function () {
   const atOnce = s.requireScript(COMPONENT);
