@@ -2,7 +2,7 @@
 // spirit/run/spirit/type/string/word/script.js
 // THE TYPE spirit.type.string.word (goal/G48.4, the box: "a type script.js is an object containing static functions ... defaultValue()
 // returns a default value that passes validation, and isValid(something) return boolean true if something is valid and throws
-// and error if something is NOT valid."): a word, one word that survives being read aloud: 1 to 32 letters, digits, dots, underscores or dashes (fieldRules.js spokenOk).
+// and error if something is NOT valid."): a word, one word that survives being read aloud: 1 to 32 letters, digits, dots, underscores or dashes.
 // The same file on the node and on a page: on the node it is this module, on a page it stands at spirit.required.type.string.word.
 // Its test: ./test/word.js.
 (function (root) {

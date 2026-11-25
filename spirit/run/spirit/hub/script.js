@@ -92,9 +92,12 @@ const MAX_SEARCHED_PEOPLE = 1000;
 // occurrences of label and description must validate at a central
 // point"). Empty is not a label here but its absence: clearing your own
 // name for somebody, or a pasted key with no label yet.
-const fieldRules = require('../script.js').requireScript('spirit/fieldRules/script.js');
+// The label's type, by its full path, and the text tidied by the spirit object (goal/G49.13: the old rules file goes).
+const SPIRIT = require('../script.js');
+const LABEL = SPIRIT.requireScript('spirit/type/string/label/script.js');
+function labelProblem(text) { try { LABEL.isValid(text); return ''; } catch (e) { return (e && e.message) || 'not a label'; } }
 function labelRefusal(text) {
-  return fieldRules.normalize(text) ? fieldRules.problem(text) : '';
+  return SPIRIT.normalizeString(text) ? labelProblem(text) : '';
 }
 
 // ── packet.js IS BACK, AND THE DELETION IT LOOKS LIKE UNDOING STANDS ──
@@ -1258,7 +1261,7 @@ function createHub(rootDir) {
         var heldLabel = String((body && body.publicLabel) || '');
         var heldBad = labelRefusal(heldLabel);
         if (heldBad) { fail(res, 400, heldBad); return; }
-        contactBook.noteLabel(rootDir, publicKey, fieldRules.normalize(heldLabel));
+        contactBook.noteLabel(rootDir, publicKey, SPIRIT.normalizeString(heldLabel));
       }
       // What YOU call that key. Never uploaded, never seen by the peer,
       // and the reason contactBook keeps publicLabel separate: the mailbox's
@@ -1267,7 +1270,7 @@ function createHub(rootDir) {
         var mine = String((body && body.myLabel) || '');
         var mineBad = labelRefusal(mine);
         if (mineBad) { fail(res, 400, mineBad); return; }
-        var row = contactBook.setMyLabel(rootDir, publicKey, fieldRules.normalize(mine));
+        var row = contactBook.setMyLabel(rootDir, publicKey, SPIRIT.normalizeString(mine));
         if (!row) { fail(res, 404, 'no row for that key'); return; }
         var caption = contactBook.labelForKey(rootDir, publicKey, row.publicLabel || '');
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1461,7 +1464,7 @@ function createHub(rootDir) {
           // Empty is a real answer: a pasted key has no label until its
           // holder writes to you or you type one yourself. Inventing one
           // would be worse than an unnamed row.
-          publicLabel: fieldRules.normalize((body && body.publicLabel) || ''),
+          publicLabel: SPIRIT.normalizeString((body && body.publicLabel) || ''),
           relay: url,
         });
 
@@ -1550,7 +1553,7 @@ function createHub(rootDir) {
 
   // A REFUSAL IS A BODY, NOT A STATUS, for both of these. The app draws
   // `error` under the field that caused it, which is where somebody is
-  // looking — and fieldRules already told it the same thing before the
+  // looking — and the label's type already told it the same thing before the
   // request left, so arriving here means the browser was out of date or
   // was not the one asking.
   function handleNodeName(req, res, readJsonBody) {
@@ -1895,7 +1898,7 @@ function createHub(rootDir) {
     var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
     var label = String((body && body.label) || '').trim();
     if (!label) return Promise.resolve({ ok: false, status: 400, error: 'a label is required' });
-    var labelBad = fieldRules.problem(label);
+    var labelBad = labelProblem(label);
     if (labelBad) return Promise.resolve({ ok: false, status: 400, error: labelBad });
     try { assertRelayUrl(url); }
     catch (e) { return Promise.resolve({ ok: false, status: 400, error: e.message }); }

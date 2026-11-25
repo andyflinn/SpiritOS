@@ -20,8 +20,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.requireScript.
-  // And its type, spirit.type.string.label, which Save asks before the wire is troubled (goal/G48.4, the box: "fieldRules.js
-  // dies").
+  // And its type, spirit.type.string.label, which Save asks before the wire is troubled (goal/G48.4: the types
+  // replace the old rules file).
   var parts = root.spirit.requireScript ? Promise.all([keepAnswer('spirit/element/fieldInput/script.js'), keepAnswer('spirit/type/string/label/script.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.

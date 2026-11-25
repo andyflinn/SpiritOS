@@ -2,7 +2,7 @@
 // spirit/run/spirit/type/string/email/script.js
 // THE TYPE spirit.type.string.email (goal/G48.4, the box: "a type script.js is an object containing static functions ... defaultValue()
 // returns a default value that passes validation, and isValid(something) return boolean true if something is valid and throws
-// and error if something is NOT valid."): an email address: no spaces, one @ with something on each side, at most 254 bytes, the mail standard's own maximum (fieldRules.js emailProblem).
+// and error if something is NOT valid."): an email address: no spaces, one @ with something on each side, at most 254 bytes, the mail standard's own maximum.
 // The same file on the node and on a page: on the node it is this module, on a page it stands at spirit.required.type.string.email.
 // Its test: ./test/email.js.
 (function (root) {

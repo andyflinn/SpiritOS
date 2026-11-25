@@ -155,9 +155,9 @@ const T = {
   ofTitle: db.prepare('SELECT * FROM testicle WHERE suite = ? AND test = ?'),
   retitle: db.prepare('UPDATE testicle SET test = ? WHERE suite = ? AND test = ?'),
 };
-// The rule a test's title keeps (goal/G47.4, the box: "test titles are constrained BY DESCRIPTION_MAX_BYTES, in
-// spirit/fieldRules/script.js").
-function fieldRules() { return spirit.requireScript('spirit/fieldRules/script.js'); }
+// The rule a test's title keeps (goal/G47.4: a description's byte limit): the description's type since goal/G49.13, by its
+// full path: '' when it takes the title, else why.
+function titleProblem(v) { try { spirit.requireScript('spirit/type/string/description/script.js').isValid(v); return ''; } catch (e) { return (e && e.message) || 'not a valid title'; } }
 // A SUITE ROW'S STATUS, THE SERVER'S ALONE (goal/G47.1, the box: "A suite row's status, for its script: \"needs running\"
 // when it never ran; \"still red\" when it ran, but has failed tests in it for that script; \"green\" if all tests in the
 // suite passed", "\"needs running\" clears when the server has a full, successful report from the suite in its database for
@@ -1539,9 +1539,9 @@ appServer.serve({
       const old = String(a.oldTitle || '');
       if (!script || !suite || !old || script.indexOf('..') !== -1 || suite.indexOf('..') !== -1 || !/\.js$/.test(suite) || !isSuite(suite)) throw refused('bad-request');
       if (!T.rowsOf.all(script, suite, old).length) throw refused('no-such-test');
-      const bad = fieldRules().describeProblem(a.title);
+      const bad = titleProblem(a.title);
       if (bad) throw Object.assign(refused('bad-title'), { extra: { why: bad } });
-      const title = fieldRules().normalize(a.title);
+      const title = spirit.normalizeString(a.title);
       if (title === old) throw refused('same-title');
       if (T.titleInSuite.get(suite, title)) throw refused('duplicate-title');
       if (!there(suite)) throw refused('no-such-file');

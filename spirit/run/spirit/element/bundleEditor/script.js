@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/bundleEditor/script.js
 // THE BUNDLES, MADE AND KEPT: a simple panel-type shell element (goal/G41.14). Andy, box: the "bundleEditor", "at the
-// top of the page: a one-row add form: "new" [fieldInput.js/fieldRules:Label input field] [Add-Button]" (a rowForm since
+// top of the page: a one-row add form": "new", a label input field, an Add button (a rowForm since
 // goal/G41.27, ➕ in place of "new"), "the
 // [add-Button] refused an empty or invalid label", and "filling the rest of the available vertical space: the
 // bundleSelector in pane-mode", its columns the label (shown only since goal/G41.26) and the owner. A row pressed opens
@@ -23,7 +23,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/type/string/label/script.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
@@ -33,12 +33,14 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var parts = Promise.all(['spirit/element/fieldInput/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
   }).concat([window.spirit.requireScript('spirit/auth/api.js')]));
-  // The label's rule, the one definition both sides use (spirit/fieldRules/script.js).
+  // The label's type, required here by its full path (goal/G49.13), and the text tidied as it is stored.
   function labelOf(text) {
-    var R = ANSWER['spirit/fieldRules/script.js'] || {};
-    var v = typeof R.normalize === 'function' ? R.normalize(text) : String(text == null ? '' : text).trim();
-    var bad = !v ? 'a bundle needs a label' : (typeof R.problem === 'function' ? R.problem(v) : '');
-    return { value: v, why: bad || '' };
+    var T = ANSWER['spirit/type/string/label/script.js'];
+    var v = window.spirit.normalizeString(String(text == null ? '' : text));
+    var bad = '';
+    if (!v) bad = 'a bundle needs a label';
+    else if (T) { try { T.isValid(v); } catch (e) { bad = (e && e.message) || 'not a label'; } }
+    return { value: v, why: bad };
   }
 
   function create(box, options) {

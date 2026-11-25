@@ -31,7 +31,7 @@
     }, said);
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/type/string/label/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/ownerBadge/script.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
@@ -356,11 +356,9 @@ var cdPage = ({
       if (!event.target || event.target.id !== 'cd-label-input') return;
       var typed = event.target.value.trim();
       // Checked here before anything is asked, by the same rule the node
-      // checks again (spirit/fieldRules/script.js; Andy, goal/G4.16: "the shell may
-      // as well rule that inputs themselves implement constraints in
-      // fieldRules.js"). Empty clears your name for them, and is asked.
-      var rule = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/fieldRules/script.js']) || null;
-      var bad = (typed && rule) ? rule.problem(typed) : '';
+      // checks again: the label's type, required here by its full path (goal/G49.13). Empty clears your name for them,
+      // and is asked.
+      var bad = typed ? ndLabelProblem(typed) : '';
       if (bad) { cdStatus(bad); return; }
       cdPeerAction('label', { myLabel: typed });
     });
@@ -438,7 +436,7 @@ function ndIconHtml(glyph) {
 }
 
 // WHAT A LABEL MAY BE, asked before a round trip is spent on it. The
-// rule is spirit/fieldRules/script.js (spirit.required.spirit.fieldRules), and the relay enforces
+// rule is the label's type, spirit/type/string/label/script.js, and the relay enforces
 // the same one — this only saves the hop and says what is wrong while
 // the cursor is still in the box.
 //
@@ -476,8 +474,9 @@ function ndNoKey(out, cls) {
 }
 
 function ndLabelProblem(name) {
-  var rule = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/fieldRules/script.js']) || null;
-  return rule ? rule.problem(name) : '';
+  var T = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/type/string/label/script.js']) || null;
+  if (!T) return '';
+  try { T.isValid(name); return ''; } catch (e) { return (e && e.message) || 'not a label'; }
 }
 var ndLayer = {};       // the layer it is drawn in: close() and setTitle(text), the mounter's (options.layer)
 
@@ -1355,7 +1354,7 @@ function ndSetRelayLabel(button) {
   }
 
   // Asked here first, so a space costs no round trip. Same rule object
-  // both sides (spirit/fieldRules/script.js), so the two cannot disagree.
+  // both sides (the label's type), so the two cannot disagree.
   var badName = ndLabelProblem(wanted);
   if (badName) { say(badName, true); return; }
 
@@ -1741,7 +1740,7 @@ function ndClaim(button) {
   //
   // The relay still decides — it writes the ledger — but there is no
   // reason to cross an ocean to be told about a character. Same rule
-  // object both sides (spirit/fieldRules/script.js), so the two cannot disagree.
+  // object both sides (the label's type), so the two cannot disagree.
   // THE PUBLIC LABEL IS OPTIONAL AND FALLS BACK TO THE INVITE NAME.
   // Being called what the person who invited you called you is the
   // obvious default, and it is what the form imposed on everybody back

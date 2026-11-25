@@ -27,9 +27,9 @@
 //
 // THE RULES (the standard a branch's api.js writes to; '?' after a rule makes the argument optional):
 //   text        any string                      flag      '' or 'yes'
-//   name        a label by fieldRules.js        number    a finite number
-//   description a description by fieldRules    bool      true or false
-//   paragraph   a paragraph by fieldRules       object    a plain object
+//   name        a label, by its type            number    a finite number
+//   description a description, by its type     bool      true or false
+//   paragraph   a paragraph, by its type        object    a plain object
 //   key         a peer's public key             list      an array
 //   path        a path inside the node's run folder, relative, no '..'
 //   url         an http or https address        id        a non-empty string
@@ -69,13 +69,26 @@
   function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+  // A TEXT TIDIED BEFORE IT IS STORED (goal/G49.13; Andy: "place additional string utilities ... inside of spirit/script.js
+  // beside spirit.escapeHtml() normalizeString(str)"; moved from the old rules file, which goes): one way of writing each letter (NFC),
+  // runs of white space one space, the ends trimmed. "  Andy   Flinn " is "Andy Flinn". Not a string: ''.
+  function normalizeString(str) {
+    if (typeof str !== 'string') return '';
+    return (str.normalize ? str.normalize('NFC') : str).replace(/\s+/g, ' ').trim();
+  }
+  // A paragraph keeps its line breaks: NFC, and every \r\n a \n. Not a string: ''.
+  function normalizeParagraph(str) {
+    if (typeof str !== 'string') return '';
+    return (str.normalize ? str.normalize('NFC') : str).replace(/\r\n/g, '\n');
+  }
 
   // ── THE CHECKS ──────────────────────────────────────────────────────────────────────────────────────────────────
-  // The field rules are fieldRules.js beside this file, the one definition both sides of the wire use.
-  function fieldRules() {
-    if ((root.spirit || {}).fieldRules) return (root.spirit || {}).fieldRules;
-    if (isNode()) { try { return require('./fieldRules/script.js'); } catch (e) { return null; } }
-    return null;
+  // name, description and paragraph are their types' isValid (goal/G49.13: the old rules
+  // file goes), each type named by its full path.
+  function byType(file, v) {
+    if (typeof v !== 'string') return 'a text';
+    var rule = typeRule(file);
+    return rule ? rule(v) : '';
   }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
   // A peer's public key: an Ed25519 key in its SPKI form, base64, as every key on this network is written.
@@ -96,21 +109,9 @@
       if (p.charAt(0) === '/' || /^[A-Za-z]:/.test(p) || p.indexOf('\0') !== -1) return 'a path inside the run folder';
       return p.split('/').indexOf('..') !== -1 ? 'a path without ..' : '';
     },
-    name: function (v) {
-      if (typeof v !== 'string') return 'a text';
-      var R = fieldRules();
-      return R && R.normalize(v) ? (R.problem(v) || '') : '';
-    },
-    description: function (v) {
-      if (typeof v !== 'string') return 'a text';
-      var R = fieldRules();
-      return R && typeof R.describeProblem === 'function' ? (R.describeProblem(v) || '') : '';
-    },
-    paragraph: function (v) {
-      if (typeof v !== 'string') return 'a text';
-      var R = fieldRules();
-      return R && typeof R.paragraphProblem === 'function' ? (R.paragraphProblem(v) || '') : '';
-    },
+    name: function (v) { return normalizeString(v) ? byType('spirit/type/string/label/script.js', v) : (typeof v === 'string' ? '' : 'a text'); },
+    description: function (v) { return byType('spirit/type/string/description/script.js', v); },
+    paragraph: function (v) { return byType('spirit/type/string/paragraph/script.js', v); },
   };
   function refusal(code, why, extra) {
     var e = new Error(why);
@@ -692,6 +693,8 @@
   self.logError = error;
   self.formatBytes = formatBytes;
   self.escapeHtml = escapeHtml;
+  self.normalizeString = normalizeString;
+  self.normalizeParagraph = normalizeParagraph;
   self.checkArgs = check;
   self.ruleNames = Object.keys(RULES);
   self.callOutcome = outcome;

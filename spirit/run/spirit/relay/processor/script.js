@@ -94,7 +94,7 @@ var SEARCH_WORDS_MAX = 200;
 // KILLED. that's a decision."), and with it the relay posting as itself.
 // ── WHAT A LABEL MAY BE ──────────────────────────────────────────────
 //
-// The rule moved to fieldRules.js on 2026-09-15 and this requires it.
+// The rule is the label's type since goal/G49.13 (before it a rules file of 2026-09-15), required here.
 //
 //   Andy: "an input field should validate before taxing the wire. the
 //   reason to have it there is to make it uniformely avalable to all
@@ -109,7 +109,10 @@ var SEARCH_WORDS_MAX = 200;
 // THIS FILE IS STILL THE ENFORCER. The browser half is a courtesy that
 // saves a hop; the ledger is written here, and every claim and rename
 // is checked here whatever any page believed.
-var fieldRules = spirit.requireScript('spirit/fieldRules/script.js');
+var LABEL = spirit.requireScript('spirit/type/string/label/script.js');
+var WORD = spirit.requireScript('spirit/type/string/word/script.js');
+var EMAIL = spirit.requireScript('spirit/type/string/email/script.js');
+function problemOf(T, v) { try { T.isValid(v); return ''; } catch (e) { return (e && e.message) || 'not valid'; } }
 
 // ── HOW MANY STREAMS THE OWNER'S RAM ALLOWS (cycle 8) ────────────────────
 //
@@ -891,11 +894,10 @@ function createRelay(rootDir, deps) {
   }
 
   // Thin wrappers, so the twelve call sites below read as they always
-  // have. The rule itself is fieldRules.js — see the note at the head of
-  // this file about why it left.
-  function normalizeName(name) { return fieldRules.normalize(name); }
-  function labelProblem(n) { return fieldRules.problem(n); }
-  function spokenOk(n) { return fieldRules.spokenOk(n); }
+  // have. The rules are the types, by their full paths — see the note at the head of this file.
+  function normalizeName(name) { return spirit.normalizeString(name); }
+  function labelProblem(n) { return problemOf(LABEL, n); }
+  function spokenOk(n) { return !!n && !problemOf(WORD, n); }
 
   // A PEER IS ITS KEY. A `|| peer.name` fallback stood here for rows
   // filed under a label, and went with them — every row has a key now,
@@ -1080,7 +1082,7 @@ function createRelay(rootDir, deps) {
   // answerSelf's owner gate (OWNER_VERBS), which has already verified the
   // post against the key in owner.json.
   //
-  // THE SAME RULE AS ANY OTHER PUBLIC LABEL (fieldRules.js). A relay's
+  // THE SAME RULE AS ANY OTHER PUBLIC LABEL (the label's type). A relay's
   // caption goes in the same lists, next to the same peers, and an
   // invisible character is the same impersonation here as anywhere.
   function setRelayLabel(next, hash) {
@@ -3992,8 +3994,8 @@ function createRelay(rootDir, deps) {
     // its key.
     var link = String(url == null ? '' : url).trim();
     if (!key) return { ok: false, status: 400, error: 'a join needs the key that asks' };
-    // The one email rule (fieldRules.emailProblem, goal/G40.10), the forms' as well.
-    var badMail = fieldRules.emailProblem(mail);
+    // The one email rule (the email type, goal/G40.10), the forms' as well.
+    var badMail = problemOf(EMAIL, mail);
     if (badMail) return { ok: false, status: 400, error: badMail };
     if (joinLinkProblem(link)) return { ok: false, status: 400, error: joinLinkProblem(link) };
     // A SEATED KEY JOINING AGAIN CHANGES ITS EMAIL (goal/G30.1, box v28): the same mail, link and code, 10 minutes

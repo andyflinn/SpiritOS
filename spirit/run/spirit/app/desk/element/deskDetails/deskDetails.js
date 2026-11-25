@@ -28,7 +28,7 @@
     return a;
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/type/string/label/script.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/codeMirror.js');
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
@@ -86,7 +86,7 @@ function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
 // (spirit/element/armingButton/script.js), which the dialog loads itself. A button drawn with data-arming="<what it says armed>" is
 // made one after each paint; it arms, says so, and disarms itself on a click elsewhere; its second press is ddSecondPress.
 // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the say box
-// held to fieldRules' line rule by fieldInput, loaded here with the armingButton and attached after each paint.
+// held to its type by fieldInput, loaded here with the armingButton and attached after each paint.
 var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.requireScript
   ? Promise.all([keepAnswer('spirit/element/armingButton/script.js'), keepAnswer('spirit/element/fieldInput/script.js')]) : null);
 function ddArming() {
@@ -678,20 +678,22 @@ function ddSay() {
 // ── INPUTS FOLLOW THE FIELD RULES (rule/12, goal/G10.10) ─────────────
 //
 //   rule/12: "every input in the shell, system or app level, whose value a field rule governs is marked with that rule
-//   (data-field="label", ...) and validated as typed with the same rule the node uses (fieldRules.js,
-//   window.spirit.required.spirit.fieldRules in the browser): bytes left shown beside it, its action refused while the rule says no."
+//   (data-field="label", ...) and validated as typed with the same rule the node uses: bytes left shown beside it, its action
+//   refused while the rule says no." The rule is the label's type, required here by its full path (goal/G49.13).
 // The title and the rename are labels. What is left, or over, shows beside each as it is typed; a value the rule
 // refuses is not sent, and the reason is said. The node checks again: this spares the wire, it never replaces that.
 var DD_FIELD_ACTION = { 'dd-name': 'dd-name-save' };
-function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spirit && ANSWER['spirit/fieldRules/script.js']) || null; }
+function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spirit && ANSWER['spirit/type/string/label/script.js']) || null; }
+function ddProblem(T, v) { try { T.isValid(v); return ''; } catch (e) { return (e && e.message) || 'not a label'; } }
+function ddBytes(v) { return new TextEncoder().encode(window.spirit.normalizeString(v)).length; }
 function ddFieldWhy(id) {
   var rule = ddFieldRule();
   var el = document.getElementById(id);
   var value = el ? String(el.value || '') : '';
   if (!rule || !value.trim()) return '';
-  var problem = rule.problem(value);
+  var problem = ddProblem(rule, value);
   if (!problem) return '';
-  var bytes = rule.byteLength(rule.normalize(value));
+  var bytes = ddBytes(value);
   return problem + (bytes > rule.MAX_BYTES ? ': ' + (bytes - rule.MAX_BYTES) + ' bytes over, the limit is ' + rule.MAX_BYTES : '');
 }
 function ddFieldCheck(id) {
@@ -699,7 +701,7 @@ function ddFieldCheck(id) {
   var el = document.getElementById(id);
   var left = document.getElementById(id + '-left');
   if (!rule || !el || !left) return;
-  var bytes = rule.byteLength(rule.normalize(String(el.value || '')));
+  var bytes = ddBytes(String(el.value || ''));
   var why = ddFieldWhy(id);
   left.textContent = why || (rule.MAX_BYTES - bytes) + ' bytes left';
   left.className = why ? 'job-start-error' : 'job-manifest-note';

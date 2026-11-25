@@ -12,10 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
-// What a label and a description may be, said once for both sides of the
-// wire. It requires nothing at all — that is what lets the browser have
-// the same copy — so this is another one-way edge.
-const fieldRules = spirit.requireScript('spirit/fieldRules/script.js');
+// What a description may be is its type's, by its full path (goal/G49.13: the old rules file goes).
+const DESCRIPTION = spirit.requireScript('spirit/type/string/description/script.js');
 
 // ── RESERVED_NAME = 'relay' STOOD HERE ───────────────────────────────
 //
@@ -486,11 +484,11 @@ function loadIdentity(rootDir) {
 // with the identity it describes and not with the things this machine
 // keeps to itself.
 //
-// THE NUMBER IS fieldRules's, and is read from there rather than repeated.
+// THE NUMBER IS the description type's, and is read from there rather than repeated.
 // A form that counts down to 128 while the file trims at 140 is the exact
 // drift that file was written to stop, and it is the browser half that
 // cannot require this module.
-var DESCRIPTION_MAX = fieldRules.DESCRIPTION_MAX_BYTES;
+var DESCRIPTION_MAX = DESCRIPTION.MAX_BYTES;
 
 function setDescription(rootDir, text) {
   const id = loadIdentity(rootDir);
@@ -499,7 +497,7 @@ function setDescription(rootDir, text) {
   // REFUSED, NEVER CUT (Andy, 2026-10-03, goal/G4.16: "too-long
   // refused"). Too long keeps nothing and hands back what is stored, so a
   // caller that reports what was stored reports the truth; nodeCard.setDescription
-  // refuses it out loud (fieldRules.describeProblem) before it gets here.
+  // refuses it out loud (the description's type) before it gets here.
   if (Buffer.byteLength(next, 'utf8') > DESCRIPTION_MAX) return id;
   id.description = next;
   saveIdentity(rootDir, id);

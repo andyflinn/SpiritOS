@@ -156,7 +156,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
           : '<button type="button" id="' + pre + 'delete">Delete</button>') + ' <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
       fields.forEach(function (f) {
         var el = input(f);
-        // Every other typed field, a URL, a secret, a list, is a line (fieldRules' LINE_MAX_BYTES; goal/G47.1, -browser: every
+        // Every other typed field, a URL, a secret, a list, is a line (a line's byte limit; goal/G47.1, -browser: every
         // input has a maxlength, and stops at it).
         var FI = ANSWER['spirit/element/fieldInput/script.js'];
         // Each field held to its type (goal/G48.4, box v22): a name a label, a description a description.

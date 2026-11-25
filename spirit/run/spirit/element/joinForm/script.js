@@ -33,7 +33,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
   // Its email field's limit, fieldInput's email rule (goal/G47.1, -browser: "every input it draws has a maxlength").
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
-  // And the email type, which a send asks first (goal/G48.4, the box: "fieldRules.js dies").
+  // And the email type, which a send asks first (goal/G48.4: the types replace the old rules file).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/type/string/email/script.js');
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.

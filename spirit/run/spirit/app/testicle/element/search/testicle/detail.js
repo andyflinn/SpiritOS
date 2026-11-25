@@ -21,7 +21,6 @@
     return a;
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules/script.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/app/testicle/element/search/testicle/row.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
@@ -131,7 +130,7 @@
         said('');
         return Promise.resolve(ANSWER['spirit/app/testicle/api.js']['testicle.title']({ script: script, suite: suite, oldTitle: test, title: to })).then(function () {
           if (gone) return;
-          test = ANSWER['spirit/fieldRules/script.js'] ? ANSWER['spirit/fieldRules/script.js'].normalize(to) : String(to).trim();
+          test = window.spirit.normalizeString(String(to));
           prefix = script + '|' + suite + '|' + test + '|';
           input.value = test;
           titleLine.textContent = test;

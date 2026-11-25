@@ -37,7 +37,7 @@
     return a;
   }
   // WHAT IT USES, IT LOADS ITSELF (goal/G43.27): the label type, which mode 2 checks a name with, through spirit.requireScript
-  // (goal/G48.4, the box: "fieldRules.js dies").
+  // (goal/G48.4: the types replace the old rules file).
   if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/type/string/label/script.js');
   // And fieldInput, which holds the name typed in mode 2 to that type as it is typed.
   if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/fieldInput/script.js');

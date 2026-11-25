@@ -2,7 +2,7 @@
 // spirit/run/spirit/type/string/paragraph/script.js
 // THE TYPE spirit.type.string.paragraph (goal/G48.4, the box: "a type script.js is an object containing static functions ... defaultValue()
 // returns a default value that passes validation, and isValid(something) return boolean true if something is valid and throws
-// and error if something is NOT valid."): a paragraph, text with its line breaks and tabs kept, never empty, nothing else invisible, at most 2048 bytes (fieldRules.js PARAGRAPH_MAX_BYTES).
+// and error if something is NOT valid."): a paragraph, text with its line breaks and tabs kept, never empty, nothing else invisible, at most 2048 bytes.
 // The same file on the node and on a page: on the node it is this module, on a page it stands at spirit.required.type.string.paragraph.
 // Its test: ./test/paragraph.js.
 (function (root) {

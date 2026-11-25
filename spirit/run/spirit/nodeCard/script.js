@@ -50,7 +50,10 @@ require('../script.js');
 // node is, and deserves the argument this one got.
 
 const auth = spirit.requireScript('spirit/relayAuth/script.js');
-const fieldRules = spirit.requireScript('spirit/fieldRules/script.js');
+// The label's and the description's types, by their full paths (goal/G49.13: the old rules file goes).
+const LABEL = spirit.requireScript('spirit/type/string/label/script.js');
+const DESCRIPTION = spirit.requireScript('spirit/type/string/description/script.js');
+function problemOf(T, v) { try { T.isValid(v); return ''; } catch (e) { return (e && e.message) || 'not valid'; } }
 // The node layer's one reading of what arrived (N1, goal/G16.5).
 const arrivals = spirit.requireScript('spirit/arrivals/script.js');
 
@@ -300,7 +303,7 @@ function read(rootDir) {
     name: String(id.name || ''),
     description: String(id.description || ''),
     publicKey: String(id.publicKey || ''),
-    descriptionMax: fieldRules.DESCRIPTION_MAX_BYTES,
+    descriptionMax: DESCRIPTION.MAX_BYTES,
   };
 }
 
@@ -309,7 +312,7 @@ function read(rootDir) {
 
 // ── AND WRITTEN ──────────────────────────────────────────────────────
 //
-// Both fields go through fieldRules, which is the rule the RELAY enforces
+// Both fields go through their types, the rules the RELAY enforces
 // on a rename (relay.setRelayLabel) — so a node names itself under the
 // same law a mailbox does, rather than under whatever this file felt like.
 //
@@ -317,10 +320,10 @@ function read(rootDir) {
 // an empty `id.name` was removed by goal/G16.2; the rule stands.)
 function setName(rootDir, text) {
   const id = auth.loadIdentity(rootDir);
-  const bad = fieldRules.problem(text);
+  const bad = problemOf(LABEL, text);
   if (bad) return { ok: false, status: 400, error: bad };
 
-  id.name = fieldRules.normalize(text);
+  id.name = spirit.normalizeString(text);
   try { auth.saveIdentity(rootDir, id); }
   catch (e) { return { ok: false, status: 500, error: 'could not write identity.json' }; }
   // ONE NAME FOR A NODE (goal/G28.3). Andy, 2026-10-16: "there should be
@@ -333,12 +336,12 @@ function setName(rootDir, text) {
 
 // Too long is refused, as is the invisible, which is the same
 // impersonation in a description as in a name, and in the same row
-// (fieldRules.describeProblem; goal/G4.16: "too-long refused").
+// (the description's type; goal/G4.16: "too-long refused").
 function setDescription(rootDir, text) {
-  const bad = fieldRules.describeProblem(text);
+  const bad = problemOf(DESCRIPTION, text);
   if (bad) return { ok: false, status: 400, error: bad };
 
-  const saved = auth.setDescription(rootDir, fieldRules.normalize(text));
+  const saved = auth.setDescription(rootDir, spirit.normalizeString(text));
   // WHAT WAS ACTUALLY STORED goes back, not what was sent. A caller that
   // echoes its own input is a caller that will draw 140 characters into a
   // field holding 128.

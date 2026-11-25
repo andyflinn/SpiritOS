@@ -947,11 +947,13 @@ function refused(code) { const e = new Error(code); e.refusal = code; return e; 
 function refusedWhy(code, why) { const e = refused(code); e.extra = { why: String(why) }; return e; }
 // A FIELD RULE'S ANSWER IN WORDS: what was wrong with which field, and its bytes against the limit when it is the size.
 function fieldWhy(what, value, paragraph) {
-  const fr = spirit.requireScript('spirit/fieldRules/script.js');
-  const p = paragraph ? fr.paragraphProblem(value) : fr.problem(value);
+  // Its type's isValid (goal/G49.13), each type by its full path; the bytes counted on the tidied text.
+  const T = paragraph ? spirit.requireScript('spirit/type/string/paragraph/script.js') : spirit.requireScript('spirit/type/string/label/script.js');
+  let p = '';
+  try { T.isValid(value); } catch (e) { p = (e && e.message) || 'not valid'; }
   if (!p) return '';
-  const max = paragraph ? fr.PARAGRAPH_MAX_BYTES : fr.MAX_BYTES;
-  const bytes = fr.byteLength(paragraph ? fr.normalizeParagraph(value) : fr.normalize(value));
+  const max = T.MAX_BYTES;
+  const bytes = Buffer.byteLength(paragraph ? spirit.normalizeParagraph(String(value)) : spirit.normalizeString(String(value)), 'utf8');
   return what + ': ' + p + (bytes > max ? ' (' + bytes + ' bytes, the limit is ' + max + ')' : '');
 }
 // A REFUSED PRESS NAMES WHAT BLOCKS IT (goal/G9.17, change 3). Andy, 2026-10-09, on "Not pressed: not-offered (that
@@ -1339,7 +1341,7 @@ appServer.serve({
   // WHAT IT BLOCKS, NAMED (goal/G9.10). Andy, 2026-10-07: "When the user presses the [add-button], The desk will add a
   // blocking item with the entered title and a blank text box." So item.add takes one more argument, optional: the id
   // the new item blocks, the goal itself or an item of that goal, and the goal when it is left out (goal/G9.9's case).
-  // The title obeys the label rules, as every label does (spirit/fieldRules/script.js).
+  // The title obeys the label type, as every label does (spirit/type/string/label/script.js).
   // WHAT IT BLOCKS (goal/G49; Andy: "put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input]
   // [Add-button], which will add an item with <Title> blocking the goal/item it was created from."): blocks, left out or
   // '', is its goal; else an item of that goal, kept on the new item as its blocks. Nothing else of the G48.8 cut's
