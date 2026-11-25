@@ -19,25 +19,18 @@ require('../../../../script.js');
 // list of more than 0 models"), adding the new and removing the ones no longer listed ("unavailable models from that
 // provider will be removed, also"). A provider that fails is refused and its row flagged unusable ("if it fails, the
 // provider row will be flagged as unusable"); a later answer clears the flag.
-const fs = require('fs');
-const path = require('path');
 const { rowTable } = spirit.requireScript('spirit/app/agent/table/rowTable.js');
 
-const PLUGINS = path.join(__dirname, '..', '..', 'provider');
-const FALLBACK = 'openai';
 
 function sameUrl(u) { return String(u || '').replace(/\/+$/, ''); }
 
 function refuse(code, why) { const e = new Error(why); e.refusal = code; e.extra = { why: why }; return e; }
 
-// The plugin of a label: the folder of that name in any case, else the OpenAI plugin. Only a folder holding its own
-// <name>/<name>.js counts, so a label never reaches outside the provider folder.
+// The plugin of a label, in any case: Anthropic's, else the OpenAI plugin. Each plugin by its literal path
+// (goal/G49.13; Andy: "generally a server script knows it's path and the literal string of the modules it requires").
 function pluginOf(label) {
-  const want = String(label || '').trim().toLowerCase();
-  let names = [];
-  try { names = fs.readdirSync(PLUGINS); } catch (e) { names = []; }
-  const name = names.filter(function (n) { return n.toLowerCase() === want && fs.existsSync(path.join(PLUGINS, n, n + '.js')); })[0] || FALLBACK;
-  return spirit.requireScript('spirit/app/agent/provider/' + name + '/' + name + '.js');
+  if (String(label || '').trim().toLowerCase() === 'anthropic') return spirit.requireScript('spirit/app/agent/provider/anthropic/anthropic.js');
+  return spirit.requireScript('spirit/app/agent/provider/openai/openai.js');
 }
 
 module.exports = function (ctx) {

@@ -15,7 +15,6 @@ require('../script.js');
 const fs = require('fs');
 const path = require('path');
 
-const DRIVERS = __dirname;
 
 // { driver, send } for the relay's mail.json, or null when it sends no mail (no file, no driver, an unknown driver,
 // or settings that driver will not take).
@@ -24,9 +23,10 @@ function createSender(rootDir, options) {
   try { v = JSON.parse(fs.readFileSync(path.join(String(rootDir || ''), 'spirit', 'state', 'mail.json'), 'utf8')); } catch (e) { return null; }
   if (!v || typeof v !== 'object') return null;
   const name = String(v.driver || '').trim();
-  if (!/^[a-z][a-zA-Z0-9]*$/.test(name) || !fs.existsSync(path.join(DRIVERS, name + '.js'))) return null;
+  // Each driver by its literal path (goal/G49.13; Andy: "generally a server script knows it's path and the literal string of the modules it requires"): mailgun's, the one there is.
+  if (name !== 'mailgun') return null;
   let made = null;
-  try { made = spirit.requireScript('spirit/sendMail/' + name + '.js').create(v, options && options.fetch); } catch (e) { made = null; }
+  try { made = spirit.requireScript('spirit/sendMail/mailgun.js').create(v, options && options.fetch); } catch (e) { made = null; }
   return made && typeof made.send === 'function' ? { driver: name, send: made.send } : null;
 }
 
