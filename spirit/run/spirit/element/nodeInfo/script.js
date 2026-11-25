@@ -107,16 +107,16 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // Each form is made once by its create, kept with what destroy lets go (rule/8: its contact watch goes with Info), and
     // only handed the relays again after.
     var forms = {};
-    function drawForm(key, name, slotName, opts) {
-      var F = ANSWER['spirit/element/' + name + '/script.js'];
+    function drawForm(key, file, slotName, opts) {
+      var F = ANSWER[file];
       if (!F) return;
       if (forms[key]) F.mount(slot(slotName), opts);
       else { forms[key] = F.create(slot(slotName), opts); made.push(forms[key]); }
     }
     function drawForms() {
       if (gone) return;
-      drawForm('email', 'joinForm', 'email', { relays: relays });
-      drawForm('face', 'faceForm', 'face', { relays: relays, reload: loadRelays });
+      drawForm('email', 'spirit/element/joinForm/script.js', 'email', { relays: relays });
+      drawForm('face', 'spirit/element/faceForm/script.js', 'face', { relays: relays, reload: loadRelays });
     }
     // relaysOf() answers { status, text, body: { rows, ... } } itself (goal/G49.11), so it is read as it comes.
     function loadRelays() {
