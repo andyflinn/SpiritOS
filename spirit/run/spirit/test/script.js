@@ -289,7 +289,7 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeString', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'processJob', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
@@ -332,6 +332,16 @@ function helpers(where, o) {
   const e = o.logError('boom');
   return (!!e && !!e.error && e.error.string === 'boom' && o.formatBytes(0) === '0 Bytes' && o.formatBytes(1024) === '1 KB' && o.formatBytes(1536) === '1.5 KB' && o.escapeHtml('&<>"\'') === '&amp;&lt;&gt;&quot;&#39;') || false;
 }
+// normalizeString (goal/G49.13; Andy: "place additional string utilities ... or put inside of spirit/script.js beside
+// spirit.escapeHtml() normalizeString(str)"): fieldRules' normalize moved into the spirit object, as it does today: one Unicode
+// form (NFC), every run of white space one space, the ends trimmed; anything but a string is ''.
+function tidies(o) {
+  if (!o || typeof o.normalizeString !== 'function') return false;
+  const nfd = 'e\u0301';
+  return o.normalizeString('  Andy \t\n  Flinn ') === 'Andy Flinn' && o.normalizeString(nfd) === '\u00e9' && o.normalizeString(5) === '' && o.normalizeString('x') === 'x';
+}
+test.run('in node, spirit.normalizeString makes one form of each letter, one space of each run of white space, and trims the ends', 0.2, function () { return tidies(s) || false; }, test.limit.quick);
+test.run('on a page, spirit.normalizeString answers the same', 0.2, function () { return T.w && T.w.spirit ? tidies(T.w.spirit) || false : false; }, test.limit.quick);
 test.run('in node, error, formatBytes and escapeHtml answer as specified', 0.2, function () { return helpers('node', s); }, test.limit.quick);
 test.run('on a page, error, formatBytes and escapeHtml answer as specified', 0.2, function () { return T.w && T.w.spirit ? helpers('page', T.w.spirit) : false; }, test.limit.quick);
 
