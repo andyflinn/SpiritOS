@@ -282,7 +282,11 @@ function createAppServer(verbs, opts) {
         // The mark rides the pipe out of band, as the caller headers ride in
         // (fileTransfer goal/G1.3): the body stays the verb's answer alone.
         if (a.kind === 'background') head['X-Spirit-Kind'] = 'background';
-        res.writeHead(a.status, head);
+        // AN ANSWER WITH NO HTTP STATUS GOES OUT AS 502 (goal/G49.18, the flag day; Andy: "all, fix it. you may :)"): a gate's
+        // forward that reached nobody answers status 0, as peerPost does, and writeHead(0) threw and killed the whole server.
+        // Its body still says why; the status says the forward failed.
+        const status = Number.isInteger(a.status) && a.status >= 100 && a.status <= 599 ? a.status : 502;
+        res.writeHead(status, head);
         res.end(text);
       });
     });

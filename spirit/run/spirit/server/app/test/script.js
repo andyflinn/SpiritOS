@@ -509,6 +509,31 @@ function gateSection() {
     if (!G.r) return false;
     return (!!G.r[1].body && G.r[1].body.code === 'no-such-argument') || false;
   }, test.limit.quick);
+  // AN ANSWER WITH NO HTTP STATUS NEVER KILLS THE SERVER (goal/G49.18, the flag day; Andy: "all, fix it. you may :)"): a
+  // gate's forward that reached nobody answers status 0, as peerPost does for a post that did not get through, and the
+  // server writing it took writeHead(0), threw, and died (wsl's desk, a client of Andy's, every 35 s). Such an answer goes
+  // out as 502, the forward's failure, and the server answers its next call. In a process of its own, so a crash is seen.
+  const Z = { out: null };
+  test.run('a server whose gate answers status 0 answers that call 502 and still answers the next', 0.8, function () {
+    const src = [
+      "require(" + JSON.stringify(path.join(RUN, 'spirit', 'script.js')) + ");",
+      "const A = spirit.requireScript('spirit/server/app/script.js');",
+      "const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(process.argv[1], 'zzStatusZero', process.platform);",
+      "require('fs').mkdirSync(require('path').dirname(pipe), { recursive: true });",
+      "const s = A.createAppServer({ zero: { request: {}, reply: {}, handler: function () { return {}; } }, ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } },",
+      "  { gate: function (verb) { return verb === 'zero' ? Promise.resolve({ status: 0, body: { ok: false, code: 'peer-unreachable' } }) : null; } });",
+      "const http = require('http');",
+      "const ask = function (verb) { return new Promise(function (r) { const b = JSON.stringify({ [verb]: {} }); const q = http.request({ socketPath: pipe, path: '/', method: 'POST', headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(b) } }, function (res) { res.resume(); res.on('end', function () { r(res.statusCode); }); }); q.on('error', function () { r(-1); }); q.end(b); }); };",
+      "s.listen(pipe, async function () { const zero = await ask('zero'); await new Promise(function (r) { setTimeout(r, 300); }); const ping = await ask('ping'); console.log(JSON.stringify({ zero: zero, ping: ping })); process.exit(0); });",
+    ].join('\n');
+    const dir = ownTemp('statusZero');
+    const r = require('child_process').spawnSync(process.execPath, ['-e', src, dir], { cwd: RUN, encoding: 'utf8', timeout: 20000 });
+    try { Z.out = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { Z.out = null; }
+    return (!!Z.out && Z.out.zero === 502) || false;
+  }, test.limit.slow);
+  test.run('after the 502, the server answers ping 200: it did not die', 0.8, function () {
+    return (!!Z.out && Z.out.ping === 200) || false;
+  }, test.limit.quick);
 }
 
 // The parts ran each in a process of its own before they were folded in: the stand-in spirit.js, the module loader and
