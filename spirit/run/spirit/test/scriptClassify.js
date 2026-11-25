@@ -254,6 +254,10 @@ function compiles(rel) {
 // the scratch node and Chrome are up. When they cannot come up, it gets no test at all, and the run ends with TOOL_DOWN, so
 // testicle leaves it unjudged and waiting for classification (../app/testicle/testicle.js, classifyEnded).
 const TOOL_DOWN = 3;
+// NO CLASSIFIER OUTLIVES ITS TESTICLE (wsl's find, goal/G49.12: 74 idle classifiers, up to 11 hours old, 8.7 GB together, their
+// node gone): testicle starts it with a channel; when that channel closes, its testicle has gone, killed with its node, and
+// the world it was handed went with it, so nothing it judges could be told. It ends, its tool down, which charges nothing.
+if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(TOOL_DOWN); });
 function classify(rel, broken) {
   // "its severity is 0.8", written as the number it is (titleRules wants a severity as a number in the call).
   test.run('it loads, so it can be classified', 0.8, async function () {
