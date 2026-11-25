@@ -11,13 +11,6 @@
 //   development team's, by hand. Any other path gets nothing: the old shell's face parts, which switched a shell app,
 //   are gone (goal/G43.20; Andy: "drop the old shells face parts altogether.").
 (function () {
-  // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
-  var ANSWER = {};
-  function keepAnswer(p) {
-    var a = window.spirit.requireScript(p);
-    if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
-    return a;
-  }
   var APP = /^spirit\/app\/([^/]+)\/\1\.js$/;
 
   function sp() { return window.spirit || {}; }

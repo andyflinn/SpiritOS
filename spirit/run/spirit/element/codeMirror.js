@@ -19,22 +19,21 @@
 //   line    a 1-based line put in view instead (goal/G29.11: a file found by its contents opens at its line)
 //   path    the file's path, which picks the syntax colours by its extension
 (function () {
-  var CM = 'spirit/element/codeMirror/';
   // The syntax by extension, and the mode files each needs, in the order they load (a mode it builds on first).
   var MODES = {
     js: 'javascript', mjs: 'javascript', json: { name: 'javascript', json: true },
     css: 'css', html: 'htmlmixed', htm: 'htmlmixed', xml: 'xml', svg: 'xml', md: 'markdown',
   };
   var FILES = {
-    javascript: ['mode/javascript/javascript.js'],
-    css: ['mode/css/css.js'],
-    xml: ['mode/xml/xml.js'],
-    markdown: ['mode/xml/xml.js', 'mode/markdown/markdown.js'],
-    htmlmixed: ['mode/xml/xml.js', 'mode/javascript/javascript.js', 'mode/css/css.js', 'mode/htmlmixed/htmlmixed.js'],
+    javascript: ['spirit/element/codeMirror/mode/javascript/javascript.js'],
+    css: ['spirit/element/codeMirror/mode/css/css.js'],
+    xml: ['spirit/element/codeMirror/mode/xml/xml.js'],
+    markdown: ['spirit/element/codeMirror/mode/xml/xml.js', 'spirit/element/codeMirror/mode/markdown/markdown.js'],
+    htmlmixed: ['spirit/element/codeMirror/mode/xml/xml.js', 'spirit/element/codeMirror/mode/javascript/javascript.js', 'spirit/element/codeMirror/mode/css/css.js', 'spirit/element/codeMirror/mode/htmlmixed/htmlmixed.js'],
   };
-  var SHEETS = ['lib/codemirror.css', 'theme/material-darker.css', 'addon/dialog/dialog.css'];
+  var SHEETS = ['spirit/element/codeMirror/lib/codemirror.css', 'spirit/element/codeMirror/theme/material-darker.css', 'spirit/element/codeMirror/addon/dialog/dialog.css'];
   // Search and replace, CodeMirror's own add-ons (goal/G29.12): Ctrl+F, Ctrl+G, Shift+Ctrl+F, Alt+G, after the library.
-  var ADDONS = ['addon/dialog/dialog.js', 'addon/search/searchcursor.js', 'addon/search/search.js', 'addon/search/jump-to-line.js'];
+  var ADDONS = ['spirit/element/codeMirror/addon/dialog/dialog.js', 'spirit/element/codeMirror/addon/search/searchcursor.js', 'spirit/element/codeMirror/addon/search/search.js', 'spirit/element/codeMirror/addon/search/jump-to-line.js'];
 
   function modeOf(p) {
     var name = String(p || '');
@@ -47,9 +46,9 @@
   // EVERY FILE THROUGH spirit.requireScript, THE ONE LOADER (Andy: "use the require interfaces that exists in spirit.js or
   // boot.js, NOTHING HAND-ROLLED"): on a page it runs each as a plain script, a stylesheet as a style, and loads each
   // once. The library puts CodeMirror on the page; a mode file finds it there and defines its mode on it.
-  function need(p) { return Promise.resolve(sp().requireScript(CM + p)); }
+  function need(p) { return Promise.resolve(sp().requireScript(p)); }
   function library() {
-    return Promise.all([need('lib/codemirror.js')].concat(SHEETS.map(function (p) {
+    return Promise.all([need('spirit/element/codeMirror/lib/codemirror.js')].concat(SHEETS.map(function (p) {
       return need(p).then(null, function () { /* a sheet missing leaves the text plain */ });
     }))).then(function () {
       return ADDONS.reduce(function (chain, p) {
