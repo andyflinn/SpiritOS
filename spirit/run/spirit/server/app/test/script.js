@@ -34,7 +34,9 @@ const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : ''
 // own, a shed that drops the newest rows instead, so the family's own shed is seen to be the one asked.
 const FAMILY = 'zzstream';
 const SHED_FAMILY = 'zzshed';
-const TRANSLATOR = path.join(RUN, 'spirit', 'app', FAMILY, 'data.js');
+// The translator by its run path, as the app server requires it since goal/G49.13 ("the app server requires its app's script and a
+// stream's translator by the run path it is handed").
+const TRANSLATOR = 'spirit/app/' + FAMILY + '/data.js';
 // The planted files' requires are relative to where each is planted, under spirit/app/<name>/ (the move tool of goal/G49.12
 // rewrote them as if they stood beside this test; set right by hand).
 function plantFamilies() {
