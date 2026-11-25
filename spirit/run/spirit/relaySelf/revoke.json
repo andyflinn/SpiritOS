@@ -1,6 +1,6 @@
 {
   "description": "Take back an unclaimed invite by its label.",
   "request": {
-    "label": ""
+    "label": "spirit/type/string/label/script.js"
   }
 }

@@ -1,6 +1,6 @@
 {
   "description": "Apply for a face name with this relay; it is paired with the verified email this relay holds for you.",
   "request": {
-    "name": ""
+    "name": "spirit/type/string/word/script.js"
   }
 }

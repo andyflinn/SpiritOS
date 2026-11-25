@@ -1,8 +1,8 @@
 {
   "description": "Read the relay configuration (empty ask) or set its limits; a raised limit applies at once, a lowered one at the next start, or now with restart.",
   "request": {
-    "ramLimitMB": 0,
-    "discLimitMB": 0,
-    "restart": false
+    "ramLimitMB": "spirit/type/number/integer/script.js?",
+    "discLimitMB": "spirit/type/number/integer/script.js?",
+    "restart": "spirit/type/boolean/script.js?"
   }
 }

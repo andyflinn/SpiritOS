@@ -1,8 +1,8 @@
 {
   "description": "Mint an invite for a new member, by label, for some days.",
   "request": {
-    "label": "",
-    "days": 0,
-    "token": ""
+    "label": "spirit/type/string/label/script.js",
+    "days": "spirit/type/number/integer/script.js",
+    "token": "spirit/type/string/word/script.js?"
   }
 }

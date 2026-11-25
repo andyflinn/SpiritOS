@@ -1,6 +1,6 @@
 {
   "description": "Read or set the relay debug switch.",
   "request": {
-    "on": false
+    "on": "spirit/type/boolean/script.js?"
   }
 }
