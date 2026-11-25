@@ -90,13 +90,18 @@ function markup(k) {
   if (k.title) a += ' title="' + esc(k.title) + '"';
   return '<' + t + a + '>' + k.innerHTML + '</' + t + '>';
 }
-// The ranking helpers at their one place, spirit.required.<their path>, as a page holds them (goal/G49.4).
-global.window = { spirit: { required: { spirit: {
-  search: { object: LOADER.requireScript('spirit/search/object.js') },
-  listLimiter: LOADER.requireScript('spirit/listLimiter.js'),
-} } } };
-// goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
-LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
+// THE RANKING HELPERS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+// never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+// fail/throw"): the real modules the search asks for as it runs, answered at once, as a second require is answered.
+global.window = { spirit: { required: { spirit: {} } } };
+LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit, {
+  'spirit/search/string.js': LOADER.requireScript('spirit/search/string.js'),
+  'spirit/search/object.js': LOADER.requireScript('spirit/search/object.js'),
+  'spirit/listLimiter.js': LOADER.requireScript('spirit/listLimiter.js'),
+  'spirit/limits.js': LOADER.requireScript('spirit/limits.js'),
+  // fieldInput, a page helper, stands in: it holds the words to their rule, which the page test judges, not this one.
+  'spirit/element/fieldInput/script.js': { attach: function () {} },
+});
 // The element, once the first test has run its file.
 let PS = null;
 
@@ -1090,8 +1095,10 @@ test.run('it requires spirit/search/string.js, spirit/search/object.js and spiri
     const delay = (wait = Math.max(0, wait - 20));
     return new Promise(function (resolve) {
       setTimeout(function () {
-        if (/^spirit\/(search\/(string|object)|listLimiter)\.js$/.test(rel)) PAGE_LOAD.runAsPage(path.join(RUN, rel));
-        resolve(true);
+        // Each answer is what its file exposes (goal/G49.9, box v5; Andy: "spirit.requireScript must allways return either an object
+        // or a function... or fail/throw"): the three files run as the page's loader runs them, fieldInput a stand-in, any other {}.
+        if (/^spirit\/(search\/(string|object)|listLimiter)\.js$/.test(rel)) resolve(PAGE_LOAD.runAsPage(path.join(RUN, rel)));
+        else resolve(rel === 'spirit/element/fieldInput/script.js' ? { attach: function () {} } : {});
       }, delay);
     });
   };

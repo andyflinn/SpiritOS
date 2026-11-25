@@ -71,7 +71,8 @@ test.run('it reaches nothing through spirit.elements', 0.2, function () {
 // spirit/element/monitor/job/script.js since goal/G47.1, the box, the monitor tiles.
 test.run('it loads and shows the spirit job monitor element, and no valued', 0.2, function () {
   const code = readCode();
-  return code && code.indexOf('spirit/element/monitor/job/script.js') !== -1 && code.indexOf('element.monitor.job.create') !== -1 && code.indexOf('monitor/spirit.js') === -1 && code.indexOf('valued') === -1 ? true : false;
+  // It shows the job monitor through its own require's answer (goal/G49.9: never at its spirit.required place).
+  return code && code.indexOf('spirit/element/monitor/job/script.js') !== -1 && code.indexOf("ANSWER['spirit/element/monitor/job/script.js'].create") !== -1 && code.indexOf('monitor/spirit.js') === -1 && code.indexOf('valued') === -1 ? true : false;
 }, test.limit.quick);
 
 test.run('a scratch node comes up with a Chrome page on its face', 0.2, async function () {

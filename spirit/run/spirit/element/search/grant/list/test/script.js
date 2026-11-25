@@ -30,19 +30,23 @@ test.run('the grant list runs on a bare window', 0.2, async function () {
   required = [];
   lists = [];
   rows = [];
+  // ITS PARTS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never
+  // by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the search element, which keeps each list it draws, and the grant row, which keeps each row.
   const STANDS = {
-    'spirit/element/search/script.js': function (E) { E.search = Object.assign(E.search || {}, { create: function (host, o) {
+    'spirit/element/search/script.js': function () { return { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
-    } }); },
-    'spirit/element/search/grant/row/script.js': function (E) { LOADER.requireScript('spirit/element/installSpiritElement/script.js')(global.window.spirit, 'spirit/element/search/grant/row/script.js', { create: function (row, opts) { const r = { kind: 'grant', row: row, opts: opts || {} }; rows.push(r); return r; } }); },
+    } }; },
+    'spirit/element/search/grant/row/script.js': function () { return { create: function (row, opts) { const r = { kind: 'grant', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
   global.document = { createElement: function () { return {}; } };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  const made = {};
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};

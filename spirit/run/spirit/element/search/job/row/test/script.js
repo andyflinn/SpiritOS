@@ -37,14 +37,22 @@ test.run('the row runs on a bare window', 0.2, async function () {
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  const E = function () { return global.window.spirit.required.spirit.element; };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(true); };
-  PAGE_LOAD.runAsPage(FILE, null, SRC);
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+  // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): the row element keeps its spec, the bar says its numbers; the icon element answers an empty
+  // object, no create, so a status mark is drawn as text (the row asks some parts with no catch, so nothing is refused).
+  const STANDS = {
+    'spirit/element/row/script.js': { index: function (sub) { indexes.push(sub); return { id: indexes.length, forKey: function (k) { return (held[k] || []).slice(); } }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } },
+    'spirit/element/progressBar/script.js': function (done, total, text) { return '[bar ' + done + '/' + total + ' ' + text + ']'; },
+  };
+  global.window.spirit.requireScript = function (p) {
+    required.push(String(p));
+    return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.resolve({});
+  };
+  const answer = PAGE_LOAD.runAsPage(FILE, null, SRC);
   await settle();
-  // The shared parts, as the page has them once they are loaded: the row element keeps its spec; the bar says its numbers.
-  E().row = { index: function (sub) { indexes.push(sub); return { id: indexes.length, forKey: function (k) { return (held[k] || []).slice(); } }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
-  E().progressBar = function (done, total, text) { return '[bar ' + done + '/' + total + ' ' + text + ']'; };
-  R = E().search && E().search.job && E().search.job.row;
+  const E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  R = E.search && E.search.job && E.search.job.row === answer ? answer : null;
   return true;
 }, test.limit.quick);
 test.run('it places itself at spirit.required.spirit.element.search.job.row, with a create', 0.2, function () {

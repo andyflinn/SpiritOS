@@ -215,30 +215,38 @@ function ddWorld(facts, checks, o) {
     Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Date: Date, Math: Math, RegExp: RegExp, Error: Error,
     console: { log: function () {}, error: function () {}, warn: function () {} } };
   win.window = win;
+  // EACH PART IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+  // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): armingButton, the search and workBench (brought when asked, never preloaded) as stand-ins, any other part an
+  // empty object.
+  const STANDS = {
+    'spirit/element/armingButton/script.js': armingStub(document, made),
+    'spirit/element/search/script.js': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } },
+    // fieldInput, tested in its own folder: a stand-in that holds a field to nothing.
+    'spirit/element/fieldInput/script.js': { attach: function (el) { return el; } },
+  };
   win.spirit = { escapeHtml: api.escapeHtml,
-    // workBench is on the page once spirit.requireScript brings it, never preloaded.
+    stands: STANDS,
     requireScript: function (p) {
       const q = String(p).replace(/^\/+/, '');
       required.push(q);
-      if (q === 'spirit/element/workBench/script.js') win.spirit.required.spirit.element.workBench = workBenchStub(document, benches);
-      return Promise.resolve({});
+      if (q === 'spirit/element/workBench/script.js' && !STANDS[q]) STANDS[q] = workBenchStub(document, benches);
+      return Promise.resolve(Object.prototype.hasOwnProperty.call(STANDS, q) ? STANDS[q] : {});
     },
-    // goal/G43.32: the parts stand where the dialog reads them, the elements at spirit.required.<their path>, a helper at
-    // spirit.required.<its path>.
-    required: { spirit: { app: {}, element: nestSearch({ armingButton: armingStub(document, made),
-      'search': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }) } },
+    required: { spirit: { app: {}, element: {} } },
   };
   // THE ROWS THE PAGE HOLDS (goal/G48.8: a goal's Close counts its open items "from the page's own rows"), when a case
   // hands some: the desk family's kept data, as spirit/app/desk/data.js gives it a page.
   if (o && o.kept) win.spirit.required.spirit.data = { desk: { data: { part: function () { return null; }, items: function () { return o.kept; }, forget: function () {} } } };
-  // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so the dialog places itself by installSpiritElement as it runs.
+  // A page's spirit (spirit/test/headLessChrome.js pageSpirit); what it does not know it hands to the requireScript above.
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   vm.createContext(win);
-  vm.runInContext(S.raw, win, { filename: FILE });
+  // Run as the page's loader runs it, in a module box; the dialog is what it sets as module.exports (goal/G49.9).
+  const dialog = SPIRIT.requireScript('spirit/test/headLessChrome.js').runAsPage(FILE, win, S.raw);
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
     // THE ELEMENT (goal/G43.27, requirement 23): made in a layer over the Desk page, handed the page's way to the node.
-    win.spirit.required.spirit.app.desk.element.deskDetails.deskDetails.create(document.body.appendChild(document.createElement('div')), { id: facts.id, via: api });
+    dialog.create(document.body.appendChild(document.createElement('div')), { id: facts.id, via: api });
     await settle();
   };
   w.writes = function () { return asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set)$/.test(a.name); }); };
@@ -448,9 +456,8 @@ const ruleWorld = function () {
   const r = ddWorld(RULED, []);
   r.searches = [];
   const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
-  delete r.win.spirit.required.spirit.element.search;
-  const req = r.win.spirit.requireScript;
-  r.win.spirit.requireScript = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search/script.js') r.win.spirit.required.spirit.element.search = make; return req(p); };
+  // The search requireScript answers (goal/G49.9): this one, in place of ddWorld's.
+  r.win.spirit.stands['spirit/element/search/script.js'] = make;
   return r;
 };
 // RULES GO OUT OF DESK (goal/G47.4, box v36: "The rules list on each goal and item goes"; Andy: "go!"): the details panel

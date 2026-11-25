@@ -154,7 +154,8 @@ test.run('open loads the detail it opens first, through spirit.requireScript, fo
 // goal/G43.32, decided 5: every element script also requires installSpiritElement, to place itself; that is no part it draws with.
 test.run('the row loads the shared row element it is built on itself, through spirit.requireScript', 0.2, function () {
   const parts = required.filter(function (p) { return p !== 'spirit/element/installSpiritElement/script.js'; });
-  return parts[0] === 'spirit/element/row/script.js' ? true : false;
+  // goal/G49.9: it keeps what its requires answer, the field rules among them, so the row element need not be the first asked.
+  return parts.indexOf('spirit/element/row/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('an action the row does not offer asks nothing', 0.2, async function () {
   if (!stranger) return false;
@@ -415,14 +416,18 @@ function page(relayServer, p, body) {
 }
 // A real join, a real face, a real login; answers the session, or none.
 async function faceOf(N, R) {
-  await home(N.base, 'relay.add', { url: R.base, label: 'scratch' });
-  await home(N.base, 'relay.join', { url: R.base, email: MAIL });
+  // The relay verbs are contact's since goal/G49.11 (box v9: "each one becomes a contact verb and names the relay by its row's public
+  // key"): add by its url, which answers the relay's key, then join and face by that key.
+  const added = await home(N.base, 'contact.add', { url: R.base, label: 'scratch' });
+  const key = (added.body && added.body.relayKey) || '';
+  if (!key) return {};
+  await home(N.base, 'contact.join', { key: key, email: MAIL });
   await until(function () { return R.mailed.length > 0; }, 5000);
   const joinCode = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
   if (!joinCode) return {};
-  await home(N.base, 'relay.join', { url: R.base, email: MAIL, code: joinCode });
+  await home(N.base, 'contact.join', { key: key, email: MAIL, code: joinCode });
   let f = null;
-  for (let i = 0; i < 10; i++) { f = await home(N.base, 'relay.face', { url: R.base, name: NAME }); if (f.status === 200) break; await sleep(2000); }
+  for (let i = 0; i < 10; i++) { f = await home(N.base, 'contact.face', { key: key, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
   await until(function () { return page(R, '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;

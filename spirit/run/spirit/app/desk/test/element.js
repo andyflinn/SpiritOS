@@ -33,9 +33,11 @@ test.run('a window of its own is made for the file to run on, with a stand-in De
   const helper = S.requireScript('spirit/element/installSpiritElement/script.js');
   global.window.spirit.requireScript = function (p) {
     W.required.push(String(p));
-    // The Desk page, as its own file places itself: by the one helper, at spirit.required.<its path>.
-    if (p === DESK) helper(global.window.spirit, DESK, { create: function (container, opts) { const m = { container: container, opts: opts, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } });
-    return Promise.resolve(true);
+    // THE DESK PAGE IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
+    // "spirit.requireScript must allways return either an object or a function... or fail/throw"), and stands at its place as the
+    // loader puts it there; desk's api.js an empty object.
+    if (p === DESK) { if (!W.page) { W.page = { create: function (container, opts) { const m = { container: container, opts: opts, destroy: function () { m.destroyed = true; } }; W.made.push(m); return m; } }; helper(global.window.spirit, DESK, W.page); } return Promise.resolve(W.page); }
+    return Promise.resolve({});
   };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
   W.up = true;

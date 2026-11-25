@@ -49,12 +49,15 @@ function world(o) {
   win.window = win;
   vm.createContext(win);
   // goal/G43.32: a page's spirit (spirit/test/headLessChrome.js pageSpirit), so info.js places itself by installSpiritElement
-  // at spirit.required.spirit.app.info.element as it runs; nodeInfo stands where it reads it, spirit.required.spirit.element.nodeInfo.
+  // at spirit.required.spirit.app.info.element as it runs; nodeInfo is what its require answers.
   win.spirit = { required: { spirit: { element: els, app: {} } },
     requireScript: function (p) {
       w.required.push(String(p));
       if (opt.refuse) return Promise.reject(new Error());
-      const put = function () { if (p === 'spirit/element/nodeInfo/script.js') els.nodeInfo = nodeInfo; return {}; };
+      // NODEINFO IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+      // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+      // fail/throw"); any other path an empty object.
+      const put = function () { return p === 'spirit/element/nodeInfo/script.js' ? nodeInfo : {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);

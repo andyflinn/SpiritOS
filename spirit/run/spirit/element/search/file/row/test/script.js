@@ -37,9 +37,14 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
     stat: function (a) { asked.push({ verb: 'fs.stat', args: a }); return Promise.resolve({ size: 9 }); },
     annotations: function (a) { asked.push({ verb: 'fs.annotations', args: a }); return Promise.resolve({ note: 'n' }); },
   };
-  const STANDS = { 'spirit/element/row/script.js': function () { PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
+  // ITS PARTS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+  // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the real shared row element and the real fstat, each run as the page's loader runs it and its answer handed
+  // on; any other part (the icon, word) answers an empty object.
+  const STANDS = { 'spirit/element/row/script.js': function () { return PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
     // What says a file's kind (goal/G43.17), the real one, should the row ask it.
-    'spirit/element/fstat/script.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat', 'script.js'); if (fs.existsSync(f)) PAGE_LOAD.runAsPage(f); } };
+    'spirit/element/fstat/script.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat', 'script.js'); return fs.existsSync(f) ? PAGE_LOAD.runAsPage(f) : {}; } };
+  const made = {};
   // escapeHtml and formatBytes are the spirit object's own: spirit.js fills this object with them as the element helper
   // loads it, as on a page.
   // What readyPromise answers holds no branch (goal/G49.6); the fs branch is answered by its api.js path, below.
@@ -64,7 +69,7 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // directly is only recorded.
   const ran = {};
   const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; PAGE_LOAD.runAsPage(f); } };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(p === 'spirit/fs/api.js' ? fsFamily : true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (p === 'spirit/fs/api.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};

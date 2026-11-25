@@ -54,7 +54,10 @@ function world() {
         const companion = m ? 'spirit/' + m[1] + '/data.js' : '';
         // By its path, through the page stand-in, which runs it in this window once (goal/G49.6).
         if (companion && fs.existsSync(path.join(RUN, companion))) win.spirit.requireScript(companion);
-        return Promise.resolve(true);
+        // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
+        // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): the search element
+        // stand-in for spirit/element/search/script.js, an object for every other part it asks (its row, its detail, node's api).
+        return Promise.resolve(p === 'spirit/element/search/script.js' ? E.search : {});
       } },
     document: { createElement: function (t) { return node(t); } },
     Event: function (type) { this.type = type; },

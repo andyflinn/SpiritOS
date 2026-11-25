@@ -138,49 +138,46 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
     return Promise.resolve({ items: [], more: false });
   } };
   global.window.spirit.readyPromise = Promise.resolve(global.window.spirit);
-  PE = function () { const e = global.window.spirit.required; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
-  global.window.spirit.requireScript = function (p) {
-    w.required.push(String(p));
-    // The agent branch's interface brings its data.js, as the real api.js does: run once, as the page runs it, into
-    // this page's spirit.required.spirit.data.
-    if (p === AGENT && !w.agentData) { w.agentData = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
-    if (p === 'spirit/auth/api.js') return Promise.resolve(w.auth);
-    // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
-    // what it was handed.
-    // The are-you-sure button (spirit/element/armingButton/script.js), tested in its own folder: a stand-in whose first press arms and
-    // whose second runs, as the real one does.
-    if (p === 'spirit/element/armingButton/script.js') PE().armingButton = { attach: function (button, opts) {
+  // EACH PART'S ANSWER IS requireScript's (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+  // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the agent family, the real shared element as it loaded, and stand-ins for the parts tested in their own folders
+  // (the are-you-sure button, the bundle selector, the search and the icon search, fieldInput); any other part an empty object.
+  w.fieldInput = { attach: function (el) { return el; } };
+  const STANDS = {
+    // The are-you-sure button (spirit/element/armingButton/script.js): its first press arms, its second runs, as the real one.
+    'spirit/element/armingButton/script.js': { attach: function (button, opts) {
       const a = { button: button, opts: opts || {}, armed: false };
       w.arming.push(a);
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
-    } };
-    if (p === 'spirit/element/search/bundle/script.js') (PE().search = PE().search || {}).bundle = { create: function (c, opts) {
+    } },
+    // The bundle selector (goal/G41.21), keeping what it was handed.
+    'spirit/element/search/bundle/script.js': { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;
-    } };
-    // EACH PART'S ANSWER IS requireScript's (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
-    // "spirit.requireScript must allways return either an object or a function... or fail/throw"): the agent family, the real
-    // shared element as it loaded, fieldInput a stand-in that holds nothing to a rule (it is tested in its own folder), and any
-    // other part an empty object. The bundle selector and armingButton still stand at their places above, where row.js reads them.
+    } },
+    'spirit/element/search/script.js': { create: function (host, o) {
+      const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
+        refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
+      w.searches.push(s); return s;
+    } },
+    // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
+    'spirit/element/search/icon/script.js': { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } },
+    'spirit/element/fieldInput/script.js': w.fieldInput,
+    'spirit/auth/api.js': w.auth,
+  };
+  global.window.spirit.requireScript = function (p) {
+    w.required.push(String(p));
+    // The agent branch's interface brings its data.js, as the real api.js does: run once, as the page runs it, into
+    // this page's spirit.required.spirit.data (branch data, read at its place until goal/G49.10).
+    if (p === AGENT && !w.agentData) { w.agentData = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
     if (p === AGENT) return Promise.resolve(w.family);
     if (p === 'spirit/app/agent/element/table/tableElement.js') return Promise.resolve(w.shared || {});
-    if (p === 'spirit/element/fieldInput/script.js') return Promise.resolve(w.fieldInput);
+    if (Object.prototype.hasOwnProperty.call(STANDS, p)) return Promise.resolve(STANDS[p]);
     return Promise.resolve({});
   };
-  w.fieldInput = { attach: function (el) { return el; } };
-  // goal/G43.32: the page's own spirit.requireScript answers the helper, so each element places itself by installSpiritElement,
-  // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
-  // spirit.required.<their path>.
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  PE().search = Object.assign(PE().search || {}, { create: function (host, o) {
-    const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
-      refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
-    w.searches.push(s); return s;
-  } });
-  // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
-  PE().search.icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   // Its tree as the page loads it: the shared element first, then this file.
   w.shared = load(SHARED);
   await settle();

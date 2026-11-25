@@ -161,9 +161,13 @@ function world() {
   // The node's own families on spirit.readyPromise; a server's family (jobs here) bound through spirit.requireScript of spirit/app/<name>/api.js.
   const families = { fs: family(w, 'fs', { search: function () { return { status: 200, body: {} }; } }) };
   const servers = { jobs: family(w, 'jobs', { list: function () { return { status: 200, body: {} }; } }) };
-  const FILES = { 'spirit/element/search/bundle/script.js': ['search'], 'spirit/element/search/contact/script.js': ['search'],
-    'spirit/element/search/api/script.js': ['search'], 'spirit/element/search/grant/script.js': ['search'], 'spirit/element/busyButton/script.js': ['busyButton'], 'spirit/element/rowForm/script.js': ['rowForm'],
-    'spirit/element/armingButton/script.js': ['armingButton'] };
+  // ITS PARTS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+  // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): each element the panel draws with is the stand-in its path answers.
+  const FILES = { 'spirit/element/search/bundle/script.js': function () { return E.search.bundle; }, 'spirit/element/search/contact/script.js': function () { return E.search.contact; },
+    'spirit/element/search/api/script.js': function () { return E.search.api; }, 'spirit/element/search/grant/script.js': function () { return E.search.grant; },
+    'spirit/element/busyButton/script.js': function () { return E.busyButton; }, 'spirit/element/rowForm/script.js': function () { return E.rowForm; },
+    'spirit/element/armingButton/script.js': function () { return E.armingButton; } };
   const page = {};
   const companionOf = function (p) {
     const m = /^spirit\/(.+)\/api\.js$/.exec(String(p));
@@ -186,9 +190,7 @@ function world() {
         // requires it (goal/G47.1), so the server jobs the test hands spirit.required.spirit.data reach the panel as the page's would, and
         // the auth tables' grants reach nodeGrants.
         companionOf(p);
-        // goal/G43.32: what the panel draws with stands where an element now finds it, spirit.required.spirit.element.
-        (FILES[p] || []).forEach(function (k) { const at = ((page.spirit = page.spirit || {}).element = page.spirit.element || {}); at[k] = E[k]; });
-        return Promise.resolve(true);
+        return Promise.resolve(FILES[p] ? FILES[p]() : {});
       },
      
       apiTree: function () { w.treeAsked += 1; return Promise.resolve(w.tree || TREE); },

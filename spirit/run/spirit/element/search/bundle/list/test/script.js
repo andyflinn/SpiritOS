@@ -59,7 +59,15 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   // The auth branch's interface brings its data.js, as the real api.js does: run once from its path, attaching itself to
   // the data set. It answers the auth branch by that path (goal/G49.6: never by a name).
   let authData = false;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : true); };
+  // EACH STAND-IN IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers"; Andy:
+  // "spirit.requireScript must allways return either an object or a function... or fail/throw"): what the stand-in made for its
+  // path, read where the loader would place it (a folder's script.js at its folder's name), or an object for a part it has none of.
+  const standIn = function (p) {
+    const keys = String(p).replace(/\.js$/, '').split('/'); if (keys[keys.length - 1] === 'script') keys.pop();
+    const v = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, global.window.spirit.required);
+    return v && (typeof v === 'object' || typeof v === 'function') ? v : {};
+  };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js' && !authData) { authData = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'spirit/auth/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/auth/api.js' ? auth : standIn(p)); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   // What the list asked as it loaded; the runner's own asks after this test are not the list's.

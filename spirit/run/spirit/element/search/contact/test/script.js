@@ -40,12 +40,15 @@ test.run('the picker runs on a bare window', 0.2, async function () {
   code = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
   lists = [];
   required = [];
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never
+  // by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the one contact list, a stand-in; contact's api and the row an object each.
   const STANDS = {
-    'spirit/element/search/contact/list/script.js': function () { LOADER.requireScript('spirit/element/installSpiritElement/script.js')(global.window.spirit, 'spirit/element/search/contact/list/script.js', { create: function (host, o) {
+    'spirit/element/search/contact/list/script.js': { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, marks: [], destroyed: 0 };
       lists.push(l);
       return { list: {}, refresh: function () { l.refreshed += 1; }, mark: function (k, s) { l.marks.push([k, s]); }, destroy: function () { l.destroyed += 1; } };
-    } }); },
+    } },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: element };
@@ -54,13 +57,15 @@ test.run('the picker runs on a bare window', 0.2, async function () {
   global.spirit = global.window.spirit;
   global.window.spirit.requireScript = function (p) {
     required.push(String(p));
-    if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); }
-    return hold || Promise.resolve(true);
+    // A held answer comes once the test lets it go, the same stand-in then.
+    const answer = Object.prototype.hasOwnProperty.call(STANDS, p) ? STANDS[p] : {};
+    return hold ? hold.then(function () { return answer; }) : Promise.resolve(answer);
   };
-  PAGE_LOAD.runAsPage(FILE, null, SRC);
+  // Its own answer, what the loader places at its place.
+  const own = PAGE_LOAD.runAsPage(FILE, null, SRC);
   await settle();
   const E = ((global.window.spirit.required || {}).spirit || {}).element || {};
-  made = E.search && E.search.contact;
+  made = E.search && E.search.contact === own ? own : null;
   atLoad = required.slice();
   return true;
 }, test.limit.quick);

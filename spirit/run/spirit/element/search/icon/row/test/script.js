@@ -21,7 +21,7 @@ const FILE = path.join(__dirname, '..', 'script.js');
 
 const settle = async function () { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); };
 
-let required, specs, indexes, R, E, s, paint;
+let required, specs, indexes, R, E, s, paint, ROW, iconIn;
 const KEYWORDS = ['smile', 'happy <face>'];
 
 test.run('the icon row element runs on a bare window', 0.2, async function () {
@@ -31,13 +31,21 @@ test.run('the icon row element runs on a bare window', 0.2, async function () {
   global.window = { spirit: { element: {} } };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  const own = global.window.spirit.requireScript;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); return own.apply(this, arguments); };
-  PAGE_LOAD.runAsPage(FILE);
+  // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ...
+  // never by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a
+  // function... or fail/throw"): the shared row element at once; the icon element's answer held back until a check hands it in.
+  ROW = { index: function (sub) { indexes.push(sub); return { id: indexes.length }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
+  const iconHeld = new Promise(function (r) { iconIn = r; });
+  global.window.spirit.requireScript = function (p) {
+    required.push(String(p));
+    if (p === 'spirit/element/row/script.js') return Promise.resolve(ROW);
+    if (p === 'spirit/element/icon/script.js') return iconHeld;
+    return Promise.reject(new Error('no stand-in for ' + p));
+  };
+  const answer = PAGE_LOAD.runAsPage(FILE);
   await settle();
-  E = global.window.spirit.required.spirit.element;
-  E.row = { index: function (sub) { indexes.push(sub); return { id: indexes.length }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } };
-  R = E.search && E.search.icon && E.search.icon.row;
+  E = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  R = E.search && E.search.icon && E.search.icon.row === answer ? answer : null;
   return true;
 }, test.limit.quick);
 test.run('it places itself at spirit.required.spirit.element.search.icon.row, with a create', 0.2, function () {
@@ -84,10 +92,11 @@ test.run('while the icon element has not loaded, the glyph is drawn as plain tex
   return (h.indexOf('&lt;b&gt;') !== -1 && h.indexOf('<b>') === -1) || false;
 }, test.limit.quick);
 // goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements and apps."
-test.run('once the icon element is in, the glyph is the icon element\'s markup', 0.2, function () {
-  if (!s) return false;
+test.run('once the icon element is in, the glyph is the icon element\'s markup', 0.2, async function () {
+  if (!s || !iconIn) return false;
   const asked = [];
-  E.icon = { create: function (hold, o) { asked.push(o); hold.innerHTML = '<span class="the-icon">' + o.glyph + '</span>'; return hold; } };
+  iconIn({ create: function (hold, o) { asked.push(o); hold.innerHTML = '<span class="the-icon">' + o.glyph + '</span>'; return hold; } });
+  await settle();
   const h = paint('glyph', s.row);
   return (h.indexOf('<span class="the-icon">🙂</span>') !== -1 && asked.length === 1 && asked[0].glyph === '🙂') || false;
 }, test.limit.quick);

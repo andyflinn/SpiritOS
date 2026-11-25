@@ -37,7 +37,7 @@ function input(value) {
   return el;
 }
 
-test.run('fieldInput runs on a window of its own', 0.2, function () {
+test.run('fieldInput runs on a window of its own', 0.2, async function () {
   const win = { TextEncoder: TextEncoder, Array: Array, JSON: JSON, String: String, Infinity: Infinity,
     document: { createElement: function () { made += 1; return {}; } } };
   win.window = win;
@@ -52,6 +52,14 @@ test.run('fieldInput runs on a window of its own', 0.2, function () {
   win.spirit.requireScript = function (p) { required.push(p); return pageRequire(p); };
   win.spirit.requireScript(SUBJECT);
   F = ((win.spirit.required.spirit || {}).element || {}).fieldInput;
+  // A TYPE ARRIVES AS ITS REQUIRE'S ANSWER (goal/G49.9, box v5: "the loader places that module.exports at the script's own place
+  // and answers spirit.requireScript with it"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): fieldInput keeps each type from that answer once it comes, a moment after its first ask, as on a page; the
+  // types the checks below hold fields to are asked once here and their answers let in before any check.
+  if (F && typeof F.fits === 'function') {
+    ['label', 'description', 'paragraph', 'glyph', 'email'].forEach(function (t) { F.fits('', 'spirit.type.string.' + t); });
+    for (let i = 0; i < 5; i++) await new Promise(function (r) { setImmediate(r); });
+  }
   return (!!F && typeof F.fits === 'function' && typeof F.attach === 'function') || false;
 }, test.limit.quick);
 // rule/26; goal/G41.27: "on a bare page, without the boot's list, it held nothing"

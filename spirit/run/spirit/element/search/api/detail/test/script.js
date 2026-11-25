@@ -38,12 +38,19 @@ test.run('the detail runs on a bare window, the real api tree reader beside it',
     readyPromise: Promise.resolve({ tree: function () { asked.push('tree'); return Promise.resolve(TREE); } }) } };
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); return Promise.resolve(true); };
-  // In node apiTreeIndex.js answers its module; a page has it at spirit.required.spirit.client.apiTreeIndex, as here.
-  ((global.window.spirit.required = global.window.spirit.required || {}).spirit = global.window.spirit.required.spirit || {}); (global.window.spirit.required.spirit.client = global.window.spirit.required.spirit.client || {}); global.window.spirit.required.spirit.client.apiTreeIndex = LOADER.requireScript('spirit/client/apiTreeIndex.js');
-  PAGE_LOAD.runAsPage(FILE);
+  // ITS ONE PART IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+  // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): apiTreeIndex.js, the real module, as the page's loader answers it.
+  const STANDS = { 'spirit/client/apiTreeIndex.js': LOADER.requireScript('spirit/client/apiTreeIndex.js') };
+  global.window.spirit.requireScript = function (p) {
+    required.push(String(p));
+    return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.reject(new Error('no stand-in for ' + p));
+  };
+  // Its own answer, what the loader places at its place.
+  const answer = PAGE_LOAD.runAsPage(FILE);
   await settle();
-  D = global.window.spirit.required.spirit.element.search && global.window.spirit.required.spirit.element.search.api && global.window.spirit.required.spirit.element.search.api.detail;
+  const SE = ((global.window.spirit.required || {}).spirit || {}).element || {};
+  D = SE.search && SE.search.api && SE.search.api.detail === answer ? answer : null;
   return true;
 }, test.limit.quick);
 test.run('it places itself at spirit.required.spirit.element.search.api.detail, with a create', 0.2, function () {

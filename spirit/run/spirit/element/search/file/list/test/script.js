@@ -41,15 +41,19 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   lists = [];
   asked = [];
   const fsFamily = { search: function (a) { asked.push(a); return Promise.resolve({ items: [{ key: 'docs/a.md', label: JSON.stringify({ path: 'docs/a.md', score: 0.9, line: 3 }) }, { key: 'docs/', label: JSON.stringify({ path: 'docs/', score: 0.2 }) }], more: false }); } };
+  // ITS PARTS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never
+  // by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the search element keeping each list, the file row, and fstat; any other part answers an empty object.
   const STANDS = {
-    'spirit/element/search/script.js': function (E) { E.search = Object.assign(E.search || {}, { create: function (host, o) {
+    'spirit/element/search/script.js': function () { return { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, sorted: null, typed: '', refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () {},
         sort: function (f, d) { l.sorted = [f, d]; }, words: function () { return l.typed; } };
       lists.push(l); return l;
-    } }); },
-    'spirit/element/search/file/row/script.js': function (E) { LOADER.requireScript('spirit/element/installSpiritElement/script.js')(global.window.spirit, 'spirit/element/search/file/row/script.js', { create: function (row) { return { kind: 'file', row: row }; } }); },
-    'spirit/element/fstat/script.js': function (E) { E.fstat = { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
+    } }; },
+    'spirit/element/search/file/row/script.js': function () { return { create: function (row) { return { kind: 'file', row: row }; } }; },
+    'spirit/element/fstat/script.js': function () { return { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
+  const made = {};
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, readyPromise: Promise.resolve({}), element: {} } };
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
@@ -63,7 +67,7 @@ test.run('the file list runs on a bare window, with the page\'s data set real', 
   // The fs family's api.js requires its companion data.js, as the real one does: the real file run once, attaching
   // itself to the data set. It answers the fs branch by that path (goal/G49.6: never by a name).
   let ran = false;
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'data.js'), 'utf8'), { filename: 'spirit/fs/data.js' }); } if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(p === 'spirit/fs/api.js' ? fsFamily : true); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/fs/api.js' && !ran) { ran = true; vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'fs', 'data.js'), 'utf8'), { filename: 'spirit/fs/data.js' }); } if (p === 'spirit/fs/api.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   E = ((global.window.spirit.required || {}).spirit || {}).element || {};

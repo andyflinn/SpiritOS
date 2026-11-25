@@ -38,7 +38,10 @@ function world(o) {
     requireScript: function (p) {
       w.required.push(String(p));
       if (opt.refuse) return Promise.reject(new Error('not-found ' + p));
-      const put = function () { if (p === 'spirit/element/joinList/script.js') els.joinList = joinList; return {}; };
+      // JOINLIST IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+      // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+      // fail/throw"); any other path an empty object.
+      const put = function () { return p === 'spirit/element/joinList/script.js' ? joinList : {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);

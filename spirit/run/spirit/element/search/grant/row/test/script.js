@@ -62,8 +62,11 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   required = [];
   armed = [];
   const STANDS = {
-    'spirit/element/row/script.js': function () { PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
-    'spirit/element/armingButton/script.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
+    // ITS PARTS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never
+    // by writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+    // fail/throw"): the real shared row element, run as the page's loader runs it, and the arming button's stand-in.
+    'spirit/element/row/script.js': function () { return PAGE_LOAD.runAsPage(path.join(RUN, 'spirit', 'element', 'row', 'script.js')); },
+    'spirit/element/armingButton/script.js': function () { return { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
   };
   global.document = { createElement: function () { return {}; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, readyPromise: Promise.resolve({}), element: {} } };
@@ -82,7 +85,8 @@ test.run('the grant row runs on a bare window, with the page\'s data set real', 
   A = ((global.window.spirit.required.spirit.data || {}).auth || {}).data;
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   V = DATA.viewAt(null, 'auth');
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](((global.window.spirit.required.spirit = global.window.spirit.required.spirit || {}).element = global.window.spirit.required.spirit.element || {})); } return Promise.resolve(true); };
+  const made = {};
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
   // What the row asked as it loaded; the runner's own asks after this test are not the row's.

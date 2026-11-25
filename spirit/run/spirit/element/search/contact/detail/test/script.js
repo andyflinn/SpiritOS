@@ -193,7 +193,10 @@ function personWorld(person, relayRows) {
     formatBytes: function (n) { return String(n) + ' B'; },
     // The shell's fact rows, drawn as the shell draws them: each name with its value, so what the detail shows can be read.
     shell: { factRow: function (rows) { return '<div class="facts">' + (rows || []).map(function (r) { return '<div>' + String(r[0]) + ' ' + String(r[1]) + '</div>'; }).join('') + '</div>'; } },
-    requireScript: function (p) { const at = String(p).replace(/^\/+/, ''); w.required.push(at); return Promise.resolve(at === 'spirit/element/armingButton/script.js' ? ARMING : (branchAt(families, p) || {})); },
+    // A PART WITH NO STAND-IN NEVER ARRIVES (goal/G49.9, box v5): the detail keeps only what a require hands back, and an empty
+    // answer would be taken for the part itself (fieldInput's attach, the face form's offers); an answer still on its way leaves
+    // it out, as a part the page has not loaded yet, and refuses nothing the detail asks without a catch.
+    requireScript: function (p) { const at = String(p).replace(/^\/+/, ''); w.required.push(at); if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING); const b = branchAt(families, p); return b ? Promise.resolve(b) : new Promise(function () {}); },
     readyPromise: Promise.resolve({}),
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
   };
@@ -286,7 +289,11 @@ function relayWorld(rows, relayStatus) {
       const at = String(p).replace(/^\/+/, '');
       w.required.push(at);
       if (at === 'spirit/contact/api.js' && !(win.spirit.required.spirit.data && win.spirit.required.spirit.data.contact)) ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
-      return Promise.resolve(at === 'spirit/element/armingButton/script.js' ? ARMING : (branchAt(families, at) || {}));
+      // A part with no stand-in never arrives, as in the person's world; the owner badge's removal rule is its stand-in here.
+      if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
+      if (at === 'spirit/ownerBadge.js') return Promise.resolve({ removalRefusal: function () { return ''; } });
+      const b = branchAt(families, at);
+      return b ? Promise.resolve(b) : new Promise(function () {});
     },
     readyPromise: Promise.resolve({}),
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the

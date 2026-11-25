@@ -104,39 +104,42 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   const ran = {};
   BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
   global.window.spirit.readyPromise = Promise.resolve({});
-  const PE = function () { const e = global.window.spirit.required; e.spirit = e.spirit || {}; e.spirit.element = e.spirit.element || {}; return e.spirit.element; };
-  global.window.spirit.requireScript = function (p) {
-    w.required.push(String(p));
-    // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once.
-    if (p === AGENT && !ran[p]) { ran[p] = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
-    // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
-    // what it was handed.
-    // The are-you-sure button (spirit/element/armingButton/script.js), tested in its own folder: a stand-in whose first press arms and
-    // whose second runs, as the real one does.
-    if (p === 'spirit/element/armingButton/script.js') PE().armingButton = { attach: function (button, opts) {
+  // EACH PART'S ANSWER IS requireScript's (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+  // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+  // fail/throw"): the agent family, and stand-ins for the parts tested in their own folders (the search, the icon search, the
+  // bundle selector, the are-you-sure button); any other part, the icon element among them, an empty object, so a title row
+  // draws its glyph as text, as it did before the icon loaded.
+  const STANDS = {
+    'spirit/element/search/script.js': { create: function (host, o) {
+      const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
+        refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
+      w.searches.push(s); return s;
+    } },
+    // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
+    'spirit/element/search/icon/script.js': { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } },
+    // The bundle selector (goal/G41.21), keeping what it was handed.
+    'spirit/element/search/bundle/script.js': { create: function (c, opts) {
+      const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
+        refresh: function () {}, destroy: function () { sel.destroyed = true; } };
+      w.bundles.push(sel); c.appendChild(sel); return sel;
+    } },
+    // The are-you-sure button: its first press arms, its second runs, as the real one does.
+    'spirit/element/armingButton/script.js': { attach: function (button, opts) {
       const a = { button: button, opts: opts || {}, armed: false };
       w.arming.push(a);
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
-    } };
-    if (p === 'spirit/element/search/bundle/script.js') (PE().search = PE().search || {}).bundle = { create: function (c, opts) {
-      const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
-        refresh: function () {}, destroy: function () { sel.destroyed = true; } };
-      w.bundles.push(sel); c.appendChild(sel); return sel;
-    } };
-    return Promise.resolve(p === AGENT ? w.family : true);
+    } },
   };
-  // goal/G43.32: the page's own spirit.requireScript answers the helper, so the element places itself by installSpiritElement,
-  // as it runs (spirit/test/headLessChrome.js pageSpirit); the parts it uses stand where it reads them, at
-  // spirit.required.<their path>.
+  global.window.spirit.requireScript = function (p) {
+    w.required.push(String(p));
+    // The agent family's api.js requires its companion data.js, as the real one does: the real file, run once (branch data,
+    // read at its place until goal/G49.10).
+    if (p === AGENT && !ran[p]) { ran[p] = true; load(path.join(RUN, 'spirit', 'app', 'agent', 'data.js')); }
+    if (p === AGENT) return Promise.resolve(w.family);
+    return Promise.resolve(Object.prototype.hasOwnProperty.call(STANDS, p) ? STANDS[p] : {});
+  };
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  PE().search = Object.assign(PE().search || {}, { create: function (host, o) {
-    const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
-      refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
-    w.searches.push(s); return s;
-  } });
-  // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
-  PE().search.icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   load(FILE);
   // The element requires the agent family's api.js as it runs, and with it its data.js, once the element's tree has loaded.
   await settle();

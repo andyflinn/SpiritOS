@@ -52,8 +52,6 @@ function world(o) {
     grantsPanel: { nodeGrants: NODE_GRANTS, create: function (host, cfg) { const p = { host: host, cfg: cfg || {}, args: arguments.length }; w.panels.push(p); return p; } },
   };
   const FILES = { 'spirit/element/tabContainer/script.js': 'tabContainer', 'spirit/element/bundleEditor/script.js': 'bundleEditor', 'spirit/element/search/grant/grantsPanel/script.js': 'grantsPanel' };
-  // Where each stands under spirit.required.spirit.element, by its path: the grants panel in the grant search (goal/G43.32).
-  const AT = { grantsPanel: ['search', 'grant', 'grantsPanel'] };
   // goal/G43.32: the parts stand where grants.js reads them, at spirit.required.spirit.element.<name>; a page's spirit
   // (spirit/test/headLessChrome.js pageSpirit), so grants.js places itself at spirit.required.spirit.app.grants.element as it runs.
   const page = {};
@@ -68,7 +66,10 @@ function world(o) {
     requireScript: function (p) {
       w.required.push(String(p));
       if (opt.refuse && opt.refuse.indexOf(p) !== -1) return Promise.reject(new Error());
-      const put = function () { const n = FILES[p]; if (n) { const at = AT[n] || [n]; at.slice(0, -1).reduce(function (o, k) { return (o[k] = o[k] || {}); }, page)[at[at.length - 1]] = E[n]; } return {}; };
+      // EACH PART IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
+      // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
+      // fail/throw"): the stand-in of the file asked, any other an empty object.
+      const put = function () { const n = FILES[p]; return n ? E[n] : {}; };
       return opt.held ? opt.held.then(put) : Promise.resolve(put());
     } };
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
@@ -128,7 +129,8 @@ test.run('it requires spirit/element/bundleEditor/script.js', 0.2, function () {
 }, test.limit.quick);
 test.run('it requires nothing else', 0.2, function () {
   if (!U.w) return false;
-  return U.w.required.length === 3 || false;
+  // Its three paths and no other: it keeps each answer as it loads and asks the same three again when it mounts (goal/G49.9).
+  return new Set(U.w.required).size === 3 || false;
 }, test.limit.quick);
 // goal/G43.24: "Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache
 // (GR_GRANTS). It moves into grantsPanel."
