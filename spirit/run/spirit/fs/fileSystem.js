@@ -302,7 +302,7 @@ const SCAN_EXCLUDED_DIR_NAMES = new Set(['.git']);
 // rules nor listed in Files; the next library is one line here. Andy's Q1:
 // "servable but not writeable." A page still loads it (CodeMirror), and
 // fileWritable refuses every file inside.
-const VENDORED_FOLDERS = ['spirit/job/chokidar', 'spirit/job/readdirp', 'spirit/element/codeMirror'];
+const VENDORED_FOLDERS = ['spirit/fs/chokidar', 'spirit/fs/readdirp', 'spirit/element/codeMirror'];
 // VENDORED_FOLDERS.holds(p), the one question every walker asks of the
 // list: is p, absolute or relative to the checkout or to spirit/run, with
 // either slash, a vendored folder or inside one?

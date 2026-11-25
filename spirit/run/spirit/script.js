@@ -1347,7 +1347,7 @@
   }
   // The vendored folders, as spirit/fs/fileSystem.js's VENDORED_FOLDERS names them (a page cannot load that node file): a
   // script inside one runs as it was written, with no module box.
-  var VENDORED_ON_PAGE = ['spirit/job/chokidar/', 'spirit/job/readdirp/', 'spirit/element/codeMirror/'];
+  var VENDORED_ON_PAGE = ['spirit/element/codeMirror/'];
   function vendored(p) { return VENDORED_ON_PAGE.some(function (v) { return String(p).indexOf(v) === 0; }); }
   // What a script may expose: an object or a function, so its folder's other scripts can stand under it.
   function placeable(v) { return !!v && (typeof v === 'object' || typeof v === 'function'); }
