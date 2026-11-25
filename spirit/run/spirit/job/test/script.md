@@ -125,29 +125,10 @@ no `run:/process`):
   empty, `con`, `zzserve/`, `a b`, `__proto__`): every one refused, and no folder appears at the run root;
 - an app's folder taken away while it runs: the node still answers.
 
-## No run://node_modules/: chokidar and readdirp in spirit/job/
+## The file watcher and the vendored libraries
 
-goal/G43.25: `spirit/job/script.js`'s part, the vendored libraries section of `./script.js`. The two libraries sit in `spirit/job/`, job.js's own folder, and job.js is the user that brings them.
-
-Andy: "can we hide those suckers in spirit/jobs/ for now? without the damn node_modules container?"
-
-The tree is read as it is. The watcher runs in a child process on a scratch folder inside spirit/run, removed afterwards. No node and no port are used. The tree before the move is commit 2fb29140, which holds spirit/run/node_modules/.
-
-### Requirements
-
-- **Both folders move whole.** All 12 files of chokidar and readdirp are in git under spirit/job/chokidar/ and spirit/job/readdirp/. Each file is byte for byte as it was, except chokidar's index.js. Each folder keeps its package.json and licence. spirit/run/node_modules/ is gone from the disk and from git.
-- **chokidar finds readdirp by path.** index.js:6 imports from "../readdirp/index.js". No other line of index.js changes, and nothing in it names readdirp by name.
-- **job.js requires it by path**, a path that resolves to spirit/job/chokidar/index.js. No script does require("chokidar") by name.
-- **The file watcher works as before:** the node's fs-watcher job hears a file made in its folder as a createFile.
-- **The core flag is kept on the file list** (goal/G47.1; Andy: *"stick that flag on the fucking file list, then you have to
-  check each file once with isCore()"*): the fs-watcher job on the run folder, its tree asked twice, reads no app's
-  <name>.json from disc; spirit/script.js comes with core, the `<name>.js` of an app whose json says intrinsic false
-  (the first found in the checkout, none named) without, that json itself with. The flag follows an app's json: on a lab node reset to the files under test (goal/G47.3), a planted app
-  zzKept whose json says intrinsic false has zzKept.js without core; the json changed to intrinsic true, zzKept.js comes
-  with core; changed back, without again.
-- **No file names spirit/run/node_modules.** That covers the .gitignore exception and the two installers.
-
-deskClient's use of the library is the chokidar part of `spirit/app/deskClient/server/test/server.md`; fileSystem.js's one list of vendored folders is the vendoredFolders part of `./fileSystem.md`.
+They left job for the fs branch (goal/G49.15, box v16): their checks are `spirit/fs/server/test/script.js`, spec
+`spirit/fs/server/test/script.md`.
 
 ## The mount part: the node starts a server from spirit/app/<name>/ (once in ./appServer.js, goal/G47.1)
 

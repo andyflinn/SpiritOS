@@ -22,7 +22,7 @@ The tree is read as it is. No node and no port are used.
 
 ### Requirements
 
-- fileSystem.js exports one list of exactly spirit/job/chokidar, spirit/job/readdirp and spirit/element/codeMirror.
+- fileSystem.js exports one list of exactly spirit/fs/chokidar, spirit/fs/readdirp and spirit/element/codeMirror.
 - The node's file scan lists nothing inside them.
 - Vendor code is "servable but not writeable" (Andy, Q1): a file of each of the three folders is servable, and fileWritable refuses it.
 - No code skips node_modules by its own name: every walker reads that list. That is `./script-sibling-general.js`'s rule of every file (goal/G47.1), once a list here of the walkers at commit 2fb29140.

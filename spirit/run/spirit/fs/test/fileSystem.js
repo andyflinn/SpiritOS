@@ -73,8 +73,8 @@ test.run('fileServable refuses spirit/app/desk/spirit/state/identity.json, an ap
 test.run('fileServable refuses SPIRIT/APP/DESK/SPIRIT/STATE/IDENTITY.JSON, an app server\'s private key in another letter case', 0.8, function () { return (ask('fileServable', 'SPIRIT/APP/DESK/SPIRIT/STATE/IDENTITY.JSON') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses Spirit/App/Desk/Spirit/State/Identity.json, an app server\'s private key in another letter case', 0.8, function () { return (ask('fileServable', 'Spirit/App/Desk/Spirit/State/Identity.json') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses spirit/server/script.js, a server script, as written', 0.8, function () { return (ask('fileServable', 'spirit/server/script.js') === false) ? true : false; }, test.limit.quick);
-test.run('fileServable refuses SPIRIT/SERVER.JS, a server script in another letter case', 0.8, function () { return (ask('fileServable', 'SPIRIT/SERVER.JS') === false) ? true : false; }, test.limit.quick);
-test.run('fileServable refuses Spirit/Server.js, a server script in another letter case', 0.8, function () { return (ask('fileServable', 'Spirit/Server.js') === false) ? true : false; }, test.limit.quick);
+test.run('fileServable refuses SPIRIT/SERVER/SCRIPT.JS, a server script in another letter case', 0.8, function () { return (ask('fileServable', 'SPIRIT/SERVER/SCRIPT.JS') === false) ? true : false; }, test.limit.quick);
+test.run('fileServable refuses Spirit/Server/Script.js, a server script in another letter case', 0.8, function () { return (ask('fileServable', 'Spirit/Server/Script.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses spirit/DEBUG/garbageArguments.js, in the DEBUG folder, as written', 0.8, function () { return (ask('fileServable', 'spirit/DEBUG/garbageArguments.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses SPIRIT/DEBUG/GARBAGEARGUMENTS.JS, in the DEBUG folder in another letter case', 0.8, function () { return (ask('fileServable', 'SPIRIT/DEBUG/GARBAGEARGUMENTS.JS') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses Spirit/DEBUG/GarbageArguments.js, in the DEBUG folder in another letter case', 0.8, function () { return (ask('fileServable', 'Spirit/DEBUG/GarbageArguments.js') === false) ? true : false; }, test.limit.quick);
@@ -98,8 +98,8 @@ test.run('fileWritable refuses spirit/state/new.json, as anything under spirit/s
 test.run('fileWritable refuses SPIRIT/STATE/NEW.JSON, as anything under spirit/state, in another letter case', 0.8, function () { return (ask('fileWritable', 'SPIRIT/STATE/NEW.JSON') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses Spirit/State/New.json, as anything under spirit/state, in another letter case', 0.8, function () { return (ask('fileWritable', 'Spirit/State/New.json') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses spirit/server/script.js, a core file, as written', 0.8, function () { return (ask('fileWritable', 'spirit/server/script.js') === false) ? true : false; }, test.limit.quick);
-test.run('fileWritable refuses SPIRIT/SERVER.JS, a core file in another letter case', 0.8, function () { return (ask('fileWritable', 'SPIRIT/SERVER.JS') === false) ? true : false; }, test.limit.quick);
-test.run('fileWritable refuses Spirit/Server.js, a core file in another letter case', 0.8, function () { return (ask('fileWritable', 'Spirit/Server.js') === false) ? true : false; }, test.limit.quick);
+test.run('fileWritable refuses SPIRIT/SERVER/SCRIPT.JS, a core file in another letter case', 0.8, function () { return (ask('fileWritable', 'SPIRIT/SERVER/SCRIPT.JS') === false) ? true : false; }, test.limit.quick);
+test.run('fileWritable refuses Spirit/Server/Script.js, a core file in another letter case', 0.8, function () { return (ask('fileWritable', 'Spirit/Server/Script.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses spirit/element/icon/script.js, a core file under spirit/element, as written', 0.8, function () { return (ask('fileWritable', 'spirit/element/icon/script.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses SPIRIT/ELEMENT/ICON.JS, a core file under spirit/element in another letter case', 0.8, function () { return (ask('fileWritable', 'SPIRIT/ELEMENT/ICON.JS') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses Spirit/Element/Icon.js, a core file under spirit/element in another letter case', 0.8, function () { return (ask('fileWritable', 'Spirit/Element/Icon.js') === false) ? true : false; }, test.limit.quick);
@@ -171,11 +171,11 @@ test.run('the node writes no preferences.json', 0.2, function () {
 // move of chokidar and readdirp itself is ./job.js, its vendoredLibraries part. The tree read as it is. No node, no port.
 // fileSystem-vendoredFolders: one list of vendored folders, in fileSystem.js, read by every walker (goal/G43.25).
 // 6. one list of vendored folders, in fileSystem.js, read by every walker.
-const VENDORED = ['spirit/job/chokidar', 'spirit/job/readdirp', 'spirit/element/codeMirror'];
+const VENDORED = ['spirit/fs/chokidar', 'spirit/fs/readdirp', 'spirit/element/codeMirror'];
 function trim(p) { return String(p).replace(/\\/g, '/').replace(/^\.?\//, '').replace(/^spirit\/run\//, '').replace(/\/+$/, ''); }
 const fsm = FS;
 const V = { listName: '', scanned: [] };
-test.run('it exports the vendored folders, spirit/job/chokidar, spirit/job/readdirp and spirit/element/codeMirror, as one list', 0.2, function () {
+test.run('it exports the vendored folders, spirit/fs/chokidar, spirit/fs/readdirp and spirit/element/codeMirror, as one list', 0.2, function () {
   V.listName = Object.keys(fsm).filter(function (k) {
     const v = fsm[k];
     const arr = Array.isArray(v) ? v : (v instanceof Set ? Array.from(v) : null);
@@ -185,25 +185,25 @@ test.run('it exports the vendored folders, spirit/job/chokidar, spirit/job/readd
   return V.listName ? true : false;
 }, test.limit.quick);
 // Not listed in Files: the node's file scan, from spirit/run.
-test.run('the node\'s file scan lists spirit/job/api.js', 0.2, function () {
+test.run('the node\'s file scan lists spirit/fs/api.js', 0.2, function () {
   V.scanned = typeof fsm.scanFolder === 'function' ? fsm.scanFolder(RUN, []).map(function (e) { return path.relative(RUN, path.join(e.parentPath, e.name)).split(path.sep).join('/'); }) : [];
-  return V.scanned.indexOf('spirit/job/api.js') !== -1 ? true : false;
+  return V.scanned.indexOf('spirit/fs/api.js') !== -1 ? true : false;
 }, test.limit.quick);
 const scanOf = function (v) {
   const inside = V.scanned.filter(function (s) { return s === v || s.indexOf(v + '/') === 0; });
   const there = fs.existsSync(path.join(RUN, v));
   return (there && !inside.length) ? true : false;
 };
-test.run('the file scan lists nothing of spirit/job/chokidar', 0.2, function () { return scanOf('spirit/job/chokidar'); }, test.limit.quick);
-test.run('the file scan lists nothing of spirit/job/readdirp', 0.2, function () { return scanOf('spirit/job/readdirp'); }, test.limit.quick);
+test.run('the file scan lists nothing of spirit/fs/chokidar', 0.2, function () { return scanOf('spirit/fs/chokidar'); }, test.limit.quick);
+test.run('the file scan lists nothing of spirit/fs/readdirp', 0.2, function () { return scanOf('spirit/fs/readdirp'); }, test.limit.quick);
 test.run('the file scan lists nothing of spirit/element/codeMirror', 0.2, function () { return scanOf('spirit/element/codeMirror'); }, test.limit.quick);
 // Served, never written. Andy, Q1 (the page loads CodeMirror from spirit/element/codeMirror/): "servable but not writeable."
 const servedOnly = function (f) {
   const there = fs.existsSync(path.join(RUN, f));
   return (there && fsm.fileServable(f) && !fsm.fileWritable(f)) ? true : false;
 };
-test.run('spirit/job/chokidar/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/job/chokidar/index.js'); }, test.limit.quick);
-test.run('spirit/job/readdirp/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/job/readdirp/index.js'); }, test.limit.quick);
+test.run('spirit/fs/chokidar/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/fs/chokidar/index.js'); }, test.limit.quick);
+test.run('spirit/fs/readdirp/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/fs/readdirp/index.js'); }, test.limit.quick);
 test.run('spirit/element/codeMirror/lib/codemirror.js is servable but not writable', 0.8, function () { return servedOnly('spirit/element/codeMirror/lib/codemirror.js'); }, test.limit.quick);
 // The walkers: that no code skips node_modules by its own name, every walker reading the one list above, is the general
 // test's, spirit/test/script-sibling-general.js, over every file (goal/G47.1); once a list of the walkers at one old commit here.
