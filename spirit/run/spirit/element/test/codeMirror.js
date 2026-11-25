@@ -60,6 +60,9 @@ function world() {
     TextDecoder: TextDecoder, TextEncoder: TextEncoder, console: { log: function () {}, error: function () {} },
   };
   win.window = win;
+  // CODEMIRROR IS ON THE PAGE BEFORE THE ELEMENT RUNS (goal/G49.15, box v16: "the vendored codeMirror will be loaded by
+  // face.html with a script tag"): its library put window.CodeMirror there, as face.html's tags do.
+  win.CodeMirror = CodeMirror;
   win.spirit = {
     elements: {
       fstat: { read: function (p) { w.read.push(String(p)); return Promise.resolve({ status: 200, type: 'text/css', bytes: new TextEncoder().encode('/* ' + p + ' */') }); } },
@@ -110,24 +113,24 @@ test.run('it puts itself on window.spirit.required as codeMirror, with create', 
   return (!!S.E && typeof S.E.create === 'function') || false;
 }, test.limit.quick);
 
-// It loads the library itself, never through index.html (goal/G40.7).
-test.run('it requires CodeMirror\'s lib/codemirror.js through spirit.requireScript', 0.2, async function () {
+// IT LOADS NONE OF CODEMIRROR ITSELF (goal/G49.15, box v16: "the page list goes. the vendored codeMirror will be loaded by
+// face.html with a script tag"): no file of spirit/element/codeMirror/ is required, read or put on the page by it.
+test.run('it makes a read view with the CodeMirror face.html put on the page', 0.2, async function () {
   if (!S.E) return false;
   S.read = await S.E.create({ id: 'host-1' }, { mode: 'read', text: 'alpha beta\ngamma beta', words: 'beta', path: 'notes.md' });
   await settle();
-  return S.w.required.indexOf(CM + 'lib/codemirror.js') !== -1 || false;
+  return (!!S.w && S.w.made.length > 0) || false;
 }, test.limit.quick);
-test.run('it requires the mode file of the path\'s syntax, mode/markdown/markdown.js for a .md file', 0.2, function () {
-  return (asked(S.w).indexOf(CM + 'mode/markdown/markdown.js') !== -1 && S.w.required.indexOf(CM + 'mode/markdown/markdown.js') !== -1) || false;
+test.run('it requires, reads and puts on the page no file of spirit/element/codeMirror/', 0.2, function () {
+  if (!S.w) return false;
+  return !asked(S.w).some(function (p) { return String(p).replace(/^\/+/, '').indexOf(CM) === 0; }) || false;
 }, test.limit.quick);
-test.run('its stylesheet lib/codemirror.css is put on the page', 0.2, function () {
-  return asked(S.w).some(function (p) { return p.replace(/^\/+/, '') === CM + 'lib/codemirror.css'; }) || false;
-}, test.limit.quick);
-test.run('its stylesheet theme/material-darker.css is put on the page', 0.2, function () {
-  return asked(S.w).some(function (p) { return p.replace(/^\/+/, '') === CM + 'theme/material-darker.css'; }) || false;
+test.run('its code names no file of spirit/element/codeMirror/', 0.2, function () {
+  const c = S.src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  return (S.there && c.indexOf(CM) === -1) || false;
 }, test.limit.quick);
 test.run('nothing of it reads or asks for index.html', 0.2, function () {
-  return (S.there && S.w.required.length > 0 && !asked(S.w).some(function (p) { return /index\.html/.test(p); }) && !/index\.html/.test(S.src.replace(/\/\/.*$/gm, ''))) || false;
+  return (S.there && !!S.w && !asked(S.w).some(function (p) { return /index\.html/.test(p); }) && !/index\.html/.test(S.src.replace(/\/\/.*$/gm, ''))) || false;
 }, test.limit.quick);
 
 // Read mode: the text shown, not editable.
@@ -261,12 +264,15 @@ test.run('the library\'s 15 files, licence included, stand in spirit/element/cod
   const lib = L.inRun.filter(function (f) { return f.indexOf('spirit/element/codeMirror/') === 0; });
   return (lib.indexOf('spirit/element/codeMirror/lib/codemirror.js') !== -1 && lib.indexOf('spirit/element/codeMirror/LICENSE') !== -1 && lib.length === 15) || false;
 }, test.limit.slow);
-// Andy: "only access to codeMirror library is through the element!"
-test.run('no product file but the element names the library\'s folder', 0.2, function () {
-  const asking = L.tracked.filter(function (f) { return /\.(js|html|css)$/.test(f) && f.indexOf('spirit/run/') === 0 && !/\/test\//.test(f) && f !== 'spirit/run/spirit/element/codeMirror.js' && f.indexOf('spirit/run/spirit/element/codeMirror/') !== 0 && !/^spirit\/run\/test\//.test(f); }).filter(function (f) {
+// WHO NAMES THE LIBRARY'S FOLDER (goal/G49.15, box v16: "the vendored codeMirror will be loaded by face.html with a script
+// tag", which ends G43.5's "only access to codeMirror library is through the element!"): face.html, which loads it, and
+// fileSystem.js's one list of vendored folders; no other product file, the element included.
+test.run('no product file but face.html and fileSystem.js names the library\'s folder', 0.2, function () {
+  const allowed = ['spirit/run/spirit/shell/face.html', 'spirit/run/spirit/fs/fileSystem.js'];
+  const asking = L.tracked.filter(function (f) { return /\.(js|html|css)$/.test(f) && f.indexOf('spirit/run/') === 0 && !/\/test\//.test(f) && allowed.indexOf(f) === -1 && f.indexOf('spirit/run/spirit/element/codeMirror/') !== 0; }).filter(function (f) {
     return fs.existsSync(path.join(REPO, f)) && /element\/codeMirror\//.test(fs.readFileSync(path.join(REPO, f), 'utf8').split('\n').map(function (l) { const cut = l.search(/(^|[^:'"])\/\//); return cut === -1 ? l : l.slice(0, cut + 1); }).join('\n'));
   });
-  return !asking.length || false;
+  return (L.tracked.length > 100 && !asking.length) || false;
 }, test.limit.slow);
 test.run('a scratch node comes up with a Chrome page on it', 0.2, async function () {
   const chrome = H.findChrome();
@@ -280,10 +286,10 @@ test.run('a scratch node comes up with a Chrome page on it', 0.2, async function
   await H.sleep(2500);
   return !!ready || false;
 }, test.limit.long);
-test.run('the page starts with no CodeMirror on it, since the only access to the library is through the element', 0.2, async function () {
+test.run('the page starts with CodeMirror on it, from face.html\'s script tags', 0.2, async function () {
   if (!L.page || L.page.error) return false;
   try { L.at = JSON.parse(await L.page.evaluate('JSON.stringify({ library: typeof window.CodeMirror })')); } catch (e) { L.at = {}; }
-  return L.at.library === 'undefined' || false;
+  return L.at.library === 'function' || false;
 }, test.limit.slow);
 test.run('the element draws from that folder, with its sheet, its marks and its search keys', 0.2, async function () {
   if (!L.page || L.page.error) return false;

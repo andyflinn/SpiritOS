@@ -3,7 +3,7 @@
 // spirit/run/spirit/server/relay/test/script.js
 // The tests of spirit/server/relay/script.js, and of no other module, in this one file (spec: ./script.md; goal/G41.3). Its
 // sections: the attacker's garbage at the relay's door (goal/G41.30), after its own: how it serves a
-// face its files. Its map and its folder are lifted out of the source and asked, with no relay running; the /face/ posts
+// face its files, the same static rule as the node's, on a scratch relay and node (goal/G49.15); the /face/ posts
 // at the end (goal/G41.30) go to a scratch relay with faces.
 
 const fs = require('fs');
@@ -14,90 +14,104 @@ const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const http = require('http');
 const net = require('net');
-const { sleep, scratchRelay, scratchFaceRelay } = LOADER.requireScript('spirit/test/headLessChrome.js');
+const { sleep, scratchRelay, scratchFaceRelay, scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
 const limits = LOADER.requireScript('spirit/limits/script.js');
 
 const FILE = path.join(__dirname, '..', 'script.js');
 
 const src = fs.readFileSync(FILE, 'utf8');
 const dirSrc = (/^const FACE_DIR = (path\.join\(__dirname, [^;]*\));/m.exec(src) || [])[1];
-const mapSrc = (/^const FACE_FILES = (\{[^;]*\});/m.exec(src) || [])[1];
-// goal/G43.18 (Q25, Andy: "the browser should see them the same."): an address is served from its file, serveCommon.pageFile.
 const common = LOADER.requireScript('spirit/server/serveCommon/script.js');
-let dir = null; let map = null;
+let dir = null;
 try { dir = dirSrc ? new Function('path', '__dirname', 'return ' + dirSrc + ';')(path, path.dirname(FILE)) : null; } catch (e) { dir = null; }
-try { map = mapSrc ? new Function('common', 'return ' + mapSrc + ';')(common) : null; } catch (e) { map = null; }
 
 // where its face files come from
 test.run('the relay reads its face files from the run root, each by its file', 0.2, function () {
   return (!!dir && path.relative(RUN, dir) === '') || false;
 }, test.limit.quick);
 
-// the addresses it serves
-// goal/G43.18, box v29: "The relay serves a logged-out face one plain page, the one-field form, with spirit.js and seal.js
-// only": /spirit.js, face.html's one script tag, the seal, and the tab's icon. No boot.js, sheet or login app.
-const WANT = ['/spirit.js', '/shell/seal.js', '/shell/favicon.svg'];
-const keys = map ? Object.keys(map).sort() : [];
-test.run('its map serves exactly /spirit.js, /shell/seal.js and /shell/favicon.svg', 0.2, function () {
-  return (!!map && JSON.stringify(keys) === JSON.stringify(WANT.slice().sort())) || false;
+// THE SAME STATIC RULE AS THE NODE, AND NO LIST (goal/G49.15, box v16: "the static file serving logic should be the exact same on
+// the relay as it is on the node"; "the relay list goes."; "the relay will serve most files outsite of spirit.state"). A
+// scratch relay with one face and a scratch node, each asked the same addresses as a browser asks them: the relay answers
+// each as the node does, the same status, and the same bytes where it serves the file.
+test.run('the relay keeps no list of the files it serves: no FACE_FILES', 0.2, function () {
+  return (src.length > 0 && !/\bFACE_FILES\b/.test(src)) || false;
 }, test.limit.quick);
-test.run('no address under /face/ serves a file any more', 0.2, function () {
-  const old = keys.filter(function (k) { return k.indexOf('/face/') === 0; });
-  return (!!map && !old.length) || false;
-}, test.limit.quick);
-test.run('every file the map names is there', 0.2, function () {
-  const missing = map && dir ? keys.filter(function (k) { return !fs.existsSync(path.join(dir, map[k])); }) : keys;
-  return (!!map && !!dir && !missing.length) || false;
-}, test.limit.quick);
-test.run('each address is served from its file, as the node serves it', 0.2, function () {
-  const named = map ? keys.every(function (k) { return map[k] === common.pageFile(k); }) : false;
-  return named || false;
-}, test.limit.quick);
-
-// goal/G41.19, Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!": the relay hands face.html and spirit.js over as they are on
-// disk. Its faceSend is lifted out of the source and run on the real files.
-// face.html and spirit.js, as they are on disk
-const sendSrc = (/^function faceSend\(res, status, file\) \{[\s\S]*?\r?\n\}\r?\n/m.exec(src) || [])[0];
-const typesSrc = (/^const FACE_TYPES = (\{.*\});\r?$/m.exec(src) || [])[1];
-let faceSend = null;
-try { faceSend = sendSrc && typesSrc ? new Function('fs', 'path', 'FACE_DIR', 'FACE_TYPES', sendSrc + '\nreturn faceSend;')(fs, path, dir, new Function('return ' + typesSrc + ';')()) : null; } catch (e) { faceSend = null; }
-function sent(file) {
+const SAME = { R: null, N: null };
+test.run('a scratch relay with a face and a scratch node come up', 0.2, async function () {
+  SAME.R = await scratchFaceRelay({ members: ['harbour'] });
+  SAME.N = await scratchNode();
+  return (!!SAME.R && SAME.R.up && !!SAME.N && SAME.N.up) || false;
+}, test.limit.long);
+test.after(async function () {
+  try { if (SAME.R && SAME.R.stop) await SAME.R.stop(); else if (SAME.R && SAME.R.release) await SAME.R.release(); } catch (e) { /* gone */ }
+  try { if (SAME.N && SAME.N.release) await SAME.N.release(); } catch (e) { /* gone */ }
+});
+function getOf(port, host, p) {
   return new Promise(function (resolve) {
-    const res = { writeHead: function () {}, setHeader: function () {}, end: function (b) { resolve(Buffer.from(b || '')); } };
-    if (!faceSend) resolve(null); else faceSend(res, 200, file);
+    const q = http.request({ host: '127.0.0.1', port: port, path: p, method: 'GET', headers: { Host: host } }, function (r) {
+      const parts = []; r.on('data', function (c) { parts.push(c); }); r.on('end', function () { resolve({ status: r.statusCode, body: Buffer.concat(parts) }); });
+    });
+    q.on('error', function () { resolve({ status: 0, body: Buffer.alloc(0) }); });
+    q.setTimeout(10000, function () { q.destroy(); resolve({ status: 0, body: Buffer.alloc(0) }); });
+    q.end();
   });
 }
+async function sameAsNode(p) {
+  if (!SAME.R || !SAME.R.up || !SAME.N || !SAME.N.up) return false;
+  const H = SAME.R.members && SAME.R.members.harbour;
+  if (!H) return false;
+  const r = await getOf(SAME.R.port, H.host, p);
+  const np = Number(String(SAME.N.base).split(':').pop());
+  const n = await getOf(np, '127.0.0.1:' + np, p);
+  if (!r.status || !n.status) return false;
+  const served = function (s) { return s >= 200 && s < 300; };
+  if (served(r.status) !== served(n.status)) return false;
+  return served(r.status) ? r.body.equals(n.body) : true;
+}
+// Served by both: the spirit object, the seal, the boot, a sheet, the vendored codeMirror.
+test.run('the relay serves /spirit/script.js as the node does', 0.2, function () { return sameAsNode('/spirit/script.js'); }, test.limit.quick);
+test.run('the relay serves /spirit/shell/seal/script.js as the node does', 0.2, function () { return sameAsNode('/spirit/shell/seal/script.js'); }, test.limit.quick);
+test.run('the relay serves /spirit/shell/boot/script.js as the node does', 0.2, function () { return sameAsNode('/spirit/shell/boot/script.js'); }, test.limit.quick);
+test.run('the relay serves /spirit/shell/shell.css as the node does', 0.2, function () { return sameAsNode('/spirit/shell/shell.css'); }, test.limit.quick);
+test.run('the relay serves /spirit/element/codeMirror/lib/codemirror.js as the node does', 0.2, function () { return sameAsNode('/spirit/element/codeMirror/lib/codemirror.js'); }, test.limit.quick);
+// Refused by both: the state, the servers' own code, the file system's own script.
+test.run('the relay refuses /spirit/state/identity.json as the node does', 0.8, function () { return sameAsNode('/spirit/state/identity.json'); }, test.limit.quick);
+test.run('the relay refuses /spirit/server/relay/script.js as the node does', 0.8, function () { return sameAsNode('/spirit/server/relay/script.js'); }, test.limit.quick);
+test.run('the relay refuses /spirit/fs/fileSystem.js as the node does', 0.8, function () { return sameAsNode('/spirit/fs/fileSystem.js'); }, test.limit.quick);
+test.run('the relay refuses /spirit/state/face.json, its own state, as the node does', 0.8, function () { return sameAsNode('/spirit/state/face.json'); }, test.limit.quick);
+// Served by both as a page of the face: face.html at /.
+test.run('the relay serves face.html at / as the node does', 0.2, function () { return sameAsNode('/'); }, test.limit.quick);
+// The two let go here, so the sections after it have the lab's relays.
+test.run('the scratch relay and node are let go', 0.2, async function () {
+  try { if (SAME.R && SAME.R.stop) await SAME.R.stop(); else if (SAME.R && SAME.R.release) await SAME.R.release(); } catch (e) { return false; }
+  try { if (SAME.N && SAME.N.release) await SAME.N.release(); } catch (e) { return false; }
+  SAME.R = null; SAME.N = null;
+  return true;
+}, test.limit.slow);
+
 // THE FACE PAGE TAKES NO TOKEN FROM ITS ADDRESS (goal/G41.29; the box: "The login-email must not carry a link", "So a
 // real login-email never holds a link"): the page at / or /face.html, asked with /?<token>, logs nobody in and sets no
 // login; the token is pasted into the Log in field only. Its route is lifted out of the source and run on stand-ins.
 // the face page logs nobody in from a token in its address
-// Line ends either way, as a Windows checkout has them (CRLF), as the faceSend pattern above does.
-const routeSrc = (/\r?\n(  if \(req\.method === 'GET' && \(pathname === '\/' \|\| pathname === '\/face\.html'\)\) \{[\s\S]*?\r?\n  \})\r?\n/.exec(src) || [])[1];
+// Line ends either way, as a Windows checkout has them (CRLF).
+const routeSrc = (/\r?\n(  if \(req\.method === 'GET' && \(pathname === '\/' \|\| pathname === '\/' \+ FACE_PAGE\)\) \{[\s\S]*?\r?\n  \})\r?\n/.exec(src) || [])[1];
 const asked = { logins: [], cookies: [], sent: [] };
 let route = null;
-try { route = routeSrc ? new Function('req', 'pathname', 'url', 'relay', 'faceSetCookie', 'faceSend', 'at', 'res', 'common', routeSrc + '\nreturn false;') : null; } catch (e) { route = null; }
+try { route = routeSrc ? new Function('req', 'pathname', 'url', 'relay', 'faceSetCookie', 'faceSend', 'at', 'res', 'common', 'FACE_PAGE', routeSrc + '\nreturn false;') : null; } catch (e) { route = null; }
 let served = false;
 test.run('the face page asked with a token in its address serves face.html', 0.2, function () {
   if (route) {
     const TOKEN = 'AbCdEfGhIjKlMnOpQrStUvWx';
     served = route({ method: 'GET' }, '/', new URL('https://harbour.relay.example/?' + TOKEN), { faceLogin: function (n, t) { asked.logins.push([n, t]); return { loggedIn: true, session: 'S' }; } },
-      function (res, sid) { asked.cookies.push(sid); }, function (res, st, file) { asked.sent.push(file); }, { name: 'harbour' }, {}, common);
+      function (res, sid) { asked.cookies.push(sid); }, function (res, st, file) { asked.sent.push(file); }, { name: 'harbour' }, {}, common, 'spirit/shell/face.html');
   }
-  return (!!route && served === true && asked.sent[0] === common.pageFile('face.html')) || false;
+  return (!!route && served === true && asked.sent[0] === 'spirit/shell/face.html') || false;
 }, test.limit.quick);
 // A token in an address that logs in is a login by a link: 0.8.
 test.run('the face page asked with a token in its address logs nobody in: no face login is asked and no login cookie is set', 0.8, function () {
   return (!!route && asked.logins.length === 0 && asked.cookies.length === 0) || false;
 }, test.limit.quick);
-test.run('the relay serves face.html byte for byte as it is on disk', 0.2, async function () {
-  const got = await sent(common.pageFile('face.html'));
-  return (!!got && got.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html')))) || false;
-}, test.limit.quick);
-test.run('the relay serves /spirit.js, from spirit/script.js, byte for byte', 0.2, async function () {
-  const got = await sent(map && map['/spirit.js'] || common.pageFile('spirit.js'));
-  return (!!got && got.equals(fs.readFileSync(path.join(RUN, 'spirit', 'script.js')))) || false;
-}, test.limit.quick);
-
 // A PAGE ON ANOTHER MEMBER'S FACE CANNOT DRIVE A LOGGED-IN OWNER'S NODE (goal/G41.30, the review, RC2: "a page on any
 // member's face can make a logged-in owner's face run verbs on his node, because all faces are same-site and /face/call
 // has no Origin check"; its fix: "on every /face/* POST, require Origin equal to the face's own host, require the

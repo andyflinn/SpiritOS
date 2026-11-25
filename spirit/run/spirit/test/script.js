@@ -624,12 +624,36 @@ test.run('isLoopback() answers true on 127.0.0.1, localhost and [::1], false on 
 }, test.limit.quick);
 
 // ── 6b. ON A FACE, spirit.js LOADS THE FACE ──────────────────────────
-// 6b. on a face: face.html holds spirit.js alone, and spirit.js loads the face shell
-// goal/G41.19, Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!": one tag, /spirit.js, and nothing pasted in by a server.
-test.run('face.html says it is a face (data-spirit="face") and loads /spirit/script.js by one script tag, and no other script', 0.2, function () {
+// 6b. on a face: face.html holds spirit.js and codeMirror's files, and spirit.js loads the face shell
+// goal/G41.19, Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!": nothing pasted in by a server.
+// CODEMIRROR'S FILES, FROM face.html (goal/G49.15, box v16: "the page list goes. the vendored codeMirror will be loaded by
+// face.html with a script tag. it lives in the repo and won't change very often. tests must not care."): the library, its
+// five modes and its four add-ons, each by its own script tag, the library first among them.
+const CM_FILES = ['spirit/element/codeMirror/lib/codemirror.js', 'spirit/element/codeMirror/mode/javascript/javascript.js',
+  'spirit/element/codeMirror/mode/css/css.js', 'spirit/element/codeMirror/mode/xml/xml.js', 'spirit/element/codeMirror/mode/markdown/markdown.js',
+  'spirit/element/codeMirror/mode/htmlmixed/htmlmixed.js', 'spirit/element/codeMirror/addon/dialog/dialog.js',
+  'spirit/element/codeMirror/addon/search/searchcursor.js', 'spirit/element/codeMirror/addon/search/search.js',
+  'spirit/element/codeMirror/addon/search/jump-to-line.js'];
+const faceScripts = function () {
   const faceHtml = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'), 'utf8');
-  const faceScripts = faceHtml.replace(/<!--[\s\S]*?-->/g, '').match(/<script\b[^>]*>[\s\S]*?<\/script>/g) || [];
-  return (/<html[^>]*data-spirit="face"/.test(faceHtml) && faceScripts.length === 1 && /^<script src="\/spirit\/script\.js"><\/script>$/.test(faceScripts[0])) || false;
+  return (faceHtml.replace(/<!--[\s\S]*?-->/g, '').match(/<script\b[^>]*>[\s\S]*?<\/script>/g) || []).map(function (s) { const m = /^<script src="\/([^"]+)"><\/script>$/.exec(s); return m ? m[1] : s; });
+};
+test.run('face.html says it is a face (data-spirit="face"), and its first script tag loads /spirit/script.js', 0.2, function () {
+  const faceHtml = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'), 'utf8');
+  return (/<html[^>]*data-spirit="face"/.test(faceHtml) && faceScripts()[0] === 'spirit/script.js') || false;
+}, test.limit.quick);
+test.run('face.html loads codeMirror\'s library, its modes and its add-ons, each by a script tag of its own', 0.2, function () {
+  const s = faceScripts();
+  return CM_FILES.every(function (f) { return s.indexOf(f) !== -1; }) || false;
+}, test.limit.quick);
+test.run('face.html loads codeMirror\'s library before its modes and add-ons', 0.2, function () {
+  const s = faceScripts();
+  const lib = s.indexOf(CM_FILES[0]);
+  return (lib !== -1 && CM_FILES.slice(1).every(function (f) { return s.indexOf(f) > lib; })) || false;
+}, test.limit.quick);
+test.run('face.html loads no other script than spirit/script.js and codeMirror\'s files', 0.2, function () {
+  const s = faceScripts();
+  return (s.length > 0 && s.every(function (f) { return f === 'spirit/script.js' || CM_FILES.indexOf(f) !== -1; })) || false;
 }, test.limit.quick);
 test.run('the node serves face.html byte for byte as it is on disk', 0.2, async function () {
   const served = await new Promise(function (resolve) {
@@ -1122,19 +1146,9 @@ async function relayServes(p) {
 }
 test.run('the relay serves /spirit/script.js', 0.2, function () { return relayServes('/spirit/script.js'); }, test.limit.quick);
 test.run('the relay serves /spirit/shell/seal/script.js', 0.2, function () { return relayServes('/spirit/shell/seal/script.js'); }, test.limit.quick);
-// "boot.js, shell.css, face.css and every other part of the shell come from the home node over that link": logged out
-// or in, the relay itself serves none of them.
-async function relayKeeps(loggedIn, p) {
-  if (!faceUp()) return false;
-  const g = await atFace(FL.R, 'GET', p, undefined, loggedIn ? FL.F.sid : '');
-  return g.status !== 200 || false;
-}
-test.run('logged out, the relay does not serve /spirit/shell/boot/script.js', 0.2, function () { return relayKeeps(false, '/spirit/shell/boot/script.js'); }, test.limit.quick);
-test.run('logged out, the relay does not serve /spirit/shell/shell.css', 0.2, function () { return relayKeeps(false, '/spirit/shell/shell.css'); }, test.limit.quick);
-test.run('logged out, the relay does not serve /spirit/shell/face.css', 0.2, function () { return relayKeeps(false, '/spirit/shell/face.css'); }, test.limit.quick);
-test.run('logged in, the relay does not serve /spirit/shell/boot/script.js', 0.2, function () { return relayKeeps(true, '/spirit/shell/boot/script.js'); }, test.limit.quick);
-test.run('logged in, the relay does not serve /spirit/shell/shell.css', 0.2, function () { return relayKeeps(true, '/spirit/shell/shell.css'); }, test.limit.quick);
-test.run('logged in, the relay does not serve /spirit/shell/face.css', 0.2, function () { return relayKeeps(true, '/spirit/shell/face.css'); }, test.limit.quick);
+// WHAT THE RELAY SERVES (goal/G49.15, box v16: "the relay list goes. tests must not care."; "the static file serving logic
+// should be the exact same on the relay as it is on the node"): judged in the relay's own test,
+// spirit/server/relay/test/script.js, against a node.
 
 // the box: "The login is spirit.login, in spirit.js, no app ... and draws the one field when logged out"
 function faceUrl() { return 'http://' + NAME + '.' + DOMAIN + ':' + FL.R.port + '/'; }
@@ -1154,10 +1168,13 @@ test.run('logged out, the page shows one field', 0.2, async function () {
   if (!FL.out) return false;
   return FL.out.fields === 1 || false;
 }, test.limit.quick);
-test.run('logged out, it loads nothing but spirit/script.js and the seal, spirit/shell/seal/script.js', 0.2, function () {
+test.run('logged out, it loads nothing but spirit/script.js, the seal, spirit/shell/seal/script.js, and face.html\'s codeMirror files', 0.2, function () {
   if (!FL.out) return false;
-  const notThree = (FL.out.loaded || []).filter(function (n) { return !/^\/(spirit\/script\.js|spirit\/shell\/seal\/script\.js|favicon\.ico|spirit\/shell\/favicon\.svg)(\?|$)/.test(n) && !/^\/face\/api/.test(n); });
-  return (Array.isArray(FL.out.loaded) && !notThree.length) || false;
+  const others = (FL.out.loaded || []).filter(function (n) {
+    const p = String(n).replace(/^\//, '').replace(/[?#].*$/, '');
+    return !/^(spirit\/script\.js|spirit\/shell\/seal\/script\.js|favicon\.ico|spirit\/shell\/favicon\.svg)$/.test(p) && CM_FILES.indexOf(p) === -1 && !/^face\/api/.test(p);
+  });
+  return (Array.isArray(FL.out.loaded) && !others.length) || false;
 }, test.limit.quick);
 
 // logged in: the shell comes from the home node, over the link
@@ -1379,8 +1396,8 @@ test.run('the page says the stream is down, onConnection false, before the new o
 // sides"; "the loader places that module.exports at the script's own place and answers spirit.requireScript with it"; "a
 // folder's script.js stands at its folder's own name"; "what a script exposes becomes its place itself, never copied in as
 // members"; "the folder's other scripts stand under it either way"; "a script.js exposes an object or a function, nothing
-// else ... so the loader refuses it"; "vendored scripts get no module box"). Planted in a scratch node's tree: an object, its
-// folder's other script, a function, a bare string, and a probe in the vendored CodeMirror folder. Node side in a process of
+// else ... so the loader refuses it"; the page list, and with it "vendored scripts get no module box", went with goal/G49.15). Planted in a scratch node's tree: an object, its
+// folder's other script, a function and a bare string. Node side in a process of
 // the scratch tree's own, page side on a page of that node.
 const LD = {};
 const LD_PLANT = {
@@ -1389,7 +1406,6 @@ const LD_PLANT = {
   'spirit/zzLoader/fn/script.js': "'use strict';\nmodule.exports = function () { return 7; };\n",
   'spirit/zzLoader/str/script.js': "'use strict';\nmodule.exports = 'text';\n",
   'spirit/zzLoader/stand/script.js': "'use strict';\nmodule.exports = { real: true };\n",
-  'spirit/element/codeMirror/zzProbe.js': "globalThis.zzProbeModule = typeof module;\n",
 };
 // What both sides answer, as one JSON object; run on the page as written, in node with spirit.js required first.
 const LD_ASK = "(async function () {\n" +
@@ -1447,11 +1463,11 @@ test.run('on a page, a folder\'s script.js stands at its folder\'s own name, and
 test.run('on a page, the folder\'s other script stands under its script.js, which stays where it was', 0.4, async function () { const o = await ldPage(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.slow);
 test.run('on a page, a script.js exposing a function stands as that function, callable at its folder\'s name', 0.4, async function () { const o = await ldPage(); return !!o && o.fnCall === 7 && o.fnAnswer === 7 || false; }, test.limit.slow);
 test.run('on a page, a script.js exposing a bare string is refused', 0.4, async function () { const o = await ldPage(); return !!o && o.strRefused === true || false; }, test.limit.slow);
-test.run('on a page, a vendored script is handed no module box', 0.4, async function () {
-  if (!LD.page) return false;
-  try { await LD.page.evaluate("window.spirit.requireScript('spirit/element/codeMirror/zzProbe.js').then(function () { return true; }, function () { return true; })"); } catch (e) { return false; }
-  return (await LD.page.evaluate('String(window.zzProbeModule)')) === 'undefined' || false;
-}, test.limit.slow);
+// THE PAGE LIST GOES (goal/G49.15, box v16: "the page list goes."): the spirit object names no vendored folder; codeMirror
+// comes from face.html's own script tags.
+test.run('the spirit object holds no list of vendored folders: no VENDORED_ON_PAGE, and it names no spirit/element/codeMirror/', 0.4, function () {
+  return (!/VENDORED_ON_PAGE/.test(code) && code.indexOf('spirit/element/codeMirror/') === -1) || false;
+}, test.limit.quick);
 // A NODE TEST'S STAND-IN (box v5: "a node test hands its stand-in as requireScript's answer too: put into node's module cache
 // for that file before the subject loads"): a stand-in put in for a planted script is what requireScript answers, and where it stands.
 test.run('in node, a stand-in put into the module cache for a script is what requireScript answers, at that script\'s place', 0.4, function () {
