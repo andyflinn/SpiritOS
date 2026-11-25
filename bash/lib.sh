@@ -157,7 +157,7 @@ unit_current() {
   want=$(sed -n 's/^ExecStart=[^ ]* \([^ ]*\).*/\1/p' "$REPO_ROOT/bash/systemd/${UNIT_TEMPLATE}.service" | tail -1)
   have=$(systemctl cat "$unit.service" 2>/dev/null | sed -n 's/^ExecStart=[^ ]* \([^ ]*\).*/\1/p' | tail -1)
   [ -n "$want" ] && [ -n "$have" ] && [ "$want" != "$have" ] || return 0
-  owner=$(node -e 'process.stdout.write(require(process.argv[1] + "/spirit/relayAuth").loadOwner(process.argv[2]) || "")' \
+  owner=$(node -e 'process.stdout.write(require(process.argv[1] + "/spirit/relayAuth/script.js").loadOwner(process.argv[2]) || "")' \
     "$RUN_DIR" "$RUN_DIR" 2>/dev/null) || owner=""
   if [ -z "$owner" ]; then
     warn "the installed $unit starts $have, the template $want, and no owner is on record here: run OWNER_KEY=<owner key> $REPO_ROOT/bash/install-units by hand"
