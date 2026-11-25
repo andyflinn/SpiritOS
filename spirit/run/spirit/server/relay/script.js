@@ -420,37 +420,19 @@ function isRelayPublicPath(method, pathname) {
 // The relay serves <face>.<its face domain> to anyone while that member has a verified email, a face name and his
 // home node present (relay.faceAt). Logged out, the page is the empty face shell with its login app; the login is the
 // relay's (relay.faceLogin), a session in its memory carried by the cookie spirit_face, HttpOnly, for that host only.
-// The face's files are served from spirit/run/spirit/shell/ (goal/G43.18; spirit/run/shell/ from goal/G41.3, face/ before).
-// The relay serves only the plain page and the few files of FACE_FILES (below); what the face does beyond that comes
-// from the home node over the link (/face/call, /face/file).
+// EVERY FILE A FACE ASKS IS SERVED BY THE NODE'S OWN STATIC ROUTE, serveCommon's serveStatic (goal/G49.15, box v16: "the static
+// file serving logic should be the exact same on the relay as it is on the node."; "the relay list goes."): "/" is the face page,
+// every other file at its own run path that fileSystem's gate allows. What the face does beyond its files comes from the
+// home node over the link (/face/call, /face/file).
 //
 // /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it before it
 // fetches a certificate for that name on demand (bash/face-setup).
-// goal/G41.3: face/ moved into shell/ (face/shell.js is shell/boot.js), so the face's files come from there, at their
-// new addresses; the old /face/<file> addresses are gone (the routes /face/allowed, call, file, stream and api stay).
-// goal/G49.13: each file at its own run path, the run root the base; the address map of goal/G43.18 is gone (Andy: "YOU
-// FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
-const FACE_DIR = path.join(__dirname, '..', '..', '..');
-// THE PLAIN PAGE ONLY (goal/G43.18, box v29: "The relay serves a logged-out face one plain page, the one-field form, with
-// spirit.js and seal.js only"): face.html, spirit.js (which holds spirit.faceLogin and the link), the seal and the tab's icon.
-// boot.js, the sheets and every other part of the shell come from the home node over the link.
-// /spirit/script.js is face.html's script tag, at the path the node serves it at too (goal/G41.19).
-const FACE_PAGE = 'spirit/shell/face.html';
-const FACE_FILES = ['spirit/script.js', 'spirit/shell/seal/script.js', 'spirit/shell/favicon.svg'].reduce(function (o, f) { o['/' + f] = f; return o; }, {});
-const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
 function faceCookie(req) {
   const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
   return m ? m[1] : '';
 }
 function faceSetCookie(res, sid) {
   res.setHeader('Set-Cookie', 'spirit_face=' + sid + '; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=' + (7 * 24 * 60 * 60));
-}
-function faceSend(res, status, file) {
-  fs.readFile(path.join(FACE_DIR, file), function (err, data) {
-    if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }
-    res.writeHead(status, { 'Content-Type': FACE_TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
-    res.end(data);
-  });
 }
 function faceJson(res, body) {
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -483,13 +465,6 @@ function faceDoor(req, res, url, pathname) {
     res.end(at.status === 503 ? 'This face is offline: its home node is not connected.' : 'No such face.');
     return true;
   }
-  if (req.method === 'GET' && (pathname === '/' || pathname === '/' + FACE_PAGE)) {
-    // THE PAGE ONLY (goal/G41.29, the box: "The login-email must not carry a link"): no token in the address logs anyone
-    // in; the token is pasted into the Log in field (POST /face/api login).
-    faceSend(res, 200, FACE_PAGE);
-    return true;
-  }
-  if (req.method === 'GET' && FACE_FILES[pathname]) { faceSend(res, 200, FACE_FILES[pathname]); return true; }
   // THE FACE REACHES ITS HOME NODE (goal/G30.14), by its login: a call or a file is a stream event to the home node,
   // and this response waits for the home node's upload; /face/stream is the face's own stream of live updates.
   if ((req.method === 'POST' && pathname === '/face/call') || (req.method === 'GET' && pathname === '/face/file')) {
@@ -559,6 +534,10 @@ function faceDoor(req, res, url, pathname) {
     }, function () { faceJson(res, { ok: false, error: 'the body is not json' }); });
     return true;
   }
+  // EVERY OTHER GET IS A FILE, BY THE NODE'S OWN STATIC ROUTE (goal/G49.15, box v16: "the static file serving logic should be the
+  // exact same on the relay as it is on the node."; "the relay list goes."): "/" is the face page, as at home; no token in
+  // the address logs anyone in (goal/G41.29: the token is pasted into the Log in field, POST /face/api login).
+  if (req.method === 'GET') { common.serveStatic(ROOT_DIR, pathname, res); return true; }
   res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Not found');
   return true;

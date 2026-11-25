@@ -92,6 +92,33 @@ function emailFromArgs(argv) {
   return '';
 }
 
+// ONE STATIC ROUTE, THE NODE'S AND THE RELAY'S (goal/G49.15, box v16: "the static file serving logic should be the exact same on
+// the relay as it is on the node."; "the relay list goes."): a GET for a file is answered from the run folder by the one gate,
+// fileSystem's fileServable, which keeps spirit/state/, relay-state/, the server code and the sidecars out.
+// "/" IS face.html (goal/G43.30; Andy: "make face.html the default for \"/\""), also asked at its own path; "/" is the one
+// address that is not a file's (goal/G49.13: no address map). The tab's icon at home is served whatever the gate says
+// (Q26, Andy: "the ghost one for loopback, the face one for the face."), at its own path.
+// The relay serves what its run folder holds that the gate allows (box v16: "the fact that the relay will serve most files
+// outsite of spirit.state will simply allow the relay owner to install a simple static website on the VPS").
+const HOME_PAGE = 'spirit/shell/face.html';
+const BOOT_ASSETS = ['spirit/shell/ghost.svg'];
+function serveStatic(rootDir, pathname, res) {
+  const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
+  const relativePath = pathname === '/' ? HOME_PAGE : String(pathname).replace(/^\/+/, '');
+  const filePath = fileSystem.fsPath(rootDir, '/' + relativePath);
+  if (!filePath) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
+  }
+  if (BOOT_ASSETS.indexOf(relativePath) === -1 && !fileSystem.fileServable(relativePath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+    return;
+  }
+  sendFile(res, filePath);
+}
+
 function sendFile(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const type = MIME_TYPES[ext] || 'application/octet-stream';
@@ -471,6 +498,7 @@ module.exports = {
   portFromArgs: portFromArgs,
   emailFromArgs: emailFromArgs,
   sendFile: sendFile,
+  serveStatic: serveStatic,
   readBody: readBody,
   readJsonBody: readJsonBody,
   useBody: useBody,

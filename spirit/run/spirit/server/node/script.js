@@ -76,10 +76,8 @@ const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || s
 // it, nothing else).
 common.writeEnvironment(ROOT_DIR, port);
 
-// "/" IS face.html (goal/G43.30; Andy: "make face.html the default for \"/\""): the old shell's index.html is gone.
+// "/" IS face.html, and every other file at its own path: serveCommon's serveStatic, the relay's too (goal/G49.15).
 // (A relay's brochure, relay.html, is gone with the relay's public door: Andy's decision, goal/G22.6.)
-// Asked at its own path too; "/" is the one address that is not a file's (goal/G49.13: no address map).
-const HOME_PAGE = 'spirit/shell/face.html';
 
 // THE LOG, read as a table. One store for both directions, keyed by hash
 // and ordered by arrival — and the thing the arrivals seam hands rows to,
@@ -117,12 +115,6 @@ const arrivals = spirit.requireScript('spirit/arrivals/script.js').createArrival
 // relayAuth.js on its first load, from its own position in spirit/run,
 // before this file listens (goal/G22.5, Andy 2026-10-13).
 
-// The small, fixed set of paths the page needs to boot at all, served
-// unconditionally by the static route below, checked before fileServable.
-// index.html, the old kernel and spirit/client/shell.js left it with the old
-// shell (goal/G43.30).
-// The tab's icon at home (Q26, Andy: "the ghost one for loopback, the face one for the face."), at its own path.
-const BOOT_ASSETS = ['spirit/shell/ghost.svg'];
 
 const jobs = spirit.requireScript('spirit/job/script.js')(port);
 // THE FS CACHE'S WRITER, THE FILE WATCHER, IS THE fs BRANCH'S (goal/G49.15, box v16: "the watcher lands in spirit/fs/server/script.js
@@ -430,28 +422,8 @@ const events = spirit.requireScript('spirit/event/event.js').createEvents({
 // A FILE, AS THE BROWSER'S GET IS SERVED IT. One function, so the face asking its home node for a file (faceHome,
 // goal/G30.13) passes the same gate as the browser on loopback.
 function serveGet(pathname, res) {
-  const isHomeRequest = pathname === '/';
-  // A FILE IS SERVED AT ITS OWN PATH (goal/G49.13; the address map of goal/G43.18 is gone): "/" alone is the face.
-  const address = isHomeRequest ? HOME_PAGE : pathname.replace(/^\/+/, '');
-  const relativePath = address;
-  const filePath = fsPath(ROOT_DIR, '/' + relativePath);
-
-  if (!filePath) {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Forbidden');
-    return;
-  }
-
-  // The raw route a browser's GET hits. Boot assets bypass the generic gate
-  // unconditionally; everything else goes through the same fileServable
-  // check every other read uses.
-  if (BOOT_ASSETS.indexOf(address) === -1 && !fileSystem.fileServable(relativePath)) {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Not found');
-    return;
-  }
-
-  sendFile(res, filePath);
+  // THE ONE STATIC ROUTE (goal/G49.15): serveCommon's, the relay's too.
+  common.serveStatic(ROOT_DIR, pathname, res);
 }
 
 // THE EVENT STREAM (handleSseConnection) STOOD HERE: it is spirit/event/event.js, the events family's subscribe.
