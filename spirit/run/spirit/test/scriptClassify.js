@@ -60,8 +60,9 @@ const SCRIPTS = given.length ? given : productScripts();
 // ends only that worker.
 function loadOnNode(run, rel) {
   return new Promise(function (resolve) {
+    // The spirit object is spirit/script.js since goal/G49.12's flag day; this path is written in pieces the move tool cannot see.
     const src = 'const { parentPort } = require("worker_threads"); const path = require("path");' +
-      'const run = ' + JSON.stringify(run) + '; const s = require(path.join(run, "spirit", "spirit.js"));' +
+      'const run = ' + JSON.stringify(run) + '; const s = require(path.join(run, "spirit", "script.js"));' +
       'const tell = function (o) { try { parentPort.postMessage(o); } catch (e) { /* gone */ } };' +
       'process.on("uncaughtException", function (e) { tell({ err: String(e && e.message || e) }); process.exit(0); });' +
       // WHAT ITS LOAD PULLED IN (goal/G47.6, box point 3: "the classifier loads each script alone in its own process and
