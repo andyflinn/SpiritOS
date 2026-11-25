@@ -90,6 +90,39 @@ test.run('the face page asked with a token in its address serves face.html', 0.2
 test.run('the face page asked with a token in its address sets no login cookie', 0.8, function () {
   return (!!tokened && !tokened.cookie.some(function (c) { return /spirit_face=[^;]+/.test(c) && !/spirit_face=;/.test(c); })) || false;
 }, test.limit.quick);
+// THE RELAY'S ROUTES UNDER /spirit (goal/G49.18, box v6: "Their names stay as they are, api replaced by spirit":
+// /spirit/relay/post, /spirit/relay/reply and the rest). A route that is there answers a bad body with a refusal of its own,
+// never a 404; the old /api/relay/ names answer 404. The old names are written in pieces, so a move leaves them as they are.
+function postTo(p) {
+  return new Promise(function (resolve) {
+    const body = '{}';
+    const q = http.request({ host: '127.0.0.1', port: SAME.R.port, path: p, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function (r) { r.resume(); resolve(r.statusCode); });
+    q.on('error', function () { resolve(0); });
+    q.setTimeout(10000, function () { q.destroy(); resolve(0); });
+    q.end(body);
+  });
+}
+const OLD_RELAY = function (verb) { return '/' + 'api' + '/relay/' + verb; };
+test.run('the relay has its post route at /spirit/relay/post: a bad body is refused there, not a 404', 0.2, async function () {
+  if (!SAME.R || !SAME.R.up) return false;
+  const s = await postTo('/spirit/relay/post');
+  return (s >= 400 && s < 500 && s !== 404) || false;
+}, test.limit.quick);
+test.run('the relay has its reply route at /spirit/relay/reply: a bad body is refused there, not a 404', 0.2, async function () {
+  if (!SAME.R || !SAME.R.up) return false;
+  const s = await postTo('/spirit/relay/reply');
+  return (s >= 400 && s < 500 && s !== 404) || false;
+}, test.limit.quick);
+test.run('the old /api/relay/post is no route: 404 or 405', 0.8, async function () {
+  if (!SAME.R || !SAME.R.up) return false;
+  const s = await postTo(OLD_RELAY('post'));
+  return (s === 404 || s === 405) || false;
+}, test.limit.quick);
+test.run('the old /api/relay/reply is no route: 404 or 405', 0.8, async function () {
+  if (!SAME.R || !SAME.R.up) return false;
+  const s = await postTo(OLD_RELAY('reply'));
+  return (s === 404 || s === 405) || false;
+}, test.limit.quick);
 // The two let go here, so the sections after it have the lab's relays.
 test.run('the scratch relay and node are let go', 0.2, async function () {
   try { if (SAME.R && SAME.R.stop) await SAME.R.stop(); else if (SAME.R && SAME.R.release) await SAME.R.release(); } catch (e) { return false; }

@@ -68,7 +68,13 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // companion data.js"): the stand-in runs that data.js once, attaching itself to the data set. A data.js asked for
   // directly is only recorded.
   const ran = {};
-  const dataScript = function (p) { const b = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1]; const f = b ? path.join(RUN, b, 'data.js') : ''; if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; PAGE_LOAD.runAsPage(f); } };
+  // A BRANCH OF THE NEW SHAPE (goal/G49.15, step 3): its script.js brings its client/script.js, the moved data.js, as fs does.
+  const dataScript = function (p) {
+    const old = (/^(spirit\/(?:app\/)?[^/]+)\/api\.js$/.exec(p) || [])[1];
+    const neu = (/^(spirit\/(?:app\/)?[^/]+)\/script\.js$/.exec(p) || [])[1];
+    const f = old ? path.join(RUN, old, 'data.js') : neu ? path.join(RUN, neu, 'client', 'script.js') : '';
+    if (f && !ran[f] && fs.existsSync(f)) { ran[f] = true; PAGE_LOAD.runAsPage(f); }
+  };
   global.window.spirit.requireScript = function (p) { required.push(String(p)); dataScript(String(p)); if (p === 'spirit/fs/script.js') return Promise.resolve(fsFamily); if (!STANDS[p]) return Promise.resolve({}); if (!(p in made)) made[p] = STANDS[p](); return Promise.resolve(made[p]); };
   PAGE_LOAD.runAsPage(FILE);
   await settle();
@@ -84,7 +90,7 @@ test.run('it requires the shared row element, and no data script', 0.2, function
   if (!loaded) return false;
   return loaded.indexOf('spirit/element/row/script.js') !== -1 && !loaded.some(function (p) { return /data\.js$/.test(p); }) ? true : false;
 }, test.limit.quick);
-test.run('it requires the fs branch\'s interface, spirit/fs/script.js, whose data.js puts the fs branch\'s data on the page', 0.2, function () {
+test.run('it requires the fs branch\'s interface, spirit/fs/script.js, whose client/script.js puts the fs branch\'s data on the page', 0.2, function () {
   if (!loaded) return false;
   return loaded.indexOf('spirit/fs/script.js') !== -1 && F && typeof F.file === 'function' ? true : false;
 }, test.limit.quick);

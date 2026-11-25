@@ -2768,6 +2768,18 @@ if (!GIVEN.length) PARTS.forEach(function (part) { runPart(part, []); });
 // file names it). Over the whole repository, the files outside spirit/run too, by path and by content, in any case. The name
 // is built here, so this file names it nowhere itself.
 if (!GIVEN.length) {
+  // NO ROUTE UNDER /api/ (goal/G49.18, box v6: "both node and relay server have at the root of their path-routes the stupid
+  // API/ node. of course this must be 'spirit'"; the rename "about thirty product files that name a route, the relay host docs
+  // and bash/card-ask.js, all in one push"). Over the whole repository, code, docs, host scripts and tests alike, nothing names
+  // /api/spirit or a /api/relay/ route. The words are built here, so this file names them nowhere itself.
+  test.run('no tracked file names a route under /api/: no /api/spirit and no /api/relay/', 0.4, function () {
+    const old = '/' + ['api', ''].join('/');
+    const top = require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: RUN_DIR, encoding: 'utf8' }).trim();
+    let hits = '';
+    try { hits = require('child_process').execFileSync('git', ['grep', '-l', '-I', '-E', old.replace(/\//g, '\\/') + '(spirit|relay/)'], { cwd: top, encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { hits = String((e && e.stdout) || ''); }
+    const files = hits.split('\n').filter(Boolean).filter(function (f) { return !/codeMirror\/|chokidar\/|readdirp\//.test(f); });
+    return files.length === 0 || false;
+  }, test.limit.slow);
   test.run('no tracked file names the deleted verifier, by path or by content', 0.4, function () {
     const word = ['desk', 'Verify'].join('');
     const top = require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: RUN_DIR, encoding: 'utf8' }).trim();

@@ -51,6 +51,31 @@ test.run('the body of "/" is spirit/shell/face.html as it stands on the disc', 0
   return W.body === W.face || false;
 }, test.limit.quick);
 
+// THE DOOR AT /spirit (goal/G49.18, box v6: "both node and relay server have at the root of their path-routes the stupid API/
+// node. of course this must be 'spirit'"; "The node's door, /api/spirit, becomes /spirit"). The old address is written in
+// pieces, so a move that rewrites every path leaves it as it is.
+const OLD_DOOR = '/' + 'api' + '/spirit';
+const askDoor = function (at, body) {
+  return fetch(W.node.base + at, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    .then(function (r) { return r.text().then(function (t) { let b = null; try { b = JSON.parse(t); } catch (e) { b = null; } return { status: r.status, body: b }; }); }, function () { return { status: 0, body: null }; });
+};
+test.run('a call POSTed to /spirit is answered: node.card answers this node\'s card', 0.2, async function () {
+  if (!W.node || !W.node.up) return false;
+  const r = await askDoor('/spirit', { call: 'node.card', args: {} });
+  return (r.status === 200 && !!r.body && typeof r.body.publicKey === 'string') || false;
+}, test.limit.quick);
+test.run('the old door, /api/spirit, answers no call', 0.8, async function () {
+  if (!W.node || !W.node.up) return false;
+  const r = await askDoor(OLD_DOOR, { call: 'node.card', args: {} });
+  return (r.status === 404 && !(r.body && r.body.publicKey)) || false;
+}, test.limit.quick);
+test.run('a GET of /spirit/script.js is still the spirit object, the file, beside the door', 0.2, async function () {
+  if (!W.node || !W.node.up) return false;
+  const r = await fetch(W.node.base + '/spirit/script.js');
+  const text = await r.text();
+  return (r.status === 200 && text === fs.readFileSync(path.join(RUN, 'spirit', 'script.js'), 'utf8')) || false;
+}, test.limit.quick);
+
 // opened in a real Chrome, "/" is the face: the spirit object, ready
 test.run('a Chrome page opens at "/"', 0.2, async function () {
   if (!W.node || !W.node.up) return false;
