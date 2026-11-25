@@ -21,6 +21,7 @@
     'api', 
     'app', 
     'chat',
+    'client',
     'console',
     'contact',
     'data',
