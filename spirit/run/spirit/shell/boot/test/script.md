@@ -1,8 +1,8 @@
 # spirit/shell/boot/script.js
 
 The face's boot (goal/G41.3): face/shell.js moved into shell/ as shell/boot.js, and the rest of face/ with it, under the
-same names; since goal/G43.18 they are in spirit/shell/, served at the addresses they always had (spirit/server/serveCommon/script.js,
-PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream, its parts and the shell the node names
+same names; since goal/G43.18 they are in spirit/shell/, and since goal/G49.13 each is asked and served at its own run path; the
+address map (serveCommon's PAGE_FILES and pageFile) is gone. spirit.js loads it on a face page. It boots only itself, the stream, its parts and the shell the node names
 (goal/G43.18). The old shell's face apps it once loaded alone went with `shell/` (goal/G43.30).
 
 ## Where it lives, and what moved with it
@@ -12,9 +12,10 @@ PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream
   ghost.svg (index.html went with the old shell, goal/G43.30), and spirit.js is in spirit/; none of them is left at the run root or in shell/.
 - `shell/login/` is gone (goal/G43.18, box v29: *"The login is spirit.faceLogin, in spirit.js, no app ... shell/login/ and its
   login.json go."*).
-- spirit.js loads `shell/boot.js` on a face page (its FACE list): at home from the node; on a face, logged in, over the
+- spirit.js loads `spirit/shell/boot/script.js` on a face page (its FACE list): at home from the node; on a face, logged in, over the
   link spirit.js made.
-- face.html, served at `/face.html`, links `/shell/favicon.svg` and no sheet (box v29: *"boot.js, shell.css, face.css
+- face.html names `/spirit/script.js` and `/spirit/shell/favicon.svg` by their own paths, and no sheet; the servers have no
+  pageFile (box v29: *"boot.js, shell.css, face.css
   and every other part of the shell come from the home node over that link"*).
 - boot names no old `face/` path and no login app. (The relay's routes `/face/allowed`, `/face/call`, `/face/file`,
   `/face/stream` and `/face/api` are routes, not files, and stay.)

@@ -32,7 +32,7 @@ test.run('nothing of face/ is left: its files moved into shell/', 0.2, function 
   return !left.length || false;
 }, test.limit.quick);
 // goal/G43.18 (Andy: "i want all vital files under run://spirit/"): the boot, the page and their files are in spirit/shell/,
-// served at the addresses they always had (spirit/server/serveCommon/script.js, PAGE_FILES).
+// each at its own run path since goal/G49.13.
 test.run('the seal, the sheets, the icons and the pages are in spirit/shell/, spirit.js in spirit/', 0.2, function () {
   const moved = ['spirit/shell/seal/script.js', 'spirit/shell/face.css', 'spirit/shell/favicon.svg', 'spirit/shell/face.html', 'spirit/shell/shell.css', 'spirit/shell/ghost.svg', 'spirit/script.js'].filter(function (p) { return !fs.existsSync(path.join(RUN, p)); });
   return !moved.length || false;
@@ -41,16 +41,19 @@ test.run('nothing of them is left at the run root or in shell/', 0.2, function (
   const leftBehind = ['face.html', 'index.html', 'shell.css', 'favicon.svg', 'spirit.js', 'shell/boot.js', 'shell/seal.js', 'shell/face.css', 'shell/favicon.svg', 'shell/tokens.css', 'shell/elements.css'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); });
   return !leftBehind.length || false;
 }, test.limit.quick);
-test.run('the addresses stay: /face.html, /spirit.js, /shell/boot.js and /favicon.svg are served from their new files', 0.2, function () {
-  return pages.pageFile('face.html') === 'spirit/shell/face.html' && pages.pageFile('spirit.js') === 'spirit/script.js' && pages.pageFile('shell/boot.js') === 'spirit/shell/boot/script.js' && pages.pageFile('favicon.svg') === 'spirit/shell/ghost.svg' ? true : false;
+// EVERY PAGE FILE AT ITS OWN RUN PATH (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM"):
+// no address map; face.html names the spirit object and its icon by their own paths.
+test.run('no page address map: the servers have no pageFile, and face.html names /spirit/script.js and /spirit/shell/favicon.svg', 0.2, function () {
+  const page = read('spirit/shell/face.html') || '';
+  return typeof pages.pageFile === 'undefined' && page.indexOf('src="/spirit/script.js"') !== -1 && page.indexOf('href="/spirit/shell/favicon.svg"') !== -1 ? true : false;
 }, test.limit.quick);
 // goal/G43.18, box v29: "The login is spirit.login, in spirit.js, no app ... shell/login/ and its login.json go."
 test.run('shell/login/ is gone: the login is spirit.faceLogin', 0.2, function () {
   return !fs.existsSync(path.join(RUN, 'shell', 'login')) || false;
 }, test.limit.quick);
-test.run('spirit.js loads shell/boot.js on a face page', 0.2, function () {
+test.run('spirit.js loads spirit/shell/boot/script.js on a face page', 0.2, function () {
   const loader = code('spirit/script.js') || '';
-  return (/var FACE = \['shell\/boot\.js'\]/).test(loader) && !(/face\/shell\.js/).test(loader) ? true : false;
+  return (/var FACE = \['spirit\/shell\/boot\/script\.js'\]/).test(loader) && !(/face\/shell\.js/).test(loader) ? true : false;
 }, test.limit.quick);
 // Box v29: "boot.js, shell.css, face.css and every other part of the shell come from the home node over that link".
 test.run('face.html links /shell/favicon.svg and no sheet', 0.2, function () {
@@ -70,7 +73,7 @@ test.run('it reads no component but its own: spirit\'s libraries, the sheets and
   if (!boot) return false;
   const paths = (boot.match(/['"](?:spirit|shell)\/[\w/.-]+\.(?:js|css|json)['"]|['"]shell\.css['"]/g) || []).map(function (s) { return s.slice(1, -1); });
   const allowed = function (p) {
-    return p === 'shell.css' || p === 'shell/face.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) ||
+    return p === 'spirit/shell/shell.css' || p === 'spirit/shell/face.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) ||
       p === 'spirit/element/joinSteps/script.js' ||
       // goal/G41.19: the file tree's row element, which spirit.js does not load.
       p === 'spirit/element/search/file/row/script.js' ||
