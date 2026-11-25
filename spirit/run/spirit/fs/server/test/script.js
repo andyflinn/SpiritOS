@@ -162,6 +162,43 @@ test.run('the fs-watcher job hears a file made.txt created in its folder', 0.2, 
   return /^HEARD/.test(jobsOut) ? true : false;
 }, test.limit.slow);
 
+// A FILE ALREADY GONE IS NO FAILURE (goal/G49.19; cw's find on Andy's Windows node, a Windows EPERM on testicle.db-journal,
+// a file SQLite makes and deletes within moments, marked spirit.fs failed and stopped the file cache's feed; Andy: "cw, go",
+// to "an error about a file that is already gone, EPERM, ENOENT or EBUSY on a path no longer there, is no failure; the
+// watcher goes on, and only a real error fails the job"). The watcher's own error event is emitted on it, caught by the
+// FSWatcher it registers its error handler on, and spirit.fs's status read back after.
+function statusAfter(code, gone) {
+  return child([
+    "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
+    "require(" + JSON.stringify(path.join(RUN, 'spirit', 'script.js')) + ");",
+    "const C = spirit.requireScript('spirit/fs/chokidar/index.js');",
+    "let watcher = null; const on = C.FSWatcher.prototype.on;",
+    "C.FSWatcher.prototype.on = function (ev) { if (ev === 'error') watcher = this; return on.apply(this, arguments); };",
+    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
+    "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
+    "fs.writeFileSync(path.join(dir, 'there.db'), 'x');",
+    "const job = W.start(dir, jobs);",
+    "setTimeout(function () {",
+    "  const at = path.join(dir, " + JSON.stringify(gone ? 'testicle.db-journal' : 'there.db') + ");",
+    "  if (!watcher) { console.log('NO-WATCHER'); process.exit(0); }",
+    "  watcher.emit('error', Object.assign(new Error(" + JSON.stringify(code) + " + ': ' + at), { code: " + JSON.stringify(code) + ", path: at }));",
+    "  setTimeout(function () { const j = jobs.getJob(job.id); console.log('STATUS ' + (j ? j.status : 'none')); process.exit(0); }, 300);",
+    "}, 1500);",
+    "setTimeout(function () { process.exit(0); }, 12000);",
+  ].join('\n'), path.join(RUN, 'vendoredFolders-gone-test'));
+}
+['EPERM', 'ENOENT', 'EBUSY'].forEach(function (code) {
+  test.run('an ' + code + ' on a file already gone leaves spirit.fs running', 0.2, function () {
+    return statusAfter(code, true) === 'STATUS running' || false;
+  }, test.limit.slow);
+});
+test.run('an EPERM on a file still there marks spirit.fs failed', 0.2, function () {
+  return statusAfter('EPERM', false) === 'STATUS failed' || false;
+}, test.limit.slow);
+test.run('an error of another kind, ENOSPC, marks spirit.fs failed', 0.2, function () {
+  return statusAfter('ENOSPC', true) === 'STATUS failed' || false;
+}, test.limit.slow);
+
 // THE CORE FLAG IS KEPT ON THE FILE LIST (goal/G47.1; Andy: "stick that flag on the fucking file list, then you have to
 // check each file once with isCore()"): the tree sent to a page that connects reads nothing from disc. Asked on every
 // send, it read an app's <name>.json once per file of that app, on the node's one thread (17 of 45 s on Andy's node).
