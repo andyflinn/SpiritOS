@@ -289,7 +289,7 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeString', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'processJob', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
