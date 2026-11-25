@@ -39,7 +39,7 @@ const C = {};
 
 test.run('rules, handed the names of items, parts and state, answers keep, shed and answer', 0.2, function () {
   let rules = null;
-  try { rules = require(FILE); } catch (e) { return false; }
+  try { rules = require(FILE).rules; } catch (e) { return false; }
   if (typeof rules !== 'function') return false;
   Object.assign(C, rules(N));
   return ['keep', 'shed', 'answer'].every(function (f) { return typeof C[f] === 'function'; }) || false;

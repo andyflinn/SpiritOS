@@ -78,7 +78,7 @@ test.run('a file verb asked for a plain path inside the run folder passes the pa
 // sit in media/, which the node's write rules let a caller write; spirit/ holds core files, refused alike on both sides.
 const fsNode = require('fs');
 const { spawnSync } = require('child_process');
-const tempFolder = LOADER.requireScript('spirit/tempFolder/script.js');
+const tempFolder = LOADER.requireScript('spirit/tempFolder/script.js').tempFolder;
 test.after(function () { try { fsNode.rmSync(tempFolder.path('spirit/fs/test/api'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const LOCAL = {};
 test.run('the world: a run root with no node, and a process asking its spirit.fs', 0.2, function () {

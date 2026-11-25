@@ -6,6 +6,8 @@
 // (spirit/fs/server/script.js) asks it for each folder and keeps the answer on the folder's row as api.
 //
 //   (dir, has) -> true when dir holds dir/api.js and dir/data.js; has(path) answers whether the tree holds that path
-module.exports = function api(dir, has) {
+function api(dir, has) {
   return !!dir && has(dir + '/api.js') && has(dir + '/data.js');
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { api: api };

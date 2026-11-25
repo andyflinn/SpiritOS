@@ -35,10 +35,10 @@ const db = new DatabaseSync(DB_FILE);
 // Each table's server by its full path, written out (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
 const tables = {};
 const ctx = { db: db, dbFile: DB_FILE, tables: tables, publish: function (x) { appServer.publish(x); } };
-tables.provider = spirit.requireScript('spirit/app/agent/table/provider/server.js')(ctx);
-tables.model = spirit.requireScript('spirit/app/agent/table/model/server.js')(ctx);
-tables.persona = spirit.requireScript('spirit/app/agent/table/persona/server.js')(ctx);
-tables.job = spirit.requireScript('spirit/app/agent/table/job/server.js')(ctx);
+tables.provider = spirit.requireScript('spirit/app/agent/table/provider/server.js').table(ctx);
+tables.model = spirit.requireScript('spirit/app/agent/table/model/server.js').table(ctx);
+tables.persona = spirit.requireScript('spirit/app/agent/table/persona/server.js').table(ctx);
+tables.job = spirit.requireScript('spirit/app/agent/table/job/server.js').table(ctx);
 
 const verbs = {};
 Object.keys(tables).forEach(function (name) { verbs[name] = tables[name].verb; });

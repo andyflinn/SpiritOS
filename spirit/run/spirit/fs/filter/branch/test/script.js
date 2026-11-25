@@ -25,9 +25,9 @@ let F = null;
 try { F = SPIRIT.requireScript('spirit/fs/filter/branch/script.js'); } catch (e) { F = null; }
 // A folder's files as the fs cache holds them: has(path) is true for each path listed.
 function hasOf(files) { return function (p) { return files.indexOf(p) !== -1; }; }
-function ask(dir, files) { try { return F(dir, hasOf(files)); } catch (e) { return 'threw'; } }
+function ask(dir, files) { try { return F.branch(dir, hasOf(files)); } catch (e) { return 'threw'; } }
 
-test.run('it is a function, (dir, has)', 0.2, function () { return typeof F === 'function' || false; }, test.limit.quick);
+test.run('it holds its function, branch(dir, has)', 0.2, function () { return typeof (F && F.branch) === 'function' || false; }, test.limit.quick);
 test.run('a folder holding script.js and client/script.js is a branch', 0.2, function () { return ask('spirit/zz', ['spirit/zz/script.js', 'spirit/zz/client/script.js']) === true || false; }, test.limit.quick);
 test.run('a folder holding script.js alone is not a branch, as contact, fs and job are today', 0.2, function () { return ask('spirit/zz', ['spirit/zz/script.js']) === false || false; }, test.limit.quick);
 test.run('a folder holding client/script.js alone is not a branch', 0.2, function () { return ask('spirit/zz', ['spirit/zz/client/script.js']) === false || false; }, test.limit.quick);

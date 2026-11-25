@@ -5,7 +5,9 @@
 // its manifest <name>/<name>.json. The fs cache's writer keeps the answer on the folder's row as app.
 //
 //   (dir, has) -> true when dir holds dir/<its own name>.json
-module.exports = function app(dir, has) {
+function app(dir, has) {
   const name = String(dir || '').slice(String(dir || '').lastIndexOf('/') + 1);
   return !!name && has(dir + '/' + name + '.json');
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { app: app };

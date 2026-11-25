@@ -618,7 +618,7 @@
       var mod = require(file);
       // A SCRIPT ANSWERS AN OBJECT OR A FUNCTION, OR FAILS (goal/G49.9; Andy: "of course spirit.requireScript must allways
       // return either an object or a function... or fail/throw."), so its folder's other scripts can stand under it.
-      if (!placeable(mod)) return Promise.reject(refusal('not-placeable', p + ' exposes ' + typeof mod + ': a script exposes an object or a function'));
+      if (!placeable(mod)) return Promise.reject(refusal('not-placeable', p + ' exposes ' + typeof mod + ': a script exposes an object'));
       nodeOnce[p] = mod;
       placeAt(required, p, mod);
       return mod;
@@ -641,7 +641,7 @@
       var box = null;
       try { box = injectBoxed(p, text(r.bytes)); } finally { collecting = outer; }
       if (box && box.set) {
-        if (!placeable(box.exports)) throw refusal('not-placeable', p + ' exposes ' + typeof box.exports + ': a script exposes an object or a function');
+        if (!placeable(box.exports)) throw refusal('not-placeable', p + ' exposes ' + typeof box.exports + ': a script exposes an object');
         placeAt(required, p, box.exports);
       }
       return Promise.all(tree).then(function () { return keptAt(p); });
@@ -1345,8 +1345,10 @@
       return makeLink().then(function () { return boot(FACE); });
     }, function (e) { drawLogin('The relay did not answer: ' + ((e && e.message) || e)); return null; });
   }
-  // What a script may expose: an object or a function, so its folder's other scripts can stand under it.
-  function placeable(v) { return !!v && (typeof v === 'object' || typeof v === 'function'); }
+  // What a script may expose: an object, so its folder's other scripts can stand under it. A function is refused, as a bare
+  // string is (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!"): a function at a
+  // folder's path would take that folder's scripts as its properties, and its own name, length and prototype cannot be overwritten.
+  function placeable(v) { return !!v && typeof v === 'object'; }
   // A page script run in a module box: { set, exports }, set true when it put anything into module.exports. A stylesheet is
   // injected as it is and answers null. No vendored script comes this way: face.html loads codeMirror by its own tags (goal/G49.15).
   var boxes = 0;

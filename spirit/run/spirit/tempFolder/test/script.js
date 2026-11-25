@@ -38,8 +38,8 @@ const NODE = crypto.createHash('sha256').update(KEY).digest('hex').slice(0, 16);
 
 test.run('it loads through spirit.requireScript and stands at spirit.required.spirit.tempFolder', 0.4, function () {
   if (!fs.existsSync(FILE)) return false;
-  T = spirit.requireScript('spirit/tempFolder/script.js');
-  return typeof T === 'function' && spirit.required.spirit && spirit.required.spirit.tempFolder === T || false;
+  T = spirit.requireScript('spirit/tempFolder/script.js').tempFolder;
+  return typeof T === 'function' && spirit.required.spirit && spirit.required.spirit.tempFolder.tempFolder === T || false;
 }, test.limit.quick);
 // The box: "the system temp folder, then spirit, then the node, then the route".
 test.run('a job\'s folder is the system temp folder, then spirit, then the node, then the route', 0.4, function () {

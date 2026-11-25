@@ -25,9 +25,9 @@ let F = null;
 try { F = SPIRIT.requireScript('spirit/fs/filter/api/script.js'); } catch (e) { F = null; }
 // A folder's files as the fs cache holds them: has(path) is true for each path listed.
 function hasOf(files) { return function (p) { return files.indexOf(p) !== -1; }; }
-function ask(dir, files) { try { return F(dir, hasOf(files)); } catch (e) { return 'threw'; } }
+function ask(dir, files) { try { return F.api(dir, hasOf(files)); } catch (e) { return 'threw'; } }
 
-test.run('it is a function, (dir, has)', 0.2, function () { return typeof F === 'function' || false; }, test.limit.quick);
+test.run('it holds its function, api(dir, has)', 0.2, function () { return typeof (F && F.api) === 'function' || false; }, test.limit.quick);
 test.run('a folder holding api.js and data.js is api', 0.2, function () { return ask('spirit/zz', ['spirit/zz/api.js', 'spirit/zz/data.js']) === true || false; }, test.limit.quick);
 test.run('a folder holding api.js alone is not api', 0.2, function () { return ask('spirit/zz', ['spirit/zz/api.js']) === false || false; }, test.limit.quick);
 test.run('a folder holding data.js alone is not api', 0.2, function () { return ask('spirit/zz', ['spirit/zz/data.js']) === false || false; }, test.limit.quick);

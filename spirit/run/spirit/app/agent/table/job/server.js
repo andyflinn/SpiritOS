@@ -10,11 +10,13 @@ require('../../../../script.js');
 // No description since goal/G41.21 (Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.").
 const { rowTable } = spirit.requireScript('spirit/app/agent/table/rowTable.js');
 
-module.exports = function (ctx) {
+function table(ctx) {
   return rowTable(ctx.db, {
     name: 'job',
     fields: { loop: 'bool?', job: 'text?', bundle: 'text?', provider: 'key?', persona: 'key?' },
     // goal/G41.21: "# mandatory fields (server AND ui)"; "job: icon, label".
     required: ['icon', 'label'],
   }, ctx.publish);
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { table: table };

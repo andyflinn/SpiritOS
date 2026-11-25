@@ -232,7 +232,7 @@ function createFaceHome(opts) {
       dropUpload(id);
       // ITS WORK FILE FROM THE ONE TEMP HELPER (goal/G47.1, the box: "nothing else builds a temp path"): a folder of its own
       // per transfer, spirit/upload/<id> under the node's own temp folder (the node's job is spirit), removed with the transfer.
-      const dir = spirit.requireScript('spirit/tempFolder/script.js')('spirit/upload/' + id);
+      const dir = spirit.requireScript('spirit/tempFolder/script.js').tempFolder('spirit/upload/' + id);
       const file = require('path').join(dir, 'part');
       try { fsm.writeFileSync(file, ''); } catch (e) { json(res, 500, { ok: false, code: 'not-saved', error: 'the work file could not be made: ' + e.message }); return; }
       uploads.set(id, { file: file, dir: dir, path: rel, size: size, of: of, next: 0, written: 0, at: nowMs() });

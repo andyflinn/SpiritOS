@@ -33,7 +33,7 @@ function pluginOf(label) {
   return spirit.requireScript('spirit/app/agent/provider/openai/openai.js');
 }
 
-module.exports = function (ctx) {
+function table(ctx) {
   const table = rowTable(ctx.db, {
     name: 'provider',
     // goal/G41.21, box v17: "The provider table gains a field, model: the id of one row of the model table, the
@@ -76,4 +76,6 @@ module.exports = function (ctx) {
     });
   };
   return table;
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { table: table };

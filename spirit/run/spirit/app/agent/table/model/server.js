@@ -26,7 +26,7 @@ function listOfWords(json) {
   return Array.isArray(v) && v.every(function (w) { return typeof w === 'string'; });
 }
 
-module.exports = function (ctx) {
+function table(ctx) {
   const table = rowTable(ctx.db, {
     name: 'model',
     fields: { providerId: 'key?', capabilities: 'spirit/type/string/json/script.js?' },
@@ -57,4 +57,6 @@ module.exports = function (ctx) {
     });
   };
   return table;
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { table: table };

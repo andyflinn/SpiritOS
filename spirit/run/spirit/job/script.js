@@ -24,7 +24,7 @@ function formatDuration(ms) {
 
 // ITS OWN STATE, ON NO KERNEL (goal/G40.6). Andy, 2026-10-25: "let jobs.js take care of its own shit." The server's
 // statistics and the job functions are this module's; the node server gets the functions back from this call.
-module.exports = function installJobs(port) {
+function installJobs(port) {
 
   const jobsMap = new Map();
   const events = new EventEmitter();
@@ -666,4 +666,6 @@ module.exports = function installJobs(port) {
     startNodeServers: startNodeServers,
     startStatsJob: startStatsJob,
   };
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { installJobs: installJobs };

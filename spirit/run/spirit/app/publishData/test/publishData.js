@@ -18,7 +18,7 @@ const SP = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SP.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = SP.requireScript('spirit/tempFolder/script.js');
+const tempFolder = SP.requireScript('spirit/tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/publishData/test/publishData/' + name + tempAsked); }
 test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/publishData/test/publishData'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });

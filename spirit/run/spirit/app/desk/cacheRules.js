@@ -17,7 +17,7 @@ require('../../script.js');
 // only one goal, then you shed the longest untouched item, LOCK, stock and barrel, / when there is only one goal with
 // one item you shed the oldest chat line." A goal's own row is no item, so it stays with its goal. Rows of no goal are
 // never shed.
-module.exports = function rules(N) {
+function rules(N) {
   var ITEMS = N.items;
   var PARTS = N.parts;
   var STATE = N.state;
@@ -110,4 +110,6 @@ module.exports = function rules(N) {
     return null;
   }
   return { keep: keep, shed: shed, answer: answer };
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { rules: rules };

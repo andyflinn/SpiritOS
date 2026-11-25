@@ -12,7 +12,7 @@ const path = require('path');
 // CHROME PROFILES FROM THE ONE TEMP HELPER (goal/G47.1, the box: "nothing else builds a temp path"): each under a route of
 // this file's own, spirit/test/headLessChrome, named by a random suffix (never a process id), so a profile its watcher removes
 // after the test has ended is no suite's leftover.
-const tempFolder = require('../tempFolder/script.js');
+const tempFolder = require('../tempFolder/script.js').tempFolder;
 const PROFILES = 'spirit/test/headLessChrome';
 const { spawn, execSync } = require('child_process');
 

@@ -43,7 +43,7 @@ test.run('it runs on a window of its own and places itself at spirit.required.sp
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
   win.spirit.requireScript(SUBJECT);
   await settle();
-  P = ((win.spirit.required.spirit || {}).element || {}).progressBar;
+  P = (((win.spirit.required.spirit || {}).element || {}).progressBar || {}).progressBar;
   return typeof P === 'function' || false;
 }, test.limit.quick);
 

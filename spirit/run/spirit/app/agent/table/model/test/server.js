@@ -29,7 +29,7 @@ test.run('spirit/app/agent/table/model/server.js exposes an object holding table
 }, test.limit.quick);
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js');
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/model/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -95,8 +95,8 @@ test.run('server.js, handed a context, answers the model table with its verb and
   X.scratch = ownTemp('spirit-model');
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
   const ctx = X.ctx = { db: db, dbFile: path.join(X.scratch, 'agent.db'), tables: {}, publish: function (x) { X.published.push(x); } };
-  ctx.tables.provider = SPIRIT.requireScript('spirit/app/agent/table/provider/server.js')(ctx);
-  const t = X.t = ctx.tables.model = SPIRIT.requireScript('spirit/app/agent/table/model/server.js')(ctx);
+  ctx.tables.provider = SPIRIT.requireScript('spirit/app/agent/table/provider/server.js').table(ctx);
+  const t = X.t = ctx.tables.model = SPIRIT.requireScript('spirit/app/agent/table/model/server.js').table(ctx);
   X.cols = db.prepare('PRAGMA table_info("model")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : false;
 }, test.limit.quick);

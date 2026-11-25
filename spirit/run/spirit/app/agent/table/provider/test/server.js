@@ -30,7 +30,7 @@ test.run('spirit/app/agent/table/provider/server.js exposes an object holding ta
 }, test.limit.quick);
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = S.requireScript('spirit/tempFolder/script.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/provider/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -64,7 +64,7 @@ test.run('server.js, handed its context, answers the table, its verb and its has
   X.scratch = ownTemp('spirit-provider');
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
   const ctx = X.ctx = { db: db, dbFile: path.join(X.scratch, 'agent.db'), tables: {}, publish: function (x) { X.published.push(x); } };
-  const t = X.t = ctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js')(ctx);
+  const t = X.t = ctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js').table(ctx);
   X.cols = db.prepare('PRAGMA table_info("provider")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : false;
 }, test.limit.quick);
@@ -189,7 +189,7 @@ const usable = function (id) { try { return X.db.prepare('SELECT unusable FROM "
 test.after(function () { if (A.server && A.server.listening) return new Promise(function (r) { A.server.close(r); }); });
 test.run('ask of a row that is not there is refused no-such-row', 0.2, async function () {
   if (!X.t) return false;
-  X.ctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js')(X.ctx);
+  X.ctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js').table(X.ctx);
   A.server = http.createServer(function (req, res) {
     stand.heard.push({ url: req.url, headers: req.headers });
     const u = new URL(req.url, 'http://x');
@@ -551,8 +551,8 @@ test.run('the page server-picker.html draws the provider\'s detail with the real
   global.spirit.checkArgs = require(path.join(RUN, 'spirit', 'script.js')).checkArgs;
   const pdir = PK.pdir;
   const pctx = { db: PK.db = new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
-  pctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js')(pctx);
-  pctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js')(pctx);
+  pctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js').table(pctx);
+  pctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js').table(pctx);
   const PV = pctx.tables.provider.verb;
   const M = pctx.tables.model.verb;
   const ANTH = call(PV, { op: 'add', icon: '🅰', label: 'Anthropic', url: 'https://anthropic.example' }).id;

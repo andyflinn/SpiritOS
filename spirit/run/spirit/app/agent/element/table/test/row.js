@@ -19,7 +19,7 @@ const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = S.requireScript('spirit/tempFolder/script.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/element/table/test/row/' + name + tempAsked); }
 // THE DATABASES IT OPENS ARE CLOSED BEFORE ITS TEMP FOLDER GOES (goal/G47.1, no pollution; testicle's "it leaves no temp
@@ -514,8 +514,8 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
   const pageSpiritObj = global.spirit;
   global.spirit = require(path.join(RUN, 'spirit', 'script.js'));
   try {
-    N.sctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js')(N.sctx);
-    N.sctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js')(N.sctx);
+    N.sctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js').table(N.sctx);
+    N.sctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js').table(N.sctx);
   } finally { global.spirit = pageSpiritObj; }
   N.PA = N.sctx.tables.provider.verb.handler({ op: 'add', icon: '🏢', label: 'Mine', url: 'https://mine.example' }).id;
   N.PB = N.sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs', url: 'https://theirs.example' }).id;
@@ -609,8 +609,8 @@ test.run('picking a persona, with the provider not picked yet, saves the job wit
   const pageSpiritAgain = global.spirit;
   global.spirit = require(path.join(RUN, 'spirit', 'script.js'));
   try {
-    N.sctx.tables.persona = S.requireScript('spirit/app/agent/table/persona/server.js')(N.sctx);
-    N.sctx.tables.job = S.requireScript('spirit/app/agent/table/job/server.js')(N.sctx);
+    N.sctx.tables.persona = S.requireScript('spirit/app/agent/table/persona/server.js').table(N.sctx);
+    N.sctx.tables.job = S.requireScript('spirit/app/agent/table/job/server.js').table(N.sctx);
   } finally { global.spirit = pageSpiritAgain; }
   J.PZ = viaTables('persona', { op: 'add', icon: '🎭', label: 'A reviewer', persona: 'You review.' }).id;
   J.JZ = viaTables('job', { op: 'add', icon: '📋', label: 'A job' }).id;

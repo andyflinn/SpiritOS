@@ -151,7 +151,7 @@ function child(src, dir) {
 test.run('the fs-watcher job hears a file made.txt created in its folder', 0.2, function () {
   const jobsOut = child([
     "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
-    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ")(1);",
+    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
     "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
     "let job = null; jobs.events.on('job-updated', function (u) {",
     "  if (job && u.id === job.id && u.data && u.data.command && u.data.command.op === 'createFile' && u.data.command.path === 'made.txt') { console.log('HEARD'); process.exit(0); } });",
@@ -180,7 +180,7 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
   const run = function (src) { const r = spawnSync(process.execPath, ['-e', src, RUN], { cwd: RUN, encoding: 'utf8', timeout: 60000 }); return r.stderr ? '' : String(r.stdout || '').trim(); };
   const out = run([
     "const fs = require('fs'), dir = process.argv[1];",
-    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ")(1);",
+    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
     "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
     "const job = W.start(dir, jobs);",
     // goal/G49.2: the tree is spirit.required.spirit.data.fs, through spirit/fs/script.js, which this process's watcher fills; read once it is whole.
@@ -239,7 +239,7 @@ test.run('a scratch tree holds an app zzKept whose json turns intrinsic true and
     const src = [
       "const fs = require('fs'), path = require('path');",
       "const run = process.argv[1];",
-      "const jobs = require(path.join(run, 'spirit', 'job', 'script.js'))(1);",
+      "const jobs = require(path.join(run, 'spirit', 'job', 'script.js')).installJobs(1);",
       "const W = require(path.join(run, 'spirit', 'fs', 'server', 'script.js'));",
       "const job = W.start(run, jobs);",
       "const json = path.join(run, 'spirit', 'app', 'zzKept', 'zzKept.json');",
@@ -295,7 +295,7 @@ test.run('the watcher runs on a scratch folder holding an old branch, a new bran
   try {
     const src = [
       "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
-      "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ")(1);",
+      "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
       "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
       "const job = W.start(dir, jobs);",
       "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'script.js')) + ");",

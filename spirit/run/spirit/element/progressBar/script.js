@@ -28,5 +28,6 @@
   }
 
   // What it hands out, as the loader places it (goal/G49.9: module.exports, on the node and on a page alike).
-  module.exports = progressBar;
+  // An object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+  module.exports = { progressBar: progressBar };
 }());

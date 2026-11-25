@@ -5,6 +5,8 @@
 // script.js are not branch interfaces. The fs cache's writer keeps the answer on the folder's row as branch.
 //
 //   (dir, has) -> true when dir holds dir/script.js and dir/client/script.js
-module.exports = function branch(dir, has) {
+function branch(dir, has) {
   return !!dir && has(dir + '/script.js') && has(dir + '/client/script.js');
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { branch: branch };

@@ -25,9 +25,9 @@ let F = null;
 try { F = SPIRIT.requireScript('spirit/fs/filter/app/script.js'); } catch (e) { F = null; }
 // A folder's files as the fs cache holds them: has(path) is true for each path listed.
 function hasOf(files) { return function (p) { return files.indexOf(p) !== -1; }; }
-function ask(dir, files) { try { return F(dir, hasOf(files)); } catch (e) { return 'threw'; } }
+function ask(dir, files) { try { return F.app(dir, hasOf(files)); } catch (e) { return 'threw'; } }
 
-test.run('it is a function, (dir, has)', 0.2, function () { return typeof F === 'function' || false; }, test.limit.quick);
+test.run('it holds its function, app(dir, has)', 0.2, function () { return typeof (F && F.app) === 'function' || false; }, test.limit.quick);
 test.run('a folder <name> holding <name>.json is an app', 0.2, function () { return ask('spirit/app/zz', ['spirit/app/zz/zz.json']) === true || false; }, test.limit.quick);
 test.run('a folder holding a json of another name is not an app', 0.2, function () { return ask('spirit/app/zz', ['spirit/app/zz/other.json']) === false || false; }, test.limit.quick);
 test.run('a folder holding no json is not an app', 0.2, function () { return ask('spirit/app/zz', ['spirit/app/zz/zz.js']) === false || false; }, test.limit.quick);

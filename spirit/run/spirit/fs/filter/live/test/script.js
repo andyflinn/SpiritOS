@@ -25,9 +25,9 @@ test.run('spirit/fs/filter/live/script.js exposes an object holding live, never 
 let F = null;
 try { F = SPIRIT.requireScript('spirit/fs/filter/live/script.js'); } catch (e) { F = null; }
 // The run folder's files by path, their text: read(path) answers it, null for a file not there.
-function ask(dir, files) { try { return F(dir, function (p) { return Object.prototype.hasOwnProperty.call(files, p) ? files[p] : null; }); } catch (e) { return 'threw'; } }
+function ask(dir, files) { try { return F.live(dir, function (p) { return Object.prototype.hasOwnProperty.call(files, p) ? files[p] : null; }); } catch (e) { return 'threw'; } }
 
-test.run('it is a function, (dir, read)', 0.2, function () { return typeof F === 'function' || false; }, test.limit.quick);
+test.run('it holds its function, live(dir, read)', 0.2, function () { return typeof (F && F.live) === 'function' || false; }, test.limit.quick);
 test.run('an app folder whose node.json says active true is live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/zz/node.json': '{"active":true}' }) === true || false; }, test.limit.quick);
 test.run('an app folder whose node.json says active false is not live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/zz/node.json': '{"active":false}' }) === false || false; }, test.limit.quick);
 test.run('an app folder with no node.json is not live', 0.2, function () { return ask('spirit/app/zz', {}) === false || false; }, test.limit.quick);

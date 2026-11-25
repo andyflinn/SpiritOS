@@ -87,7 +87,7 @@ function closingRows(clone, sinceIso) {
   const src = path.join(clone, 'spirit', 'run', 'spirit', 'state', 'node.db');
   if (!fs.existsSync(src)) end(1, 'publishData: no traffic log at ' + src + ' (is the node run from this clone?)');
   // ITS TEMP FOLDER FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "a job by its route (spirit.app.publishData)").
-  const tmp = spirit.requireScript('spirit/tempFolder/script.js')('spirit.app.publishData/nodeDb');
+  const tmp = spirit.requireScript('spirit/tempFolder/script.js').tempFolder('spirit.app.publishData/nodeDb');
   const copy = path.join(tmp, 'node.db');
   ['', '-wal', '-shm'].forEach(function (x) { if (fs.existsSync(src + x)) fs.copyFileSync(src + x, copy + x); });
   const { DatabaseSync } = require('node:sqlite');

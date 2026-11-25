@@ -29,10 +29,10 @@ require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
-const FLAG_API = spirit.requireScript('spirit/fs/filter/api/script.js');
-const FLAG_BRANCH = spirit.requireScript('spirit/fs/filter/branch/script.js');
-const FLAG_APP = spirit.requireScript('spirit/fs/filter/app/script.js');
-const FLAG_LIVE = spirit.requireScript('spirit/fs/filter/live/script.js');
+const FLAG_API = spirit.requireScript('spirit/fs/filter/api/script.js').api;
+const FLAG_BRANCH = spirit.requireScript('spirit/fs/filter/branch/script.js').branch;
+const FLAG_APP = spirit.requireScript('spirit/fs/filter/app/script.js').app;
+const FLAG_LIVE = spirit.requireScript('spirit/fs/filter/live/script.js').live;
 
 const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
 const RUN_ROOT = path.join(__dirname, '..', '..', '..');

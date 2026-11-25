@@ -52,5 +52,6 @@ function tempFolder(route, opts) {
 }
 tempFolder.path = pathOf;
 
-module.exports = tempFolder;
+// What it hands out: an object holding its two functions (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { tempFolder: tempFolder, path: pathOf };
 }());

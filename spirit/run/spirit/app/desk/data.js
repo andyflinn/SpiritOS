@@ -32,7 +32,7 @@
   var DOORS = 'deskDoors';
   var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
-    ? require('../../script.js').requireScript('spirit/app/desk/cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
+    ? require('../../script.js').requireScript('spirit/app/desk/cacheRules.js').rules({ items: ITEMS, parts: PARTS, state: STATE }) : null;
   // THE TRANSLATOR, ONCE PER DATA SET: spirit.required.spirit.data.makeFamily runs this once, however often the file is loaded.
   var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,

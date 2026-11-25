@@ -7,10 +7,12 @@
 //
 //   (dir, read) -> true when dir is spirit/app/<name> and read(spirit/state/<name>/node.json) is JSON with active true;
 //                  read(path) answers that file's text, or null
-module.exports = function live(dir, read) {
+function live(dir, read) {
   const m = /^spirit\/app\/([^/]+)$/.exec(String(dir || ''));
   if (!m) return false;
   const text = read('spirit/state/' + m[1] + '/node.json');
   if (text == null) return false;
   try { return JSON.parse(String(text)).active === true; } catch (e) { return false; }
-};
+}
+// What it hands out: an object holding its function (goal/G49.16; Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING OBJECT. PERIOD!").
+module.exports = { live: live };

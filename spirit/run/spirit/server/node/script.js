@@ -116,7 +116,7 @@ const arrivals = spirit.requireScript('spirit/arrivals/script.js').createArrival
 // before this file listens (goal/G22.5, Andy 2026-10-13).
 
 
-const jobs = spirit.requireScript('spirit/job/script.js')(port);
+const jobs = spirit.requireScript('spirit/job/script.js').installJobs(port);
 // THE FS CACHE'S WRITER, THE FILE WATCHER, IS THE fs BRANCH'S (goal/G49.15, box v16: "the watcher lands in spirit/fs/server/script.js
 // and is required by the node."), its job in this node's job table.
 spirit.requireScript('spirit/fs/server/script.js').start(ROOT_DIR, jobs);

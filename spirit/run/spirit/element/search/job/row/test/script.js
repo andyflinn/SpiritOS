@@ -43,7 +43,7 @@ test.run('the row runs on a bare window', 0.2, async function () {
   // object, no create, so a status mark is drawn as text (the row asks some parts with no catch, so nothing is refused).
   const STANDS = {
     'spirit/element/row/script.js': { index: function (sub) { indexes.push(sub); return { id: indexes.length, forKey: function (k) { return (held[k] || []).slice(); } }; }, create: function (spec) { specs.push(spec); return { spec: spec }; } },
-    'spirit/element/progressBar/script.js': function (done, total, text) { return '[bar ' + done + '/' + total + ' ' + text + ']'; },
+    'spirit/element/progressBar/script.js': { progressBar: function (done, total, text) { return '[bar ' + done + '/' + total + ' ' + text + ']'; } },
   };
   global.window.spirit.requireScript = function (p) {
     required.push(String(p));

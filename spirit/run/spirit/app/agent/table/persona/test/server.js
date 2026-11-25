@@ -28,7 +28,7 @@ test.run('spirit/app/agent/table/persona/server.js exposes an object holding tab
 }, test.limit.quick);
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = S.requireScript('spirit/tempFolder/script.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/persona/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -60,7 +60,7 @@ test.run('server.js, given its context, answers the table with its verb and its 
   const db = X.db = new DatabaseSync(path.join(X.scratch, 'agent.db'));
   const ctx = { db: db, dbFile: path.join(X.scratch, 'agent.db'), tables: {}, publish: function () {} };
   ctx.tables.grant = { dropJob: function (id) { X.dropped.push(id); } };
-  const t = X.t = ctx.tables.persona = S.requireScript('spirit/app/agent/table/persona/server.js')(ctx);
+  const t = X.t = ctx.tables.persona = S.requireScript('spirit/app/agent/table/persona/server.js').table(ctx);
   X.cols = db.prepare('PRAGMA table_info("persona")').all().map(function (c) { return c.name; });
   return t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function' ? true : false;
 }, test.limit.quick);

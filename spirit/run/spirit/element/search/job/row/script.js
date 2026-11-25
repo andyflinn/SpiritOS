@@ -68,7 +68,7 @@
   // progress) draws it, an ended one or a terminal job none.
   function progressOf(job) {
     var c = job && job.app && typeof job.app === 'object' ? job.app.job : null;
-    var bar = ANSWER['spirit/element/progressBar/script.js'];
+    var bar = (ANSWER['spirit/element/progressBar/script.js'] || {}).progressBar;
     if (!c || typeof c !== 'object' || TERMINAL.indexOf(job.status) !== -1 || typeof bar !== 'function') return '';
     if (c.state === 'start') return bar(0, 0, String(c.name || ''));
     if (c.state === 'progress') return bar(Number(c.done) || 0, Number(c.total) || 0, String(c.text || ''));
