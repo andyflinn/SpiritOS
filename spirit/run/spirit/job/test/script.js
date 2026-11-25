@@ -848,7 +848,7 @@ function mountPart() {
     fs.writeFileSync(path.join(follow, 'follower.js'), [
       "require('../../script.js');",
       "const path = require('path');",
-      "require('../../server/app/script.js').serve({}, { stream: { translator: path.join(__dirname, 'followerRows.js'), cache: true, module: 'a.test' } });",
+      "require('../../server/app/script.js').serve({}, { stream: { translator: 'spirit/app/" + NAME + "/followerRows.js', cache: true, module: 'a.test' } });",
     ].join('\n') + '\n');
     return { root: root, run: run };
   }
@@ -1285,6 +1285,9 @@ function mountPart() {
   }, test.limit.slow);
 }
 mountPart();
+
+// A script's code, its comments left out.
+function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
 
 // ── job.js's app checks read the common file/folder cache (goal/G49.2) ──
 // Andy: "portion to use the common file/folder cache?", "fix job.js"; G49.1's box: "job.js's manifest and api.js checks"
