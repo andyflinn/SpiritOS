@@ -85,7 +85,7 @@ test.run('the row runs on a bare window, with the page\'s data set and the auth 
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, addEventListener: function () {}, removeEventListener: function () {} };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); },
-    required: { spirit: { fieldRules: LOADER.requireScript('spirit/fieldRules/script.js') } }, readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
+    required: { spirit: {} }, normalizeString: LOADER.normalizeString, readyPromise: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   global.spirit = global.window.spirit;
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);

@@ -1291,9 +1291,20 @@ const OWN_PROOF = {
   'spirit/element/joinList/script.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
   'spirit/app/join/element.js': { test: 'spirit/element/joinList/test/script.js', check: 'a new join on the spirit job, taken into spirit.required.spirit.data, redraws the steps' },
 };
-// THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules/script.js): a field that keeps more than this holds no rule at all.
-const FIELD_RULES = SPIRIT.requireScript('spirit/fieldRules/script.js');
-const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function (k) { return /MAX_BYTES$/.test(k) && typeof FIELD_RULES[k] === 'number'; }).map(function (k) { return FIELD_RULES[k]; }));
+// THE LONGEST FIELD THE TYPES ALLOW (goal/G49.13: the type files replaced fieldRules): the largest MAX_BYTES a type file under
+// spirit/type/ holds; a field that keeps more than this holds no rule at all.
+const MOST_BYTES = (function () {
+  const out = [];
+  (function walk(d) {
+    let es = []; try { es = fs.readdirSync(path.join(RUN, d), { withFileTypes: true }); } catch (e) { es = []; }
+    es.forEach(function (e) {
+      const rel = d + '/' + e.name;
+      if (e.isDirectory() && e.name !== 'test') walk(rel);
+      else if (e.name === 'script.js') { let T = null; try { T = SPIRIT.requireScript(rel); } catch (x) { T = null; } if (T && typeof T.MAX_BYTES === 'number') out.push(T.MAX_BYTES); }
+    });
+  })('spirit/type');
+  return out.length ? Math.max.apply(null, out) : 0;
+})();
 // THE PAGE WATCHED FROM BEFORE ITS FIRST SCRIPT (goal/G41.27): put on the page ahead of spirit.js, it keeps what the
 // rules below are judged by, each call known by the file whose code made it (a module runs with its path as its
 // sourceURL). Spirit's own code is spirit.js, its families (spirit-interface/), spirit/client/ and the page's data set

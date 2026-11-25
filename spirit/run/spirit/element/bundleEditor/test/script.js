@@ -53,7 +53,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   auth = { bundle: function (a) { asked.push(a); return answer(a); } };
   // ITS PARTS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
   // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
-  // fail/throw"): each stand-in below is what its path answers; fieldRules and the types are the real ones; any other path {}.
+  // fail/throw"): each stand-in below is what its path answers; the types and spirit.normalizeString are the real ones; any other path {}.
   const answered = {};
   STANDS = {
     // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
@@ -71,7 +71,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
-  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, required: { spirit: { fieldRules: LOADER.requireScript('spirit/fieldRules/script.js') } },
+  global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, required: { spirit: {} }, normalizeString: LOADER.normalizeString,
     readyPromise: Promise.resolve({}), element: {} } };
   global.spirit = global.window.spirit;
   // goal/G43.32: the element places itself by installSpiritElement, and fieldInput, a helper, stands in spirit.required
@@ -97,7 +97,7 @@ test.run('the bundle editor requires the field input and the bundle selector thr
   };
   // A bundle row on the node's own job spirit.auth, as the auth family's data.js takes it (goal/G43.20).
   arrive = function (id, label) { global.window.spirit.required.spirit.data.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); };
-  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js') family(); if (p === 'spirit/auth/api.js') return Promise.resolve(auth); if (STANDS[p]) { if (!(p in answered)) answered[p] = STANDS[p](); return Promise.resolve(answered[p]); } if (/^spirit\/(type\/.+|fieldRules)\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p)); return Promise.resolve({}); };
+  global.window.spirit.requireScript = function (p) { required.push(String(p)); if (p === 'spirit/auth/api.js') family(); if (p === 'spirit/auth/api.js') return Promise.resolve(auth); if (STANDS[p]) { if (!(p in answered)) answered[p] = STANDS[p](); return Promise.resolve(answered[p]); } if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p)); return Promise.resolve({}); };
   // The auth branch is answered by its api.js path (goal/G49.6: never by a name).
   PAGE_LOAD.runAsPage(FILE);
   await settle();

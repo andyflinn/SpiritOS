@@ -47,8 +47,8 @@ test.run('the contact row runs on a window of its own, with the data set and the
   window.spirit.readyPromise = Promise.resolve({});
   const BRANCHES = { contact: { block: verb('contact.block'), unblock: verb('contact.unblock'),
     forget: verb('contact.forget'), label: verb('contact.label'), get: verb('contact.get') }, peer: { acquire: verb('peer.acquire') } };
-  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); window.spirit.required.spirit.fieldRules = { normalize: function (t) { return String(t || '').trim(); },
-    problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
+  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); window.spirit.normalizeString = LOADER.normalizeString;
+  // The label type is the real one (goal/G49.13: the type files replaced fieldRules), loaded from its path below.
   // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
   // goal/G43.32: what the row opens stands where an element now finds it, spirit.required.spirit.element.
   (((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {})).element = { search: { contact: { detail: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } } } } };
@@ -64,6 +64,8 @@ test.run('the contact row runs on a window of its own, with the data set and the
     if (p === 'spirit/contact/api.js') { if (!contactData) { contactData = true; load(path.join(JS, '..', '..', 'spirit', 'contact', 'data.js')); } return Promise.resolve(BRANCHES.contact); }
     if (p === 'spirit/peer/api.js') return Promise.resolve(BRANCHES.peer);
     if (/installSpiritElement\.js$/.test(p)) return pageRequire(p);
+    // A type is the real one, by its full path (goal/G49.13).
+    if (/^spirit\/type\/.+\/script\.js$/.test(p)) return Promise.resolve(LOADER.requireScript(p));
     // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
     // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
     // stands at its place, a stand-in above or a real file loaded, and a path with nothing there is refused.
@@ -250,7 +252,8 @@ test.run('a name the rule refuses is refused here, and not asked', 0.2, async fu
     C.create({ key: 'K13', keep: true }); window.spirit.required.spirit.element.row.create = p; return f; }());
   const n = asked.length;
   const bad = await labelField.edit({ key: 'K13' }, '   ');
-  return bad.ok === false && bad.error === 'a name is needed' && asked.length === n ? true : false;
+  let said = ''; try { LOADER.requireScript('spirit/type/string/label/script.js').isValid(''); } catch (e) { said = e.message; }
+  return bad.ok === false && !!said && bad.error === said && asked.length === n ? true : false;
 }, test.limit.quick);
 test.run('a good name is normalized and asked of contact.label', 0.2, async function () {
   if (!labelField) return false;
