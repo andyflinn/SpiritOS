@@ -174,7 +174,7 @@ test.run('it has its Save and its message, and outside the form nothing but its 
 }, test.limit.quick);
 // Its type by path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*"): a label.
 test.run('the input is held at its byte limit by fieldInput, the label type', 0.2, function () {
-  return (w.attached.some(function (a) { return a.input === input && a.rule === 'spirit.type.string.label'; })) ? true : false;
+  return (w.attached.some(function (a) { return a.input === input && a.rule === 'spirit/type/string/label/script.js'; })) ? true : false;
 }, test.limit.quick);
 test.run('set puts the stored name in the field', 0.2, function () {
   // it shows what the node holds

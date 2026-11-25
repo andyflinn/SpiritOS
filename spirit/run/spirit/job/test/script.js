@@ -40,7 +40,7 @@ function stop(node) {
 const J = {};
 // job.create's args as the verb takes them since goal/G48.4: a list in a JSON string. Every helper below sends them so.
 function asSent(verb, args) { const a = Object.assign({}, args || {}); if (verb === 'job.create' && Array.isArray(a.args)) a.args = JSON.stringify(a.args); return a; }
-// ITS ARGS AS JSON IN A STRING (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json"): a list handed here is sent as the
+// ITS ARGS AS JSON IN A STRING (goal/G48.4, Q6, Andy: lists are "spirit/type/string/json/script.js"): a list handed here is sent as the
 // verb takes it, so a start is refused or let in by job.js's own rules, never by the type of its args.
 const call = async function (args) {
   const a = Object.assign({}, args);

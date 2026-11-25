@@ -50,7 +50,7 @@ test.run('the icons api.js names its verbs', 0.2, function () {
 test.run('each argument of the icon verb carries a rule', 0.2, function () {
   if (!W.verbs || !W.verbs.length) return false;
   const rules = W.api.verbs.icon || {};
-  const bad = Object.keys(rules).filter(function (a) { return typeof rules[a] !== 'string' || !(/^[a-z]+\??$/i.test(rules[a]) || /^spirit\.type(\.[A-Za-z]+)+\??$/.test(rules[a])); });
+  const bad = Object.keys(rules).filter(function (a) { return typeof rules[a] !== 'string' || !(/^[a-z]+\??$/i.test(rules[a]) || /^spirit\/type(\/[A-Za-z]+)+\/script\.js\??$/.test(rules[a])); });
   return !bad.length || false;
 }, test.limit.quick);
 // goal/G47.1, Andy: "every api.js requires it's companion data.js, and is the only script to require that data.js": the one

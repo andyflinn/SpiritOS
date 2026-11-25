@@ -170,7 +170,7 @@ test.run('the agent\'s interface declares the four verbs, provider, model, perso
 // spirit.type.string.IDNew (goal/G48.4, Q13, Andy: "for now, use IDNew.js for them.").
 test.run('the persona verb takes a provider, declared as the job\'s', 0.2, function () {
   const verbs = V.verbs;
-  return verbs.persona && verbs.job && verbs.persona.provider === verbs.job.provider && /^spirit\.type\.string\.IDNew\??$/.test(String(verbs.persona.provider || '')) ? true : false;
+  return verbs.persona && verbs.job && verbs.persona.provider === verbs.job.provider && /^spirit\/type\/string\/IDNew\/script\.js\??$/.test(String(verbs.persona.provider || '')) ? true : false;
 }, test.limit.quick);
 test.run('each table has a folder of its own name under spirit/app/agent/table with server.js, and its elementTable.js and elementRow.js', 0.2, function () {
   const files = [];

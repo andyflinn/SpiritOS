@@ -53,7 +53,7 @@ test.run('every rule is one of spirit.js\'s standard rules, a trailing question 
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
       // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
-      if ((spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule))) badRule++;
+      if ((spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(rule))) badRule++;
     });
   });
   return badRule === 0 || false;
@@ -146,9 +146,9 @@ test.run('none of the seven rule verbs is declared', 0.2, function () {
 
 // A CHAT LINE IS A PARAGRAPH (goal/G48.4, Q21; Andy, of "should a chat line take emoji joiners (U+200D) and be a paragraph,
 // 2048 bytes with line breaks, instead of a line of 1024?": "DAMN FCUKING RIGHT: spirit/type/string/paragraph/script.js").
-test.run('chat.add takes its text as spirit.type.string.paragraph', 0.4, function () {
+test.run('chat.add takes its text as spirit/type/string/paragraph/script.js', 0.4, function () {
   if (!W.api) return false;
-  return ((W.verbs['chat.add'] || {}).text === 'spirit.type.string.paragraph') || false;
+  return ((W.verbs['chat.add'] || {}).text === 'spirit/type/string/paragraph/script.js') || false;
 }, test.limit.quick);
 test.run('chat.add takes a pasted block: two lines, a runner emoji with its joiner, 2048 bytes', 0.4, function () {
   if (!W.api) return false;

@@ -58,7 +58,7 @@ test.run('it answers its verb, has, label and icon', 0.2, function () {
   X.dbFile = path.join(X.scratch, 'agent.db');
   X.db = new DatabaseSync(X.dbFile);
   X.def = {
-    name: 'thing', fields: { url: 'url?', apiKey: 'text?', on: 'bool?', tags: 'spirit.type.string.json?' }, secret: ['apiKey'],
+    name: 'thing', fields: { url: 'url?', apiKey: 'text?', on: 'bool?', tags: 'spirit/type/string/json/script.js?' }, secret: ['apiKey'],
     check: function (a) { X.checked = a; return a.url === 'https://refused.example' ? 'that url is refused' : ''; },
     deleted: function (id) { X.deleted = id; },
   };

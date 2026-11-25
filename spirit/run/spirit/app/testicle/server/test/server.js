@@ -1833,7 +1833,7 @@ test.run('testicle.script.classify sets a script\'s browserOnly and nodeOnly', 0
   const row = scriptRow(tables(DB), KA);
   return (r.status === 200 && !!row && yes(row.browserOnly) && no(row.nodeOnly)) || false;
 }, test.limit.quick);
-// goal/G48.4, Q6, Andy: lists are "spirit.type.string.json": what a load pulled in comes as a list in JSON, and is taken.
+// goal/G48.4, Q6, Andy: lists are "spirit/type/string/json/script.js": what a load pulled in comes as a list in JSON, and is taken.
 test.run('testicle.script.classify takes what the load pulled in as a list in JSON', 0.4, async function () {
   if (!up()) return false;
   const r = await call(N.base, 'testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false, requires: JSON.stringify(['spirit/limits/script.js']) });

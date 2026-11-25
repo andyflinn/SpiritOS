@@ -112,7 +112,7 @@ test.run('every verb\'s arguments are a plain object, each rule one of spirit.js
       const raw = String(W.verbs[v][arg]);
       const rule = raw.charAt(raw.length - 1) === '?' ? raw.slice(0, -1) : raw;
       // A rule may also name a type by its path (goal/G48.4, the box: "a type identifier is ALWAYS spirit.type.*").
-      return (spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule));
+      return (spirit.ruleNames.indexOf(rule) === -1 && !/^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(rule));
     });
   });
   return bad.length === 0 || false;
@@ -147,7 +147,7 @@ test.run('get, cancel and delete name the job, never by an empty name', 0.2, fun
   const no = refusedAs('get', { key: '' }) === 'bad-request' && refusedAs('cancel', { id: '' }) === 'bad-request' && refusedAs('delete', {}) === 'bad-request';
   return (ok && no) || false;
 }, test.limit.quick);
-// goal/G48.4, Q6, Andy: lists are "spirit.type.string.json": args a JSON list in a string.
+// goal/G48.4, Q6, Andy: lists are "spirit/type/string/json/script.js": args a JSON list in a string.
 test.run('create needs a command; its args are a JSON list in a string, its type a text, both optional', 0.2, function () {
   if (!W.api) return false;
   return (passes('create', { command: 'node' }) && passes('create', { command: 'node', args: JSON.stringify(['a.js']), type: 'server' }) && refusedAs('create', {}) === 'bad-request' && refusedAs('create', { command: 'node', args: 'a.js' }) === 'bad-request') || false;

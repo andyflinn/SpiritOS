@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/type/number/float/test/script.js
 // The tests of spirit/type/number/float/script.js, and of no other module (spec: ./script.md). goal/G48.4, Q23; Andy:
-// "spirit.type.number.float": a finite number, with or without a fractional part.
+// "spirit/type/number/float/script.js": a finite number, with or without a fractional part.
 
 const fs = require('fs');
 const path = require('path');

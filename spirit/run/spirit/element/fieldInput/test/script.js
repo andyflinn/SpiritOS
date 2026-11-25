@@ -57,27 +57,27 @@ test.run('fieldInput runs on a window of its own', 0.2, async function () {
   // fail/throw"): fieldInput keeps each type from that answer once it comes, a moment after its first ask, as on a page; the
   // types the checks below hold fields to are asked once here and their answers let in before any check.
   if (F && typeof F.fits === 'function') {
-    ['label', 'description', 'paragraph', 'glyph', 'email'].forEach(function (t) { F.fits('', 'spirit.type.string.' + t); });
+    ['spirit/type/string/label/script.js', 'spirit/type/string/description/script.js', 'spirit/type/string/paragraph/script.js', 'spirit/type/string/glyph/script.js', 'spirit/type/string/email/script.js'].forEach(function (t) { F.fits('', t); });
     for (let i = 0; i < 5; i++) await new Promise(function (r) { setImmediate(r); });
   }
   return (!!F && typeof F.fits === 'function' && typeof F.attach === 'function') || false;
 }, test.limit.quick);
 // rule/26; goal/G41.27: "on a bare page, without the boot's list, it held nothing"
-test.run('it loads the type it holds a field to itself: spirit/type/string/label/script.js for spirit.type.string.label', 0.2, function () {
+test.run('it loads the type it holds a field to itself: spirit/type/string/label/script.js, by the path it is handed', 0.2, function () {
   if (!F) return false;
-  F.fits('a', 'spirit.type.string.label');
+  F.fits('a', 'spirit/type/string/label/script.js');
   return required.indexOf('spirit/type/string/label/script.js') !== -1 || false;
 }, test.limit.quick);
 
 // fits: "counted in bytes as the rule counts them, never characters"
 test.run('fits counts bytes, never characters: a name of 64 bytes fits, 65 does not', 0.2, function () {
   if (!F) return false;
-  const got = [F.fits('a'.repeat(64), 'spirit.type.string.label'), F.fits('a'.repeat(65), 'spirit.type.string.label'), F.fits('é'.repeat(32), 'spirit.type.string.label'), F.fits('é'.repeat(33), 'spirit.type.string.label')];
+  const got = [F.fits('a'.repeat(64), 'spirit/type/string/label/script.js'), F.fits('a'.repeat(65), 'spirit/type/string/label/script.js'), F.fits('é'.repeat(32), 'spirit/type/string/label/script.js'), F.fits('é'.repeat(33), 'spirit/type/string/label/script.js')];
   return JSON.stringify(got) === JSON.stringify([true, false, true, false]) || false;
 }, test.limit.quick);
 test.run('fits holds each type to its limit: description 128, paragraph 2048 bytes', 0.2, function () {
   if (!F) return false;
-  const bad = [['spirit.type.string.description', 128], ['spirit.type.string.paragraph', 2048]].filter(function (p) {
+  const bad = [['spirit/type/string/description/script.js', 128], ['spirit/type/string/paragraph/script.js', 2048]].filter(function (p) {
     return !(F.fits('x'.repeat(p[1]), p[0]) && !F.fits('x'.repeat(p[1] + 1), p[0]));
   });
   return !bad.length || false;
@@ -85,7 +85,7 @@ test.run('fits holds each type to its limit: description 128, paragraph 2048 byt
 // goal/G48.4, Andy: "glyphs are capped at 32 bytes, one character.": a family emoji, 25 bytes, is one glyph.
 test.run('fits takes one glyph of at most 32 bytes for the glyph type, never two', 0.2, function () {
   if (!F) return false;
-  const got = [F.fits('🙂', 'spirit.type.string.glyph'), F.fits('👩‍👩‍👧‍👦', 'spirit.type.string.glyph'), F.fits('ab', 'spirit.type.string.glyph'), F.fits('🙂🙂', 'spirit.type.string.glyph')];
+  const got = [F.fits('🙂', 'spirit/type/string/glyph/script.js'), F.fits('👩‍👩‍👧‍👦', 'spirit/type/string/glyph/script.js'), F.fits('ab', 'spirit/type/string/glyph/script.js'), F.fits('🙂🙂', 'spirit/type/string/glyph/script.js')];
   return JSON.stringify(got) === JSON.stringify([true, true, false, false]) || false;
 }, test.limit.quick);
 
@@ -94,7 +94,7 @@ let full = null;
 test.run('attach answers the input it is given', 0.2, function () {
   if (!F) return false;
   full = input('a'.repeat(64));
-  return F.attach(full, 'spirit.type.string.label') === full || false;
+  return F.attach(full, 'spirit/type/string/label/script.js') === full || false;
 }, test.limit.quick);
 test.run('a keystroke that would take the text past its limit is refused before it lands', 0.2, function () {
   if (!full) return false;
@@ -102,35 +102,35 @@ test.run('a keystroke that would take the text past its limit is refused before 
 }, test.limit.quick);
 test.run('a keystroke within the limit is taken', 0.2, function () {
   if (!F) return false;
-  const i = F.attach(input('a'.repeat(63)), 'spirit.type.string.label');
+  const i = F.attach(input('a'.repeat(63)), 'spirit/type/string/label/script.js');
   return i.type('insertText', 'b') === false || false;
 }, test.limit.quick);
 test.run('a keystroke of a character of two bytes is refused with one byte left', 0.2, function () {
   if (!F) return false;
-  const i = F.attach(input('a'.repeat(63)), 'spirit.type.string.label');
+  const i = F.attach(input('a'.repeat(63)), 'spirit/type/string/label/script.js');
   return i.type('insertText', 'é') === true || false;
 }, test.limit.quick);
 test.run('a paste that would take the text past its limit is refused', 0.2, function () {
   if (!F) return false;
-  const i = F.attach(input('a'.repeat(60)), 'spirit.type.string.label');
+  const i = F.attach(input('a'.repeat(60)), 'spirit/type/string/label/script.js');
   const paste = { getData: function (t) { return t === 'text/plain' ? 'pasted' : ''; } };
-  const small = F.attach(input('a'.repeat(50)), 'spirit.type.string.label');
+  const small = F.attach(input('a'.repeat(50)), 'spirit/type/string/label/script.js');
   return (i.type('insertFromPaste', null, paste) === true && small.type('insertFromPaste', null, paste) === false) || false;
 }, test.limit.quick);
 test.run('a line break counts as the byte it adds', 0.2, function () {
   if (!F) return false;
-  const i = F.attach(input('x'.repeat(2048)), 'spirit.type.string.paragraph');
+  const i = F.attach(input('x'.repeat(2048)), 'spirit/type/string/paragraph/script.js');
   return i.type('insertLineBreak', null) === true || false;
 }, test.limit.quick);
 test.run('typing over a selection counts what it replaces', 0.2, function () {
   if (!F) return false;
-  const i = F.attach(input('a'.repeat(64)), 'spirit.type.string.label');
+  const i = F.attach(input('a'.repeat(64)), 'spirit/type/string/label/script.js');
   i.selectionStart = 10; i.selectionEnd = 12;
   return i.type('insertText', 'bb') === false || false;
 }, test.limit.quick);
 test.run('deleting always works, even past the limit', 0.2, function () {
   if (!F) return false;
-  const i = F.attach(input('a'.repeat(100)), 'spirit.type.string.label');
+  const i = F.attach(input('a'.repeat(100)), 'spirit/type/string/label/script.js');
   return (i.type('deleteContentBackward') === false && i.type('deleteByCut') === false) || false;
 }, test.limit.quick);
 // "It never says how far past the limit the text went: it simply does not get there."
@@ -145,14 +145,14 @@ test.run('it never says how far past the limit: a refusal leaves the text as it 
 // length constraint": attach sets the input's maxlength to its rule's bytes, a ceiling on its characters.
 test.run('attach sets the input\'s maxlength to its rule\'s bytes: name 64, description 128, paragraph 2048, glyph 32', 0.4, function () {
   if (!F) return false;
-  const got = ['spirit.type.string.label', 'spirit.type.string.description', 'spirit.type.string.paragraph', 'spirit.type.string.glyph'].map(function (r) { return F.attach(input(''), r).maxLength; });
+  const got = ['spirit/type/string/label/script.js', 'spirit/type/string/description/script.js', 'spirit/type/string/paragraph/script.js', 'spirit/type/string/glyph/script.js'].map(function (r) { return F.attach(input(''), r).maxLength; });
   return JSON.stringify(got) === JSON.stringify([64, 128, 2048, 32]) || false;
 }, test.limit.quick);
 // goal/G47.1, cw's fix of join's email field: fieldInput takes fieldRules' email rule (fieldRules.js: "THE EMAIL RULE
 // (goal/G40.10, box v20; Andy: \"no fieldRules.js for emails?\", and \"254\")").
 test.run('the email rule is fieldRules\' 254 bytes: 254 fit, 255 do not, and attach sets maxlength 254', 0.4, function () {
   if (!F) return false;
-  const got = [F.fits('a'.repeat(254), 'spirit.type.string.email'), F.fits('a'.repeat(255), 'spirit.type.string.email'), F.attach(input(''), 'spirit.type.string.email').maxLength];
+  const got = [F.fits('a'.repeat(254), 'spirit/type/string/email/script.js'), F.fits('a'.repeat(255), 'spirit/type/string/email/script.js'), F.attach(input(''), 'spirit/type/string/email/script.js').maxLength];
   return JSON.stringify(got) === JSON.stringify([true, false, 254]) || false;
 }, test.limit.quick);
 test.run('a rule it does not know sets no maxlength', 0.4, function () {
@@ -162,5 +162,5 @@ test.run('a rule it does not know sets no maxlength', 0.4, function () {
 }, test.limit.quick);
 test.run('attach of no input answers it, untouched', 0.2, function () {
   if (!F) return false;
-  return (F.attach(null, 'spirit.type.string.label') === null && F.attach(undefined, 'spirit.type.string.label') === undefined) || false;
+  return (F.attach(null, 'spirit/type/string/label/script.js') === null && F.attach(undefined, 'spirit/type/string/label/script.js') === undefined) || false;
 }, test.limit.quick);
