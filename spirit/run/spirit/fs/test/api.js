@@ -198,23 +198,30 @@ function askNode(call, args) {
     .then(function (r) { return r.text().then(function (t) { let b = null; try { b = JSON.parse(t); } catch (e) { b = null; } return { status: r.status, body: b }; }); }, function () { return { status: 0, body: null }; });
 }
 test.run('a scratch node comes up', 0.2, async function () { NODE.n = await H.scratchNode(); return (!!NODE.n && NODE.n.up) || false; }, test.limit.long);
-test.run('the node answers fs.stat of spirit/script.js', 0.2, async function () {
+test.run('the node answers spirit.fs.stat of spirit/script.js', 0.2, async function () {
   if (!NODE.n || !NODE.n.up) return false;
-  const r = await askNode('fs.stat', { path: 'spirit/script.js' });
+  const r = await askNode('spirit.fs.stat', { path: 'spirit/script.js' });
   return (r.status === 200 && !!r.body && typeof r.body.size === 'number') || false;
 }, test.limit.quick);
-test.run('the node refuses fs.stat with a path that is no file path, a number, as a bad request', 0.8, async function () {
+// THE NAME ON THE WIRE IS THE BRANCH'S PATH IN DOTS (Andy, goal/G49.15: "THE NAME ON THE MOTHERCUKING WIRE IS "spirit.fs""):
+// a call is spirit.fs.<verb>; the old word, fs.<verb>, is answered no more.
+test.run('the node answers no call by the old word: fs.stat is refused', 0.8, async function () {
   if (!NODE.n || !NODE.n.up) return false;
-  const r = await askNode('fs.stat', { path: 5 });
+  const r = await askNode('fs' + '.stat', { path: 'spirit/script.js' });
+  return (r.status >= 400 && r.status < 500) || false;
+}, test.limit.quick);
+test.run('the node refuses spirit.fs.stat with a path that is no file path, a number, as a bad request', 0.8, async function () {
+  if (!NODE.n || !NODE.n.up) return false;
+  const r = await askNode('spirit.fs.stat', { path: 5 });
   return (r.status === 400 && !!r.body && r.body.code === 'bad-request') || false;
 }, test.limit.quick);
-test.run('the node refuses fs.stat with an argument its validator does not name', 0.8, async function () {
+test.run('the node refuses spirit.fs.stat with an argument its validator does not name', 0.8, async function () {
   if (!NODE.n || !NODE.n.up) return false;
-  const r = await askNode('fs.stat', { path: 'spirit/script.js', zzExtra: 1 });
+  const r = await askNode('spirit.fs.stat', { path: 'spirit/script.js', zzExtra: 1 });
   return (r.status === 400 && !!r.body && r.body.code === 'no-such-argument') || false;
 }, test.limit.quick);
-test.run('the node refuses fs.save with no content', 0.8, async function () {
+test.run('the node refuses spirit.fs.save with no content', 0.8, async function () {
   if (!NODE.n || !NODE.n.up) return false;
-  const r = await askNode('fs.save', { path: 'media/zzNoContent.txt' });
+  const r = await askNode('spirit.fs.save', { path: 'media/zzNoContent.txt' });
   return (r.status === 400 && !at('media/zzNoContent.txt')) || false;
 }, test.limit.quick);
