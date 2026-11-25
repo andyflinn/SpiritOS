@@ -2778,6 +2778,49 @@ if (!GIVEN.length) {
       return /['"`]spirit\/state\/['"`]?\s*\+/.test(c) || /path\.join\([^)]*['"]spirit['"]\s*,\s*['"]state['"]\s*,\s*(?!['"])[A-Za-z_$]/.test(c);
     }) || false;
   }, test.limit.quick);
+  // AN APP IS KNOWN BY ITS PATH, NEVER BUILT FROM A NAME (goal/G49.19, box v13: "An app's path comes from one source: the fs
+  // cache's app rows ... Never \"spirit/app/\" + a name"; Andy: "all translation from name to path or back is NOT PERMITTED in
+  // SpiritOS"; "yes, i need the pages fixed in this item, too"): no product script, node side or page, joins 'spirit/app/'
+  // with a name, nor path.joins 'app' with one.
+  test.run('no product script builds an app\'s path from a name: no \'spirit/app/\' + a name, no path.join of \'app\' with one', 0.6, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return !files.some(function (f) {
+      const c = codeText(f);
+      return /['"`]spirit\/app\/['"`]?\s*\+/.test(c) || /path\.join\([^)]*['"]app['"]\s*,\s*(?!['"])[A-Za-z_$]/.test(c);
+    }) || false;
+  }, test.limit.quick);
+  // THE JOB BRANCH IN THE NEW SHAPE (goal/G49.19, box v13): "spirit/job/script.js --> spirit/job/engine/script.js",
+  // "spirit/joinStepsJob/ --> spirit/job/joinStepsJob/", "spirit/job/api.js --> spirit/job/script.js", "spirit/job/data.js -->
+  // spirit/job/client/script.js", and "spirit.processJob() leaves spirit/script.js and becomes spirit/job/processJob/script.js".
+  const inTree = function (rel) { return shFs.existsSync(shPath.join(SH.run, rel)); };
+  ['spirit/job/engine/script.js', 'spirit/job/joinStepsJob/script.js', 'spirit/job/client/script.js', 'spirit/job/processJob/script.js'].forEach(function (rel) {
+    test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
+  });
+  ['spirit/job/api.js', 'spirit/job/data.js', 'spirit/joinStepsJob'].forEach(function (rel) {
+    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+  });
+  test.run('spirit/job/engine/script.js is the engine: it holds installJobs', 0.2, function () {
+    return /\bfunction installJobs\s*\(/.test(codeText('spirit/job/engine/script.js')) || false;
+  }, test.limit.quick);
+  test.run('spirit/job/script.js is the interface: it names the verbs search, get, create, cancel and delete, and holds no installJobs', 0.2, function () {
+    const c = codeText('spirit/job/script.js');
+    return (['search', 'get', 'create', 'cancel', 'delete'].every(function (v) { return new RegExp('\\b' + v + '\\s*:\\s*\\{').test(c); }) && !/installJobs/.test(c)) || false;
+  }, test.limit.quick);
+  // processJob "is required by its path, spirit/job/processJob/script.js, by every caller (testicle, icons, publishData, the
+  // app server) ... The spirit object keeps no copy and no member of it"; "after the move the spirit object's publish requires
+  // spirit/job/processJob/script.js for it".
+  test.run('no product script reaches processJob as a member: none names .processJob', 0.4, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return !files.some(function (f) { return /\.processJob\b/.test(codeText(f)); }) || false;
+  }, test.limit.quick);
+  ['spirit/app/testicle/server/server.js', 'spirit/app/icons/server/server.js', 'spirit/app/publishData/publishData.js', 'spirit/server/app/script.js', 'spirit/script.js'].forEach(function (rel) {
+    test.run(rel + ' requires spirit/job/processJob/script.js by its path', 0.2, function () {
+      // The spirit object loads its own parts by requireOne, the function its requireScript is (spirit/script.js).
+      return /require(Script|One)\(\s*['"]spirit\/job\/processJob\/script\.js['"]\s*\)/.test(codeText(rel)) || false;
+    }, test.limit.quick);
+  });
 }
 if (!GIVEN.length) PARTS.forEach(function (part) { runPart(part, []); });
 // NO TRACKED FILE NAMES THE DELETED VERIFIER (goal/G47.1, box v101, the cycle that deletes the desk's verifier: no tracked

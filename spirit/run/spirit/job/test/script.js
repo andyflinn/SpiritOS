@@ -865,7 +865,28 @@ function mountPart() {
       "const path = require('path');",
       "require('../../server/app/script.js').serve({}, { stream: { translator: 'spirit/app/" + NAME + "/followerRows.js', cache: true, module: 'a.test' } });",
     ].join('\n') + '\n');
+    plantFake(run);
     return { root: root, run: run };
+  }
+  // A FAKE APP OUTSIDE spirit/app/ (goal/G49.19, box v13; Andy: "ALL aspects of jobs/processes identify them by the full path
+  // of their branch, whereever they may be mounted, a test should actually place a fake app at spirit.fake (a copy of icon
+  // perhaps) and make sure the moved folder still streams with the proper new ID"; "all publishes on the wire ... MUST stream
+  // under the proper job id, which is that dot path of the spirit.<branchPath>"): spirit/fake/, a server with one verb, which
+  // publishes one row as it starts.
+  function plantFake(run) {
+    const dir = path.join(run, 'spirit', 'fake');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'fake.json'), JSON.stringify({ identity: { icon: '🧪', label: 'fake' }, mount: { 'fake.js': true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }));
+    fs.writeFileSync(path.join(dir, 'fake.js'), [
+      "'use strict';",
+      "if (typeof window === 'undefined') {",
+      "  require('../script.js');",
+      "  require('../server/app/script.js').serve({ ping: { request: {}, reply: {}, handler: function () { return { pid: process.pid }; } } }, {});",
+      "  setTimeout(function () { spirit.eventStream.publish({ fake: 'streamed' }); }, 500);",
+      '}',
+    ].join('\n') + '\n');
+    fs.writeFileSync(path.join(dir, 'api.js'), "if (typeof window !== 'undefined') window.spirit.requireScript('spirit/fake/data.js'); else require('../script.js').requireScript('spirit/fake/data.js');\nmodule.exports = { verbs: { ping: {} } };\n");
+    fs.writeFileSync(path.join(dir, 'data.js'), "module.exports = {};\n");
   }
   async function call(base, verb, args) {
     try {
@@ -1286,6 +1307,37 @@ function mountPart() {
     N = await boot(s.run); live.push(N.child);
     return (N.up && await until(function () { return pingOf(N.base).then(function (r) { return answers(r) && Number(r.body.pid) !== cutPid; }); }, 30000)) || false;
   }, test.limit.slow);
+  // THE FAKE APP AT spirit/fake/, KNOWN BY ITS PATH ALONE (goal/G49.19, box v13).
+  const FAKE = 'spirit.fake';
+  test.run('the app planted at spirit/fake/ is a row of the app branch under spirit.fake', 0.2, async function () {
+    return (!noNode() && !!(await rowOf(N.base, FAKE))) || false;
+  }, test.limit.quick);
+  let fakeJob = null;
+  test.run('app.active with the key spirit.fake starts its server under the job id spirit.fake', 0.4, async function () {
+    if (noNode()) return false;
+    await call(N.base, 'app.active', { key: FAKE, active: true });
+    fakeJob = await until(function () { return liveJob(N.base, FAKE); }, 30000);
+    return !!fakeJob || false;
+  }, test.limit.slow);
+  test.run('its verb is answered as spirit.fake.ping', 0.2, async function () {
+    if (noNode()) return false;
+    return answers(await call(N.base, FAKE + '.ping', {})) || false;
+  }, test.limit.quick);
+  test.run('what it publishes streams under the job id spirit.fake', 0.2, async function () {
+    if (!fakeJob) return false;
+    const heard = await until(function () { return call(N.base, 'job.get', { key: fakeJob.id }).then(function (r) { const j = r.body && r.body.job; return !!(j && j.id === FAKE && j.app && j.app.fake === 'streamed'); }); }, 15000);
+    return !!heard || false;
+  }, test.limit.slow);
+  test.run('nothing of it goes by a name: no job spirit.app.fake, and job.get of fake finds none', 0.2, async function () {
+    if (!fakeJob) return false;
+    const bare = await call(N.base, 'job.get', { key: 'fake' });
+    return (!(await liveJob(N.base, 'spirit.app.fake')) && !(bare.body && bare.body.job)) || false;
+  }, test.limit.quick);
+  test.run('its switch is kept at spirit/state/fake/node.json', 0.2, function () {
+    if (!s) return false;
+    return (readJson(path.join(s.run, 'spirit', 'state', 'fake', 'node.json')) || {}).active === true || false;
+  }, test.limit.quick);
+
   test.run('deactivated, a restarted node does not start it', 0.2, async function () {
     if (!s) return false;
     await call(N.base, 'app.active', { key: NAME, active: false });

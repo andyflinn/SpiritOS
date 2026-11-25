@@ -154,7 +154,7 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
     // This process's job, published by event.publish with its own id, the one path.
     out.publish = s.eventStream.publish({ x: 1 });
     out.tooBig = s.eventStream.publish({ big: 'y'.repeat(30000) });
-    out.noJobsPublish = !('publish' in s.processJob);
+    out.noProcessJob = !('processJob' in s);
     // The node's events, subscribed: the snapshot, then an update; unsubscribed, nothing more.
     out.heard = await new Promise(function (r) {
       const heard = [];
@@ -165,10 +165,6 @@ async function code(p) { try { await p; return null; } catch (e) { return e && e
       });
       setTimeout(function () { r(heard); }, 2000);
     });
-    await s.processJob.start('j1');
-    out.startAgain = await code(s.processJob.start('j2'));
-    await s.processJob.progress(1, 2, 'half');
-    await s.processJob.end({ done: true });
     await new Promise(function (r) { setTimeout(r, 100); });
     // The peer's answer, through the node's event stream.
     out.peerAnswer = await s.peerPost('peerKey9', 'api', { demo: { hello: { name: 'p' } } }, { waitMs: 3000 });
@@ -289,9 +285,9 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames', 'statePath'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'statePath'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
-  return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'processJob', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
+  return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
 // BRANCH (goal/G49.2; Andy: "assert the \"branch\"", "yes on the two verbs. fix it all."): a bound branch's subscribe takes
 // {branch, run?, since?}.
@@ -411,9 +407,11 @@ test.run('in node, every name on the spirit instance but required has an upperca
 }, test.limit.quick);
 // THE NEW NAMES (goal/G49.6; cw's proposal, Andy: "wsl, function names accepted."): each helper on the trunk under the name
 // that says what it does. In node the instance holds these at start, as it held their old names.
-const NODE_HELPERS = ['requireScript', 'checkArgs', 'ruleNames', 'callOutcome', 'apiTree', 'logError', 'debugLog', 'eventStream', 'nodeFacts', 'processJob'];
+// processJob is no helper of the spirit object (goal/G49.19, box v13: "spirit.processJob() leaves spirit/script.js and becomes
+// spirit/job/processJob/script.js"; "The spirit object keeps no copy and no member of it").
+const NODE_HELPERS = ['requireScript', 'checkArgs', 'ruleNames', 'callOutcome', 'apiTree', 'logError', 'debugLog', 'eventStream', 'nodeFacts'];
 const PAGE_HELPERS = ['requireScript', 'readyPromise', 'startPage', 'checkArgs', 'ruleNames', 'callOutcome', 'apiTree', 'logError', 'debugLog', 'faceLogin'];
-test.run('in node, the ten helpers stand under their accepted names', 0.2, function () {
+test.run('in node, the nine helpers stand under their accepted names', 0.2, function () {
   const o = O(); if (!o || !o.keys) return false;
   return NODE_HELPERS.every(function (k) { return o.keys.indexOf(k) >= 0; });
 }, test.limit.quick);
@@ -452,15 +450,16 @@ test.run('spirit.nodeFacts holds its port from environment.json, and the name, k
   const f = o.facts || {};
   return (f.port === T.node.port && f.name === 'nodey' && f.key === 'K1' && f.ownerKey === 'O1') || false;
 }, test.limit.quick);
-test.run('processJob start, progress and end publish by event.publish with the job\'s id; over the cap is dropped; a second start job-open', 0.2, function () {
+// ITS PUBLISH, THROUGH processJob BY ITS PATH (goal/G49.19, box v13: "after the move the spirit object's publish requires
+// spirit/job/processJob/script.js for it"): what it publishes goes out by event.publish with the job's id, over the cap is
+// dropped, and the spirit object holds no processJob. processJob's own verbs are judged in its own test.
+test.run('spirit.eventStream.publish goes out by event.publish with the job\'s id; over the cap is dropped; the spirit object holds no processJob', 0.2, function () {
   const o = O(); if (!o) return false;
   const node = T.node;
   const updates = node.asked.filter(function (b) { return b.call === 'event.publish'; }).map(function (b) { return b.args; });
-  const states = updates.map(function (u) { return u.app && u.app.job && u.app.job.state; }).filter(Boolean);
   const dropped = updates.filter(function (u) { return u.app && u.app.dropped; });
   return (o.publish === true && o.tooBig === false && updates.length > 0 && updates.every(function (u) { return u.id === 'job_7'; }) && updates.some(function (u) { return u.app && u.app.x === 1; })
-      && dropped.length === 1 && dropped[0].app.dropped.max > 0 && JSON.stringify(states) === JSON.stringify(['start', 'progress', 'end']) && o.startAgain === 'job-open'
-      && o.noJobsPublish === true && !node.asked.some(function (b) { return b.call === 'job.update'; })) || false;
+      && dropped.length === 1 && dropped[0].app.dropped.max > 0 && o.noProcessJob === true && !node.asked.some(function (b) { return b.call === 'job.update'; })) || false;
 }, test.limit.quick);
 test.run('spirit.eventStream.subscribe hears the node\'s events as a stream: up, then the snapshot, then each update, until unsubscribed', 0.2, function () {
   const o = O(); if (!o) return false;
