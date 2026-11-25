@@ -446,8 +446,11 @@ function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '
 // data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
   if (!family || !/^[A-Za-z]\w*$/.test(String(family))) return null;
-  // Beside the app's api.js, in spirit/app/<name>/ (appApiPath).
-  const file = path.join(RUN_ROOT, path.dirname(appApiPath(String(family))), 'data.js');
+  // Beside the app's api.js, in spirit/app/<name>/ (appApiPath), or a node branch's own, spirit/<name>/data.js (wsl's red,
+  // goal/G49.12: a sender of a core branch, contact or job, has its data.js in the trunk).
+  const inApp = path.join(RUN_ROOT, path.dirname(appApiPath(String(family))), 'data.js');
+  const inTrunk = path.join(RUN_ROOT, 'spirit', String(family), 'data.js');
+  const file = fs.existsSync(inApp) ? inApp : inTrunk;
   if (!fs.existsSync(file)) return null;
   try { return spirit.requireScript(path.relative(RUN_ROOT, file).split(path.sep).join('/')); } catch (e) { return null; }
 }
