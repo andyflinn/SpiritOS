@@ -1390,7 +1390,8 @@ test.run('the page says the stream is down, onConnection false, before the new o
 // sides"; "the loader places that module.exports at the script's own place and answers spirit.requireScript with it"; "a
 // folder's script.js stands at its folder's own name"; "what a script exposes becomes its place itself, never copied in as
 // members"; "the folder's other scripts stand under it either way"; "a script.js exposes an object or a function, nothing
-// else ... so the loader refuses it"; the page list, and with it "vendored scripts get no module box", went with goal/G49.15). Planted in a scratch node's tree: an object, its
+// else ... so the loader refuses it"; since goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
+// OBJECT. PERIOD!", a function is refused as a bare string is; the page list, and with it "vendored scripts get no module box", went with goal/G49.15). Planted in a scratch node's tree: an object, its
 // folder's other script, a function and a bare string. Node side in a process of
 // the scratch tree's own, page side on a page of that node.
 const LD = {};
@@ -1409,8 +1410,8 @@ const LD_ASK = "(async function () {\n" +
   "  var other = await Promise.resolve(S.requireScript('spirit/zzLoader/obj/other.js'));\n" +
   "  out.otherB = other && other.b; out.otherUnder = !!(S.required.spirit.zzLoader.obj && S.required.spirit.zzLoader.obj.other === other);\n" +
   "  out.objStill = S.required.spirit.zzLoader.obj === obj;\n" +
-  "  var fn = await Promise.resolve(S.requireScript('spirit/zzLoader/fn/script.js'));\n" +
-  "  out.fnCall = typeof S.required.spirit.zzLoader.fn === 'function' ? S.required.spirit.zzLoader.fn() : null; out.fnAnswer = typeof fn === 'function' ? fn() : null;\n" +
+  "  try { var fn = await Promise.resolve(S.requireScript('spirit/zzLoader/fn/script.js')); out.fnRefused = false; out.fnGot = typeof fn; } catch (e) { out.fnRefused = true; }\n" +
+  "  out.fnPlaced = !!(S.required.spirit.zzLoader && typeof S.required.spirit.zzLoader.fn === 'function');\n" +
   "  try { var str = await Promise.resolve(S.requireScript('spirit/zzLoader/str/script.js')); out.strRefused = false; out.strGot = typeof str; } catch (e) { out.strRefused = true; }\n" +
   "  return JSON.stringify(out);\n" +
   "})()";
@@ -1449,13 +1450,13 @@ async function ldPage() {
 test.run('in node, requireScript answers what a script.js sets as module.exports', 0.4, function () { const o = ldNode(); return !!o && o.objA === 1 || false; }, test.limit.slow);
 test.run('in node, a folder\'s script.js stands at its folder\'s own name, and is that answer itself', 0.4, function () { const o = ldNode(); return !!o && o.objAt === true || false; }, test.limit.slow);
 test.run('in node, the folder\'s other script stands under its script.js, which stays where it was', 0.4, function () { const o = ldNode(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.slow);
-test.run('in node, a script.js exposing a function stands as that function, callable at its folder\'s name', 0.4, function () { const o = ldNode(); return !!o && o.fnCall === 7 && o.fnAnswer === 7 || false; }, test.limit.slow);
+test.run('in node, a script.js exposing a function is refused, and nothing is placed at its folder\'s name', 0.4, function () { const o = ldNode(); return !!o && o.fnRefused === true && o.fnPlaced === false || false; }, test.limit.slow);
 test.run('in node, a script.js exposing a bare string is refused', 0.4, function () { const o = ldNode(); return !!o && o.strRefused === true || false; }, test.limit.slow);
 // on a page
 test.run('on a page, requireScript answers what a script.js sets as module.exports', 0.4, async function () { const o = await ldPage(); return !!o && o.objA === 1 || false; }, test.limit.slow);
 test.run('on a page, a folder\'s script.js stands at its folder\'s own name, and is that answer itself', 0.4, async function () { const o = await ldPage(); return !!o && o.objAt === true || false; }, test.limit.slow);
 test.run('on a page, the folder\'s other script stands under its script.js, which stays where it was', 0.4, async function () { const o = await ldPage(); return !!o && o.otherB === 2 && o.otherUnder === true && o.objStill === true || false; }, test.limit.slow);
-test.run('on a page, a script.js exposing a function stands as that function, callable at its folder\'s name', 0.4, async function () { const o = await ldPage(); return !!o && o.fnCall === 7 && o.fnAnswer === 7 || false; }, test.limit.slow);
+test.run('on a page, a script.js exposing a function is refused, and nothing is placed at its folder\'s name', 0.4, async function () { const o = await ldPage(); return !!o && o.fnRefused === true && o.fnPlaced === false || false; }, test.limit.slow);
 test.run('on a page, a script.js exposing a bare string is refused', 0.4, async function () { const o = await ldPage(); return !!o && o.strRefused === true || false; }, test.limit.slow);
 // THE PAGE LIST GOES (goal/G49.15, box v16: "the page list goes."): the spirit object names no vendored folder; codeMirror
 // comes from face.html's own script tags.

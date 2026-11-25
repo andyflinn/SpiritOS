@@ -15,6 +15,17 @@ const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
+// IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
+// OBJECT. PERIOD!"; box v4: "spirit/app/agent/table/job/server.js { table }"): asked in a process of its own, spirit.requireScript answers an
+// object holding table, each a function.
+test.run('spirit/app/agent/table/job/server.js exposes an object holding table, never a bare function', 0.2, function () {
+  const P = require('path');
+  let run = __dirname;
+  while (run !== P.dirname(run) && !require('fs').existsSync(P.join(run, 'spirit', 'script.js'))) run = P.dirname(run);
+  const r = require('child_process').spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); let m = null; try { m = spirit.requireScript('spirit/app/agent/table/job/server.js'); } catch (e) { m = null; } process.stdout.write(JSON.stringify({ t: typeof m, k: ['table'].map(function (k) { return m ? typeof m[k] : ''; }) }));"], { cwd: run, encoding: 'utf8', timeout: 20000 });
+  let o = null; try { o = JSON.parse(r.stdout); } catch (e) { o = null; }
+  return (!!o && o.t === 'object' && o.k.length === 1 && o.k.every(function (k) { return k === 'function'; })) || false;
+}, test.limit.quick);
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
 const tempFolder = S.requireScript('spirit/tempFolder/script.js');

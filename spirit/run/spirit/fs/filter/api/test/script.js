@@ -10,6 +10,17 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
+// IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
+// OBJECT. PERIOD!"; box v4: "spirit/fs/filter/api/script.js { api }"): asked in a process of its own, spirit.requireScript answers an
+// object holding api, each a function.
+test.run('spirit/fs/filter/api/script.js exposes an object holding api, never a bare function', 0.2, function () {
+  const P = require('path');
+  let run = __dirname;
+  while (run !== P.dirname(run) && !require('fs').existsSync(P.join(run, 'spirit', 'script.js'))) run = P.dirname(run);
+  const r = require('child_process').spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); let m = null; try { m = spirit.requireScript('spirit/fs/filter/api/script.js'); } catch (e) { m = null; } process.stdout.write(JSON.stringify({ t: typeof m, k: ['api'].map(function (k) { return m ? typeof m[k] : ''; }) }));"], { cwd: run, encoding: 'utf8', timeout: 20000 });
+  let o = null; try { o = JSON.parse(r.stdout); } catch (e) { o = null; }
+  return (!!o && o.t === 'object' && o.k.length === 1 && o.k.every(function (k) { return k === 'function'; })) || false;
+}, test.limit.quick);
 let F = null;
 try { F = SPIRIT.requireScript('spirit/fs/filter/api/script.js'); } catch (e) { F = null; }
 // A folder's files as the fs cache holds them: has(path) is true for each path listed.

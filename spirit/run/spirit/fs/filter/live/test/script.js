@@ -11,6 +11,17 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
+// IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
+// OBJECT. PERIOD!"; box v4: "spirit/fs/filter/live/script.js { live }"): asked in a process of its own, spirit.requireScript answers an
+// object holding live, each a function.
+test.run('spirit/fs/filter/live/script.js exposes an object holding live, never a bare function', 0.2, function () {
+  const P = require('path');
+  let run = __dirname;
+  while (run !== P.dirname(run) && !require('fs').existsSync(P.join(run, 'spirit', 'script.js'))) run = P.dirname(run);
+  const r = require('child_process').spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); let m = null; try { m = spirit.requireScript('spirit/fs/filter/live/script.js'); } catch (e) { m = null; } process.stdout.write(JSON.stringify({ t: typeof m, k: ['live'].map(function (k) { return m ? typeof m[k] : ''; }) }));"], { cwd: run, encoding: 'utf8', timeout: 20000 });
+  let o = null; try { o = JSON.parse(r.stdout); } catch (e) { o = null; }
+  return (!!o && o.t === 'object' && o.k.length === 1 && o.k.every(function (k) { return k === 'function'; })) || false;
+}, test.limit.quick);
 let F = null;
 try { F = SPIRIT.requireScript('spirit/fs/filter/live/script.js'); } catch (e) { F = null; }
 // The run folder's files by path, their text: read(path) answers it, null for a file not there.

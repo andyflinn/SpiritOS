@@ -21,6 +21,17 @@ const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REPO = path.resolve(RUN, '..', '..');
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
+// IT EXPOSES AN OBJECT, NEVER A BARE FUNCTION (goal/G49.16, Andy: "A FUNCTION MUST ALWAYS BE INSTALLED INSIDE A CONTAINING
+// OBJECT. PERIOD!"; box v4: "spirit/job/script.js { installJobs }"): asked in a process of its own, spirit.requireScript answers an
+// object holding installJobs, each a function.
+test.run('spirit/job/script.js exposes an object holding installJobs, never a bare function', 0.2, function () {
+  const P = require('path');
+  let run = __dirname;
+  while (run !== P.dirname(run) && !require('fs').existsSync(P.join(run, 'spirit', 'script.js'))) run = P.dirname(run);
+  const r = require('child_process').spawnSync(process.execPath, ['-e', "require('./spirit/script.js'); let m = null; try { m = spirit.requireScript('spirit/job/script.js'); } catch (e) { m = null; } process.stdout.write(JSON.stringify({ t: typeof m, k: ['installJobs'].map(function (k) { return m ? typeof m[k] : ''; }) }));"], { cwd: run, encoding: 'utf8', timeout: 20000 });
+  let o = null; try { o = JSON.parse(r.stdout); } catch (e) { o = null; }
+  return (!!o && o.t === 'object' && o.k.length === 1 && o.k.every(function (k) { return k === 'function'; })) || false;
+}, test.limit.quick);
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
 const tempFolder = require('../../tempFolder/script.js');
