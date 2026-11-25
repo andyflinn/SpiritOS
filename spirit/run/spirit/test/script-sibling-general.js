@@ -2768,6 +2768,19 @@ if (!GIVEN.length) PARTS.forEach(function (part) { runPart(part, []); });
 // file names it). Over the whole repository, the files outside spirit/run too, by path and by content, in any case. The name
 // is built here, so this file names it nowhere itself.
 if (!GIVEN.length) {
+  // ONE TRANSLATOR OF A PRODUCT PATH TO ITS STATE (goal/G49.17, box v5; Andy: "i'm looking for one central translator of
+  // branch-path to state path", "agreed spirit.statePath(productPath) beside normalizeString() and escapeHtml()"): outside the
+  // spirit object, which holds statePath, no product script makes a state path of its own: no 'spirit/state/' joined with a
+  // name, no path.join of 'spirit' and 'state' with one. A fixed file of the node's own (spirit/state/identity.json) is no
+  // translation and stays written out.
+  test.run('no product script but the spirit object makes a state path from a name: each asks spirit.statePath', 0.6, function () {
+    const files = productCode().filter(function (f) { return f !== 'spirit/script.js'; });
+    if (files.length < 100) return false;
+    return !files.some(function (f) {
+      const c = codeText(f);
+      return /['"`]spirit\/state\/['"`]?\s*\+/.test(c) || /path\.join\([^)]*['"]spirit['"]\s*,\s*['"]state['"]\s*,\s*(?!['"])[A-Za-z_$]/.test(c);
+    }) || false;
+  }, test.limit.quick);
   // NO ROUTE UNDER /api/ (goal/G49.18, box v6: "both node and relay server have at the root of their path-routes the stupid
   // API/ node. of course this must be 'spirit'"; the rename "about thirty product files that name a route, the relay host docs
   // and bash/card-ask.js, all in one push"). Over the whole repository, code, docs, host scripts and tests alike, nothing names

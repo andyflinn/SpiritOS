@@ -5,7 +5,7 @@
 // live, on an app folder's row, set from spirit/state/<app>/node.json when that file changes"; "the flag conditions live in
 // spirit/fs/filter/<flagName>/script.js". Its shape, (dir, read), read(path) answering a file's text or null, as the fs
 // cache's writer asks it (cw, goal/G49.15: "live takes (dir, read) ... since it reads node.json's content"). The owner's
-// switch is node.json's active.
+// switch is node.json's active. Since goal/G49.17 an app's state is spirit.statePath's, spirit/state/app/<name>/.
 
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
@@ -28,9 +28,10 @@ try { F = SPIRIT.requireScript('spirit/fs/filter/live/script.js'); } catch (e) {
 function ask(dir, files) { try { return F.live(dir, function (p) { return Object.prototype.hasOwnProperty.call(files, p) ? files[p] : null; }); } catch (e) { return 'threw'; } }
 
 test.run('it holds its function, live(dir, read)', 0.2, function () { return typeof (F && F.live) === 'function' || false; }, test.limit.quick);
-test.run('an app folder whose node.json says active true is live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/zz/node.json': '{"active":true}' }) === true || false; }, test.limit.quick);
-test.run('an app folder whose node.json says active false is not live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/zz/node.json': '{"active":false}' }) === false || false; }, test.limit.quick);
+test.run('an app folder whose node.json says active true is live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/app/zz/node.json': '{"active":true}' }) === true || false; }, test.limit.quick);
+test.run('an app folder whose node.json says active false is not live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/app/zz/node.json': '{"active":false}' }) === false || false; }, test.limit.quick);
 test.run('an app folder with no node.json is not live', 0.2, function () { return ask('spirit/app/zz', {}) === false || false; }, test.limit.quick);
-test.run('an app folder whose node.json is no json is not live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/zz/node.json': 'not json' }) === false || false; }, test.limit.quick);
-test.run('another app\'s node.json does not make it live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/other/node.json': '{"active":true}' }) === false || false; }, test.limit.quick);
-test.run('a folder that is no app folder is not live', 0.2, function () { return ask('spirit/zz', { 'spirit/state/zz/node.json': '{"active":true}' }) === false || false; }, test.limit.quick);
+test.run('an app folder whose node.json is no json is not live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/app/zz/node.json': 'not json' }) === false || false; }, test.limit.quick);
+test.run('another app\'s node.json does not make it live', 0.2, function () { return ask('spirit/app/zz', { 'spirit/state/app/other/node.json': '{"active":true}' }) === false || false; }, test.limit.quick);
+test.run('an app\'s node.json at the old place, spirit/state/<name>/, makes it live no more', 0.2, function () { return ask('spirit/app/zz', { ['spirit/state/' + 'zz/node.json']: '{"active":true}' }) === false || false; }, test.limit.quick);
+test.run('a folder that is no app folder is not live, its own state saying active true', 0.2, function () { return ask('spirit/zz', { 'spirit/state/zz/node.json': '{"active":true}' }) === false || false; }, test.limit.quick);

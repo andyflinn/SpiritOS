@@ -281,7 +281,7 @@ test.run('with its json changed back to intrinsic false, zzKept.js comes without
 // ── THE FLAGS ON A FOLDER'S ROW (box v16) ──
 // The watcher on a scratch folder inside spirit/run: an old-shape branch (api.js and data.js), a new-shape branch
 // (script.js and client/script.js), a folder with script.js alone, an app (<name>/<name>.json) and that app's
-// spirit/state/<name>/node.json, its active turned true and then false. Each row is read from the fs dataset
+// spirit/state/app/<name>/node.json (spirit.statePath's place, goal/G49.17), its active turned true and then false. Each row is read from the fs dataset
 // (spirit/fs/dataset/script.js), which this process's watcher fills.
 let rows = null;
 test.run('the watcher runs on a scratch folder holding an old branch, a new branch, a script.js alone and an app, and its rows are read', 0.2, function () {
@@ -300,7 +300,7 @@ test.run('the watcher runs on a scratch folder holding an old branch, a new bran
       "const job = W.start(dir, jobs);",
       "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'dataset', 'script.js')) + ");",
       "const row = function (p) { const r = F.file(p); return r ? { api: r.api === true, branch: r.branch === true, app: r.app === true, live: r.live === true } : null; };",
-      "const state = path.join(dir, 'spirit', 'state', 'zzApp', 'node.json');",
+      "const state = path.join(dir, 'spirit', 'state', 'app', 'zzApp', 'node.json');",
       "const wait = function (want, ms) { const end = Date.now() + ms; return new Promise(function (r) { (function tick() { const a = row('spirit/app/zzApp'); if ((a && a.live === want) || Date.now() > end) return r(a ? a.live : null); setTimeout(tick, 100); })(); }); };",
       "const out = {};",
       "const end = Date.now() + 40000;",

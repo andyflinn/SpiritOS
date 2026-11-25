@@ -35,14 +35,22 @@ function scratch() {
   fs.writeFileSync(path.join(dir, NAME + '.json'), JSON.stringify({ identity: { icon: '🧪', label: NAME, intrinsic: false }, mount: { [NAME + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }));
   fs.writeFileSync(path.join(dir, NAME + '.js'), "'use strict';\nif (typeof window === 'undefined') {\n  require('../../script.js');\n  const n = " + SIZE + ";\n  require('../../server/app/script.js').serve({ big: { request: {}, reply: {}, handler: function () { return { text: Array.from({ length: n }, function (x, i) { return String.fromCharCode(97 + (i % 26)); }).join('') }; } } }, {});\n}\n");
   fs.writeFileSync(path.join(dir, 'api.js'), 'module.exports = { verbs: { big: {} } };\n');
-  const state = path.join(run, 'spirit', 'state', NAME);
+  // Its state where spirit.statePath puts an app's, spirit/state/app/<name>/ (goal/G49.17).
+  const state = path.join(run, 'spirit', 'state', 'app', NAME);
   fs.mkdirSync(state, { recursive: true });
   fs.writeFileSync(path.join(state, 'node.json'), JSON.stringify({ active: true }));
   // Icons, the first one-shot app (goal/G43.19), switched on too.
-  fs.mkdirSync(path.join(run, 'spirit', 'state', 'icons'), { recursive: true });
-  fs.writeFileSync(path.join(run, 'spirit', 'state', 'icons', 'node.json'), JSON.stringify({ active: true }));
+  fs.mkdirSync(path.join(run, 'spirit', 'state', 'app', 'icons'), { recursive: true });
+  fs.writeFileSync(path.join(run, 'spirit', 'state', 'app', 'icons', 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: run };
 }
+
+// AN APP'S DOOR IN ITS STATE FOLDER (goal/G49.17, box v5: "spirit/appClient/script.js: an app's door.sock"; the state of
+// spirit/app/<name> is spirit/state/app/<name>/).
+test.run('an app\'s door is spirit/state/app/<name>/door.sock, spirit.statePath\'s place', 0.2, function () {
+  const A = SPIRIT.requireScript('spirit/appClient/script.js');
+  return A.pipePathFor('/zzRoot', 'desk', 'linux') === path.join('/zzRoot', 'spirit', 'state', 'app', 'desk', 'door.sock') || false;
+}, test.limit.quick);
 
 // What the tests share: the scratch copy, its node and the answers later tests judge.
 const W = {};

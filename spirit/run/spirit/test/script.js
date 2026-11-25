@@ -289,7 +289,7 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'processJob', 'readStream', 'requireScript', 'ruleNames', 'statePath'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'processJob', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
@@ -332,6 +332,15 @@ function helpers(where, o) {
   const e = o.logError('boom');
   return (!!e && !!e.error && e.error.string === 'boom' && o.formatBytes(0) === '0 Bytes' && o.formatBytes(1024) === '1 KB' && o.formatBytes(1536) === '1.5 KB' && o.escapeHtml('&<>"\'') === '&amp;&lt;&gt;&quot;&#39;') || false;
 }
+// statePath (goal/G49.17, box v5; Andy: "agreed spirit.statePath(productPath) beside normalizeString() and escapeHtml()"; "the
+// state of spirit/<path>/ is always spirit/state/<path-without-leading-spirit>"): an app's, a trunk branch's, the contact branch's.
+function statesOf(o) {
+  if (!o || typeof o.statePath !== 'function') return false;
+  return o.statePath('spirit/app/desk') === 'spirit/state/app/desk' && o.statePath('spirit/console') === 'spirit/state/console' &&
+    o.statePath('spirit/contact') === 'spirit/state/contact' && o.statePath('spirit/app/testicle') === 'spirit/state/app/testicle';
+}
+test.run('in node, spirit.statePath answers spirit/state/ and the path without its leading spirit: spirit/app/desk is spirit/state/app/desk', 0.2, function () { return statesOf(s) || false; }, test.limit.quick);
+test.run('on a page, spirit.statePath answers the same', 0.2, function () { return T.w && T.w.spirit ? statesOf(T.w.spirit) || false : false; }, test.limit.quick);
 // normalizeString (goal/G49.13; Andy: "place additional string utilities ... or put inside of spirit/script.js beside
 // spirit.escapeHtml() normalizeString(str)"): fieldRules' normalize moved into the spirit object, as it does today: one Unicode
 // form (NFC), every run of white space one space, the ends trimmed; anything but a string is ''.
