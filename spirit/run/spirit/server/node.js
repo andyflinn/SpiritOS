@@ -183,13 +183,166 @@ let peerRouter = null;
 
 // ── WHAT THE LOOPBACK CLIENT DOOR CAN BE ASKED ───────────────────────
 //
-// Declared here, filled at the foot of this file. Modules claim their
-// own namespace where their dependencies exist — see verbTable.js for
-// why claiming beats a table, and why it happens after boot rather than
-// on require.
-//
-// A relay has no such door and does not load this module (relayServer.js).
-const loopbackVerbs = spirit.requireScript('spirit/verbTable.js').createVerbTable();
+// Declared here, filled at the foot of this file. A relay has no such door and does not load this module.
+// THE NODE'S OWN BRANCHES, IN THE NODE (goal/G49.12, box v17; Andy: "spirit/verbTable.js will be deleted, handlers for
+// node-branches are already inside the node process"): each branch's handlers, mounted at the foot of this file, are kept
+// here by branch and verb, and the door below looks every call up here. No claim and no namespace rules ("Reserved names in
+// the namespace are handled by the file system itself and by our naming conventions"), and no argument checks ("verbTables
+// "argument" checks will go, and be later replaced by 49.10's architecture"): a handler reads its own arguments.
+const loopbackVerbs = (function nodeBranches() {
+  const answer = Object.create(null);   // 'branch.verb' -> its (req, res) handler
+  const shapes = Object.create(null);   // branch -> {verb: {request, reply}}, the node's half of the flat table
+  const folders = Object.create(null);  // branch -> the folder it was mounted with, where its api.js is (goal/G32.3)
+  // mount(branch, dir, declarations): a module hands its verbs bare, {stat: {request, reply, handler}}, and its folder; the
+  // node gives them the branch's name (Andy, 2026-10-20: "a module shouldn't know who mounted it").
+  function mount(branch, dir, declarations) {
+    const ns = String(branch || '');
+    Object.keys(declarations || {}).forEach(function (v) {
+      const d = declarations[v];
+      answer[ns + '.' + v] = d.handler;
+      (shapes[ns] = shapes[ns] || {})[v] = { request: d.request, reply: d.reply };
+    });
+    if (dir) folders[ns] = String(dir);
+  }
+  function handlerFor(verb) {
+    const name = String(verb || '');
+    return Object.prototype.hasOwnProperty.call(answer, name) ? answer[name] : null;
+  }
+  function tree() {
+    const out = {};
+    Object.keys(shapes).sort().forEach(function (ns) { out[ns] = Object.assign({}, shapes[ns]); });
+    return out;
+  }
+  // The branches mounted here, by name: the names no app may take, since branches and apps sit side by side in one table.
+  function namespaces() { return Object.keys(shapes).sort().map(function (ns) { return { namespace: ns }; }); }
+  // THE BODY THE DOOR ALREADY READ: serveCommon.readJsonBody keeps its promise on the request, so a second read answers at
+  // once (a second reader on the stream would wait for an end that already passed).
+  function readBody(rq) { return spirit.requireScript('spirit/server/serveCommon.js').readJsonBody(rq); }
+  // ONE CALL, IN-PROCESS (goal/G30.4): the handler a loopback call reaches, called without the network, the args in as
+  // its request body and the answer caught off the response; a handler failing at once or later resolves handler-failed, once.
+  function call(verb, args) {
+    return new Promise(function (resolve) {
+      const handler = handlerFor(verb);
+      if (!handler) { resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: verb }); return; }
+      const text = JSON.stringify(args && typeof args === 'object' && !Array.isArray(args) ? args : {});
+      const req = require('stream').Readable.from([text]);
+      req.headers = { 'content-type': 'application/json', 'content-length': String(Buffer.byteLength(text, 'utf8')) };
+      let status = 200;
+      const res = {
+        writeHead: function (code) { status = Number(code) || 200; return res; },
+        setHeader: function () {},
+        write: function () { return true; },
+        end: function (body) {
+          let parsed = null;
+          try { parsed = JSON.parse(String(body || '')); } catch (e) { parsed = null; }
+          resolve({ ok: status < 400, status: status, body: parsed, text: parsed ? undefined : String(body || '') });
+        },
+      };
+      const failed = function () { resolve({ ok: false, status: 500, code: 'handler-failed', error: 'the handler failed', verb: verb }); };
+      let ran = null;
+      try { ran = handler(req, res); } catch (e) { failed(); return; }
+      if (ran && typeof ran.then === 'function') ran.then(null, failed);
+    });
+  }
+  // THE ONE DOOR TO THE FLAT TABLE (goal/G30.4): 'api' is one flat object, this node's branches and its apps' side by side;
+  // {branch: {verb: {args}}} runs a node branch through call and hands anything else to the apps. It gates nothing: the gate
+  // is apiDoor's. opts.owner() is the caller the owner's own calls carry; opts.branchDir(name) a served app's folder.
+  function door(apps, opts) {
+    const ownerOf = opts && typeof opts.owner === 'function' ? opts.owner : function () { return { owner: true }; };
+    const branchDirOf = opts && typeof opts.branchDir === 'function' ? opts.branchDir : function () { return ''; };
+    // A BRANCH'S INTERFACE (goal/G32.3): api {branch} answers {branch, interface}, the text of its api.js.
+    function interfaceOf(name) {
+      const fam = String(name || '');
+      const served = apps && typeof apps.apps === 'function' && apps.apps().indexOf(fam) !== -1;
+      const dir = folders[fam] || (served ? branchDirOf(fam) : '');
+      let text = null;
+      if (dir) { try { text = require('fs').readFileSync(path.join(dir, 'api.js'), 'utf8'); } catch (e) { text = null; } }
+      if (text === null) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-interface', error: 'no interface for the branch ' + fam } });
+      return Promise.resolve({ status: 200, body: { branch: fam, interface: text } });
+    }
+    function asksInterface(body) {
+      return !!body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 && body.api && typeof body.api === 'object' && typeof body.api.branch === 'string';
+    }
+    const d = {
+      ask: function (body, caller) {
+        if (asksInterface(body)) return interfaceOf(body.api.branch);
+        if (body === 'api') {
+          return Promise.resolve(apps && typeof apps.ask === 'function' ? apps.ask('api', caller) : { status: 200, body: {} }).then(function (r) {
+            const flat = Object.assign({}, (r && r.body && typeof r.body === 'object') ? r.body : {});
+            const own = tree();
+            Object.keys(own).forEach(function (ns) { flat[ns] = own[ns]; });
+            return { status: 200, body: flat };
+          });
+        }
+        const isObj = body && typeof body === 'object' && !Array.isArray(body);
+        const ns = isObj && Object.keys(body).length === 1 ? Object.keys(body)[0] : '';
+        if (ns && shapes[ns]) {
+          const inner = body[ns];
+          if (!inner || typeof inner !== 'object' || Array.isArray(inner) || Object.keys(inner).length !== 1) {
+            return Promise.resolve({ status: 400, body: { ok: false, code: 'bad-request', error: 'one verb, as {branch: {verb: {args}}}' } });
+          }
+          const v = Object.keys(inner)[0];
+          return call(ns + '.' + v, inner[v]).then(function (a) {
+            return { status: a.status, body: a.body !== null && a.body !== undefined ? a.body : { ok: a.ok, code: a.code, error: a.error || a.text } };
+          });
+        }
+        return Promise.resolve(apps && typeof apps.ask === 'function' ? apps.ask(body, caller) : { status: 404, body: { ok: false, code: 'app-not-served' } });
+      },
+    };
+    // THE DOOR'S OWN FRONT (goal/G30.5): the loopback door (/api/spirit) asks this for a verb's handler. A node branch's
+    // verb keeps its own (req, res) handler; 'api' answers the flat table; 'branch.verb' goes through ask, args the call's
+    // own (goal/G41.15). The caller is the owner, on loopback, so its answer is bound by no ANSWER_MAX (goal/G41.28).
+    d.handlerFor = function (verb) {
+      const name = String(verb || '');
+      const own = handlerFor(name);
+      if (own) return own;
+      const dot = name.indexOf('.');
+      if (name !== 'api' && (dot < 1 || dot === name.length - 1)) return null;
+      // A branch nobody serves is no verb at all: the door refuses it.
+      if (name !== 'api' && apps && typeof apps.apps === 'function' && apps.apps().indexOf(name.slice(0, dot)) === -1) return null;
+      return function (rq, rs) {
+        return readBody(rq).then(function (body) {
+          const args = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
+          let asked = name;
+          if (name === 'api' && typeof args.branch === 'string') asked = { api: { branch: args.branch } };
+          else if (name !== 'api') {
+            asked = {};
+            asked[name.slice(0, dot)] = {};
+            asked[name.slice(0, dot)][name.slice(dot + 1)] = args;
+          }
+          const own2 = ownerOf();
+          own2.loopback = true;
+          return d.ask(asked, own2);
+        }).then(function (a) {
+          rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
+          rs.end(JSON.stringify(a && a.body !== undefined ? a.body : { ok: false, code: 'handler-failed' }));
+        });
+      };
+    };
+    // THE DOOR'S IN-PROCESS CALL (goal/G30.6): what the owner door runs, one verb by name, answered {ok, status, body}; a
+    // branch nobody serves is no-such-verb, as the loopback door says it. An app gets the call's arguments as they came.
+    d.call = function (verb, args) {
+      const name = String(verb || '');
+      if (handlerFor(name)) return call(name, args);
+      const dot = name.indexOf('.');
+      if (name !== 'api' && !d.handlerFor(name)) return Promise.resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: name });
+      let asked = name;
+      if (name === 'api' && args && typeof args.branch === 'string') asked = { api: { branch: args.branch } };
+      else if (name !== 'api') {
+        const given = args && typeof args === 'object' && !Array.isArray(args) ? args : {};
+        asked = {};
+        asked[name.slice(0, dot)] = {};
+        asked[name.slice(0, dot)][name.slice(dot + 1)] = given;
+      }
+      return Promise.resolve(d.ask(asked, ownerOf())).then(function (a) {
+        const status = (a && a.status) || 500;
+        return { ok: status < 400, status: status, body: a ? a.body : null };
+      });
+    };
+    return d;
+  }
+  return { mount: mount, call: call, tree: tree, door: door, handlerFor: handlerFor, namespaces: namespaces };
+}());
 // The flat apiDoor (goal/G30.4), set once the app client exists below; /api/spirit dispatches through it (goal/G30.5).
 let nodeDoor = null;
 // This node's face (goal/G30.13), built on nodeDoor once it exists; presence hands it the relay's face events.
@@ -900,7 +1053,7 @@ const server = http.createServer((req, res) => {
     // knows — the same thing said twice, kept in step by remembering,
     // which is what the four post-path doors were.
     //
-    // Modules CLAIM a namespace instead (verbTable.js), at the foot of
+    // Each module MOUNTS its branch instead (nodeBranches, above), at the foot of
     // this file where their dependencies exist. So this dispatch knows
     // how to find an answer and nothing about what the answers are.
     if (pathname === '/api/spirit') {
@@ -1743,7 +1896,7 @@ catch (e) {
   // { to, verb, body }: the page names the puppet and the verb it would
   // call locally ("It's a remote control"); peerOwnerPost signs, sends and
   // waits for the one answer with that command's hash. WIRE, because the
-  // puppet can be unreachable, and a wire verb says so (verbTable.js).
+  // puppet can be unreachable.
   loopbackVerbs.mount('owner', path.join(__dirname, '..', 'owner'), {
     // WHAT HIS BOXES CARRY, grouped by box, on demand (G10). Andy: "that
     // must be visible-on-demand in a UI", and over-committed is a warning.

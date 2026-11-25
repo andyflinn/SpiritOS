@@ -18,7 +18,7 @@ require('./spirit.js');
 //
 //   THE KNOCK. ask('api') asks every server its verb tree; ask({app: {verb:
 //   {args}}}) hands one verb to one server over its pipe and brings back
-//   its reply as it came (appPair/G1 D10, D11). The flat door (verbTable door,
+//   its reply as it came (appPair/G1 D10, D11). The flat door (the node's door (server/node.js),
 //   /api/spirit) and a member's 'api' packet (apiDoor.js) both end here.
 //
 // WHAT LEFT WITH goal/G13.2 (Andy, 2026-10-10, "no \"face\" crap belongs
@@ -113,7 +113,7 @@ function createAppClient(opts) {
     const h = {};
     if (caller.owner === true) h['X-Spirit-Owner'] = '1';
     // The owner on loopback (goal/G41.28): his answer travels nowhere, so no ANSWER_MAX holds it (the server's own check,
-    // and this file's read below). Only the node's loopback door sets it (verbTable.js).
+    // and this file's read below). Only the node's loopback door sets it (server/node.js).
     if (caller.owner === true && caller.loopback === true) h['X-Spirit-Loopback'] = '1';
     if (typeof caller.key === 'string' && caller.key) h['X-Spirit-Caller'] = caller.key;
     if (typeof caller.label === 'string' && caller.label) h['X-Spirit-Label'] = caller.label;

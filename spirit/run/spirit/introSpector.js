@@ -66,7 +66,7 @@ function readFolder(dir, declared, manifest) {
 
 // THE FAMILY OF ONE FOLDER, in the declaration form {request, reply, handler}.
 // opts: { declared: [stem...], manifest, prefix }
-//   prefix        '' on a process server, the namespace and a dot on the node ('fs.', 'contact.', verbTable.js): it goes before
+//   prefix        '' on a process server, the namespace and a dot on the node ('fs.', 'contact.', server/node.js): it goes before
 //                 every verb name the family answers and lists
 // Answers { verbs: {name: declaration}, stale: [fileName] }: the FS verbs
 // (fsVerbs, below) on every folder, AGENTS.md or not.
@@ -182,7 +182,7 @@ function stale(dir, declared) { return readFolder(dir, declared || [], '').stale
 
 // claim(table, namespace, by, declarations) STOOD HERE (goal/G10.5). It signed a module's verbs up on the node's
 // table and wrapped their AGENTS verbs for the web door: the node's wiring, not introspection. It moved into
-// verbTable as mount (goal/G30.4; Andy, 2026-10-20: "it does NOT belong in introSpector. a namespace container is not
+// the node's mount (goal/G30.4; Andy, 2026-10-20: "it does NOT belong in introSpector. a namespace container is not
 // known by the namespace.").
 
 module.exports = { family: family, stale: stale, AGENTS_FILE: AGENTS_FILE };

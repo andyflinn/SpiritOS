@@ -133,7 +133,7 @@ function ownerCommandIn(arrival, opts) {
 //     owner as a second packet carrying re = the command's hash
 //     (transport/R12: "where a hash must match").
 //
-// THE SHIM (verbTable's call since goal/G30.4, below): a readable holding the body and a writable catching status and
+// THE SHIM (the node's call since goal/G30.4, below): a readable holding the body and a writable catching status and
 // body. It carries the two headers the shared body reader needs and no
 // socket, so a handler that reaches for the socket fails ALONE (G3): that
 // one command is refused, and the node and the next command are untouched.
@@ -168,7 +168,7 @@ function puppetDoor(opts) {
       say('puppet door: the answer to ' + String(message.hash).slice(0, 8) + ' could not be sent: ' + e.message);
     });
   }
-  // THE SHIM STOOD HERE: the in-process call of a loopback handler. It is the table's own now, verbTable call
+  // THE SHIM STOOD HERE: the in-process call of a loopback handler. It is the table's own now, the node's call
   // (goal/G30.4), because a granted peer call runs the same way; o.call is that function.
   return function (message) {
     const p = puppet();

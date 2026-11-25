@@ -14,7 +14,7 @@
 // relative to the file naming it ('./x.js', '../x.js'), as path.join pieces, in its regex-escaped form. Its dotted name is
 // never touched: a folder's script.js stands at the folder's name, so a move changes no dotted name (goal/G49.9; G49.5,
 // tried: rewriting it left 56 of 78 moved elements' tests redder). Left alone: quoted words, generated reports, history, the vendored
-// folders and every state folder. Refused: a target that already exists, or a move that would make a folder a branch.
+// folders and every state folder. Refused: a target that already exists.
 //
 // WHERE IT FINDS THE REFERENCES (the box): the loaders by testicle's dependency table (script, requires), read once a batch
 // into memory and never written (testicle stays its one writer; each move renames its copy, old path to new in both
@@ -77,18 +77,8 @@ async function testicleActive(on) {
   } catch (e) { return false; }
 }
 
-// A BRANCH IS A FOLDER HOLDING AN api.js OR A data.js (Andy: "a branch is a path, anywhere in the node that satisfies the
-// condition of having an api.js file"): a move must not make one.
-// Refused both ways: a script moved into a folder that holds an api.js or a data.js, and an api.js or data.js moved into a
-// folder that holds neither.
-const BRANCH_FILES = ['api.js', 'data.js'];
-function makesBranch(to) {
-  const base = path.posix.basename(to);
-  const dir = path.posix.dirname(to);
-  const branchThere = BRANCH_FILES.some(function (b) { return exists(dir + '/' + b); });
-  if (BRANCH_FILES.indexOf(base) === -1) return branchThere;
-  return !branchThere;
-}
+// NO RULE ON WHERE A SCRIPT MAY LAND BESIDE A BRANCH'S FILES (goal/G49.12; Andy: "DUMB RULES! ./api.js files will disappear
+// into ./client/script.js or equivalent when we get to enforcing branch and app api standards....").
 
 // What moves with a script: its test, its .md and its test's fixtures named after it.
 function companions(from, to) {
@@ -170,7 +160,6 @@ function moveOne(from, to, o) {
   from = posix(from).replace(/^\.?\//, ''); to = posix(to).replace(/^\.?\//, '');
   if (!exists(from)) return { refused: 'no such script: ' + from };
   if (exists(to)) return { refused: 'the target exists: ' + to };
-  if (makesBranch(to)) return { refused: 'it would make ' + path.posix.dirname(to) + ' a branch' };
   const pairs = companions(from, to);
   const blocked = pairs.filter(function (p) { return exists(p[1]); });
   if (blocked.length) return { refused: 'the target exists: ' + blocked[0][1] };
@@ -239,5 +228,5 @@ async function main(argv) {
   return refused ? 1 : 0;
 }
 
-module.exports = { moveOne: moveOne, batchOf: batchOf, fixText: fixText, companions: companions, makesBranch: makesBranch };
+module.exports = { moveOne: moveOne, batchOf: batchOf, fixText: fixText, companions: companions };
 if (require.main === module) main(process.argv.slice(2)).then(function (code) { process.exit(code); }, function (e) { console.error(e && e.stack || e); process.exit(1); });
