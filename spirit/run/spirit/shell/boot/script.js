@@ -203,8 +203,8 @@
   // it, through spirit.requireScript, once (goal/G43.24: "every element that accesses ANY api must require them themselves").
   // The list of goal/G40.7 that fetched spirit's libraries, Join's steps and the navigation here is gone.
   var FACE_PARTS = [
-    'shell.css',
-    'shell/face.css',
+    'spirit/shell/shell.css',
+    'spirit/shell/face.css',
   ];
   // Asked all at once, run in their order: a part missing is said by the app that needs it.
   function loadParts() {
@@ -283,12 +283,12 @@
   }
 
   // THE CALLER'S LINK (goal/G40.10, box v25; Andy: "the join-app-link, which only the shell really knows"): this page,
-  // opening Join; the relay adds its code and key to it and mails it. At home the node's /face.html, on a relay this face.
+  // opening Join; the relay adds its code and key to it and mails it. At home the node's /, on a relay this face.
   (window.spirit.shell = window.spirit.shell || {}).joinLink = function () {
     return window.location.origin + window.location.pathname + '?app=join';
   };
 
-  // THE MAILED JOIN LINK (goal/G40.10): the relay mails /face.html?join=<code>&relay=<its key>&app=join. Read here, before
+  // THE MAILED JOIN LINK (goal/G40.10): the relay mails /?join=<code>&relay=<its key>&app=join. Read here, before
   // the address is cleared; once the page is up the code goes to contact.join, at the relay this node lists under that key
   // (joinSteps.linkRelay).
   var joinCode = '';

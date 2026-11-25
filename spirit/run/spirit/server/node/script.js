@@ -82,7 +82,8 @@ common.writeEnvironment(ROOT_DIR, port);
 
 // "/" IS face.html (goal/G43.30; Andy: "make face.html the default for \"/\""): the old shell's index.html is gone.
 // (A relay's brochure, relay.html, is gone with the relay's public door: Andy's decision, goal/G22.6.)
-const HOME_PAGE = 'face.html';
+// Asked at its own path too; "/" is the one address that is not a file's (goal/G49.13: no address map).
+const HOME_PAGE = 'spirit/shell/face.html';
 
 // THE LOG, read as a table. One store for both directions, keyed by hash
 // and ordered by arrival — and the thing the arrivals seam hands rows to,
@@ -124,7 +125,8 @@ const arrivals = spirit.requireScript('spirit/arrivals/script.js').createArrival
 // unconditionally by the static route below, checked before fileServable.
 // index.html, the old kernel and spirit/client/shell.js left it with the old
 // shell (goal/G43.30).
-const BOOT_ASSETS = ['favicon.svg'];
+// The tab's icon at home (Q26, Andy: "the ghost one for loopback, the face one for the face."), at its own path.
+const BOOT_ASSETS = ['spirit/shell/ghost.svg'];
 
 const jobs = spirit.requireScript('spirit/job/script.js')(port);
 jobs.startFsWatcherJob(ROOT_DIR);
@@ -431,9 +433,9 @@ const events = spirit.requireScript('spirit/event/event.js').createEvents({
 // goal/G30.13) passes the same gate as the browser on loopback.
 function serveGet(pathname, res) {
   const isHomeRequest = pathname === '/';
-  // THE ADDRESS STAYS, THE FILE MOVED (goal/G43.18, Q25, Andy: "the browser should see them the same."): serveCommon.pageFile.
+  // A FILE IS SERVED AT ITS OWN PATH (goal/G49.13; the address map of goal/G43.18 is gone): "/" alone is the face.
   const address = isHomeRequest ? HOME_PAGE : pathname.replace(/^\/+/, '');
-  const relativePath = common.pageFile(address);
+  const relativePath = address;
   const filePath = fsPath(ROOT_DIR, '/' + relativePath);
 
   if (!filePath) {

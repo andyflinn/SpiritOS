@@ -428,14 +428,15 @@ function isRelayPublicPath(method, pathname) {
 // fetches a certificate for that name on demand (bash/face-setup).
 // goal/G41.3: face/ moved into shell/ (face/shell.js is shell/boot.js), so the face's files come from there, at their
 // new addresses; the old /face/<file> addresses are gone (the routes /face/allowed, call, file, stream and api stay).
-// goal/G43.18 (Q25, Andy: "the browser should see them the same."): the files moved under spirit/shell/, the addresses stay;
-// each address is served from its file (serveCommon.pageFile), the run root the base.
+// goal/G49.13: each file at its own run path, the run root the base; the address map of goal/G43.18 is gone (Andy: "YOU
+// FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
 const FACE_DIR = path.join(__dirname, '..', '..', '..');
 // THE PLAIN PAGE ONLY (goal/G43.18, box v29: "The relay serves a logged-out face one plain page, the one-field form, with
 // spirit.js and seal.js only"): face.html, spirit.js (which holds spirit.faceLogin and the link), the seal and the tab's icon.
 // boot.js, the sheets and every other part of the shell come from the home node over the link.
-// /spirit.js is face.html's script tag, at the address the node serves it at too (goal/G41.19).
-const FACE_FILES = { '/spirit.js': common.pageFile('spirit.js'), '/shell/seal.js': common.pageFile('shell/seal.js'), '/shell/favicon.svg': common.pageFile('shell/favicon.svg') };
+// /spirit/script.js is face.html's script tag, at the path the node serves it at too (goal/G41.19).
+const FACE_PAGE = 'spirit/shell/face.html';
+const FACE_FILES = ['spirit/script.js', 'spirit/shell/seal/script.js', 'spirit/shell/favicon.svg'].reduce(function (o, f) { o['/' + f] = f; return o; }, {});
 const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
 function faceCookie(req) {
   const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
@@ -482,10 +483,10 @@ function faceDoor(req, res, url, pathname) {
     res.end(at.status === 503 ? 'This face is offline: its home node is not connected.' : 'No such face.');
     return true;
   }
-  if (req.method === 'GET' && (pathname === '/' || pathname === '/face.html')) {
+  if (req.method === 'GET' && (pathname === '/' || pathname === '/' + FACE_PAGE)) {
     // THE PAGE ONLY (goal/G41.29, the box: "The login-email must not carry a link"): no token in the address logs anyone
     // in; the token is pasted into the Log in field (POST /face/api login).
-    faceSend(res, 200, common.pageFile('face.html'));
+    faceSend(res, 200, FACE_PAGE);
     return true;
   }
   if (req.method === 'GET' && FACE_FILES[pathname]) { faceSend(res, 200, FACE_FILES[pathname]); return true; }

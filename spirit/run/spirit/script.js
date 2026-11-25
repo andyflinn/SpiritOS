@@ -1256,7 +1256,7 @@
   }
   // Made once, logged in: the home node's keys, then this page's own key when the browser can seal.
   function makeLink() {
-    return requireOne('shell/seal.js').then(function () { return linkCall({ keys: 1 }); }).then(function (r) {
+    return requireOne('spirit/shell/seal/script.js').then(function () { return linkCall({ keys: 1 }); }).then(function (r) {
       var keys = null;
       try { keys = JSON.parse(linkText(r.bytes)); } catch (e) { keys = null; }
       if (r.status !== 200 || !keys || !keys.publicKey) throw refusal('no-home', 'the home node did not answer', { status: r.status });
@@ -1285,7 +1285,7 @@
   // home is made, and boot.js, the sheets and every other part of the shell come from the home node over it (box v29: "The
   // relay serves a logged-out face one plain page ... with spirit.js and seal.js only"). spirit.faceState says where the page
   // stands, { home, loggedIn, name }; spirit.faceBooted answers once boot.js runs.
-  var FACE = ['shell/boot.js'];
+  var FACE = ['spirit/shell/boot/script.js'];
   // THE ONE FIELD (box v29: "draws the one field when logged out"; Andy: "i don't care if the face-login is totally plain, it
   // only serves one single-field form...."): the email or the mailed token, Log in, and a line for what the relay said.
   function drawLogin(said) {
@@ -1320,9 +1320,9 @@
   function startFace() {
     if (isLoopback()) {
       self.faceState = { home: true, loggedIn: true, name: '' };
-      // THE GHOST AT HOME (Q26, Andy: "the ghost one for loopback, the face one for the face."): the tab's icon, /favicon.svg.
+      // THE GHOST AT HOME (Q26, Andy: "the ghost one for loopback, the face one for the face."): the tab's icon, at its own path.
       var icon = root.document && root.document.querySelector('link[rel="icon"]');
-      if (icon) icon.setAttribute('href', '/favicon.svg');
+      if (icon) icon.setAttribute('href', '/spirit/shell/ghost.svg');
       return boot(FACE);
     }
     return self.faceLogin.state().then(function (s) {

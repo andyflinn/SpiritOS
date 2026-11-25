@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- spirit/run/spirit/shell/face.html
      THE NEW SHELL IN THE MAKING (goal/G30.9): the lazy-load shell, served by the relay at <face>.<relay host> and by
-     the home node at /face.html alike. It has the shell's skeleton (the desktop, the title bar with Back and Home,
+     the home node at / alike. It has the shell's skeleton (the desktop, the title bar with Back and Home,
      the app screen); its sheets come with boot.js's parts (below). Logged out, spirit.faceLogin draws the one field (the
      login app went with goal/G43.18). Logged in, everything else comes from the home node over the
      sealed link (goal/G30.11; shell/seal.js is the node's seal in WebCrypto, shell/boot.js says the rest); the not
@@ -15,9 +15,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="/spirit.js"></script>
+  <script src="/spirit/script.js"></script>
   <title>Face</title>
-  <link rel="icon" type="image/svg+xml" href="/shell/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/spirit/shell/favicon.svg" />
 </head>
 <body>
   <div id="face-banner" hidden></div>

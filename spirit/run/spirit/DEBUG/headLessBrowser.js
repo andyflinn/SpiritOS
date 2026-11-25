@@ -2,7 +2,7 @@
 require('../script.js');
 // spirit/run/spirit/DEBUG/headLessBrowser.js
 // THE BARE MOUNT PAGE OF ONE MODULE (goal/G41.19, ./test/script.md), replacing shell/mount.html. Andy: "the response will
-// be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit.js"> and the most minimal
+// be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit/script.js"> and the most minimal
 // mount for armingButton.js". Its first user is the shell's general rules (spirit/test/script-sibling-browser.md).
 //
 // The page loads /spirit.js, then the module through spirit.requireScript, alone (rule/26). An app (it calls
@@ -64,9 +64,9 @@ function make(o) {
   if (o.ext !== 'html') return Promise.resolve(null);
   const name = o.module.slice(o.module.lastIndexOf('/') + 1);
   const body = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>' + name + '</title>\n' +
-    '<link rel="stylesheet" href="/shell.css" />\n' +
+    '<link rel="stylesheet" href="/spirit/shell/shell.css" />\n' +
     '<style>html, body { height: 100%; margin: 0; } body { display: flex; flex-direction: column; }</style>\n' +
-    '</head>\n<body>\n<div id="mount-box" class="fill"></div>\n<script src="/spirit.js"></script>\n<script>\n' + mountScript(o.module + '.js') + '\n</script>\n</body>\n</html>\n';
+    '</head>\n<body>\n<div id="mount-box" class="fill"></div>\n<script src="/spirit/script.js"></script>\n<script>\n' + mountScript(o.module + '.js') + '\n</script>\n</body>\n</html>\n';
   return Promise.resolve({ type: 'text/html; charset=utf-8', body: body });
 }
 

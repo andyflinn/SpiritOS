@@ -1932,7 +1932,7 @@ function createHub(rootDir) {
     // the asking page's shell wants opened, which only the shell knows; the relay adds its code and key and mails it. A
     // join with no page behind it (joinAtStart, at boot) gets this node's own face on the loopback.
     var link = String((body && body.link) || '').trim() ||
-      ('http://127.0.0.1:' + (Number(deps && deps.port) || 0) + '/face.html?app=join');
+      ('http://127.0.0.1:' + (Number(deps && deps.port) || 0) + '/?app=join');
     // A router that throws before it answers (no route to the relay) is the same refusal as one that never answers.
     return Promise.resolve().then(function () { return router.join(url, email, link, code); }).then(function (said) {
       if (!code) {
