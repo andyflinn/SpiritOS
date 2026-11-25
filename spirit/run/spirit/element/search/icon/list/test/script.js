@@ -20,7 +20,7 @@ const test = LOADER.requireScript('spirit/test/testReport.js');
 const { scratchNode, scratchFaceRelay, chromePage, findChrome, until, sleep } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 const SET = 'spirit/iconSet.json';
-const OWN = 'spirit/state/icons/data/iconSet.json';
+const OWN = 'spirit/state/app/icons/data/iconSet.json';
 const DOMAIN = 'localhost';
 const NAME = 'icons';
 const MAIL = 'bert@example.org';

@@ -345,12 +345,16 @@ function installJobs(port) {
   // before anything runs: another command or another script, not-a-process; an app without node run, process-not-included.
   // Its job's id is the app's route, spirit.app.<name>, so a second start while one runs or waits is refused (createJob).
   // AN APP OF spirit/app/ (goal/G43.12). Andy: "active is exactly that: "running"", and "that's how the node knows, at
-  // re-boot time, which servers it must autostart." active in spirit/state/<name>/node.json is the one switch for its server;
+  // re-boot time, which servers it must autostart." active in spirit/state/app/<name>/node.json is the one switch for its server;
   // node.mount in spirit/app/<name>/<name>.json says it has a server at all.
+  // AN APP'S STATE FOLDER, BY spirit.statePath (goal/G49.17, box v5: spirit/state/app/<name>/): its node.json, its data/ handed
+  // over as --state. The app path is built from the name here, as all of the job's app paths are until the job's turn (Andy,
+  // goal/G49.17: "we'll fix all of job when it's turn after fs finally starts").
+  function appState(root, name) { return path.join(root, ...spirit.statePath('spirit/app/' + name).split('/')); }
   function appActive(root, name) {
     // An intrinsic app is always active (goal/G43.14): its <name>.json says so, and node.json is not asked.
     if (spirit.requireScript('spirit/coreFiles/script.js').appIntrinsic(path.resolve(root, '..', '..'), name) === true) return true;
-    try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
+    try { return JSON.parse(fs.readFileSync(path.join(appState(root, name), 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
   }
   // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21): node.run in its <name>.json.
   function appRuns(root, name) {
@@ -424,10 +428,10 @@ function installJobs(port) {
     const values = {};
     ((own && Array.isArray(own.args)) ? own.args : []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
     const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, name, process.platform);
-    // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/<name>/data/ (goal/G43.10), handed over as --state, so a
-    // process never works out its own folder. Its folder, spirit/state/<name>/, holds node.json, cache/, data/ and on Linux
+    // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/app/<name>/data/ (goal/G43.10), handed over as --state, so a
+    // process never works out its own folder. Its folder, spirit/state/app/<name>/, holds node.json, cache/, data/ and on Linux
     // door.sock (goal/G43.20).
-    const state = path.join(rootDir, 'spirit', 'state', name, 'data');
+    const state = path.join(appState(rootDir, name), 'data');
     try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the server says why */ }
     const args = appServerArgs(rootDir, script).concat([JSON.stringify(values), '--pipe', pipe, '--state', state], nodeArgOf(rootDir));
     // AN APP'S DEBUG, KEPT BY THE NODE (goal/G43.15, Q2, Q3: "only the new ones."): handed over at every start, a restart after a
@@ -495,7 +499,7 @@ function installJobs(port) {
     const old = getJob(route);
     const job = old && !TERMINAL_STATUSES.has(old.status) ? old : createJob('server', route, { oneShot: true, command: process.execPath, args: appServerArgs(rootDir, script) }, route);
     updateJob(job.id, { status: 'running' });
-    const state = path.join(rootDir, 'spirit', 'state', name, 'data');
+    const state = path.join(appState(rootDir, name), 'data');
     try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the run says why */ }
     const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, name, process.platform);
     // One run of the script, handed what a permanent server is handed: its pipe, its state folder, the node's facts and its
@@ -546,12 +550,12 @@ function installJobs(port) {
   // its next start. The server never writes the node's file.
   const appArgs = new Map();     // name -> the argument list its server job starts from
   function appDebug(root, name) {
-    try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).debug === true; } catch (e) { return false; }
+    try { return JSON.parse(fs.readFileSync(path.join(appState(root, name), 'node.json'), 'utf8')).debug === true; } catch (e) { return false; }
   }
   function keepDebug(job, on) {
     const m = /^spirit\.app\.([^/]+)$/.exec(String(job.module || ''));
     if (!m || job.kind !== 'server' || !serverHost) return;
-    const file = path.join(serverHost.rootDir, 'spirit', 'state', m[1], 'node.json');
+    const file = path.join(appState(serverHost.rootDir, m[1]), 'node.json');
     let state = {};
     try { state = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch (e) { state = {}; }
     if (state.debug === on) return;

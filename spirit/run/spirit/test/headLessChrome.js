@@ -219,7 +219,8 @@ async function scratchNode(o) {
   const run = lab.run;
   trees.set(path.resolve(run), lab);
   (opts.servers || []).forEach(function (name) {
-    const dir = path.join(run, 'spirit', 'state', name);
+    // Its switch where the node reads it, the app's state folder by spirit.statePath (goal/G49.17).
+    const dir = path.join(run, ...require('../script.js').statePath('spirit/app/' + name).split('/'));
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'node.json'), JSON.stringify({ active: true }));
   });

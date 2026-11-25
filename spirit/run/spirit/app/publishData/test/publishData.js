@@ -55,9 +55,9 @@ let line, at, want, readme;
 
 // its files and folders
 // THE TEST STATE FROM TESTICLE (Andy, the cycle that deletes the desk's verifier: "publish Data uses testicle data."): it
-// reads testicle's testicle.db where testicle keeps it, its state spirit/state/testicle/data/, worked out from its own line.
-const TESTICLE_DB = path.join(RUN, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
-test.run('publishData reads testicle\'s testicle.db where testicle keeps it, in its state folder spirit/state/testicle/data/', 0.2, function () {
+// reads testicle's testicle.db where testicle keeps it, its state spirit/state/app/testicle/data/, worked out from its own line.
+const TESTICLE_DB = path.join(RUN, 'spirit', 'state', 'app', 'testicle', 'data', 'testicle.db');
+test.run('publishData reads testicle\'s testicle.db where testicle keeps it, in its state folder spirit/state/app/testicle/data/', 0.2, function () {
   const lines = code(FILE).split('\n').filter(function (l) { return /const\s+\w+\s*=\s*path\.join\(__dirname[^;]*testicle\.db/.test(l); });
   line = (/=\s*([^;]+);/.exec(lines[0] || '') || [])[1];
   at = '';

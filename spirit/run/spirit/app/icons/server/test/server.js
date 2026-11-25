@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/icons/server/test/server.js
 // The tests of spirit/app/icons/server/server.js, and of no other module (spec: ./server/server.md; goal/G43.19, box v16): the
-// icon set's node half, one table. The box: "./node<Name>.js will maintain the table (run://spirit/state/icons/data/iconSet.json)",
+// icon set's node half, one table. The box: "./node<Name>.js will maintain the table (run://spirit/state/app/icons/data/iconSet.json)",
 // "it is initialized from run://spirit/iconSet.json when it does not exist yet", "only ./server/server.js writes the table";
 // 9: "two saves never write iconSet.json at once"; 10: it publishes on its job before the answer. Andy, of a duplicate:
 // "the icon app allowed me to add a duplicate icon.... that shouldn't work". Raw calls to a scratch node with Icons
@@ -45,7 +45,7 @@ test.run('a scratch node of its own comes up with Icons switched on', 0.2, async
 test.run('the system set is read, and twelve glyphs it does not hold are found', 0.2, function () {
   if (!W.up) return false;
   const run = path.join(W.node.root, 'spirit', 'run');
-  W.SET = path.join(run, 'spirit', 'state', 'icons', 'data', 'iconSet.json');
+  W.SET = path.join(run, 'spirit', 'state', 'app', 'icons', 'data', 'iconSet.json');
   W.SYSTEM = path.join(run, 'spirit', 'iconSet.json');
   W.system = json(W.SYSTEM) || {};
   W.systemText = read(W.SYSTEM);
@@ -93,7 +93,7 @@ test.run('search by a keyword of the first system glyph finds that glyph', 0.2, 
   const byWord = await icon({ op: 'search', text: String(kw || '') });
   return !!kw && items(byWord).some(function (r) { return r && r.glyph === W.sys; }) ? true : false;
 }, test.limit.quick);
-test.run('none of these reads wrote spirit/state/icons/data/iconSet.json', 0.2, function () {
+test.run('none of these reads wrote spirit/state/app/icons/data/iconSet.json', 0.2, function () {
   if (!W.ready) return false;
   return !fs.existsSync(W.SET) || false;
 }, test.limit.quick);

@@ -68,13 +68,14 @@ const STATUS = {
 // checkout: a short hash of its root, or both nodes' desk would collide.
 // EVERY SERVER IS AN APP OF spirit/app/ (goal/G43.12, goal/G43.20). Andy: "their new door.sock will live in
 // run://spirit/state/<name>/, owned by the node.", and "put those in spirit/state/<name>/ since they belong to the node."
-// kind is no longer told apart: every server's socket is spirit/state/<name>/door.sock, its Windows pipe 'app-<name>'.
+// kind is no longer told apart: every server's socket is spirit/state/app/<name>/door.sock, its Windows pipe 'app-<name>'.
 function pipePathFor(rootDir, appName, platform) {
   if ((platform || process.platform) === 'win32') {
     const tag = crypto.createHash('sha256').update(path.resolve(String(rootDir))).digest('hex').slice(0, 12);
     return '\\\\.\\pipe\\spirit-' + tag + '-app-' + appName;
   }
-  return path.join(rootDir, 'spirit', 'state', appName, 'door.sock');
+  // In the app's state folder by spirit.statePath (goal/G49.17), the app path built from its name until the job's turn.
+  return path.join(rootDir, ...spirit.statePath('spirit/app/' + appName).split('/'), 'door.sock');
 }
 
 // opts: { rootDir, log, request }

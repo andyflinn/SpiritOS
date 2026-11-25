@@ -26,7 +26,7 @@ box leaves open is guessed. What is written is read from the disc, what runs fro
 - **One job, open while it is on** (the box, 10): `spirit.app.icons`, the same job after its runs.
 - **Its tile opens its face** (the box: "its tile opens no face"): the add row, ➕, an icon to paste, its keywords, comma
   separated, and Add.
-- **An Add through it is a run, ended**: it writes the icon into `spirit/state/icons/data/iconSet.json`, and no
+- **An Add through it is a run, ended**: it writes the icon into `spirit/state/app/icons/data/iconSet.json`, and no
   `icons.js` runs after; after the runs it is the same job, `spirit.app.icons`, still open.
 - **Switched off** (the box, 4): `icons.<verb>` answers `app-not-served`, the tree holds no icons branch, its job is no
   longer open, nothing runs. Switched on again, its branch is back with no restart of the node.
@@ -38,4 +38,4 @@ interface `./api.md`'s.
 
 - Five Adds at once (the box, 9: *"two saves never write iconSet.json at once"*): all five land, what was there stays,
   and never two runs of `icons.js` at once. A run must have been seen, by the process list or by two pids the job `spirit.app.icons` names, or the count judged nothing.
-- A page writing `spirit/state/icons/data/iconSet.json` itself is refused, and the set stands.
+- A page writing `spirit/state/app/icons/data/iconSet.json` itself is refused, and the set stands.

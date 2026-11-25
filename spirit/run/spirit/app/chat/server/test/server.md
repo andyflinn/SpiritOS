@@ -10,7 +10,7 @@ A scratch node of its own; the app switched on (`app.active {key: chat}`); every
 
 - **No held path** (goal/G43.23, the checks of the old chatClerver-noHeld.js, one test file per module): its code asks nothing `held` and calls no `contact.accept`.
 - **The branch is chat**: switched on, it answers `chat.chats.search`, and its job `spirit.app.chat` runs; `chatClerver.<verb>` is no verb of the node.
-- **chat.db, started empty**: `chat.db` is in `spirit/state/chat/data/`; `chats.search` answers no chat at the start.
+- **chat.db, started empty**: `chat.db` is in `spirit/state/app/chat/data/`; `chats.search` answers no chat at the start.
 - **A line written is kept**: `line.write` to a key nobody answers answers `seq` 1, `refused` or `pending`; `chat.read` holds it (written here, its text, marked unsent); `chats.search` then has that chat; the next line is `seq` 2.
 - **A line is the grant to answer** (G4.6): after it, `auth.query` says the key may `chat.line.receive`, and never `chatClerver.line.receive`.
 - **chat.search** finds the written line by its text with who `me`, and none with who `them`.

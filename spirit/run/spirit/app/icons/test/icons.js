@@ -107,7 +107,7 @@ test.run('a scratch node with its own disc comes up with Icons and Desk switched
   if (!W.node.up || W.chrome.error) return false;
   if (!W.node.root) return false;
   const run = path.join(W.node.root, 'spirit', 'run');
-  W.SET = path.join(run, 'spirit', 'state', 'icons', 'data', 'iconSet.json');
+  W.SET = path.join(run, 'spirit', 'state', 'app', 'icons', 'data', 'iconSet.json');
   W.up = true;
   return true;
 }, test.limit.slow);
@@ -197,7 +197,7 @@ test.run('the Icons tile opens its face, with an icon to paste, its keywords, co
 }, test.limit.quick);
 
 // an Add through its tile's face is a run of icons.js, and the run ends
-test.run('an Add writes the new glyph into spirit/state/icons/data/iconSet.json', 0.2, async function () {
+test.run('an Add writes the new glyph into spirit/state/app/icons/data/iconSet.json', 0.2, async function () {
   if (!W.drew) return false;
   await add(W.chrome, W.G1, 'flamingo, bird');
   const wrote = await until(function () { return Promise.resolve(((json(W.SET) || {})[W.G1] || []).join(',') === 'flamingo,bird'); }, 10000);
@@ -244,9 +244,9 @@ test.run('two runs of icons.js never happen at once', 0.2, function () {
   if (!W.watched) return false;
   return W.watched.most <= 1 || false;
 }, test.limit.quick);
-test.run('a page writing spirit/state/icons/data/iconSet.json itself is refused, and the set stands', 0.8, async function () {
+test.run('a page writing spirit/state/app/icons/data/iconSet.json itself is refused, and the set stands', 0.8, async function () {
   if (!W.drew) return false;
-  await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/script.js"); }).then(function (s) { return s.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
+  await W.chrome.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/fs/script.js"); }).then(function (s) { return s.saveFile("spirit/state/app/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function () { return false; })');
   await sleep(800);
   return W.G1 in (json(W.SET) || {}) ? true : false;
 }, test.limit.slow);

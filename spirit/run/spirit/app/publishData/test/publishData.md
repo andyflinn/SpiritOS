@@ -7,7 +7,7 @@ Andy: *"spirit/app/publishData/publishData will be fixed to point at the correct
 ## Requirements
 
 - Run with no argument, as Run starts it, it does not stop at its usage: the node port comes from the node that starts it (`SPIRIT_CALLBACK_URL`), and it goes on to its first step.
-- It reads testicle's `testicle.db` where testicle keeps it, its state `spirit/state/testicle/data/` (Andy: *"publish Data
+- It reads testicle's `testicle.db` where testicle keeps it, its state `spirit/state/app/testicle/data/` (Andy: *"publish Data
   uses testicle data."*), and no other test database.
 - `agentReadme.js` stands beside it in `spirit/app/publishData/` and loads.
 - No agent starts it: `deskClient.js` names no publishData.

@@ -143,7 +143,7 @@ function scratch() {
   const run = path.join(root, 'spirit', 'run');
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
   // testicle turned on there, as an owner turns a server on (spirit/test/headLessChrome.js scratchNode).
-  const on = path.join(run, 'spirit', 'state', 'testicle');
+  const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
   fs.mkdirSync(on, { recursive: true });
   fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
   fs.mkdirSync(path.join(on, 'data'), { recursive: true });
@@ -275,7 +275,7 @@ test.run('spirit/app/testicle/testicle.js is there', 0.2, function () {
 test.run('a scratch node comes up', 0.2, async function () {
   s = scratch();
   dropRunlog();
-  DB = path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'testicle.db');
+  DB = path.join(s.run, 'spirit', 'state', 'app', 'testicle', 'data', 'testicle.db');
   N = await boot(s.run); live.push(N.child);
   return N.up || false;
 }, test.limit.long);
@@ -321,7 +321,7 @@ test.run('in debug mode, the classifier judged only scripts under spirit/app/tes
 }, test.limit.quick);
 
 // the box: "testicle.db sits in testicle's state folder"
-test.run('testicle.db is made in its state folder, spirit/state/testicle/data/, with its tables script and suite', 0.2, async function () {
+test.run('testicle.db is made in its state folder, spirit/state/app/testicle/data/, with its tables script and suite', 0.2, async function () {
   if (!up()) return false;
   return !!(await until(function () { return Promise.resolve(fs.existsSync(DB) && !tables(DB).error); }, 30000)) || false;
 }, test.limit.long);
@@ -406,7 +406,7 @@ test.run('the script table has the columns reClassify, browserOnly and nodeOnly'
 // "preferences {} answers them all; preferences {interactive: false} sets that one and answers them all. An unknown name
 // or a wrong type is refused." "For now it supports testicle.preferences.interactive (true by default)."
 const classifyRowAt = function (t, name) { return (t.test || []).filter(function (r) { return r.script === name && r.suite === 'spirit/test/scriptClassify.js' && r.test === 'it loads, so it can be classified' && yes(r.current); })[0] || null; };
-const PREFS = function () { return path.join(s.run, 'spirit', 'state', 'testicle', 'data', 'preferences.json'); };
+const PREFS = function () { return path.join(s.run, 'spirit', 'state', 'app', 'testicle', 'data', 'preferences.json'); };
 const prefsOf = function (r) { const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
 let p0 = null;
 test.run('the node lists the verb testicle.preferences', 0.2, async function () {
@@ -1766,7 +1766,7 @@ test.run('preferences with interactive false sets it, and answers them all', 0.2
   pAuto = await call(N.base, 'testicle.preferences', { interactive: false });
   return (pAuto.status === 200 && prefsOf(pAuto).interactive === false) || false;
 }, test.limit.quick);
-test.run('the interactive preference is kept in spirit/state/testicle/data/preferences.json', 0.2, function () {
+test.run('the interactive preference is kept in spirit/state/app/testicle/data/preferences.json', 0.2, function () {
   if (!pAuto) return false;
   const kept = readJson(PREFS());
   return (!!kept && kept.interactive === false) || false;
@@ -2522,7 +2522,7 @@ function MICRO_GENERAL(body) {
     fs.writeFileSync(path.join(run, GENERAL), MICRO_GENERAL("if (/zzLimit\\/bHang\\.js$/.test(rel)) test.run('it works on past the run limit', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 240000); }); }, test.limit.long);" +
       " else test.run('it holds', 0.2, function () { return true; }, test.limit.quick);"));
     [AOK, BHANG, CLATER].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the run limit\n'); });
-    const on = path.join(run, 'spirit', 'state', 'testicle');
+    const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
     fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
     fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
@@ -2622,7 +2622,7 @@ function MICRO_GENERAL(body) {
       " else if (/zzReason\\/fCut\\.js$/.test(rel)) { test.run('" + 'b'.repeat(130) + " one', 0.2, function () { return true; }, test.limit.quick); test.run('" + 'b'.repeat(130) + " two', 0.2, function () { return true; }, test.limit.quick); }" +
       " else test.run('it holds', 0.2, function () { return true; }, test.limit.quick);"));
     [ACRASH, BHUNG, CFALSE, DDUP, ELONG, FCUT].forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), '\'use strict\';\n// ' + path.basename(f) + ', planted for the reason of a red\n'); });
-    const on = path.join(run, 'spirit', 'state', 'testicle');
+    const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
     fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
     fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
@@ -2707,7 +2707,7 @@ function MICRO_GENERAL(body) {
     fs.mkdirSync(path.dirname(path.join(run, BAD)), { recursive: true });
     fs.writeFileSync(path.join(run, BAD), '\'use strict\';\nfunction ( {\n');
     fs.writeFileSync(path.join(run, GOOD), '\'use strict\';\nmodule.exports = { good: true };\n');
-    const on = path.join(run, 'spirit', 'state', 'testicle');
+    const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
     fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
     fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
@@ -2787,7 +2787,7 @@ function MICRO_GENERAL(body) {
       fs.writeFileSync(path.join(run, DEP[k]), DEP_SRC[k]);
       fs.writeFileSync(path.join(run, ownOfDep(DEP[k])), SUITE_HEAD + DEP_TEST[k]);
     });
-    const on = path.join(run, 'spirit', 'state', 'testicle');
+    const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
     fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
     fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
@@ -2869,7 +2869,7 @@ function MICRO_GENERAL(body) {
     fs.writeFileSync(path.join(run, KILLED), "'use strict';\n// bKilled\n");
     fs.writeFileSync(path.join(run, ownOfLeak(LEFT)), SUITE_HEAD + LEAK_TEST.left);
     fs.writeFileSync(path.join(run, ownOfLeak(KILLED)), SUITE_HEAD + LEAK_TEST.killed);
-    const on = path.join(run, 'spirit', 'state', 'testicle');
+    const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
     fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
     fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
@@ -2953,7 +2953,7 @@ function MICRO_GENERAL(body) {
       fs.writeFileSync(path.join(run, RC[k]), RC_SRC[k]);
       fs.writeFileSync(path.join(run, ownOfR(RC[k])), SUITE_HEAD + "test.run('" + k + "R answers', 0.2, function () { return true; }, test.limit.quick);\n");
     });
-    const on = path.join(run, 'spirit', 'state', 'testicle');
+    const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
     fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
     fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));
@@ -3031,7 +3031,7 @@ function MICRO_GENERAL(body) {
     fs.mkdirSync(path.join(run, S0, 'test'), { recursive: true });
     fs.writeFileSync(path.join(run, SA), "'use strict';\n// sA\n");
     fs.writeFileSync(path.join(run, ownOfS(SA)), SUITE_HEAD + "test.run('sA answers', 0.2, function () { return true; }, test.limit.quick);\n");
-    const on = path.join(run, 'spirit', 'state', 'testicle');
+    const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
     fs.mkdirSync(path.join(on, 'data'), { recursive: true });
     fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
     fs.writeFileSync(path.join(on, 'data', 'preferences.json'), JSON.stringify({ debug: true }));

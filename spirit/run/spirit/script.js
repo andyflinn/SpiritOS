@@ -81,6 +81,19 @@
     if (typeof str !== 'string') return '';
     return (str.normalize ? str.normalize('NFC') : str).replace(/\r\n/g, '\n');
   }
+  // A BRANCH'S STATE FOLDER, BY ONE FORMULA (goal/G49.17, box v5; Andy: "agreed spirit.statePath(productPath) beside
+  // normalizeString() and escapeHtml()", "the state of spirit/<path>/ is always spirit/state/<path-without-leading-spirit>"):
+  // the product path loses its leading spirit and goes under spirit/state/. spirit/app/desk is spirit/state/app/desk,
+  // spirit/console spirit/state/console, spirit itself spirit/state. Run-root relative, '/' between parts. A path that is no
+  // product path (not under spirit/, a '..' in it, or inside spirit/state/ itself) throws: a state folder is never guessed.
+  function statePath(productPath) {
+    var p = String(productPath || '').replace(/\\/g, '/').replace(/\/+$/, '');
+    var parts = p.split('/');
+    if (parts[0] !== 'spirit' || parts.some(function (s) { return s === '' || s === '.' || s === '..'; }) || parts[1] === 'state') {
+      throw new TypeError('statePath: not a product path: ' + JSON.stringify(String(productPath)));
+    }
+    return ['spirit', 'state'].concat(parts.slice(1)).join('/');
+  }
 
   // ── THE CHECKS ──────────────────────────────────────────────────────────────────────────────────────────────────
   // name, description and paragraph are their types' isValid (goal/G49.13: the old rules
@@ -724,6 +737,7 @@
   self.escapeHtml = escapeHtml;
   self.normalizeString = normalizeString;
   self.normalizeParagraph = normalizeParagraph;
+  self.statePath = statePath;
   self.checkArgs = check;
   self.ruleNames = Object.keys(RULES);
   self.callOutcome = outcome;

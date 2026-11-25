@@ -145,9 +145,14 @@ function start(rootDir, jobs) {
       const up = dir.lastIndexOf('/');
       if (up > 0) reflag(dir.slice(0, up));
     }
-    // AN APP SWITCHED ON OR OFF (goal/G49.15): spirit/state/<app>/node.json made, changed or gone turns that app's live.
-    const state = /^spirit\/state\/([^/]+)\/node\.json$/.exec(rel);
-    if (state && op !== 'createDirectory' && op !== 'deleteDirectory') reflag('spirit/app/' + state[1]);
+    // AN APP SWITCHED ON OR OFF (goal/G49.15): its node.json in its state folder made, changed or gone turns that app's
+    // live. Which app: the app folder whose spirit.statePath is that folder (goal/G49.17), found among the tree's apps.
+    if (/^spirit\/state\/app\/[^/]+\/node\.json$/.test(rel) && op !== 'createDirectory' && op !== 'deleteDirectory') {
+      const home = rel.slice(0, rel.lastIndexOf('/'));
+      Object.keys(tree.files()).forEach(function (p) {
+        if (/^spirit\/app\/[^/]+$/.test(p) && tree.file(p).kind === 'folder' && spirit.statePath(p) === home) reflag(p);
+      });
+    }
     // AN APP'S <name>.json CHANGED, MADE OR GONE: whether its files are core may have changed with it (coreFiles.js reads
     // its identity.intrinsic), so its files' flags are worked out again, and each one that turned is sent as a change.
     const app = /^spirit\/app\/([^/]+)\/([^/]+)\.json$/.exec(rel);

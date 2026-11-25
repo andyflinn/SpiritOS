@@ -77,7 +77,7 @@ test.run('desk.js knows no team chat goal, goal/G0', 0.2, function () {
 // A desk server of the tree, on a scratch state folder: what its api serves, and what a fresh one holds.
 test.run('a scratch desk answers api with its verbs, item.get among them', 0.2, async function () {
   // A unix socket's path is short (108 bytes): the helper's folder for this suite gives a socket path of 91 on Linux
-  // (/tmp/spirit/<node>/spirit/app/desk/test/nodeDesk/spn1/spirit/state/desk/door.sock); Windows has named pipes.
+  // (/tmp/spirit/<node>/spirit/app/desk/test/nodeDesk/spn1/spirit/state/app/desk/door.sock); Windows has named pipes.
   const scratch = W.scratch = ownTemp('spn');
   const state = path.join(scratch, 'state');
   fs.mkdirSync(state, { recursive: true });

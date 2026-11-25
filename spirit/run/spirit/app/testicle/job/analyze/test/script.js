@@ -46,7 +46,7 @@ const SCHEMA = [
 // What requires what (the dependency table): x.js requires z.js, so z.js shares a file with the red; r.js and n.js require d.js.
 const DEPS = [[X, Z], [R, D], [N, D]];
 function plant(root, rows) {
-  const dir = path.join(root, 'spirit', 'state', 'testicle', 'data');
+  const dir = path.join(root, 'spirit', 'state', 'app', 'testicle', 'data');
   fs.mkdirSync(dir, { recursive: true });
   const db = new DatabaseSync(path.join(dir, 'testicle.db'));
   SCHEMA.forEach(function (s) { db.exec(s); });
@@ -192,7 +192,7 @@ test.run('x.js\'s red, its script changed and its own test not, is blamed on the
   return !!b && b.where === 'in the script';
 }, test.limit.quick);
 function handed(script, suite, title) {
-  const db = new DatabaseSync(path.join(W.root, 'spirit', 'state', 'testicle', 'data', 'testicle.db'), { readOnly: true });
+  const db = new DatabaseSync(path.join(W.root, 'spirit', 'state', 'app', 'testicle', 'data', 'testicle.db'), { readOnly: true });
   try { return db.prepare('SELECT * FROM testicle WHERE current = 1 AND script = ? AND suite = ? AND test = ?').get(script, suite, title); } finally { db.close(); }
 }
 function verdictOf(script, suite, title) {
@@ -242,7 +242,7 @@ test.run('started while testicle.db is held by a write for 2 s, it waits and ans
   if (!W.root) return false;
   const copy = path.join(W.root, REL);
   if (!fs.existsSync(copy)) return false;
-  const db = new DatabaseSync(path.join(W.root, 'spirit', 'state', 'testicle', 'data', 'testicle.db'));
+  const db = new DatabaseSync(path.join(W.root, 'spirit', 'state', 'app', 'testicle', 'data', 'testicle.db'));
   // A write inside it, as the server's are: an exclusive transaction that has written keeps every reader out until it ends.
   db.exec('BEGIN EXCLUSIVE');
   db.exec('UPDATE testicle SET severity = severity WHERE id = (SELECT min(id) FROM testicle)');
@@ -293,6 +293,6 @@ test.run('handed a red that is not in testicle.db it says why on stderr and exit
 // "it reads testicle.db directly, read only"
 test.run('it leaves testicle.db as it found it', 0.4, function () {
   if (!W.root || !W.a || W.a.code !== 0) return false;
-  const db = new DatabaseSync(path.join(W.root, 'spirit', 'state', 'testicle', 'data', 'testicle.db'), { readOnly: true });
+  const db = new DatabaseSync(path.join(W.root, 'spirit', 'state', 'app', 'testicle', 'data', 'testicle.db'), { readOnly: true });
   try { return db.prepare('SELECT count(*) n FROM testicle').get().n === WORLD.length; } finally { db.close(); }
 }, test.limit.quick);

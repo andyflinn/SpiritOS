@@ -55,10 +55,10 @@ if (!NODE || !NODE.publicKey) {
 const values = parsed(argv[2], {}) || {};
 const QUIET = Number(values.quietMs) > 0 ? Number(values.quietMs) : 5000;
 
-// With --state spirit/state/backup/data/, OWN is backup and SOURCE is
-// spirit/state/, the node's state.
-const SOURCE = path.dirname(path.dirname(STATE));
-const OWN = path.basename(path.dirname(STATE));
+// With --state spirit/state/app/backup/data/ (its folder by spirit.statePath, goal/G49.17), OWN is app/backup, its own
+// folder within SOURCE, and SOURCE is spirit/state/, the node's state, three folders above data/.
+const SOURCE = path.dirname(path.dirname(path.dirname(STATE)));
+const OWN = path.relative(SOURCE, path.dirname(STATE)).split(path.sep).join('/');
 fs.mkdirSync(STATE, { recursive: true });
 
 function spiritHome() {
@@ -94,7 +94,7 @@ function sourceFiles() {
     const r = p.slice(pre.length);
     const parts = r.split('/');
     const name = parts[parts.length - 1];
-    if (parts[0] === OWN) return;
+    if (r === OWN || r.indexOf(OWN + '/') === 0) return;
     // NEVER A KEY (Andy: "don't include my private key in the backup"). A face keeps its own node identity in a spirit/state/
     // of its own inside its state folder (slim/G1.4, goal/G43.8): nothing under such a folder is taken, and no identity.json
     // is copied wherever it is.

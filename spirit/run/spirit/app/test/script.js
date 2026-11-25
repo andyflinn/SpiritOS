@@ -227,7 +227,7 @@ test.run('no row but an intrinsic app\'s says active before a press', 0.2, async
   return (before.length > 0 && !lit.length) || false;
 }, test.limit.quick);
 // The box: "The node writes spirit/state/<key>/node.json".
-test.run('active true lands in spirit/state/agent/node.json', 0.2, async function () {
+test.run('active true lands in spirit/state/app/agent/node.json', 0.2, async function () {
   if (noNode()) return false;
   const on = await ask(W.node.base, 'app.active', { key: 'agent', active: true });
   return (on.status === 200 && activeIn('agent') === true) || false;
@@ -365,7 +365,7 @@ test.run('the file to ask for is there', 0.2, function () {
 }, test.limit.quick);
 test.run('a plain GET does not hand it over', 0.8, async function () {
   if (noNode()) return false;
-  const got = await fetch(W.node.base + '/spirit/state/agent/node.json');
+  const got = await fetch(W.node.base + '/spirit/state/app/agent/node.json');
   const gotText = await got.text();
   return (got.status !== 200 && gotText.indexOf('active') === -1) || false;
 }, test.limit.quick);

@@ -149,9 +149,9 @@ function filesUnder(dir) {
     if (!answers(await call(N.base, 'agent.DEBUG', {}))) { STOP = true; return false; }
     return (!!(await liveJob(N.base))) ? true : false;
   }, test.limit.quick);
-  test.run('its rows are kept in spirit/state/agent/data/', 0.2, async function () {
+  test.run('its rows are kept in spirit/state/app/agent/data/', 0.2, async function () {
     if (STOP) return false;
-    db = path.join(s.run, 'spirit', 'state', 'agent', 'data', 'agent.db');
+    db = path.join(s.run, 'spirit', 'state', 'app', 'agent', 'data', 'agent.db');
     return (fs.existsSync(db)) ? true : false;
   }, test.limit.quick);
   test.run('the server takes a provider, a model, a persona and a job', 0.2, async function () {
@@ -237,14 +237,14 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
     await c.evaluate('(function () { var rows = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")).filter(function (r) { return /DEBUG/.test(String(r.innerText || "")); }); if (rows[0]) rows[0].querySelector("button").click(); return 1; }())');
     return (await until(function () { return call(N.base, 'agent.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : false;
   }, test.limit.quick);
-  test.run('the node keeps the agent\'s DEBUG in spirit/state/agent/node.json', 0.2, async function () {
+  test.run('the node keeps the agent\'s DEBUG in spirit/state/app/agent/node.json', 0.2, async function () {
     if (STOP) return false;
-    kept = path.join(s.run, 'spirit', 'state', 'agent', 'node.json');
+    kept = path.join(s.run, 'spirit', 'state', 'app', 'agent', 'node.json');
     return (await until(function () { return Promise.resolve((readJson(kept) || {}).debug === true); }, 8000)) ? true : false;
   }, test.limit.quick);
   test.run('no config.json of the agent\'s own is written', 0.2, async function () {
     if (STOP) return false;
-    return (!fs.existsSync(path.join(s.run, 'spirit', 'state', 'agent', 'data', 'config.json'))) ? true : false;
+    return (!fs.existsSync(path.join(s.run, 'spirit', 'state', 'app', 'agent', 'data', 'config.json'))) ? true : false;
   }, test.limit.quick);
   test.run('the panel then says turn off DEBUG', 0.2, async function () {
     if (STOP) return false;
@@ -297,7 +297,7 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
     await sleep(1500);
     return ((await shown()).indexOf('Agent') === -1) ? true : false;
   }, test.limit.slow);
-  // ── the box: "its rows are there, from the same spirit/state/agent/data/": through a restart, active again ──
+  // ── the box: "its rows are there, from the same spirit/state/app/agent/data/": through a restart, active again ──
   test.run('a restarted node starts the active agent\'s server', 0.2, async function () {
     if (STOP) return false;
 

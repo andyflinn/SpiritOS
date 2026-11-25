@@ -54,7 +54,7 @@ function scratch() {
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
   // testicle turned on there, as an owner turns a server on, now that it is not intrinsic (spirit/test/headLessChrome.js
   // scratchNode; the server's test does the same).
-  const on = path.join(run, 'spirit', 'state', 'testicle');
+  const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
   fs.mkdirSync(on, { recursive: true });
   fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: run };

@@ -422,7 +422,7 @@ const RUN_ROOT = path.resolve(__dirname, '..', '..', '..');
 // THE CACHE (box v15). "Only a client caches. Auto-cache is one switch on the client's serve(), with a limit the client
 // sets, 4 MB per sender by default." opts.stream.cache: true, or { limit } in bytes. "The cache keeps everything the
 // server sends, every goal, no filtering on the client side", per sender, in
-// spirit/state/<client server>/<sender key in base64url>.json under the run root (goal/G41.28), saved as it changes and read
+// spirit/state/app/<client server>/<sender key in base64url>.json under the run root (goal/G41.28), saved as it changes and read
 // back into the data set at the start, before any subscribe. The rows are kept as the sender sent them.
 // THE SENDER'S OWN api.js DOES THE CACHE'S WORK (box v15: "That api.js is the client's own: its appServer takes it from
 // the client's node ... never from the working folder and never the text a peer sends. No peer's code runs in the
@@ -445,10 +445,14 @@ function dataSet() {
 const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
 // THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28): its name the key as spirit.required.spirit.data names the node, <node id>.json.
-// ITS FOLDER IS spirit/state/<name>/cache/ (goal/G43.20; Andy: "cache, which is written by spirit/server/app/script.js was ALWAYS
+// ITS FOLDER IS <its state folder>/cache/ (goal/G43.20; Andy: "cache, which is written by spirit/server/app/script.js was ALWAYS
 // supposed to go into spirit/state/<name>/cache/", "NO FUCKING RESCUE CODE"): read and written there and nowhere else; a
 // file left at an older place is not read, and is rebuilt from the stream.
-function cacheDir() { return path.join(RUN_ROOT, 'spirit', 'state', following.name, 'cache'); }
+// THIS SERVER'S STATE FOLDER IS THE NODE'S TO NAME (goal/G49.17, box v5: "spirit/state/<path-without-leading-spirit>/ is owned
+// by the node (spirit/server/app)"; desk/G1 D5): the folder above the data/ folder the node hands over as --state, which the node
+// named by spirit.statePath. Never worked out from the server's name. Set by serve(), before anything reads it.
+let stateHome = '';
+function cacheDir() { return path.join(stateHome, 'cache'); }
 function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '.json'); }
 // The sender's cache rules on this node, or null: none there, no cache. They are its family folder's
 // data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
@@ -665,9 +669,9 @@ function withStreamListener(verbs, stream, followed, name) {
 // branch; a granted key the file does not name is sent nothing until it subscribes itself.
 let publisher = null;
 const subscribers = new Map();   // key -> { family, busy, rows: [entry] }
-let listenersName = '';          // the server's name, its state folder's
+let listenersName = '';          // the server's name, the branch a subscribe names
 let listeners = {};              // key -> branch, as clientListeners.json holds it
-function listenersFile() { return path.join(RUN_ROOT, 'spirit', 'state', listenersName, 'clientListeners.json'); }
+function listenersFile() { return path.join(stateHome, 'clientListeners.json'); }
 function readListeners() {
   let held = null;
   try { held = JSON.parse(fs.readFileSync(listenersFile(), 'utf8')); } catch (e) { held = null; }
@@ -905,7 +909,7 @@ function withChecked(verbs, script) {
 // client-mode, other than the chosen sibling's stream deliveries; the subscribers it had are dropped at the switch. The
 // subscribe a server makes to another kind of server (deskClient to desk) is untouched: remote routes toward its own kind.
 const remote = { name: '', current: '', known: [], refreshing: false, server: null, hasListener: false, refused: false };
-function remoteFile() { return path.join(RUN_ROOT, 'spirit', 'state', remote.name, 'remote.json'); }
+function remoteFile() { return path.join(stateHome, 'remote.json'); }
 function selfKey() { return String((spirit.nodeFacts && typeof spirit.nodeFacts.key === 'string' && spirit.nodeFacts.key) || ''); }
 function selfLabel() { return String((spirit.nodeFacts && (spirit.nodeFacts.label || spirit.nodeFacts.name)) || ''); }
 function clientMode() { return !!remote.current && remote.current !== selfKey(); }
@@ -1005,10 +1009,10 @@ const sibling = { key: '', run: '', n: 0, timer: null, rows: [], pushing: null, 
 // are cached as they are now, but also published to its own faces"; Andy, from goal/G48.6: "it was ALWAYS obvious the me
 // that a spirit/server/app/script.js in client mode automatically caches the servers's state the way it always did", "go fix
 // 47.5 now!"). The sibling listener built in cecde22dc only handed rows to the pages; now it keeps them as a following
-// server keeps its sender's: the same file, spirit/state/<name>/cache/<node id>.json, { key, family, run, n, rows }, the
+// server keeps its sender's: the same file, spirit/state/app/<name>/cache/<node id>.json, { key, family, run, n, rows }, the
 // rows placed by the family's own keep and shed past CACHE_LIMIT, a full push landing whole on what was kept. Read back
 // at start, before the first subscribe, so a restart hands the sibling its place and is sent only what it missed.
-function siblingFile(key) { return path.join(RUN_ROOT, 'spirit', 'state', remote.name, 'cache', dataSet().nodeId(key) + '.json'); }
+function siblingFile(key) { return path.join(stateHome, 'cache', dataSet().nodeId(key) + '.json'); }
 function siblingRules() {
   const api = familyApi(remote.name);
   return api && api.cache && typeof api.cache === 'object' ? api.cache : null;
@@ -1165,6 +1169,13 @@ function serve(verbs, opts) {
   // THE NAME FIRST, because this server's own codes wear it (goal/G16.11), and its cache folder is named by it
   // (goal/G41.12); the declaration lands before anything listens so a malformed one stops the start.
   const name = path.basename(String(argv[1] || 'server'), '.js');
+  // ITS STATE FOLDER, FROM THE NODE (goal/G49.17): the one above the --state data/ folder; with none, no start.
+  const stateAt = argv.indexOf('--state');
+  if (stateAt === -1 || !argv[stateAt + 1]) {
+    console.error(name + ': no --state; the node that starts a server names its state folder');
+    process.exit(2);
+  }
+  stateHome = path.dirname(path.resolve(String(argv[stateAt + 1])));
   // THE DEBUG IT HAD (goal/G43.15, Q2: "i think we should persist it, always."): the node hands it over as --debug.
   const debugAt = argv.indexOf('--debug');
   if (debugAt !== -1) spirit.debugLog(argv[debugAt + 1] === 'true');

@@ -67,7 +67,7 @@ test.run('a scratch node comes up with Icons switched on, and a Chrome page open
 test.run('the system set is read, and four glyphs it does not hold are found', 0.2, function () {
   if (!W.up) return false;
   const run = path.join(W.node.root, 'spirit', 'run');
-  W.SET = path.join(run, 'spirit', 'state', 'icons', 'data', 'iconSet.json');
+  W.SET = path.join(run, 'spirit', 'state', 'app', 'icons', 'data', 'iconSet.json');
   const system = json(path.join(run, 'spirit', 'iconSet.json')) || {};
   const known = Object.keys(system).map(bare);
   const fresh = [];

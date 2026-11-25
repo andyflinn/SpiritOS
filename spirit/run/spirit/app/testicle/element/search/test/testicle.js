@@ -70,7 +70,7 @@ function scratch() {
   const run = path.join(root, 'spirit', 'run');
   Object.keys(PLANT).forEach(function (f) { fs.mkdirSync(path.dirname(path.join(run, f)), { recursive: true }); fs.writeFileSync(path.join(run, f), PLANT[f]); });
   // testicle turned on there, as an owner turns a server on (spirit/test/headLessChrome.js scratchNode).
-  const on = path.join(run, 'spirit', 'state', 'testicle');
+  const on = path.join(run, 'spirit', 'state', 'app', 'testicle');
   fs.mkdirSync(on, { recursive: true });
   fs.writeFileSync(path.join(on, 'node.json'), JSON.stringify({ active: true }));
   // THE GENERAL SUITES TAKEN AWAY (goal/G47.1, the queue cycle): the scratch node's testicle runs every flagged suite by

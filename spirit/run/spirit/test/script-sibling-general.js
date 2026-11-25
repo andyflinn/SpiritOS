@@ -1279,7 +1279,7 @@ function kindOf(file) {
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
-// as they are used, not refused: scratchNode turns it on by active in spirit/state/agent/node.json (spirit/job/script.js).
+// as they are used, not refused: scratchNode turns it on by active in spirit/state/app/agent/node.json (spirit/job/script.js).
 const SERVERS = { servers: ['agent'] };
 // A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
 // bare mount never has; its own test's check, by its words, stands for it here.

@@ -241,9 +241,13 @@ function deleteFile(filePath) {
 // A NODE'S SIDECARS ARE ITS STATE (box v16 and v17; Andy: "because of desk we MUST run different configurations", "why
 // would we track app sidecars?"): the sidecar lives at the mirror of its file's path in the node's state, out of git,
 // this node's alone: spirit/state/<path>.sidecar.json. None beside the code counts.
+// A product file's sidecar follows the state formula (goal/G49.17): spirit/app/desk/desk.js's is
+// spirit/state/app/desk/desk.js.sidecar.json, by spirit.statePath. A file outside spirit/, the owner's own, keeps its
+// whole path under spirit/state/; where those belong is for later (goal/G49.17, Andy: "all oos for now").
 function sidecarPathFor(filePath) {
   const p = canonicalPath(filePath) || String(filePath || '');
-  return 'spirit/state/' + p + SIDECAR_SUFFIX;
+  const product = p.indexOf('spirit/') === 0 && p.indexOf('spirit/state/') !== 0;
+  return (product ? spirit.statePath(p) : 'spirit/state/' + p) + SIDECAR_SUFFIX;
 }
 
 function readSidecar(filePath) {

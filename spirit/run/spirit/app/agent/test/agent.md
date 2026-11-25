@@ -8,8 +8,8 @@ The Agent in `spirit/app/agent/`, as Andy sees it (goal/G43.13). Its test is `./
 
 ### Its one switch
 
-- `active` in `spirit/state/agent/node.json` is its one switch. Before Activate no server job runs, its verbs are not answered, its row is in the pane and it has no tile.
-- Activate on its row starts the server, under the job id `spirit.app.agent`, with its rows in `spirit/state/agent/data/`.
+- `active` in `spirit/state/app/agent/node.json` is its one switch. Before Activate no server job runs, its verbs are not answered, its row is in the pane and it has no tile.
+- Activate on its row starts the server, under the job id `spirit.app.agent`, with its rows in `spirit/state/app/agent/data/`.
 - Deactivate stops the server. Its row stays in the pane and its tile goes.
 - A restarted node starts it while it is active, and the rows made before are there.
 
@@ -18,7 +18,7 @@ The Agent in `spirit/app/agent/`, as Andy sees it (goal/G43.13). Its test is `./
 - Its tile opens the app; its ✕ puts it out of view (the panel hides, never destroys: what it drew stays, none of it shown), and it opens again.
 - The provider, model, persona and job tables each show their row.
 - A row the server adds reaches the page's `spirit.required.spirit.data.agent` with no reload: `data.js` takes the id `spirit.app.agent`.
-- The server's tool on the right strip shows ⚙, and its panel shows the agent's icon, then its label, then serverDEBUG (goal/G43.15). Pressed, `agent.DEBUG {}` says true, the node keeps `debug` true in `spirit/state/agent/node.json`, no `config.json` of the agent's own is written, and the panel says turn off DEBUG.
+- The server's tool on the right strip shows ⚙, and its panel shows the agent's icon, then its label, then serverDEBUG (goal/G43.15). Pressed, `agent.DEBUG {}` says true, the node keeps `debug` true in `spirit/state/app/agent/node.json`, no `config.json` of the agent's own is written, and the panel says turn off DEBUG.
 - Nothing throws on the page.
 
 ### What goes

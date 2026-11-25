@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/backup/server/test/server.js
 // THE BACKUP SERVER COPIES THE NODE'S STATE (goal/G43.23, item 5; spec: ./backup.md). The box: "backup copies
 // nothing: it copies only its own state folder and reads a config path that does not exist". The real backup.js of this
-// tree, started as the node starts it (job.js runServer: --state spirit/state/backup/data, --node {name, publicKey}), on
+// tree, started as the node starts it (job.js runServer: --state spirit/state/app/backup/data, --node {name, publicKey}), on
 // a scratch tree under /tmp: another process's state and a node.db planted in its spirit/state/, and a config.json
 // naming a spiritHome. HOME points into the scratch too, so a fallback home never reaches a real one. No node runs.
 
@@ -70,7 +70,7 @@ const W = {};
 W.scratch = ownTemp('bk');
 W.run = path.join(W.scratch, 'run');
 W.state = path.join(W.run, 'spirit', 'state');
-W.own = path.join(W.state, 'backup', 'data');
+W.own = path.join(W.state, 'app', 'backup', 'data');
 W.homeCfg = path.join(W.scratch, 'homeCfg');
 W.fakeHome = path.join(W.scratch, 'home');
 const DESK_MARK = 'desk state ' + process.pid + ' ' + Date.now();
@@ -84,14 +84,14 @@ test.after(async function () {
 test.run('spirit/state/ holds node.db with its row, desk/data/marker.json, and config.json naming a spiritHome', 0.2, function () {
   const state = W.state;
   fs.mkdirSync(W.own, { recursive: true });
-  fs.mkdirSync(path.join(state, 'desk', 'data'), { recursive: true });
+  fs.mkdirSync(path.join(state, 'app', 'desk', 'data'), { recursive: true });
   fs.mkdirSync(W.fakeHome, { recursive: true });
-  fs.writeFileSync(path.join(state, 'desk', 'data', 'marker.json'), JSON.stringify({ mark: DESK_MARK }));
+  fs.writeFileSync(path.join(state, 'app', 'desk', 'data', 'marker.json'), JSON.stringify({ mark: DESK_MARK }));
   const { DatabaseSync } = require('node:sqlite');
   const db = new DatabaseSync(path.join(state, 'node.db'));
   db.exec('PRAGMA journal_mode = DELETE'); db.exec('CREATE TABLE mark (v TEXT)'); db.prepare('INSERT INTO mark (v) VALUES (?)').run(NODE_MARK); db.close();
   fs.writeFileSync(path.join(state, 'config.json'), JSON.stringify({ spiritHome: W.homeCfg }));
-  return dbMark(path.join(state, 'node.db')) === NODE_MARK && readText(path.join(state, 'desk', 'data', 'marker.json')).indexOf(DESK_MARK) !== -1
+  return dbMark(path.join(state, 'node.db')) === NODE_MARK && readText(path.join(state, 'app', 'desk', 'data', 'marker.json')).indexOf(DESK_MARK) !== -1
     ? true : false;
 }, test.limit.quick);
 
@@ -113,7 +113,7 @@ test.run('the backup server ran once and said so', 0.2, async function () {
 }, test.limit.slow);
 
 // The box: "it copies only its own state folder"
-test.run('another process\'s state, spirit/state/desk/data/marker.json, is copied', 0.2, function () {
+test.run('another process\'s state, spirit/state/app/desk/data/marker.json, is copied', 0.2, function () {
   const copied = W.copied || [];
   const desk = copied.filter(function (f) { return readText(f).indexOf(DESK_MARK) !== -1; });
   return desk.length > 0 ? true : false;

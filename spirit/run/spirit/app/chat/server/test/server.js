@@ -52,7 +52,7 @@ test.run('a scratch node of its own comes up for this suite', 0.2, async functio
   const node = X.node = await H.scratchNode();
   if (!node.up || !node.root) return false;
   const run = path.join(node.root, 'spirit', 'run');
-  const state = X.state = path.join(run, 'spirit', 'state', 'chat', 'data');
+  const state = X.state = path.join(run, 'spirit', 'state', 'app', 'chat', 'data');
   X.call = async function (name, args) {
     const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
     const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
@@ -80,7 +80,7 @@ test.run('no chatClerver verb is a verb of this node, because the branch is chat
 }, test.limit.quick);
 
 // ── its database is chat.db, started empty ──
-test.run('chat.db is in the node\'s state, in spirit/state/chat/data/', 0.2, function () {
+test.run('chat.db is in the node\'s state, in spirit/state/app/chat/data/', 0.2, function () {
   if (!X.up) return false;
   return fs.existsSync(path.join(X.state, 'chat.db')) ? true : false;
 }, test.limit.quick);

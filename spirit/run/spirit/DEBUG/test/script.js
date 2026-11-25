@@ -47,7 +47,7 @@ function json(r) { try { return JSON.parse(r.text); } catch (e) { return undefin
 function scratchCopy() {
   const root = LABH.scratchTree().root;
   // testicle turned on, as its owner does: the server whose garbage is asked (GARBAGE, below).
-  const state = path.join(root, 'spirit', 'run', 'spirit', 'state', 'testicle');
+  const state = path.join(root, 'spirit', 'run', 'spirit', 'state', 'app', 'testicle');
   fs.mkdirSync(state, { recursive: true });
   fs.writeFileSync(path.join(state, 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: path.join(root, 'spirit', 'run') };

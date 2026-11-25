@@ -8,7 +8,7 @@ sync with run:// by itself. Its test is `./testicle.js`. The tables' columns are
 The box, in Andy's words where he gave them:
 
 - *"The server mounts beside the face (testicle.json: node.mount true); testicle.db sits in testicle's state folder"*:
-  `node.mount` true, `mount` naming `testicle.js` beside `element.js`; `spirit/state/testicle/data/testicle.db`.
+  `node.mount` true, `mount` naming `testicle.js` beside `element.js`; `spirit/state/app/testicle/data/testicle.db`.
 - *"The testicle server will serve one first verb, "busy": it returns true if it is doing any work, false if it is
   idle."*: the node lists `testicle.busy`; idle it answers false; asked over and over in the second after a general
   test changes, it answers true at least once; once that work is done, false again.
@@ -95,7 +95,7 @@ The box, in Andy's words where he gave them:
     A row matches when it is current, of the script, suite and result asked, and each word is in its title, script or
     suite, in any case. Not cut, the answer holds every matching row; cut, it is full (the room of one answer cannot hold
     one more of its rows) and holds matching rows first, never a row outside the script, suite or result.
-- **The preferences** (goal/G47.1, box v79, 2 and 4): kept in `spirit/state/testicle/data/preferences.json`; the one
+- **The preferences** (goal/G47.1, box v79, 2 and 4): kept in `spirit/state/app/testicle/data/preferences.json`; the one
   preference *"testicle.preferences.interactive (true by default)"*, a missing or unreadable file the default. The verb
   preferences: `{}` answers them all; `{interactive: <bool>}` sets it, writes the file, streams `{testicle: {preferences}}`
   and answers them all; an unknown name or a value of the wrong type is refused. *"interactive: all actions and runs are
@@ -171,7 +171,7 @@ The box, in Andy's words where he gave them:
   both modes; classification never sets both `browserOnly` and `nodeOnly`.
 - **The verb `preferences`** (4): listed by the node; `{}` answers them all, `interactive` true by default; an unknown name
   or a wrong type is refused and sets nothing; `{interactive: false}` sets it, answers them all, and is kept in
-  `spirit/state/testicle/data/preferences.json`.
+  `spirit/state/app/testicle/data/preferences.json`.
 - **Interactive** (2), the default: a changed script gets its row and its suite is flagged "needs running", and nothing
   runs by itself (five seconds idle, no test rows); a press (`testicle.run`) runs that suite and only it.
 - **Auto**: set by the verb, the server processes everything by itself: a suite flagged while interactive is run.
@@ -245,7 +245,7 @@ The box, in Andy's words where he gave them:
 Andy: *"the testicle tests set the testicle server to \"debug\". in debug mode, the testicle server limits its scope to
 \"run://spirit/app/testicle/ and only operates as if that were ALL the testables in the whole node"*.
 
-- The test writes `{ debug: true }` into its scratch node's `spirit/state/testicle/data/preferences.json` before the node
+- The test writes `{ debug: true }` into its scratch node's `spirit/state/app/testicle/data/preferences.json` before the node
   starts; no verb sets it, and Andy's own testicle, with no debug set, sees the whole tree as before.
 - `spirit/app/testicle/test/testicle-sibling-general.js`, `-node.js` and `-browser.js` are there, each with a test: in debug
   mode the only general tests testicle sees, beside the planted worlds' own.

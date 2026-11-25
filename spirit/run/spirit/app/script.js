@@ -9,7 +9,7 @@ require('../script.js');
 //   createApp({ rootDir, jobs }) -> { search(body), active(body), label(body), icon(body) }
 //     search({ q })   the plugins the words fit, best first, as { key: the folder's name, label: the row as JSON }; no
 //                     words is every plugin. "it's minimum, no filters, just a search string."
-//     active({ key, active })  sets a plugin's active in spirit/state/<key>/node.json, publishes the rows, and the node starts or
+//     active({ key, active })  sets a plugin's active in spirit/state/app/<key>/node.json, publishes the rows, and the node starts or
 //                     stops its server, if it has one (goal/G43.12).
 //                     A key that is no plugin is refused, so no path can be written through it (goal/G43.9).
 //     label({ key, label }), icon({ key, icon })  the same, for its label and its icon. <name>.json gives the default,
@@ -49,7 +49,9 @@ function createApp(opts) {
   const folder = path.join(o.rootDir, 'spirit', 'app');
   // goal/G43's box: "the file "repo://spirit/run/spirit/state/<name>/node.json" belongs to the node". No file is not active:
   // "must be set to true by the user".
-  function stateFile(name) { return path.join(o.rootDir, 'spirit', 'state', name, 'node.json'); }
+  // Its folder by spirit.statePath (goal/G49.17): spirit/state/app/<name>/node.json. The app path is still built from the name here,
+  // as every app path is until the job's turn (Andy, goal/G49.17: "we'll fix all of job when it's turn after fs finally starts").
+  function stateFile(name) { return path.join(o.rootDir, ...spirit.statePath('spirit/app/' + name).split('/'), 'node.json'); }
   function stateOf(name) {
     try { const s = JSON.parse(fs.readFileSync(stateFile(name), 'utf8')); return s && typeof s === 'object' ? s : {}; } catch (e) { return {}; }
   }

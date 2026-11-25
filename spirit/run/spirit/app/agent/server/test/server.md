@@ -15,7 +15,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 ## Its state
 
-- In the folder the node hands it as `--state`, which is `spirit/state/agent/data/` on a node: never in git.
+- In the folder the node hands it as `--state`, which is `spirit/state/app/agent/data/` on a node: never in git.
 - `agent.db` is created there at start, an SQLite database.
 - No `config.json` is written there (goal/G43.15).
 

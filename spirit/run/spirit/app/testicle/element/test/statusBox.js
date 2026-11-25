@@ -61,7 +61,7 @@ const HANDS = '(function () { window.zz = { rows: [], icons: [], doing: false, n
 const owedInDb = function () {
   let db = null;
   try {
-    db = new DatabaseSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', 'testicle', 'data', 'testicle.db'), { readOnly: true });
+    db = new DatabaseSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', 'app', 'testicle', 'data', 'testicle.db'), { readOnly: true });
     db.exec('PRAGMA busy_timeout = 5000');
     const suites = db.prepare('SELECT COUNT(DISTINCT suite) AS n FROM suite WHERE test = 1 AND deleted = 0').get().n;
     const classifications = db.prepare('SELECT COUNT(*) AS n FROM script WHERE reClassify = 1 AND deleted = 0').get().n;
@@ -265,7 +265,7 @@ test.run('through classifying and both runs, a number that was zero was never se
 const leadersInDb = function () {
   let db = null;
   try {
-    db = new DatabaseSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', 'testicle', 'data', 'testicle.db'), { readOnly: true });
+    db = new DatabaseSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', 'app', 'testicle', 'data', 'testicle.db'), { readOnly: true });
     db.exec('PRAGMA busy_timeout = 5000');
     const tests = db.prepare('SELECT suite, test, COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0 GROUP BY suite, test ORDER BY n DESC').all();
     const scripts = db.prepare('SELECT script, COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0 GROUP BY script ORDER BY n DESC').all();
@@ -355,7 +355,7 @@ test.run('as suites report, row 1\'s number follows them down: still the count m
 const redsInDb = function () {
   let db = null;
   try {
-    db = new DatabaseSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', 'testicle', 'data', 'testicle.db'), { readOnly: true });
+    db = new DatabaseSync(path.join(W.node.root, 'spirit', 'run', 'spirit', 'state', 'app', 'testicle', 'data', 'testicle.db'), { readOnly: true });
     db.exec('PRAGMA busy_timeout = 5000');
     return Number(db.prepare('SELECT COUNT(*) AS n FROM testicle WHERE current = 1 AND verified = 0').get().n);
   } catch (e) { return null; } finally { try { if (db) db.close(); } catch (e) { /* closed */ } }
