@@ -78,12 +78,17 @@ if (require.main === module) {
     process.exit(2);
   }
   // The spirit object of Andy's checkout: its asks go to his node.
-  require(path.join(repo, 'spirit', 'run', 'spirit', 'spirit.js'));
+  // The spirit object is spirit/script.js since goal/G49.12's flag day, spirit/spirit.js before it: whichever the checkout holds.
+  const run = path.join(repo, 'spirit', 'run');
+  const fs = require('fs');
+  require(fs.existsSync(path.join(run, 'spirit', 'script.js')) ? path.join(run, 'spirit', 'script.js') : path.join(run, 'spirit', 'spirit.js'));
+  // A verb by its branch's interface, the answer of spirit.requireScript (goal/G49.9), its outcome through spirit.callOutcome.
   const ask = function (verb, args) {
     const cut = verb.indexOf('.');
-    const family = verb.slice(0, cut);
+    const branch = verb.slice(0, cut);
     const name = verb.slice(cut + 1);
-    return spirit.outcome(spirit.require(spirit.branchPath(family)).then(function (c) { return c[name](args); }))
+    const at = fs.existsSync(path.join(run, 'spirit', 'app', branch, 'api.js')) ? 'spirit/app/' + branch + '/api.js' : 'spirit/' + branch + '/api.js';
+    return spirit.callOutcome(Promise.resolve(spirit.requireScript(at)).then(function (c) { return c[name](args); }))
       .then(function (r) { return r && r.body; });
   };
   const say = function (text) {
