@@ -684,7 +684,7 @@ test.after(stopAll);
   function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
   async function call(base, verb, args) {
     try {
-      const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+      const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
       const text = await r.text();
       return { status: r.status, text: text, body: parsed(text) };
     } catch (e) { return { status: 0, text: '', body: null }; }
@@ -784,7 +784,7 @@ test.after(stopAll);
     await c4.send('Page.navigate', { url: N4.base + '/' });
     await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
     await sleep(3000);
-    // Every call the page makes, kept: its fetches to /api/spirit carry { call, args }.
+    // Every call the page makes, kept: its fetches to /spirit carry { call, args }.
     await c4.evaluate('(function () { window.__zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { if (o && o.body) window.__zzAsked.push(String(o.body)); } catch (e) {} return f.apply(this, arguments); }; return true; }())');
     W4.up = !!served && !!CHAT && !!TESTICLE && !!STARTER;
     return W4.up || false;

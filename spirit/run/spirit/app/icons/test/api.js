@@ -30,7 +30,7 @@ test.after(function () {
   try { if (node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 const call = async function (name, args) {
-  const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args }) });
+  const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args }) });
   const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
   return { status: r.status, body: b, text: t };
 };

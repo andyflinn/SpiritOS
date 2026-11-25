@@ -194,7 +194,7 @@ function installJobs(port) {
         // THE ONE DOOR, and the id travels beside the verb rather than
         // baked into the path — spirit.js's spirit.processJob reads SPIRIT_JOB_ID,
         // and a process that needs the node's port reads this URL.
-        SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit',
+        SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/spirit',
       }),
       // The IPC channel closes when this node dies however it dies, and a
       // server's appServer.serve ends its process then: no orphan ("who wants

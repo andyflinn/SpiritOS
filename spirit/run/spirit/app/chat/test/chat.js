@@ -68,7 +68,7 @@ test.run('its server answers chat.chats.search', 0.2, async function () {
   const node = X.node = await H.scratchNode();
   if (!node.up || !node.root) return false;
   X.call = async function (name, args) {
-    const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
+    const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
     const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
     return { status: r.status, body: b, text: t };
   };

@@ -45,7 +45,7 @@ function isCall(b) {
     Object.keys(b).every(function (k) { return k === 'call' || k === 'args'; });
 }
 const FLAT = [400, { ok: false, code: 'bad-request', error: 'a call is { call: "<family>.<verb>", args: { ... } }, nothing else beside them' }];
-// The node's answers, the same at the loopback door and at a page's /api/spirit.
+// The node's answers, the same at the loopback door and at a page's /spirit.
 function answer(b) {
   if (!isCall(b)) return FLAT;
   const c = b.call;
@@ -218,7 +218,7 @@ function page() {
   const window = {
     fetch: function (url, init) {
       fetched.push({ url: url, body: init && init.body });
-      if (url === '/api/spirit') {
+      if (url === '/spirit') {
         const b = JSON.parse(init.body);
         // peer.post as the node answers it: the packet read out of its envelope, the peer's reply in one (goal/G43.24: a
         // page's spirit.peerPost sends its body in the packet envelope, as a process's does).
@@ -523,7 +523,7 @@ test.run('startPage() asks no api but node, readyPromise answers the instance it
   const again = wq.spirit.startPage();
   const ps = T.ps = await started;
   const askedAtStart = wq.fetched.filter(function (f) {
-    const b = f.url === '/api/spirit' ? JSON.parse(f.body) : null;
+    const b = f.url === '/spirit' ? JSON.parse(f.body) : null;
     return !!b && b.call === 'api' && !(b.args && b.args.branch === 'node');
   });
   const goneSaid = await Promise.resolve(wq.spirit.requireScript('spirit/gone/api.js'))
@@ -555,13 +555,13 @@ test.run('in node, spirit holds no branchPath', 0.2, function () {
   const o = O(); if (!o || !o.keys) return false;
   return o.keys.length > 0 && o.keys.indexOf('branchPath') === -1;
 }, test.limit.quick);
-test.run('on a page with no link, calls go to the page\'s own origin, /api/spirit, as a call with its args', 0.2, async function () {
+test.run('on a page with no link, calls go to the page\'s own origin, /spirit, as a call with its args', 0.2, async function () {
   if (!T.ps) return false;
   const wq = T.wq;
   // Asked by its path (goal/G49.6: never by a name).
   const demo = await wq.spirit.requireScript('spirit/demo/api.js');
   const pc = await demo.hello({ name: 'hal' });
-  const toDoor = wq.fetched.filter(function (f) { return f.url === '/api/spirit'; });
+  const toDoor = wq.fetched.filter(function (f) { return f.url === '/spirit'; });
   return (pc.said === 'hello hal' && toDoor.length > 0 && isCall(JSON.parse(toDoor[toDoor.length - 1].body)) && JSON.parse(toDoor[toDoor.length - 1].body).call === 'demo.hello') || false;
 }, test.limit.quick);
 // goal/G49.6, the same one place on a page: once called, the branch's verbs stand at spirit.required.spirit.demo.api,
@@ -754,7 +754,7 @@ test.run('on a page, a require with a key answers the peer\'s branch through the
   const wq = T.wq;
   const pp = await wq.spirit.requireScript('spirit/demo/api.js', 'peerKey2');
   const ppa = await pp.hello({ name: 'x' });
-  return (wq.fetched.some(function (f) { return f.url === '/api/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.required.spirit.demo.api) || false;
+  return (wq.fetched.some(function (f) { return f.url === '/spirit' && JSON.parse(f.body).call === 'peer.post'; }) && ppa.said === 'hello page peer' && pp !== wq.spirit.required.spirit.demo.api) || false;
 }, test.limit.quick);
 
 // ── 7a. spirit.requireScript DE-DUPES, AS NODE'S require DOES (goal/G41.3) ──
@@ -861,7 +861,7 @@ const H = require(path.join(RUN, 'spirit', 'test', 'headLessChrome.js'));
 const L = {};
 // Every call to the node's door, as the page sends it: { call, args }.
 function calls() {
-  return L.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/api\/spirit$/.test(m.params.request.url) && m.params.request.postData; })
+  return L.page.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/spirit$/.test(m.params.request.url) && m.params.request.postData; })
     .map(function (m) { try { return JSON.parse(m.params.request.postData); } catch (e) { return null; } }).filter(Boolean);
 }
 test.run('a scratch node comes up with a headless page on it', 0.2, async function () {
@@ -973,7 +973,7 @@ test.run('the desk server answers the page once switched on', 0.2, async functio
   let up = '';
   if (L.on === true) {
     await H.until(async function () {
-      up = await L.page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ call: 'desk.items.search', args: { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false } }) }).then(function (r) { return String(r.status); })");
+      up = await L.page.evaluate("fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ call: 'desk.items.search', args: { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false } }) }).then(function (r) { return String(r.status); })");
       return up === '200';
     }, 40000);
   }
@@ -990,7 +990,7 @@ test.run('on a real page, the Desk element opens on the page that loaded before 
   let got = {};
   try { got = JSON.parse(drawn); } catch (e) { got = { refused: String(drawn) !== '' }; }
   L.got = got;
-  L.deskAsked = L.page.heard.slice(mark).filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/api\/spirit$/.test(m.params.request.url) && /"call":"desk\.items\.search"/.test(m.params.request.postData || ''); });
+  L.deskAsked = L.page.heard.slice(mark).filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/spirit$/.test(m.params.request.url) && /"call":"desk\.items\.search"/.test(m.params.request.postData || ''); });
   return (!got.refused && got.nodes > 0) || false;
 }, test.limit.long);
 test.run('on a real page, the Desk element asks desk itself with desk.items.search, and no reload', 0.2, function () {
@@ -1059,7 +1059,7 @@ const MAIL = 'bert@example.org';
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 async function homeCall(base, verb, args) {
-  const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+  const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
   const text = await r.text();
   return { status: r.status, text: text, body: parsed(text) };
 }

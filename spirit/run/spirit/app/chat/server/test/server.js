@@ -54,7 +54,7 @@ test.run('a scratch node of its own comes up for this suite', 0.2, async functio
   const run = path.join(node.root, 'spirit', 'run');
   const state = X.state = path.join(run, 'spirit', 'state', 'chat', 'data');
   X.call = async function (name, args) {
-    const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
+    const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
     const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
     return { status: r.status, body: b, text: t };
   };

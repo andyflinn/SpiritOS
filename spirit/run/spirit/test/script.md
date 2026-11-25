@@ -51,7 +51,7 @@ them those.
 
 | | |
 |---|---|
-| `post(verb, args, how)` | sends `{ call: verb, args }` to the node's `/api/spirit` (goal/G41.15), or on a face through `window.spirit.transport`; answers `{status, text, body}`. With `how.stream` it answers the response itself, read as it comes (the events family's subscribe); `how.headers` are sent along |
+| `post(verb, args, how)` | sends `{ call: verb, args }` to the node's `/spirit` (goal/G41.15), or on a face through `window.spirit.transport`; answers `{status, text, body}`. With `how.stream` it answers the response itself, read as it comes (the events family's subscribe); `how.headers` are sent along |
 | `get(path)` | fetches a file of the node's run root by its path; answers `{status, type, bytes}` |
 
 Every member function checks its arguments and then calls one of the two.

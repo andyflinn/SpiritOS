@@ -41,7 +41,7 @@ function stop(child) { return new Promise(function (r) { if (!child || child.exi
 
 // One call at a node's door, as its own pages make it.
 async function call(base, verb, args) {
-  const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+  const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
   let body = null;
   try { body = await r.json(); } catch (e) { body = null; }
   return { status: r.status, body: body };

@@ -47,7 +47,7 @@ the module's name without extension; the generator script's name without `.js`, 
   from the verbs and argument shapes the server's api answers. For a module whose api the node serves (the testicle server, turned on in the lab node,
   `/DEBUG/spirit/app/testicle/testicle/garbageArguments.json`):
   - at least one entry for every verb of that module's api;
-  - every entry that breaks its verb's shape, thrown at the node's api door (`POST /api/spirit`), is answered with a
+  - every entry that breaks its verb's shape, thrown at the node's api door (`POST /spirit`), is answered with a
     refusal that carries a code: a 4xx status and a `code`, never a 2xx, a 5xx or a "handler failed";
   - every lone bad string, its verb's shape kept whole (goal/G41.30; Andy: *"fill this gap, in this item"*), is a real
     call handed to its handler, which may answer it; its pass is the box's *"the server MUST not CRASH or HANG"*:

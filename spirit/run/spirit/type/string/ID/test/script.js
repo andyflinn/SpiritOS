@@ -52,7 +52,7 @@ const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 const N = {};
 async function call(verb, args) {
   try {
-    const r = await fetch(N.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    const r = await fetch(N.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     return { status: r.status, body: await r.json() };
   } catch (e) { return { status: 0, body: null }; }
 }

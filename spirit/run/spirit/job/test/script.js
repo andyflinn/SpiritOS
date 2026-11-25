@@ -56,7 +56,7 @@ function asSent(verb, args) { const a = Object.assign({}, args || {}); if (verb 
 const call = async function (args) {
   const a = Object.assign({}, args);
   if (Array.isArray(a.args)) a.args = JSON.stringify(a.args);
-  const r = await fetch(J.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.create', args: a }) });
+  const r = await fetch(J.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.create', args: a }) });
   const text = await r.text();
   let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
   return { status: r.status, code: body && body.code, text: text };
@@ -218,7 +218,7 @@ test.run('a spirit/server/script.js planted inside an app folder of this node, t
 // keeps what the node and the process's own published lines say. Andy, Q8, of the node and the relay themselves: "NOT the
 // servers.", so only what they start is judged. scratchNode leaves DEBUG on, so each part sets it.
 const door = async function (verb, args) {
-  const r = await fetch(J.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: asSent(verb, args) }) });
+  const r = await fetch(J.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: asSent(verb, args) }) });
   const text = await r.text();
   let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
   return { status: r.status, body: body, text: text };
@@ -418,7 +418,7 @@ function plantApp(run, name, ms, nodeRun) {
 }
 const RT = {};
 const rask = function (call, args) {
-  return fetch(RT.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: asSent(call, args) }) })
+  return fetch(RT.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: asSent(call, args) }) })
     .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
 };
 
@@ -614,7 +614,7 @@ const MAY = ['node.json', 'cache', 'data'].concat(process.platform === 'win32' ?
 const APPS = path.join(REPO, 'spirit', 'run', 'spirit', 'app');
 const SL = { servers: [] };
 const sask = function (call, args) {
-  return fetch(SL.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+  return fetch(SL.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
     .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
 };
 const answersApi = function (name) {
@@ -865,7 +865,7 @@ function mountPart() {
   }
   async function call(base, verb, args) {
     try {
-      const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: asSent(verb, args) }) });
+      const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: asSent(verb, args) }) });
       const text = await r.text();
       return { status: r.status, text: text, body: parsed(text) };
     } catch (e) { return { status: 0, text: '', body: null }; }

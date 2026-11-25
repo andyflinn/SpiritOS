@@ -187,7 +187,7 @@ const BOTTOMS = {
 //             our code, Node's own bottom: "node:" and its kinds joined by "+", of http (http.request), https
 //             (https.request) and fetch (the global): "node:http+https+fetch".
 //   paths     a node: endpoint only, and needed there: a request counts only when its path starts with one of them
-//             (the relay's, ["/api/relay/"]; the why is at relayBound below).
+//             (the relay's, ["/spirit/relay/"]; the why is at relayBound below).
 //   suites    what drives it, MEASURED by an agent; empty until then, and an empty run is its red.
 //   item      the desk item that asked for it.
 //
@@ -626,7 +626,7 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
   //
   // That is the other half of the fork hunt. Two scopes reaching one
   // ENDPOINT is the same finding as two scopes reaching one bottom, and
-  // it is legible without reading a stack at all: `GET /api/relay/key`
+  // it is legible without reading a stack at all: `GET /spirit/relay/key`
   // called from two places is a duplicate whatever the routes look like.
   //
   // It is also the live half of the protocol inventory: a declared route
@@ -769,9 +769,9 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
   //
   // The relay's door counts a request only when it is addressed to a relay. Not by host: a lab relay listens on
   // 127.0.0.1 exactly like a process's own node, so "not loopback" would miss every relay a suite starts. BY PATH:
-  // every route a relay answers sits under /api/relay/ (stream, post, reply and the face routes; relayServer.js's
+  // every route a relay answers sits under /spirit/relay/ (stream, post, reply and the face routes; relayServer.js's
   // public table), and a node answers none of them (server.js: "A node no longer answers any relay route"), so a
-  // process asking its own node (/api/spirit, /api/events) is never counted.
+  // process asking its own node (/spirit, /api/events) is never counted.
   //
   // fetch is watched beside http and https because global fetch goes through undici and never through http.request:
   // without it a fetch to a relay is invisible here.
@@ -1006,7 +1006,7 @@ if (require.main === module) {
   // reached, it is one list anybody can check in one pass.
   //
   // TWO SCOPES ON ONE ENDPOINT IS A DUPLICATE, and it is legible without
-  // reading a stack at all — which is how `GET /api/relay/key` from two
+  // reading a stack at all — which is how `GET /spirit/relay/key` from two
   // places was found.
   const byEndpoint = new Map();
   counts.forEach(function (n, key) {

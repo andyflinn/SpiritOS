@@ -40,7 +40,7 @@ test.run('run with no argument, publishData does not stop at its usage', 0.2, as
   const port = await freePort();
   const tmp = ownTemp('spirit-publishdata');
   try {
-    const env = Object.assign({}, process.env, { SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit' });
+    const env = Object.assign({}, process.env, { SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/spirit' });
     const r = spawnSync(process.execPath, [FILE], { cwd: tmp, env: env, encoding: 'utf8', timeout: 30000 });
     W.said = String(r.stdout || '') + String(r.stderr || '');
     return (r.status !== 2 && !/usage:/.test(W.said)) ? true : false;

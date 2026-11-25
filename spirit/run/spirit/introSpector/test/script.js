@@ -23,7 +23,7 @@ const CORE = [
 // The scratch node, made by the world's test, asked by the later ones.
 const W = {};
 const post = function (call, args) {
-  return fetch(W.N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
+  return fetch(W.N.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
     .then(function (r) { return r.text().then(function (t) { let body = null; try { body = JSON.parse(t); } catch (e) { /* judged as text */ } return { status: r.status, body: body, text: t }; }); },
       function () { return { status: 0, body: null, text: '' }; });
 };

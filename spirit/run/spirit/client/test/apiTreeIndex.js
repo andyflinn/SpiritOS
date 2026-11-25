@@ -21,7 +21,7 @@ const FILE = path.join(RUN, SUBJECT);
 const T = LOADER.requireScript(SUBJECT);
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-// A tree as the verb api answers it on /api/spirit (goal/G30.6): a branch per server, its verbs; a server that did not
+// A tree as the verb api answers it on /spirit (goal/G30.6): a branch per server, its verbs; a server that did not
 // answer is { ok: false, ... }.
 const TREE = {
   fs: { read: {}, write: {}, DEBUG: {} },

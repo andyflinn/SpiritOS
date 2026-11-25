@@ -61,8 +61,8 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(
     'Usage: node spirit/server/relay/script.js [--port <number>]\n' +
     '   or: node spirit/server/script.js --relay [--port <number>]   (the same process)\n\n' +
-    '  Runs a public relay: answers only its one door (POST /api/relay/post, and\n' +
-    '  /api/relay/reply) and its members\' stream (GET /api/relay/stream), and\n' +
+    '  Runs a public relay: answers only its one door (POST /spirit/relay/post, and\n' +
+    '  /spirit/relay/reply) and its members\' stream (GET /spirit/relay/stream), and\n' +
     '  404s everything else. A card ask on the door answers with its key.\n' +
     '  Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is meant\n' +
     '  to be reached from the internet. A personal node is spirit/server/script.js.\n\n' +
@@ -384,14 +384,14 @@ spirit.requireScript('spirit/relayAuth/script.js').nameIdentity(ROOT_DIR, 'relay
 try { spirit.requireScript('spirit/server/serveCommon/script.js').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
 catch (e) { /* a caption must never be the reason a relay will not boot */ }
 
-// handleDeviceOffer (POST /api/relay/device) STOOD HERE, removed by
+// handleDeviceOffer (POST /spirit/relay/device) STOOD HERE, removed by
 // goal/G16.2 with the device enrolment.
 
 // ── THE PUBLIC DOOR IS CLOSED (goal/G22.6) ───────────────────────────
 //
 // Andy's decision (goal/G22.6, 2026-10-13): "The relay's public door, the
 // one any curl can reach without key or signature, is killed in this item:
-// /api/relay/key, /api/relay/claim, /api/version and the brochure all
+// /spirit/relay/key, /spirit/relay/claim, /api/version and the brochure all
 // close. The relay keeps its one door (post) and its members' stream."
 //
 // What they did moved onto the one door, signed: the relay's key is the
@@ -404,14 +404,14 @@ function isRelayPublicPath(method, pathname) {
   // The presence wire, the members' stream: gated inside relay.streamOpen,
   // which refuses an identity this box does not hold before it allocates
   // anything.
-  if (method === 'GET' && pathname === '/api/relay/stream') return true;
+  if (method === 'GET' && pathname === '/spirit/relay/stream') return true;
   // THE ONE DOOR, and the reply that answers what came through it: gated
   // inside relay.js by a signature, and refused instantly if the peer is
   // not there to receive it (decision 0006).
-  if (method === 'POST' && (pathname === '/api/relay/post' || pathname === '/api/relay/reply')) return true;
+  if (method === 'POST' && (pathname === '/spirit/relay/post' || pathname === '/spirit/relay/reply')) return true;
   // THE HOME NODE'S UPLOADS TO ITS FACE (goal/G30.14): gated inside relay.js by a signature naming this relay and the
   // request's id.
-  if (method === 'POST' && (pathname === '/api/relay/face/answer' || pathname === '/api/relay/face/stream')) return true;
+  if (method === 'POST' && (pathname === '/spirit/relay/face/answer' || pathname === '/spirit/relay/face/stream')) return true;
   return false;
 }
 
@@ -568,7 +568,7 @@ const server = http.createServer((req, res) => {
   // answer nothing. The relay's api tree is its verbs' own files in relaySelf/, as relay.js answers 'api' to the owner.
   if (common.debugFirst(req, res, { kind: 'relay', api: relayApiTree })) return;
 
-  const faceUpload = req.method === 'POST' && /^\/api\/relay\/face\/(answer|stream)(\?|$)/.test(String(req.url || ''));
+  const faceUpload = req.method === 'POST' && /^\/spirit\/relay\/face\/(answer|stream)(\?|$)/.test(String(req.url || ''));
   if (!faceUpload && common.refuseTooBig(req, res)) return;
 
   const parsed = common.parseRequestPath(req, res);
@@ -585,10 +585,10 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // GET /api/relay/key STOOD HERE (closed by goal/G22.6): its answer is the
+  // GET /spirit/relay/key STOOD HERE (closed by goal/G22.6): its answer is the
   // relay's card, given to a card ask on the one door (relay.js relayCard).
 
-  // GET /api/relay/who STOOD HERE — THE ROLL, DELETED 2026-09-18. See
+  // GET /spirit/relay/who STOOD HERE — THE ROLL, DELETED 2026-09-18. See
   // the tombstone in server.js's history and decision 0012: no party may
   // ask a relay for its whole enrolment list.
 
@@ -599,7 +599,7 @@ const server = http.createServer((req, res) => {
   // signature is a HEADER (streamSignatureFrom, relay.js): a query string
   // is written to every access log the request passes, and this one buys
   // a STANDING grant rather than a single read.
-  if (req.method === 'GET' && pathname === '/api/relay/stream') {
+  if (req.method === 'GET' && pathname === '/spirit/relay/stream') {
     const from = createRelay.streamSignatureFrom(url.searchParams.get('sig'), req.headers);
     if (!from.ok) {
       nodeRefusal(res, from.status);
@@ -689,10 +689,10 @@ const server = http.createServer((req, res) => {
   // /favicon.svg) STOOD HERE, closed by goal/G22.6.
 
   if (req.method === 'POST') {
-    // POST /api/relay/claim STOOD HERE (closed by goal/G22.6): a claim is a
+    // POST /spirit/relay/claim STOOD HERE (closed by goal/G22.6): a claim is a
     // post on the one door, sealed to the relay's key.
 
-    if (pathname === '/api/relay/post') {
+    if (pathname === '/spirit/relay/post') {
       readJsonBody(req).then(function (body) {
         // A POST WITH HINTS IS REFUSED (goal/G47.1, box v69: "A post carries no hints: the node sends none, the hint
         // signature goes, and the relay takes a post with hints no more"). They were not read since goal/G22.6; a
@@ -776,10 +776,10 @@ const server = http.createServer((req, res) => {
     // THE HOME NODE ANSWERS ITS FACE (goal/G30.14): the raw body is piped into the face's waiting response, or into
     // its open stream, as it arrives. Who it is, and the signature over this relay and the id, are headers, so the
     // body is never read here.
-    if (pathname === '/api/relay/face/answer' || pathname === '/api/relay/face/stream') {
+    if (pathname === '/spirit/relay/face/answer' || pathname === '/spirit/relay/face/stream') {
       const from = String(req.headers['x-spirit-from'] || '');
       const sig = String(req.headers['x-spirit-sig'] || '');
-      const said = pathname === '/api/relay/face/answer'
+      const said = pathname === '/spirit/relay/face/answer'
         ? relay.faceAnswer(from, url.searchParams.get('id') || '', sig, req, { status: req.headers['x-spirit-status'], type: req.headers['x-spirit-type'] })
         : relay.faceFeed(from, sig, req);
       if (!said.ok) {
@@ -793,7 +793,7 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (pathname === '/api/relay/reply') {
+    if (pathname === '/spirit/relay/reply') {
       readJsonBody(req).then(function (body) {
         const result = relay.routeReply(
           body && body.from, body && body.hash, body && body.text, body && body.sig

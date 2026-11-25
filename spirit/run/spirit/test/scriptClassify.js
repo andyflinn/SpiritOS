@@ -129,7 +129,7 @@ async function ownScratch() {
   const child = LABH.startNodeOn(run, port, { windowsHide: true });
   const base = 'http://127.0.0.1:' + port;
   const post = function (call, args) {
-    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
+    return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
   };
   const up = await until(function () { return post('api').then(function (r) { return r.status === 200; }); }, 60000);
   if (up) await post('node.debug', { debug: { on: true } }).catch(function () { /* the page loads without it */ });
@@ -153,7 +153,7 @@ async function handedScratch() {
   fs.writeFileSync(path.join(run, 'spirit', 'test', BARE), '<!doctype html><html><head><meta charset="utf-8"><script>window.pageErrors = [];' +
     ' window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); });</script><script src="/spirit.js"></script></head><body></body></html>\n');
   const post = function (call, args) {
-    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+    return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
       .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
   };
   const up = await until(function () { return post('api').then(function (r) { return r.status === 200; }); }, 30000);

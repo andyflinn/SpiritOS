@@ -266,7 +266,7 @@ async function closeBundleWorld() {
 test.after(closeBundleWorld);
 const home = async function (verb, args) {
   try {
-    const r = await fetch(B.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    const r = await fetch(B.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
   } catch (e) { return { status: 0, text: '', body: null }; }
@@ -547,7 +547,7 @@ const WANT = { label: 'Grants', icon: '🔒' };
 const APP_DIR = path.join(RUN, 'spirit', 'app', NAME);
 async function wcall(base, verb, args) {
   try {
-    const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
   } catch (e) { return { status: 0, text: '', body: null }; }

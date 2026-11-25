@@ -220,7 +220,7 @@ test.run('"api" at spirit.app.agent.test, a folder with no api.js, answers a JSO
 // argument as true or false, a list or object argument as JSON". What the node holds is asked over its own door, by the test.
 async function call(verb, args) {
   try {
-    const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     return { status: r.status, body: await r.json() };
   } catch (e) { return { status: 0, body: null }; }
 }

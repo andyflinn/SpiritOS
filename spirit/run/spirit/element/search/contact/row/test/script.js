@@ -401,7 +401,7 @@ const MAIL = 'bert@example.org';
 const DRAWN_MS = 6000;
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 async function home(base, v, args) {
-  const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: v, args: args || {} }) });
+  const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: v, args: args || {} }) });
   const text = await r.text();
   return { status: r.status, text: text, body: parsed(text) };
 }

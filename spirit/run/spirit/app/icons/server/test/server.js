@@ -31,7 +31,7 @@ test.after(function () {
   try { if (node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
 });
 const icon = async function (args) {
-  const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'icons.icon', args: args }) });
+  const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'icons.icon', args: args }) });
   const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
   return { status: r.status, body: b, text: t };
 };
@@ -197,7 +197,7 @@ test.run('the rest of the set stands, and the file is whole JSON', 0.2, function
 // the box, 10: the change is published on the job spirit.app.icons before the answer
 test.run('the job spirit.app.icons is there', 0.2, async function () {
   if (!W.ready) return false;
-  const job = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.get', args: { key: 'spirit.app.icons' } }) }).then(function (r) { return r.json(); }, function () { return null; });
+  const job = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.get', args: { key: 'spirit.app.icons' } }) }).then(function (r) { return r.json(); }, function () { return null; });
   W.j = (job && job.job) || null;
   return !!W.j && W.j.module === 'spirit.app.icons' ? true : false;
 }, test.limit.quick);

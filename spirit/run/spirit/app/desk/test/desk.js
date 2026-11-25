@@ -102,7 +102,7 @@ function interfaceOf(body) {
   return { ok: false, code: 'no-interface' };
 }
 function entriesOf(got) { return Array.isArray(got) ? got : got && Array.isArray(got.rows) ? got.rows : got ? [got] : []; }
-// ANDY'S NODE AS THE DESK SEES IT, on its one door (POST /api/spirit {verb, ...}): his pages' publishes
+// ANDY'S NODE AS THE DESK SEES IT, on its one door (POST /spirit {verb, ...}): his pages' publishes
 // (event.publish, the row as app) into pages; the event stream peerPost reads its answers on (event.subscribe); a
 // family's interface (api {family}); each post to a subscriber's desk listener (peer.post) into posts as {to, json},
 // every row of it into sent as {to, row}.

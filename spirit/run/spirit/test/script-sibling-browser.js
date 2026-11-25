@@ -72,7 +72,7 @@ async function batch() {
       // Each of its servers answering its interface before any page is drawn, as a script's own run waited for its own.
       await Promise.all(servers.map(function (name) {
         return H.until(function () {
-          return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: name } }) })
+          return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: name } }) })
             .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
         }, 30000);
       }));
@@ -800,7 +800,7 @@ async function session() {
   if (!node.debug) { P.fail = true; return P; }
   if (ownServer) {
     const served = await until(function () {
-      return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: own } }) })
+      return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: { branch: own } }) })
         .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; });
     }, 30000);
     if (!served) { P.fail = true; return P; }
@@ -838,8 +838,9 @@ async function session() {
   P.report = report;
   P.thrown = page.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function () { return true; });
   // A file asked for and not there is missing; the door's answers (a refusal answers 404 too) and the browser's own
-  // favicon ask are not files the page asked for.
-  const notFile = function (url) { return /\/api\/|\/favicon\.ico$/.test(String(url || '')); };
+  // favicon ask are not files the page asked for. The door is /spirit itself and the relay's routes sit under
+  // /spirit/relay/ (goal/G49.18); every other path under /spirit/ is a file.
+  const notFile = function (url) { return /\/spirit(\?|$)|\/spirit\/relay\/|\/favicon\.ico$/.test(String(url || '').replace(/^[a-z]+:\/\/[^/]+/, '')); };
   P.errors = page.heard.filter(function (m) { return (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') || (m.method === 'Log.entryAdded' && m.params.entry.level === 'error' && !notFile(m.params.entry.url)); })
     .map(function () { return true; });
   P.missing = page.heard.filter(function (m) { return m.method === 'Network.responseReceived' && m.params.response.status >= 400 && !notFile(m.params.response.url); }).map(function () { return true; })

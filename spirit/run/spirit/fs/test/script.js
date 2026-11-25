@@ -195,7 +195,7 @@ const NODE = { n: null };
 const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 test.after(async function () { try { if (NODE.n && NODE.n.release) await NODE.n.release(); } catch (e) { /* gone */ } });
 function askNode(call, args) {
-  return fetch(NODE.n.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
+  return fetch(NODE.n.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
     .then(function (r) { return r.text().then(function (t) { let b = null; try { b = JSON.parse(t); } catch (e) { b = null; } return { status: r.status, body: b }; }); }, function () { return { status: 0, body: null }; });
 }
 test.run('a scratch node comes up', 0.2, async function () { NODE.n = await H.scratchNode(); return (!!NODE.n && NODE.n.up) || false; }, test.limit.long);

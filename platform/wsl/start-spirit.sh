@@ -48,7 +48,7 @@ wait_for() {
 
 node_answers() {
   curl -s -m 2 -X POST -H 'Content-Type: application/json' \
-    --data '{"verb":"node.card"}' "http://127.0.0.1:$1/api/spirit" | grep -q '"ok":true'
+    --data '{"verb":"node.card"}' "http://127.0.0.1:$1/spirit" | grep -q '"ok":true'
 }
 page_answers() { curl -s -m 2 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$1/" | grep -q '^200$'; }
 

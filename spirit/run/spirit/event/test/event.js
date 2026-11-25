@@ -36,7 +36,7 @@ function world() {
   const pageStreams = new Set();
   const events = createEvents({ jobs: jobs, relayEvents: relayEvents, arrivals: arrivals, renames: renames, pageStreams: pageStreams,
     readJsonBody: function () { return Promise.resolve({}); }, bodyRefused: function () {} });
-  // AS THE NODE'S DOOR HANDS IT OVER: the call's body read to its end first ({ call, args }, POST /api/spirit), so the
+  // AS THE NODE'S DOOR HANDS IT OVER: the call's body read to its end first ({ call, args }, POST /spirit), so the
   // request is over before handleSubscribe sees it. Called straight from the request, its close still comes, and the leak
   // does not show.
   const server = http.createServer(function (req, res) {
@@ -209,7 +209,7 @@ function selfSubTree() {
   return { root: root, run: run, seen: path.join(state, 'seen.json') };
 }
 const nodePost = function (call, args) {
-  return fetch(N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
+  return fetch(N.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
     .then(function (r) { return r.status; }, function () { return 0; });
 };
 const selfSubs = function () { try { return fs.readFileSync(N.s.seen, 'utf8').split('\n').filter(Boolean).length; } catch (e) { return 0; } };
@@ -222,7 +222,7 @@ test.run('a page\'s connect to the node\'s event stream reaches each app server 
   if (!up) return false;
   const before = selfSubs();
   const page = await new Promise(function (resolve) {
-    const req = http.request({ port: port, host: '127.0.0.1', method: 'POST', path: '/api/spirit', headers: { 'content-type': 'application/json' } }, function (res) {
+    const req = http.request({ port: port, host: '127.0.0.1', method: 'POST', path: '/spirit', headers: { 'content-type': 'application/json' } }, function (res) {
       res.on('data', function () {}); res.on('error', function () {}); resolve(req);
     });
     req.on('error', function () { resolve(null); });

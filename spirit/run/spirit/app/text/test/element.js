@@ -36,7 +36,7 @@ async function boot(run) {
   const port = await freePort();
   const child = LABH.startNodeOn(run, port);
   const base = 'http://127.0.0.1:' + port;
-  const up = await until(function () { return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; }); }, 60000);
+  const up = await until(function () { return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; }); }, 60000);
   return { child: child, base: base, up: !!up };
 }
 
@@ -138,7 +138,7 @@ test.run('Save is plain again once the answer has come', 0.2, async function () 
 // the box: its title bar, ✏️ "Text Editor:" + file-name, and its own icon while no file is picked
 test.run('app.active switches the app on', 0.2, async function () {
   if (!W.N || !W.N.up) return false;
-  const on = await fetch(W.N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: NAME, active: true } }) }).then(function (r) { return r.status; }, function () { return 0; });
+  const on = await fetch(W.N.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: NAME, active: true } }) }).then(function (r) { return r.status; }, function () { return 0; });
   return on === 200 || false;
 }, test.limit.quick);
 test.run('its tile is there and is pressed', 0.2, async function () {

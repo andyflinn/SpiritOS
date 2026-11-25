@@ -63,7 +63,7 @@ function watchRuns(root, name, opts) {
   const asked = (async function () {
     while (asking) {
       try {
-        const r = await fetch(opts.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.get', args: { key: 'spirit.app.' + name } }) });
+        const r = await fetch(opts.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.get', args: { key: 'spirit.app.' + name } }) });
         const b = await r.json();
         const pid = b && b.job && b.job.data && b.job.data.pid;
         if (pid) pids.add(String(pid));
@@ -176,9 +176,9 @@ async function startNode(lab, port) {
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + at;
   const up = await until(function () {
-    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
+    return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; });
   }, 60000);
-  const debug = up ? await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'node.debug', args: { debug: { on: true } } }) })
+  const debug = up ? await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'node.debug', args: { debug: { on: true } } }) })
     .then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.debug === true); }, function () { return false; }) : false;
   return { child: child, base: base, port: at, up: up, debug: debug };
 }
@@ -195,7 +195,7 @@ async function handed(opts) {
   const base = process.env.SPIRIT_MOUNT_BASE;
   const run = process.env.SPIRIT_MOUNT_RUN ? path.resolve(process.env.SPIRIT_MOUNT_RUN) : '';
   const post = function (call, args) {
-    return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
+    return fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
       .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }, function () { return { status: r.status, body: null }; }); }, function () { return { status: 0, body: null }; });
   };
   if (run && typeof opts.before === 'function') await opts.before(run);

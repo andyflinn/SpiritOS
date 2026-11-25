@@ -28,7 +28,7 @@ function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function source(rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } }
 
 async function home(base, verb, args) {
-  const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+  const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
   const text = await r.text();
   return { status: r.status, text: text, body: parsed(text) };
 }

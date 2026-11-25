@@ -1113,7 +1113,7 @@ a fork hides in the gap.**
 
 **Neither alone catches a duplicate inside an already-permitted file** —
 and that is not hypothetical. `hub.sealedClaim` and `appServer.askRelay`
-both composed `GET /api/relay/key`; both files were legitimately in the
+both composed `GET /spirit/relay/key`; both files were legitimately in the
 tally; `oneDoor` was green throughout. The probe found it on its first
 real run, and the duplicate was **a security defect**: the app server
 pinned the relay's identity and then the second fetch sealed an invite to

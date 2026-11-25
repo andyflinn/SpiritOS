@@ -92,7 +92,7 @@ test.run('the face page asked with a token in its address sets no login cookie',
 }, test.limit.quick);
 // THE RELAY'S ROUTES UNDER /spirit (goal/G49.18, box v6: "Their names stay as they are, api replaced by spirit":
 // /spirit/relay/post, /spirit/relay/reply and the rest). A route that is there answers a bad body with a refusal of its own,
-// never a 404; the old /api/relay/ names answer 404. The old names are written in pieces, so a move leaves them as they are.
+// never a 404; the old relay names under api answer 404. The old names are written in pieces, so a move leaves them as they are.
 function postTo(p) {
   return new Promise(function (resolve) {
     const body = '{}';
@@ -113,12 +113,12 @@ test.run('the relay has its reply route at /spirit/relay/reply: a bad body is re
   const s = await postTo('/spirit/relay/reply');
   return (s >= 400 && s < 500 && s !== 404) || false;
 }, test.limit.quick);
-test.run('the old /api/relay/post is no route: 404 or 405', 0.8, async function () {
+test.run('the old post route, under api, is no route: 404 or 405', 0.8, async function () {
   if (!SAME.R || !SAME.R.up) return false;
   const s = await postTo(OLD_RELAY('post'));
   return (s === 404 || s === 405) || false;
 }, test.limit.quick);
-test.run('the old /api/relay/reply is no route: 404 or 405', 0.8, async function () {
+test.run('the old reply route, under api, is no route: 404 or 405', 0.8, async function () {
   if (!SAME.R || !SAME.R.up) return false;
   const s = await postTo(OLD_RELAY('reply'));
   return (s === 404 || s === 405) || false;
@@ -298,7 +298,7 @@ test.run('a scratch relay comes up and hands its garbage list', 0.2, async funct
     ['text a huge string, signed', signed(stranger, JSON.stringify({ v: 1, body: { card: 'x'.repeat(15000) } }))],
     ['text with a NUL, signed', signed(stranger, '{"v":1,"body":{"card":"\u0000"}}')],
   ];
-  const POSTS = ['/api/relay/post', '/api/relay/reply', '/api/relay/face/answer', '/api/relay/face/stream'];
+  const POSTS = ['/spirit/relay/post', '/spirit/relay/reply', '/spirit/relay/face/answer', '/spirit/relay/face/stream'];
   const RAWS = G.RAWS;
   POSTS.forEach(function (p) {
     BODIES.forEach(function (b) { RAWS.push({ run: function () { return post(base, p, b[1]); } }); });
@@ -316,11 +316,11 @@ test.run('a scratch relay comes up and hands its garbage list', 0.2, async funct
     RAWS.push({ run: function () { return raw(base, getHead(p, FACE_HOST), ''); } });
   });
   // The members' stream, with garbage in its signature and key.
-  ['/api/relay/stream', '/api/relay/stream?sig=garbage&key=%00', '/api/relay/stream?sig=' + 'a'.repeat(9000), '/api/relay/stream?key=__proto__'].forEach(function (p) {
+  ['/spirit/relay/stream', '/spirit/relay/stream?sig=garbage&key=%00', '/spirit/relay/stream?sig=' + 'a'.repeat(9000), '/spirit/relay/stream?key=__proto__'].forEach(function (p) {
     RAWS.push({ run: function () { return raw(base, getHead(p, null, 'X-Spirit-Sig: garbage\r\n'), '', { keepOpen: true }); }, waits: true });
   });
-  RAWS.push({ run: function () { return raw(base, 'GARBAGE /api/relay/post NOPE\r\n\r\n', ''); } });
-  RAWS.push({ run: function () { return raw(base, 'POST /api/relay/post HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', '{}'); } });
+  RAWS.push({ run: function () { return raw(base, 'GARBAGE /spirit/relay/post NOPE\r\n\r\n', ''); } });
+  RAWS.push({ run: function () { return raw(base, 'POST /spirit/relay/post HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', '{}'); } });
   // 3) MALFORMED PATHS, GET AND POST, at the relay's host and at a face's (the box, rule 2: "malformed paths").
   const PATHS = ['/..', '/../../../../etc/passwd', '/%2e%2e/%2e%2e/etc/passwd', '/shell/%2f%2f..%2f..%2fetc', '/' + 'a'.repeat(9000), '/%', '/%zz',
     '/%E0%A4%A', '/api/%2e%2e/relay/post', '//api//relay//post', '/DEBUG/../../spirit/state/identity.json', '/shell/../../spirit/state/relay.db',
@@ -341,14 +341,14 @@ test.run('a scratch relay comes up and hands its garbage list', 0.2, async funct
 }, test.limit.slow);
 
 // THE VERBS, BATCH BY BATCH.
-// /api/relay/post: every relay verb takes bad arguments without crashing or hanging
-test.run('the relay verbs took all their garbage at /api/relay/post without crashing or hanging', 0.2, async function () {
+// /spirit/relay/post: every relay verb takes bad arguments without crashing or hanging
+test.run('the relay verbs took all their garbage at /spirit/relay/post without crashing or hanging', 0.2, async function () {
   if (!G.list) return false;
   const relay = G.relay; const base = G.base; const ASKS = G.ASKS;
   const broken = {}; const statuses = {};
   for (let i = 0; i < ASKS.length && !G.killer; i += BATCH) {
     const batch = ASKS.slice(i, i + BATCH);
-    const got = await Promise.all(batch.map(function (a) { return post(base, '/api/relay/post', signed(a.id, JSON.stringify(Object.assign({ v: 1 }, a.e)))); }));
+    const got = await Promise.all(batch.map(function (a) { return post(base, '/spirit/relay/post', signed(a.id, JSON.stringify(Object.assign({ v: 1 }, a.e)))); }));
     got.forEach(function (r, j) {
       const a = batch[j];
       const name = Object.keys(a.e.body || {})[0] || '?';
@@ -364,7 +364,7 @@ test.run('the relay verbs took all their garbage at /api/relay/post without cras
   const bad = Object.keys(G.verbs).filter(function (v) { return broken[v]; });
   return (!bad.length && !G.killer) || false;
 }, test.limit.slow);
-test.run('after every batch posted to /api/relay/post the relay answered a plain request in time', 0.2, function () {
+test.run('after every batch posted to /spirit/relay/post the relay answered a plain request in time', 0.2, function () {
   if (!G.thrown) return false;
   if (G.killer) return false;
   return !G.hungAfter.length || false;
@@ -389,77 +389,77 @@ async function door(ri) {
   if (relay.child.exitCode !== null && !G.killer) { G.killer = true; bad = true; }
   return !bad || false;
 }
-test.run('a body that is not JSON posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(0); }, test.limit.slow);
-test.run('a JSON body that is not an object posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(1); }, test.limit.slow);
-test.run('a bare JSON string posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(2); }, test.limit.slow);
-test.run('a JSON null posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(3); }, test.limit.slow);
-test.run('a body nested 5000 levels deep posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(4); }, test.limit.slow);
-test.run('a body with a __proto__ key posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(5); }, test.limit.slow);
-test.run('a body with a constructor key posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(6); }, test.limit.slow);
-test.run('a body of invalid UTF-8 bytes posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(7); }, test.limit.slow);
-test.run('a post whose from is a number, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(8); }, test.limit.slow);
-test.run('a post with its sig missing, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(9); }, test.limit.slow);
-test.run('a post with a forged sig, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(10); }, test.limit.slow);
-test.run('a signed post whose text is not JSON, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(11); }, test.limit.slow);
-test.run('a signed post whose text is a JSON array, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(12); }, test.limit.slow);
-test.run('a signed post whose text holds a huge string, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(13); }, test.limit.slow);
-test.run('a signed post whose text holds a NUL, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(14); }, test.limit.slow);
-test.run('a body with no Content-Type posted to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(15); }, test.limit.slow);
-test.run('a body sent as text/plain to /api/relay/post is answered, and the relay still answers', 0.2, function () { return door(16); }, test.limit.slow);
-test.run('a body cut off half-way, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(17); }, test.limit.long);
-test.run('a body one byte past the largest allowed, posted to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(18); }, test.limit.slow);
-test.run('a post whose Content-Length is far past what is sent, to /api/relay/post, is answered, and the relay still answers', 0.2, function () { return door(19); }, test.limit.long);
-test.run('a body that is not JSON posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(20); }, test.limit.slow);
-test.run('a JSON body that is not an object posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(21); }, test.limit.slow);
-test.run('a bare JSON string posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(22); }, test.limit.slow);
-test.run('a JSON null posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(23); }, test.limit.slow);
-test.run('a body nested 5000 levels deep posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(24); }, test.limit.slow);
-test.run('a body with a __proto__ key posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(25); }, test.limit.slow);
-test.run('a body with a constructor key posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(26); }, test.limit.slow);
-test.run('a body of invalid UTF-8 bytes posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(27); }, test.limit.slow);
-test.run('a post whose from is a number, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(28); }, test.limit.slow);
-test.run('a post with its sig missing, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(29); }, test.limit.slow);
-test.run('a post with a forged sig, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(30); }, test.limit.slow);
-test.run('a signed post whose text is not JSON, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(31); }, test.limit.slow);
-test.run('a signed post whose text is a JSON array, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(32); }, test.limit.slow);
-test.run('a signed post whose text holds a huge string, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(33); }, test.limit.slow);
-test.run('a signed post whose text holds a NUL, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(34); }, test.limit.slow);
-test.run('a body with no Content-Type posted to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(35); }, test.limit.slow);
-test.run('a body sent as text/plain to /api/relay/reply is answered, and the relay still answers', 0.2, function () { return door(36); }, test.limit.slow);
-test.run('a body cut off half-way, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(37); }, test.limit.long);
-test.run('a body one byte past the largest allowed, posted to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(38); }, test.limit.slow);
-test.run('a post whose Content-Length is far past what is sent, to /api/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(39); }, test.limit.long);
-test.run('a body that is not JSON posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(40); }, test.limit.slow);
-test.run('a JSON body that is not an object posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(41); }, test.limit.slow);
-test.run('a bare JSON string posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(42); }, test.limit.slow);
-test.run('a JSON null posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(43); }, test.limit.slow);
-test.run('a body nested 5000 levels deep posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(44); }, test.limit.slow);
-test.run('a body with a __proto__ key posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(45); }, test.limit.slow);
-test.run('a body with a constructor key posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(46); }, test.limit.slow);
-test.run('a body of invalid UTF-8 bytes posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(47); }, test.limit.slow);
-test.run('a post whose from is a number, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(48); }, test.limit.slow);
-test.run('a post with its sig missing, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(49); }, test.limit.slow);
-test.run('a post with a forged sig, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(50); }, test.limit.slow);
-test.run('a signed post whose text is not JSON, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(51); }, test.limit.slow);
-test.run('a signed post whose text is a JSON array, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(52); }, test.limit.slow);
-test.run('a signed post whose text holds a huge string, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(53); }, test.limit.slow);
-test.run('a signed post whose text holds a NUL, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(54); }, test.limit.slow);
-test.run('a body with no Content-Type posted to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(55); }, test.limit.slow);
-test.run('a body sent as text/plain to /api/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(56); }, test.limit.slow);
-test.run('a body cut off half-way, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(57); }, test.limit.long);
-test.run('a body one byte past the largest allowed, posted to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(58); }, test.limit.slow);
-test.run('a post whose Content-Length is far past what is sent, to /api/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(59); }, test.limit.long);
-test.run('a body that is not JSON posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(60); }, test.limit.slow);
-test.run('a JSON body that is not an object posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(61); }, test.limit.slow);
-test.run('a bare JSON string posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(62); }, test.limit.slow);
-test.run('a JSON null posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(63); }, test.limit.slow);
-test.run('a body nested 5000 levels deep posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(64); }, test.limit.slow);
-test.run('a body with a __proto__ key posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(65); }, test.limit.slow);
-test.run('a body with a constructor key posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(66); }, test.limit.slow);
-test.run('a body of invalid UTF-8 bytes posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(67); }, test.limit.slow);
-test.run('a post whose from is a number, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(68); }, test.limit.slow);
-test.run('a post with its sig missing, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(69); }, test.limit.slow);
-test.run('a post with a forged sig, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(70); }, test.limit.slow);
+test.run('a body that is not JSON posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(0); }, test.limit.slow);
+test.run('a JSON body that is not an object posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(1); }, test.limit.slow);
+test.run('a bare JSON string posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(2); }, test.limit.slow);
+test.run('a JSON null posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(3); }, test.limit.slow);
+test.run('a body nested 5000 levels deep posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(4); }, test.limit.slow);
+test.run('a body with a __proto__ key posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(5); }, test.limit.slow);
+test.run('a body with a constructor key posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(6); }, test.limit.slow);
+test.run('a body of invalid UTF-8 bytes posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(7); }, test.limit.slow);
+test.run('a post whose from is a number, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(8); }, test.limit.slow);
+test.run('a post with its sig missing, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(9); }, test.limit.slow);
+test.run('a post with a forged sig, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(10); }, test.limit.slow);
+test.run('a signed post whose text is not JSON, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(11); }, test.limit.slow);
+test.run('a signed post whose text is a JSON array, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(12); }, test.limit.slow);
+test.run('a signed post whose text holds a huge string, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(13); }, test.limit.slow);
+test.run('a signed post whose text holds a NUL, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(14); }, test.limit.slow);
+test.run('a body with no Content-Type posted to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(15); }, test.limit.slow);
+test.run('a body sent as text/plain to /spirit/relay/post is answered, and the relay still answers', 0.2, function () { return door(16); }, test.limit.slow);
+test.run('a body cut off half-way, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(17); }, test.limit.long);
+test.run('a body one byte past the largest allowed, posted to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(18); }, test.limit.slow);
+test.run('a post whose Content-Length is far past what is sent, to /spirit/relay/post, is answered, and the relay still answers', 0.2, function () { return door(19); }, test.limit.long);
+test.run('a body that is not JSON posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(20); }, test.limit.slow);
+test.run('a JSON body that is not an object posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(21); }, test.limit.slow);
+test.run('a bare JSON string posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(22); }, test.limit.slow);
+test.run('a JSON null posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(23); }, test.limit.slow);
+test.run('a body nested 5000 levels deep posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(24); }, test.limit.slow);
+test.run('a body with a __proto__ key posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(25); }, test.limit.slow);
+test.run('a body with a constructor key posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(26); }, test.limit.slow);
+test.run('a body of invalid UTF-8 bytes posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(27); }, test.limit.slow);
+test.run('a post whose from is a number, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(28); }, test.limit.slow);
+test.run('a post with its sig missing, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(29); }, test.limit.slow);
+test.run('a post with a forged sig, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(30); }, test.limit.slow);
+test.run('a signed post whose text is not JSON, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(31); }, test.limit.slow);
+test.run('a signed post whose text is a JSON array, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(32); }, test.limit.slow);
+test.run('a signed post whose text holds a huge string, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(33); }, test.limit.slow);
+test.run('a signed post whose text holds a NUL, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(34); }, test.limit.slow);
+test.run('a body with no Content-Type posted to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(35); }, test.limit.slow);
+test.run('a body sent as text/plain to /spirit/relay/reply is answered, and the relay still answers', 0.2, function () { return door(36); }, test.limit.slow);
+test.run('a body cut off half-way, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(37); }, test.limit.long);
+test.run('a body one byte past the largest allowed, posted to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(38); }, test.limit.slow);
+test.run('a post whose Content-Length is far past what is sent, to /spirit/relay/reply, is answered, and the relay still answers', 0.2, function () { return door(39); }, test.limit.long);
+test.run('a body that is not JSON posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(40); }, test.limit.slow);
+test.run('a JSON body that is not an object posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(41); }, test.limit.slow);
+test.run('a bare JSON string posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(42); }, test.limit.slow);
+test.run('a JSON null posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(43); }, test.limit.slow);
+test.run('a body nested 5000 levels deep posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(44); }, test.limit.slow);
+test.run('a body with a __proto__ key posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(45); }, test.limit.slow);
+test.run('a body with a constructor key posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(46); }, test.limit.slow);
+test.run('a body of invalid UTF-8 bytes posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(47); }, test.limit.slow);
+test.run('a post whose from is a number, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(48); }, test.limit.slow);
+test.run('a post with its sig missing, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(49); }, test.limit.slow);
+test.run('a post with a forged sig, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(50); }, test.limit.slow);
+test.run('a signed post whose text is not JSON, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(51); }, test.limit.slow);
+test.run('a signed post whose text is a JSON array, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(52); }, test.limit.slow);
+test.run('a signed post whose text holds a huge string, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(53); }, test.limit.slow);
+test.run('a signed post whose text holds a NUL, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(54); }, test.limit.slow);
+test.run('a body with no Content-Type posted to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(55); }, test.limit.slow);
+test.run('a body sent as text/plain to /spirit/relay/face/answer is answered, and the relay still answers', 0.2, function () { return door(56); }, test.limit.slow);
+test.run('a body cut off half-way, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(57); }, test.limit.long);
+test.run('a body one byte past the largest allowed, posted to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(58); }, test.limit.slow);
+test.run('a post whose Content-Length is far past what is sent, to /spirit/relay/face/answer, is answered, and the relay still answers', 0.2, function () { return door(59); }, test.limit.long);
+test.run('a body that is not JSON posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(60); }, test.limit.slow);
+test.run('a JSON body that is not an object posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(61); }, test.limit.slow);
+test.run('a bare JSON string posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(62); }, test.limit.slow);
+test.run('a JSON null posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(63); }, test.limit.slow);
+test.run('a body nested 5000 levels deep posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(64); }, test.limit.slow);
+test.run('a body with a __proto__ key posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(65); }, test.limit.slow);
+test.run('a body with a constructor key posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(66); }, test.limit.slow);
+test.run('a body of invalid UTF-8 bytes posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(67); }, test.limit.slow);
+test.run('a post whose from is a number, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(68); }, test.limit.slow);
+test.run('a post with its sig missing, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(69); }, test.limit.slow);
+test.run('a post with a forged sig, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(70); }, test.limit.slow);
 // A FORGED SIGNATURE IS REFUSED, NOT MERELY SURVIVED (goal/G47.6, box: "a packet with a faked signature is refused by the relay
 // with a refusal, not merely that the relay does not crash"). The four tests above pass on any answer. Here the post claims
 // to be from the relay's own owner, whom the relay would take, and carries a real signature by that owner over another text:
@@ -471,21 +471,21 @@ test.run('a post claiming to be from the relay\'s owner with a signature over an
   const text = '{"v":1,"body":{"card":true}}';
   const sig = A.sign(owner.privateKey, A.postMessage(owner.publicKey, '', '{"v":1,"body":{"other":true}}'));
   const took = [];
-  for (const p of ['/api/relay/post', '/api/relay/reply', '/api/relay/face/answer', '/api/relay/face/stream']) {
+  for (const p of ['/spirit/relay/post', '/spirit/relay/reply', '/spirit/relay/face/answer', '/spirit/relay/face/stream']) {
     const r = await post(G.base, p, { from: owner.publicKey, to: '', text: text, sig: sig });
     if (!r || !(r.status >= 400 && r.status < 500)) took.push(p + ' ' + (r && r.status));
   }
   return took.length === 0;
 }, test.limit.slow);
-test.run('a signed post whose text is not JSON, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(71); }, test.limit.slow);
-test.run('a signed post whose text is a JSON array, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(72); }, test.limit.slow);
-test.run('a signed post whose text holds a huge string, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(73); }, test.limit.slow);
-test.run('a signed post whose text holds a NUL, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(74); }, test.limit.slow);
-test.run('a body with no Content-Type posted to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(75); }, test.limit.slow);
-test.run('a body sent as text/plain to /api/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(76); }, test.limit.slow);
-test.run('a body cut off half-way, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(77); }, test.limit.long);
-test.run('a body one byte past the largest allowed, posted to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(78); }, test.limit.slow);
-test.run('a post whose Content-Length is far past what is sent, to /api/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(79); }, test.limit.long);
+test.run('a signed post whose text is not JSON, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(71); }, test.limit.slow);
+test.run('a signed post whose text is a JSON array, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(72); }, test.limit.slow);
+test.run('a signed post whose text holds a huge string, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(73); }, test.limit.slow);
+test.run('a signed post whose text holds a NUL, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(74); }, test.limit.slow);
+test.run('a body with no Content-Type posted to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(75); }, test.limit.slow);
+test.run('a body sent as text/plain to /spirit/relay/face/stream is answered, and the relay still answers', 0.2, function () { return door(76); }, test.limit.slow);
+test.run('a body cut off half-way, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(77); }, test.limit.long);
+test.run('a body one byte past the largest allowed, posted to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(78); }, test.limit.slow);
+test.run('a post whose Content-Length is far past what is sent, to /spirit/relay/face/stream, is answered, and the relay still answers', 0.2, function () { return door(79); }, test.limit.long);
 test.run('a body that is not JSON posted to /face/api under a face\'s host is answered, and the relay still answers', 0.2, function () { return door(80); }, test.limit.slow);
 test.run('a JSON body that is not an object posted to /face/api under a face\'s host is answered, and the relay still answers', 0.2, function () { return door(81); }, test.limit.slow);
 test.run('a bare JSON string posted to /face/api under a face\'s host is answered, and the relay still answers', 0.2, function () { return door(82); }, test.limit.slow);
@@ -506,10 +506,10 @@ test.run('a GET of /face/allowed with the domain %00, under a face\'s host, is a
 test.run('a GET of /face/allowed with a domain of 9000 a\'s, under a face\'s host, is answered, and the relay still answers', 0.2, function () { return door(97); }, test.limit.slow);
 test.run('a GET of /face/file with the path ..%2f..%2frelay-state, under a face\'s host, is answered, and the relay still answers', 0.2, function () { return door(98); }, test.limit.slow);
 test.run('a GET of /face/stream under a face\'s host is answered, and the relay still answers', 0.2, function () { return door(99); }, test.limit.slow);
-test.run('a GET of /api/relay/stream with a garbage signature header is answered, and the relay still answers', 0.2, function () { return door(100); }, test.limit.slow);
-test.run('a GET of /api/relay/stream with the sig garbage and the key %00 is answered, and the relay still answers', 0.2, function () { return door(101); }, test.limit.slow);
-test.run('a GET of /api/relay/stream with a sig of 9000 a\'s is answered, and the relay still answers', 0.2, function () { return door(102); }, test.limit.slow);
-test.run('a GET of /api/relay/stream with the key __proto__ is answered, and the relay still answers', 0.2, function () { return door(103); }, test.limit.slow);
+test.run('a GET of /spirit/relay/stream with a garbage signature header is answered, and the relay still answers', 0.2, function () { return door(100); }, test.limit.slow);
+test.run('a GET of /spirit/relay/stream with the sig garbage and the key %00 is answered, and the relay still answers', 0.2, function () { return door(101); }, test.limit.slow);
+test.run('a GET of /spirit/relay/stream with a sig of 9000 a\'s is answered, and the relay still answers', 0.2, function () { return door(102); }, test.limit.slow);
+test.run('a GET of /spirit/relay/stream with the key __proto__ is answered, and the relay still answers', 0.2, function () { return door(103); }, test.limit.slow);
 test.run('a request line that is not HTTP is answered, and the relay still answers', 0.2, function () { return door(104); }, test.limit.slow);
 test.run('a header line with no colon is answered, and the relay still answers', 0.2, function () { return door(105); }, test.limit.slow);
 test.run('a GET of the path /.. is answered, and the relay still answers', 0.2, function () { return door(106); }, test.limit.slow);
@@ -596,7 +596,7 @@ test.run('the scratch relay is still running and answers', 0.2, async function (
 // header"; its fix: "clamp the status to an integer from 100 to 599 (else 502), and wrap faceAnswer and faceFeed in
 // try/catch"; Andy, Q3: "yes."). A member answers his own face's call, signed, with a bad x-spirit-status: the viewer
 // gets 502 and the relay goes on. A dead relay is replaced, so each bad status is judged alone.
-// /api/relay/face/answer: a bad status or type from a member never crashes the relay
+// /spirit/relay/face/answer: a bad status or type from a member never crashes the relay
 const BA = { R: null, got: {} };
 async function fresh() { if (BA.R) BA.R.stop(); BA.R = await scratchFaceRelay({ members: ['harbour'] }); return BA.R.up; }
 // The viewer's call, waiting; the member's signed answer with these headers; what the viewer got.
@@ -616,7 +616,7 @@ async function answered(headers) {
   const id = line ? (/"id":"([^"]+)"/.exec(line.line) || [])[1] : '';
   if (!id) return { viewer: 0, noCall: true };
   const sig = R.auth.sign(m.privateKey, R.auth.faceMessage(m.publicKey, R.relayKey, id));
-  let head = 'POST /api/relay/face/answer?id=' + encodeURIComponent(id) + ' HTTP/1.1\r\nHost: ' + new URL(R.base).host + '\r\nConnection: close\r\nX-Spirit-From: ' + m.publicKey + '\r\nX-Spirit-Sig: ' + sig + '\r\n';
+  let head = 'POST /spirit/relay/face/answer?id=' + encodeURIComponent(id) + ' HTTP/1.1\r\nHost: ' + new URL(R.base).host + '\r\nConnection: close\r\nX-Spirit-From: ' + m.publicKey + '\r\nX-Spirit-Sig: ' + sig + '\r\n';
   Object.keys(headers).forEach(function (k) { head += k + ': ' + headers[k] + '\r\n'; });
   head += 'Content-Length: 1\r\n\r\n';
   await raw(R.base, head, 'x', { ms: 3000 });
@@ -693,12 +693,12 @@ test.run('two scratch relays come up, and a signed card ask is posted to one as 
   HN.R2 = await scratchRelay({});
   if (!HN.R.up || !HN.R2.up) return false;
   HOST = new URL(HN.R.base).host;
-  HN.plain = await post(HN.R.base, '/api/relay/post', cardAsk(HN.R).body);
+  HN.plain = await post(HN.R.base, '/spirit/relay/post', cardAsk(HN.R).body);
   HOST = new URL(HN.R2.base).host;
   const c = cardAsk(HN.R2);
   const hints = ['MCowBQYDK2VwAyEAHINTHINTHINTHINTHINTHINTHINTHINTHINTHINTHINT='];
   const hintSig = typeof c.A.hintMessage === 'function' ? c.A.sign(c.who.privateKey, c.A.hintMessage(c.body.sig, hints)) : 'AAAA';
-  HN.hinted = await post(HN.R2.base, '/api/relay/post', Object.assign({}, c.body, { hints: hints, hintSig: hintSig }));
+  HN.hinted = await post(HN.R2.base, '/spirit/relay/post', Object.assign({}, c.body, { hints: hints, hintSig: hintSig }));
   return (!!HN.plain && !!HN.hinted && !!HN.plain.status && !!HN.hinted.status) || false;
 }, test.limit.slow);
 test.run('a post with no hints is taken', 0.2, function () {

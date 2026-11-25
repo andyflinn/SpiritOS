@@ -1055,7 +1055,7 @@ function createHub(rootDir) {
   //
   // What was left of the ring went together, with R8 (2026-09-15), because
   // splitting it leaves a signed format guarding an unreachable function:
-  // relay.send, /api/relay/send, sendMessage, checkSend, the `messages`
+  // relay.send, /spirit/relay/send, sendMessage, checkSend, the `messages`
   // array and inbox.
 
   // OF THE MINT DOOR (handleInvite, gone with the post-path doors below):
@@ -1575,7 +1575,7 @@ function createHub(rootDir) {
   }
 
   // THE NAME ARRIVES IN THE BODY, not on a query string, since the relay
-  // namespace folded onto /api/spirit. What this buys is that every
+  // namespace folded onto /spirit. What this buys is that every
   // loopback verb is now the same shape — a POST with a JSON body — so
   // there is nothing left for a caller to remember about this one in
   // particular. `readJsonBody` is memoised on the request, so reading it

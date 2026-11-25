@@ -25,7 +25,7 @@ const OK = 'spirit/zzBox/zzOk.js', OKS = 'spirit/zzBox/test/zzOk.js', BAD = 'spi
 const SUITE_HEAD = "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\n";
 const ev = function (expr) { return W.page.evaluate(expr).catch(function () { return null; }); };
 const ask = function (verb, args) {
-  return fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) })
+  return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) })
     .then(function (r) { return r.json(); }, function () { return null; });
 };
 // Idle for good: testicle says it is not busy, and still says so three seconds later (it rests a quiet second between the

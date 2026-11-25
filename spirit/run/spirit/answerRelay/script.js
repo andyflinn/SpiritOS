@@ -16,7 +16,7 @@ const auth = spirit.requireScript('spirit/relayAuth/script.js');
 //
 // `askKey(url)` resolves the relay's signed key statement — peerPost's
 // relayKey, the card ask on the relay's one door (goal/G22.6: GET
-// /api/relay/key is closed, and a node reaches a relay only through
+// /spirit/relay/key is closed, and a node reaches a relay only through
 // peerPost). A rejection is a relay that did not answer.
 function createAnswerer(opts) {
   opts = opts || {};
@@ -67,7 +67,7 @@ function createAnswerer(opts) {
   // ── THE KEY ITSELF, FROM THE ONE THING THAT ANSWERS IT ─────────────
   //
   // The relay's card — a card ask on its one door since goal/G22.6, which
-  // replaced `GET /api/relay/key` — answers its key statement and nothing
+  // replaced `GET /spirit/relay/key` — answers its key statement and nothing
   // about its members.
   //
   // THERE IS NO FALLBACK TO THE ROLL, and that is the decision rather

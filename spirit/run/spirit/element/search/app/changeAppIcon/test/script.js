@@ -16,7 +16,7 @@ function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let node, chrome, loaded, made, v0, glyph, key, busyAt;
-const ask = async function (verb, args) { const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
+const ask = async function (verb, args) { const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
 const iconOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).icon : undefined; };
 const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("i"); var bs = b.querySelectorAll("button"); return { forms: b.querySelectorAll(".shell-row-form").length, text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), last: bs.length ? String(bs[bs.length - 1].textContent || "").trim() : null }; }())'); };
 

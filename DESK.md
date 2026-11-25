@@ -22,7 +22,7 @@ Your own node's verbs are called on its loopback door, as its owner. Call one li
 `<args>` filled in:
 
 ```
-node -e "fetch('http://127.0.0.1:<port>/api/spirit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({call:'<verb>',args:<args>})}).then(r=>r.text()).then(console.log)"
+node -e "fetch('http://127.0.0.1:<port>/spirit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({call:'<verb>',args:<args>})}).then(r=>r.text()).then(console.log)"
 ```
 
 2. **Make his desk node a contact of yours**: `contact.accept` with args `{publicKey:'<his desk node key>'}`.

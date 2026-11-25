@@ -52,7 +52,7 @@ test.run('the body of "/" is spirit/shell/face.html as it stands on the disc', 0
 }, test.limit.quick);
 
 // THE DOOR AT /spirit (goal/G49.18, box v6: "both node and relay server have at the root of their path-routes the stupid API/
-// node. of course this must be 'spirit'"; "The node's door, /api/spirit, becomes /spirit"). The old address is written in
+// node. of course this must be 'spirit'"; the node's old door, under api, becomes /spirit). The old address is written in
 // pieces, so a move that rewrites every path leaves it as it is.
 const OLD_DOOR = '/' + 'api' + '/spirit';
 const askDoor = function (at, body) {
@@ -64,10 +64,11 @@ test.run('a call POSTed to /spirit is answered: node.card answers this node\'s c
   const r = await askDoor('/spirit', { call: 'node.card', args: {} });
   return (r.status === 200 && !!r.body && typeof r.body.publicKey === 'string') || false;
 }, test.limit.quick);
-test.run('the old door, /api/spirit, answers no call', 0.8, async function () {
+// 404 or 405: the node answers a POST to any path it does not route 405, as it did before goal/G49.18.
+test.run('the old door, under api, answers no call: 404 or 405', 0.8, async function () {
   if (!W.node || !W.node.up) return false;
   const r = await askDoor(OLD_DOOR, { call: 'node.card', args: {} });
-  return (r.status === 404 && !(r.body && r.body.publicKey)) || false;
+  return ((r.status === 404 || r.status === 405) && !(r.body && r.body.publicKey)) || false;
 }, test.limit.quick);
 test.run('a GET of /spirit/script.js is still the spirit object, the file, beside the door', 0.2, async function () {
   if (!W.node || !W.node.up) return false;
@@ -250,7 +251,7 @@ function postHead(p, len, type) {
 }
 function call(base, body) {
   const b = Buffer.from(typeof body === 'string' ? body : JSON.stringify(body), 'utf8');
-  return raw(base, postHead('/api/spirit', b.length), b);
+  return raw(base, postHead('/spirit', b.length), b);
 }
 // A crash or a hang, as the box says it: no answer, a server error, or a handler that failed. true when it broke.
 function broke(r) {
@@ -272,10 +273,10 @@ async function upNode() {
   if (!node.up) return { node: node, base: '', plain: null };
   const base = node.base;
   const host = new URL(base).host;
-  const plain = async function () { const r = await raw(base, 'POST /api/spirit HTTP/1.1\r\nHost: ' + host + '\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: 24\r\n\r\n', '{"call":"api","args":{}}', { ms: PLAIN_MS }); return r && r.status === 200; };
+  const plain = async function () { const r = await raw(base, 'POST /spirit HTTP/1.1\r\nHost: ' + host + '\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: 24\r\n\r\n', '{"call":"api","args":{}}', { ms: PLAIN_MS }); return r && r.status === 200; };
   let t = null;
   for (let i = 0; i < 60; i++) {
-    t = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
+    t = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
     if (t && SERVERS.every(function (s) { return t[s]; })) break;
     await sleep(500);
   }
@@ -292,7 +293,7 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
   if (!node.up) return false;
   const base = G.base = node.base;
   HOST = new URL(base).host;
-  G.plain = async function () { const r = await raw(base, postHead('/api/spirit', 24), '{"call":"api","args":{}}', { ms: PLAIN_MS }); return r && r.status === 200; };
+  G.plain = async function () { const r = await raw(base, postHead('/spirit', 24), '{"call":"api","args":{}}', { ms: PLAIN_MS }); return r && r.status === 200; };
   // Its app servers come up after the node: wait until the api names them.
   let tree = null;
   for (let i = 0; i < 60; i++) {
@@ -303,7 +304,7 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
     await sleep(500);
   }
   // The api answer can be longer than the first 300 bytes kept: ask it whole once.
-  tree = G.tree = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
+  tree = G.tree = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
   if (!tree || typeof tree !== 'object') { G.tree = null; return false; }
   // 1) EVERY VERB, BAD ARGUMENTS (the box, rule 3 and "bad arguments").
   Object.keys(tree).forEach(function (fam) {
@@ -320,10 +321,10 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
     { head: null, type: undefined, body: '[1,2,3]' },
     { head: null, type: undefined, body: '"string"' },
     { head: null, type: undefined, body: 'null' },
-    { head: postHead('/api/spirit', 100), body: '{"call":"node.ca', keepOpen: true },
-    { head: postHead('/api/spirit', BODY_MAX + 1), body: '{"call":"node.card","args":{"x":"' + 'x'.repeat(BODY_MAX + 1 - 36) + '"}}' },
-    { head: postHead('/api/spirit', 10000000), body: '{}' , keepOpen: true },
-    { head: postHead('/api/spirit', Buffer.byteLength(deepJson)), body: deepJson },
+    { head: postHead('/spirit', 100), body: '{"call":"node.ca', keepOpen: true },
+    { head: postHead('/spirit', BODY_MAX + 1), body: '{"call":"node.card","args":{"x":"' + 'x'.repeat(BODY_MAX + 1 - 36) + '"}}' },
+    { head: postHead('/spirit', 10000000), body: '{}' , keepOpen: true },
+    { head: postHead('/spirit', Buffer.byteLength(deepJson)), body: deepJson },
     { head: null, type: undefined, body: '{"call":"node.card","args":{"__proto__":{"admin":1}}}' },
     { head: null, type: undefined, body: '{"call":"node.card","args":{"constructor":{"x":1}}}' },
     { head: null, type: undefined, body: '{"call":"__proto__","args":{}}' },
@@ -332,13 +333,13 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
     { head: null, type: 'text/plain', body: '{"call":"api","args":{}}' },
     { head: null, type: 'multipart/form-data', body: '{"call":"api","args":{}}' },
     { head: null, type: undefined, body: Buffer.from([0x7b, 0xff, 0xfe, 0xc3, 0x28, 0x7d]) },
-    { head: 'GARBAGE /api/spirit NOPE\r\n\r\n', body: '' },
-    { head: 'POST /api/spirit HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', body: '{}' },
+    { head: 'GARBAGE /spirit NOPE\r\n\r\n', body: '' },
+    { head: 'POST /spirit HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', body: '{}' },
   ];
   // 3) MALFORMED PATHS, GET AND POST (the box, rule 2: "malformed paths").
   const PATHS = ['/..', '/../../../../etc/passwd', '/%2e%2e/%2e%2e/etc/passwd', '/shell/%2f%2f..%2f..%2fetc', 
     '/' + 'a'.repeat(9000), '/%', '/%zz', '/%E0%A4%A', '/api/%2e%2e/spirit', '//api//spirit', '/DEBUG/../../spirit/state/node.json',
-    '/spirit/element/../../../spirit/state/identity.json', '/api/spirit/../../spirit/state/node.json', '/\\..\\..\\relay-state', '/?%', '/#x', '*',
+    '/spirit/element/../../../spirit/state/identity.json', '/spirit/../../spirit/state/node.json', '/\\..\\..\\relay-state', '/?%', '/#x', '*',
     // A null byte last: it may kill the node, and every path before it is still thrown.
     '/%00', '/index.html%00.js'];
   PATHS.forEach(function (p) {
@@ -355,7 +356,7 @@ test.run('the scratch node for the garbage comes up, with every app server it tu
 // THROWN, BATCH BY BATCH: each ask judged; after each batch the node answers a plain call within PLAIN_MS.
 const hungAfter = [];
 let thrown = false;
-// /api/spirit: every verb takes bad arguments without crashing or hanging
+// /spirit: every verb takes bad arguments without crashing or hanging
 test.run('the verbs that do not act took all their garbage, pairs included, without crashing or hanging', 0.2, async function () {
   if (!G.tree) return false;
   const broken = {};   // name -> true, when it broke
@@ -377,7 +378,7 @@ test.run('the verbs that do not act took all their garbage, pairs included, with
   thrown = true;
   return Object.keys(broken).length === 0;
 }, test.limit.slow);
-test.run('after every batch thrown at /api/spirit, the node answered a plain call in time', 0.2, function () {
+test.run('after every batch thrown at /spirit, the node answered a plain call in time', 0.2, function () {
   if (!thrown) return false;
   return hungAfter.length === 0;
 }, test.limit.quick);
@@ -388,7 +389,7 @@ test.run('after every batch thrown at /api/spirit, the node answered a plain cal
 const CLIMBING = ['/../../../../etc/passwd', '/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd', '/shell/..%2f..%2f..%2f..%2fetc/passwd',
   '/spirit/element/../../../spirit/state/identity.json', '/spirit/element/%2e%2e/%2e%2e/%2e%2e/spirit/state/identity.json',
   '/spirit/%2e%2e%2fspirit%2fstate%2fidentity.json', '/DEBUG/../../spirit/state/node.json', '/DEBUG/%2e%2e/%2e%2e/spirit/state/node.json',
-  '/api/spirit/../../spirit/state/node.json', '/spirit/element/..%5c..%5c..%5cspirit%5cstate%5cidentity.json'];
+  '/spirit/../../spirit/state/node.json', '/spirit/element/..%5c..%5c..%5cspirit%5cstate%5cidentity.json'];
 test.run('no climbing address, plain or encoded, brings back the node\'s identity, its node.json or the machine\'s passwd', 0.8, async function () {
   if (!G.node || !G.node.run || G.killer) return false;
   // What would show the file came back: a long value of each, as it lies on the scratch node's disc.
@@ -413,7 +414,7 @@ async function door(ri) {
   const r0 = G.RAWS[ri];
   if (G.killer) return false;
   const node = G.node;
-  const head = r0.head || postHead('/api/spirit', Buffer.byteLength(r0.body || ''), r0.type);
+  const head = r0.head || postHead('/spirit', Buffer.byteLength(r0.body || ''), r0.type);
   const r = await raw(G.base, head, r0.body, { keepOpen: r0.keepOpen });
   // A body cut off, or longer than it says, is left waiting by any server until its own time runs out: the node may
   // hold it, but it must still answer everybody else.
@@ -466,8 +467,8 @@ test.run('a GET of /DEBUG/../../spirit/state/node.json is answered, and the node
 test.run('a POST to /DEBUG/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(39); }, test.limit.slow);
 test.run('a GET of /spirit/element/../../../spirit/state/identity.json is answered, and the node still answers', 0.2, function () { return door(40); }, test.limit.slow);
 test.run('a POST to /spirit/element/../../../spirit/state/identity.json is answered, and the node still answers', 0.2, function () { return door(41); }, test.limit.slow);
-test.run('a GET of /api/spirit/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(42); }, test.limit.slow);
-test.run('a POST to /api/spirit/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(43); }, test.limit.slow);
+test.run('a GET of /spirit/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(42); }, test.limit.slow);
+test.run('a POST to /spirit/../../spirit/state/node.json is answered, and the node still answers', 0.2, function () { return door(43); }, test.limit.slow);
 test.run('a GET of /\\..\\..\\relay-state is answered, and the node still answers', 0.2, function () { return door(44); }, test.limit.slow);
 test.run('a POST to /\\..\\..\\relay-state is answered, and the node still answers', 0.2, function () { return door(45); }, test.limit.slow);
 test.run('a GET of /?% is answered, and the node still answers', 0.2, function () { return door(46); }, test.limit.slow);
@@ -491,7 +492,7 @@ test.run('the scratch node is still running and answers', 0.2, async function ()
 // THE VERBS THAT ACT, ON A THROWAWAY NODE OF THEIR OWN: node A is let go first. Verb by verb, each verb's garbage in
 // batches, a plain call after each; a node that dies is judged and replaced by a fresh one, so the next verb is judged
 // on a living node.
-// /api/spirit: every verb that acts takes the whole garbage, on a throwaway node, without crashing or hanging
+// /spirit: every verb that acts takes the whole garbage, on a throwaway node, without crashing or hanging
 let B = null;
 test.run('the throwaway node for the verbs that act comes up, with every app server it turned on named in its api', 0.2, async function () {
   if (!G.tree) return false;

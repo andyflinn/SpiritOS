@@ -49,7 +49,7 @@ function claimMessage(name) {
 // statusMessage STOOD HERE — `'status\n' + name` — and it was the last
 // signed format on this wire that named a LABEL rather than a key, and
 // the only one carrying no clock. Deleted with `checkOwner` and
-// `GET /api/relay/status` on 2026-09-15 (R3).
+// `GET /spirit/relay/status` on 2026-09-15 (R3).
 //
 // Every format left here carries a minute: streamMessage, postMessage
 // and receiptMessage all take `atMs` and are checked ±1. claimMessage
@@ -299,7 +299,7 @@ function commandSignatureOk(publicKey, from, to, id, text, sig, atMs) {
 // addressed to it are sealed like any other — which means a node must
 // learn its CIPHER key, and learn it in a way a carrier cannot choose.
 //
-// The relay's key statement (then `GET /api/relay/key`, since goal/G22.6
+// The relay's key statement (then `GET /spirit/relay/key`, since goal/G22.6
 // the answer to a card ask on its one door) was unsigned, and
 // answerRelay.js already said in
 // as many words what that was worth: the re-check *"compares against an
@@ -659,7 +659,7 @@ function nameIdentity(rootDir, name) {
 //   open mode, in cycle 3.)
 
 // checkOwner STOOD HERE, and `statusMessage` above it. Both went with
-// `GET /api/relay/status` on 2026-09-15 (R3,
+// `GET /spirit/relay/status` on 2026-09-15 (R3,
 // design/cycles/2026-09-15-labels-are-not-identities.md), which was the
 // only thing either had ever gated.
 //

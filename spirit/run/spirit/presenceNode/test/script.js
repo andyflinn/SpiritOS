@@ -99,7 +99,7 @@ test.run('createPresence refuses to be built without the router it posts from (h
 }, test.limit.quick);
 test.run('streamUrl is the relay\'s stream door with the key in its query, a trailing slash dropped', 0.2, function () {
   const u = PN.streamUrl('https://r.example//', 'a+b/c');
-  return u === 'https://r.example/api/relay/stream?key=a%2Bb%2Fc' || false;
+  return u === 'https://r.example/spirit/relay/stream?key=a%2Bb%2Fc' || false;
 }, test.limit.quick);
 
 // ── the world ──

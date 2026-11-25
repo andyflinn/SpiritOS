@@ -128,7 +128,7 @@ function scratchTree(port) {
   return { root: root, run: run };
 }
 
-// The fake node: its door, /api/spirit, answering testicle's interface and keeping each testicle.testicle.set.
+// The fake node: its door, /spirit, answering testicle's interface and keeping each testicle.testicle.set.
 function fakeNode() {
   const sets = [];
   const asked = [];
@@ -144,7 +144,7 @@ function fakeNode() {
       try { msg = JSON.parse(body); } catch (e) { msg = null; }
       asked.push(msg && msg.call);
       const send = function (status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
-      if (req.method !== 'POST' || req.url !== '/api/spirit' || !msg) return send(404, { ok: false, code: 'not-found' });
+      if (req.method !== 'POST' || req.url !== '/spirit' || !msg) return send(404, { ok: false, code: 'not-found' });
       if (msg.call === 'api' && msg.args && msg.args.branch === 'testicle') return send(200, { branch: 'testicle', interface: iface });
       if (msg.call === 'testicle.testicle.set') { sets.push(msg.args); order.push({ verb: 'set', args: msg.args }); return send(200, { ok: true }); }
       if (msg.call === 'testicle.suite.success') { successes.push(msg.args); order.push({ verb: 'success', args: msg.args }); return send(200, { ok: true }); }

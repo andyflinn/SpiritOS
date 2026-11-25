@@ -39,7 +39,7 @@ function ask(host, port, p, opts) {
   });
 }
 function call(port, verb, args) {
-  return ask('127.0.0.1', port, '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+  return ask('127.0.0.1', port, '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
 }
 function json(r) { try { return JSON.parse(r.text); } catch (e) { return undefined; } }
 
@@ -437,7 +437,7 @@ test.run('each entry that breaks the shape is refused with a code: a 4xx, never 
   wrong = []; lone = [];
   keptCount = 0;
   for (const entry of (Array.isArray(list) ? list : [])) {
-    const r = await ask('127.0.0.1', N, '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(entry) });
+    const r = await ask('127.0.0.1', N, '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(entry) });
     const b = json(r);
     if (kept(entry)) {
       keptCount += 1;

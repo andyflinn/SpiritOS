@@ -45,7 +45,7 @@ async function bootPage(x, debug) {
 // A verb of the node, asked from the page as the page asks it.
 function caller(page) {
   return function (verb, args) {
-    return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
+    return page.evaluate("fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
       .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
   };
 }

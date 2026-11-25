@@ -5,7 +5,7 @@
 // ASK A RELAY WHO IT IS, ON ITS ONE DOOR (goal/G22.6) — what bash/status runs.
 //
 // Andy's decision (goal/G22.6, 2026-10-13): "bash/status, which checked a relay with curl, checks it with a small
-// node script that sends the card ask instead." The relay's public GET /api/relay/key is closed; a relay answers a
+// node script that sends the card ask instead." The relay's public GET /spirit/relay/key is closed; a relay answers a
 // signed card ask from a key it does not know (to: "", plain) with its key, on the post itself.
 //
 // The asking key is made in memory for this one ask and written nowhere. The answer is accepted only when it is the
@@ -34,7 +34,7 @@ const body = JSON.stringify({ from: id.publicKey, to: '', text: text, sig: auth.
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 async function ask() {
-  const res = await fetch(url + '/api/relay/post', {
+  const res = await fetch(url + '/spirit/relay/post', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body,
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });

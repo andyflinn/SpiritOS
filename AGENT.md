@@ -28,7 +28,7 @@ The interface has **two halves**, because a personal node has no public address:
 
 | direction | mechanism |
 |---|---|
-| out | `relayRequest` — `POST /api/relay/post`, `POST /api/relay/reply` |
+| out | `relayRequest` — `POST /spirit/relay/post`, `POST /spirit/relay/reply` |
 | in | the held stream — the relay pushes `request` and `reply` to a node it cannot call |
 
 That is *request by post, reply by stream*. The stream is the **inbound half of the interface**, never a way around it.

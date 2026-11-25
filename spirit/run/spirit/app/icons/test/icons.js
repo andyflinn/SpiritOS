@@ -128,7 +128,7 @@ test.run('seven glyphs the system set does not hold are found', 0.2, function ()
   return true;
 }, test.limit.quick);
 const ask = async function (call, args) {
-  const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
+  const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
   const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
   return { status: r.status, body: b, text: t };
 };

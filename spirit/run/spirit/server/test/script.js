@@ -34,7 +34,7 @@ function launch(run, args) {
   L.kids.push(kid);
   return r;
 }
-function answers(port) { return fetch('http://127.0.0.1:' + port + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; }); }
+function answers(port) { return fetch('http://127.0.0.1:' + port + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; }); }
 async function nodeComesUp(modeArgs) {
   const t = labTree();
   const port = await H.freePort();

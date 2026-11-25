@@ -651,7 +651,7 @@ function createPeerPost(opts) {
 
     Promise.resolve()
       .then(function () {
-        return request(it.relayUrl, 'POST', '/api/relay/post', it.payload.body);
+        return request(it.relayUrl, 'POST', '/spirit/relay/post', it.payload.body);
       })
       .then(function (res) {
         var body = {};
@@ -1167,7 +1167,7 @@ function createPeerPost(opts) {
     var text = nodeCard.describe(rootDir);
     // The receipt covers the text it answers with (S1, goal/G16.1).
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
-    return request(relayUrl, 'POST', '/api/relay/reply', {
+    return request(relayUrl, 'POST', '/spirit/relay/reply', {
       from: id.publicKey, hash: hash, text: text, sig: receipt,
     }).then(function (res) {
       replyAnswered(relayUrl, res);
@@ -1199,7 +1199,7 @@ function createPeerPost(opts) {
     var text = JSON.stringify({ v: 1, body: inner });
     // The refusal is a reply too, and its receipt covers it (S1, goal/G16.1).
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
-    return request(relayUrl, 'POST', '/api/relay/reply', {
+    return request(relayUrl, 'POST', '/spirit/relay/reply', {
       from: id.publicKey, hash: hash, text: text, sig: receipt,
     }).then(function (res) { replyAnswered(relayUrl, res); return null; }).catch(function () { return null; });
   }
@@ -1577,7 +1577,7 @@ function createPeerPost(opts) {
           }
         }
         var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
-        return request(relayUrl, 'POST', '/api/relay/reply', {
+        return request(relayUrl, 'POST', '/spirit/relay/reply', {
           from: id.publicKey, hash: hash, text: text, sig: receipt,
         }).then(function (res) {
           replyAnswered(relayUrl, res);
@@ -1710,7 +1710,7 @@ function createPeerPost(opts) {
       var wait = (publicAskedAt[u] || 0) + STRANGER_GAP_MS - Date.now();
       return (wait > 0 ? pause(wait) : Promise.resolve()).then(function () {
         publicAskedAt[u] = Date.now();
-        return request(u, 'POST', '/api/relay/post', body);
+        return request(u, 'POST', '/spirit/relay/post', body);
       }).then(function (res) {
         var said = null;
         try { said = JSON.parse(res.text); } catch (e) { said = null; }
@@ -1999,7 +1999,7 @@ function createPeerPost(opts) {
 
   function relayOfStream(streamUrl) {
     var s = String(streamUrl || '');
-    var at = s.indexOf('/api/relay/stream');
+    var at = s.indexOf('/spirit/relay/stream');
     return at === -1 ? '' : s.slice(0, at).replace(/\/+$/, '');
   }
 

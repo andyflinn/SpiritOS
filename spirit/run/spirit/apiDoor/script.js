@@ -190,7 +190,7 @@ function createApiDoor(opts) {
     if (info.re) return;
     if (!o.isKnown(message.fromKey)) return;
     // 'DEBUG verb is never allowed through peerPost()' (Andy, desk/G2.5): a member's ask for it on
-    // any server is refused here, by name, granted or not, and never passed on. The owner's own calls on /api/spirit still reach them.
+    // any server is refused here, by name, granted or not, and never passed on. The owner's own calls on /spirit still reach them.
     if (asksOwnerVerb(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'DEBUG is for the owner, on loopback only' });
     return answer(o.servers, info.body, { key: message.fromKey, auth: o.auth }).then(function (r) {
       return reply(message, r ? r.body : null, r && r.kind);

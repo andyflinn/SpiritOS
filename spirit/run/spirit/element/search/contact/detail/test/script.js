@@ -346,7 +346,7 @@ const MAIL = 'bert@example.org';
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 async function home(base, verb, args) {
-  const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+  const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
   const text = await r.text();
   return { status: r.status, text: text, body: parsed(text) };
 }
@@ -354,7 +354,7 @@ async function home(base, verb, args) {
 function stream(base) {
   const kept = [];
   const c = new AbortController();
-  const done = fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json', 'x-spirit-reader': 'server' }, body: JSON.stringify({ call: 'event.subscribe', args: {} }), signal: c.signal }).then(async function (r) {
+  const done = fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json', 'x-spirit-reader': 'server' }, body: JSON.stringify({ call: 'event.subscribe', args: {} }), signal: c.signal }).then(async function (r) {
     let held = '';
     const dec = new TextDecoder();
     for await (const chunk of r.body) {

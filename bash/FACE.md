@@ -17,7 +17,7 @@ browser ─https─ Caddy (on-demand cert) ─ face node :65434 (its appFaceApp 
         ─api ask via the relay─ YOUR node (appFaceApp asks grantFace; appFaceAppServer answers) ─ back the same way
 ```
 
-When it works, a json ask to `https://join.face.spirit.andyflinn.com/api/spirit`
+When it works, a json ask to `https://join.face.spirit.andyflinn.com/spirit`
 is answered by your node's appFaceAppServer, naming itself and the verb. That
 is the proof that the route reached your node and came back. (`GET /` is the
 face's own page, served by the face node itself: it proves Caddy and the face,
@@ -79,7 +79,7 @@ then `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`,
 `systemctl reload caddy`, and `/root/face/SpiritOS/bash/face-tls`.
 
 **4. On your own box**, where your node runs, with the face node's key that
-step 2 printed. Each is one POST to your node's `/api/spirit` on
+step 2 printed. Each is one POST to your node's `/spirit` on
 `http://127.0.0.1:65432`:
 
 - let the face node in: `{"verb":"peer.acquire","publicKey":"<FACE_NODE_KEY>"}`,
@@ -104,7 +104,7 @@ grantFace refuses a name another key holds (409 `slot-held`) and changes nothing
 **5. Test**, from anywhere:
 
 ```
-curl -sS -H 'Content-Type: application/json' -d '{"verb":"app.state"}' https://join.face.spirit.andyflinn.com/api/spirit
+curl -sS -H 'Content-Type: application/json' -d '{"verb":"app.state"}' https://join.face.spirit.andyflinn.com/spirit
 ```
 
 The first visit takes a few seconds, while Caddy asks the face node about

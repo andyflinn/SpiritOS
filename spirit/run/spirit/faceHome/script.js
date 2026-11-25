@@ -17,8 +17,8 @@ require('../script.js');
 //
 // HOW IT RIDES THE RELAY (goal/G30.14, relay.js faceCall .. faceFeed): the relay puts the face's request on this
 // node's stream as a 'face' event { id, request } (presenceNode hands it here). The answer is its own upload to
-// /api/relay/face/answer?id=, signed relayAuth.faceMessage for that id, so a request is item 1 by never waiting behind
-// anything. face-open starts one long upload to /api/relay/face/stream (signed for 'stream'), carrying the queue's
+// /spirit/relay/face/answer?id=, signed relayAuth.faceMessage for that id, so a request is item 1 by never waiting behind
+// anything. face-open starts one long upload to /spirit/relay/face/stream (signed for 'stream'), carrying the queue's
 // lines; face-close ends it.
 //
 // A request { get: path } is a file, served by the node's own GET (serveFile, the gate the browser's GET passes);
@@ -118,7 +118,7 @@ function createFaceHome(opts) {
     return {
       writeHead: function (status, headers) {
         const h = headers || {};
-        req = upload(url, '/api/relay/face/answer?id=' + encodeURIComponent(id), Object.assign(signed(url, id), {
+        req = upload(url, '/spirit/relay/face/answer?id=' + encodeURIComponent(id), Object.assign(signed(url, id), {
           'x-spirit-status': String(status || 200),
           'x-spirit-type': String(h['Content-Type'] || h['content-type'] || 'application/octet-stream'),
         }));
@@ -388,7 +388,7 @@ function createFaceHome(opts) {
     // A RELAY WITHOUT THE STAR GETS NO STREAM (goal/G48.4, Q19; Andy: "absolutely. either there is a face, or there is not.
     // NO inbetween."): refused as every call there is; the star put on opens it.
     if (!faceIsOwned(url)) { say('face: ' + url + ' asked for a stream, and that relay has no star: refused'); return; }
-    const req = upload(url, '/api/relay/face/stream', signed(url, 'stream'));
+    const req = upload(url, '/spirit/relay/face/stream', signed(url, 'stream'));
     if (!req) return;
     const key = String(k || '');
     const me = key ? o.identity() : null;

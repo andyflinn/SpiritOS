@@ -121,7 +121,7 @@ const jobs = spirit.requireScript('spirit/job/script.js').installJobs(port);
 // and is required by the node."), its job in this node's job table.
 spirit.requireScript('spirit/fs/server/script.js').start(ROOT_DIR, jobs);
 // WHERE THE JOIN STEPS STAND (goal/G30.1, box v40): a permanent job the shell's Join tile and the Join app hear, so
-// they draw when a seat, a contact or a face changes and never ask. Refreshed at /api/spirit after a relay, contact or
+// they draw when a seat, a contact or a face changes and never ask. Refreshed at /spirit after a relay, contact or
 // peer verb has answered (below), the moment the node knows.
 let joinStepsJob = null;
 try { joinStepsJob = spirit.requireScript('spirit/joinStepsJob/script.js').create(ROOT_DIR, jobs); } catch (e) { joinStepsJob = null; }
@@ -249,7 +249,12 @@ const loopbackVerbs = (function nodeBranches() {
       const dir = folders[fam] || (served ? branchDirOf(fam) : '');
       let text = null;
       // A new-shape branch's interface is its script.js, beside its client/script.js (goal/G49.15); an old one's its api.js.
-      const fileOf = function (d) { return require('fs').existsSync(path.join(d, 'client', 'script.js')) && require('fs').existsSync(path.join(d, 'script.js')) ? 'script.js' : 'api.js'; };
+      // Which shape is the fs cache's branch flag on the folder's row, never a look at the disc (goal/G49.2: "FROM THE ONE
+      // FS DATASET, NEVER FROM THE DISC").
+      const fileOf = function (d) {
+        const row = spirit.requireScript('spirit/fs/dataset/script.js').file(path.relative(ROOT_DIR, d).split(path.sep).join('/'));
+        return row && row.branch === true ? 'script.js' : 'api.js';
+      };
       if (dir) { try { text = require('fs').readFileSync(path.join(dir, fileOf(dir)), 'utf8'); } catch (e) { text = null; } }
       if (text === null) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-interface', error: 'no interface for the branch ' + fam } });
       return Promise.resolve({ status: 200, body: { branch: fam, interface: text } });
@@ -283,7 +288,7 @@ const loopbackVerbs = (function nodeBranches() {
         return Promise.resolve(apps && typeof apps.ask === 'function' ? apps.ask(body, caller) : { status: 404, body: { ok: false, code: 'app-not-served' } });
       },
     };
-    // THE DOOR'S OWN FRONT (goal/G30.5): the loopback door (/api/spirit) asks this for a verb's handler. A node branch's
+    // THE DOOR'S OWN FRONT (goal/G30.5): the loopback door (/spirit) asks this for a verb's handler. A node branch's
     // verb keeps its own (req, res) handler; 'api' answers the flat table; 'branch.verb' goes through ask, args the call's
     // own (goal/G41.15). The caller is the owner, on loopback, so its answer is bound by no ANSWER_MAX (goal/G41.28).
     d.handlerFor = function (verb) {
@@ -337,7 +342,7 @@ const loopbackVerbs = (function nodeBranches() {
   }
   return { mount: mount, call: call, tree: tree, door: door, handlerFor: handlerFor, namespaces: namespaces };
 }());
-// The flat apiDoor (goal/G30.4), set once the app client exists below; /api/spirit dispatches through it (goal/G30.5).
+// The flat apiDoor (goal/G30.4), set once the app client exists below; /spirit dispatches through it (goal/G30.5).
 let nodeDoor = null;
 // This node's face (goal/G30.13), built on nodeDoor once it exists; presence hands it the relay's face events.
 let faceHome = null;
@@ -840,10 +845,10 @@ const server = http.createServer((req, res) => {
   // THE PROXY CARRIES WHAT IT IS GIVEN (2026-09-22). Andy: "no limit on
   // size for proxy request, yes" — the 17 KB bound is the peer packet's,
   // and net.fetch inherited it only by sharing this door, which held a
-  // review to four thousand tokens a message. So /api/spirit is read
+  // review to four thousand tokens a message. So /spirit is read
   // unbounded and judged once its verb is known (below); every other path
   // is refused here, before routing, as it always was.
-  if (String(req.url || '').split('?')[0] !== '/api/spirit' && common.refuseTooBig(req, res)) return;
+  if (String(req.url || '').split('?')[0] !== '/spirit' && common.refuseTooBig(req, res)) return;
 
   requestCounters.total++;
   requestCounters.byMethod[req.method] = (requestCounters.byMethod[req.method] || 0) + 1;
@@ -857,8 +862,8 @@ const server = http.createServer((req, res) => {
   if (!parsed) return;
   const pathname = parsed.pathname;
 
-  // THE RELAY ROUTES STOOD HERE — /api/relay/key, the device page and
-  // /api/relay/stream, with the roll and ring tombstones beside them.
+  // THE RELAY ROUTES STOOD HERE — /spirit/relay/key, the device page and
+  // /spirit/relay/stream, with the roll and ring tombstones beside them.
   // A node no longer answers any relay route (cycle 0, Andy 2026-09-19);
   // they are relayServer.js.
 
@@ -916,7 +921,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST') {
     
 
-    // POST /api/relay/claim, /post, /reply AND /device STOOD HERE,
+    // POST /spirit/relay/claim, /post, /reply AND /device STOOD HERE,
     // answered on loopback by a node that was never a relay. Removed by
     // cycle 0 (Andy, 2026-09-19): relay routes live only in relayServer.js.
 
@@ -1021,7 +1026,7 @@ const server = http.createServer((req, res) => {
     // Each module MOUNTS its branch instead (nodeBranches, above), at the foot of
     // this file where their dependencies exist. So this dispatch knows
     // how to find an answer and nothing about what the answers are.
-    if (pathname === '/api/spirit') {
+    if (pathname === '/spirit') {
       // The verb is read off the body without consuming it: each handler
       // still reads the body it was written to read, so a handler moving
       // under this door needs no change of its own.
@@ -1377,7 +1382,7 @@ catch (e) {
     });
   };
   // THE ONE DOOR TO THE FLAT TABLE (goal/G30.4): this node's families and its apps' side by side. apiDoor (a
-  // peer, gated by its grants) and /api/spirit (the owner, ungated) both ask it; a node family runs in-process
+  // peer, gated by its grants) and /spirit (the owner, ungated) both ask it; a node family runs in-process
   // through the same handler the loopback door calls (Andy: "1 handler, grant-system covers all").
   nodeDoor = loopbackVerbs.door(appClient, {
     // The owner's own calls carry his key and name (apiAuth/G1.13), so a server tracks his records by key like anybody's.
@@ -1613,7 +1618,7 @@ catch (e) {
     pinRelay: answerer.relayKey,
   });
   // Which relays hold a seat for this node is asked of each relay's card,
-  // through this router (goal/G22.6: GET /api/relay/key is closed).
+  // through this router (goal/G22.6: GET /spirit/relay/key is closed).
   peerRouter.startStreams(spirit.requireScript('spirit/hub/script.js').relayKeyAsk(peerRouter)).catch(() => {});
 
   // ── THE CLAIMS, WHERE WHAT THEY NEED IS ────────────────────────────
@@ -1757,7 +1762,7 @@ catch (e) {
     'delete': { request: { id: '' }, reply: {}, handler: handleDeleteJob },
     // THE LOCAL WAY TO A SERVER PROCESS (the jobs api verb) STOOD HERE until goal/G30.6. Andy, 2026-10-20: "jobs is
     // for launching and tracking appServer processes and other local (transient) processes, it is NOT meant to be
-    // some kind of api-hub." A server process is called on /api/spirit by its verb, through the flat apiDoor.
+    // some kind of api-hub." A server process is called on /spirit by its verb, through the flat apiDoor.
     // LOCAL: a job is this machine's, whether or not anything is reachable.
   });
 

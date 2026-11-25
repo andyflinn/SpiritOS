@@ -92,7 +92,7 @@ if (require.main === module) {
       .then(function (r) { return r && r.body; });
   };
   const say = function (text) {
-    return fetch('http://127.0.0.1:' + Number(port) + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'desk.chat.add', args: { id: item, text: text } }) })
+    return fetch('http://127.0.0.1:' + Number(port) + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'desk.chat.add', args: { id: item, text: text } }) })
       .then(function (r) { return r.ok; }, function () { return false; });
   };
   const tick = function () {

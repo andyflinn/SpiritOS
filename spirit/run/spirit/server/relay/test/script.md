@@ -41,12 +41,12 @@ dammit!"*
 - **Introspect, then throw garbage** (the box: *"1) introspect ... 2) then throw garbage"*): the relay's own api, as its
   garbage list (`/DEBUG/spirit/relay/garbageArguments.json`), each entry an ask's body `{ body: { <verb>: args } }`.
 - **Every relay verb takes bad arguments** (the box: *"all servers (node and relay, or serveCommon) are tested by throwing
-  malformed paths at them, and malformed, invalid arguments"*): every entry posted to `/api/relay/post` signed by the
+  malformed paths at them, and malformed, invalid arguments"*): every entry posted to `/spirit/relay/post` signed by the
   relay's owner, so it passes the door and reaches the verb, and again by a stranger, as anybody may send it; batches of
   20, each followed by a plain request.
 - **Raw requests at every door** (*"an attacker trying to crash our servers will throw ANYTHING at the api. Imitate that
-  attacker!"*), over a bare socket: at `/api/relay/post`, `/api/relay/reply`, `/api/relay/face/answer` and
-  `/api/relay/face/stream`, bodies that are not JSON, JSON that is no object, deeply nested, `__proto__` and
+  attacker!"*), over a bare socket: at `/spirit/relay/post`, `/spirit/relay/reply`, `/spirit/relay/face/answer` and
+  `/spirit/relay/face/stream`, bodies that are not JSON, JSON that is no object, deeply nested, `__proto__` and
   `constructor` keys, invalid UTF-8, wrong field types, no or a forged signature, signed texts that are not JSON, huge, or
   hold a NUL, no or a wrong Content-Type, a body cut off, one past `BODY_MAX`, a Content-Length past what is sent; at the
   face's routes under a face's host (`/face/api`, `/face/call`, `/face/allowed`, `/face/file`, `/face/stream`); the
@@ -84,4 +84,4 @@ refused as a bad request (400).
 
 The box: *"a packet with a faked signature is refused by the relay with a refusal, not merely that the relay does not
 crash."* A post claiming to be from the relay's own owner, with a real signature by that owner over another text, is answered
-with a 4xx at /api/relay/post, /api/relay/reply, /api/relay/face/answer and /api/relay/face/stream.
+with a 4xx at /spirit/relay/post, /spirit/relay/reply, /spirit/relay/face/answer and /spirit/relay/face/stream.

@@ -72,9 +72,9 @@ test.run('a newer card naming nobody leaves no star', 0.8, function () {
   return (said3.ok === true && (W.seen.get(W.puppet.publicKey) || {}).mine === false) || false;
 }, test.limit.quick);
 
-// /api/spirit on a scratch node, over a raw POST.
+// /spirit on a scratch node, over a raw POST.
 const call = async function (name, args) {
-  const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args }) });
+  const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args }) });
   const text = await r.text(); let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
   return { status: r.status, body: body, text: text };
 };

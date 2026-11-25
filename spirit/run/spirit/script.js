@@ -35,7 +35,7 @@
 //   url         an http or https address        id        a non-empty string
 //
 // WHERE IT RUNS: on the face its calls go through window.spirit.transport (the sealed link to the home node); at home
-// through the node's own door (POST /api/spirit); in node through the node's loopback door at the url it is given.
+// through the node's own door (POST /spirit); in node through the node's loopback door at the url it is given.
 (function (root) {
   'use strict';
 
@@ -189,7 +189,7 @@
   function door() { return isNode() ? 'http://127.0.0.1:' + PORT : ''; }
   // The face's link to its home node (window.spirit.transport), on a page only.
   function link() { return isBrowser() && self.transport && typeof self.transport === 'object' ? self.transport : null; }
-  // post(verb, args) -> {status, text, body}: { call: verb, args } to the node's /api/spirit, the name and the arguments
+  // post(verb, args) -> {status, text, body}: { call: verb, args } to the node's /spirit, the name and the arguments
   // apart (goal/G41.15; the box: "ONE ENVELOPE for every call to a node's door"), so an argument named verb is the
   // verb's own. post(verb, args, {stream: true, headers}) answers the response itself, read as it comes: the events
   // branch's subscribe (below).
@@ -200,7 +200,7 @@
     var payload = { call: String(verb), args: args || {} };
     var headers = { 'Content-Type': 'application/json' };
     Object.keys((how && how.headers) || {}).forEach(function (k) { headers[k] = how.headers[k]; });
-    var asked = fetch(door() + '/api/spirit', { method: 'POST', headers: headers, body: JSON.stringify(payload), signal: (how && how.signal) || undefined });
+    var asked = fetch(door() + '/spirit', { method: 'POST', headers: headers, body: JSON.stringify(payload), signal: (how && how.signal) || undefined });
     if (how && how.stream) return asked;
     return asked.then(function (r) { return r.text().then(function (x) { return { status: r.status, text: x, body: parse(x) }; }); });
   }

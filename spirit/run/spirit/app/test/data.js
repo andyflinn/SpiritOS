@@ -27,7 +27,7 @@ test.after(async function () {
   try { if (node.root) SPIRIT.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
   try { if (chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 });
-const ask = async function (verb, args) { const r = await fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return { status: r.status, body: JSON.parse(await r.text()) }; } catch (e) { return { status: r.status, body: null }; } };
+const ask = async function (verb, args) { const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return { status: r.status, body: JSON.parse(await r.text()) }; } catch (e) { return { status: r.status, body: null }; } };
 const held = function () { return W.chrome.evaluate('JSON.stringify(spirit.required.spirit.data.app.data.rows())').then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } }); };
 // Each run-only app of the tree written out, so that each check has a plain title of its own.
 const rowsOf = function (K) {

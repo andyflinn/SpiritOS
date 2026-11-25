@@ -150,7 +150,7 @@ test.run('scratchTree takes one lab node and no more, and a node asked after it 
 }, test.limit.long);
 test.run('startNodeOn starts a node on a tree lab handed out, and refuses a run it did not hand out', 0.4, async function () {
   const r = await inChild('const t = H.scratchTree(); let refused = ""; try { H.startNodeOn(' + JSON.stringify(RUN) + ', 1); } catch (e) { refused = e.message; }' +
-    ' H.freePort().then(function (port) { const c = H.startNodeOn(t.run, port); return H.until(function () { return fetch("http://127.0.0.1:" + port + "/api/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: {} }) }).then(function (x) { return x.status === 200; }); }, 60000).then(function (up) { c.kill(); console.log("@@" + JSON.stringify({ up: up, refused: refused })); process.exit(0); }); });', 120000);
+    ' H.freePort().then(function (port) { const c = H.startNodeOn(t.run, port); return H.until(function () { return fetch("http://127.0.0.1:" + port + "/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: {} }) }).then(function (x) { return x.status === 200; }); }, 60000).then(function (up) { c.kill(); console.log("@@" + JSON.stringify({ up: up, refused: refused })); process.exit(0); }); });', 120000);
   if (!r || r === 'waiting' || r.error) return false;
   return (r.up === true && /no lab node/.test(r.refused)) || false;
 }, test.limit.long);
@@ -249,7 +249,7 @@ test.run('handed a node and a Chrome, scratchNode and chromePage start neither, 
   if (!HANDED.node || !HANDED.node.up || !HANDED.chrome || HANDED.chrome.error) return false;
   const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const n = await H.scratchNode({ shared: true, servers: ["testicle"] });' +
     ' const p = await H.chromePage(H.findChrome());' +
-    ' let served = false; for (let i = 0; i < 120 && !served; i++) { served = await fetch(n.base + "/api/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: { branch: "testicle" } }) }).then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; }); if (!served) await H.sleep(250); }' +
+    ' let served = false; for (let i = 0; i < 120 && !served; i++) { served = await fetch(n.base + "/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: { branch: "testicle" } }) }).then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; }); if (!served) await H.sleep(250); }' +
     ' const title = p && p.evaluate ? await p.evaluate("1 + 1") : null;' +
     ' console.log("@@" + JSON.stringify({ base: n.base, run: n.run || "", root: n.root || "", served: served, page: title === 2, port: p && p.port })); try { p.kid.kill(); } catch (e) {} process.exit(0); }());';
   const kid = spawn(process.execPath, ['-e', code], { cwd: RUN, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { SPIRIT_MOUNT_BASE: HANDED.node.base, SPIRIT_MOUNT_RUN: HANDED.node.run, SPIRIT_CHROME_PORT: String(HANDED.chrome.port) }) });

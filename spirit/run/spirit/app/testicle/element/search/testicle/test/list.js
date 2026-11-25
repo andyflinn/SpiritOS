@@ -59,7 +59,7 @@ function scratch() {
 }
 async function call(base, verb, args) {
   try {
-    const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
   } catch (e) { return { status: 0, text: '', body: null }; }

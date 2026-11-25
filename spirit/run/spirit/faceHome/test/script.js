@@ -76,7 +76,7 @@ async function send(w, url, request) {
   let thrown = null;
   try { w.home.request(url, { id: id, request: request }); } catch (e) { thrown = e; }
   await settle();
-  const u = w.uploads['/api/relay/face/answer?id=' + id];
+  const u = w.uploads['/spirit/relay/face/answer?id=' + id];
   const a = { reached: w.calls.slice(calls), thrown: thrown, status: u ? Number(u.headers['x-spirit-status']) : 0, body: null };
   if (u) {
     const text = Buffer.concat(u.chunks).toString('utf8');
@@ -145,7 +145,7 @@ test.run('the keys asked by it are refused', 0.8, async function () {
 test.run('face-open from it starts no stream of this node\'s events', 0.8, function () {
   const w = lazy('w', noFaceWorld);
   let opened = null;
-  try { w.home.open(OTHER, ''); opened = !!w.uploads['/api/relay/face/stream']; } catch (e) { opened = null; }
+  try { w.home.open(OTHER, ''); opened = !!w.uploads['/spirit/relay/face/stream']; } catch (e) { opened = null; }
   try { w.home.close(OTHER); } catch (e) { /* its own check is this one */ }
   return opened === false || false;
 }, test.limit.quick);
@@ -179,7 +179,7 @@ test.run('the keys are answered', 0.2, async function () {
 test.run('face-open starts the stream', 0.2, function () {
   const m = lazy('m', starredWorld);
   let streaming = false;
-  try { m.home.open(MINE, ''); streaming = !!m.uploads['/api/relay/face/stream']; } catch (e) { streaming = false; }
+  try { m.home.open(MINE, ''); streaming = !!m.uploads['/spirit/relay/face/stream']; } catch (e) { streaming = false; }
   try { m.home.close(MINE); } catch (e) { /* the stream is the stand-in's */ }
   return streaming || false;
 }, test.limit.quick);
@@ -190,7 +190,7 @@ test.run('face-open starts the stream', 0.2, function () {
 test.run('a quiet face stream carries a beat each second: no gap of more than 1.5 s in 4 s', 0.8, async function () {
   const w = starredWorld();
   try { w.home.open(MINE, ''); } catch (e) { return false; }
-  const u = w.uploads['/api/relay/face/stream'];
+  const u = w.uploads['/spirit/relay/face/stream'];
   if (!u) return false;
   await settle();
   const times = [];
@@ -249,7 +249,7 @@ function streams(star) {
     relayKey: function () { return 'RELAYKEY'; },
     upload: function (url, p) {
       const u = { url: url, path: p, chunks: [], on: function () {}, destroy: function () {}, once: function (e, fn) { if (e === 'drain') s.drains.push(fn); }, write: function (c) { u.chunks.push(String(c)); return !s.busy; }, end: function () {}, headers: {} };
-      if (p === '/api/relay/face/stream') s.ups[url] = u;
+      if (p === '/spirit/relay/face/stream') s.ups[url] = u;
       return u;
     },
     jobs: { listJobs: function () { return s.jobs; }, onEvent: function () {} },
@@ -449,7 +449,7 @@ function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 
 // The node's own loopback door, as the owner at home.
 async function home(base, verb, args) {
-  const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+  const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
   const text = await r.text();
   return { status: r.status, text: text, body: parsed(text) };
 }
@@ -921,7 +921,7 @@ test.run('a real node has a real face, logged in', 0.2, async function () {
   // TEXT EDITOR AND MEDIA VIEWER SWITCHED ON AT HOME, as an owner would: since goal/G43.17 they are apps of their own, not
   // intrinsic, so a fresh node shows them only once they are active.
   const on = async function (key) {
-    const r = await fetch(A.N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: key, active: true } }) }).then(function (x) { return x.status; }, function () { return 0; });
+    const r = await fetch(A.N.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: key, active: true } }) }).then(function (x) { return x.status; }, function () { return 0; });
     return r === 200;
   };
   if (!(await on('text')) || !(await on('media'))) return false;

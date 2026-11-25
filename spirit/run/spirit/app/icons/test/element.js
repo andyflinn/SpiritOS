@@ -248,5 +248,5 @@ test.run('destroy empties its container', 0.2, async function () {
 
 // A delete asked of the node directly, as another page or peer would.
 function icondelete(node, glyph) {
-  return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'icons.icon', args: { op: 'delete', glyph: glyph } }) }).then(function (r) { return r.text(); }, function () { return ''; });
+  return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'icons.icon', args: { op: 'delete', glyph: glyph } }) }).then(function (r) { return r.text(); }, function () { return ''; });
 }

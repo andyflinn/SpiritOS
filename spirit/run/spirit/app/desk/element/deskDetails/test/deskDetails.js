@@ -707,7 +707,7 @@ test.run('the qs panel fills the pane\'s height when first opened, and its list 
 // The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk on, a goal and two items: one pressed done, whose detail
 // offers Close; one in design mode, whose detail offers Delete (goal/G9.7). Each detail opened from Desk's List.
 const call = function (verb, args) {
-  return S.page2.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
+  return S.page2.evaluate("fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
     .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
 };
 const state = async function (id) { const r = await call('desk.item.get', { id: id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };

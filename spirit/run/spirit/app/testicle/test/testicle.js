@@ -32,7 +32,7 @@ test.run('on a node with testicle switched on, the server it loads answers its D
   W.node = await H.scratchNode({ servers: ['testicle'] });
   if (!W.node || !W.node.up) return false;
   const ok = await H.until(function () {
-    return fetch(W.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'testicle.DEBUG', args: {} }) })
+    return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'testicle.DEBUG', args: {} }) })
       .then(function (r) { return r.status === 200; }, function () { return false; });
   }, 60000);
   return !!ok || false;

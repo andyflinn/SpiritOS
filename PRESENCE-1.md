@@ -8,7 +8,7 @@ detailed review rather than per-cycle packets.
 
 ## What it is
 
-`GET /api/relay/stream` — an SSE connection a personal node holds open. The
+`GET /spirit/relay/stream` — an SSE connection a personal node holds open. The
 relay pushes **who among its members is reachable right now**. Nothing else
 ever travels on it.
 
@@ -95,7 +95,7 @@ data: {"key":"MCow…","present":true}
 
 ## `server.js` — the route
 
-- `isRelayPublicPath`: `GET /api/relay/stream`, relay mode only. Public in
+- `isRelayPublicPath`: `GET /spirit/relay/stream`, relay mode only. Public in
   the same sense the rest is — reachable from the internet, gated inside
   `relay.js`.
 - The signature is a **header**, and a query-string `sig` is refused even

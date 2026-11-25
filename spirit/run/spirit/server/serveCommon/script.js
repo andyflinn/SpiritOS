@@ -144,7 +144,7 @@ function sendFile(res, filePath) {
 // while a path chose the handler, because exactly one thing ever read
 // it.
 //
-// /api/spirit has to look at the body to know WHICH handler — the verb
+// /spirit has to look at the body to know WHICH handler — the verb
 // is in there — and the handler it picks then reads the same body for
 // itself. So the promise is memoised on the request: the first caller
 // drains the stream, every later caller gets the same answer, and a
@@ -337,7 +337,7 @@ function clientKeyFor(req) {
 
 // One answer for every way this can fail, and it says nothing.
 //
-// Its callers are the relay's stream door (relayServer.js, /api/relay/stream):
+// Its callers are the relay's stream door (relayServer.js, /spirit/relay/stream):
 // a bad signature or a refused open comes back as `not now` (a sender that
 // is not a member is told so apart, before this). It was the device page's
 // answer until the device enrolment went (goal/G16.2), where a form that

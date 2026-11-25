@@ -1789,7 +1789,7 @@ function createRelay(rootDir, deps) {
   // in it, travelling on a query string. The only signature on this wire
   // that could not expire.
   //
-  // AND IT ANSWERS DECISION 0010'S LAST QUESTION. `GET /api/relay/status`
+  // AND IT ANSWERS DECISION 0010'S LAST QUESTION. `GET /spirit/relay/status`
   // was the one route neither the protocol nor bootstrap had claimed —
   // "it owes an argument rather than a classification". It owes nothing
   // now; it is not there.
@@ -4417,7 +4417,7 @@ function createRelay(rootDir, deps) {
 // identity being asked for, not the permission to be it.
 //
 // NAMED FOR THE STREAM NOW, and it was `inboxSignatureFrom`. The rule was
-// written for `GET /api/relay/inbox` and outlived it by one commit: R8
+// written for `GET /spirit/relay/inbox` and outlived it by one commit: R8
 // deleted that route and this is the last GET on the relay that carries a
 // signature at all. Renamed rather than deleted, because the rule never
 // belonged to the ring — it belongs to the shape of a GET.

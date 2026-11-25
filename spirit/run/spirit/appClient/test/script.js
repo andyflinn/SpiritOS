@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/appClient/test/script.js
 // The tests of spirit/appClient/script.js, the node's client of its app servers, and of no other module (spec: ./script.md).
-// It runs a scratch node and asks it as the owner, on loopback, as a page on that machine does (POST /api/spirit). The
+// It runs a scratch node and asks it as the owner, on loopback, as a page on that machine does (POST /spirit). The
 // family asked is a throwaway app server planted in the scratch copy, whose one verb answers a text past ANSWER_MAX.
 // (No branch carries an FS set since goal/G43.20, so no server's folder is read through one.)
 
@@ -47,7 +47,7 @@ function scratch() {
 // What the tests share: the scratch copy, its node and the answers later tests judge.
 const W = {};
 const post = function (call, args) {
-  return fetch(W.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
+  return fetch(W.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
     .then(function (r) { return r.text().then(function (t) { let body = null; try { body = JSON.parse(t); } catch (e) { /* judged as text */ } return { status: r.status, body: body, text: t }; }); },
       function () { return { status: 0, body: null, text: '' }; });
 };

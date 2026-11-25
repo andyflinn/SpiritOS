@@ -17,7 +17,7 @@ const ROW = { key: 'zzapp', label: 'Zz App Label', icon: '🧩' };
 
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let node, chrome, loaded, text, identity, own, mounted, MOUNT, drawnIn, press, plainNow, want;
-const ask = async function (verb, args) { const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return JSON.parse(await r.text()); } catch (e) { return null; } };
+const ask = async function (verb, args) { const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return JSON.parse(await r.text()); } catch (e) { return null; } };
 const activeOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; let v = null; try { v = JSON.parse(r.label); } catch (e) { /* none */ } return v ? v.active : undefined; };
 // Which of the apps are active, as the node answers; the filter's set is that and node.mount, from the tree.
 const wantOn = async function () { const out = []; for (const a of mounted) { if ((await activeOf(a.key)) === true) out.push(a.label); } return out.sort(); };

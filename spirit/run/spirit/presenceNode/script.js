@@ -25,7 +25,7 @@ const relayKeys = spirit.requireScript('spirit/relayKeys/script.js');
 
 function streamUrl(relayUrl, key) {
   return String(relayUrl).replace(/\/+$/, '') +
-    '/api/relay/stream?key=' + encodeURIComponent(key);
+    '/spirit/relay/stream?key=' + encodeURIComponent(key);
 }
 
 // opts: { rootDir, jobs, connectImpl, probeImpl, now }

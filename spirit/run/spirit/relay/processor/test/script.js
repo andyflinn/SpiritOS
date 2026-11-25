@@ -258,10 +258,10 @@ function openFace() {
     resolve(f);
   });
 }
-// The home node's long upload of the face's updates: POST /api/relay/face/stream, signed for this relay and 'stream'.
+// The home node's long upload of the face's updates: POST /spirit/relay/face/stream, signed for this relay and 'stream'.
 function feed() {
   const R = F.R; const M = F.M;
-  const req = http.request({ host: '127.0.0.1', port: R.port, path: '/api/relay/face/stream', method: 'POST',
+  const req = http.request({ host: '127.0.0.1', port: R.port, path: '/spirit/relay/face/stream', method: 'POST',
     headers: { 'x-spirit-from': M.publicKey, 'x-spirit-sig': R.auth.sign(M.privateKey, R.auth.faceMessage(M.publicKey, R.relayKey, 'stream')), 'transfer-encoding': 'chunked' } });
   req.on('error', function () { /* cut */ });
   req.flushHeaders();

@@ -26,7 +26,7 @@ It runs exactly two long-lived processes:
 | Process | Port | Role |
 |---|---|---|
 | Caddy | 80, 443 | TLS, HTTP→HTTPS redirect, proxy |
-| `node spirit/server/script.js --relay --port 65430` | 65430 | Mailbox only: the one door (`POST /api/relay/post`, `/reply`) and the members' stream. No brochure, no public key route, no `/api/version` (goal/G22.6) |
+| `node spirit/server/script.js --relay --port 65430` | 65430 | Mailbox only: the one door (`POST /spirit/relay/post`, `/reply`) and the members' stream. No brochure, no public key route, no `/api/version` (goal/G22.6) |
 
 systemd unit: `spirit-relay.service`  
 Working directory: `/root/SpiritOS/spirit/run`  
@@ -147,7 +147,7 @@ Prints:
 - a signed card ask on the relay's one door over HTTPS, by
   `node bash/card-ask.js https://spirit.andyflinn.com` (its card, `relayPublicKey` in it)
 - the same on loopback, `node bash/card-ask.js http://127.0.0.1:65430`
-  (the public `GET /api/relay/key` is closed since goal/G22.6)
+  (the public `GET /spirit/relay/key` is closed since goal/G22.6)
 
 Does not change anything. First command after SSH.
 
@@ -391,7 +391,7 @@ Good:
 - HTTPS card ask answered, JSON with `relayPublicKey`
 - local `:65430` card ask answered, JSON with `relayPublicKey`
 
-A relay answers no curl GET any more: `/api/relay/key`, `/api/version` and
+A relay answers no curl GET any more: `/spirit/relay/key`, `/api/version` and
 the brochure are closed (goal/G22.6) and answer **404**. Ask with
 `node bash/card-ask.js <url>`, as `./bash/status` does. Behind Caddy every
 stranger's request arrives from 127.0.0.1, so two card asks within a second
@@ -432,7 +432,7 @@ off the network until it is.
 This was observed live on 2026-09-23 between the two agents' own boxes:
 wsl-claude's node was updated to cycle-10 code while spirit-3 was not, and
 it went **mute outward** — posts left as `sent` and were never receipted,
-because a receipt is itself an outward message. `GET /api/relay/key` on
+because a receipt is itself an outward message. `GET /spirit/relay/key` on
 spirit-3 returned no `sealKey`, which is the whole story in one field. (That
 route is closed since goal/G22.6; a card ask on the door answers it now.)
 

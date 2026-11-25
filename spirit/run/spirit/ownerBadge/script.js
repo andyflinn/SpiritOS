@@ -6,7 +6,7 @@
 
 // The owner badge, and the relay list's rules: for each URL in this node's
 // relay list, does the relay's card name this node's key as its owner
-// (probe, ownedBy, below)? The signed GET /api/relay/status that once was
+// (probe, ownedBy, below)? The signed GET /spirit/relay/status that once was
 // the badge was deleted by R3 (see where statusPath stood); the card is
 // the one authority on that fact, so the badge gets no endpoint of its own.
 //
@@ -213,7 +213,7 @@ function removeRelay(rootDir, url, opts) {
 
 // statusPath STOOD HERE, and it was the badge:
 //
-//   '/api/relay/status?name=' + name + '&sig=' +
+//   '/spirit/relay/status?name=' + name + '&sig=' +
 //     sign(privateKey, statusMessage(name))
 //
 // Deleted 2026-09-15 (R3,
@@ -250,7 +250,7 @@ function removeRelay(rootDir, url, opts) {
 //
 // ownedFrom ("is my key the one marked owner?"), claimedFrom,
 // claimedLabelFrom and censusFacts — each read a public roll list
-// (`/api/relay/who` answering `peers`). The roll went on 2026-09-18;
+// (`/spirit/relay/who` answering `peers`). The roll went on 2026-09-18;
 // `probe` below had already stopped fetching it, and only suites still
 // called these. Andy: "nothing is allowed to return a roster", and a row
 // never says who owns the relay — "ownership is only determined by one
@@ -293,8 +293,8 @@ function summarize(rows) {
 // history: the public roll it then read went on 2026-09-18, and the
 // request is the relay's card now, below.)
 //
-// It was two: a signed `GET /api/relay/status` to decide `owned`, and
-// then `GET /api/relay/who` for `claimed` on every relay the first one
+// It was two: a signed `GET /spirit/relay/status` to decide `owned`, and
+// then `GET /spirit/relay/who` for `claimed` on every relay the first one
 // said no to. R3 deleted the first, because the second was already
 // carrying the answer — `claimedFrom` parsed the very list that has
 // `owner` on every row and did not look at it.
@@ -332,7 +332,7 @@ function summarize(rows) {
 // `request(url)` asks one relay for its card and answers { status, text },
 // `text` the relay's signed key statement. Since goal/G22.6 that is a card
 // ask on the relay's one door through the node's peerPost (hub.relayKeyAsk);
-// GET /api/relay/key is closed.
+// GET /spirit/relay/key is closed.
 //
 // `owned` is now a COMPARISON rather than a search — is the key this box
 // names as its owner my key — which is the same fact the roll row

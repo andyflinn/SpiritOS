@@ -400,7 +400,7 @@ const N = { node: null, tree: null };
 function raw(call, args) {
   const c = new AbortController();
   const timer = setTimeout(function () { c.abort(); }, ASK_MS);
-  return fetch(N.node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }), signal: c.signal })
+  return fetch(N.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }), signal: c.signal })
     .then(function (r) { return r.text().then(function (t) { let body = null; try { body = JSON.parse(t); } catch (e) { body = null; } return { status: r.status, body: body, text: t }; }); },
       function () { return { status: 0, body: null, text: '' }; })
     .then(function (r) { clearTimeout(timer); return r; });
@@ -502,14 +502,14 @@ if (served.length) {
     });
   }, test.limit.quick);
   // EVERY BROKEN CALL IS REFUSED AT THE DOOR (goal/G41.30; Andy, of "only the spirit object checks those rules, on the
-  // caller's side. A raw call to /api/spirit, the attacker's way, reaches the handler unchecked": "this needs fixing in
+  // caller's side. A raw call to /spirit, the attacker's way, reaches the handler unchecked": "this needs fixing in
   // this item."; an app's in its own process, decided 9): from its declaration, a raw call over http, no spirit
   // object, breaks each verb's arguments three ways, an argument of the wrong type, a required one left out, one no
   // verb names; each must answer a 4xx with a code, before the handler runs.
   const broken = function (b) { const asks = []; Object.keys(b.verbs).forEach(function (v) { asksFor(b.family, v, b.verbs[v]).forEach(function (a) { asks.push(a); }); }); return asks; };
   const thrownAt = served.filter(function (b) { return broken(b).length > 0; });
   if (thrownAt.length) {
-    test.run('every broken call to its branch on /api/spirit is refused at the door with a 4xx and a code', 0.4, async function () {
+    test.run('every broken call to its branch on /spirit is refused at the door with a 4xx and a code', 0.4, async function () {
       if (!up()) return false;
       let ok = true;
       for (const b of thrownAt) {
@@ -2771,8 +2771,8 @@ if (!GIVEN.length) {
   // NO ROUTE UNDER /api/ (goal/G49.18, box v6: "both node and relay server have at the root of their path-routes the stupid
   // API/ node. of course this must be 'spirit'"; the rename "about thirty product files that name a route, the relay host docs
   // and bash/card-ask.js, all in one push"). Over the whole repository, code, docs, host scripts and tests alike, nothing names
-  // /api/spirit or a /api/relay/ route. The words are built here, so this file names them nowhere itself.
-  test.run('no tracked file names a route under /api/: no /api/spirit and no /api/relay/', 0.4, function () {
+  // the node's old door or an old relay route under api. The words are built here, so this file names them nowhere itself.
+  test.run('no tracked file names a route under /api/: not the node\'s door, not one of the relay\'s routes', 0.4, function () {
     const old = '/' + ['api', ''].join('/');
     const top = require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: RUN_DIR, encoding: 'utf8' }).trim();
     let hits = '';

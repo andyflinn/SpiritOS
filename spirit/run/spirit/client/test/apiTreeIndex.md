@@ -1,6 +1,6 @@
 # spirit/client/apiTreeIndex.js — its own test
 
-The owner's api tree, read for choosing: the tree the verb api answers on `/api/spirit` (goal/G30.6), one branch per
+The owner's api tree, read for choosing: the tree the verb api answers on `/spirit` (goal/G30.6), one branch per
 server, `{ ok: false, ... }` for one that did not answer (Andy: *"that server will not be part of the apiTree"*). No DOM,
 so the deciding is asserted in node; dual target, so it is loaded once more in a window of its own. Owed since the rule
 *"every production script has its own test"* (goal/G47.1, box v72).

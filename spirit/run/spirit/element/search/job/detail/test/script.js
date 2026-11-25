@@ -42,7 +42,7 @@ test.run('a scratch node of its own comes up with two planted apps, and Chrome o
   fs.writeFileSync(path.join(failDir, 'zzFail.json'), JSON.stringify({ identity: { icon: '🧪', label: 'zzFail', intrinsic: false }, node: { run: true } }));
   fs.writeFileSync(path.join(failDir, 'zzFail.js'), 'process.exit(3);\n');
   call = async function (name, args) {
-    const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
+    const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: name, args: args || {} }) });
     const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
     return { status: r.status, body: b, text: t };
   };

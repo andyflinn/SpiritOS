@@ -156,7 +156,7 @@ function scratch() {
 }
 async function call(base, verb, args) {
   try {
-    const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    const r = await fetch(base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
     const text = await r.text();
     return { status: r.status, text: text, body: parsed(text) };
   } catch (e) { return { status: 0, text: '', body: null }; }
@@ -2444,7 +2444,7 @@ test.run('two planted UI suites, each pressed, write down what testicle handed t
 }, test.limit.long);
 test.run('testicle hands the suites it runs a node that answers, and a Chrome that answers', 0.4, async function () {
   if (!handed || !handed.a) return false;
-  const node = !!handed.a.base && await fetch(handed.a.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; });
+  const node = !!handed.a.base && await fetch(handed.a.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; });
   const chrome = !!handed.a.chrome && await fetch('http://127.0.0.1:' + handed.a.chrome + '/json/version').then(function (r) { return r.status === 200; }, function () { return false; });
   return (node && chrome) || false;
 }, test.limit.slow);
