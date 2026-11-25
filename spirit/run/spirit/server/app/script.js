@@ -589,7 +589,7 @@ function withStreamListener(verbs, stream, followed, name) {
   if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'listener')) return verbs;
   dataSet();
   // A family's data.js stands on this server's data set as it is required (goal/G41.24, goal/G43.7).
-  if (stream.translator) spirit.requireScript(path.relative(RUN_ROOT, path.resolve(String(stream.translator))).split(path.sep).join('/'));
+  if (stream.translator) spirit.requireScript(String(stream.translator));
   const cache = stream.cache === true || isPlain(stream.cache);
   following = {
     module: String(stream.module || ''),
@@ -1302,6 +1302,8 @@ module.exports = {
 // spirit/server/script.js hands its --app here with the arguments as they stand after it, so the script stands where it always stood
 // (argv[1]), is required through spirit.requireScript, and serves through serve() above, where each call is checked by its api.js.
 function start(script) {
-  spirit.requireScript(path.relative(RUN_ROOT, path.resolve(script)).split(path.sep).join('/'));
+  // Its run path as the node hands it, required as it is (goal/G49.13; Andy: "did you finally get rid of the fucking
+  // spirit.requireScript().resolve FUCKING CRAP").
+  spirit.requireScript(String(script));
 }
 module.exports.start = start;

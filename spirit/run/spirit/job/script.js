@@ -580,7 +580,8 @@ module.exports = function installJobs(port) {
   let serverHost = null;            // { rootDir, client }, from startNodeServers
   // ONE APP'S SERVER: spirit/app/<name>/<name>.js. ITS ARGUMENTS ARE ITS <name>.json's DEFAULTS; none without.
   function startAppServer(rootDir, client, name) {
-    const script = path.join(rootDir, 'spirit', 'app', name, name + '.js');
+    // The app's script by its run path, as the app server requires it, as it is (goal/G49.13: no resolve).
+    const script = 'spirit/app/' + name + '/' + name + '.js';
     if (!inTree('spirit/app/' + name + '/' + name + '.js')) return null;
     let own = null;
     try { own = JSON.parse(fs.readFileSync(path.join(rootDir, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { own = null; }
@@ -652,7 +653,8 @@ module.exports = function installJobs(port) {
   }
   function startOneShot(rootDir, client, name) {
     if (!client || typeof client.registerOneShot !== 'function') return null;
-    const script = path.join(rootDir, 'spirit', 'app', name, name + '.js');
+    // The app's script by its run path, as the app server requires it, as it is (goal/G49.13: no resolve).
+    const script = 'spirit/app/' + name + '/' + name + '.js';
     const route = 'spirit.app.' + name;
     const old = getJob(route);
     const job = old && !TERMINAL_STATUSES.has(old.status) ? old : createJob('server', route, { oneShot: true, command: process.execPath, args: appServerArgs(rootDir, script) }, route);
