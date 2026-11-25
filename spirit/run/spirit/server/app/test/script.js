@@ -35,12 +35,14 @@ const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : ''
 const FAMILY = 'zzstream';
 const SHED_FAMILY = 'zzshed';
 const TRANSLATOR = path.join(RUN, 'spirit', 'app', FAMILY, 'data.js');
+// The planted files' requires are relative to where each is planted, under spirit/app/<name>/ (the move tool of goal/G49.12
+// rewrote them as if they stood beside this test; set right by hand).
 function plantFamilies() {
   const at = function (n) { const d = path.join(RUN, 'spirit', 'app', n); fs.mkdirSync(d, { recursive: true }); return d; };
   const head = "'use strict';\n// Planted by spirit/server/app/test/script.js for its stream checks, and removed when it ends.\n";
   fs.writeFileSync(path.join(at(FAMILY), 'api.js'), head + 'module.exports = { verbs: {} };\n');
   fs.writeFileSync(path.join(at(FAMILY), 'data.js'), head + [
-    "const D = require('../../../script.js').requireScript('spirit/data/script.js');",
+    "const D = require('../../script.js').requireScript('spirit/data/script.js');",
     "D.makeFamily('" + FAMILY + "', function () {",
     "  const HOME = D.viewAt(null, '" + FAMILY + "');",
     "  D.addTranslator({ onJob: function (job) {",
@@ -168,8 +170,15 @@ const fake = {
   debugLog: (function () { let on = false; return function (v) { if (typeof v === 'boolean') on = v; return on; }; }()),
 };
 const realLoad = Module._load;
+const SPIRIT_OBJECT_FILE = path.join(RUN, 'spirit', 'script.js');
 Module._load = function (request, parent) {
-  if (/(^|[\\/])spirit\.js$/.test(request) && parent && String(parent.filename).indexOf(RUN) === 0) { globalThis.spirit = fake; return fake; }
+  // The spirit object by the file a require resolves to, spirit/script.js since goal/G49.12 (a script asks for it as
+  // '../script.js', '../../script.js' and so on, which no test of the request's own name can tell from another script.js).
+  if (parent && String(parent.filename).indexOf(RUN) === 0 && /script\.js$/.test(request)) {
+    let at = '';
+    try { at = Module._resolveFilename(request, parent); } catch (e) { at = ''; }
+    if (at === SPIRIT_OBJECT_FILE) { globalThis.spirit = fake; return fake; }
+  }
   return realLoad.apply(this, arguments);
 };
 globalThis.spirit = fake;
@@ -606,14 +615,14 @@ function stateCachePart() {
     // The follower: a server of spirit/app/ following a stream with its cache on. Its translator says by a file what came
     // back; once read back, it saves its caches (saveCaches) and says which files it wrote.
     fs.writeFileSync(path.join(app, 'rows.js'), [
-      "const D = require('../../../data/script.js');",
+      "const D = require('../../data/script.js');",
       "D.addTranslator({ onJob: function (job) { if (job && job.app) require('fs').writeFileSync(process.env.ROW_SEEN, JSON.stringify(job.app)); } });",
     ].join('\n') + '\n');
     fs.writeFileSync(path.join(app, NAME + '.js'), [
-      "require('../../../script.js');",
+      "require('../../script.js');",
       "const path = require('path');",
-      "const S = require('../script.js');",
-      "S.serve({}, { stream: { translator: path.join(__dirname, '..', '..', 'test', 'rows.js'), cache: true, module: 'a.test' } });",
+      "const S = require('../../server/app/script.js');",
+      "S.serve({}, { stream: { translator: path.join(__dirname, 'rows.js'), cache: true, module: 'a.test' } });",
       "setTimeout(function () { require('fs').writeFileSync(process.env.SAVED, JSON.stringify(S.saveCaches())); }, 1500);",
     ].join('\n') + '\n');
     const nodeId = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./spirit/data/script.js').nodeId(" + JSON.stringify(SENDER) + "))"], { cwd: run, encoding: 'utf8' }).stdout;
