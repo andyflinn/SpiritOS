@@ -8,7 +8,7 @@ The peer family: packets to peers, and acquiring one. Owed since the rule *"ever
   no family of its own (goal/G32.3: the node maps it).
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
-  the verbs server.js mounts for the family, and each verb exactly the arguments its handler's `request` carries.
+  the verbs the node server, spirit/server/node/script.js, mounts for the family, and each verb exactly the arguments its handler's `request` carries.
 - `post` names the peer by its key and carries JSON text (spirit.type.string.json, goal/G48.4); `via`, `patienceMs` and `kind` may be left out.
 - `acquire` names the key, with a label and an address it may be given.
 - **goal/G40.11**: `acquire` takes no `via` (*"how a key arrived went with acquiredVia; acquiring keeps the row."*).

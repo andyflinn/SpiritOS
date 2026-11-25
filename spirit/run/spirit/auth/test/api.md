@@ -8,7 +8,7 @@ The auth family: who may call what on this node, the grants, and the node's bund
   no family of its own (goal/G32.3: the node maps it).
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
-  the verbs server.js mounts for the family, and each verb exactly the arguments its handler's `request` carries.
+  the verbs the node server, spirit/server/node/script.js, mounts for the family, and each verb exactly the arguments its handler's `request` carries.
 - `query`, `grant`, `revoke` and `peer` name the peer by its public key; `relabel` takes a label the name rule passes;
   `search`'s text is optional.
 - **goal/G41.14**: `bundle` and `branch` are one flat verb per table, `op` needed (`add`, `set`, `delete`, `get`,

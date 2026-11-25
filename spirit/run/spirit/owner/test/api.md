@@ -8,7 +8,7 @@ The owner family: the owner's boxes and his commands to his puppets (puppets/G4)
   no family of its own (goal/G32.3: the node maps it).
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
-  the verbs server.js mounts for the family, and each verb exactly the arguments its handler's `request` carries.
+  the verbs the node server, spirit/server/node/script.js, mounts for the family, and each verb exactly the arguments its handler's `request` carries.
 - `boxSearch`'s q is optional; `boxGet` names the box.
 - `command` names the puppet by its key (`to`) and the command, its `body` an object that may be left out.
 

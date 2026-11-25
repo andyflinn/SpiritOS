@@ -59,12 +59,12 @@ test.run('its verbs are search, active, label and icon', 0.2, function () {
   return W.names.slice().sort().join() === 'active,icon,label,search' || false;
 }, test.limit.quick);
 // "A verb added to the family is added here, in the same commit": the node mounts what this file lists, and no more.
-test.run('each verb is one the node mounts for the app BRANCH in server.js, with the same arguments', 0.2, function () {
+test.run('each verb is one the node mounts for the app BRANCH in spirit/server/node/script.js, with the same arguments', 0.2, function () {
   if (!W.api) return false;
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8');
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8');
   const at = src.indexOf('loopbackVerbs.mount(\'app\'');
   if (at === -1) return false;
-  const block = src.slice(at, src.indexOf('}, { wire', at));
+  const block = src.slice(at, src.indexOf('\n  });', at));
   const mounted = {};
   const re = /'([a-z.]+)':\s*\{\s*request:\s*\{([^}]*)\}/g; let m;
   while ((m = re.exec(block))) mounted[m[1]] = m[2].split(',').map(function (s) { return s.split(':')[0].trim(); }).filter(Boolean).sort().join();

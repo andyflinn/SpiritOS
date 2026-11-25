@@ -53,7 +53,7 @@ function keysAt(src, open) {
   return null;
 }
 function mounted(family) {
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8');
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8');
   const head = 'loopbackVerbs.mount(\'' + family + '\',';
   let at = src.indexOf(head);
   if (at === -1) return null;
@@ -93,7 +93,7 @@ test.run('it asks for its companion data.js, spirit/owner/data.js, and for nothi
   if (!W.asked) return false;
   return W.asked.length === 1 && W.asked[0] === 'spirit/owner/data.js' ? true : false;
 }, test.limit.quick);
-test.run('server.js mounts the owner branch', 0.2, function () {
+test.run('the node server, spirit/server/node/script.js, mounts the owner branch', 0.2, function () {
   try { W.mounted = mounted('owner'); } catch (e) { return false; }
   return !!W.mounted || false;
 }, test.limit.quick);

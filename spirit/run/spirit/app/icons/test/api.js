@@ -59,7 +59,7 @@ test.run('the icons api.js handles nothing: it requires only its companion data.
   if (!fs.existsSync(FILE)) return false;
   const code = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
   const asked = (code.match(/require(?:Script)?\s*\(\s*['"][^'"]+['"]\s*\)/g) || []).map(function (r) { return /['"]([^'"]+)['"]/.exec(r)[1]; })
-    .filter(function (p) { return !/(^|\/)spirit\.js$/.test(p); });
+    .filter(function (p) { return path.resolve(path.dirname(FILE), p) !== path.join(RUN, 'spirit', 'script.js'); });
   return asked.length > 0 && asked.every(function (p) { return p === 'spirit/app/icons/data.js'; }) || false;
 }, test.limit.quick);
 
@@ -129,21 +129,21 @@ test.run('an op that is no id is refused', 0.2, async function () {
 }, test.limit.quick);
 test.run('an op that is no id is refused by a run of the app, not by the node', 0.2, byRun, test.limit.quick);
 
-// "a page binds by" it: spirit.icons.<verb> on a page
-test.run('spirit.required.spirit.app.icons.api.icon is a function on a page', 0.2, async function () {
+// "a page binds by" it: its verbs on a page are what spirit.requireScript('spirit/app/icons/api.js') answers (goal/G49.9)
+test.run('on a page, spirit.requireScript(\'spirit/app/icons/api.js\') answers icon as a function', 0.2, async function () {
   if (!W.up) return false;
-  await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
+  await W.chrome.send('Page.navigate', { url: W.node.base + '/' });
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
-  const bound = await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { return typeof (s.icons && s.icons[' + JSON.stringify(W.v) + ']); }, function () { return false; })');
+  const bound = await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { return s.requireScript(\'spirit/app/icons/api.js\'); }).then(function (api) { return typeof (api && api[' + JSON.stringify(W.v) + ']); }, function () { return false; })');
   return bound === 'function' || false;
 }, test.limit.quick);
-test.run('spirit.required.spirit.app.icons.api.icon on a page answers a search', 0.2, async function () {
+test.run('on a page, that icon answers a search', 0.2, async function () {
   if (!W.up) return false;
-  const answered = await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", text: "" }); }).then(function (b) { return JSON.stringify({ items: Array.isArray(b && b.items) }); }, function () { return false; })');
+  const answered = await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { return s.requireScript(\'spirit/app/icons/api.js\'); }).then(function (api) { return api[' + JSON.stringify(W.v) + ']({ op: "search", text: "" }); }).then(function (b) { return JSON.stringify({ items: Array.isArray(b && b.items) }); }, function () { return false; })');
   return answered === '{"items":true}' || false;
 }, test.limit.quick);
 test.run('an argument the icons api does not name is refused on the page too', 0.2, async function () {
   if (!W.up) return false;
-  const pageBad = await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { return s.icons[' + JSON.stringify(W.v) + ']({ op: "search", zzExtra: 1 }); }).then(function () { return false; }, function () { return "refused"; })');
+  const pageBad = await W.chrome.evaluate('window.spirit.readyPromise.then(function (s) { return s.requireScript(\'spirit/app/icons/api.js\'); }).then(function (api) { if (typeof api[' + JSON.stringify(W.v) + '] !== "function") return "no verb"; return Promise.resolve(api[' + JSON.stringify(W.v) + ']({ op: "search", zzExtra: 1 })).then(function () { return false; }, function () { return "refused"; }); }, function () { return "no api"; })');
   return pageBad === 'refused' || false;
 }, test.limit.quick);

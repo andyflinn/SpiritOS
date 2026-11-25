@@ -8,7 +8,7 @@ The net family: a fetch the node makes for the page. Owed since the rule *"every
   no family of its own (goal/G32.3: the node maps it).
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
-  the verbs server.js mounts for the family, and each verb exactly the arguments its handler's `request` carries.
+  the verbs the node server, spirit/server/node/script.js, mounts for the family, and each verb exactly the arguments its handler's `request` carries.
 - `fetch` takes an http or https address and nothing else (`file:///` refused); its `method`, `headers`, `body`
   and `timeoutMs` may be left out, each of its kind when given.
 

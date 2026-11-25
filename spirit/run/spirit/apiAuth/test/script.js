@@ -51,9 +51,9 @@ test.run('spirit/auth/api.js declares the bundle verb with an op, a numeric id, 
   b = verbs.bundle;
   // goal/G41.25, box: "the bundle table gains 1 field: \"owner\"", and "changes to the auth.bundle verb for the addition
   // of the \"owner\" field are approved by andy and need no review."
-  // goal/G48.4: each argument names its spirit.type.*: the op a table op, the id a number, the label a label, the search
+  // goal/G48.4: each argument names its type file by its full path (goal/G49.13): the op a table op, the id a number, the label a label, the search
   // text a descriptionSelect, each but the op optional.
-  return (b && b.op === 'spirit/type/string/tableOp/script.js' && /^spirit\/type\/number\/[A-Za-z]+\/script\.js\?$/.test(b.id) && b.label === 'spirit/type/string/label/script.js?' && b.text === 'spirit/type/string/descriptionSelect/script.js?' && typeof b.owner === 'string' && /^spirit\.type\.[A-Za-z.]+\?$/.test(b.owner) && Object.keys(b).length === 5) ? true : false;
+  return (b && b.op === 'spirit/type/string/tableOp/script.js' && /^spirit\/type\/number\/[A-Za-z]+\/script\.js\?$/.test(b.id) && b.label === 'spirit/type/string/label/script.js?' && b.text === 'spirit/type/string/descriptionSelect/script.js?' && typeof b.owner === 'string' && /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js\?$/.test(b.owner) && Object.keys(b).length === 5) ? true : false;
 }, test.limit.quick);
 
 test.run('spirit/auth/api.js declares the branch verb with an op, an id, a bundle, a branch, a verb and a search text, all flat', 0.2, async function () {

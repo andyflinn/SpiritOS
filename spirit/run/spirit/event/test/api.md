@@ -8,7 +8,7 @@ The event family (goal/G40.6): the node's one dispatcher of events. Owed since t
   no family of its own (goal/G32.3: the node maps it).
 - Every argument's rule is one of spirit.js's standard rules, `?` optional.
 - **"Every verb the node mounts for this family, each argument with its rule"** (its own header): it declares exactly
-  the verbs server.js mounts for the family, and each verb exactly the arguments its handler's `request` carries.
+  the verbs the node server, spirit/server/node/script.js, mounts for the family, and each verb exactly the arguments its handler's `request` carries.
 - It declares `subscribe` and `publish`. `subscribe` takes nothing.
 - `publish` needs the job's `id`; `status`, `data`, `logMessage` and `app` may be left out, `data` and `app`
   objects when given.
