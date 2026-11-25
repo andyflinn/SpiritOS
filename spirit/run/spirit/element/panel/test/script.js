@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/panel/test/script.js
 // The tests of spirit/element/panel/script.js (spec: ./script.md; goal/G43.17, Q12: "yes." to panel, in spirit/element/panel/script.js). Andy's
 // box, "What mounts covers its mounter": one generic panel element, used by the appSelector and file, each pane keeping its own
-// stack. A real node on a scratch copy of the tracked files, and real clicks in a real Chrome on /face.html, on the appSelector
+// stack. A real node on a scratch copy of the tracked files, and real clicks in a real Chrome on / (spirit/shell/face.html), on the appSelector
 // as appMigration makes it. Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
@@ -137,7 +137,7 @@ test.run('a Chrome page opens', 0.2, async function () {
 }, test.limit.quick);
 const open = async function () {
   await c.evaluate('window.__zzOld = true').catch(function () {});
-  await c.send('Page.navigate', { url: N.base + '/face.html' });
+  await c.send('Page.navigate', { url: N.base + '/' });
   const up = await until(function () { return c.evaluate('!window.__zzOld && !!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000);
   await c.evaluate(HANDS);
   return up;

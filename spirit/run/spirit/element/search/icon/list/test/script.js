@@ -159,7 +159,7 @@ test.run('a scratch node, a scratch relay and Chrome come up', 0.2, async functi
 // at home
 test.run('the list is made', 0.2, async function () {
   if (!open) return false;
-  await open(N.base + '/face.html');
+  await open(N.base + '/');
   one = await made();
   return one === 'made' ? true : false;
 }, test.limit.slow);

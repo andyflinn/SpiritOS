@@ -147,7 +147,7 @@ test.run('a page on the node holds the whole servable tree in its spirit.require
   if (!up()) return false;
   P.chrome = await H.chromePage(H.findChrome());
   if (!P.chrome || P.chrome.error) return false;
-  await P.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
+  await P.chrome.send('Page.navigate', { url: W.node.base + '/' });
   await until(function () { return false; }, 1000);
   await P.chrome.evaluate("window.spirit && window.spirit.readyPromise ? window.spirit.readyPromise.then(function () { return window.spirit.requireScript('spirit/fs/api.js'); }).then(function () { return true; }, function () { return true; }) : false");
   for (let i = 0; i < 100; i++) { P.rows = await pageRows(); if (P.rows && P.rows.ready && P.rows.desk) break; await H.sleep(300); }

@@ -475,7 +475,7 @@ const shown2 = function () { return F2.page.evaluate("(function () { var all = A
 test.run('a goal and two items are put on the scratch desk', 0.2, async function () {
   if (!(await bootPage(F2, false))) return false;
   const page = F2.page;
-  await page.send('Page.navigate', { url: F2.node.base + '/face.html' });
+  await page.send('Page.navigate', { url: F2.node.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   const call = caller(page);
   await call('app.active', { key: 'desk', active: true });
@@ -547,7 +547,7 @@ const state3 = async function () { const r = await F3.call('desk.item.get', { id
 test.run('a goal and its item, pressed done, are put on the scratch desk', 0.2, async function () {
   if (!(await bootPage(F3, false))) return false;
   const page = F3.page;
-  await page.send('Page.navigate', { url: F3.node.base + '/face.html' });
+  await page.send('Page.navigate', { url: F3.node.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   const call = F3.call = caller(page);
   await call('app.active', { key: 'desk', active: true });

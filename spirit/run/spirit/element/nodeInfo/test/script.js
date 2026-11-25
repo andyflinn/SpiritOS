@@ -668,7 +668,7 @@ function rotatePart() {
   // THE ROTATE KEY DIALOG, DONE RIGHT (goal/G43.24, requirement 8; spec: ./script.md, its rotate section). Andy, on "Info's rotate button
   // opens the old shell's dialog": "not good." "do it right!", "it's just a panel that opens exactly overtop of the calling
   // panel, new-shell-style.", "like fstat". The tree read as it is, then a real node on a scratch copy of the tree's files and
-  // real clicks in a real Chrome on /face.html, Info opened from its tile in the shell app. No key is ever rotated: the page's
+  // real clicks in a real Chrome on / (spirit/shell/face.html), Info opened from its tile in the shell app. No key is ever rotated: the page's
   // node.rotateCipher is replaced by a recorder that refuses, and the node's card is compared before and after. Neither Andy's
   // node nor an agent's is touched.
 
@@ -770,7 +770,7 @@ function rotatePart() {
     if (!N || !N.up) return false;
     if (!where) return false;
     if (!c || c.error) return false;
-    await c.send('Page.navigate', { url: N.base + '/face.html' });
+    await c.send('Page.navigate', { url: N.base + '/' });
     return (await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000)) ? true : false;
   }, test.limit.quick);
   test.run('the page\'s node.rotateCipher is replaced by a recorder that refuses', 0.2, async function () {

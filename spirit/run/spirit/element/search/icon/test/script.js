@@ -37,7 +37,7 @@ test.run('a scratch node comes up, with Chrome on its face page', 0.2, async fun
   const c = await chromePage(where);
   if (c.error) { if (c.kid) chrome = c; return false; }
   chrome = c;
-  await chrome.send('Page.navigate', { url: N.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: N.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   rows = async function () {
     // The list's dropdown: its field opens its popup, whose rows carry their glyph as their key.
@@ -95,7 +95,7 @@ test.run('a pick makes its value that glyph, with one bubbling change', 0.2, asy
 // the box: "A page reads the file once"
 test.run('a selector and two lists made together read the icon set file once', 0.2, async function () {
   if (!rows) return false;
-  await chrome.send('Page.navigate', { url: N.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: N.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   await chrome.evaluate(ASKS + '.then(function () {' +
     ' return Promise.all([window.spirit.requireScript("spirit/element/search/icon/script.js"), window.spirit.requireScript("spirit/element/search/icon/list/script.js")]); }).then(function () { var box = document.body.appendChild(document.createElement("div"));' +

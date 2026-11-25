@@ -71,7 +71,7 @@ test.after(stopAll);
     fs.writeFileSync(path.join(zz, 'hearing.json'), JSON.stringify({ identity: { icon: '🦻', label: 'Hearing', intrinsic: false }, mount: { 'element.js': true }, shell: { true: false, mount: true, tile: true }, node: { mount: false } }, null, 2));
     // Monitor's main element, placed at the planted app's own path, as a tile asks for it (goal/G43.32, rule 4).
     fs.writeFileSync(path.join(zz, 'element.js'), fs.readFileSync(path.join(RUN, 'spirit', 'app', 'monitor', 'element.js'), 'utf8').split('spirit/app/monitor/element.js').join('spirit/app/hearing/element.js'));
-    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await chrome.send('Page.navigate', { url: node.base + '/' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     W1.up = true;
     return true;
@@ -470,7 +470,7 @@ test.after(stopAll);
   let loaded;
   test.run('the face page reloads and the app selector loads', 0.2, async function () {
     if (!W1.up) return false;
-    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await chrome.send('Page.navigate', { url: node.base + '/' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     loaded = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/script.js"); }).then(function () { return "loaded"; }, function () { return false; })');
     W1.loaded = loaded === 'loaded';
@@ -674,7 +674,7 @@ test.after(stopAll);
   // THE ONE SHELL (goal/G49.4, box v15; Andy: "spirit/element/script.js becomes the hard-coded only shell there is in
   // SpiritOS", "the app manifests shell:true goes, and all the logic that goes with it, including any places where the
   // \"current\" shell is stored", "the verb node.shell goes", "go!"). A real node on a scratch copy of the tracked files, and
-  // a real Chrome on the page Andy uses at home, /face.html. Neither Andy's node nor an agent's is touched.
+  // a real Chrome on the page Andy uses at home, / (spirit/shell/face.html). Neither Andy's node nor an agent's is touched.
 
   const os = require('os');
   const { spawn, execSync } = require('child_process');
@@ -722,7 +722,7 @@ test.after(stopAll);
   }, test.limit.quick);
   const open = async function () {
     await c.evaluate('window.__zzOld = true').catch(function () {});
-    await c.send('Page.navigate', { url: N.base + '/face.html' });
+    await c.send('Page.navigate', { url: N.base + '/' });
     const up = await until(function () { return c.evaluate('!window.__zzOld && document.readyState === "complete" && !!window.spirit'); }, 20000);
     await sleep(4000);
     return up;
@@ -777,11 +777,11 @@ test.after(stopAll);
     c4 = await chromePage(findChrome());
     LIVE.push({ c: c4 });
     if (c4.error) return false;
-    await c4.send('Page.navigate', { url: N4.base + '/face.html' });
+    await c4.send('Page.navigate', { url: N4.base + '/' });
     await until(function () { return c4.evaluate('!!(window.spirit && window.spirit.readyPromise && spirit.required.spirit.app && spirit.required.spirit.app.api && spirit.required.spirit.app.api.activeApp)'); }, 20000);
     await c4.evaluate('spirit.required.spirit.app.api.activeApp({ key: "chat", active: true }); spirit.required.spirit.app.api.activeApp({ key: "testicle", active: true }); spirit.required.spirit.app.api.activeApp({ key: "starter", active: true }); true');
     const served = await until(function () { return call(N4.base, 'api').then(function (r) { return !!(r.body && r.body.chat && r.body.testicle); }); }, 60000);
-    await c4.send('Page.navigate', { url: N4.base + '/face.html' });
+    await c4.send('Page.navigate', { url: N4.base + '/' });
     await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
     await sleep(3000);
     // Every call the page makes, kept: its fetches to /api/spirit carry { call, args }.
@@ -854,7 +854,7 @@ test.after(stopAll);
   }, test.limit.slow);
   test.run('Starter, an app with no server, opens with no dropdown in its title bar', 0.2, async function () {
     if (!W4.up) return false;
-    await c4.send('Page.navigate', { url: N4.base + '/face.html' });
+    await c4.send('Page.navigate', { url: N4.base + '/' });
     await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
     await sleep(3000);
     if (!(await pressTile(STARTER))) return false;
@@ -865,7 +865,7 @@ test.after(stopAll);
   // testicle's manifest sets node.remote false): Testicle, though it has a server, opens with no dropdown.
   test.run('Testicle, whose manifest refuses client mode, opens with no dropdown in its title bar', 0.4, async function () {
     if (!W4.up) return false;
-    await c4.send('Page.navigate', { url: N4.base + '/face.html' });
+    await c4.send('Page.navigate', { url: N4.base + '/' });
     await until(function () { return c4.evaluate('document.readyState === "complete" && !!window.spirit'); }, 20000);
     await sleep(3000);
     if (!(await pressTile(TESTICLE))) return false;

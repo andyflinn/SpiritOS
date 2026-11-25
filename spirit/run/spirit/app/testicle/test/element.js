@@ -6,7 +6,7 @@
 // "testicle's face calls no verbs in this round: it shows a file pane in the leftmost workBench pane, and nothing else", "A
 // face-only app is its manifest and its element.js, as contact and starter are", "The file viewer is the existing file list
 // with a filter for production *.js files: no new list." A real node on a scratch copy of the tracked files, with planted files
-// of every kind the filter must tell apart, and the face mounted in a real Chrome on /face.html. Neither Andy's node nor an
+// of every kind the filter must tell apart, and the face mounted in a real Chrome on / (spirit/shell/face.html). Neither Andy's node nor an
 // agent's is touched.
 
 const fs = require('fs');
@@ -242,7 +242,7 @@ test.run('the node\'s face page opens in Chrome and has its spirit', 0.2, async 
   if (!where) return false;
   c = await chromePage(where);
   if (c.error) return false;
-  await c.send('Page.navigate', { url: N.base + '/face.html' });
+  await c.send('Page.navigate', { url: N.base + '/' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
 }, test.limit.long);
 

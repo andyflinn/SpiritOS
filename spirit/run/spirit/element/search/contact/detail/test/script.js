@@ -1050,7 +1050,7 @@ test.run('In Chrome the contact detail is mounted for the relay\'s key, told it 
   if (chrome.error) return false;
   // The shell Andy uses, at home as on a relay: boot.js. The older page at / loads every element up front and would hide a
   // panel that forgets to load its own.
-  await chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: S.N.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);
   const mounted = await chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/search/contact/detail/script.js")).then(function () { var E = window.spirit.required.spirit.element.search.contact.detail; if (!E || typeof E.create !== "function") return false; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(S.key) + ', relay: true }); return "ok"; }, function () { return false; })');
@@ -1205,7 +1205,7 @@ test.run('a later change neither throws nor paints', 0.2, async function () {
 // the face form: its check, as a function
 test.run('The face form has a function saying whether it has relays to offer', 0.2, async function () {
   if (!S.chrome) return false;
-  await S.chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
+  await S.chrome.send('Page.navigate', { url: S.N.base + '/' });
   await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);
   S.checkArgs = await S.chrome.evaluate('Promise.resolve(window.spirit.requireScript("spirit/element/faceForm/script.js")).then(function () { var F = window.spirit.required.spirit.element.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, faceable: false }]), owner: F.offers([{ url: u, owned: true, faceable: false }]), starred: F.offers([{ url: u, claimed: true, faceable: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, faceable: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, faceable: true }, { url: "http://y", claimed: true, faceable: false }]) }; })');
@@ -1377,7 +1377,7 @@ test.run('a relay\'s label is bold and italic, under 📡 Relays', 0.2, async fu
   await home(S.N.base, 'contact.label', { publicKey: S.person, myLabel: 'zzPersonRow' });
   await home(S.N.base, 'contact.unblock', { publicKey: S.person });
   await home(S.N.base, 'contact.accept', { publicKey: S.person });
-  await S.chrome.send('Page.navigate', { url: S.N.base + '/face.html' });
+  await S.chrome.send('Page.navigate', { url: S.N.base + '/' });
   await until(function () { return S.chrome.evaluate('!!(window.spirit && window.spirit.requireScript)'); }, 20000);
   await sleep(3000);
   await S.chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Contacts"; })[0]; if (e) e.click(); }())');

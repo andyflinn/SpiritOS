@@ -21,12 +21,11 @@ TextEditor app are gone. It replaces `spirit/element/textView.js`, which is gone
 
 ## Requirements
 
-- **It is the only door to the library** (goal/G43.5; Andy: *"only access to codeMirror library is through the element!"*).
-- **It loads the CodeMirror library itself**, through `spirit.requireScript`:
-  `spirit/element/codeMirror/lib/codemirror.js`, then CodeMirror's search add-ons (`addon/dialog/dialog.js`,
-  `addon/search/searchcursor.js`, `addon/search/search.js`, `addon/search/jump-to-line.js`), and the mode files of the
-  path's syntax (`spirit/element/codeMirror/mode/<mode>/<mode>.js`, a mode it builds on first). Its stylesheets,
-  `lib/codemirror.css`, `theme/material-darker.css` and `addon/dialog/dialog.css`, are put on the page. **It never reads `index.html`** (goal/G40.7: the face never reads
+- **It loads none of CodeMirror itself** (goal/G49.15, box v16: *"the page list goes. the vendored codeMirror will be loaded
+  by face.html with a script tag"*, which ends G43.5's *"only access to codeMirror library is through the element!"*):
+  face.html puts the library, its four add-ons, its five modes and its three sheets on the page by tags of its own,
+  before the element runs. The element requires, reads and puts on the page no file of `spirit/element/codeMirror/`,
+  and its code names none. **It never reads `index.html`** (goal/G40.7: the face never reads
   the old shell's page) and nothing of it asks for it.
 - **Read mode** makes CodeMirror read-only; **edit mode** editable, and `value()` answers what was typed.
 - **The syntax by extension**: `.js`/`.mjs` javascript, `.json` javascript with `json: true`, `.css` css, `.html`/`.htm`
@@ -51,6 +50,7 @@ goal/G43.5: `spirit/element/codeMirror.js`'s part of the element move. Its test 
 ### Requirements
 
 - *"ALL move the fucking library inside run::/spirit/element/codeMirror/"*. CodeMirror's 15 files, licence included, stand there (that no file names its old place is `spirit/test/script-sibling-general.js`'s). On a real page the element draws from there with its sheet and search, and asks no other place.
-- *"all, only access to codeMirror library is through the element!"* The page starts with no `window.CodeMirror`, and no product file but `spirit/element/codeMirror.js` names the library's folder. The element brings the library, its sheets and its search add-ons itself.
+- Since goal/G49.15 (box v16): the page starts with `window.CodeMirror` on it, from face.html's tags, and no product file but
+  `spirit/shell/face.html` and `spirit/fs/fileSystem.js` (its one list of vendored folders) names the library's folder.
 
 The rest of the element move is the elementMove part of `spirit/test/script.md`.

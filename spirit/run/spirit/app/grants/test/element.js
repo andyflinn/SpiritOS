@@ -6,7 +6,7 @@
 // (spirit/element/search/grant/grantsPanel/script.js) configured with the contacts and the panel's own grantsPanel.nodeGrants, both tested in
 // spirit/element/search/grant/grantsPanel/test/script.js; its Bundles tab is the bundle editor. The browser file runs in node on a BARE window
 // (rule/26): each element is put on the page only once the app requires it, a stand-in that keeps what the app handed it.
-// Then the bundle lines of goal/G41.32, judged by real clicks in the Grants app as the shell app opens it, on /face.html of
+// Then the bundle lines of goal/G41.32, judged by real clicks in the Grants app as the shell app opens it, on / (spirit/shell/face.html) of
 // a real node on a scratch copy of the tree's files. Neither Andy's node nor an agent's is touched.
 // This is the one test file of its script (spirit/test/TEST_SYSTEM.md): the wrapper part, once a file of its own, is a
 // section at its end, run after the checks above and counted with them. One test.run per test (goal/G47.2).
@@ -326,7 +326,7 @@ test.run('a server\'s bundle is planted in the node\'s database', 0.2, async fun
 }, test.limit.quick);
 test.run('the face page has its spirit', 0.2, async function () {
   if (!B.chrome) return false;
-  await B.chrome.send('Page.navigate', { url: B.base + '/face.html' });
+  await B.chrome.send('Page.navigate', { url: B.base + '/' });
   B.page = !!(await H.until(function () { return B.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
   return B.page || false;
 }, test.limit.quick);
@@ -537,7 +537,7 @@ test.run('a press on a row throws nothing', 0.2, function () {
 // tests of spirit/app/grants/element.js and its grants.json. Andy: "i just moved them, didn't fix the manifest.", "no i want those apps
 // to basically be wrappers for spirit/element/ things....", and "box that these apps must mount in the new format of the new
 // shell." The tree read as it is, its own test run, then a real node on a scratch copy of the tree's files and real clicks in
-// a real Chrome on /face.html, on the shell app as boot.js draws it. Neither Andy's node nor an agent's is touched.
+// a real Chrome on / (spirit/shell/face.html), on the shell app as boot.js draws it. Neither Andy's node nor an agent's is touched.
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
@@ -691,7 +691,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   }, test.limit.quick);
   test.run('the wrapper\'s face page has its spirit', 0.2, async function () {
     if (!R.c) return false;
-    await R.c.send('Page.navigate', { url: R.N.base + '/face.html' });
+    await R.c.send('Page.navigate', { url: R.N.base + '/' });
     R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
     if (R.page) await R.c.evaluate(HANDS);
     return R.page || false;

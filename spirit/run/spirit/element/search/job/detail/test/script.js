@@ -47,7 +47,7 @@ test.run('a scratch node of its own comes up with two planted apps, and Chrome o
     return { status: r.status, body: b, text: t };
   };
   jobOf = function (id) { return call('job.get', { key: id }).then(function (j) { return (j.body && j.body.job) || null; }); };
-  await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: node.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   return true;
 }, test.limit.slow);

@@ -14,7 +14,7 @@
 // testicle.testicle.search, a view of the testicle branch data.js keeps, the current rows shown".
 //
 // A real node on a scratch copy of the tracked files, testicle turned on there, tests of planted scripts set on it through
-// testicle.testicle.set, and the search mounted alone in a real Chrome on /face.html. Neither Andy's node nor an agent's is
+// testicle.testicle.set, and the search mounted alone in a real Chrome on / (spirit/shell/face.html). Neither Andy's node nor an agent's is
 // touched. Where it opens a test's detail is the face's (spirit/app/testicle/test/element.js).
 
 const fs = require('fs');
@@ -201,7 +201,7 @@ test.run('the face page has its spirit', 0.2, async function () {
   if (!where) return false;
   c = await chromePage(where);
   if (c.error) return false;
-  await c.send('Page.navigate', { url: N.base + '/face.html' });
+  await c.send('Page.navigate', { url: N.base + '/' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
 }, test.limit.long);
 
@@ -583,7 +583,7 @@ test.run('the node holds 110 passing tests of beta at severity 1, 25 failing tes
 test.run('a fresh page opens the search again with no words and no selector', 0.2, async function () {
   if (!many) return false;
   if (!c || c.error || !c.evaluate) return false;
-  await c.send('Page.navigate', { url: N.base + '/face.html' });
+  await c.send('Page.navigate', { url: N.base + '/' });
   if (!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000))) return false;
   await c.evaluate(HANDS);
   opened = await c.evaluate('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/app/testicle/element/search/testicle.js"); }).then(function () {' +

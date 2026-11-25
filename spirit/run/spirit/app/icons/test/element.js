@@ -36,7 +36,7 @@ test.after(function () {
 
 // The face, mounted alone in a box, as the Icons app's createApp mounts it.
 const mount = async function (page) {
-  await page.send('Page.navigate', { url: W.node.base + '/face.html' });
+  await page.send('Page.navigate', { url: W.node.base + '/' });
   await until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   return page.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/app/icons/element.js"); }).then(function () { var c =document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.made = spirit.required.spirit.app.icons.element.create(c); window.__posts = []; var f = window.fetch; window.fetch = function (u, o) { if (/\\/api\\//.test(String(u)) && o && o.body) window.__posts.push(String(o.body).slice(0, 200)); return f.apply(this, arguments); }; return "made"; }, function () { return false; })');
 };

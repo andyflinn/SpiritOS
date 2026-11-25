@@ -33,7 +33,7 @@ test.run('a scratch node comes up with Chrome on its face page', 0.2, async func
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) { chrome = chrome.error ? (chrome.kid ? chrome : null) : chrome; return false; }
-  await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: node.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
   return true;

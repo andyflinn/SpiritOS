@@ -629,6 +629,8 @@ test.run('isLoopback() answers true on 127.0.0.1, localhost and [::1], false on 
 // CODEMIRROR'S FILES, FROM face.html (goal/G49.15, box v16: "the page list goes. the vendored codeMirror will be loaded by
 // face.html with a script tag. it lives in the repo and won't change very often. tests must not care."): the library, its
 // five modes and its four add-ons, each by its own script tag, the library first among them.
+// Its three sheets, which face.html links beside them (the box names no place for them; face.html is where they are).
+const CM_SHEETS = ['spirit/element/codeMirror/lib/codemirror.css', 'spirit/element/codeMirror/theme/material-darker.css', 'spirit/element/codeMirror/addon/dialog/dialog.css'];
 const CM_FILES = ['spirit/element/codeMirror/lib/codemirror.js', 'spirit/element/codeMirror/mode/javascript/javascript.js',
   'spirit/element/codeMirror/mode/css/css.js', 'spirit/element/codeMirror/mode/xml/xml.js', 'spirit/element/codeMirror/mode/markdown/markdown.js',
   'spirit/element/codeMirror/mode/htmlmixed/htmlmixed.js', 'spirit/element/codeMirror/addon/dialog/dialog.js',
@@ -731,15 +733,6 @@ test.run('on a page, spirit/data/script.js required stands at spirit.required.sp
   try { onPage = await wq.spirit.requireScript('spirit/data/script.js'); } catch (e) { onPage = null; }
   const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.data;
   return (!!placed && typeof placed.makeFamily === 'function' && typeof placed.viewAt === 'function' && onPage === placed) || false;
-}, test.limit.quick);
-// A CodeMirror mode file, written for both node and a page: given no module box it finds CodeMirror on the page (here
-// a stand-in, the library itself needs a real browser) and defines its mode on it.
-test.run('on a page, a CodeMirror mode file, required, runs as the page script it is, finds CodeMirror and defines its mode', 0.2, async function () {
-  const boxed = page();
-  const defined = [];
-  boxed.CodeMirror = { defineMode: function (name) { defined.push(name); }, defineMIME: function () {}, registerHelper: function () {}, resolveMode: function () { return {}; } };
-  await boxed.spirit.requireScript('spirit/element/codeMirror/mode/css/css.js');
-  return (defined.indexOf('css') !== -1 && !boxed.scriptError) || false;
 }, test.limit.quick);
 test.run('on a page, a stylesheet required is put on the page as a style', 0.2, async function () {
   if (!T.wq) return false;
@@ -924,10 +917,11 @@ test.run('on a real page, no file is fetched twice as the page loads', 0.2, func
   return !again.length || false;
 }, test.limit.quick);
 // A script comes when something requires it: spirit.requireScript (spirit.js) loads it, never a list fetched up front.
-// face.html asks for spirit.js, spirit.js for the shell's boot.js; every other script is spirit.requireScript's.
+// face.html asks for spirit.js and codeMirror's files by its own tags (goal/G49.15, box v16), spirit.js for the shell's boot.js;
+// every other script is spirit.requireScript's.
 test.run('on a real page, every script is loaded by spirit.requireScript when something requires it, and none from a list up front', 0.2, function () {
   if (!L.scripts) return false;
-  const listed = L.scripts.filter(function (g) { return g.file !== 'spirit/script.js' && g.file !== 'spirit/shell/boot/script.js' && g.by !== 'spirit/script.js'; });
+  const listed = L.scripts.filter(function (g) { return g.file !== 'spirit/script.js' && g.file !== 'spirit/shell/boot/script.js' && CM_FILES.indexOf(g.file) === -1 && g.by !== 'spirit/script.js'; });
   return !listed.length || false;
 }, test.limit.quick);
 // A dialog's parts come when it opens: the home page opens no app's detail, so none of its files is fetched.
@@ -1172,7 +1166,7 @@ test.run('logged out, it loads nothing but spirit/script.js, the seal, spirit/sh
   if (!FL.out) return false;
   const others = (FL.out.loaded || []).filter(function (n) {
     const p = String(n).replace(/^\//, '').replace(/[?#].*$/, '');
-    return !/^(spirit\/script\.js|spirit\/shell\/seal\/script\.js|favicon\.ico|spirit\/shell\/favicon\.svg)$/.test(p) && CM_FILES.indexOf(p) === -1 && !/^face\/api/.test(p);
+    return !/^(spirit\/script\.js|spirit\/shell\/seal\/script\.js|favicon\.ico|spirit\/shell\/favicon\.svg)$/.test(p) && CM_FILES.indexOf(p) === -1 && CM_SHEETS.indexOf(p) === -1 && !/^face\/api/.test(p);
   });
   return (Array.isArray(FL.out.loaded) && !others.length) || false;
 }, test.limit.quick);

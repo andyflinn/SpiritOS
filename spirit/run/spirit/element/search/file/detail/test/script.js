@@ -38,7 +38,7 @@ test.run('a scratch node comes up with a Chrome on its face page', 0.2, async fu
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
-  await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: node.base + '/' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
 }, test.limit.slow);
 test.run('it loads on a page, at spirit.required.spirit.element.search.file.detail, and makes its detail', 0.2, async function () {

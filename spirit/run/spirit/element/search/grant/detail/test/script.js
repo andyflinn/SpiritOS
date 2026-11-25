@@ -30,7 +30,7 @@ test.run('a scratch node comes up, and Chrome opens its face page', 0.2, async f
   node = await scratchNode();
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
-  await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: node.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   js = function (s) { return chrome.evaluate(s); };
   // The test's own grants table: it keeps what is revoked, and serves no path under zz/.

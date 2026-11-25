@@ -719,7 +719,7 @@ function every() {
     E.pageLoaded = []; E.pageBad = []; E.noFactory = [];
     E.elements = E.req.filter(isElementScript);
     for (const f of E.req) {
-      await page.send('Page.navigate', { url: E.node.base + '/face.html' });
+      await page.send('Page.navigate', { url: E.node.base + '/' });
       await until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, WAIT);
       const keys = JSON.stringify(placeKeys(f));
       const got = await page.evaluate('window.spirit.readyPromise.then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(true); }); return spirit.requireScript(' + JSON.stringify(f) + '); })' +

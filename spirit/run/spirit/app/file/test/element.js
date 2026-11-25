@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/file/test/element.js
 // The tests of spirit/app/file/element.js, and of Files as Andy sees it (spec: ./file.md; goal/G43.17). Andy: "file should be the
 // same as files is. i don't want to loose all the nice stuff files has...". A real node on a scratch copy of the tracked files,
-// with a folder of planted files, and real clicks in a real Chrome on /face.html, on the appSelector as the shell app makes it.
+// with a folder of planted files, and real clicks in a real Chrome on / (spirit/shell/face.html), on the appSelector as the shell app makes it.
 // Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
@@ -194,7 +194,7 @@ test.run('a Chrome page opens for this suite', 0.2, async function () {
 }, test.limit.quick);
 test.run('the face shell opens in that page with its spirit ready', 0.2, async function () {
   if (!W.c) return false;
-  await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
+  await W.c.send('Page.navigate', { url: W.N.base + '/' });
   W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
   if (W.page) await W.c.evaluate(HANDS);
   return W.page || false;

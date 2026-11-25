@@ -223,9 +223,10 @@ test.run('a view given no mode is a read view, and one given no text shows the e
   const b = S.w.made[3];
   return (!!S.bare && S.bare.mode === 'read' && !!b && b.cfg.readOnly === true && b.cfg.value === '') || false;
 }, test.limit.quick);
-test.run('a .js file is coloured as javascript, and its mode file is required', 0.2, function () {
+// Its mode file is face.html's, loaded before the element runs (goal/G49.15, box v16).
+test.run('a .js file is coloured as javascript', 0.2, function () {
   const b = S.w && S.w.made[3];
-  return (!!b && b.cfg.mode === 'javascript' && S.w.required.indexOf(CM + 'mode/javascript/javascript.js') !== -1) || false;
+  return (!!b && b.cfg.mode === 'javascript') || false;
 }, test.limit.quick);
 // Each file kind, written out: a view of an empty text at that path, and the mode it is coloured in.
 const colouredAs = async function (p, mode) {

@@ -1193,7 +1193,7 @@ async function keptPart() {
   }, test.limit.slow);
   test.run('a list of five rows is drawn with a filter, a selector, two sortable columns and a search field, and each row is marked', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
-    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await chrome.send('Page.navigate', { url: node.base + '/' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/script.js"); }).then(function () { ' +
       'var b = document.createElement("div"); b.id = "zzKept"; b.style.cssText = "position:absolute;left:0;top:0;width:900px;height:700px;display:flex;flex-direction:column"; document.body.appendChild(b); ' +
@@ -1532,7 +1532,7 @@ async function popupPart() {
   }, test.limit.slow);
   test.run('three search dropdowns of 40 rows, each in a 48 px box cutting off its overflow, a block over the space below the first two', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
-    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await chrome.send('Page.navigate', { url: node.base + '/' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     // Each box cuts off what overflows it (overflow hidden), and stands under a sibling drawn later on the same spot's level.
     made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/script.js"); }).then(function () { ' +
@@ -1679,7 +1679,7 @@ async function tilesPart() {
   const js = function (s) { return chrome.evaluate(s); };
   test.run('the search element loads on the page', 0.2, async function () {
     if (!node || !node.up || !chrome || chrome.error) return false;
-    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await chrome.send('Page.navigate', { url: node.base + '/' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     loaded = await js('window.spirit.readyPromise.then(function () { return window.spirit.requireScript("spirit/element/search/script.js"); }).then(function () { return "loaded"; }, function () { return null; })');
     return (loaded === 'loaded') ? true : false;
@@ -2030,7 +2030,7 @@ async function reconnectPart() {
     WORLDS.push(function () { return free(); });
     chrome = await chromePage(findChrome());
     if (!node.up || chrome.error) return false;
-    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await chrome.send('Page.navigate', { url: node.base + '/' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
     made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/script.js"); }).then(function () { ' +
       'window.__r = { asked: 0, up: false }; spirit.eventStream.subscribe({ onConnection: function (u) { if (u) window.__r.up = true; } }); var b = document.createElement("div"); b.id = "zz-r"; b.style.cssText = "width:400px;height:300px"; document.body.appendChild(b); ' +

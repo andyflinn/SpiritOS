@@ -59,7 +59,7 @@ test.run('zzFail is started', 0.2, async function () {
 test.run('it loads through requireScript and mounts with spirit.required.spirit.element.search.job.list.create, given container and open', 0.2, async function () {
   if (!call) return false;
   await until(function () { return call('job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
-  await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: node.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/job/list/script.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(1); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.opened = []; var J = spirit.required.spirit.element.search.job.list; if (!J || typeof J.create !== "function") return ""; window.made = J.create(c, { open: function (k, spec) { window.opened.push({ key: String(k), spec: spec ? Object.keys(spec) : [], fill: !!(spec && typeof spec.fill === "function") }); return Promise.resolve(null); } }); return "made"; }, function () { return ""; })');
   // The job rows: a header row (th, or under thead) is no job and is never judged as one.

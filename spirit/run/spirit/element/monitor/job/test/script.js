@@ -46,7 +46,7 @@ test.run('a scratch node comes up with a Chrome page on its face', 0.2, async fu
   W.node = await scratchNode();
   W.chrome = await chromePage(findChrome());
   if (!W.node.up || !W.chrome || W.chrome.error) return false;
-  await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
+  await W.chrome.send('Page.navigate', { url: W.node.base + '/' });
   W.page = !!(await until(function () { return js('!!(window.spirit && window.spirit.readyPromise)'); }, 20000));
   return W.page || false;
 }, test.limit.slow);

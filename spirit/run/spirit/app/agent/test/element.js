@@ -464,7 +464,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
   // tabContainer, activated if it already exists, created if it doesn't have a tab yet."; each tab's header, by kind; "any tab
   // that hears (by listening) of it's own rows deletion will close itself."; "an unsaved add-tab will say: "new <row-type>*"";
   // and Q1, the tabs stay open when the left tool changes). What a person sees is judged, by real clicks in a real Chrome on a
-  // scratch node, on the shell Andy uses, /face.html.
+  // scratch node, on the shell Andy uses, / (spirit/shell/face.html).
 
   const fs = require('fs');
   const path = require('path');
@@ -522,7 +522,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
     if (!where) { STOP = true; return false; }
     c = await chromePage(where);
     if (c.error) { STOP = true; return false; }
-    await c.send('Page.navigate', { url: N.base + '/face.html' });
+    await c.send('Page.navigate', { url: N.base + '/' });
     await until(function () { return c.evaluate('!!(window.spirit && window.spirit.eventStream)'); }, 20000);
     LEAF = 'function leaf(w, within) { var root = within ? document.querySelector(within) : document; if (!root) return null; return Array.prototype.slice.call(root.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === w && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === w; }); })[0] || null; }';
     press = function (words, within) { return c.evaluate('(function () { ' + LEAF + ' var e = leaf(' + JSON.stringify(words) + ', ' + JSON.stringify(within || '') + '); if (!e) return false; e.click(); return true; }())'); };

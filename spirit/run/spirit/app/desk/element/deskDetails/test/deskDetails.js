@@ -735,7 +735,7 @@ test.run('there is an item done, and an item in design mode offering Delete', 0.
   const scratch = S.scratch = await H.scratchNode();
   const page = S.page2 = scratch.up ? await H.chromePage(S.chrome) : null;
   if (!page || page.error) return false;
-  await page.send('Page.navigate', { url: scratch.base + '/face.html' });
+  await page.send('Page.navigate', { url: scratch.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   await call('app.active', { key: 'desk', active: true });
   await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);

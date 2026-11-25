@@ -166,7 +166,7 @@ test.run('when nodeInfo is refused it says Info could not be loaded.', 0.2, asyn
 // tests of spirit/app/info/element.js and its info.json. Andy: "i just moved them, didn't fix the manifest.", "no i want those apps
 // to basically be wrappers for spirit/element/ things....", and "box that these apps must mount in the new format of the new
 // shell." The tree read as it is, its own test run, then a real node on a scratch copy of the tree's files and real clicks in
-// a real Chrome on /face.html, on the shell app as boot.js draws it. Neither Andy's node nor an agent's is touched.
+// a real Chrome on / (spirit/shell/face.html), on the shell app as boot.js draws it. Neither Andy's node nor an agent's is touched.
 const os = require('os');
 const { spawn, execSync } = require('child_process');
 const REPO = path.resolve(RUN, '..', '..');
@@ -339,7 +339,7 @@ const waitFor = function (expr, ms) { return H.until(function () { return R.c.ev
   }, test.limit.quick);
   test.run('the face page has its spirit', 0.2, async function () {
     if (!R.c) return false;
-    await R.c.send('Page.navigate', { url: R.N.base + '/face.html' });
+    await R.c.send('Page.navigate', { url: R.N.base + '/' });
     R.page = !!(await H.until(function () { return R.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
     if (R.page) await R.c.evaluate(HANDS);
     return R.page || false;

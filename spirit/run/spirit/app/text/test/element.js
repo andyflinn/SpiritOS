@@ -4,7 +4,7 @@
 // The tests of spirit/app/text/element.js for goal/G43.17, whose box built it first: "Four elements: file, fstat, text and media",
 // and "text and media take a file when mounted, and show their whole selves with it, the file picker too, also when launched from file". With
 // one is judged where Files hands it one (../../file/test/file.js); here it is mounted with none. A real node on a scratch copy of
-// the tracked files and a real Chrome on /face.html; neither Andy's node nor an agent's is touched.
+// the tracked files and a real Chrome on / (spirit/shell/face.html); neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const os = require('os');
@@ -78,7 +78,7 @@ test.run('a Chrome page opens', 0.2, async function () {
 }, test.limit.quick);
 test.run('the face shell has its spirit', 0.2, async function () {
   if (!W.c) return false;
-  await W.c.send('Page.navigate', { url: W.N.base + '/face.html' });
+  await W.c.send('Page.navigate', { url: W.N.base + '/' });
   W.page = !!(await until(function () { return W.c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000));
   return W.page || false;
 }, test.limit.quick);

@@ -309,7 +309,7 @@ async function openEach() {
   if (world) return false;
   const failed = [];
   for (const n of TARGETS) {
-    await W.page.send('Page.navigate', { url: W.node.base + '/face.html' });
+    await W.page.send('Page.navigate', { url: W.node.base + '/' });
     await until(function () { return W.page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, 20000);
     let got = null;
     try { got = await Promise.race([W.page.evaluate('Promise.resolve(' + PAGE + '(' + JSON.stringify(n) + ',' + ROWS + ',' + JSON.stringify(LONG) + ',' + PANE_W + ',' + PANE_H + ',' + JSON.stringify(VIA_LIST) + ',' + JSON.stringify(OPTIONS) + ',' + JSON.stringify(SHAPES) + ',' + JSON.stringify(KEEP) + ',' + JSON.stringify(FORCE) + ')).then(function (r) { return JSON.stringify(r); })'), sleep(60000).then(function () { return null; })]); } catch (e) { got = null; }

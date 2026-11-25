@@ -7,7 +7,7 @@
 //
 // The world of spirit/element/search/test/testicle.js, as it is: a real node on a scratch copy of the tracked files,
 // testicle turned on there, the general suites stubbed, tests of planted scripts set through testicle.testicle.set, and
-// the list mounted alone in a real Chrome on /face.html. Neither Andy's node nor an agent's is touched.
+// the list mounted alone in a real Chrome on / (spirit/shell/face.html). Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const os = require('os');
@@ -153,7 +153,7 @@ test.run('the face page opens in Chrome with its spirit ready', 0.2, async funct
   if (!where) return false;
   c = await chromePage(where);
   if (c.error) return false;
-  await c.send('Page.navigate', { url: N.base + '/face.html' });
+  await c.send('Page.navigate', { url: N.base + '/' });
   return !!(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) || false;
 }, test.limit.long);
 

@@ -55,7 +55,7 @@ test.run('a scratch node comes up with chat switched on and its face page open i
   await H.until(function () {
     return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'chat.chats.search', args: {} }) }).then(function (r) { return r.status === 200; }, function () { return false; });
   }, 40000);
-  await page.send('Page.navigate', { url: node.base + '/face.html' });
+  await page.send('Page.navigate', { url: node.base + '/' });
   X.ready = await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.readyPromise)').then(Boolean); }, H.WAIT);
   return X.ready ? true : false;
 }, test.limit.slow);

@@ -49,7 +49,7 @@ test.run('a scratch node comes up with three apps planted, and Chrome opens its 
   node = await scratchNode({ before: plant });
   chrome = await chromePage(findChrome());
   if (!node.up || chrome.error) return false;
-  await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+  await chrome.send('Page.navigate', { url: node.base + '/' });
   return (await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000)) ? true : false;
   // Slow, not quick: a scratch node booted, Chrome started and up to 20 s for the page cannot fit 10 s; on Andy's node,
   // loaded by his testicle run, it did not (2026-11-17, red at 0.7, every row after it with it).

@@ -62,7 +62,7 @@ let s, N, c, loaded, pid, v0, detail, gaps;
 const live = [];
 const nodeJson = function () { return readJson(path.join(s.run, 'spirit', 'state', NAME, 'node.json')) || {}; };
 const open = async function () {
-  await c.send('Page.navigate', { url: N.base + '/face.html' });
+  await c.send('Page.navigate', { url: N.base + '/' });
   return until(function () { return c.evaluate('!!(window.spirit && window.spirit.readyPromise && window.spirit.eventStream)'); }, 20000);
 };
 // One serverDEBUG per app, each in a box of its own.

@@ -184,7 +184,7 @@ const ADD = '(function () { var l = ' + LAYER + '; if (!l) return null; return A
 const add = function (page, glyph, words) { return page.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + ', b = ' + ADD + '; if (!g || !k || !b) return false; g.value = ' + JSON.stringify(glyph) + '; g.dispatchEvent(new Event("input", { bubbles: true })); k.value = ' + JSON.stringify(words) + '; k.dispatchEvent(new Event("input", { bubbles: true })); b.click(); return true; }())'); };
 test.run('the Icons tile is there and is pressed', 0.2, async function () {
   if (!W.ready) return false;
-  await W.chrome.send('Page.navigate', { url: W.node.base + '/face.html' });
+  await W.chrome.send('Page.navigate', { url: W.node.base + '/' });
   await until(function () { return W.chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   const opened = await open(W.chrome);
   W.opened = opened === true;
