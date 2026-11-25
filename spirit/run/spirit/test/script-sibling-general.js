@@ -2515,6 +2515,68 @@ if (!GIVEN.length) {
     if (files.length < 100) return false;
     return !files.some(function (f) { return /\bPAGE_FILES\b|\bpageFile\s*\(/.test(codeText(f)); }) || false;
   }, test.limit.quick);
+  // THE FULL PATH, AND THE ONLY WAY (goal/G49.13; Andy: "WSL, YOU WRITE A FUCKING TEST THAT ENSURES THAT PRODUCT FILES DO SUPPLY THE
+  // FULL PATH in spirit.requireScript() and that's the ONLY WAY to require modules."). A full path: a run-root path written out as one
+  // string, 'spirit/<...>.js' (or .css, .json). It may reach requireScript through a helper's parameter, function keepAnswer(p) {
+  // ... requireScript(p) ... }, or a list mapped into it, [...].forEach(function (p) { ... requireScript(p) }), only where every
+  // value so handed is such a string; anything else, a path built, joined, resolved or looked up, is red.
+  const FULL = /^(['"])spirit\/[^'"+`$]+\.(js|css|json)\1$/;
+  const literalArgsOf = function (c, fn) {
+    const out = [];
+    const re = new RegExp('(?<![\\w$.])' + fn + '\\s*\\(\\s*([^),]*)', 'g');
+    let m;
+    while ((m = re.exec(c))) out.push(m[1].trim());
+    return out;
+  };
+  const unfull = function (f) {
+    const c = codeText(f);
+    const bad = [];
+    const re = /requireScript\s*\(\s*([^),]*)/g;
+    let m;
+    while ((m = re.exec(c))) {
+      const a = m[1].trim();
+      if (FULL.test(a)) continue;
+      if (/^[A-Za-z_$][\w$]*$/.test(a)) {
+        // A helper's parameter: function <name>(a) whose every call hands a full path.
+        const helper = new RegExp('function\\s+([A-Za-z_$][\\w$]*)\\s*\\(\\s*' + a + '\\s*\\)').exec(c);
+        if (helper) {
+          const calls = literalArgsOf(c, helper[1]).filter(function (x) { return x !== a; });
+          if (calls.length && calls.every(function (x) { return FULL.test(x); })) continue;
+        }
+        // A list mapped into it: [ 'spirit/...', ... ].map|forEach(function (a) { ... }).
+        const lists = c.match(new RegExp('\\[([^\\[\\]]*)\\]\\s*\\.(?:map|forEach)\\(\\s*function\\s*\\(\\s*' + a + '\\s*\\)', 'g')) || [];
+        if (lists.length && lists.every(function (l) { const items = l.slice(l.indexOf('[') + 1, l.indexOf(']')).split(',').map(function (s) { return s.trim(); }).filter(Boolean); return items.length && items.every(function (x) { return FULL.test(x); }); })) continue;
+        // A constant holding one: const (or var) a = 'spirit/...'.
+        const k = new RegExp('(?:const|var|let)\\s+' + a + '\\s*=\\s*([^;\\n]+);').exec(c);
+        if (k && FULL.test(k[1].trim())) continue;
+      }
+      bad.push(a);
+    }
+    return bad;
+  };
+  test.run('every spirit.requireScript in product code is handed a full path, \'spirit/<...>.js\', written out as one string', 0.6, function () {
+    const files = productCode().filter(function (f) { return f !== 'spirit/script.js'; });
+    if (files.length < 100) return false;
+    return !files.some(function (f) { return unfull(f).length > 0; }) || false;
+  }, test.limit.quick);
+  test.run('spirit.requireScript is the only way a product script requires a module of the tree: its one plain require is the spirit object, the rest are node\'s own', 0.6, function () {
+    const files = productCode().filter(function (f) { return f !== 'spirit/script.js'; });
+    if (files.length < 100) return false;
+    return !files.some(function (f) {
+      const c = codeText(f);
+      const re = /(?<![\w$.])require\s*\(\s*([^)]*)\)/g;
+      let m;
+      while ((m = re.exec(c))) {
+        const a = m[1].trim();
+        if (/^(['"])(node:)?[a-z_][\w/]*\1$/.test(a) && !/^(['"])\.|\//.test(a.slice(1))) continue;
+        const lit = /^(['"])([^'"]+)\1$/.exec(a);
+        if (lit && shPath.resolve(shPath.dirname(shPath.join(SH.run, f)), lit[2]) === shPath.join(SH.run, 'spirit', 'script.js')) continue;
+        if (/^path\.join\(\s*[A-Za-z_$][\w$]*\s*,\s*['"]spirit['"]\s*,\s*['"]script\.js['"]\s*\)$/.test(a)) continue;
+        return true;
+      }
+      return false;
+    }) || false;
+  }, test.limit.quick);
   test.run('the face page loads the spirit object by its own path, /spirit/script.js', 0.6, function () {
     let t = '';
     try { t = shFs.readFileSync(shPath.join(SH.run, 'spirit', 'shell', 'face.html'), 'utf8'); } catch (e) { return false; }
