@@ -20,15 +20,6 @@ const limits = LOADER.requireScript('spirit/limits/script.js');
 const FILE = path.join(__dirname, '..', 'script.js');
 
 const src = fs.readFileSync(FILE, 'utf8');
-const dirSrc = (/^const FACE_DIR = (path\.join\(__dirname, [^;]*\));/m.exec(src) || [])[1];
-const common = LOADER.requireScript('spirit/server/serveCommon/script.js');
-let dir = null;
-try { dir = dirSrc ? new Function('path', '__dirname', 'return ' + dirSrc + ';')(path, path.dirname(FILE)) : null; } catch (e) { dir = null; }
-
-// where its face files come from
-test.run('the relay reads its face files from the run root, each by its file', 0.2, function () {
-  return (!!dir && path.relative(RUN, dir) === '') || false;
-}, test.limit.quick);
 
 // THE SAME STATIC RULE AS THE NODE, AND NO LIST (goal/G49.15, box v16: "the static file serving logic should be the exact same on
 // the relay as it is on the node"; "the relay list goes."; "the relay will serve most files outsite of spirit.state"). A
@@ -82,6 +73,23 @@ test.run('the relay refuses /spirit/fs/fileSystem.js as the node does', 0.8, fun
 test.run('the relay refuses /spirit/state/face.json, its own state, as the node does', 0.8, function () { return sameAsNode('/spirit/state/face.json'); }, test.limit.quick);
 // Served by both as a page of the face: face.html at /.
 test.run('the relay serves face.html at / as the node does', 0.2, function () { return sameAsNode('/'); }, test.limit.quick);
+// The face page asked with a token in its address: face.html, and no login cookie (goal/G41.29).
+let tokened = null;
+test.run('the face page asked with a token in its address serves face.html', 0.2, async function () {
+  if (!SAME.R || !SAME.R.up || !SAME.R.members || !SAME.R.members.harbour) return false;
+  tokened = await new Promise(function (resolve) {
+    const q = http.request({ host: '127.0.0.1', port: SAME.R.port, path: '/?AbCdEfGhIjKlMnOpQrStUvWx', method: 'GET', headers: { Host: SAME.R.members.harbour.host } }, function (r) {
+      const parts = []; r.on('data', function (c) { parts.push(c); }); r.on('end', function () { resolve({ status: r.statusCode, cookie: r.headers['set-cookie'] || [], body: Buffer.concat(parts) }); });
+    });
+    q.on('error', function () { resolve(null); });
+    q.end();
+  });
+  return (!!tokened && tokened.status === 200 && tokened.body.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html')))) || false;
+}, test.limit.quick);
+// A token in an address that logs in is a login by a link: 0.8.
+test.run('the face page asked with a token in its address sets no login cookie', 0.8, function () {
+  return (!!tokened && !tokened.cookie.some(function (c) { return /spirit_face=[^;]+/.test(c) && !/spirit_face=;/.test(c); })) || false;
+}, test.limit.quick);
 // The two let go here, so the sections after it have the lab's relays.
 test.run('the scratch relay and node are let go', 0.2, async function () {
   try { if (SAME.R && SAME.R.stop) await SAME.R.stop(); else if (SAME.R && SAME.R.release) await SAME.R.release(); } catch (e) { return false; }
@@ -91,27 +99,8 @@ test.run('the scratch relay and node are let go', 0.2, async function () {
 }, test.limit.slow);
 
 // THE FACE PAGE TAKES NO TOKEN FROM ITS ADDRESS (goal/G41.29; the box: "The login-email must not carry a link", "So a
-// real login-email never holds a link"): the page at / or /face.html, asked with /?<token>, logs nobody in and sets no
-// login; the token is pasted into the Log in field only. Its route is lifted out of the source and run on stand-ins.
-// the face page logs nobody in from a token in its address
-// Line ends either way, as a Windows checkout has them (CRLF).
-const routeSrc = (/\r?\n(  if \(req\.method === 'GET' && \(pathname === '\/' \|\| pathname === '\/' \+ FACE_PAGE\)\) \{[\s\S]*?\r?\n  \})\r?\n/.exec(src) || [])[1];
-const asked = { logins: [], cookies: [], sent: [] };
-let route = null;
-try { route = routeSrc ? new Function('req', 'pathname', 'url', 'relay', 'faceSetCookie', 'faceSend', 'at', 'res', 'common', 'FACE_PAGE', routeSrc + '\nreturn false;') : null; } catch (e) { route = null; }
-let served = false;
-test.run('the face page asked with a token in its address serves face.html', 0.2, function () {
-  if (route) {
-    const TOKEN = 'AbCdEfGhIjKlMnOpQrStUvWx';
-    served = route({ method: 'GET' }, '/', new URL('https://harbour.relay.example/?' + TOKEN), { faceLogin: function (n, t) { asked.logins.push([n, t]); return { loggedIn: true, session: 'S' }; } },
-      function (res, sid) { asked.cookies.push(sid); }, function (res, st, file) { asked.sent.push(file); }, { name: 'harbour' }, {}, common, 'spirit/shell/face.html');
-  }
-  return (!!route && served === true && asked.sent[0] === 'spirit/shell/face.html') || false;
-}, test.limit.quick);
-// A token in an address that logs in is a login by a link: 0.8.
-test.run('the face page asked with a token in its address logs nobody in: no face login is asked and no login cookie is set', 0.8, function () {
-  return (!!route && asked.logins.length === 0 && asked.cookies.length === 0) || false;
-}, test.limit.quick);
+// real login-email never holds a link"): the page at /, asked with /?<token>, logs nobody in and sets no login; the token is
+// pasted into the Log in field only. Asked of the scratch relay above, before it is let go.
 // A PAGE ON ANOTHER MEMBER'S FACE CANNOT DRIVE A LOGGED-IN OWNER'S NODE (goal/G41.30, the review, RC2: "a page on any
 // member's face can make a logged-in owner's face run verbs on his node, because all faces are same-site and /face/call
 // has no Origin check"; its fix: "on every /face/* POST, require Origin equal to the face's own host, require the

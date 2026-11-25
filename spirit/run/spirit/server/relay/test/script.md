@@ -1,24 +1,19 @@
 # spirit/server/relay/script.js
 
-The relay's server. This test holds parts of it: how it serves a face its files (goal/G41.3), the face page and a token
-in its address (goal/G41.29), and who may post to the face's routes (goal/G41.30). The map, the folder, `faceSend` and
-the face page's route are lifted out of the source and run; the posts go to a scratch relay with faces
-(`scratchFaceRelay`). The relays run this code the same day as the nodes (no backward compatibility before alpha).
+The relay's server. This test holds parts of it: how it serves a face its files, the face page and a token in its
+address (goal/G41.29), and who may post to the face's routes (goal/G41.30). A scratch relay with a face and a scratch node
+are asked the same addresses; the posts go to a scratch relay with faces (`scratchFaceRelay`). The relays run this code
+the same day as the nodes (no backward compatibility before alpha).
 
 ## Requirements
 
-- Its face files are read from the run root (FACE_DIR), each from its file: the addresses stay, the files moved under
-  `spirit/` (goal/G43.18, Q25, Andy: *"the browser should see them the same."*), each served from `serveCommon.pageFile`.
-- Its map of addresses to files (FACE_FILES) serves exactly these (box v29: *"The relay serves a logged-out face one plain
-  page, the one-field form, with spirit.js and seal.js only"*): `/spirit.js` (face.html's one script tag, goal/G41.19),
-  `/shell/seal.js` and `/shell/favicon.svg`. No boot.js, sheet or login app.
-- No address under `/face/` serves a file any more. (The relay's own routes `/face/allowed`, `/face/call`, `/face/file`,
-  `/face/stream` and `/face/api` are routes, not files, and stay.)
-- Every file the map names is there.
-- face.html and spirit.js go out byte for byte as they are on disk (goal/G41.19): nothing pasted in.
+- **The same static rule as the node, and no list** (goal/G49.15, box v16: *"the static file serving logic should be the
+  exact same on the relay as it is on the node"*; *"the relay list goes."*): no FACE_FILES. Each address asked is answered
+  as the node answers it, the same status and the same bytes where it serves: `/spirit/script.js`, the seal, the boot,
+  `spirit/shell/shell.css` and codeMirror's library served; `spirit/state/identity.json`, the relay's own code,
+  `spirit/fs/fileSystem.js` and the relay's own `spirit/state/face.json` refused; face.html at `/`.
 - **The face page takes no token from its address** (goal/G41.29; the box: *"The login-email must not carry a link"*):
-  asked with `/?<token>`, the page at `/` or `/face.html` serves face.html and logs nobody in: no `faceLogin`, no login
-  cookie. The token is pasted into the Log in field only.
+  asked with `/?<token>`, the page at `/` serves face.html and sets no login cookie. The token is pasted into the Log in field only.
 - **Only the face's own page posts to its /face/ routes** (goal/G41.30, the review, RC2: *"on every /face/* POST, require
   Origin equal to the face's own host, require the session's name to match faceAt(host).name, and require Content-Type:
   application/json"*; Andy: *"yes."*). On a scratch relay with two faces, present and logged in: `POST /face/call` with an
@@ -28,7 +23,7 @@ the face page's route are lifted out of the source and run; the posts go to a sc
 
 ## What its test must try to break
 
-- An old address left in the map, and an address naming a file that is not there.
+- A list of files of its own, and an address it answers otherwise than the node.
 - A token in the face page's address that still logs in.
 - A page on another member's face driving this member's node.
 
