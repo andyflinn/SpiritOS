@@ -1052,16 +1052,18 @@ function atFace(relay, method, p, body, sid) {
 }
 // A real join, the star pressed at home (box v29: a face only on a starred relay), a real face, a real login.
 async function faceOf(N, R) {
-  await homeCall(N.base, 'relay.add', { url: R.base, label: 'scratch' });
-  await homeCall(N.base, 'relay.join', { url: R.base, email: MAIL });
+  // The relay verbs are contact's, the relay named by its row's key (goal/G49.11, box v9); add alone takes the url, and answers the key.
+  const added = await homeCall(N.base, 'contact.add', { url: R.base, label: 'scratch' });
+  const key = String((added.body && added.body.relayKey) || R.relayKey || '');
+  await homeCall(N.base, 'contact.join', { key: key, email: MAIL });
   await until(function () { return R.mailed.length > 0; }, 5000);
   const code = R.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(R.mailed[0].text)) || [])[1];
   if (!code) return {};
-  await homeCall(N.base, 'relay.join', { url: R.base, email: MAIL, code: code });
+  await homeCall(N.base, 'contact.join', { key: key, email: MAIL, code: code });
   const star = await homeCall(N.base, 'contact.faceable', { key: R.relayKey, faceable: true });
   if (star.status !== 200) return {};
   let f = null;
-  for (let i = 0; i < 10; i++) { f = await homeCall(N.base, 'relay.face', { url: R.base, name: NAME }); if (f.status === 200) break; await sleep(2000); }
+  for (let i = 0; i < 10; i++) { f = await homeCall(N.base, 'contact.face', { key: key, name: NAME }); if (f.status === 200) break; await sleep(2000); }
   if (!f || f.status !== 200) return {};
   await until(function () { return atFace(R, 'POST', '/face/api', { call: 'state', args: {} }).then(function (s) { return s.status === 200; }); }, 15000);
   const from = R.mailed.length;
@@ -1213,11 +1215,12 @@ function walk(dir, base, out) {
 // familyFinder: an api.js where a family is, no name twice (goal/G43.27)
 // the world
 const FF = {};
-test.run('ten or more branch names have an api.js in the tree, contact and relay among them', 0.2, function () {
+// The node's relay branch is gone (goal/G49.11): peer stands in for it, a branch with no app folder of its name.
+test.run('ten or more branch names have an api.js in the tree, contact and peer among them', 0.2, function () {
   const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); }).map(function (f) { return f.slice('spirit/run/'.length); });
   const by = interfaces(RUN, files);
-  return (Object.keys(by).length >= 10 && !!by.contact && !!by.relay) || false;
+  return (Object.keys(by).length >= 10 && !!by.contact && !!by.peer) || false;
 }, test.limit.quick);
 test.run('spirit/app/contact/ is an app folder with no api.js', 0.2, function () {
   return (fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact')) && !fs.existsSync(path.join(RUN, 'spirit', 'app', 'contact', 'api.js'))) || false;
@@ -1236,15 +1239,15 @@ test.run('a scratch node is up, on its own copy of the tree', 0.2, async functio
   const sRun = FF.sRun = path.join(node.root, 'spirit', 'run');
   const plant = function (rel, text) { const f = path.join(sRun, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
   // Rule 3: the same name with an api.js one level deeper is a duplicate.
-  plant('spirit/app/relay/api.js', 'module.exports = { verbs: {} };\n');
+  plant('spirit/app/peer/api.js', 'module.exports = { verbs: {} };\n');
   return true;
 }, test.limit.slow);
 // 3. a duplicate is seen
-test.run('the check sees the planted second relay/api.js, with both spirit/relay/ and spirit/app/relay/ there', 0.2, function () {
+test.run('the check sees the planted second peer/api.js, with both spirit/peer/ and spirit/app/peer/ there', 0.2, function () {
   if (!FF.sRun) return false;
   const planted = interfaces(FF.sRun, walk(FF.sRun, FF.sRun, []));
   if (FF.node && FF.node.child) FF.node.child.kill();
-  return (!!planted.relay && planted.relay.length === 2) || false;
+  return (!!planted.peer && planted.peer.length === 2) || false;
 }, test.limit.quick);
 
 // The worlds above, freed once: by the last world before it takes a node of its own (the lab holds five, and these hold
@@ -1450,3 +1453,60 @@ test.run('in node, a stand-in put into the module cache for a script is what req
   try { o = JSON.parse(r.stdout || 'null'); } catch (e) { o = null; }
   return !!o && o.answer === true && o.at === true || false;
 }, test.limit.slow);
+
+
+// ── THE FLAG DAY'S MOVES (goal/G49.12, box v17, "Flag-Day-Moves") ──
+// Every old path below is written in pieces, J(...), so the move tool, which rewrites every path it moves wherever it is named
+// in one piece, leaves these checks as they were written.
+const FD = { root: path.join(RUN, '..', '..') };
+const J = function () { return Array.prototype.join.call(arguments, ''); };
+const isFile = function (rel) { try { return fs.statSync(path.join(RUN, rel)).isFile(); } catch (e) { return false; } };
+// box v17: "spirit/spirit.js --> spirit/script.js"
+test.run('the spirit object is spirit/script.js, and spirit/spirit.js is gone', 0.4, function () {
+  return (isFile('spirit/script.js') && !isFile(J('spirit/', 'spirit', '.js'))) || false;
+}, test.limit.quick);
+// box v17, "Server Group": server.js, server/app.js, server/node.js, server/relay.js, server/serveCommon.js each to <name>/script.js
+test.run('the server group stands at server/script.js and server/<name>/script.js, and the old files are gone', 0.4, function () {
+  const moved = [[J('spirit/', 'server', '.js'), 'spirit/server/script.js']].concat(['app', 'node', 'relay', 'serveCommon'].map(function (n) { return [J('spirit/server/', n, '.js'), 'spirit/server/' + n + '/script.js']; }));
+  return moved.every(function (m) { return !isFile(m[0]) && isFile(m[1]); }) || false;
+}, test.limit.quick);
+// box v17, "Shell group": boot.js and seal.js to shell/boot/script.js and shell/seal/script.js
+test.run('the shell\'s boot and seal stand at shell/boot/script.js and shell/seal/script.js, and the old files are gone', 0.4, function () {
+  return (isFile('spirit/shell/boot/script.js') && isFile('spirit/shell/seal/script.js') && !isFile(J('spirit/shell/', 'boot', '.js')) && !isFile(J('spirit/shell/', 'seal', '.js'))) || false;
+}, test.limit.quick);
+// box v17, "special cases": relay.js to relay/processor/script.js, peerPost.js to peer/post/script.js, verbTable.js deleted
+test.run('relay.js stands at spirit/relay/processor/script.js and peerPost.js at spirit/peer/post/script.js, the old files gone', 0.4, function () {
+  return (isFile('spirit/relay/processor/script.js') && isFile('spirit/peer/post/script.js') && !isFile(J('spirit/', 'relay', '.js')) && !isFile(J('spirit/', 'peerPost', '.js'))) || false;
+}, test.limit.quick);
+test.run('verbTable.js is deleted, moved nowhere', 0.4, function () {
+  const files = execList();
+  return (files.length > 100 && !files.some(function (f) { return /(^|\/)verbTable(\/script)?\.js$/.test(f); })) || false;
+}, test.limit.quick);
+function execList() { try { return require('child_process').execFileSync('git', ['ls-files', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean); } catch (e) { return []; } }
+// box v17: "spirit/<name>.js --> spirit/<name>/script.js (folder created, if it doesn't exist)"
+test.run('no script stands at spirit/<name>.js any more: every one is spirit/<name>/script.js', 0.4, function () {
+  let names = [];
+  try { names = fs.readdirSync(path.join(RUN, 'spirit')).filter(function (n) { return /\.js$/.test(n) && fs.statSync(path.join(RUN, 'spirit', n)).isFile(); }); } catch (e) { return false; }
+  return (isFile('spirit/script.js') && names.length === 1 && names[0] === 'script.js') || false;
+}, test.limit.quick);
+// box v17, "fallout": "general tests spirit-sibling-* will become script-sibling-*"
+test.run('the three general tests beside the spirit object are spirit/test/script-sibling-general.js, -node.js and -browser.js', 0.4, function () {
+  return (['general', 'node', 'browser'].every(function (k) { return isFile('spirit/test/script-sibling-' + k + '.js'); }) && !['general', 'node', 'browser'].some(function (k) { return isFile(J('spirit/test/', 'spirit', '-sibling-', k, '.js')); })) || false;
+}, test.limit.quick);
+// box v17, "fallout": "spirit/job.js (new spirit/job/script.js) will have to be fixed to ... start server processes fully knowing that
+// the server is at ./spirit/server/script.js, relative to the current directory of all spirit processes"
+test.run('the job branch starts each app server with spirit/server/script.js named in one string, no path joined from pieces', 0.4, function () {
+  let src = '';
+  try { src = fs.readFileSync(path.join(RUN, 'spirit', 'job', 'script.js'), 'utf8'); } catch (e) { return false; }
+  return (src.indexOf("'spirit/server/script.js'") !== -1 && !/'spirit',\s*'server'/.test(src) && !/'server\.js'/.test(src)) || false;
+}, test.limit.quick);
+// box v17, "fallout": "npm start will have to be updated, README.md", "the start command of every node and relay", "repo://bash/ will need fixes"
+test.run('package.json\'s start, README.md and the bash/ scripts name no spirit/server.js and no spirit/spirit.js', 0.4, function () {
+  const old = [J('spirit/', 'server', '.js'), J('spirit/', 'spirit', '.js')];
+  const read = function (f) { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return null; } };
+  const files = [path.join(FD.root, 'package.json'), path.join(FD.root, 'README.md')];
+  try { fs.readdirSync(path.join(FD.root, 'bash')).forEach(function (n) { const f = path.join(FD.root, 'bash', n); if (fs.statSync(f).isFile()) files.push(f); }); } catch (e) { /* no bash folder */ }
+  const texts = files.map(read).filter(function (t) { return t !== null; });
+  if (texts.length < 3) return false;
+  return !texts.some(function (t) { return old.some(function (o) { return t.indexOf(o) !== -1; }); }) || false;
+}, test.limit.quick);
