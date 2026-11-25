@@ -2499,6 +2499,51 @@ function runPart(part, given) {
     else test.run('a general part of it makes its tests without throwing', 0.2, fail, test.limit.quick);
   }
 }
+// EVERY PATH WRITTEN OUT WHOLE, AND NO SHIM (goal/G49.13; Andy: "that's NOT acceptable. all your saying is that your hacking a fix to
+// compensate for lazyness in properly requiring the fucking interface by it's motherfucking full path", "YOU FUCKING FIX THE CALLERS AND
+// REMOVE THE MOTHERFUCKING SHIM"). Over the whole tree, from git: no product script joins a requireScript argument from pieces, and no
+// server serves an address from another file, so the browser asks every file by its own path.
+if (!GIVEN.length) {
+  const SH = { run: require('path').join(__dirname, '..', '..') };
+  const shFs = require('fs');
+  const shPath = require('path');
+  const productCode = function () {
+    const vendored = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+    return require('child_process').execFileSync('git', ['ls-files', '--', '.'], { cwd: SH.run, encoding: 'utf8' }).split('\n').filter(Boolean)
+      .filter(function (f) { return /\.js$/.test(f) && !/(^|\/)test\//.test(f) && !(vendored && vendored.holds(f)) && shFs.existsSync(shPath.join(SH.run, f)); });
+  };
+  const codeText = function (f) {
+    let t = '';
+    try { t = shFs.readFileSync(shPath.join(SH.run, f), 'utf8'); } catch (e) { return ''; }
+    return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  };
+  test.run('every spirit.requireScript argument in product code is one path written out whole, never joined from pieces', 0.6, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    const joined = files.filter(function (f) {
+      const c = codeText(f);
+      const re = /requireScript\s*\(([^()]*(?:\([^()]*\))?[^()]*)\)/g;
+      let m;
+      while ((m = re.exec(c))) { if (/['"`]\s*\+|\+\s*['"`]|\$\{/.test(m[1])) return true; }
+      return false;
+    });
+    return !joined.length || false;
+  }, test.limit.quick);
+  test.run('no server serves an address from another file: serveCommon has no PAGE_FILES and no pageFile, and nothing calls one', 0.6, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return !files.some(function (f) { return /\bPAGE_FILES\b|\bpageFile\s*\(/.test(codeText(f)); }) || false;
+  }, test.limit.quick);
+  test.run('the face page loads the spirit object by its own path, /spirit/script.js', 0.6, function () {
+    let t = '';
+    try { t = shFs.readFileSync(shPath.join(SH.run, 'spirit', 'shell', 'face.html'), 'utf8'); } catch (e) { return false; }
+    return (/<script src="\/spirit\/script\.js"><\/script>/.test(t) && !/src="\/spirit\.js"/.test(t)) || false;
+  }, test.limit.quick);
+  test.run('the face boots the shell by its own path, spirit/shell/boot/script.js', 0.6, function () {
+    const c = codeText('spirit/script.js');
+    return (/var FACE = \['spirit\/shell\/boot\/script\.js'\]/.test(c) && !/['"]shell\/boot\.js['"]/.test(c)) || false;
+  }, test.limit.quick);
+}
 if (!GIVEN.length) PARTS.forEach(function (part) { runPart(part, []); });
 // NO TRACKED FILE NAMES THE DELETED VERIFIER (goal/G47.1, box v101, the cycle that deletes the desk's verifier: no tracked
 // file names it). Over the whole repository, the files outside spirit/run too, by path and by content, in any case. The name
