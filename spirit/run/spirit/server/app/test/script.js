@@ -81,8 +81,11 @@ const PUBLISHER = Buffer.from('KEY-DESK\xfb\xef\xbf\xfe', 'latin1').toString('ba
 const SELF = 'KEY-CLIENT';
 
 const TMP = CHILD ? String(process.argv[4]) : ownTemp('appServer-test-');
-// A server name of the test's own, so its cache folder (spirit/state/<name>/) is no real server's.
+// A server name of the test's own, so its cache folder is no real server's.
 const NAME = CHILD ? String(process.argv[5]) : 'streamProbe';
+// ITS STATE FOLDER IS THE NODE'S TO NAME (goal/G49.17: the app server takes its folder from the --state the node hands it,
+// never from its name): each server of this test is handed one in the test's own temp, at the app layout, state/app/<name>/.
+const stateOf = function (name) { return path.join(TMP, 'state', 'app', name); };
 let PIPE = path.join(TMP, NAME + '.sock');
 function post(verb, args, callerKey) {
   return new Promise(function (resolve) {
@@ -186,7 +189,7 @@ Module._load = function (request, parent) {
 globalThis.spirit = fake;
 if (process.platform === 'win32') PIPE = LOADER.requireScript('spirit/appClient/script.js').pipePathFor(TMP, NAME, 'win32');
 const childArgv = process.argv.slice();
-process.argv = [process.argv[0], path.join(TMP, NAME + '.js'), '--pipe', PIPE];
+process.argv = [process.argv[0], path.join(TMP, NAME + '.js'), '--pipe', PIPE, '--state', path.join(stateOf(NAME), 'data')];
 
 let bootstrap = [];
 let bootstraps = 0;
@@ -203,7 +206,7 @@ const row = function (f) { return { item: f }; };
 const SENDER = Buffer.from(PUBLISHER, 'base64');
 const namesSender = function (n) { return /^[A-Za-z0-9_-]+=*$/.test(n) && Buffer.from(n, 'base64url').equals(SENDER); };
 const cacheFile = function (name) {
-  const dir = path.join(RUN, 'spirit', 'state', name, 'cache');
+  const dir = path.join(stateOf(name), 'cache');
   let found = '';
   try { found = fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f) && namesSender(f.slice(0, -5)); })[0] || ''; } catch (e) { found = ''; }
   return found ? path.join(dir, found) : path.join(dir, SENDER.toString('base64url') + '.json');
@@ -373,7 +376,7 @@ function runChild(mode, name, fam) {
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('RESULT ') === 0; })[0];
   try { return JSON.parse(line.slice(7)); } catch (e) { return {}; }
 }
-function clearCache(name) { [path.join(RUN, 'spirit', 'state', name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
+function clearCache(name) { [stateOf(name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
 
 // ── the tree: one family path, a folder per server (box v15, Family folders) ─────────────────────────────────────────────
 function jsonFiles(dir, out) {
@@ -615,9 +618,11 @@ function stateCachePart() {
     fs.writeFileSync(path.join(where, id + '.json'), JSON.stringify({ key: SENDER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: where }] }));
     const seen = path.join(root, 'seen-' + kids.length + '.json');
     const saved = path.join(root, 'saved-' + kids.length + '.json');
-    const pipe = require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, NAME, process.platform, 'app');
+    // A door of its own in a short temp folder: under the scratch tree's spirit/state/app/follower/ the path passes the
+    // 107 bytes a unix socket may name, and the follower cannot listen (EINVAL).
+    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
     if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
-    const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
+    const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe, '--state', path.join(state, 'data')], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
     kids.push(kid);
     await until(function () { return Promise.resolve(fs.existsSync(saved)); }, 8000);
     await sleep(200);
@@ -649,11 +654,11 @@ function stateCachePart() {
       "require('../../script.js');",
       "const path = require('path');",
       "const S = require('../../server/app/script.js');",
-      "S.serve({}, { stream: { translator: path.join(__dirname, 'rows.js'), cache: true, module: 'a.test' } });",
+      "S.serve({}, { stream: { translator: 'spirit/app/" + NAME + "/rows.js', cache: true, module: 'a.test' } });",
       "setTimeout(function () { require('fs').writeFileSync(process.env.SAVED, JSON.stringify(S.saveCaches())); }, 1500);",
     ].join('\n') + '\n');
     const nodeId = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./spirit/data/script.js').nodeId(" + JSON.stringify(SENDER) + "))"], { cwd: run, encoding: 'utf8' }).stdout;
-    state = path.join(run, 'spirit', 'state', NAME);
+    state = path.join(run, 'spirit', 'state', 'app', NAME);
     cache = path.join(state, 'cache');
     if (nodeId.length > 10) id = nodeId;
     return nodeId.length > 10 || false;
@@ -686,9 +691,11 @@ function stateCachePart() {
     spoil();
     const seen = path.join(root, 'seen-x' + kids.length + '.json');
     const saved = path.join(root, 'saved-x' + kids.length + '.json');
-    const pipe = require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, NAME, process.platform, 'app');
+    // A door of its own in a short temp folder: under the scratch tree's spirit/state/app/follower/ the path passes the
+    // 107 bytes a unix socket may name, and the follower cannot listen (EINVAL).
+    const pipe = process.platform === 'win32' ? require(path.join(run, 'spirit', 'appClient', 'script.js')).pipePathFor(root, NAME, process.platform) : path.join(ownTemp('f'), 'door.sock');
     if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
-    const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
+    const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe, '--state', path.join(state, 'data')], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
     kids.push(kid);
     const up = await until(function () { return Promise.resolve(fs.existsSync(saved)); }, 8000);
     await sleep(200);
@@ -988,12 +995,12 @@ function ownPart() {
       req.end(JSON.stringify(verb === 'api' ? 'api' : { [verb]: args }));
     });
   };
-  const remoteFile = path.join(RUN, 'spirit', 'state', NAME, 'remote.json');
+  const remoteFile = path.join(stateOf(NAME), 'remote.json');
   // EACH SUBSCRIBER'S RETURN ADDRESS, KEPT (goal/G47.5; Andy: "so the \"subscribe\" verb needs to carry a return address.",
   // "it probably needs to be stored in the server-apps node-owned state? spirit/state/<server-app>/clientListeners.json",
   // "go!"): a subscribe's key and the branch it names are written there, so a restart delivers to the same branch; an
   // unsubscribe takes the key out. The file's shape is the builder's: the key and its branch are looked for in it.
-  const listenersFile = path.join(RUN, 'spirit', 'state', NAME, 'clientListeners.json');
+  const listenersFile = path.join(stateOf(NAME), 'clientListeners.json');
   const SUB_KEY = 'KEY-ZZSUBSCRIBER';
   const listenersText = function () { try { return fs.readFileSync(listenersFile, 'utf8'); } catch (e) { return ''; } };
   test.after(function () { try { fs.rmSync(listenersFile, { force: true }); } catch (e) { /* none */ } });
