@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = S.requireScript('spirit/test/testReport.js');
 // The tree before the move: the commit the red was written on, which holds the agent's api.js one folder down.

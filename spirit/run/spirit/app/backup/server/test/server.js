@@ -11,21 +11,21 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 // Its own route, this suite's path (goal/G49.7): it took backup.js's suite's, spirit/app/backup/test/backup, and what it left there
 // was charged to backup.js as "it leaves no temp folder behind".
 const ROUTE = 'spirit/app/backup/server/test/server';
 function ownTemp(name) { tempAsked += 1; return tempFolder(ROUTE + '/' + name + tempAsked); }
-// ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G49.7, as spirit/test/relay.js does it, goal/G48.4; Andy, of the 0.7s: "it leaves no temp folder behind"): on Windows a
+// ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G49.7, as spirit/relay/processor/test/script.js does it, goal/G48.4; Andy, of the 0.7s: "it leaves no temp folder behind"): on Windows a
 // folder holding an open database cannot be removed, and nodeStore keeps each store it opened open; every one under the
 // suite's folder (a node.db or a relay.db at <root>/spirit/state) is closed first.
 function closeStoresUnder(top) {
-  const NS = SPIRIT.requireScript('spirit/nodeStore.js');
+  const NS = SPIRIT.requireScript('spirit/nodeStore/script.js');
   (function walk(dir, depth) {
     let names = [];
     try { names = fs.readdirSync(dir); } catch (e) { return; }

@@ -94,7 +94,7 @@ They work the same on Windows, WSL and Ubuntu.
 
 0. On a new machine: git, and Node.js 22.13 or newer (`package.json`, `engines`; the node needs `node:sqlite`).
 1. Clone it, beside your checkout on your own machine, anywhere on another: `git clone https://github.com/andyflinn/SpiritOS.git <folder>`.
-2. Start its node on its own port: `cd spirit/run && node spirit/server.js --port <port>`. A start without
+2. Start its node on its own port: `cd spirit/run && node spirit/server/script.js --port <port>`. A start without
    `--port` is refused while your node runs, and it has already written 65432 into its `environment.json`, which
    its console reads, so start it again with `--port`.
 3. Seat it on your relay, `https://spirit.andyflinn.com`: an invite from you, the Join app, or `--email` on its first

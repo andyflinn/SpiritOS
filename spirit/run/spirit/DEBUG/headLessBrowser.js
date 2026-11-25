@@ -1,9 +1,9 @@
 'use strict';
-require('../spirit.js');
+require('../script.js');
 // spirit/run/spirit/DEBUG/headLessBrowser.js
-// THE BARE MOUNT PAGE OF ONE MODULE (goal/G41.19, ../test/DEBUG.md), replacing shell/mount.html. Andy: "the response will
+// THE BARE MOUNT PAGE OF ONE MODULE (goal/G41.19, ./test/script.md), replacing shell/mount.html. Andy: "the response will
 // be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit.js"> and the most minimal
-// mount for armingButton.js". Its first user is the shell's general rules (spirit/test/spirit-sibling-browser.md).
+// mount for armingButton.js". Its first user is the shell's general rules (spirit/test/script-sibling-browser.md).
 //
 // The page loads /spirit.js, then the module through spirit.requireScript, alone (rule/26). An app (it calls
 // spirit.shell.activateApp) is mounted into the box with an api as the face

@@ -21,8 +21,8 @@
 // It holds nothing of its own: the jobs keep the jobs.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../spirit.js');
-const limits = spirit.requireScript('spirit/limits.js');
+require('../script.js');
+const limits = spirit.requireScript('spirit/limits/script.js');
 
 // o: { jobs, relayEvents, arrivals, renames, readJsonBody, bodyRefused, pageStreams, pageConnected? }
 //   pageConnected()   called at each page's connect (goal/G47.5, part 2), after it is subscribed
@@ -111,7 +111,7 @@ function createEvents(o) {
     // owner's waiting lines.
     const off = subscribe(write, { packets: asServer ? 'witness' : 'take' });
     // A PAGE'S CONNECT IS PASSED ON TO THE APP SERVERS (goal/G47.5, part 2; Andy: "the node forwards a loopback connect to the
-    // as server as a normal request, so that spirit/server/app.js knows a loopback client connected"): a page, never a
+    // as server as a normal request, so that spirit/server/app/script.js knows a loopback client connected"): a page, never a
     // process, once its snapshot is written and it is subscribed, so what a server publishes in answer reaches it.
     if (!asServer && typeof o.pageConnected === 'function') { try { o.pageConnected(); } catch (e) { /* the page has its snapshot */ } }
 

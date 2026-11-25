@@ -13,11 +13,11 @@
 // appServer's DEBUG switches it, the node keeps it across restarts, and its config.json and debug verb are gone.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit.js');
+require('../../../script.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.requireScript('spirit/server/app.js');
+const appServer = spirit.requireScript('spirit/server/app/script.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');

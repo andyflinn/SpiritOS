@@ -1,0 +1,486 @@
+'use strict';
+// ITS NAMES STAY ITS OWN (goal/G47.1; Andy: "is there any motherfucking reason that this fucking shit cannot be fucking
+// contained in the motherfucking spirit objects"): a page loads this file through a script tag, so the whole of it runs
+// inside one function, and what it hands out goes onto the spirit object or module.exports, never the window.
+(function () {
+
+// The owner badge, and the relay list's rules: for each URL in this node's
+// relay list, does the relay's card name this node's key as its owner
+// (probe, ownedBy, below)? The signed GET /api/relay/status that once was
+// the badge was deleted by R3 (see where statusPath stood); the card is
+// the one authority on that fact, so the badge gets no endpoint of its own.
+//
+// Nothing here opens a socket. The caller passes a request function — the
+// hub passes the one that speaks HTTPS, tests pass one that answers from a
+// relay object in the same process.
+
+// Isomorphic: the rules are shared, the filesystem
+// and the signing are node-only. The relay panel runs in the browser and has to
+// obey the same "how few mailboxes may this node be left with" rule the
+// node side knows, and a rule copied into a second file is a rule that
+// will be changed in one of them. Nothing below this line requires
+// anything unless it is running under node.
+const isNode = typeof process !== 'undefined' && !!process.versions && !!process.versions.node;
+const auth = isNode ? require('../script.js').requireScript('spirit/relayAuth/script.js') : null;
+// Where this node holds a seat, and who each relay is. Both are records
+// this node keeps about itself — see probe.
+const relayKeys = isNode ? require('../script.js').requireScript('spirit/relayKeys/script.js') : null;
+
+function normalizeUrl(u) {
+  return String(u == null ? '' : u).trim().replace(/\/+$/, '');
+}
+
+// WHAT A NODE MUST NOT BE LEFT WITHOUT.
+//
+//   Andy: "That rule should be: a node keeps at least one working,
+//   public relay"
+//
+// It used to be `count > 1` — pure arithmetic over rows — and that is
+// satisfied by a list of two dead loopback lab relays, which is a node
+// that cannot claim, cannot send, cannot read, and cannot be reached by
+// anybody. Andy's own node was in exactly that shape: two rows, one of
+// them a lab relay on 127.0.0.1 that was not running, sitting FIRST so
+// every /api/hub verb dialled it.
+//
+// So the floor is not a number of rows. It is one PUBLIC relay.
+//
+// ── PUBLIC, AND WHY "WORKING" IS NOT PART OF THIS ────────────────────
+//
+// Public is a property of the URL and the same one relayUrl.assertRelayUrl
+// already enforces on the wire: https, or http only to loopback. A
+// loopback relay is a lab fixture — no peer on the internet can reach
+// you there, so it is not what keeps a node alive.
+//
+// "Working" is a live fact — a stream held right now — and it does NOT
+// belong in a permission check, for a reason that only shows up in the
+// case that matters: if your one public relay is down, a rule demanding
+// a working one would refuse every removal, including removing the dead
+// lab row that is causing the trouble. It would lock the door of the
+// room it just set on fire.
+//
+// Working belongs in what a screen SHOWS — "your relay is not answering"
+// — which is a different job from deciding whether a list may be edited.
+//
+// `relays` is the list as it stands and `url` the row being considered.
+// The question is about what SURVIVES, which a count can never answer:
+// removing the only public row from a list of five is still fatal.
+function isPublicRelay(url) {
+  var target;
+  try { target = new URL(String(url || '')); }
+  catch (e) { return false; }
+  if (target.protocol !== 'https:' && target.protocol !== 'http:') return false;
+  var host = String(target.hostname || '').toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') return false;
+  // http to a public host is refused on the wire by assertRelayUrl, so a
+  // node cannot rely on one and this must not count it either.
+  return target.protocol === 'https:';
+}
+
+// THE RELAY KEPT BY NAME IS noderoutes.net (goal/G16.3, KEPT_RELAY below),
+// not spirit.andyflinn.com: spirit is neither seeded nor protected since
+// goal/G19.15 (Andy: "spirit.andyflinn.com is OURS"). The rule below also
+// keeps one PUBLIC row: a row may go only if another public row survives.
+// WHY A RELAY MAY NOT COME OFF THE LIST, or '' when it may (goal/G30.7). rows are the list's rows; a row may say owned
+// (this node owns that relay) and claimed (this node holds a seat there). Andy, 2026-10-20: "Owning a relay or holding a
+// seat there should block it from being removed", with the sentences below.
+var REFUSE_OWNED = 'you cannot remove a relay you own';
+var REFUSE_SEATED = 'you must remove yourself from this relay before you can remove the relay from your contacts';
+function removalRefusal(relays, url) {
+  // A count, from the version before this one, is a question this rule no longer answers: no is the safe half of wrong.
+  if (!Array.isArray(relays)) return 'this node must keep one public relay';
+  var going = normalizeUrl(String(url || ''));
+  // THE FLOOR (goal/G16.3): noderoutes.net is never removed. Andy: "we'll remove the option to delete noderoutes.net".
+  if (going === normalizeUrl(KEPT_RELAY.url)) return 'noderoutes.net is kept on every node';
+  var row = relays.filter(function (r) { return normalizeUrl(String((r && r.url) || r || '')) === going; })[0] || null;
+  if (row && row.owned) return REFUSE_OWNED;
+  if (row && row.claimed) return REFUSE_SEATED;
+  var another = relays.some(function (r) {
+    var u = normalizeUrl(String((r && r.url) || r || ''));
+    return u !== going && isPublicRelay(u);
+  });
+  return another ? '' : 'this node must keep one public relay';
+}
+
+// ── THE LIST IS THE NODE'S OWN STATE (goal/G16.3) ────────────────────
+//
+// No app decides where this node claims, connects and searches: the list
+// is the node's own state (in node.db, below), which the fs write gate
+// refuses every app and every page. The node is its only writer:
+// ensureRelays seeds it, a successful claim adds to it (addRelay) and
+// relay.remove takes from it (removeRelay).
+//
+//   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
+//   list relays and remove relay, with a successful claim adding its
+//   relay? yes."
+//
+// IN node.db SINCE goal/G19.15, AND IN THE ONE TABLE SINCE goal/G40.11: the list is the relays kept (seen rows
+// flagged relay and keep), which relayKeys.js reads and writes.
+
+// Rows, in list order, one per URL. Never a throw, because the browser
+// asks for this on every claim: a store that cannot be read is no
+// mailboxes.
+function loadRelays(rootDir) {
+  try { return relayKeys.listed(rootDir); }
+  catch (e) { return []; }
+}
+
+function configuredUrls(rootDir) {
+  return loadRelays(rootDir).map(function (r) { return r.url; });
+}
+
+// ── A NODE WITH NO LIST AT ALL GETS ONE, AT BOOT ─────────────────────
+//
+// The seed is noderoutes.net, asserted at every boot (goal/G19.15, below).
+//
+// A list WRITTEN BY THE NODE is the node's own state — it
+// is created once, into a gap, and from then on it belongs to whoever
+// runs the box. Nothing ever overwrites it again.
+//
+// noderoutes.net CANNOT BE REMOVED (goal/G16.3): "we'll remove the option
+// to delete noderoutes.net". It is the steady relay every node keeps;
+// removeRelay refuses it by name.
+//
+// ONE SEED, ASSERTED AT EVERY BOOT, BY KEY (goal/G19.15). Andy,
+// 2026-10-12: "on boot, the node asserts the contents of "noderoutes.net"
+// ... in the database, by creating those rows, if they don't exist", "we
+// will pre-seed WITH keys, we know those key, after all", and then "we
+// only list noderoutes.net, spirit.andyflinn.com is OURS." So spirit is
+// neither seeded nor trusted from install: a node that uses it claims
+// there, and the claim pins its key. A seed this node already has a row
+// for is left as it is.
+//
+// Said plainly because it is a real choice and not a detail: this points
+// a brand-new node at ANDY'S relay. Anybody forking this tree should
+// change these lines, and nothing else, to point their nodes somewhere of
+// their own.
+var KEPT_RELAY = { label: 'noderoutes', url: 'https://noderoutes.net',
+  key: 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=' };
+var SEED_RELAYS = [KEPT_RELAY];
+
+function ensureRelays(rootDir) {
+  try { relayKeys.assertSeeds(rootDir, SEED_RELAYS); }
+  catch (e) { return []; }
+  return loadRelays(rootDir);
+}
+
+// EVERY LISTED RELAY IS A PEER (goal/G30.7, relays are peers): since goal/G40.11 a listed relay IS a row of the one
+// table, flagged relay and kept, its url a direct route (relayKeys), so the peer search finds it without a second
+// write. notePeers, which copied each into the shadow, stood here.
+
+// A SUCCESSFUL CLAIM IS WHAT ADDS A RELAY (goal/G16.3, Andy's Q4 above).
+// There is no verb for adding one: his yes covered two verbs, and a relay
+// gets onto the list by a claim on it succeeding. Appended, so the first
+// row stays first — hub.loadRelayUrl still reads order. A url already
+// listed is left where it is, label and all.
+//
+// `relayKey` is the key the claim learned at first contact (goal/G19.15):
+// the row is filed under it. A url this node never met, named without one,
+// cannot be keyed and is not listed.
+function addRelay(rootDir, url, label, relayKey) {
+  var u = normalizeUrl(url);
+  if (!u) return loadRelays(rootDir);
+  relayKeys.list(rootDir, u, label, relayKey);
+  return loadRelays(rootDir);
+}
+
+// relay.remove's whole effect, under the rule the screen has always
+// obeys (removalRefusal): noderoutes.net stays, an owned or seated relay stays, the node keeps one public relay. Asked here as
+// well as in the browser, because the node is the list's only writer and
+// a rule enforced only by a screen is a suggestion.
+// opts.owned: whether this node owns that relay, which only the node's live view of its relays knows (hub.relayRemove).
+// The seat is this node's own record (relayKeys).
+function removeRelay(rootDir, url, opts) {
+  var u = normalizeUrl(url);
+  var rows = loadRelays(rootDir).map(function (r) {
+    var row = { url: r.url, label: r.label };
+    if (r.url === u) {
+      row.owned = !!(opts && opts.owned);
+      // A seat the relay has refused is gone already (goal/G19.1, seated cleared): only a seat it still honours blocks
+      // the removal.
+      row.claimed = !!(relayKeys.byUrl(rootDir, r.url) || {}).seated;
+    }
+    return row;
+  });
+  if (!u) return { ok: false, status: 400, error: 'key required' };
+  if (!rows.some(function (r) { return r.url === u; })) {
+    return { ok: false, status: 404, error: 'no such relay' };
+  }
+  var why = removalRefusal(rows, u);
+  if (why) return { ok: false, status: 409, error: why };
+  relayKeys.unlist(rootDir, u);
+  return { ok: true, status: 200, key: u };
+}
+
+// statusPath STOOD HERE, and it was the badge:
+//
+//   '/api/relay/status?name=' + name + '&sig=' +
+//     sign(privateKey, statusMessage(name))
+//
+// Deleted 2026-09-15 (R3,
+// design/cycles/2026-09-15-labels-are-not-identities.md).
+//
+//   Andy: "i don't understand the ownerbadge concept at all: the relay
+//   knows its owner by key, and already filters requests by that, because
+//   the owner gets a wider peer-post-api than non-owning peers."
+//
+// He was right, and it was redundant three ways over. The roll below
+// already says `owner: true|false` on every row, unsigned, to anyone —
+// and `claimedFrom` was already fetching and parsing that exact list to
+// answer a different question, with the flag open in a variable and
+// unread. `statusToOwner` reaches only the owner's key, so receiving one
+// IS the badge. And `answerSelf` decides `isOwner` from the post's own
+// signature, per verb, so there was never state to pre-fetch.
+//
+// IT WAS ALSO THE WORST SIGNATURE ON THIS WIRE. `statusMessage` is
+// `status\n<name>` with no minute in it — the only credential in the
+// system that could not expire — and it travelled on a QUERY STRING,
+// where `relay.streamSignatureFrom` refuses its sibling outright. It was
+// fired at every relay in the list, including boxes this node holds
+// no row on.
+//
+// Deleting it fixes that by removing it rather than by patching it, and
+// costs one fewer request per relay: the roll answers `owned` and
+// `claimed` together.
+
+// readBadge STOOD HERE — *"200 alone is not the badge"* — parsing the
+// owner-only report to decide whether this key owned the box. It went
+// with the route it read (R3).
+//
+// ── FOUR ROLL PARSERS STOOD HERE, DELETED 2026-09-19 ────────────────
+//
+// ownedFrom ("is my key the one marked owner?"), claimedFrom,
+// claimedLabelFrom and censusFacts — each read a public roll list
+// (`/api/relay/who` answering `peers`). The roll went on 2026-09-18;
+// `probe` below had already stopped fetching it, and only suites still
+// called these. Andy: "nothing is allowed to return a roster", and a row
+// never says who owns the relay — "ownership is only determined by one
+// identified key. The relay knows it." That key is what the relay's card
+// answers (a card ask on its one door, goal/G22.6), and `probe` compares it
+// with this node's own.
+
+// ── ONE OWNERSHIP RULE, FOR A RELAY AND A NODE (goal/G19.8) ──────────
+//
+//   Andy, 2026-10-12: "so the relays owner code and the puppets owner code should be the same."
+//
+// Owned means: the owner the box itself states is this node's key. A relay states it on its card (probe,
+// below); a node states it on its signed card (nodeCard, read by contacts.setCard). Both ask this, and nothing else.
+function ownedBy(saidOwnerKey, myKey) {
+  var said = String(saidOwnerKey || '');
+  return !!(said && myKey && said === String(myKey));
+}
+
+function summarize(rows) {
+  var ownedUrls = rows.filter(function (r) { return r.owned; })
+    .map(function (r) { return r.url; });
+  // A DIFFERENT QUESTION from owning, and the one a device needs. B2 gave
+  // every identity with a row its own slot; this is how a node finds the
+  // relays where it HAS a row. Owning implies claiming — the owner holds
+  // a peer row from first claim — so the owned ones are in here too.
+  var claimedUrls = rows.filter(function (r) { return r.owned || r.claimed; })
+    .map(function (r) { return r.url; });
+  return {
+    rows: rows,
+    ownedUrls: ownedUrls,
+    claimedUrls: claimedUrls,
+    // The picker is a question, not a default. One owned mailbox needs no
+    // question; two do, and answering it by taking the first URL is the
+    // habit this cycle exists to break.
+    mustPick: ownedUrls.length > 1,
+  };
+}
+
+// ONE REQUEST PER RELAY. (What follows down to the next heading is its
+// history: the public roll it then read went on 2026-09-18, and the
+// request is the relay's card now, below.)
+//
+// It was two: a signed `GET /api/relay/status` to decide `owned`, and
+// then `GET /api/relay/who` for `claimed` on every relay the first one
+// said no to. R3 deleted the first, because the second was already
+// carrying the answer — `claimedFrom` parsed the very list that has
+// `owner` on every row and did not look at it.
+//
+// So this now signs NOTHING. A node asking which relays it is on, and
+// which of those it owns, makes no credential of any kind and reveals
+// nothing it did not already publish. That is the right shape for a
+// question asked on a timer against every relay in the list, including
+// boxes this node has no relationship with.
+// `name` WAS THE SECOND ARGUMENT and is gone (R3). It existed to build
+// `statusPath(rootDir, name)` — a signature over a LABEL, to prove a KEY
+// owned a box. Nothing here asks by name any more, and a parameter kept
+// for a call that no longer happens is the residue this whole cycle is
+// about.
+//
+// `myKey` is REQUIRED now rather than optional. It used to refine the
+// answer — `owned` came from the signed report, `claimed` needed a key —
+// and both come from the roll by key, so a caller without one gets
+// nothing and should.
+// ── IT ASKS WHO THE RELAY IS, AND READS ITS OWN SEAT ────────────────
+//
+//   Andy: "doesn't the node persist the necessary connection information
+//   when the bind occurs? … Like the relay, the node must record the
+//   enrolment details. Simple, no?"
+//
+// It fetched the WHOLE ROLL of every configured relay, on a timer, and
+// looked for its own key in the list — the last roll read in the tree,
+// and the only one that was not a question about other people. It was
+// asking each relay to remember what this node did.
+//
+// Now: the relay's card says who the box is and who runs it, at a fixed
+// size; `relayKeys` says where this node holds a seat, off disk. Neither
+// answer has a membership term in it.
+//
+// `request(url)` asks one relay for its card and answers { status, text },
+// `text` the relay's signed key statement. Since goal/G22.6 that is a card
+// ask on the relay's one door through the node's peerPost (hub.relayKeyAsk);
+// GET /api/relay/key is closed.
+//
+// `owned` is now a COMPARISON rather than a search — is the key this box
+// names as its owner my key — which is the same fact the roll row
+// marked `owner` carried, arrived at without reading anybody else's row.
+function probe(rootDir, request, myKey) {
+  var relays = loadRelays(rootDir);
+
+  // One read for the whole pass. See relayKeys.seatedUrls for why a pinned
+  // relay with no recorded seat counts as one: on a node that predates the
+  // seat record, the pinned set IS the membership set.
+  var seated = Object.create(null);
+  if (relayKeys) {
+    relayKeys.seatedUrls(rootDir).forEach(function (u) { seated[u] = true; });
+  }
+  function hasSeat(url) {
+    return !!(relayKeys && seated[relayKeys.normalizeUrl(url)]);
+  }
+
+  return Promise.all(relays.map(function (relay) {
+    return Promise.resolve()
+      .then(function () { return request(relay.url); })
+      .then(function (answer) {
+        var said = null;
+        try { said = JSON.parse(answer && answer.text); }
+        catch (e) { said = null; }
+
+        var badge = {
+          url: relay.url,
+          label: relay.label,
+          // `status > 0` is what tells "answered" from "unreachable"
+          // downstream.
+          status: Number(answer && answer.status) || 0,
+          owned: ownedBy(said && said.ownerKey, myKey),
+        };
+
+        // OWNING IMPLIES CLAIMING — the owner holds a peer row from first
+        // claim — so this is true of an owner too, and `summarize` no
+        // longer has to say `owned || claimed`. It also covers an owner
+        // whose seat predates the record and was never pinned.
+        badge.claimed = badge.owned || hasSeat(relay.url);
+        // A RELAY THAT REFUSED THIS NODE HOLDS NO SEAT FOR IT (goal/G19.1).
+        // Andy: "the seat is already vacated, so the nodes ID has to get a
+        // new invite". Listed with the refusal, never claimed, so no start
+        // or restart opens a stream to it.
+        if (relay.refused) {
+          badge.refused = relay.refused;
+          badge.claimed = false;
+          badge.owned = false;
+        }
+
+        // Kept only for a row this node is actually on. A relay it merely
+        // lists tells it nothing, and a panel is not offered for one.
+        //
+        // STILL CALLED `roll` AND IT IS NO LONGER ONE. The name is the
+        // apps' and changing it is their commit, not this one
+        // (SURFACE.md §10, step 2). What it carries is what the key door
+        // answers; `roster`, `peers` and `myLabel` are gone, and every
+        // reader of those already guards with `|| []`.
+        if (badge.claimed) {
+          badge.roll = {
+            owner: (said && said.ownerLabel) || '',
+            // Who owns it, by key.
+            ownerKey: (said && said.ownerKey) || '',
+            relayKey: (said && said.relayPublicKey) || '',
+            relayLabel: (said && said.relayLabel) || '',
+            // What this box calls this node: the same fact as `claimedLabel`
+            // below — two names for one thing, which step 2 collapses.
+            myLabel: relayKeys ? relayKeys.seatLabel(rootDir, relay.url) : '',
+          };
+          // What this relay calls this node, as recorded when the claim
+          // was granted. Empty on a backfilled seat — the label was never
+          // written down, and inventing one would be worse than silence.
+          badge.claimedLabel = relayKeys ? relayKeys.seatLabel(rootDir, relay.url) : '';
+        }
+        if (!badge.owned && !badge.claimed) badge.error = 'no row here';
+        return badge;
+      })
+      .catch(function (err) {
+        // A mailbox that is down is not a mailbox we own. It says so on
+        // the row rather than failing the whole probe: one unreachable
+        // URL must not hide the badge on the others.
+        var down = {
+          url: relay.url,
+          label: relay.label,
+          owned: false,
+          status: 0,
+          error: String((err && err.message) || err),
+        };
+        if (relay.refused) down.refused = relay.refused;
+        return down;
+      });
+  })).then(summarize);
+}
+
+// Which listed relay a call is aimed at (hub.withChosenRelay, a claim with
+// no url named; the mint doors it was written for are gone). `wanted` is
+// the URL the human picked; it is honoured only if it is one this node
+// actually lists. With nothing wanted there is a default only when there
+// is no choice to make — never the first row out of habit.
+function chooseUrl(urls, wanted) {
+  var w = normalizeUrl(wanted);
+  if (w) {
+    if (urls.indexOf(w) === -1) {
+      return { ok: false, status: 403, error: 'url not in the relay list of this node' };
+    }
+    return { ok: true, url: w };
+  }
+  if (urls.length === 1) return { ok: true, url: urls[0] };
+  if (urls.length === 0) {
+    return { ok: false, status: 503, error: 'no relay url in the relay list of this node' };
+  }
+  return { ok: false, status: 400, error: 'pick a relay url' };
+}
+
+// The node side gets everything. The browser gets the rules it has to
+// obey and nothing that would need a filesystem — the relay panel
+// (element/search/contact/detail.js, a relay's details) reads window.spirit.required.spirit.ownerBadge,
+// and if this script never loaded it finds no
+// helper and draws no Remove at all, which is the safe way to be wrong.
+if (isNode) {
+  module.exports = {
+    normalizeUrl: normalizeUrl,
+    removalRefusal: removalRefusal,
+    isPublicRelay: isPublicRelay,
+    loadRelays: loadRelays,
+    ensureRelays: ensureRelays,
+    addRelay: addRelay,
+    removeRelay: removeRelay,
+    configuredUrls: configuredUrls,
+    // The one row a node writes itself, exported so a test can assert the
+    // default without repeating the string it is checking for.
+    KEPT_RELAY: KEPT_RELAY,
+    SEED_RELAYS: SEED_RELAYS,
+    // `statusPath`, `readBadge`, `ownedFrom`, `claimedLabelFrom` and
+    // `censusFacts` STOOD HERE (R3, then 2026-09-19): see where they stood.
+    summarize: summarize,
+    ownedBy: ownedBy,
+    probe: probe,
+    chooseUrl: chooseUrl,
+  };
+} else if (typeof window !== 'undefined') {
+  // ONE PLACE, spirit.required.<its path> (goal/G49.4; Andy: "spirit.requireScript() places the loaded script at the exact same
+  // motherfucking location/path in the spirit object"): on a page as in node, where the loader finds it.
+  var R = ((window.spirit = window.spirit || {}).required = window.spirit.required || {});
+  (R.spirit = R.spirit || {}).ownerBadge = {
+    normalizeUrl: normalizeUrl,
+    removalRefusal: removalRefusal,
+    isPublicRelay: isPublicRelay,
+  };
+}
+}());

@@ -59,7 +59,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var family = ANSWER['spirit/element/search/api/script.js'].create(form.span, { all: 'choose a family…' });
     var said = document.createElement('div');
     said.className = 'job-manifest-note';
-    // Each note keeps its words inside (spirit-sibling-browser.js: overflow not visible).
+    // Each note keeps its words inside (script-sibling-browser.js: overflow not visible).
     if (said.style) said.style.overflow = 'hidden';
     box.appendChild(said);
     // THE BUNDLE'S BRANCHES, filling the rest (shell.css fill).

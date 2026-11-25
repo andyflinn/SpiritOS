@@ -10,9 +10,9 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
-const tempFolder = S.requireScript('spirit/tempFolder.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js');
 const SUBJECT = path.join(RUN, 'spirit', 'app', 'testicle', 'job', 'analyze', 'script.js');
 
 // The planted world (box points 1-7): the red is "it holds" of a general suite on x.js, green at T0 against script hash h1 and

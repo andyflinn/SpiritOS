@@ -1,8 +1,8 @@
 'use strict';
-require('../spirit.js');
+require('../script.js');
 
 // spirit/run/spirit/sendMail/mailgun.js
-// A sendMail DRIVER: Mailgun (goal/G30.2). Loaded by spirit/sendMail.js when spirit/state/mail.json names it,
+// A sendMail DRIVER: Mailgun (goal/G30.2). Loaded by spirit/sendMail/script.js when spirit/state/mail.json names it,
 // { "driver": "mailgun", "url": "https://api.mailgun.net", "domain": "spirit.andyflinn.com", "key": "..." }.
 //
 // One HTTPS post per mail to <url>/v3/<domain>/messages, user api and the key (HTTP basic), the fields from, to,

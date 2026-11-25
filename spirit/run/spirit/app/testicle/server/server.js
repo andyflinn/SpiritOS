@@ -1,5 +1,5 @@
 'use strict';
-require('../../../spirit.js');
+require('../../../script.js');
 
 // spirit/run/spirit/app/testicle/testicle.js
 // TESTICLE'S SERVER (goal/G47.1, the server cycle). Its contract and its test: ./test/testicle.md and ./test/testicle.js.
@@ -20,7 +20,7 @@ require('../../../spirit.js');
 //   - a changed .js in a test/ folder is a suite, any other .js a product file; the node's state, .git and vendored
 //     code are never watched, and a file that is no script is let go;
 //   - the changes of one moment are taken together: testModule.js is run once, as its own process (a test file is run,
-//     never loaded: spirit-sibling-general.js (testReachRules)), and the rows are written in one transaction.
+//     never loaded: script-sibling-general.js (testReachRules)), and the rows are written in one transaction.
 
 const fs = require('fs');
 const path = require('path');
@@ -28,11 +28,11 @@ const crypto = require('crypto');
 const { execFile, execFileSync, spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 // Every status line and every result's icon, worded in one place (goal/G47.1; ./words.js).
-const appServer = spirit.requireScript('spirit/server/app.js');
+const appServer = spirit.requireScript('spirit/server/app/script.js');
 const { VENDORED_FOLDERS } = spirit.requireScript('spirit/fs/fileSystem.js');
-const { createProbabilityBucket } = spirit.requireScript('spirit/listLimiter.js');
+const { createProbabilityBucket } = spirit.requireScript('spirit/listLimiter/script.js');
 const { probabilityStringObjectMatch } = spirit.requireScript('spirit/search/object.js');
-const limits = spirit.requireScript('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits/script.js');
 // What one search answer holds once its frame is counted (as the agent's tables count it, rowTable.js).
 const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 
@@ -156,8 +156,8 @@ const T = {
   retitle: db.prepare('UPDATE testicle SET test = ? WHERE suite = ? AND test = ?'),
 };
 // The rule a test's title keeps (goal/G47.4, the box: "test titles are constrained BY DESCRIPTION_MAX_BYTES, in
-// spirit/fieldRules.js").
-function fieldRules() { return spirit.requireScript('spirit/fieldRules.js'); }
+// spirit/fieldRules/script.js").
+function fieldRules() { return spirit.requireScript('spirit/fieldRules/script.js'); }
 // A SUITE ROW'S STATUS, THE SERVER'S ALONE (goal/G47.1, the box: "A suite row's status, for its script: \"needs running\"
 // when it never ran; \"still red\" when it ran, but has failed tests in it for that script; \"green\" if all tests in the
 // suite passed", "\"needs running\" clears when the server has a full, successful report from the suite in its database for
@@ -177,7 +177,7 @@ const D = {
   named: db.prepare('SELECT script AS name FROM dependency UNION SELECT requires FROM dependency'),
   gone: db.prepare('DELETE FROM dependency WHERE script = ? OR requires = ?'),
 };
-// On disc, whatever the scope: in debug mode a script of the scope still requires spirit/spirit.js.
+// On disc, whatever the scope: in debug mode a script of the scope still requires spirit/script.js.
 function dropStale() { D.named.all().forEach(function (r) { let on = false; try { on = fs.statSync(path.join(RUN, r.name)).isFile(); } catch (e) { on = false; } if (!on) D.gone.run(r.name, r.name); }); }
 // The files a script requires, as sent: run paths of production scripts, each once, never the script itself.
 // A list comes as JSON in a string (goal/G48.4, Q6, Andy: lists are "spirit.type.string.json").
@@ -403,7 +403,7 @@ function sweep(when) {
     });
   } catch (e) { /* no lab on this tree */ }
   let profiles = '';
-  try { profiles = spirit.requireScript('spirit/tempFolder.js').path('spirit/test/headLessChrome'); } catch (e) { profiles = ''; }
+  try { profiles = spirit.requireScript('spirit/tempFolder/script.js').path('spirit/test/headLessChrome'); } catch (e) { profiles = ''; }
   const chromes = profiles ? chromesOn(profiles) : [];
   // TESTICLE'S OWN NODE AND CHROME ARE SPARED, their records too: swept before every suite (wsl's red, "while the runner stays
   // busy, a stray left on a lab node during one suite is ended before the next suite runs"), the world it hands its runs lives
@@ -805,7 +805,7 @@ function judgeLitter(j, script, scriptHash) {
 }
 // A TEST'S TEMP FOLDER IS GONE AFTER IT (goal/G47.1, the box, no pollution: "A temp folder is cleaned by its owner: ... a
 // test's in its own after. Guard: after each suite, testicle finds its temp folder gone; red if not"; Q31, Andy: the tests
-// take their temp folders from spirit/tempFolder.js). A suite's folder is the helper's for its route, the suite's path
+// take their temp folders from spirit/tempFolder/script.js). A suite's folder is the helper's for its route, the suite's path
 // without .js, on this node. When a run of one script's suite has ended, after hooks and all, that folder still there is
 // red for that script and suite: STRAY. A general suite's run over many scripts is not judged: its one folder is the
 // suite's, and blaming each script it judged for it would be wrong.
@@ -814,7 +814,7 @@ const STRAY_SEVERITY = 0.7;
 function judgeStray(j) {
   if (!j || j.classify || j.batch || j.stopped || !j.script || !/\.js$/.test(j.suite)) return;
   let left = false;
-  try { left = fs.existsSync(spirit.requireScript('spirit/tempFolder.js').path(j.suite.replace(/\.js$/, ''))); }
+  try { left = fs.existsSync(spirit.requireScript('spirit/tempFolder/script.js').path(j.suite.replace(/\.js$/, ''))); }
   catch (e) { logError('judgeStray ' + j.script + ' ' + j.suite, e); return; }
   try { setResult(j.script, j.suite, STRAY, !left, STRAY_SEVERITY, j.scriptHash, j.suiteHash); }
   catch (e) { logError('judgeStray ' + j.script + ' ' + j.suite, e); }
@@ -1097,7 +1097,7 @@ function apply(changed, P) {
       // depends on it, at any depth"; "Who re-runs when a file changes is one lookup, every script whose rows name it, with no
       // walk"): each such script's own suite flagged. "A change to spirit.js, which all 255 depend on, goes to a quiet-hours
       // sweep instead of running everything": it flags none here.
-      if (rel !== 'spirit/spirit.js') D.dependents.all(rel).forEach(function (d) { const own = ownTestOf(d.script); if (d.script !== rel && there(d.script) && there(own)) suiteUp(d.script, own); });
+      if (rel !== 'spirit/script.js') D.dependents.all(rel).forEach(function (d) { const own = ownTestOf(d.script); if (d.script !== rel && there(d.script) && there(own)) suiteUp(d.script, own); });
     });
     if (shaped) Q.redRows.all().forEach(function (r) { if (isGeneral(r.suite) && there(r.script) && there(r.suite)) suiteUp(r.script, r.suite); });
     if (shaped) dropStale();

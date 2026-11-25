@@ -15,7 +15,7 @@
 // Each script given (none given: every product script of the tree) is one test, "classifyable", reported for that script
 // (testReport's opts.script). Classified, it tells the node's testicle by testicle.script.classify {script, browserOnly,
 // nodeOnly} and passes; not classifyable, it fails, saying both loads' answers. testicle's server runs it by itself.
-require('../spirit.js');
+require('../script.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
@@ -24,13 +24,13 @@ const test = require('./testReport.js');
 const { until, freePort, findChrome, chromePage, WAIT } = require('./headLessChrome.js');
 
 const RUN = path.join(__dirname, '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 // "a load that is not complete in 3 seconds counts as crash/hang".
 const LOAD_MS = 3000;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
-const NODE_ONLY = ['spirit/server.js', 'spirit/server/relay.js'];
+const NODE_ONLY = ['spirit/server/script.js', 'spirit/server/relay/script.js'];
 // A FILE IN A TEST FOLDER IS NEVER LOADED (a tool of the test system with a test of its own, testReport.js, testModule.js,
 // or a test itself): loading a test runs it. Tests and their tools run on the node: node-only, as server.js is.
 function neverLoaded(rel) { return NODE_ONLY.indexOf(rel) !== -1 || /(^|\/)test\//.test(rel); }
@@ -94,7 +94,7 @@ function loadOnNode(run, rel) {
 // THE PAGE SIDE: a fresh face page of the scratch node, the script required there; a thrown error or one the page reported
 // is its answer; not answered in time, a hang.
 // ITS OWN SCRATCH NODE, ON A LAB NODE (goal/G47.3) HOLDING THIS TREE AS IT STANDS (its commit and its uncommitted edits, so a
-// script not yet committed is classified too), then spirit/server.js started there on a free port, its DEBUG on.
+// script not yet committed is classified too), then spirit/server/script.js started there on a free port, its DEBUG on.
 async function ownScratch() {
   const root = LABH.scratchTree().root;
   const run = path.join(root, 'spirit', 'run');

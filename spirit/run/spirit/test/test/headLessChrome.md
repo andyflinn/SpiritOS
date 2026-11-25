@@ -30,12 +30,12 @@ moves at once"*. Each hand-out is asked from a child process of its own, as a te
 
 ## The helpers a test's own world uses (goal/G47.3, the build)
 
-Tests that made their world in plain functions, copying the tree and starting `spirit/server.js` themselves, moved onto lab
+Tests that made their world in plain functions, copying the tree and starting `spirit/server/script.js` themselves, moved onto lab
 with three helpers, so every node a test uses is one of lab's:
 
 - **`scratchTree()`**: a lab node reset to the files under test, no node on it yet, handed out without a promise (it waits
   by blocking while every node is taken). Answers `{ root, run, name, release() }`. One call takes one lab node, never more.
-- **`startNodeOn(run, port, o)`**: `spirit/server.js` started on such a tree's `spirit/run` on the test's port, the child
+- **`startNodeOn(run, port, o)`**: `spirit/server/script.js` started on such a tree's `spirit/run` on the test's port, the child
   answered at once (`o.stdio`, `o.windowsHide` as spawn's). A `run` lab did not hand out to this process is refused.
 - **`freeTree(x)`**: what a test did with its scratch root (deleted it) becomes freeing the lab node; nothing is deleted, lab
   resets it for the next test.
@@ -46,4 +46,4 @@ the nodes `repo://lab/node/<name>/`, their locks `<name>.lock` (the holder's pid
 `<name>.pid`; a reset removes even a file whose name passes Windows' old path limit.
 
 The layout of `repo://lab/` itself (labMaster moved there, the old test folder's leftovers gone, `.gitignore`, no test starting
-`spirit/server.js` itself) is judged by `../spirit-sibling-general.js` over the whole repository.
+`spirit/server/script.js` itself) is judged by `../script-sibling-general.js` over the whole repository.

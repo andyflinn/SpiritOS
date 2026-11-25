@@ -10,6 +10,6 @@ The box: *"a node:run app shows as a tile with Activate: app/data.js drops run a
 - The tiles, on the page while the job comes, never draw a tile for a run-only app.
 - The app detail of a run-only app, made after the job, shows no Activate, where an app that mounts shows one.
 
-## spirit.app's own rules (moved here from spirit/test/data.md, goal/G47.1)
+## spirit.app's own rules (moved here from spirit/data/test/script.md, goal/G47.1)
 
 - On `spirit.app`, Andy: *"the helpes must not be words there either, this goes for all spirit.app contained objects."* No function on it, or on an app it holds, is a word. `FS` is left out: it is every family's, and an app cannot land inside it. So are the auto-verbs every bound branch has, `remote`, `listener`, `subscribe` and `unsubscribe` (goal/G47.5): they are its verbs, not helpers. No app in it has a `createApp`; monitor's is its `element.js`.

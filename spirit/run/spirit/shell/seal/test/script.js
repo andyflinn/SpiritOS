@@ -1,0 +1,79 @@
+'use strict';
+
+// spirit/run/spirit/shell/seal/test/script.js
+// The tests of spirit/shell/seal/script.js, and of no other module (spec: ./script.md; goal/G41.3). The browser seal runs in node on
+// node's own WebCrypto, held against the node's seal (spirit/seal/script.js): what one seals the other opens.
+// One test.run per test (goal/G47.2).
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const vm = require('vm');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+// spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
+const test = LOADER.requireScript('spirit/test/testReport.js');
+
+// What it judges, by its run-root path, the one place it is named (goal/G49.6).
+const SUBJECT = 'spirit/shell/seal/script.js';
+const FILE = path.join(RUN, SUBJECT);
+const FROM = 'MCowBQYDK2VwAyEAsealTestFromAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+const TO = 'MCowBQYDK2VwAyEAsealTestToAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+
+// What the tests made, for the tests after them.
+const W = {};
+
+// where it lives
+test.run('face/seal.js is gone', 0.2, function () {
+  return !fs.existsSync(path.join(RUN, 'face', 'seal.js')) || false;
+}, test.limit.quick);
+test.run('the browser seal loads on spirit.required.shell.seal with supported, newKey, seal and open', 0.2, function () {
+  if (!fs.existsSync(FILE)) return false;
+  const win = { crypto: globalThis.crypto, TextEncoder: TextEncoder, TextDecoder: TextDecoder, btoa: btoa, atob: atob, Uint8Array: Uint8Array, Promise: Promise, JSON: JSON, Buffer: Buffer };
+  win.window = win;
+  // Run in this world by its path, through the page stand-in (goal/G49.6).
+  win.spirit = {};
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: [SUBJECT] });
+  win.spirit.requireScript(SUBJECT);
+  const S = win.spirit && win.spirit.required.shell.seal;
+  W.S = S;
+  return S && ['supported', 'newKey', 'seal', 'open'].every(function (f) { return typeof S[f] === 'function'; }) ? true : false;
+}, test.limit.quick);
+test.run('the browser seal says it is supported where WebCrypto has X25519', 0.2, async function () {
+  if (!W.S) return false;
+  return await W.S.supported() === true || false;
+}, test.limit.quick);
+
+// what one seals the other opens
+test.run('what the page seals to a node\'s key, the node\'s seal opens to the same text', 0.2, async function () {
+  if (!W.S) return false;
+  const node = LOADER.requireScript('spirit/seal/script.js');
+  W.node = node;
+  const pair = crypto.generateKeyPairSync('x25519');
+  const nodePub = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+  const nodePriv = pair.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64');
+  const sealed = await W.S.seal(nodePub, FROM, TO, 'from the page');
+  const opened = node.open(nodePriv, FROM, TO, sealed);
+  const openedText = opened && typeof opened === 'object' ? opened.text : opened;
+  return sealed && sealed.sealed === 1 && openedText === 'from the page' ? true : false;
+}, test.limit.quick);
+test.run('what the node\'s seal seals to the page\'s key, the page opens', 0.2, async function () {
+  if (!W.S || !W.node) return false;
+  W.mine = await W.S.newKey();
+  W.back = W.node.seal(W.mine.publicKey, FROM, TO, 'from the node');
+  const read = await W.S.open(W.mine.privateKey, W.mine.publicKey, FROM, TO, W.back);
+  return read === 'from the node' || (read && read.text === 'from the node') ? true : false;
+}, test.limit.quick);
+
+// it opens nothing it should not
+test.run('a different pair, with from and to swapped, opens nothing', 0.8, async function () {
+  if (!W.back) return false;
+  const wrongPair = await W.S.open(W.mine.privateKey, W.mine.publicKey, TO, FROM, W.back);
+  return wrongPair === null ? true : false;
+}, test.limit.quick);
+test.run('one changed byte of the ciphertext opens nothing', 0.8, async function () {
+  if (!W.back) return false;
+  const c = Buffer.from(W.back.c, 'base64'); c[0] = c[0] ^ 1;
+  const changed = await W.S.open(W.mine.privateKey, W.mine.publicKey, FROM, TO, Object.assign({}, W.back, { c: c.toString('base64') }));
+  return changed === null ? true : false;
+}, test.limit.quick);

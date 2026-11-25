@@ -1,5 +1,5 @@
 'use strict';
-require('../../../spirit.js');
+require('../../../script.js');
 
 // spirit/run/spirit/app/backup/backup.js
 // THE BACKUP SERVER — desk/G1.7.
@@ -36,7 +36,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const sqlite = require('node:sqlite');
-const appServer = spirit.requireScript('spirit/server/app.js');
+const appServer = spirit.requireScript('spirit/server/app/script.js');
 
 const argv = process.argv;
 function arg(name) { const at = argv.indexOf(name); return at !== -1 ? argv[at + 1] : ''; }

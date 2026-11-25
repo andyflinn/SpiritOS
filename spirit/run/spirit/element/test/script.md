@@ -70,7 +70,7 @@ Testicle (a server) and Starter (none) switched on, each opened from its tile on
 - Testicle's title bar, the row form naming it, holds the shared search dropdown (a button whose id ends in field).
 - The page asks testicle's remote with no argument to fill it.
 - Before any pick, the field names the server remote answers as current (Andy: *"the selector dropdown on andy-wsl's desk finds \"Andy Flinn\" but won't accept the selection, the setting remains on \"WSL ANDY VSCode\""*).
-- Testicle's published remote row reaches the page's `spirit.required.spirit.data.testicle.remote`, naming the same current (Andy: *"all, agreed. spirit/data.js"*).
+- Testicle's published remote row reaches the page's `spirit.required.spirit.data.testicle.remote`, naming the same current (Andy: *"all, agreed. spirit/data/script.js"*).
 - A remote row landing in `spirit.required.spirit.data.testicle.remote` is what the field then names.
 - Picking a row of the dropdown sends remote with that row's id.
 - A switch the node refuses says why in the title bar. The refusal is stood in for at the page's fetch.

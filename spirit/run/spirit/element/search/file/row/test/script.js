@@ -12,9 +12,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'file', 'row', 'script.js');
 
@@ -55,10 +55,10 @@ test.run('the row runs on a bare window, with the page\'s real data set', 0.2, a
   // Handed over from the real spirit object (goal/G47.1, Andy's red 'its size is shown through formatBytes'): spirit.js may be
   // loaded already in this process (the test reporter loads it), and then a later require of it hands back its cached copy
   // and fills nothing here, so the row fell back to "2048 B".
-  (function () { const real = require(path.join(RUN, 'spirit', 'spirit.js')); ['formatBytes', 'escapeHtml'].forEach(function (k) { if (typeof global.window.spirit[k] !== 'function' && typeof real[k] === 'function') global.window.spirit[k] = real[k]; }); }());
+  (function () { const real = require(path.join(RUN, 'spirit', 'script.js')); ['formatBytes', 'escapeHtml'].forEach(function (k) { if (typeof global.window.spirit[k] !== 'function' && typeof real[k] === 'function') global.window.spirit[k] = real[k]; }); }());
   // goal/G43.32: every element places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
   D = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
@@ -183,7 +183,7 @@ test.run('a file\'s icon follows its kind: text 📜, image 🌇, video 📹, au
 }, test.limit.quick);
 test.run('a core file\'s name is yellow and said to be core, write-protected', 0.2, function () {
   if (noRow()) return false;
-  const cc = cellsOf(E.search.file.row.create({ path: 'spirit/spirit.js', core: true }));
+  const cc = cellsOf(E.search.file.row.create({ path: 'spirit/script.js', core: true }));
   return /spirit-core/.test(cc.name) && /core: write-protected/.test(cc.name) ? true : false;
 }, test.limit.quick);
 
@@ -303,9 +303,9 @@ test.run('spirit/client is not reserved and has no colour', 0.2, async function 
   const plain = await row('spirit/client');
   return plain.client === 'none' ? true : false;
 }, test.limit.slow);
-test.run('spirit/hub.js is not reserved and has no colour', 0.2, async function () {
+test.run('spirit/hub/script.js is not reserved and has no colour', 0.2, async function () {
   if (!row) return false;
-  const hub = await row('spirit/hub.js', 'file');
+  const hub = await row('spirit/hub/script.js', 'file');
   return hub['hub.js'] === 'none' ? true : false;
 }, test.limit.slow);
 test.run('outside spirit/ no word holds, so shell/app has no colour', 0.2, async function () {

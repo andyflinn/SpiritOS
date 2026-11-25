@@ -100,7 +100,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
   // A PACKET TO A PEER, THROUGH THE SPIRIT OBJECT (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): spirit.peerPost, which puts the body in its packet envelope, with the node's whole answer, { ok, body,
-  // card, error }; the card a card ask brings is the node's verified one (spirit/peerPost.js, answer.card).
+  // card, error }; the card a card ask brings is the node's verified one (spirit/peer/post/script.js, answer.card).
   function peerPost(app, key, body) {
     return window.spirit.peerPost(String(key), app, body, { answer: true });
   }

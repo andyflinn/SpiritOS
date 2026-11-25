@@ -11,10 +11,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'api.js');
-require(path.join(RUN, 'spirit', 'spirit.js'));
+require(path.join(RUN, 'spirit', 'script.js'));
 const spirit = globalThis.spirit;
 
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
@@ -27,7 +27,7 @@ const refusedAs = function (verb, args) { if (!W.verbs[verb]) return null; const
 const VERBS = ['busy', 'preferences', 'script.get', 'script.classify', 'suite.search', 'testicle.set', 'testicle.title', 'suite.success', 'testicle.search', 'red', 'run', 'hold', 'subscribe', 'unsubscribe'];
 // No analyze among them (goal/G49.6, box v15; Andy: "analyze, the verb goes, and analyze becomes a tool script at
 // spirit/app/testicle/job/analyze/script.js"): the list above is the whole interface, judged by its names below.
-const SET = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title', verified: true, severity: 0.2 };
+const SET = { script: 'spirit/seal/script.js', suite: 'spirit/seal/test/script.js', test: 'a title', verified: true, severity: 0.2 };
 
 test.run('testicle\'s api.js loads', 0.2, function () {
   try { W.api = require(FILE); } catch (e) { return false; }
@@ -68,7 +68,7 @@ test.run('api.js names exactly testicle\'s verbs, no more and no fewer', 0.2, fu
 test.run('each verb is a handler of testicle.js, or of appServer\'s streamPublisher, which testicle.js asks for', 0.2, function () {
   if (!W.api) return false;
   const own = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'testicle', 'server', 'server.js'), 'utf8');
-  const app = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'app.js'), 'utf8');
+  const app = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'app', 'script.js'), 'utf8');
   if (!/\n {2}publisher:\s*\{/.test(own)) return false;
   const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
   const unserved = W.names.filter(function (v) {
@@ -103,11 +103,11 @@ test.run('red takes nothing', 0.2, function () {
 }, test.limit.quick);
 test.run('script.get takes a name, which is a text and required', 0.2, function () {
   if (!W.api) return false;
-  return (passes('script.get', { name: 'spirit/seal.js' }) && refusedAs('script.get', {}) === 'bad-request' && refusedAs('script.get', { name: 1 }) === 'bad-request') || false;
+  return (passes('script.get', { name: 'spirit/seal/script.js' }) && refusedAs('script.get', {}) === 'bad-request' && refusedAs('script.get', { name: 1 }) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('suite.search takes its words, required, and a script, optional', 0.2, function () {
   if (!W.api) return false;
-  return (passes('suite.search', { text: '' }) && passes('suite.search', { script: 'spirit/seal.js', text: '' }) && refusedAs('suite.search', { script: 'spirit/seal.js' }) === 'bad-request') || false;
+  return (passes('suite.search', { text: '' }) && passes('suite.search', { script: 'spirit/seal/script.js', text: '' }) && refusedAs('suite.search', { script: 'spirit/seal/script.js' }) === 'bad-request') || false;
 }, test.limit.quick);
 // goal/G47.1, the test-table cycle: one test's result, by itself (no bundling).
 test.run('testicle.set takes one test\'s result, with script, suite, test, verified as true or false and severity as a number, all required', 0.2, function () {
@@ -127,7 +127,7 @@ test.run('testicle.set takes testHash, the hash of the test\'s own block, beside
 // "script, suite and test, the testicle key as every testicle verb takes it ..., all three mandatory; and holder, optional".
 test.run('hold takes script, suite and test, all three required, and holder, optional', 0.4, function () {
   if (!W.api) return false;
-  const KEY = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', test: 'a title' };
+  const KEY = { script: 'spirit/seal/script.js', suite: 'spirit/seal/test/script.js', test: 'a title' };
   const missing = ['script', 'suite', 'test'].filter(function (k) { const a = Object.assign({}, KEY); delete a[k]; return refusedAs('hold', a) !== 'bad-request'; });
   return (passes('hold', KEY) && passes('hold', Object.assign({}, KEY, { holder: 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=' })) && missing.length === 0
     && refusedAs('hold', Object.assign({}, KEY, { other: 'x' })) === 'no-such-argument') || false;
@@ -144,15 +144,15 @@ test.run('testicle.search requires its words, takes script, suite, test and resu
 // goal/G47.1, box v129-131: {script, suite, success}, a suite's success or failure for one script.
 test.run('suite.success takes script, suite and success as true or false, all required', 0.2, function () {
   if (!W.api) return false;
-  const ok = { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', success: true };
+  const ok = { script: 'spirit/seal/script.js', suite: 'spirit/seal/test/script.js', success: true };
   const without = Object.keys(ok).filter(function (k) { const a = Object.assign({}, ok); delete a[k]; return refusedAs('suite.success', a) !== 'bad-request'; });
   return (passes('suite.success', ok) && without.length === 0 && refusedAs('suite.success', Object.assign({}, ok, { success: 'yes' })) === 'bad-request') || false;
 }, test.limit.quick);
 // goal/G47.1, the run cycle: one suite run for one script, testicle (a test's title) to run up to it.
 test.run('run takes a script and a suite, required, and a test\'s title, optional', 0.2, function () {
   if (!W.api) return false;
-  return (passes('run', { script: 'spirit/seal.js', suite: 'spirit/test/seal.js' }) && passes('run', { script: 'spirit/seal.js', suite: 'spirit/test/seal.js', testicle: 'a title' })
-    && refusedAs('run', { script: 'spirit/seal.js' }) === 'bad-request') || false;
+  return (passes('run', { script: 'spirit/seal/script.js', suite: 'spirit/seal/test/script.js' }) && passes('run', { script: 'spirit/seal/script.js', suite: 'spirit/seal/test/script.js', testicle: 'a title' })
+    && refusedAs('run', { script: 'spirit/seal/script.js' }) === 'bad-request') || false;
 }, test.limit.quick);
 test.run('subscribe takes the branch, a non-empty id, and optional run and since, and unsubscribe takes nothing', 0.2, function () {
   if (!W.api) return false;
@@ -163,7 +163,7 @@ test.run('subscribe takes the branch, a non-empty id, and optional run and since
 // goal/G47.1, box v94, 1: "a new verb testicle.script.classify (arguments: script, browserOnly and nodeOnly)".
 test.run('script.classify takes script, browserOnly and nodeOnly, and refuses one missing or of a wrong type', 0.2, function () {
   if (!W.api) return false;
-  const ok = { script: 'spirit/seal.js', browserOnly: false, nodeOnly: true };
-  const bad = [{ browserOnly: false, nodeOnly: true }, { script: 'spirit/seal.js', nodeOnly: true }, { script: 'spirit/seal.js', browserOnly: false }, { script: 'spirit/seal.js', browserOnly: 'no', nodeOnly: true }];
+  const ok = { script: 'spirit/seal/script.js', browserOnly: false, nodeOnly: true };
+  const bad = [{ browserOnly: false, nodeOnly: true }, { script: 'spirit/seal/script.js', nodeOnly: true }, { script: 'spirit/seal/script.js', browserOnly: false }, { script: 'spirit/seal/script.js', browserOnly: 'no', nodeOnly: true }];
   return (passes('script.classify', ok) && bad.every(function (b) { return !passes('script.classify', b); })) || false;
 }, test.limit.quick);

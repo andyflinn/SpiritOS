@@ -1,5 +1,5 @@
 // spirit/run/spirit/DEBUG/garbageArguments.js
-// THE WORST ARGUMENTS A SERVER'S API COULD BE SENT (goal/G41.19, ../test/DEBUG.md). Andy: "from the introspections, it
+// THE WORST ARGUMENTS A SERVER'S API COULD BE SENT (goal/G41.19, ./test/script.md). Andy: "from the introspections, it
 // will generate the most garbage arguments, that could be thrown at the api, and check the responses.", "it can do that
 // for any version of a relay as well".
 //
@@ -19,9 +19,9 @@
 // few sizes, containing bad characters", and "Pairs, not every combination": for any two arguments, every pairing of
 // their kinds meets in at least one entry, each entry setting all arguments at once.
 'use strict';
-require('../spirit.js');
+require('../script.js');
 
-const limits = spirit.requireScript('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits/script.js');
 
 const DEPTH = 64;
 const EXTRA = 'noSuchArgumentFromDEBUG';

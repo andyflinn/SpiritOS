@@ -9,7 +9,7 @@
 // Node only: never served to a page (UNSERVABLE_FILES below names it).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../spirit.js');
+require('../script.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -64,15 +64,15 @@ function statFile(filePath) {
 
 // ONLY CORE FILES ARE WRITE-PROTECTED (goal/G30.21). Andy: "only "core" files are write-protected, manifests are no
 // longer core", "any non-core file is fair game", and "the notion that we dictate to a user how to organize his file
-// is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (spirit/coreFiles.js,
+// is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (spirit/coreFiles/script.js,
 // the commit check's own rule), a node's state at any depth, a sidecar's own path, and the node's root-level files,
 // every one of them: no root-level file is writable (goal/G43.17, the last one it named gone). A server's own state is
 // its spirit/state/<name>/data/, handed to it as --state; no page writes there (goal/G43.20).
 
-// A CORE FILE, by the one rule the commit check reads (spirit/coreFiles.js): spirit/run/spirit/, spirit/run/spirit/element/, the
+// A CORE FILE, by the one rule the commit check reads (spirit/coreFiles/script.js): spirit/run/spirit/, spirit/run/spirit/element/, the
 // shell's frame and an intrinsic app's folder, never a manifest. The repo root is two folders above the run folder.
 function isCoreFile(canonical) {
-  return spirit.requireScript('spirit/coreFiles.js').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));
+  return spirit.requireScript('spirit/coreFiles/script.js').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));
 }
 // The one sidecar per annotated file gets a suffix, never a same-name
 // extension swap — <file>.sidecar.json can never collide with the
@@ -87,9 +87,9 @@ const SIDECAR_SUFFIX = '.sidecar.json';
 // narrower exception), never through the generic fileServable-gated
 // path loadFile/scanFolder/the rest of the static route all share.
 // fileSystem.js, this file, joined it when it was lifted out of the old kernel (goal/G40.6).
-// DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/test/DEBUG.md).
-// spirit/server.js is the launcher since goal/G48.5; the servers it starts stand in spirit/server/, never served as a folder.
-const UNSERVABLE_FILES = ['spirit/fs/fileSystem.js', 'spirit/job.js', 'spirit/server.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
+// DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/DEBUG/test/script.md).
+// spirit/server/script.js is the launcher since goal/G48.5; the servers it starts stand in spirit/server/, never served as a folder.
+const UNSERVABLE_FILES = ['spirit/fs/fileSystem.js', 'spirit/job/script.js', 'spirit/server/script.js', 'spirit/relayConfig/script.js', 'spirit/relay/processor/script.js', 'spirit/hub/script.js', 'spirit/relayAuth/script.js', 'spirit/DEBUG/script.js'].map(function (p) { return p.toLowerCase(); });
 // goal/G43.9, Andy's box: "spirit/state/ is not servable, so a page cannot read other apps' state through a plain GET."
 // goal/G48.5, the box: "never served: UNSERVABLE_FOLDERS in spirit/fs/fileSystem.js names spirit/server/ and every
 // spirit/app/<name>/server/": the node's, the relay's and the server processes' code, and each app's server-only files.
@@ -267,7 +267,7 @@ function writeBucket(bucket, filePath, payload) {
   }
   if (!stat || !stat.isFile()) return { ok: false, reason: 'file-not-found' };
   const sidecar = readSidecar(filePath);
-  // INTRINSIC IS NO NODE'S TO WRITE: an app's own <name>.json says it (spirit/coreFiles.js), so it is never kept in a sidecar.
+  // INTRINSIC IS NO NODE'S TO WRITE: an app's own <name>.json says it (spirit/coreFiles/script.js), so it is never kept in a sidecar.
   const part = Object.assign({}, payload || {});
   if (bucket === 'face') delete part.intrinsic;
   sidecar[bucket] = part;

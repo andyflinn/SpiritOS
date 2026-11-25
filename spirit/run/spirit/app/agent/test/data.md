@@ -3,7 +3,7 @@
 What a client knows of the agent server's tables (goal/G41.28; Andy: *"We're not done until every family of the API
 tree as a clientCacheManager"*): job, model, persona and provider, one branch each, id -> the row, under the node that
 served it. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs in a window
-of its own beside the real `spirit/data.js`, the rows handed in as the stream hands them; in node it comes with the family's
+of its own beside the real `spirit/data/script.js`, the rows handed in as the stream hands them; in node it comes with the family's
 interface, `spirit.requireScript('spirit/app/agent/api.js')`, the one script that requires it.
 
 - It stands at `spirit.required.spirit.data.agent.data`; its `tables` are job, model, persona, provider.

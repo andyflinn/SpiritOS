@@ -1,9 +1,9 @@
 'use strict';
 
-// spirit/run/spirit/test/test/spirit-sibling-general.js
-// The tests of the garbage rule, the noFuckingGarbage part of spirit/test/spirit-sibling-general.js (goal/G47.1, box v94, 2:
-// the general tests folded into three), and of no other part (spec: ./spirit-sibling-general.md). goal/G47.1, the cycle "missing tests reported", the box:
-// "spirit-sibling-noFuckingGarbage also reports missing tests, in one check, "every production script has its own test",
+// spirit/run/spirit/test/test/script-sibling-general.js
+// The tests of the garbage rule, the noFuckingGarbage part of spirit/test/script-sibling-general.js (goal/G47.1, box v94, 2:
+// the general tests folded into three), and of no other part (spec: ./script-sibling-general.md). goal/G47.1, the cycle "missing tests reported", the box:
+// "script-sibling-noFuckingGarbage also reports missing tests, in one check, "every production script has its own test",
 // severity 0.2: red while any production script has no own test, test/<name>.js beside it, its answer naming every script
 // missing one. Over the whole tree (handed nothing, or spirit.js) it judges every production script; handed one script, that
 // one, by the same check. One check, not one per script", "Vendored scripts are left out of the check" (Andy: "damn right,
@@ -17,18 +17,18 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder.js');
+const tempFolder = require('../../tempFolder/script.js');
 let tempAsked = 0;
-function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/spirit-sibling-general/' + name + tempAsked); }
-test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/spirit-sibling-general'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/script-sibling-general/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/script-sibling-general'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
 
-const RULE = path.join(RUN, 'spirit', 'test', 'spirit-sibling-general.js');
+const RULE = path.join(RUN, 'spirit', 'test', 'script-sibling-general.js');
 const CHECK = 'every production script has its own test';
 const HAS = 'spirit/zzGarbage/has.js';
 const LACKS = 'spirit/zzGarbage/lacks.js';
@@ -39,8 +39,8 @@ PLANT['spirit/zzGarbage/test/has.js'] = '\'use strict\';\n// the test of has\n';
 PLANT['spirit/zzGarbage/test/has.md'] = '# the test of has\n';
 PLANT[LACKS] = '\'use strict\';\n// lacks, no test of its own\n';
 PLANT[VENDORED] = '\'use strict\';\n// a vendored script, no test of its own\n';
-// A module whose first require is not spirit.js (goal/G47.1; moved here from spirit/test/spirit.js: Andy, "11. is
-// spirit-sibling-general"). Planted inside the tree, where the general test judges.
+// A module whose first require is not spirit.js (goal/G47.1; moved here from spirit/test/script.js: Andy, "11. is
+// script-sibling-general"). Planted inside the tree, where the general test judges.
 const LATE = 'spirit/zzGarbage/late.js';
 PLANT[LATE] = '\'use strict\';\nconst fs = require(\'fs\');\nrequire(\'../spirit.js\');\n';
 // WHAT IT CHANGES, IT LISTENS FOR, THROUGH A CHILD ON A BRANCH (goal/G47.1; wsl, of the model table: "the list it mounts ... is
@@ -60,19 +60,19 @@ PLANT[DEAF] = '\'use strict\';\nvar ask = { op: \'set\', id: \'zz\' };\nwindow.s
 const LEAKY = 'spirit/zzGlobal/leaky.js';
 const CLEAN = 'spirit/zzGlobal/clean.js';
 const GLOBALS = 'loaded in a node, it adds nothing to the global object or to process but spirit';
-PLANT[LEAKY] = ["'use strict';", "require('../spirit.js');", 'global.zzLeaked = 1;', 'module.exports = {};', ''].join('\n');
-PLANT[CLEAN] = ["'use strict';", "require('../spirit.js');", 'const zzKept = 1;', 'module.exports = { zzKept: zzKept };', ''].join('\n');
+PLANT[LEAKY] = ["'use strict';", "require('../script.js');", 'global.zzLeaked = 1;', 'module.exports = {};', ''].join('\n');
+PLANT[CLEAN] = ["'use strict';", "require('../script.js');", 'const zzKept = 1;', 'module.exports = { zzKept: zzKept };', ''].join('\n');
 // A script that builds a temp path of its own (goal/G47.1, the box: "nothing else builds a temp path").
 const OWN_TEMP = 'spirit/zzGlobal/ownTemp.js';
-const TEMP_CHECK = 'it builds no temp path of its own: its temp folder comes from spirit/tempFolder.js';
-PLANT[OWN_TEMP] = ["'use strict';", "require('../spirit.js');", "const os = require('os');", "module.exports = { where: os.tmpdir() };", ''].join('\n');
+const TEMP_CHECK = 'it builds no temp path of its own: its temp folder comes from spirit/tempFolder/script.js';
+PLANT[OWN_TEMP] = ["'use strict';", "require('../script.js');", "const os = require('os');", "module.exports = { where: os.tmpdir() };", ''].join('\n');
 
 let root = null, run = null;
 // The rule run in the scratch tree, handed arg or nothing: its check as printed (spirit/test/testReport.js prints each test
 // as its title and its mark, under its script's heading), { red, script }, or null when the check printed nothing.
 function lineOf(arg, check, env) {
   let out = '';
-  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'spirit-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, env || {}) }); } catch (e) { out = String((e && e.stdout) || ''); }
+  try { out = execFileSync(process.execPath, [path.join(run, 'spirit', 'test', 'script-sibling-general.js')].concat(arg ? [arg] : []), { cwd: run, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, env || {}) }); } catch (e) { out = String((e && e.stdout) || ''); }
   let script = '';
   let found = null;
   out.split('\n').forEach(function (l) {
@@ -114,7 +114,7 @@ test.run('over the whole tree, with a script missing its own test, the check is 
 }, test.limit.slow);
 test.run('handed spirit.js, it judges the whole tree the same', 0.2, function () {
   if (!run) return false;
-  const l = lineOf('spirit/spirit.js');
+  const l = lineOf('spirit/script.js');
   return (!!l && l.red) || false;
 }, test.limit.slow);
 
@@ -134,7 +134,7 @@ test.run('handed a script with no own test, the check is red, under that script'
 // module that requires fs first, red, naming that require
 test.run('the general rules pass spirit.js itself: it sets the global spirit before its first require', 0.2, function () {
   if (!run) return false;
-  const l = lineOf('spirit/spirit.js', 'it sets the global spirit before its first require');
+  const l = lineOf('spirit/script.js', 'it sets the global spirit before its first require');
   return (!!l && !l.red) || false;
 }, test.limit.slow);
 test.run('a module whose first require is not spirit.js goes red', 0.2, function () {

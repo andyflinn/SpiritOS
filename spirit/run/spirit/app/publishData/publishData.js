@@ -31,7 +31,7 @@
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../spirit.js');
+require('../../script.js');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -45,7 +45,7 @@ const LIST_TRIES = 3;
 
 const argv = process.argv.slice(2);
 // THE PORT OF THE NODE THAT STARTS IT (goal/G43.21): Run in the app detail hands no argument, and the node hands every job it
-// starts its own address, SPIRIT_CALLBACK_URL (spirit/job.js). A port given first still wins.
+// starts its own address, SPIRIT_CALLBACK_URL (spirit/job/script.js). A port given first still wins.
 const fromNode = (/:(\d+)\//.exec(String(process.env.SPIRIT_CALLBACK_URL || '')) || [])[1];
 const port = /^\d+$/.test(String(argv[0] || '')) ? Number(argv[0]) : Number(fromNode);
 function flag(name) { const i = argv.indexOf(name); return i === -1 ? '' : String(argv[i + 1] || ''); }
@@ -87,7 +87,7 @@ function closingRows(clone, sinceIso) {
   const src = path.join(clone, 'spirit', 'run', 'spirit', 'state', 'node.db');
   if (!fs.existsSync(src)) end(1, 'publishData: no traffic log at ' + src + ' (is the node run from this clone?)');
   // ITS TEMP FOLDER FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "a job by its route (spirit.app.publishData)").
-  const tmp = spirit.requireScript('spirit/tempFolder.js')('spirit.app.publishData/nodeDb');
+  const tmp = spirit.requireScript('spirit/tempFolder/script.js')('spirit.app.publishData/nodeDb');
   const copy = path.join(tmp, 'node.db');
   ['', '-wal', '-shm'].forEach(function (x) { if (fs.existsSync(src + x)) fs.copyFileSync(src + x, copy + x); });
   const { DatabaseSync } = require('node:sqlite');
@@ -165,7 +165,7 @@ function writeTestState(out, platform, commit) {
 // THE TWO DOCUMENTS OF ## Details BELOW testState.md (goal/G47.1, box v170): "the general tests: each general suite, the
 // number of production files it judges, and its green and red counts", and "below those, the own suites: each production
 // script with its own suite, and that suite's green and red counts". A general suite is one of the sibling or child rules
-// (spirit-sibling-general.js and its kind); every other suite is a script's own.
+// (script-sibling-general.js and its kind); every other suite is a script's own.
 const GENERAL_SUITE = /-(child|sibling)-(general|node|browser)\.js$/;
 const SUITE_DOCS = [{ label: 'The general tests', file: 'generalTests.md' }, { label: 'The own suites', file: 'ownSuites.md' }];
 function writeSuiteDocs(out, report) {

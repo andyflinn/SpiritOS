@@ -1,11 +1,11 @@
-# spirit/test/test/spirit-sibling-general.js
+# spirit/test/test/script-sibling-general.js
 
-The tests of the garbage rule, the noFuckingGarbage part of `spirit/test/spirit-sibling-general.js` (goal/G47.1, box v94, 2:
+The tests of the garbage rule, the noFuckingGarbage part of `spirit/test/script-sibling-general.js` (goal/G47.1, box v94, 2:
 the general tests folded into three), and of no other part.
 
 ## What it asserts (goal/G47.1, the cycle "missing tests reported")
 
-The box: *"spirit-sibling-noFuckingGarbage also reports missing tests, in one check, "every production script has its own
+The box: *"script-sibling-noFuckingGarbage also reports missing tests, in one check, "every production script has its own
 test", severity 0.2: red while any production script has no own test, test/<name>.js beside it, its answer naming every
 script missing one. Over the whole tree (handed nothing, or spirit.js) it judges every production script; handed one script,
 that one, by the same check. One check, not one per script"*, and *"Vendored scripts are left out of the check"*.
@@ -32,9 +32,9 @@ node.
 
 ## The module rule, tried
 
-Moved here from `spirit/test/spirit.js` (goal/G47.1; Andy: *"11. is spirit-sibling-general"*). In the same scratch tree, a planted `spirit/zzGarbage/late.js` requires `fs` before `spirit.js`.
+Moved here from `spirit/test/script.js` (goal/G47.1; Andy: *"11. is script-sibling-general"*). In the same scratch tree, a planted `spirit/zzGarbage/late.js` requires `fs` before `spirit.js`.
 
-- Handed `spirit/spirit.js`, the rule "it sets the global spirit before its first require" is green.
+- Handed `spirit/script.js`, the rule "it sets the global spirit before its first require" is green.
 - Handed `late.js`, "it requires spirit.js first" is red, and its answer names the first require, `"fs"`.
 
 ## What it changes, it listens for, through a child on a branch
@@ -65,6 +65,6 @@ goal/G47.1; Andy: *"no developer will want to use a system that pollutes global 
 
 goal/G47.1, the box: *"nothing else builds a temp path"*. In the same scratch tree, a planted `spirit/zzGlobal/ownTemp.js` that calls the system temp folder itself.
 
-- Handed `ownTemp.js`, "it builds no temp path of its own: its temp folder comes from spirit/tempFolder.js" is red, under that script.
+- Handed `ownTemp.js`, "it builds no temp path of its own: its temp folder comes from spirit/tempFolder/script.js" is red, under that script.
 - Handed `clean.js`, the same check is green.
 - Both red on the rule before, which had no such check.

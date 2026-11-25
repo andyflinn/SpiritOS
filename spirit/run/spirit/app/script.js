@@ -1,5 +1,5 @@
 'use strict';
-require('../spirit.js');
+require('../script.js');
 
 // spirit/run/spirit/app/script.js
 // THE app FAMILY'S CORE MODULE (goal/G43.2). Andy, box: "we build a skeleton core-api-family, not a separate server,
@@ -20,15 +20,15 @@ require('../spirit.js');
 // /<name>/<name>.json"), read from the disk at each search, so no list names one. test/, the app branch's own tests, is no plugin.
 //
 // WHO PAINTS, LISTENS (Andy, G41.32): the permanent job 'apps' holds every plugin's row, { apps: { key: row } }, published
-// whole as a plugin's file changes, so a connect's snapshot is the whole push a cache forgets for (spirit/data.js's forget).
+// whole as a plugin's file changes, so a connect's snapshot is the whole push a cache forgets for (spirit/data/script.js's forget).
 // The fs watcher hears the disk; nothing here watches it again. A face with no star keeps today's stream (goal/G41.33), so
 // it hears no such job: it asks again when a connect forgets (./element/search/app/rowFormAppActive.js).
 
 const fs = require('fs');
 const path = require('path');
-const limits = spirit.requireScript('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits/script.js');
 const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
-const createProbabilityBucket = spirit.requireScript('spirit/listLimiter.js').createProbabilityBucket;
+const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 
 const ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
 // A plugin's own file, or its folder: what changes the table.
@@ -137,7 +137,7 @@ function createApp(opts) {
     const key = String((body && body.key) || '');
     // Its development team made it intrinsic, so no press switches it, and nothing is written for it (goal/G43.14). Refused by
     // name (goal/G43.15; Andy: "And what's even worse, the server allows it!!!!").
-    if (spirit.requireScript('spirit/coreFiles.js').appIntrinsic(path.resolve(o.rootDir, '..', '..'), key) === true && names().indexOf(key) !== -1) {
+    if (spirit.requireScript('spirit/coreFiles/script.js').appIntrinsic(path.resolve(o.rootDir, '..', '..'), key) === true && names().indexOf(key) !== -1) {
       return { ok: false, status: 409, code: 'app-intrinsic', error: 'app ' + key + ' is intrinsic: it is always active' };
     }
     // ONE THAT IS ONLY RUN HAS NOTHING TO ACTIVATE (goal/G43.21; Andy: "and the node should know it, too."): refused by name, and

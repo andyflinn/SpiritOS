@@ -16,9 +16,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // ITS STAND-INS ARE requireScript's ANSWERS (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers";
 // Andy: "spirit.requireScript must allways return either an object or a function... or fail/throw"): a script answers what
@@ -86,11 +86,11 @@ function world() {
   const ANSWERS = { 'spirit/node/api.js': {}, 'spirit/node/data.js': {}, 'spirit/element/search/api/row/script.js': { create: function () { return {}; } }, 'spirit/element/search/api/detail/script.js': { create: function () { return {}; } } };
   win.window = win;
   // The page's installSpiritElement, as spirit.js hands it (spirit/test/headLessChrome.js pageSpirit).
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/data.js', 'spirit/client/apiTreeIndex.js', SUBJECT] });
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/node/data.js', 'spirit/data/script.js', 'spirit/client/apiTreeIndex.js', SUBJECT] });
   vm.createContext(win);
   // The tree index is one of the spirit object's own, there before any element.
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
-  win.spirit.requireScript('spirit/data.js');
+  win.spirit.requireScript('spirit/data/script.js');
   pageData = win.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   win.spirit.nodeFacts = { key: 'nOdE+key/one==' };

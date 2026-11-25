@@ -20,7 +20,7 @@ The receipt time. It depends on the network and the node a receipt crosses, and 
 
 ## A page's connect reaches every app server (goal/G47.5, part 2)
 
-Andy: *"the node forwards a loopback connect to the as server as a normal request, so that spirit/server/app.js knows a
+Andy: *"the node forwards a loopback connect to the as server as a normal request, so that spirit/server/app/script.js knows a
 loopback client connected"*, *"the connect to all app servers doesn't need a loopback mark, it will reach the app server
 with the local node's ID"*, *"47.5 WILL NOT HAVE ANY APP-SPECIFIC SHIT IN IT."* On a scratch node of lab's, a planted app
 server whose bootstrap writes down every subscriber that is its own node: a page opens the node's event stream, and that

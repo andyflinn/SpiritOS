@@ -1,5 +1,5 @@
 'use strict';
-require('../../../../spirit.js');
+require('../../../../script.js');
 
 // spirit/run/spirit/app/agent/table/provider/server.js
 // THE PROVIDER TABLE (goal/G41.4): a model provider, its url and its API key. Andy, box v22: "a provider table. keyed by

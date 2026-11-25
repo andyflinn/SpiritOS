@@ -22,7 +22,7 @@
 //                 a folder inside run://spirit/
 // Each line that moved the path is logged as if typed at the root, "path app.agent" (the box: "logs the command as path
 // app.agent"); the root itself as "path <<". The newest 256 are kept.
-require('../spirit.js');
+require('../script.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -109,7 +109,7 @@ function apiAt(p) {
   }, function () { return null; });
 }
 // EVERY SERVER'S AUTO-VERBS (wsl, on goal/G48.8: "the console lists only api.js verbs, so the auto-verb remote cannot be
-// called from it"): remote and DEBUG, which spirit.js binds by hand on every branch and no api.js lists (spirit/server/app.js
+// called from it"): remote and DEBUG, which spirit.js binds by hand on every branch and no api.js lists (spirit/server/app/script.js
 // serves them on every app server, goal/G47.5 and desk/G2.5), offered beside the api.js verbs of an app's branch when the
 // app has a server, and only then (wsl's rule 8 of app-child-general: "the auto-verbs only where the manifest says
 // node.mount"): its spirit/app/<name>/<name>.json, read through the node's fs as everything of the tree is.
@@ -224,9 +224,9 @@ function verbCommand(s, verbs, words, line) {
 // ── THE WAIT (goal/G48.6, the box v10) ──────────────────────────────────────────────────────────────────────────────
 // Andy: "an array of wait events will be maintained in spirit/state/console/node.json, with the following special console
 // commands: wait, wait add <event-description>, wait remove <event-description-string>"; "console MUST ALSO NOT BE APP
-// SPECIFIC IN ANY WAY". It reads node.db's log through its one reader, arrivals of spirit/trafficLog.js (delivered inbound
-// rows only, so an agent's own calls never wake it), opens each row's envelope with envelopeOf of spirit/arrivals.js and a
-// listener's bundle with unpack of spirit/streamBundle.js (goal/G48.7), and calls no verb of any branch.
+// SPECIFIC IN ANY WAY". It reads node.db's log through its one reader, arrivals of spirit/trafficLog/script.js (delivered inbound
+// rows only, so an agent's own calls never wake it), opens each row's envelope with envelopeOf of spirit/arrivals/script.js and a
+// listener's bundle with unpack of spirit/streamBundle/script.js (goal/G48.7), and calls no verb of any branch.
 //   wait                       blocks until a wait-row matches or the timeout passes: a match prints one JSON line per row
 //                              with its wait-row and ends 0, a timeout says nothing came and ends WAIT_TIMED_OUT, no
 //                              wait-row is refused; one wait at a time on a node
@@ -260,7 +260,7 @@ function matches(o, filters) {
 }
 // What of one log row a wait-row matches: the call's arguments, or for a listener's bundle each entry's row.
 function matchesOf(row, rows) {
-  const env = spirit.requireScript('spirit/arrivals.js').envelopeOf(String(row.payload || ''));
+  const env = spirit.requireScript('spirit/arrivals/script.js').envelopeOf(String(row.payload || ''));
   if (!env || !env.body || typeof env.body !== 'object') return [];
   const out = [];
   rows.forEach(function (text) {
@@ -270,7 +270,7 @@ function matchesOf(row, rows) {
     const args = call && typeof call === 'object' ? call : {};
     const base = { wait: text, at: row.at, peer: row.peer || '', app: env.app, api: w.branch + '.' + w.verb };
     if (w.verb === 'listener' && typeof args.json === 'string') {
-      (spirit.requireScript('spirit/streamBundle.js').unpack(args.json) || []).forEach(function (e) {
+      (spirit.requireScript('spirit/streamBundle/script.js').unpack(args.json) || []).forEach(function (e) {
         if (matches(e.row || {}, w.filters)) out.push(Object.assign({ entry: e }, base));
       });
     } else if (matches(args, w.filters)) out.push(Object.assign({ args: args }, base));
@@ -313,7 +313,7 @@ function waitCommand(s, words, line) {
   fs.writeFileSync(WAIT_LOCK, String(process.pid));
   const unlock = function () { try { if (Number(fs.readFileSync(WAIT_LOCK, 'utf8')) === process.pid) fs.unlinkSync(WAIT_LOCK); } catch (e) { /* gone */ } };
   process.once('exit', unlock);
-  const log = spirit.requireScript('spirit/trafficLog.js').createTrafficLog({ rootDir: RUN });
+  const log = spirit.requireScript('spirit/trafficLog/script.js').createTrafficLog({ rootDir: RUN });
   // THE FIRST WAIT STARTS AT THE NEWEST ROW (the box): with no pointer, now.
   if (!s.since) { s.since = new Date().toISOString(); save(s); }
   const deadline = Date.now() + s.timeout * 1000;

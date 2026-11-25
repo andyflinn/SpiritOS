@@ -1,5 +1,5 @@
 'use strict';
-require('../../spirit.js');
+require('../../script.js');
 
 // spirit/run/spirit/app/chat/chat.js
 // CHAT'S SERVER SCRIPT (goal/G43.31; Andy: "chat.js splits between browser and node.... the usual pattern"). The node starts this

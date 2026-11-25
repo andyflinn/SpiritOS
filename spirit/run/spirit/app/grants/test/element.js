@@ -19,8 +19,8 @@ const { spawn, execSync } = require('child_process');
 // spirit/app/grants/test/ -> the run root, four up.
 const RUN = path.resolve(__dirname, '../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REPO = path.resolve(RUN, '..', '..');

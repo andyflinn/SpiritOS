@@ -1,5 +1,5 @@
 'use strict';
-require('../../spirit.js');
+require('../../script.js');
 
 // spirit/run/spirit/app/publishData/agentReadme.js
 // THE PLATFORM'S README (goal/G47.1, box v170, "#### publishData"), written by publishData.js into platform/<platform>/,
@@ -12,7 +12,7 @@ require('../../spirit.js');
 // No raw numbers: only these lines (the box: "no iteration of a measurement is published, only these lines").
 //
 // THE MEMBERS FIGURE IS THE RELAY'S OWN RULE (box v170: "<number-of-users> computed by the relay's own rule; no memory per
-// stream is measured or shown"): spirit/relay.js's allowanceFor at 512 MB, less the relay's memory at rest as publishData
+// stream is measured or shown"): spirit/relay/processor/script.js's allowanceFor at 512 MB, less the relay's memory at rest as publishData
 // measured it on its lab relay (relayAtRestRss), in seats of SEAT_STREAMS streams.
 //
 //   write(out, platform, facts)   writes out/README.md; facts: { at (a Date), commit, machine?, summary }, summary
@@ -38,7 +38,7 @@ function ms(x) { return String(Math.round(Number(x || 0) * 10) / 10); }
 
 function summaryOf(cap) {
   if (!cap || !(Number(cap.relayAtRestRss) > 0)) return null;
-  const relay = spirit.requireScript('spirit/relay.js');
+  const relay = spirit.requireScript('spirit/relay/processor/script.js');
   const allowance = relay.allowanceFor(RAM_MB, Number(cap.relayAtRestRss) / 1048576);
   const members = allowance ? Math.floor(allowance / relay.SEAT_STREAMS) : 0;
   const perPeer = Number(cap.perReachablePeerBytes) || 0;
@@ -49,7 +49,7 @@ function summaryOf(cap) {
   };
 }
 
-// The SpiritOS node processes on this machine: node processes running spirit/server.js.
+// The SpiritOS node processes on this machine: node processes running spirit/server/script.js.
 function spiritNodes() {
   const lines = process.platform === 'win32'
     ? spawnSync('powershell', ['-NoProfile', '-Command', "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | ForEach-Object { $_.CommandLine }"], { encoding: 'utf8', windowsHide: true }).stdout

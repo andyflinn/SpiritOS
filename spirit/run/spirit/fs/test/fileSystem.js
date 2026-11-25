@@ -13,7 +13,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // THE FILE MOVED (goal/G49.1; Andy: "spirit/fileSystem.js moves to spirit/fs/fileSystem.js", "THEN FUCKING MOVE IT!"): read at
 // its new place, and every check below red, never a crash, while it does not stand there.
@@ -38,7 +38,7 @@ function ask(fn, p) { try { return FS[fn](p); } catch (e) { return null; } }
 const CLOSED_READ = [
   ['spirit/state/identity.json', 'the node\'s private key'],
   ['spirit/app/desk/spirit/state/identity.json', 'an app server\'s private key, at depth'],
-  ['spirit/server.js', 'a server script'],
+  ['spirit/server/script.js', 'a server script'],
   ['spirit/DEBUG/garbageArguments.js', 'the DEBUG folder'],
   ['spirit/app/desk/element/desk/desk.js.sidecar.json', 'a sidecar\'s own path'],
 ];
@@ -51,7 +51,7 @@ function cases(p) {
 // NEVER SERVED, THE SERVER FOLDERS (goal/G48.5, the box: "no file under spirit/server/ or any spirit/app/<name>/server/ is
 // served"; "UNSERVABLE_FOLDERS in spirit/fileSystem.js names spirit/server/ and every spirit/app/<name>/server/"). Asked by path;
 // the files need not stand yet.
-const SERVER_FOLDER_FILES = ['spirit/server/node.js', 'spirit/server/relay.js', 'spirit/server/app.js', 'spirit/server/serveCommon.js'];
+const SERVER_FOLDER_FILES = ['spirit/server/node/script.js', 'spirit/server/relay/script.js', 'spirit/server/app/script.js', 'spirit/server/serveCommon/script.js'];
 const APP_SERVER_FILES = ['agent', 'backup', 'chat', 'desk', 'deskClient', 'icons', 'testicle'].map(function (n) { return 'spirit/app/' + n + '/server/server.js'; })
   .concat(['spirit/app/desk/server/deskLoop.js', 'spirit/app/testicle/server/testAll.js', 'spirit/app/zzAnyApp/server/anyHelper.js']);
 test.run('fileServable refuses every file under spirit/server/: node.js, relay.js, app.js and serveCommon.js', 0.8, function () {
@@ -60,8 +60,8 @@ test.run('fileServable refuses every file under spirit/server/: node.js, relay.j
 test.run('fileServable refuses every file under an app\'s server/ folder: its server.js and its helpers, of any app', 0.8, function () {
   return APP_SERVER_FILES.every(function (p) { return ask('fileServable', p) === false && cases(p).every(function (c) { return ask('fileServable', c) === false; }); }) || false;
 }, test.limit.quick);
-test.run('fileServable still serves an app\'s own <name>.js, the loader, and spirit/server.js stays refused', 0.4, function () {
-  return (ask('fileServable', 'spirit/app/desk/desk.js') === true && ask('fileServable', 'spirit/server.js') === false) || false;
+test.run('fileServable still serves an app\'s own <name>.js, the loader, and spirit/server/script.js stays refused', 0.4, function () {
+  return (ask('fileServable', 'spirit/app/desk/desk.js') === true && ask('fileServable', 'spirit/server/script.js') === false) || false;
 }, test.limit.quick);
 
 // fileServable: what it refuses, it refuses in every case.
@@ -72,7 +72,7 @@ test.run('fileServable refuses Spirit/State/Identity.json, the node\'s private k
 test.run('fileServable refuses spirit/app/desk/spirit/state/identity.json, an app server\'s private key deep in the tree, as written', 0.8, function () { return (ask('fileServable', 'spirit/app/desk/spirit/state/identity.json') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses SPIRIT/APP/DESK/SPIRIT/STATE/IDENTITY.JSON, an app server\'s private key in another letter case', 0.8, function () { return (ask('fileServable', 'SPIRIT/APP/DESK/SPIRIT/STATE/IDENTITY.JSON') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses Spirit/App/Desk/Spirit/State/Identity.json, an app server\'s private key in another letter case', 0.8, function () { return (ask('fileServable', 'Spirit/App/Desk/Spirit/State/Identity.json') === false) ? true : false; }, test.limit.quick);
-test.run('fileServable refuses spirit/server.js, a server script, as written', 0.8, function () { return (ask('fileServable', 'spirit/server.js') === false) ? true : false; }, test.limit.quick);
+test.run('fileServable refuses spirit/server/script.js, a server script, as written', 0.8, function () { return (ask('fileServable', 'spirit/server/script.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses SPIRIT/SERVER.JS, a server script in another letter case', 0.8, function () { return (ask('fileServable', 'SPIRIT/SERVER.JS') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses Spirit/Server.js, a server script in another letter case', 0.8, function () { return (ask('fileServable', 'Spirit/Server.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses spirit/DEBUG/garbageArguments.js, in the DEBUG folder, as written', 0.8, function () { return (ask('fileServable', 'spirit/DEBUG/garbageArguments.js') === false) ? true : false; }, test.limit.quick);
@@ -86,7 +86,7 @@ test.run('fileServable refuses Spirit/App/Desk/Element/Desk/Desk.js.sidecar.json
 const CLOSED_WRITE = [
   ['spirit/state/identity.json', 'the node\'s private key'],
   ['spirit/state/new.json', 'anything under spirit/state'],
-  ['spirit/server.js', 'a core file'],
+  ['spirit/server/script.js', 'a core file'],
   ['spirit/element/icon/script.js', 'a core file under spirit/element'],
   ['spirit/app/desk/element/desk/desk.js.sidecar.json', 'a sidecar\'s own path'],
 ];
@@ -97,7 +97,7 @@ test.run('fileWritable refuses Spirit/State/Identity.json, the node\'s private k
 test.run('fileWritable refuses spirit/state/new.json, as anything under spirit/state, as written', 0.8, function () { return (ask('fileWritable', 'spirit/state/new.json') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses SPIRIT/STATE/NEW.JSON, as anything under spirit/state, in another letter case', 0.8, function () { return (ask('fileWritable', 'SPIRIT/STATE/NEW.JSON') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses Spirit/State/New.json, as anything under spirit/state, in another letter case', 0.8, function () { return (ask('fileWritable', 'Spirit/State/New.json') === false) ? true : false; }, test.limit.quick);
-test.run('fileWritable refuses spirit/server.js, a core file, as written', 0.8, function () { return (ask('fileWritable', 'spirit/server.js') === false) ? true : false; }, test.limit.quick);
+test.run('fileWritable refuses spirit/server/script.js, a core file, as written', 0.8, function () { return (ask('fileWritable', 'spirit/server/script.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses SPIRIT/SERVER.JS, a core file in another letter case', 0.8, function () { return (ask('fileWritable', 'SPIRIT/SERVER.JS') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses Spirit/Server.js, a core file in another letter case', 0.8, function () { return (ask('fileWritable', 'Spirit/Server.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses spirit/element/icon/script.js, a core file under spirit/element, as written', 0.8, function () { return (ask('fileWritable', 'spirit/element/icon/script.js') === false) ? true : false; }, test.limit.quick);
@@ -115,20 +115,20 @@ test.run('fileWritable refuses Spirit/App/Desk/Element/Desk/Desk.js.sidecar.json
 // Each spelling written out, so that each check has a plain title of its own.
 test.run('fileServable refuses "RELAY-~1/IDENTI~1.JSO", an 8.3 short name of spirit/state/identity.json', 0.8, function () { return (ask('fileServable', 'RELAY-~1/IDENTI~1.JSO') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses "RELAY-~1/IDENTI~1.JSO", an 8.3 short name of spirit/state/identity.json', 0.8, function () { return (ask('fileWritable', 'RELAY-~1/IDENTI~1.JSO') === false) ? true : false; }, test.limit.quick);
-test.run('fileServable refuses "SPIRIT~1/SERVER~1.JS", an 8.3 short name of spirit/server.js', 0.8, function () { return (ask('fileServable', 'SPIRIT~1/SERVER~1.JS') === false) ? true : false; }, test.limit.quick);
-test.run('fileWritable refuses "SPIRIT~1/SERVER~1.JS", an 8.3 short name of spirit/server.js', 0.8, function () { return (ask('fileWritable', 'SPIRIT~1/SERVER~1.JS') === false) ? true : false; }, test.limit.quick);
+test.run('fileServable refuses "SPIRIT~1/SERVER~1.JS", an 8.3 short name of spirit/server/script.js', 0.8, function () { return (ask('fileServable', 'SPIRIT~1/SERVER~1.JS') === false) ? true : false; }, test.limit.quick);
+test.run('fileWritable refuses "SPIRIT~1/SERVER~1.JS", an 8.3 short name of spirit/server/script.js', 0.8, function () { return (ask('fileWritable', 'SPIRIT~1/SERVER~1.JS') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses "relay-state./identity.json", a folder name ending in a dot', 0.8, function () { return (ask('fileServable', 'relay-state./identity.json') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses "relay-state./identity.json", a folder name ending in a dot', 0.8, function () { return (ask('fileWritable', 'relay-state./identity.json') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses "relay-state /new.json", a folder name ending in a space', 0.8, function () { return (ask('fileServable', 'relay-state /new.json') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses "relay-state /new.json", a folder name ending in a space', 0.8, function () { return (ask('fileWritable', 'relay-state /new.json') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses "spirit./server.js", a core folder ending in a dot', 0.8, function () { return (ask('fileServable', 'spirit./server.js') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses "spirit./server.js", a core folder ending in a dot', 0.8, function () { return (ask('fileWritable', 'spirit./server.js') === false) ? true : false; }, test.limit.quick);
-test.run('fileServable refuses "spirit/server.js.", a file name ending in a dot', 0.8, function () { return (ask('fileServable', 'spirit/server.js.') === false) ? true : false; }, test.limit.quick);
-test.run('fileWritable refuses "spirit/server.js.", a file name ending in a dot', 0.8, function () { return (ask('fileWritable', 'spirit/server.js.') === false) ? true : false; }, test.limit.quick);
+test.run('fileServable refuses "spirit/server/script.js.", a file name ending in a dot', 0.8, function () { return (ask('fileServable', 'spirit/server/script.js.') === false) ? true : false; }, test.limit.quick);
+test.run('fileWritable refuses "spirit/server/script.js.", a file name ending in a dot', 0.8, function () { return (ask('fileWritable', 'spirit/server/script.js.') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses "spirit/element/icon/script.js ", a file name ending in a space', 0.8, function () { return (ask('fileServable', 'spirit/element/icon/script.js ') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses "spirit/element/icon/script.js ", a file name ending in a space', 0.8, function () { return (ask('fileWritable', 'spirit/element/icon/script.js ') === false) ? true : false; }, test.limit.quick);
-test.run('fileServable refuses "spirit/server.js::$DATA", the file\'s data stream', 0.8, function () { return (ask('fileServable', 'spirit/server.js::$DATA') === false) ? true : false; }, test.limit.quick);
-test.run('fileWritable refuses "spirit/server.js::$DATA", the file\'s data stream', 0.8, function () { return (ask('fileWritable', 'spirit/server.js::$DATA') === false) ? true : false; }, test.limit.quick);
+test.run('fileServable refuses "spirit/server/script.js::$DATA", the file\'s data stream', 0.8, function () { return (ask('fileServable', 'spirit/server/script.js::$DATA') === false) ? true : false; }, test.limit.quick);
+test.run('fileWritable refuses "spirit/server/script.js::$DATA", the file\'s data stream', 0.8, function () { return (ask('fileWritable', 'spirit/server/script.js::$DATA') === false) ? true : false; }, test.limit.quick);
 test.run('fileServable refuses "spirit/state/identity.json:secret", a named stream with a colon in the name', 0.8, function () { return (ask('fileServable', 'spirit/state/identity.json:secret') === false) ? true : false; }, test.limit.quick);
 test.run('fileWritable refuses "spirit/state/identity.json:secret", a named stream with a colon in the name', 0.8, function () { return (ask('fileWritable', 'spirit/state/identity.json:secret') === false) ? true : false; }, test.limit.quick);
 
@@ -206,4 +206,4 @@ test.run('spirit/job/chokidar/index.js is servable but not writable', 0.8, funct
 test.run('spirit/job/readdirp/index.js is servable but not writable', 0.8, function () { return servedOnly('spirit/job/readdirp/index.js'); }, test.limit.quick);
 test.run('spirit/element/codeMirror/lib/codemirror.js is servable but not writable', 0.8, function () { return servedOnly('spirit/element/codeMirror/lib/codemirror.js'); }, test.limit.quick);
 // The walkers: that no code skips node_modules by its own name, every walker reading the one list above, is the general
-// test's, spirit/test/spirit-sibling-general.js, over every file (goal/G47.1); once a list of the walkers at one old commit here.
+// test's, spirit/test/script-sibling-general.js, over every file (goal/G47.1); once a list of the walkers at one old commit here.

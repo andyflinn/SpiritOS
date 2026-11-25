@@ -23,7 +23,7 @@
 //
 // A BATCH (the box): testicle off at its start, on at its end, so it does not test a tree half moved; every move changed
 // the hashes of the files it edited, so testicle relearns and tests what changed by itself.
-require('../../spirit.js');
+require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
@@ -113,7 +113,7 @@ function relFrom(dir, target) {
 function fixText(text, ownOld, ownNew, map) {
   let t = text;
   const oldDir = path.posix.dirname(ownOld), newDir = path.posix.dirname(ownNew);
-  // 1. Relative references, resolved against where the file stood: './x.js', '../a/b.md', '../../spirit.js'.
+  // 1. Relative references, resolved against where the file stood: './x.js', '../a/b.md', '../../script.js'.
   t = t.replace(/(^|[\s'"`(=,\[])((?:\.\.?\/)(?:[\w@.-]+\/)*[\w@.-]+\.(?:js|md|html|json|css))(?=$|[\s'"`),;:\]#?])/gm, function (all, pre, ref) {
     const target = path.posix.normalize(path.posix.join(oldDir, ref));
     const moved = map[target];
@@ -133,7 +133,8 @@ function fixText(text, ownOld, ownNew, map) {
     if (!/\.\w+$/.test(now) && !moved) { if (oldDir === newDir) return all; }
     const r = path.posix.relative(newDir, now);
     const parts = r ? r.split('/') : [];
-    if (!parts.length) return all;
+    // The script's own new folder (the flag-day moves, missed: DEBUG's and sendMail's folder beside them became their own).
+    if (!parts.length) return '__dirname';
     return via + fn + '(__dirname, ' + parts.map(function (p) { return "'" + p + "'"; }).join(', ') + ')';
   });
   Object.keys(map).forEach(function (old) {

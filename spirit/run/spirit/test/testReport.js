@@ -30,7 +30,7 @@
 
 const path = require('path');
 // The rule a test's title keeps (goal/G47.4): product code, which a test may load.
-const TITLE_RULE = require(path.join(__dirname, '..', 'fieldRules.js'));
+const TITLE_RULE = require(path.join(__dirname, '..', 'fieldRules', 'script.js'));
 
 const STARS = '**************************************************************************';
 const LINE_LENGTH = STARS.length;
@@ -115,7 +115,7 @@ let testicle = null;
 let reportsOut = 0;
 const reportsLanded = [];
 // EACH REPORT AT ONCE, NONE WAITING FOR THE ONE BEFORE (goal/G49.8; Andy: "make it smaller! make it faster! do it.", after the
-// timing of spirit-sibling-general.js: 41 checks a script, each waiting its report's round trip): a test's report goes out the
+// timing of script-sibling-general.js: 41 checks a script, each waiting its report's round trip): a test's report goes out the
 // moment the test ends, and the next test starts without waiting for it to land. IN ORDER WHERE IT COUNTS (goal/G47.1, box
 // v129: a general test's success for one script comes before any result of the next): a script's success is sent only once
 // every report of its tests has landed (testicle erases a title a completed run did not report), and the run waits for that
@@ -140,7 +140,7 @@ function reportToTesticle(rec, verb, after) {
     globalThis.spirit = undefined;
     globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
+    try { real = require(path.join(__dirname, '..', 'script.js')); } finally { globalThis.spirit = own !== undefined ? own : (real || undefined); globalThis.window = ownWindow; }
     testicle = testicle || real.requireScript('spirit/app/testicle/api.js');
     // ITS FAILURE CAUGHT WHERE IT IS KEPT (the test review, fix 1: "testReport.js:137 stores the report promise with no handler, and
     // :209 charges the rejection to the running test"; with no node, three passing tests gave two greens and a red): a family
@@ -181,7 +181,7 @@ let started = false;
 function start() { if (!started) { started = true; ownImmediate(runAll); } }
 // THE TIME LIMITS, CENTRAL (Andy, 2026-11-11, after limits measured on one machine hung the tests on another: "cw, change
 // the limits, i hope you have those as relatively central constants, GO!!"). Every suite gives a test one of these, never
-// a number of its own (spirit-sibling-general.js (titleRules) judges it): quick for a test that asks and answers, slow for one that
+// a number of its own (script-sibling-general.js (titleRules) judges it): quick for a test that asks and answers, slow for one that
 // starts a scratch node, a desk or a Chrome page, long for one that runs a whole world end to end. A limit catches a hang,
 // not a slow machine, so each is wide; change one here and every suite follows.
 test.limit = Object.freeze({ quick: 10000, slow: 60000, long: 300000 });
@@ -317,7 +317,7 @@ async function runAll() {
     const once = script + '|' + title;
     // A title said twice, a severity that is no number from 0.0 to 1.0, or no body: a fail at 0.7, as a crash is.
     // A TITLE THAT BREAKS THE DESCRIPTION RULE too (goal/G47.4, the box: "test titles are constrained BY
-    // DESCRIPTION_MAX_BYTES, in spirit/fieldRules.js"): empty, invisible characters, or past its 128 bytes; refused, never cut.
+    // DESCRIPTION_MAX_BYTES, in spirit/fieldRules/script.js"): empty, invisible characters, or past its 128 bytes; refused, never cut.
     // TWO TESTS OF ONE TITLE, CUT OR NOT, FAIL THE SUITE, NOT A TEST (goal/G49.6; Andy: "that refusal has to be a suite level
     // failure. then you can have a new status for suites \"duplicate titles\"", "rule one wins": every test is still run and
     // reported as it ends): the suite's success for the script goes out false, its reason duplicateTitles.

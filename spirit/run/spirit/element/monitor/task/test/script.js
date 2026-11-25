@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
@@ -91,7 +91,7 @@ test.run('while its job runs, the line shows the name and the text the app publi
   running = await waitFor('zztask', function (l) { return l.button === 'Cancel' && l.line === 'Zz Task: halfway there'; }, 15000);
   return running ? true : false;
 }, test.limit.long);
-// spirit/job.js: a cancelled run is removed, so Run comes back.
+// spirit/job/script.js: a cancelled run is removed, so Run comes back.
 test.run('Cancel ends its job, and the row offers Run again with the name alone', 0.4, async function () {
   if (!running) return false;
   await press('zztask');

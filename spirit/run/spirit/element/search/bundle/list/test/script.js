@@ -11,9 +11,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(RUN, 'spirit', 'element', 'search', 'bundle', 'list', 'script.js');
 
@@ -46,8 +46,8 @@ test.run('the bundle list runs on a bare window with the page\'s real data set',
   // goal/G43.32: the element places itself by installSpiritElement, as it runs (spirit/test/headLessChrome.js pageSpirit).
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(window.spirit);
   global.spirit = global.window.spirit;
-  // The page's one data set (spirit/data.js), which spirit.js brings with the client.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
+  // The page's one data set (spirit/data/script.js), which spirit.js brings with the client.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
   DATA = global.window.spirit.required.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
@@ -211,7 +211,7 @@ test.run('of the bundles the page holds, it offers that server\'s alone', 0.2, f
     const win = { window: null, spirit: { element: {} }, console: console };
     // goal/G43.32: search.js places itself by installSpiritElement (spirit/test/headLessChrome.js pageSpirit).
     // The search and what it ranks with, run in this world by their paths through the page stand-in (goal/G49.6).
-    const REAL = ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search/script.js'];
+    const REAL = ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'];
     win.window = win;
     LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
     REAL.forEach(function (rel) { win.spirit.requireScript(rel); });

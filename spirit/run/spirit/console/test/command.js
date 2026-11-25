@@ -13,7 +13,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 
@@ -296,7 +296,7 @@ test.run('the command history rolls at 256: after 300 more lines it holds 256, t
 // ── THE WAIT (goal/G48.6) ──────────────────────────────────────────────────────────────────────────────────────────────
 // The box: "an array of wait events will be maintained in spirit/state/console/node.json", with "wait", "wait add
 // <event-description>" and "wait remove <event-description-string>"; "wait reads node.db's log on its own node ... through
-// the log's one reader, arrivals in spirit/trafficLog.js"; "arrivals hands delivered inbound rows only, so the agent's own
+// the log's one reader, arrivals in spirit/trafficLog/script.js"; "arrivals hands delivered inbound rows only, so the agent's own
 // outgoing calls ... never wake a wait"; "a stream's delivery to a server's listener carries a bundle ... each of its entries
 // is matched on its own"; "wait add api=<branch>.<verb> <field>=<value> ..."; the read-pointer: "a wake reads every row past
 // it once", "the first wait starts at the newest row"; the commands: "it blocks until a wait-row matches or the configured
@@ -308,7 +308,7 @@ test.run('the command history rolls at 256: after 300 more lines it holds 256, t
 const packetCodec = LOADER.requireScript('spirit/client/packet.js');
 let nodeLog = null;
 const arrive = function (body, dir) {
-  if (!nodeLog) nodeLog = LOADER.requireScript('spirit/trafficLog.js').createTrafficLog({ rootDir: W.node.run });
+  if (!nodeLog) nodeLog = LOADER.requireScript('spirit/trafficLog/script.js').createTrafficLog({ rootDir: W.node.run });
   const e = packetCodec.encode('api', body);
   return nodeLog.note({ dir: dir || 'in', kind: 'request', peer: 'KEY-ZZWAITPEER', hash: e.envelope.id, outcome: 'delivered', payload: e.text });
 };

@@ -13,7 +13,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/search/contact/detail/script.js';
@@ -291,7 +291,7 @@ function relayWorld(rows, relayStatus) {
       if (at === 'spirit/contact/api.js' && !(win.spirit.required.spirit.data && win.spirit.required.spirit.data.contact)) ((win.spirit.required.spirit.data = win.spirit.required.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function (){}; } };
       // A part with no stand-in never arrives, as in the person's world; the owner badge's removal rule is its stand-in here.
       if (at === 'spirit/element/armingButton/script.js') return Promise.resolve(ARMING);
-      if (at === 'spirit/ownerBadge.js') return Promise.resolve({ removalRefusal: function () { return ''; } });
+      if (at === 'spirit/ownerBadge/script.js') return Promise.resolve({ removalRefusal: function () { return ''; } });
       const b = branchAt(families, at);
       return b ? Promise.resolve(b) : new Promise(function () {});
     },
@@ -1291,7 +1291,7 @@ test.run('taking away a 😏 it does not have changes nothing', 0.2, async funct
   await home(S.N.base, 'contact.faceable', { key: S.Far.relayKey, faceable: false });
   const pass = !(await starred(S.Far.relayKey));
   // A node that is no relay is refused 😏 (box v33: "for a relay this node holds a seat on only").
-  S.person = LOADER.requireScript('spirit/relayAuth.js').generateIdentity('zzPuppet').publicKey;
+  S.person = LOADER.requireScript('spirit/relayAuth/script.js').generateIdentity('zzPuppet').publicKey;
   await home(S.N.base, 'contact.block', { publicKey: S.person });
   const personAns = await home(S.N.base, 'contact.faceable', { key: S.person, faceable: true });
   return (pass && personAns.status >= 400 && personAns.status < 500) || false;

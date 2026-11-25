@@ -19,7 +19,7 @@ themselves are who installs the element factory at spirit.required.<path-of-elem
   placed first; what stood before still stands.
 
 On a page every element script's factory is asked at its place by the general rules
-(`spirit/test/spirit-sibling-node.md` and `spirit-sibling-browser.md`, every product script placed where it is required).
+(`spirit/test/script-sibling-node.md` and `script-sibling-browser.md`, every product script placed where it is required).
 
 ## What its test must try to break
 

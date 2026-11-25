@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -801,7 +801,7 @@ test.after(stopAll);
     return (await asked()).some(function (b) { const j = parsed(b) || {}; return /(^|\.)remote$/.test(String(j.call || '')) && /chat/.test(String(j.call || '')) && !(j.args && j.args.id); }) || false;
   }, test.limit.quick);
   // WHAT IT RUNS ON, SHOWN (Andy: "the selector dropdown on andy-wsl's desk finds \"Andy Flinn\" but won't accept the
-  // selection, the setting remains on \"WSL ANDY VSCode\""; "nothing returned handles the data"; "all, agreed. spirit/data.js"):
+  // selection, the setting remains on \"WSL ANDY VSCode\""; "nothing returned handles the data"; "all, agreed. spirit/data/script.js"):
   // before any pick the field names the server remote answers as current; chat's published remote row reaches the page's
   // spirit.required.spirit.data.chat.remote; and the field follows what lands there.
   const barForm = function () { return '[].filter.call(document.querySelectorAll(".shell-row-form"), function (x) { var sp = x.querySelector(".shell-row-form-span"); return x.getBoundingClientRect().height > 0 && sp && String(sp.textContent || "").indexOf(' + JSON.stringify(CHAT) + ') !== -1; })[0]'; };

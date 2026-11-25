@@ -1,6 +1,6 @@
 # spirit/DEBUG/garbageArguments.js — its own test
 
-The worst arguments a server's api could be sent (goal/G41.19, `../../test/DEBUG.md`; Andy: *"from the introspections, it
+The worst arguments a server's api could be sent (goal/G41.19, `./script.md`; Andy: *"from the introspections, it
 will generate the most garbage arguments, that could be thrown at the api, and check the responses."*). Made from the
 server's own api tree. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). In
 process: `make` is handed a planted server whose `api()` answers a planted tree.

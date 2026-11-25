@@ -60,7 +60,7 @@ var chIconPart = window.spirit && typeof window.spirit.requireScript === 'functi
   ? Promise.resolve(keepAnswer('spirit/element/icon/script.js')).then(null, function () { /* the arrows stay text */ })
   : Promise.resolve();
 // THE INTERFACES IT USES, IT LOADS ITSELF (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING INTERFACES IT FUCKING
-// NEEDS"; spirit/test/spirit-sibling-browser.js): chat's own, the node's (its card) and contacts' (the peers it lists), and
+// NEEDS"; spirit/test/script-sibling-browser.js): chat's own, the node's (its card) and contacts' (the peers it lists), and
 // chat's cache manager; none is left to another part having loaded it first.
 var chInterfaces = window.spirit && typeof window.spirit.requireScript === 'function'
   ? Promise.all(['spirit/app/chat/api.js', 'spirit/node/api.js', 'spirit/contact/api.js'].map(function (p) { return Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); })

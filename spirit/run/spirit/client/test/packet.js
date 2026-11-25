@@ -5,7 +5,7 @@
 // "every production script has its own test" (goal/G47.1, box v72).
 //
 // One door for every app: the envelope { app, v, id, body, re } lives inside the relay's `text`, so the wire does not
-// change. Encode, decode, decorate, isEnvelope, randomId; the bound it enforces is asked of spirit/limits.js, never
+// change. Encode, decode, decorate, isEnvelope, randomId; the bound it enforces is asked of spirit/limits/script.js, never
 // restated. Pure and dual target: driven in node, and loaded in a window of its own (vm) as a page loads it.
 
 const fs = require('fs');
@@ -13,13 +13,13 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/client/packet.js';
 const FILE = path.join(RUN, SUBJECT);
 const P = LOADER.requireScript(SUBJECT);
-const limits = LOADER.requireScript('spirit/limits.js');
+const limits = LOADER.requireScript('spirit/limits/script.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function bytes(s) { return Buffer.byteLength(String(s), 'utf8'); }
@@ -160,8 +160,8 @@ test.run('in a page, with limits loaded first, it is window.spirit.required.spir
   return (p.MAX_TEXT === limits.SEALED_MAX && r.ok === true && /^[0-9a-f]{32}$/.test(r.envelope.id)) || false;
 }, test.limit.quick);
 // WHAT IT NEEDS, IT LOADS ITSELF (goal/G47.1, Andy: "cw, FIX IT!"): in a page with no limits yet it asks spirit.requireScript for
-// spirit/limits.js, and is window.spirit.required.spirit.client.packet once that is in.
-test.run('in a page without limits.js it asks for spirit/limits.js itself, and is spirit.required.spirit.client.packet once it is in', 0.2, async function () {
+// spirit/limits/script.js, and is window.spirit.required.spirit.client.packet once that is in.
+test.run('in a page without limits.js it asks for spirit/limits/script.js itself, and is spirit.required.spirit.client.packet once it is in', 0.2, async function () {
   const asked = [];
   const win = { spirit: {} };
   win.spirit.requireScript = function (p) {
@@ -174,5 +174,5 @@ test.run('in a page without limits.js it asks for spirit/limits.js itself, and i
   const before = !!(((win.spirit.required || {}).spirit || {}).client || {}).packet;
   await new Promise(function (r) { setTimeout(r, 50); });
   const p = win.spirit.required.spirit.client.packet;
-  return (asked.join() === 'spirit/limits.js' && !before && !!p && p.MAX_TEXT === limits.SEALED_MAX && p.encode('chat', 'x').ok === true) || false;
+  return (asked.join() === 'spirit/limits/script.js' && !before && !!p && p.MAX_TEXT === limits.SEALED_MAX && p.encode('chat', 'x').ok === true) || false;
 }, test.limit.quick);

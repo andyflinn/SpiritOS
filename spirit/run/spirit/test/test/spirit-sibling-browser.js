@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/test/test/spirit-sibling-browser.js
-// The test of spirit/test/spirit-sibling-browser.js, and of no other module (spec: ./spirit-sibling-browser.md): THE
+// spirit/run/spirit/test/test/script-sibling-browser.js
+// The test of spirit/test/script-sibling-browser.js, and of no other module (spec: ./script-sibling-browser.md): THE
 // BROWSER TESTS ON ONE PAGE (goal/G47.1, box v144, "this cycle, first: the browser tests on one page"). The general test is
 // run as testicle runs it, handed a list of scripts: six real elements and one planted script that never ends, a file of
 // its own beside them for the run (a git-ignored file never reaches the node the general test takes). What it
@@ -11,8 +11,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
-const SUBJECT = path.join(RUN, 'spirit', 'test', 'spirit-sibling-browser.js');
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
+const SUBJECT = path.join(RUN, 'spirit', 'test', 'script-sibling-browser.js');
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -20,7 +20,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const ELEMENTS = ['spirit/element/busyButton/script.js', 'spirit/element/progressBar/script.js', 'spirit/element/panel/script.js', 'spirit/element/icon/script.js',
   'spirit/element/fieldInput/script.js', 'spirit/element/armingButton/script.js'];
 const HANG = 'spirit/element/zzBrowserHang.js';
-// box v144: "measured before: spirit-sibling-browser.js ~10 s a script on cw's Windows ..., 3.7 s on wsl"; "the target: at
+// box v144: "measured before: script-sibling-browser.js ~10 s a script on cw's Windows ..., 3.7 s on wsl"; "the target: at
 // least 80% less test time".
 const BEFORE_S = process.platform === 'win32' ? 10 : 3.7;
 
@@ -44,7 +44,7 @@ function descendants(pid) {
   const args = {};
   rows.forEach(function (l) { const m = /^\s*(\d+)\s+(\d+)\s*(.*)$/.exec(l); if (!m) return; (kids[m[2]] = kids[m[2]] || []).push(m[1]); args[m[1]] = m[3]; });
   const out = [];
-  const walk = function (p) { (kids[p] || []).forEach(function (k) { out.push({ pid: k, args: args[k] }); if (!/spirit\/server\.js --port/.test(args[k])) walk(k); }); };
+  const walk = function (p) { (kids[p] || []).forEach(function (k) { out.push({ pid: k, args: args[k] }); if (!/spirit\/server\/script\.js --port/.test(args[k])) walk(k); }); };
   walk(String(pid));
   return out;
 }
@@ -60,7 +60,7 @@ function testicleBase() {
 async function newestTested(base, script) {
   try {
     const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ call: 'testicle.testicle.search', args: { script: script, suite: 'spirit/test/spirit-sibling-browser.js', text: '' } }) });
+      body: JSON.stringify({ call: 'testicle.testicle.search', args: { script: script, suite: 'spirit/test/script-sibling-browser.js', text: '' } }) });
     const b = await r.json();
     return ((b && b.items) || []).map(function (i) { try { return Number(JSON.parse(i.label).tested) || 0; } catch (e) { return 0; } }).reduce(function (a, c) { return Math.max(a, c); }, 0);
   } catch (e) { return 0; }
@@ -69,7 +69,7 @@ test.after(function () { try { fs.rmSync(path.join(RUN, HANG), { force: true });
 
 test.run('a script that never ends is planted', 0.2, function () {
   const f = path.join(RUN, HANG);
-  fs.writeFileSync(f, '\'use strict\';\n// planted by spirit/test/test/spirit-sibling-browser.js: it never ends\nfor (;;) { /* hang */ }\n');
+  fs.writeFileSync(f, '\'use strict\';\n// planted by spirit/test/test/script-sibling-browser.js: it never ends\nfor (;;) { /* hang */ }\n');
   return fs.existsSync(f) || false;
 }, test.limit.quick);
 test.run('the general test runs on six elements with the hung script among them, watched from outside', 0.2, async function () {
@@ -84,7 +84,7 @@ test.run('the general test runs on six elements with the hung script among them,
   // Watched four times a second until it ends, or for four minutes: a run still going then is ended, with all it started.
   while (!ended && Date.now() - W.startAt < 240000) {
     (descendants(kid.pid) || []).forEach(function (p) {
-      if (/spirit\/server\.js --port/.test(p.args)) W.nodes.add(p.pid);
+      if (/spirit\/server\/script\.js --port/.test(p.args)) W.nodes.add(p.pid);
       // One Chrome is its browser process; its zygotes, renderers and utilities carry --type=.
       if (/chrome/.test(p.args) && /--headless/.test(p.args) && /--user-data-dir=/.test(p.args) && !/--type=/.test(p.args)) W.chromes.add(p.pid);
     });
@@ -105,7 +105,7 @@ test.run('the general test runs on six elements with the hung script among them,
   return true;
 }, test.limit.long);
 
-// box v144: "spirit/test/spirit-sibling-browser.js and spirit/test/app-child-browser.js run on one node and one Chrome for
+// box v144: "spirit/test/script-sibling-browser.js and spirit/test/app-child-browser.js run on one node and one Chrome for
 // the whole run"
 test.run('the run ends by itself, within four minutes', 0.4, function () {
   return (!!W.list && !W.hung) || false;
@@ -140,9 +140,9 @@ test.run('the run takes at least 80% less than the time measured before', 0.4, f
   return (W.ms > 0 && W.ms <= most) || false;
 }, test.limit.quick);
 // box v144: "no fixed sleeps in the checks: each wait ends the moment the page has settled."
-test.run('spirit-sibling-browser.js holds no fixed sleep', 0.4, function () {
+test.run('script-sibling-browser.js holds no fixed sleep', 0.4, function () {
   const bad = [];
-  ['spirit-sibling-browser.js'].forEach(function (n) {
+  ['script-sibling-browser.js'].forEach(function (n) {
     const lines = fs.readFileSync(path.join(RUN, 'spirit', 'test', n), 'utf8').split('\n');
     lines.forEach(function (l, i) {
       const code = l.replace(/\/\/.*$/, '');
@@ -161,7 +161,7 @@ test.after(function () { try { fs.rmSync(path.join(RUN, FLAG), { force: true });
 test.run('a change written into a row of true or false fields alone redraws the element that draws it', 0.4, async function () {
   fs.writeFileSync(path.join(RUN, FLAG), [
     '\'use strict\';',
-    '// planted by spirit/test/test/spirit-sibling-browser.js: it draws a row that holds one true or false field alone',
+    '// planted by spirit/test/test/script-sibling-browser.js: it draws a row that holds one true or false field alone',
     '(function () {',
     '  var S = window.spirit;',
     '  function create(container) {',
@@ -195,7 +195,7 @@ function planted(top, wrapped) {
     '  var S = window.spirit;',
     '  function create(container) { var el = document.createElement(\'div\'); el.style.overflow = \'hidden\'; container.appendChild(el); return { destroy: function () { el.remove(); } }; }',
     '  S.requireScript(\'spirit/element/installSpiritElement/script.js\').then(function () { S.required.spirit.element.installSpiritElement(S, \'' + LEAK + '\', { create: create }); });'];
-  return ['\'use strict\';', '// planted by spirit/test/test/spirit-sibling-browser.js: what it leaves on the window', top]
+  return ['\'use strict\';', '// planted by spirit/test/test/script-sibling-browser.js: what it leaves on the window', top]
     .concat(wrapped ? ['(function () {'].concat(body, ['}());']) : ['(function () {'].concat(body, ['}());'])).concat(['']).join('\n');
 }
 async function judged(src) {

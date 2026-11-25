@@ -6,7 +6,7 @@
 // its test: ./test/script.md and ./test/task.js.
 //
 //   spirit.required.spirit.element.monitor.task.create(container, { id }) -> { destroy() }
-//     id   the app's job id, spirit.app.<name>: a run's job id is its app's route (spirit/job.js, goal/G43.20)
+//     id   the app's job id, spirit.app.<name>: a run's job id is its app's route (spirit/job/script.js, goal/G43.20)
 //
 // IT SHOWS ONLY FOR A RUN APP: an app whose spirit/app/<name>/<name>.json says node.run; for any other it draws nothing, as
 // the app detail's other rows hide themselves. The icon and the name are that manifest's identity.

@@ -50,7 +50,7 @@ goal/G43.5: `spirit/element/codeMirror.js`'s part of the element move. Its test 
 
 ### Requirements
 
-- *"ALL move the fucking library inside run::/spirit/element/codeMirror/"*. CodeMirror's 15 files, licence included, stand there (that no file names its old place is `spirit/test/spirit-sibling-general.js`'s). On a real page the element draws from there with its sheet and search, and asks no other place.
+- *"ALL move the fucking library inside run::/spirit/element/codeMirror/"*. CodeMirror's 15 files, licence included, stand there (that no file names its old place is `spirit/test/script-sibling-general.js`'s). On a real page the element draws from there with its sheet and search, and asks no other place.
 - *"all, only access to codeMirror library is through the element!"* The page starts with no `window.CodeMirror`, and no product file but `spirit/element/codeMirror.js` names the library's folder. The element brings the library, its sheets and its search add-ons itself.
 
-The rest of the element move is the elementMove part of `spirit/test/spirit.md`.
+The rest of the element move is the elementMove part of `spirit/test/script.md`.

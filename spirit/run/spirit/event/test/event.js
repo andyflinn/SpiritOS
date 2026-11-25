@@ -10,7 +10,7 @@ const path = require('path');
 const { EventEmitter } = require('events');
 const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const { createEvents } = LOADER.requireScript('spirit/event/event.js');
 
@@ -169,7 +169,7 @@ test.run('when one of two streams closes, the other keeps its heartbeat and goes
 }, test.limit.quick);
 
 // A PAGE'S CONNECT REACHES EVERY APP SERVER (goal/G47.5, part 2; Andy: "the node forwards a loopback connect to the as server as
-// a normal request, so that spirit/server/app.js knows a loopback client connected", "the connect to all app servers doesn't
+// a normal request, so that spirit/server/app/script.js knows a loopback client connected", "the connect to all app servers doesn't
 // need a loopback mark, it will reach the app server with the local node's ID", "47.5 WILL NOT HAVE ANY APP-SPECIFIC SHIT IN
 // IT.", "Go on 47.5 fix, part two"). On a scratch node of lab's: a planted app server whose bootstrap writes down every
 // subscriber that is its own node; a page opens the node's event stream, and that subscriber is written down.
@@ -188,14 +188,14 @@ function selfSubTree() {
   const dir = path.join(run, 'spirit', 'app', SELFSUB);
   fs.mkdirSync(path.join(dir, 'server'), { recursive: true });
   fs.writeFileSync(path.join(dir, SELFSUB + '.json'), JSON.stringify({ identity: { icon: '🧪', label: SELFSUB, intrinsic: false }, mount: { [SELFSUB + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }));
-  fs.writeFileSync(path.join(dir, SELFSUB + '.js'), "'use strict';\nrequire('../../spirit.js');\nspirit.requireScript('spirit/app/" + SELFSUB + "/server/server.js');\n");
+  fs.writeFileSync(path.join(dir, SELFSUB + '.js'), "'use strict';\nrequire('../../script.js');\nspirit.requireScript('spirit/app/" + SELFSUB + "/server/server.js');\n");
   fs.writeFileSync(path.join(dir, 'server', 'server.js'), [
     "'use strict';",
     "require('../../../spirit.js');",
     "const fs = require('fs');",
     "const path = require('path');",
     "const SEEN = path.join(__dirname, '..', '..', '..', 'state', '" + SELFSUB + "', 'seen.json');",
-    "spirit.requireScript('spirit/server/app.js').serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {",
+    "spirit.requireScript('spirit/server/app/script.js').serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {",
     "  publisher: { family: '" + SELFSUB + "', waitMs: 5000, bootstrap: function (key) {",
     "    if (spirit.nodeFacts && key && key === spirit.nodeFacts.key) { try { fs.appendFileSync(SEEN, 'self\\n'); } catch (e) { /* judged by its absence */ } }",
     "    return [];",

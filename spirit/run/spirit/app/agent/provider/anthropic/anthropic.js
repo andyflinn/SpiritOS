@@ -1,5 +1,5 @@
 'use strict';
-require('../../../../spirit.js');
+require('../../../../script.js');
 
 // spirit/run/spirit/app/agent/provider/anthropic/anthropic.js
 // THE ANTHROPIC PLUGIN (goal/G41.18): Anthropic's model list. Andy, box v17: "built in this item - OpenAI plugin -

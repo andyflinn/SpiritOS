@@ -7,7 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const H = S.requireScript('spirit/test/headLessChrome.js');
 const REL = 'spirit/app/testicle/element/settingsPanel.js';

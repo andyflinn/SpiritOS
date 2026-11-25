@@ -14,7 +14,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = LOADER.requireScript('spirit/test/headLessChrome.js');
 const test = LOADER.requireScript('spirit/test/testReport.js');
@@ -23,7 +23,7 @@ const SUBJECT = 'spirit/element/nodeInfo/script.js';
 const FILE = path.join(RUN, SUBJECT);
 // The files of the tree its worlds load as they are, by their paths, through the page stand-in: the data set, a branch's
 // companion data.js, and the subject.
-const REAL = function (p) { return p === 'spirit/data.js' || p === SUBJECT || /^spirit\/[^/]+\/data\.js$/.test(p); };
+const REAL = function (p) { return p === 'spirit/data/script.js' || p === SUBJECT || /^spirit\/[^/]+\/data\.js$/.test(p); };
 const SRC = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8') : '';
 const CODE = SRC.replace(/\/\/.*$/gm, '');
 
@@ -135,7 +135,7 @@ function world(o) {
   // a branch's companion data.js and the subject run in this window by their paths, through the page stand-in (goal/G49.6).
   win.spirit = win.spirit || {};
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
-  win.spirit.requireScript('spirit/data.js');
+  win.spirit.requireScript('spirit/data/script.js');
   const S = win.spirit;
   Object.assign(S.required.spirit, page.spirit);
   S.nodeFacts = { key: 'NODEKEY+INFO==',
@@ -534,7 +534,7 @@ function formsPart() {
     const REAL2 = function (p) { return REAL(p) || p === 'spirit/element/joinForm/script.js' || p === 'spirit/element/faceForm/script.js'; };
     win.spirit = win.spirit || {};
     LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL2 });
-    win.spirit.requireScript('spirit/data.js');
+    win.spirit.requireScript('spirit/data/script.js');
     const S = win.spirit;
     // goal/G43.32: every element stands at its path, spirit.required.spirit.element.<name>, the stand-ins with them.
     Object.assign(S.required.spirit, { element: {} });
@@ -738,7 +738,7 @@ function rotatePart() {
     over, bars, layerButton, armed, closed, back, card1;
   // The old dialog's folder gone, its INTRINSIC line gone, its test moved, nothing opening it (the box, 8): the move is done
   // and shell/ is gone, so those checks are dropped (goal/G47.1); that a require names a file that is there is
-  // spirit-sibling-general.js's. rotateKey.js itself, alone, is its own test's: spirit/element/rotateKey/test/script.js.
+  // script-sibling-general.js's. rotateKey.js itself, alone, is its own test's: spirit/element/rotateKey/test/script.js.
   test.run('nodeInfo opens no dialog of the old shell, through callDialog or otherwise', 0.2, function () {
     ni = code(path.join(RUN, 'spirit', 'element', 'nodeInfo', 'script.js'));
     return (ni.length > 0 && !/\bcallDialog\b/.test(ni)) ? true : false;

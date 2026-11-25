@@ -6,14 +6,14 @@
 // again". Each check reads a scratch run root, planted here with one script, its test, its .md, a fixture of its test and
 // the files that name it, after one command, `node spirit/devtool/moveScript/script.js <old> <new>`, run in that root.
 
-require('../../../spirit.js');
+require('../../../script.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
-const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js');
 const TOOL = path.join(RUN, 'spirit', 'devtool', 'moveScript', 'script.js');
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/devtool/moveScript/test'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 
@@ -29,7 +29,7 @@ const NEW = 'spirit/element/foo/script.js';
 
 // The scratch run root: what a move of spirit/element/foo.js to spirit/element/foo/script.js must find and fix.
 const PLANT = {
-  'spirit/spirit.js': "'use strict';\n",
+  'spirit/script.js': "'use strict';\n",
   // the script, with its own relative require
   'spirit/element/foo.js': "'use strict';\n" + req('../spirit.js') + ";\nwindow.spirit.required.spirit.element.foo = { create: function () {} };\n",
   // its test, its .md, a page fixture of its test

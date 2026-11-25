@@ -9,7 +9,7 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 
 const FILE = path.join(__dirname, '..', 'openai.js');

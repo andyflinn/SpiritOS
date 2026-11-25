@@ -25,12 +25,12 @@
 // the probability bucket, and says so with more (tableSearch, below).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit.js');
+require('../../../script.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.requireScript('spirit/server/app.js');
-const limits = spirit.requireScript('spirit/limits.js');
+const appServer = spirit.requireScript('spirit/server/app/script.js');
+const limits = spirit.requireScript('spirit/limits/script.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -179,7 +179,7 @@ function walked(walk, pairOf, room) {
 // With no text every probability is 0 and the bucket keeps the walk's order.
 const probabilityStringMatch = spirit.requireScript('spirit/search/string.js').probabilityStringMatch;
 const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
-const createProbabilityBucket = spirit.requireScript('spirit/listLimiter.js').createProbabilityBucket;
+const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 const MAX_SCANNED_ITEMS = 1000;
 function lineProbability(text, line) { return text ? probabilityStringMatch(text, String(line.text)) : 0; }
 // THE WHOLE ROW, AS ITS GET SERVES IT (goal/G41.28; Andy, box v15: "a probability search of a dataBase table must ALWAYS
@@ -947,7 +947,7 @@ function refused(code) { const e = new Error(code); e.refusal = code; return e; 
 function refusedWhy(code, why) { const e = refused(code); e.extra = { why: String(why) }; return e; }
 // A FIELD RULE'S ANSWER IN WORDS: what was wrong with which field, and its bytes against the limit when it is the size.
 function fieldWhy(what, value, paragraph) {
-  const fr = spirit.requireScript('spirit/fieldRules.js');
+  const fr = spirit.requireScript('spirit/fieldRules/script.js');
   const p = paragraph ? fr.paragraphProblem(value) : fr.problem(value);
   if (!p) return '';
   const max = paragraph ? fr.PARAGRAPH_MAX_BYTES : fr.MAX_BYTES;
@@ -994,7 +994,7 @@ function publishOne(o) {
 //   Andy: "What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it
 //   knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes."
 //
-// appServer's streamPublisher (spirit/server/app.js, opts.publisher) keeps the subscribers: a deskClient subscribes as family
+// appServer's streamPublisher (spirit/server/app/script.js, opts.publisher) keeps the subscribers: a deskClient subscribes as family
 // deskClient, the node's grants deciding who may; every publish goes to each of them, a line his to some agents to those
 // alone (the row's to, goal/G21.1). A new subscriber is handed the desk's bootstrap set: the current goal's row and its
 // items' rows, their facts alone; everything published afterwards has a home in its data set
@@ -1339,7 +1339,7 @@ appServer.serve({
   // WHAT IT BLOCKS, NAMED (goal/G9.10). Andy, 2026-10-07: "When the user presses the [add-button], The desk will add a
   // blocking item with the entered title and a blank text box." So item.add takes one more argument, optional: the id
   // the new item blocks, the goal itself or an item of that goal, and the goal when it is left out (goal/G9.9's case).
-  // The title obeys the label rules, as every label does (spirit/fieldRules.js).
+  // The title obeys the label rules, as every label does (spirit/fieldRules/script.js).
   // WHAT IT BLOCKS (goal/G49; Andy: "put the plunger back with one rowForm: ➕ \"Add blocking item\" [title-input]
   // [Add-button], which will add an item with <Title> blocking the goal/item it was created from."): blocks, left out or
   // '', is its goal; else an item of that goal, kept on the new item as its blocks. Nothing else of the G48.8 cut's

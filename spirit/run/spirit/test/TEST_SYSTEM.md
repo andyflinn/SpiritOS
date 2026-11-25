@@ -51,7 +51,7 @@ modules reads as one result per module.
 A test that does not judge the one file it is handed is never a general test: a `-sibling-` beside `spirit.js` runs once per
 module, 111 times (goal/G43.2; Andy: *"it looks to me like a lazy-funcking-ass placement of tests"*). A test that covers
 several modules end to end is a test of the module it is most about, in its `./test/<name>.js`, and runs once. **Every test matches a production file** (goal/G43.27; Andy: *"wsl: every test in run:/ MUST MATCH a production
-file."*): a test named after no module is garbage, and the garbage rule of `spirit/test/spirit-sibling-general.js` goes red
+file."*): a test named after no module is garbage, and the garbage rule of `spirit/test/script-sibling-general.js` goes red
 on it.
 
 **Three kinds of general test** (goal/G47.1, box v94, 2): *"there will be, from now on only 3 types of general tests, at any
@@ -62,8 +62,8 @@ browser only scripts are tested by -general and -browser general tests. if a scr
 it will be tested by all 3 categories."* A script's class is testicle's (its script row's browserOnly and nodeOnly, set
 by `spirit/test/scriptClassify.js`, a special general test under its own name, `testModule.js`'s `SPECIAL`).
 
-The general tests of `spirit.js` stand in `spirit/run/spirit/test/` beside `spirit/run/spirit/spirit.js` (goal/G43.32):
-each judges every module in `spirit/` and below. `spirit-sibling-general.js` holds the rules read from a script's file,
+The general tests of `spirit.js` stand in `spirit/run/spirit/test/` beside `spirit/run/spirit/script.js` (goal/G43.32):
+each judges every module in `spirit/` and below. `script-sibling-general.js` holds the rules read from a script's file,
 each part the test it was (branchRules, titleRules, noFuckingGarbage, searchRules, testReachRules).
 
 **The tools of `spirit/run/spirit/test/`** (goal/G43.32, Q2; Andy: *"We need special rules for run://spirit/test/  it will
@@ -105,5 +105,5 @@ An item that names one file therefore gets the right tests without listing them.
   (a crash or a hang is 0.7, set by the reporter), its time limit one of the reporter's named limits, `test.limit.quick`, `.slow` or `.long`. The body
   answers `true` or `false`, nothing else (below, *A test has one string: its title*). Setup goes into a "the world:" test, cleanup into `test.after(fn)`. Each test is
   reported by itself to `testicle.testicle.set` of the node of the checkout it runs in, and the suite's success for each script it judged to `testicle.suite.success` once it is through with that script (none for a run with `--test`; testicle never sums a suite's result from its test rows); `--test <title>` runs the tests up
-  to that one. The titleRules part of `spirit-sibling-general.js` holds every suite to it. Its contract: `./test/testReport.md`.
+  to that one. The titleRules part of `script-sibling-general.js` holds every suite to it. Its contract: `./test/testReport.md`.
 - A product test that finds a module breaking a rule fails that module's test, not the item that brought the test.

@@ -22,7 +22,7 @@ const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '../../../../..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REPO = path.resolve(RUN, '..', '..');
@@ -991,7 +991,7 @@ test.run('typed words and result together: "wombat" with result red finds theta\
 // is current, of the script, the suite and the result asked, and each typed word is in its title, its script or its suite,
 // in any case. An answer is full when the room one answer has (limits.ANSWER_MAX) left after it cannot hold one more of
 // its rows. For each: not cut, it holds every matching row; cut, it is full and holds matching rows only.
-const limits = SPIRIT.requireScript('spirit/limits.js');
+const limits = SPIRIT.requireScript('spirit/limits/script.js');
 const ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 const bytes = function (x) { return Buffer.byteLength(JSON.stringify(x), 'utf8'); };
 // next: the item the server held back, the first of the following answer (from), when the search takes from; without it,
@@ -1808,12 +1808,12 @@ const ZC = {
   broken: Z + 'zzcBroken.js', hang: Z + 'zzcHang.js', exit: Z + 'zzcExit.js',
 };
 const ZC_SRC = {
-  node: "'use strict';\nrequire('../../../../spirit.js');\nconst fs = require('fs');\nmodule.exports = { fs: typeof fs.readFileSync };\n",
+  node: "'use strict';\nrequire('../../../../script.js');\nconst fs = require('fs');\nmodule.exports = { fs: typeof fs.readFileSync };\n",
   page: "'use strict';\ndocument.title = String(document.title);\nwindow.zzcPage = true;\n",
   both: "'use strict';\n(function (root) { var v = { both: true }; if (typeof module === 'object' && module && module.exports) module.exports = v; else root.zzcBoth = v; }(this));\n",
   broken: "'use strict';\nfunction ( {\n",
   hang: "'use strict';\nwhile (true) { /* never done */ }\n",
-  exit: "'use strict';\nrequire('../../../../spirit.js');\nconsole.error('zzcExit: no --state; the node that starts this names its state folder');\nprocess.exit(2);\n",
+  exit: "'use strict';\nrequire('../../../../script.js');\nconsole.error('zzcExit: no --state; the node that starts this names its state folder');\nprocess.exit(2);\n",
 };
 const ownOf = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
 const ownSuite = function (k) { return SUITE_HEAD + "test.run('" + k + " answers', 0.2, function () { return true; }, test.limit.quick);\n"; };
@@ -1836,7 +1836,7 @@ test.run('testicle.script.classify sets a script\'s browserOnly and nodeOnly', 0
 // goal/G48.4, Q6, Andy: lists are "spirit.type.string.json": what a load pulled in comes as a list in JSON, and is taken.
 test.run('testicle.script.classify takes what the load pulled in as a list in JSON', 0.4, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false, requires: JSON.stringify(['spirit/limits.js']) });
+  const r = await call(N.base, 'testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false, requires: JSON.stringify(['spirit/limits/script.js']) });
   return r.status === 200 || false;
 }, test.limit.quick);
 test.run('six scripts are written, each with its own test: node, page, both, broken, hang and exit', 0.2, async function () {
@@ -2348,7 +2348,7 @@ test.run('testicle.suite.success with success true sets it green, at once, whate
 // goal/G48.4, Q6: what the suite pulled in comes as a list in JSON, and is taken.
 test.run('testicle.suite.success takes what the suite pulled in as a list in JSON', 0.4, async function () {
   if (!succWorld) return false;
-  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: true, requires: JSON.stringify(['spirit/limits.js']) });
+  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: true, requires: JSON.stringify(['spirit/limits/script.js']) });
   return r.status === 200 || false;
 }, test.limit.quick);
 
@@ -2751,9 +2751,9 @@ function MICRO_GENERAL(body) {
   const DEP = { lib: D0 + 'lib.js', user: D0 + 'user.js', lazyLib: D0 + 'lazyLib.js', lazy: D0 + 'lazy.js' };
   const DEP_SRC = {
     lib: "'use strict';\nmodule.exports = { v: 1 };\n",
-    user: "'use strict';\nrequire('../../../../spirit.js').requireScript('" + D0 + "lib.js');\nmodule.exports = { user: true };\n",
+    user: "'use strict';\nrequire('../../../../script.js').requireScript('" + D0 + "lib.js');\nmodule.exports = { user: true };\n",
     lazyLib: "'use strict';\nmodule.exports = { lazy: 1 };\n",
-    lazy: "'use strict';\nconst spirit = require('../../../../spirit.js');\nmodule.exports = { use: function () { return spirit.requireScript('" + D0 + "lazyLib.js'); } };\n",
+    lazy: "'use strict';\nconst spirit = require('../../../../script.js');\nmodule.exports = { use: function () { return spirit.requireScript('" + D0 + "lazyLib.js'); } };\n",
   };
   const DEP_TEST = {
     lib: "test.run('lib answers', 0.2, function () { return true; }, test.limit.quick);\n",
@@ -2925,7 +2925,7 @@ function MICRO_GENERAL(body) {
 {
   const R0 = 'spirit/app/testicle/temp/zzRecon/';
   const RC = { a: R0 + 'aR.js', b: R0 + 'bR.js', c: R0 + 'cR.js' };
-  const pulls = function (what) { return "'use strict';\nrequire('../../../../spirit.js').requireScript('" + R0 + "bR.js');\nmodule.exports = { " + what + ": true };\n"; };
+  const pulls = function (what) { return "'use strict';\nrequire('../../../../script.js').requireScript('" + R0 + "bR.js');\nmodule.exports = { " + what + ": true };\n"; };
   const RC_SRC = { a: pulls('a'), b: "'use strict';\nmodule.exports = { b: true };\n", c: pulls('c') };
   const ownOfR = function (rel) { return path.posix.join(path.posix.dirname(rel), 'test', path.posix.basename(rel)); };
   const RR = { s: null, N: null, DB: '', ran: false, moved: false };

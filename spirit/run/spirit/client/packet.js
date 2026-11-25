@@ -39,11 +39,11 @@
 // page. spirit.js requires limits.js before packet.js for exactly that
 // reason (spirit.peerPost).
 var limits = (typeof process !== 'undefined' && process.versions && process.versions.node)
-  ? require('../spirit.js').requireScript('spirit/limits.js')
+  ? require('../script.js').requireScript('spirit/limits/script.js')
   : (typeof window !== 'undefined' ? ((((window.spirit || {}).required || {}).spirit || {}).limits || null) : null);
 
 // WHAT IT NEEDS, IT LOADS ITSELF (rule/26; goal/G47.1, Andy: "cw, FIX IT!", after the classifier found this file failing
-// in a page loaded alone): in a page with no limits yet, this file asks for spirit/limits.js and defines itself once it is
+// in a page loaded alone): in a page with no limits yet, this file asks for spirit/limits/script.js and defines itself once it is
 // in. A spirit.requireScript made while this file runs is one its own require waits for (spirit.js, requireOne's collecting), so
 // whoever required packet.js finds it defined. On the node, and in a page that has the limits, it is defined at once.
 function definePacket() {
@@ -59,7 +59,7 @@ function definePacket() {
 if (!limits || typeof limits.PAYLOAD_MAX !== 'number') {
   throw new Error(
     'packet.js needs js/limits.js loaded first — ' +
-    'spirit/limits.js must be loaded before this file. ' +
+    'spirit/limits/script.js must be loaded before this file. ' +
     'A hard reload usually fixes it: the page is running a cached copy.'
   );
 }
@@ -74,7 +74,7 @@ var PACKET_VERSION = 1;
 // IT SAID 1024 AND THE RELAY SAID 16384 — the same measurement of the
 // same string, disagreeing by 16×, with this comment claiming to mirror
 // a number it undercut. Every app was capped at a sixteenth of what the
-// relay would take. One rule, one place: spirit/limits.js.
+// relay would take. One rule, one place: spirit/limits/script.js.
 // PLAINTEXT_MAX since cycle 10's R6: an app composes a packet and the node
 // seals it afterwards, so what an app may build is the plaintext bound.
 // Against the wire figure every app would be told it has 22 KB and be
@@ -124,7 +124,7 @@ function byteLength(s) {
 // contributed fewer than its 32 bits.)
 //
 // 128 bits rather than 64 because it is the same line of code and the
-// envelope has a cap far larger than this (spirit/limits.js), so sixteen more
+// envelope has a cap far larger than this (spirit/limits/script.js), so sixteen more
 // characters cost nothing. That cap was 1024 when this was written and is
 // 16384 now; the sentence was true of the number rather than of the
 // reason, which is why it is stated as the reason here.
@@ -388,5 +388,5 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
 }
 
 if ((typeof process !== 'undefined' && process.versions && process.versions.node) || limits) definePacket();
-else window.spirit.requireScript('spirit/limits.js').then(function () { limits = ((((window.spirit || {}).required || {}).spirit || {}).limits || null); definePacket(); });
+else window.spirit.requireScript('spirit/limits/script.js').then(function () { limits = ((((window.spirit || {}).required || {}).spirit || {}).limits || null); definePacket(); });
 }());

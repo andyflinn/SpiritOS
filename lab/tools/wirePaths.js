@@ -472,7 +472,7 @@ function enclosingAt(file, line, col) {
 //
 // A PLANTED COPY OF spirit/run IS OURS TOO (goal/G19.14). A suite that
 // boots a real node copies the run tree into a temp home (plantRun.js)
-// and starts spirit/server.js there, so every frame of that node sat outside
+// and starts spirit/server/script.js there, so every frame of that node sat outside
 // the repo and was dropped — and a node is exactly where a component is
 // reached in production. Named by its path from `spirit/run/` on, as if
 // it were the repo's.

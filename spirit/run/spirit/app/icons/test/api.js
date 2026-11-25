@@ -7,12 +7,12 @@
 // top with no api/ folder"; 5: "the api branch is icons, and icons.<verb> can be granted to a peer like any branch". A
 // scratch node with Icons switched on, raw calls and a real Chrome on its face page; whether a call started a run is read
 // from the job spirit.app.icons, which names the pid of its last run. Who checks a call is goal/G43.32's decided 9: the
-// app's run, spirit/server/app.js in front of icons.js, not the node.
+// app's run, spirit/server/app/script.js in front of icons.js, not the node.
 
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const { scratchNode, chromePage, findChrome, until } = S.requireScript('spirit/test/headLessChrome.js');
 const FILE = path.join(__dirname, '..', 'api.js');
@@ -79,7 +79,7 @@ test.run('the api verb asked for the icons branch answers spirit/app/icons/api.j
 }, test.limit.quick);
 
 // goal/G43.32, decided 9, which replaces this box's 7 on who checks: the check runs in the app's process, its run started
-// as spirit/server/app.js in front of icons.js, never in the node. Andy: "isolation, we don't want the NODE to run the
+// as spirit/server/app/script.js in front of icons.js, never in the node. Andy: "isolation, we don't want the NODE to run the
 // validation", "for one-shot servers, appClient launches appServer with the argument "spirit/app/<name>/name.js"".
 // goal/G43.32, decided 9: a call that breaks it is refused by a run of the app, appServer.js in front of it, not by the node
 test.run('a call the icons api allows starts a run, and the job names a new pid each time', 0.2, async function () {

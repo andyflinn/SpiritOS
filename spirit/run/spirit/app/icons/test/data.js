@@ -4,7 +4,7 @@
 // The tests of spirit/app/icons/data.js, and of no other module (spec: ./data.md; goal/G43.19, box v16). The box: "it
 // implements a database-table interface, also reflected in api.js and data.js", and 10: "data.js on every open page follows
 // that one job", spirit.app.icons. The translator runs as it does: in a window of its own beside the real spirit.required.spirit.data
-// (spirit/data.js), which it writes into; the runs' rows are handed in as the node's stream hands them, jobs of module
+// (spirit/data/script.js), which it writes into; the runs' rows are handed in as the node's stream hands them, jobs of module
 // spirit.app.icons.
 
 const fs = require('fs');
@@ -12,11 +12,11 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
 
 // The sender's public key, base64 with a + and a / in it, as a node's key is.
 const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';

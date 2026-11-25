@@ -15,9 +15,9 @@ const vm = require('vm');
 const http = require('http');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
@@ -72,7 +72,7 @@ test.run('the contact row runs on a window of its own, with the data set and the
     const at = keys.reduce(function (o, k) { return o == null ? undefined : o[k]; }, window.spirit.required);
     return at && (typeof at === 'object' || typeof at === 'function') ? Promise.resolve(at) : Promise.reject(new Error('no stand-in for ' + p));
   };
-  load(path.join(JS, '..', '..', 'spirit', 'data.js'));
+  load(path.join(JS, '..', '..', 'spirit', 'data', 'script.js'));
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };

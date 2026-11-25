@@ -5,7 +5,7 @@
 // check"): a label that may be left empty, as a desk profile's name, "" for none, else a label as spirit.type.string.label is. The same file on the node and on a
 // page: on the node it is this module, on a page it stands at spirit.required.spirit.type.string.labelSelect.
 // On the node the spirit object first, as every file of the tree takes it (the general rules).
-if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../spirit.js');
+if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../script.js');
 (function (root) {
   // spirit.type.string.label, through spirit.requireScript: on the node its module at once, on a page what spirit.required
   // holds.

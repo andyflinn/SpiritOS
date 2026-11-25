@@ -10,20 +10,20 @@
 //
 // Judged on disc, from the files and the code (comments left out): no node is started. Each rule is one test over
 // every sub-folder judged, its detail naming each app's folder that breaks it (goal/G47.2: one title, unique in the
-// suite). What an element script places, a page judges in spirit-sibling-browser.js; what an api.js serves,
-// spirit-sibling-general.js (branchRules).
+// suite). What an element script places, a page judges in script-sibling-browser.js; what an api.js serves,
+// script-sibling-general.js (branchRules).
 
 // A LIST OF SCRIPTS (goal/G47.1, box v94, 2: "with no script-argument, they will process all applicable scripts. else it
 // will process all scripts listed in the arguments that fit"): its rules judge each argument in turn, its results reported for
 // that argument (testReport's test.forScript); none given, every sub-folder.
-require('../spirit.js');
+require('../script.js');
 const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });
 function appChild(ARGS) {
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 function code(rel) { let t = ''; try { t = fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } return t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
@@ -217,7 +217,7 @@ function appRules(all) {
     test.run('the app\'s data.js is there', 0.4, function () {
       return each(withApi, function (f) { return isFile(f.dir + '/data.js') ? true : false; });
     }, test.limit.quick);
-    // Each verb's <verb>.json: judged on every branch, both ways and with its arguments, by spirit-sibling-general.js
+    // Each verb's <verb>.json: judged on every branch, both ways and with its arguments, by script-sibling-general.js
     // (goal/G47.4, "api.js and <verb>.json files match precisely"), which replaced this one-way check of the apps.
   }
   // Rule 7 (goal/G48.5, the box: "an app's server-only files stand in spirit/app/<name>/server/; its server portion MUST be
@@ -232,7 +232,7 @@ function appRules(all) {
   }
   // Rule 8 (goal/G48.8; Andy: "wsl, let the verb list be checked by a general test like app-child-general"): what the console
   // offers at spirit.app.<name> is the app's api.js verbs, and beside them the auto-verbs every app server serves, remote and
-  // DEBUG (spirit/server/app.js), when the app has a server, and only then. Asked of the console's own verbsAt.
+  // DEBUG (spirit/server/app/script.js), when the app has a server, and only then. Asked of the console's own verbsAt.
   if (withApi.length) {
     test.run('the console offers at spirit.app.<name> its api.js verbs, and remote and DEBUG when it has a server', 0.4, async function () {
       let console0 = null;

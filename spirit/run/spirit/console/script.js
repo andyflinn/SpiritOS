@@ -9,7 +9,7 @@
 //                                               script ends, 1 when it refused
 //   node spirit/run/spirit/console/script.js          ./console/loop.js, the prompt
 // The hello world's card is gone (the box, ## reversals: "the card feature from 48.1 will be completely dropped").
-require('../spirit.js');
+require('../script.js');
 if (require.main === module) {
   const words = process.argv.slice(2).join(' ');
   // Its parts through spirit.requireScript, as every file of the tree loads another (the general rules).

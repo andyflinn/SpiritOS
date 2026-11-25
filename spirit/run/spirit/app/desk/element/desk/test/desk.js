@@ -14,8 +14,8 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'desk.js');
 
@@ -219,7 +219,7 @@ function deskWorld(goal, items) {
   // The page's caches are the desk and backup families' data.js, over the one spirit.required.spirit.data (goal/G41.28): each comes with
   // its family's api.js, as the real api.js requires its companion data.js (goal/G47.1), and runs as it is, so the List is
   // a search of what the cache holds; anything else is answered and not run.
-  const REAL = { 'spirit/data.js': 'spirit/data.js', 'spirit/app/desk/api.js': 'spirit/app/desk/data.js', 'spirit/app/backup/api.js': 'spirit/app/backup/data.js' };
+  const REAL = { 'spirit/data/script.js': 'spirit/data/script.js', 'spirit/app/desk/api.js': 'spirit/app/desk/data.js', 'spirit/app/backup/api.js': 'spirit/app/backup/data.js' };
   const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,
@@ -246,7 +246,7 @@ function deskWorld(goal, items) {
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
-  win.spirit.requireScript('spirit/data.js');
+  win.spirit.requireScript('spirit/data/script.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the key as
   // spirit.nodeFacts.key, so a page files its own node's rows under it?" "yes."): as spirit.startPage does once node.card answers,
   // the key kept on spirit.nodeFacts and handed to the data set, so the cache files the page's rows under its node.

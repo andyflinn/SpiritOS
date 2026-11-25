@@ -8,7 +8,7 @@
 //   spirit.required.spirit.element.joinList.create(container, {}) -> { destroy() }
 //
 // The steps are the Join app's manifest's (spirit/app/join/join.json, steps), each with its name, icon and the fact that
-// ends it. Where the user stands is the join news on the node's spirit job (spirit/joinStepsJob.js), heard in the jobs family's cache
+// ends it. Where the user stands is the join news on the node's spirit job (spirit/joinStepsJob/script.js), heard in the jobs family's cache
 // and worked out with joinSteps.js: nothing is asked for it, and the list draws again only when the job changes. Done steps
 // are ticked; every open step up to the open one is expanded with its form, so the optional Find someone never stands in
 // the way of the step after it. The forms are the shell elements: joinForm and the contact list. Handed something new

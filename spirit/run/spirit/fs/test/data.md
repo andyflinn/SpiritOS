@@ -1,7 +1,7 @@
 # spirit/fs/data.js — its own test
 
 What a client knows of a node's files (goal/G41.28): the tree the `spirit.fs` job streams (goal/G30.18), and the icon
-set. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside the real `spirit/data.js`; the test reads through `spirit.required.spirit.data.fs.data` alone.
+set. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside the real `spirit/data/script.js`; the test reads through `spirit.required.spirit.data.fs.data` alone.
 
 - In node, `spirit.requireScript('spirit/fs/api.js')` brings it, the one script that requires it, and it stands at
   `spirit.required.spirit.data.fs.data`.

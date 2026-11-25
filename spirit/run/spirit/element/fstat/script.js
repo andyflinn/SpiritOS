@@ -103,7 +103,7 @@
     var path = String(o.path || '');
     // SPACE GRANTED TOP-DOWN (rule/16, goal/G41.7): the frame is a fill column and its pane a fill box, so what fills it takes
     // what the facts leave it and scrolls inside itself.
-    // Its frame keeps what it holds inside (spirit-sibling-browser.js: overflow not visible); the file search's detail lets it scroll.
+    // Its frame keeps what it holds inside (script-sibling-browser.js: overflow not visible); the file search's detail lets it scroll.
     host.innerHTML = '<div class="stack fill" style="overflow:hidden">' +
       '<div data-part="body" class="fill"></div><div data-part="facts"></div></div>';
     function part(name) { return host.querySelector('[data-part="' + name + '"]'); }

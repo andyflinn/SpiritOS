@@ -26,15 +26,15 @@
 // (peers.search, chats.search since goal/G29.18) and goal/G29.18 (chat.search).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit.js');
+require('../../../script.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = spirit.requireScript('spirit/server/app.js');
+const appServer = spirit.requireScript('spirit/server/app/script.js');
 const packet = spirit.requireScript('spirit/client/packet.js');
-const limits = spirit.requireScript('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits/script.js');
 // The probability modules (goal/G29.18).
-const createProbabilityBucket = spirit.requireScript('spirit/listLimiter.js').createProbabilityBucket;
+const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.js').probabilityStringObjectMatch;
 
 const argv = process.argv;

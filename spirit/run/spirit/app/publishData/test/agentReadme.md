@@ -14,13 +14,13 @@ little table". The members figure is the relay's own rule (Andy chose it, box v1
 ## Requirements
 
 - **summaryOf**: null without a capacity whose `relayAtRestRss` is a positive number. Members are
-  `relay.allowanceFor(512, relayAtRestRss in MB)` in seats of `relay.SEAT_STREAMS` (spirit/relay.js); streams are
+  `relay.allowanceFor(512, relayAtRestRss in MB)` in seats of `relay.SEAT_STREAMS` (spirit/relay/processor/script.js); streams are
   members times SEAT_STREAMS; peers are 512 MB of disk over `perReachablePeerBytes`, 0 when that is not measured;
   `measuredAt` and `commit` carried as text, `''` when left out.
 - **write**: its README is judged where publishData writes it, in `./publishData.md` (goal/G47.1, box v170); its old
   layout (the agent's name, Machine Description, Measurements, Studies) went with that box.
 - **machineOf**: platform, OS, arch, total and used RAM, node's release, version, LTS and path from this process; the
-  SpiritOS node processes (node processes running spirit/server.js, counted from the process list); the time asked.
+  SpiritOS node processes (node processes running spirit/server/script.js, counted from the process list); the time asked.
 
 ## What its test must try to break
 

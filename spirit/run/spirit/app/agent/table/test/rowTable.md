@@ -15,7 +15,7 @@ Its test is `./rowTable.js`.
 - Every row is keyed as the shadow roll keys a peer (Andy, box v22: "keyed by ID same as the shadow-roll"; "the ID-key
   for each row of these tables is generated at \"add-row\", including the rest of the key-set stored on that table
   row"):
-  - add makes a whole identity with `spirit/relayAuth.js` `generateIdentity`.
+  - add makes a whole identity with `spirit/relayAuth/script.js` `generateIdentity`.
   - Its public key is the row's `id`.
   - Its private key, seal public key and seal private key sit on the row.
 - The secrets never leave the table (Andy: an API_KEY "will never reach the browser or any place outside of the agent

@@ -4,7 +4,7 @@
 // The tests of spirit/contact/data.js, and of no other module (spec: ./data.md). Its own test, owed since the rule "every
 // production script has its own test" (goal/G47.1, box v72).
 // What a client knows of a node's contacts, people and relays in one table (goal/G41.28, goal/G40.11), from the node's job spirit.contact (goal/G43.20).
-// It runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data.js), which it writes into, the
+// It runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data/script.js), which it writes into, the
 // stream's events handed in as spirit.required.spirit.data hands them (takeJob, takeRename), each from the node that served it. In node
 // it comes with the family's api.js (spirit.requireScript('spirit/contact/api.js')), the one script that requires it. The reads alone are read, never a branch.
 
@@ -13,12 +13,12 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/contact/data.js';
 const FILE = path.join(RUN, SUBJECT);
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
 
 const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
 // Two nodes' public keys, base64 with a + and a / in them, as a node's key is.
@@ -32,8 +32,8 @@ function world() {
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data.js', SUBJECT] });
-  win.spirit.requireScript('spirit/data.js');
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data/script.js', SUBJECT] });
+  win.spirit.requireScript('spirit/data/script.js');
   const D = win.spirit.required.spirit.data;
   const translators = [];
   const add = D.addTranslator;
@@ -52,8 +52,8 @@ function pageWorld() {
   win.window = win;
   win.spirit = { isBrowser: function () { return true; }, nodeFacts: { key: SENDER } };
   vm.createContext(win);
-  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data.js', SUBJECT] });
-  win.spirit.requireScript('spirit/data.js');
+  LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: ['spirit/data/script.js', SUBJECT] });
+  win.spirit.requireScript('spirit/data/script.js');
   win.spirit.requireScript(SUBJECT);
   const D = win.spirit.required.spirit.data;
   const F = D['contact'];
@@ -64,7 +64,7 @@ function pageWorld() {
 let w = null;
 
 test.run('in node, requiring spirit/contact/api.js brings the contact branch\'s data.js, at spirit.required.spirit.data.contact.data', 0.2, async function () {
-  require(path.join(RUN, 'spirit', 'spirit.js'));
+  require(path.join(RUN, 'spirit', 'script.js'));
   const S = globalThis.spirit;
   let threw = null;
   try { await Promise.resolve(S.requireScript('spirit/contact/api.js')); } catch (e) { threw = e; }

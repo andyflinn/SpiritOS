@@ -1,7 +1,7 @@
 # spirit/client/packet.js — its own test
 
 One door for every app: the envelope `{ app, v, id, body, re }` lives inside the relay's `text`, so the wire does not
-change. The bound it enforces is asked of `spirit/limits.js` and never restated. Dual target: driven in node, and loaded
+change. The bound it enforces is asked of `spirit/limits/script.js` and never restated. Dual target: driven in node, and loaded
 in a window of its own as a page loads it. Owed since the rule *"every production script has its own test"*
 (goal/G47.1, box v72).
 
@@ -22,7 +22,7 @@ in a window of its own as a page loads it. Owed since the rule *"every productio
 - `decorate`: every field kept, `packet` added beside them, the message itself untouched; a chat line decorates as
   legacy.
 - In a page: `window.spirit.required.spirit.client.packet` with limits loaded first; without them it asks `spirit.requireScript` for
-  `spirit/limits.js` itself and is `window.spirit.required.spirit.client.packet` once that is in (goal/G47.1, Andy: *"cw, FIX IT!"*, rule/26: what
+  `spirit/limits/script.js` itself and is `window.spirit.required.spirit.client.packet` once that is in (goal/G47.1, Andy: *"cw, FIX IT!"*, rule/26: what
   it needs, it loads itself).
 
 ## A body JSON cannot express

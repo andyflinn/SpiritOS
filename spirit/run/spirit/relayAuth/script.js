@@ -1,0 +1,745 @@
+'use strict';
+require('../script.js');
+
+// Shared by the relay (relay.js, relayServer.js: verify) and the node (peerPost.js, hub.js, nodeCard.js and
+// others: sign and verify). Node crypto only.
+// Files live on that process's spirit/run home, never in git:
+//   spirit/state/owner.json     { "owner" }, or absent = no owner
+//   spirit/state/identity.json  { "name", "publicKey", "privateKey", "sealPublicKey", "sealPrivateKey",
+//                                 "description" }
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const os = require('os');
+// What a label and a description may be, said once for both sides of the
+// wire. It requires nothing at all — that is what lets the browser have
+// the same copy — so this is another one-way edge.
+const fieldRules = spirit.requireScript('spirit/fieldRules/script.js');
+
+// ── RESERVED_NAME = 'relay' STOOD HERE ───────────────────────────────
+//
+//   Andy: "relay is just a public-key-type. node is another one, none
+//   other exist yet, but will."
+//
+// It was a TYPE wearing a caption's clothes, and it said so itself. The
+// note above `relayPublicKey` justified it with "a node that keeps one
+// file per peer cannot file the relay anywhere without one
+// (CYCLE-CHAT-5.1)" — true when it was written, and obsolete since
+// relayKeys.js, which files a relay by key and pins it across restarts.
+//
+// It never guarded routing. `postedToSelf` compares against the relay's
+// own key and always has, so reserving a word protected nothing a packet
+// could reach — only what a list could DISPLAY. And it could not do even
+// that: the comparison is exact, so `Relay` was always claimable, and
+// Unicode labels make `relaу` with a Cyrillic у free. A display name
+// cannot be defended by blacklisting one string.
+//
+// What replaces it is what the node already had: two books, both keyed.
+// relayKeys.js holds the relays, contacts.js holds the peers, and which
+// book a key is in IS its type. Nothing needs to travel, because the
+// node is the one who needs to know and it wrote it down itself.
+//
+// Deleted 2026-09-15 with `who().reserved`, the three refusals in claim,
+// invite and renameSelf, and hub's `reservedName` — which was forwarded
+// to the browser and read by nothing.
+
+function claimMessage(name) {
+  return 'claim\n' + name;
+}
+
+// statusMessage STOOD HERE — `'status\n' + name` — and it was the last
+// signed format on this wire that named a LABEL rather than a key, and
+// the only one carrying no clock. Deleted with `checkOwner` and
+// `GET /api/relay/status` on 2026-09-15 (R3).
+//
+// Every format left here carries a minute: streamMessage, postMessage
+// and receiptMessage all take `atMs` and are checked ±1. claimMessage
+// does not, and is the exception that proves the rule — a claim is
+// answered once, at a box you have no row on, and a registered hash is
+// what stops a post being replayed rather than a clock.
+
+// sendMessage AND inboxMessage STOOD HERE — the ring's two signed
+// formats, deleted with it by R8 on 2026-09-15 and struck from the
+// register in decision 0010.
+//
+//   sendMessage   'send\n<from>\n<to>\n<text>'    signed by LABEL
+//   inboxMessage  'inbox\n<label>\n<unix-minute>' proved a read
+//
+// Worth recording what `inbox` cost to get right, because the lesson
+// outlived the verb and is enforced two functions down. Reading a mailbox
+// is as much a capability as writing to one: claim and send were
+// signature-gated from the start while inbox took a bare name and handed
+// over that peer's messages to anyone who asked. Peer-by-key re-opened
+// the same hole. And the first fix was not enough either — `inbox\n<label>`
+// never changed, it travelled in the query string, and a query string is
+// written to every access log a request passes through, so one line of a
+// proxy log was a standing licence to drain that mailbox with no way to
+// revoke it short of changing the key. The minute in the bytes is what
+// made a captured line die on its own.
+//
+// Both halves of that survive the verb: streamMessage below carries a
+// minute for the same reason, and relay.streamSignatureFrom refuses a
+// signature on the query outright.
+//
+// ITS OWN VERB, and that was the point of it. The argument was that the
+// owner signed `status` constantly, for every roll, so a captured
+// signature was always lying around — and what a STREAM opens is a
+// standing grant rather than a single read, which makes it the better
+// prize. Same reason the device design (removed by goal/G16.2) gave
+// `device-take` its own bytes.
+//
+// `status` is gone (R3, 2026-09-15) and the rule outlived it, which is
+// the ordinary way of these: one verb, one format, no signature that
+// works in two places. There is nothing left on this wire whose bytes
+// could be replayed into a stream open.
+//
+// The token is a public KEY, not a label. Labels duplicate by design, so
+// a signature naming one identifies nobody on a relay holding two johns
+// (the device design, and B2 carried it inward).
+//
+// AND IT NAMES THE RELAY (goal/G16.12, S8 of the review of 2026-10-10).
+// Without it a relay that saw a member's header could replay it on another
+// relay inside the window and take the member's stream there, because a new
+// stream evicts the old one. Andy: "then the header needs a signature from
+// the relay (key)." So the relay's public key is inside what the member
+// signs, and a relay checks it against its own.
+function streamMessage(key, relayKey, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'stream\n' + String(key || '') + '\n' + String(relayKey || '') + '\n' + minute;
+}
+
+// Previous, current and next: enough for two clocks a minute apart, in
+// both directions, because the SIGNER may be the one running fast. The
+// ring's inboxSignatureOk had the same window for the same reason, and
+// this is the only one of the pair left.
+function streamSignatureOk(publicKey, key, relayKey, sig, atMs) {
+  if (!publicKey || !sig || !relayKey) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, streamMessage(key, relayKey, now + step * 60000), sig)) return true;
+  }
+  return false;
+}
+
+// ── AN UPLOAD FROM THE HOME NODE TO ITS FACE (goal/G30.14) ───────────
+//
+// faceStream: the home node answers a face request, or feeds the face's live updates, by an upload the relay pipes
+// straight into the face. The upload is signed over the member's key, THIS relay's key (so it cannot be replayed on
+// another relay) and the request's id ('stream' for the live updates), with the minute and the same window either way
+// as a stream signature. The body is not signed: it is node-internal and may be any size, piped as it arrives.
+function faceMessage(key, relayKey, id, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'face\n' + String(key || '') + '\n' + String(relayKey || '') + '\n' + String(id || '') + '\n' + minute;
+}
+
+function faceSignatureOk(publicKey, key, relayKey, id, sig, atMs) {
+  if (!publicKey || !sig || !relayKey || !id) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, faceMessage(key, relayKey, id, now + step * 60000), sig)) return true;
+  }
+  return false;
+}
+
+// removePeerMessage and removePeerSignatureOk STOOD HERE, under a note
+// arguing that removal — the one owner action that destroys — least
+// deserved a shared signature, and that it had to name the KEY because
+// labels duplicate.
+//
+// Both claims were right and a post keeps both, for free: it binds
+// sender, recipient and the exact text, carries a minute, and has its
+// hash registered before anything is answered. Removal names a key
+// because the packet says `key`. There is nothing left here to sign.
+//
+// Both ways in are packets now — the owner naming anybody, a peer naming
+// themselves — see relay.answerSelf. Decision 0010.
+
+function postMessage(from, to, text, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'post\n' + String(from || '') + '\n' + String(to || '') + '\n' +
+    minute + '\n' + String(text == null ? '' : text);
+}
+
+// Returns THE MESSAGE THAT VERIFIED, not a boolean — and that is the
+// whole trick. The signature is accepted across ±1 minute, so three
+// different strings could have produced it, and the hash must be taken
+// over whichever one actually did. Recovering it here means the minute
+// never has to be transmitted: the requester, the relay and the target
+// each arrive at the same string by finding the one that checks out.
+function postSignatureFor(publicKey, from, to, text, sig, atMs) {
+  if (!publicKey || !sig) return '';
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    var message = postMessage(from, to, text, now + step * 60000);
+    if (verify(publicKey, message, sig)) return message;
+  }
+  return '';
+}
+
+// THE HINT SIGNATURE IS GONE (goal/G47.1, box v69: "A post carries no hints: the node sends none, the hint signature
+// goes"): hintMessage and hintsSigned stood here, for route hints a relay has not read since partnering went.
+
+// The name of a request, everywhere in the chain.
+function requestHash(message) {
+  return crypto.createHash('sha256').update(String(message || ''), 'utf8').digest('hex');
+}
+
+// "I received exactly those bytes." The hash is INSIDE the signed
+// message rather than beside it: attached alongside a signature over
+// something else, the relay could swap it (ROUTER.md §2).
+//
+// ── AND THE BYTES IT RECEIVED ARE NOT THE BYTES IT SENT BACK (S1) ──
+//
+// The receipt covered the request's hash and a clock minute, and NOTHING
+// about the reply. So a relay carrying an answer could rewrite it and the
+// signature still verified — the review of 2026-10-10 reproduced exactly
+// that: "receipt verifies with forged text: true". Every reply in the
+// system was unauthenticated in content while looking signed, which is
+// worse than unsigned: the asker had a proof, and the proof was of the
+// wrong thing.
+//
+// The reply text's sha256 goes INSIDE the signed message for the same
+// reason the request's hash does. The text itself is not signed over
+// directly, so a receipt stays a fixed-size thing whatever it answers.
+//
+// Andy, 2026-10-10: "flag day. we don't maintain backward compatibility
+// before alpha, maybe not even before beta, the data stored in the
+// SpiritOS is never in danger." So there is no old form accepted here: a
+// node or relay that has not updated fails to verify, which is the
+// loudest and most honest way for a flag day to arrive.
+//
+// THE BARE RECEIPT IS STILL A RECEIPT. A plain "I got it" carries no text,
+// and the empty string hashes like any other, so it has a message of its
+// own that cannot be reused for an answer that says something.
+function receiptMessage(hash, text, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'receipt\n' + String(hash || '') + '\n' + requestHash(String(text == null ? '' : text)) + '\n' + minute;
+}
+
+function receiptSignatureOk(publicKey, hash, text, sig, atMs) {
+  if (!publicKey || !sig) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, receiptMessage(hash, text, now + step * 60000), sig)) return true;
+  }
+  return false;
+}
+
+// ── WHAT AN OWNER'S COMMAND TO A PUPPET SAYS (puppets/G5) ────────────
+//
+//   Andy, 2026-09-26: "a puppet always routes requests through its owner ...
+//   the puppet is uable to sign any request with the owners signature. and
+//   that signature must exist before the puppet routes the request to
+//   loopback." Then: "so we must make sure in code, that the signature is
+//   verified in the pupped, else request is refused."
+//
+// THE TRANSPORT SIGNATURE CANNOT SERVE. peerPost signs every outgoing post
+// with this same identity key and no caller can withhold it, so a puppet
+// posting through its own node receives the owner's signature for free — and
+// to a SIBLING puppet under that owner, the node key IS the owner key. The
+// forger never signs anything; the router signs for it. That is why what the
+// switch verifies has to be a signature over the COMMAND, made where a puppet
+// has no reach.
+//
+// FOUR THINGS IN THE SIGNED BYTES, and each one closes something (the last
+// three raised by spiritos-f6 before the first cut, which is the cheap moment):
+//
+//   the tag          domain separation. Both signatures come from ONE key, so
+//                    without a tag a transport signature could be presented as
+//                    an inner one wherever the byte strings coincide.
+//   the recipient    a command signed for puppet B, re-posted to sibling C,
+//                    must not verify at C. The owner did sign those bytes.
+//   the envelope id  so the same command cannot be replayed at the same
+//                    recipient either.
+//   the minute       the freshness this file already uses for streams, posts
+//                    and receipts, with the same one-minute window either side.
+//
+// The TEXT is the encoded packet as it travels, not the verb and body before
+// encoding: the thing signed is then the thing that arrives, and nothing can
+// be re-ordered between signing and sending.
+//
+// FIELD ORDER AND TAG FOLLOW postMessage (above) RATHER THAN THIS AGENT'S FIRST
+// CUT, which put the minute last and tagged it 'owner-command'. wsl-claude was
+// right that a signed format must not fork: every one on this wire is a
+// tagged, structured string with the minute in the same position, and a second
+// shape would be a second convention to remember. The tag doing the domain
+// separation is 'command' against 'post', and the two byte-strings cannot
+// coincide — so a router-made signature presented as an inner one fails
+// BECAUSE IT SIGNS DIFFERENT BYTES, not because anything checks for it.
+function commandMessage(from, to, id, text, atMs) {
+  var NL = String.fromCharCode(10);
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'command' + NL + String(from || '') + NL + String(to || '') + NL +
+    minute + NL + String(id || '') + NL + String(text == null ? '' : text);
+}
+
+// RETURNS THE MESSAGE THAT VERIFIED, not a boolean, for the same reason
+// postSignatureFor does: the minute never travels, so it is recovered by
+// trying, and the caller that needs to know WHICH minute was accepted has it
+// without a second pass.
+function commandSignatureFor(publicKey, from, to, id, text, sig, atMs) {
+  if (!publicKey || !sig) return '';
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    var message = commandMessage(from, to, id, text, now + step * 60000);
+    if (verify(publicKey, message, sig)) return message;
+  }
+  return '';
+}
+
+function commandSignatureOk(publicKey, from, to, id, text, sig, atMs) {
+  return !!commandSignatureFor(publicKey, from, to, id, text, sig, atMs);
+}
+
+// ── WHAT A RELAY SAYS ITS KEYS ARE (cycle 10, R9) ────────────────────
+//
+//   Andy, 2026-09-23: "relay needs a cypher key too, because it has
+//   answerSelf()."
+//
+// A relay is a peer with a key (decision 0010), so after this cycle posts
+// addressed to it are sealed like any other — which means a node must
+// learn its CIPHER key, and learn it in a way a carrier cannot choose.
+//
+// The relay's key statement (then `GET /api/relay/key`, since goal/G22.6
+// the answer to a card ask on its one door) was unsigned, and
+// answerRelay.js already said in
+// as many words what that was worth: the re-check *"compares against an
+// UNSIGNED answer and so catches nothing an attacker could not forge."*
+// That was tolerable while the answer was only an identity to pin. It
+// stops being tolerable the moment the same answer carries the key
+// everything sent to that box is sealed to — hand over your own cipher
+// key there and you read every owner verb, every invite token included.
+//
+// So the relay signs the statement with its IDENTITY key, and the three
+// fields are signed together: a signature over the cipher key alone could
+// be lifted onto another relay's answer, and key and label are a pair
+// besides (Andy: *"key and label are a pair, in keyed mode"*).
+//
+// THIS IS SELF-SIGNED, with the same honest limit as a node's card: it
+// settles tampering, not introduction. What makes it worth anything here
+// is the PIN — `relayKeys` remembers the identity across restarts, so a
+// substitution after first sighting is what gets caught, which is the
+// case that actually happens.
+function relayKeyMessage(publicKey, sealKey, label) {
+  return 'relay-key\n' + String(publicKey || '') + '\n' +
+    String(sealKey || '') + '\n' + String(label || '');
+}
+
+function relayKeySigned(publicKey, sealKey, label, sig) {
+  if (!publicKey || !sealKey || !sig) return false;
+  return verify(publicKey, relayKeyMessage(publicKey, sealKey, label), sig);
+}
+
+// ── TWO KEYPAIRS, ONE IDENTITY (cycle 10, R2) ────────────────────────
+//
+//   Andy, 2026-09-23, asked where the cipher key should live: *"same
+//   file"*.
+//
+// The Ed25519 pair SIGNS; the X25519 pair SEALS. Never one key for both:
+// a signing key that also decrypts is one theft away from being both, and
+// the two have different lifetimes — an identity is who you are, a seal
+// key is what your correspondence rests on.
+//
+// ONE FILE, which is the ruling and also the practical answer: one thing
+// to protect with a file mode, one thing to back up, one thing to lose.
+// A second file would mean a node that has half an identity, which is a
+// state nothing in this tree knows how to be.
+//
+// X25519 is in Node's own crypto (22.x), so nothing is hand-rolled and
+// nothing is added to package.json. The public half serialises to 60
+// characters of base64, which is what rides on the card.
+function generateIdentity(name) {
+  const pair = crypto.generateKeyPairSync('ed25519');
+  const seal = crypto.generateKeyPairSync('x25519');
+  return {
+    name: name,
+    publicKey: pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64'),
+    privateKey: pair.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64'),
+    sealPublicKey: seal.publicKey.export({ type: 'spki', format: 'der' }).toString('base64'),
+    sealPrivateKey: seal.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64'),
+  };
+}
+
+function privateKeyFromB64(b64) {
+  return crypto.createPrivateKey({
+    key: Buffer.from(b64, 'base64'),
+    format: 'der',
+    type: 'pkcs8',
+  });
+}
+
+function publicKeyFromB64(b64) {
+  return crypto.createPublicKey({
+    key: Buffer.from(b64, 'base64'),
+    format: 'der',
+    type: 'spki',
+  });
+}
+
+function sign(privateKeyB64, message) {
+  return crypto.sign(null, Buffer.from(message, 'utf8'), privateKeyFromB64(privateKeyB64)).toString('base64');
+}
+
+function verify(publicKeyB64, message, sigB64) {
+  try {
+    return crypto.verify(
+      null,
+      Buffer.from(message, 'utf8'),
+      publicKeyFromB64(publicKeyB64),
+      Buffer.from(sigB64, 'base64')
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
+// PENDING-OWNER STOOD HERE — loadPendingOwner, writePendingOwner,
+// clearPendingOwner and spirit/state/pending-owner.json, written by
+// install-public-relay.js to reserve the first claim for a NAME. A name
+// with no secret behind it: anybody who guessed it took the box. Replaced
+// in cycle 3 (Part B) by a token install.js minted, and that in turn by
+// goal/G16.8: the owner is written into owner.json at install time
+// (bash/install-units, OWNER_KEY), and nothing over the wire makes one.
+
+// Every owned server keeps its owner's key in spirit/state/owner.json, as
+// { owner } (Andy, cleanup/G1.7). No file, or no key in it: no owner.
+// Only an Ed25519 public key counts: a torn or hand-mangled file means no
+// owner, never a claimed relay nobody can enter.
+const OWNER_KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
+// onBroken(raw), if given, hears a file that exists but names no key.
+function loadOwner(rootDir, onBroken) {
+  let raw = null;
+  try { raw = fs.readFileSync(path.join(rootDir, 'spirit', 'state', 'owner.json'), 'utf8'); } catch (e) { return ''; }
+  let doc = null;
+  try { doc = JSON.parse(raw); } catch (e) { doc = null; }
+  const key = doc && typeof doc.owner === 'string' ? doc.owner.trim() : '';
+  if (OWNER_KEY.test(key)) return key;
+  if (onBroken && String(raw).trim()) onBroken(raw);
+  return '';
+}
+
+function writeOwner(rootDir, key) {
+  const dir = path.join(rootDir, 'spirit', 'state');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'owner.json'), JSON.stringify({ owner: String(key) }, null, 2));
+}
+
+// A KEY THAT CANNOT SIGN IS NOT AN IDENTITY.
+//
+// This used to check that `privateKey` was a non-empty string and stop
+// there, so a torn or truncated identity.json loaded fine and threw
+// ERR_OSSL_ASN1_NOT_ENOUGH_DATA at the first sign() — synchronously,
+// inside an http handler, with nothing waiting to catch it. The node
+// died. Found on 2026-09-13 by serverSurface.js's hub sweep, which was
+// the first thing ever to call those routes against a booted process.
+//
+// Answering `null` for a key that cannot sign is the fix rather than a
+// try/catch at each signing site: there were eleven signing sites and one
+// of this. A node's own identity exists from its first boot (goal/G22.5,
+// ensureIdentity below and the first-load call at the foot of this file),
+// so on a node null means a torn or hand-mangled file, never "not yet".
+//
+// A NAME IS NOT WHAT MAKES IT AN IDENTITY (goal/G22.5). Keys that sign are.
+// This used to answer null for an identity with no name, and ensureIdentity
+// read that null as "none" and made a NEW key over it — so a node booted
+// nameless was re-keyed by every restart and again by its first claim.
+//
+// The parse is done once, here, and the result thrown away — crypto
+// caches nothing for us, but a malformed key fails identically every
+// time, so proving it once at load proves it for the process.
+// KEPT IN MEMORY ONCE READ (goal/G47.1; Andy: "why is the tiny bit of memory
+// to expensive to cache the identity of the node?"): the node asked for it on
+// every owner call, a disc read and a key parse each time, on its one thread.
+// saveIdentity, the one writer of identity.json, drops what is kept, so a new
+// name or a new key is read on the next ask. Each caller gets its own copy.
+const identityKept = new Map();
+function identityFile(rootDir) { return path.join(rootDir, 'spirit', 'state', 'identity.json'); }
+function loadIdentity(rootDir) {
+  const file = identityFile(rootDir);
+  if (identityKept.has(file)) return Object.assign({}, identityKept.get(file));
+  try {
+    const raw = fs.readFileSync(file, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.privateKey) return null;
+    // Not a format check — an actual parse by the thing that will use it.
+    // Anything this accepts, sign() accepts.
+    privateKeyFromB64(parsed.privateKey);
+    identityKept.set(file, parsed);
+    return Object.assign({}, parsed);
+  } catch (e) { /* none, or none usable */ }
+  return null;
+}
+
+// ── WHAT THIS NODE SAYS ABOUT ITSELF ─────────────────────────────────
+//
+//   Andy: "spirit/run/relay-state/identity.json store a 'description'
+//   let's say max 128 characters ... the description is what I want to
+//   replace the ugly end-of-key stuff with in the UI."
+//
+// 128 BYTES, not characters, and measured the way the wire measures it.
+// A cap counted in characters is a cap somebody can walk through with
+// emoji, and the thing being protected is a packet budget.
+//
+// It lives beside the key rather than in a preference file because it is
+// answered to strangers: a node hands it over on request, so it belongs
+// with the identity it describes and not with the things this machine
+// keeps to itself.
+//
+// THE NUMBER IS fieldRules's, and is read from there rather than repeated.
+// A form that counts down to 128 while the file trims at 140 is the exact
+// drift that file was written to stop, and it is the browser half that
+// cannot require this module.
+var DESCRIPTION_MAX = fieldRules.DESCRIPTION_MAX_BYTES;
+
+function setDescription(rootDir, text) {
+  const id = loadIdentity(rootDir);
+  if (!id) return null;
+  const next = String(text == null ? '' : text).trim();
+  // REFUSED, NEVER CUT (Andy, 2026-10-03, goal/G4.16: "too-long
+  // refused"). Too long keeps nothing and hands back what is stored, so a
+  // caller that reports what was stored reports the truth; nodeCard.setDescription
+  // refuses it out loud (fieldRules.describeProblem) before it gets here.
+  if (Buffer.byteLength(next, 'utf8') > DESCRIPTION_MAX) return id;
+  id.description = next;
+  saveIdentity(rootDir, id);
+  return id;
+}
+
+// ── THE PRIVATE HALF IS NOT A WORLD-READABLE FILE ───────────────────
+//
+// `identity.json` holds the signing key and, since cycle 10, the cipher
+// key. It was written at whatever the umask gave — 644 on a typical box,
+// so every account on the machine could read both.
+//
+// 600 ON THE FILE, 700 ON THE DIRECTORY, at creation. Not checked at
+// start-up and nothing refuses to run over it: Windows, WSL's drvfs and
+// a deliberately widened permission are where that check would produce
+// false alarms, and a relay that will not start because of a mode bit is
+// worse than one that runs with a known residual.
+//
+// WHAT IT ACTUALLY BUYS, said plainly rather than implied. The realistic
+// reader is a SERVICE ACCOUNT on the same box — www-data, a container
+// user, a backup agent — not a second person at a keyboard. Root reads
+// everything regardless, and on a single-tenant VPS root is the operator.
+// So this closes the accidental path and none of the deliberate ones.
+//
+// AND IT DOES NOTHING ON WINDOWS. Measured 2026-09-24: `chmod(0o600)`
+// leaves mode 666 on NTFS — it is silently inert. The node's prime
+// platform is Windows, so this protects the RELAY, which runs on Ubuntu,
+// and on a node it is a no-op that costs nothing. The Windows answer is
+// an ACL and is deliberately not attempted here; it is a different
+// mechanism and would need its own evidence.
+//
+// FAILURES ARE SWALLOWED. A filesystem that cannot express a mode — a
+// mounted share, drvfs — must not stop a node writing its own identity.
+function protectFile(file) {
+  try { fs.chmodSync(file, 0o600); } catch (e) { /* a mode it cannot express */ }
+}
+function protectDir(dir) {
+  try { fs.chmodSync(dir, 0o700); } catch (e) { /* as above */ }
+}
+
+function saveIdentity(rootDir, id) {
+  const dir = path.join(rootDir, 'spirit', 'state');
+  fs.mkdirSync(dir, { recursive: true });
+  protectDir(dir);
+  const file = path.join(dir, 'identity.json');
+  // WHOLE OR NOT AT ALL (goal/G16.9). Written in place, a crash part-way
+  // left a file ensureIdentity cannot read, so it minted a NEW key and
+  // every allow entry naming this relay or node named one that no longer
+  // existed. A temp file in the same folder, renamed over the old one, is
+  // atomic on one filesystem. The temp is
+  // made private before it holds the key, and protected again after.
+  const tmp = file + '.tmp';
+  identityKept.delete(identityFile(rootDir));
+  fs.writeFileSync(tmp, JSON.stringify(id, null, 2), { mode: 0o600 });
+  protectFile(tmp);
+  fs.renameSync(tmp, file);
+  protectFile(file);
+  identityKept.delete(identityFile(rootDir));
+}
+
+// ── ONE IDENTITY, MADE ONCE, NEVER MADE AGAIN (goal/G22.5) ───────────
+//
+// Andy's rulings, 2026-10-13 (goal/G22.5 box), decisions and not this
+// file's to loosen:
+//   - The first call to ensureIdentity ensures a real, permanent identity
+//     exists; every later call returns that same identity and never makes
+//     another.
+//   - When no name is given, the machine's name (os.hostname()) is the
+//     default name.
+//   - relayAuth.js NO LONGER EXPORTS ensureIdentity. It is called once,
+//     by this file's own first load, for the spirit/run it sits in; the
+//     one thing any other component may do to the identity is name it
+//     (nameIdentity below), which never touches a key.
+//
+// THE NAMING RULE, as built from those:
+//   - an identity with keys, named or not, is KEPT: its keys are never
+//     regenerated;
+//   - one with no name gets the machine's name;
+//   - a name given (nameIdentity) over an empty name or over the
+//     machine-name default is written, keys unchanged: so a claim names
+//     the node without re-keying it, and a relay naming itself 'relay'
+//     over its first-load default keeps working;
+//   - otherwise the name it has stands;
+//   - only when there is no identity with keys is one made, named by the
+//     machine.
+// Nothing is written when nothing changed, so a boot over a whole identity
+// touches no file.
+function nameFor(stored, given) {
+  var machine = os.hostname();
+  var have = typeof stored === 'string' ? stored.trim() : '';
+  if (!have) return given || machine;
+  if (given && have === machine) return given;
+  return have;
+}
+
+function ensureIdentity(rootDir) {
+  var existing = loadIdentity(rootDir);
+  if (existing && existing.privateKey && existing.publicKey) {
+    // AN IDENTITY IS NEVER MENDED: one made before sealing, with no seal key, is not given one (Andy, goal/G47.1:
+    // "old files or tables should not be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"). Its card has
+    // no cipher key, and it is deleted by hand.
+    var next = existing;
+    var stored = typeof next.name === 'string' ? next.name.trim() : '';
+    var wanted = nameFor(next.name, '');
+    if (wanted !== stored) next = Object.assign({}, next, { name: wanted });
+    if (next === existing) return existing;
+    saveIdentity(rootDir, next);
+    return next;
+  }
+  var id = generateIdentity(nameFor('', ''));
+  saveIdentity(rootDir, id);
+  return id;
+}
+
+// ── NAMING THE IDENTITY THAT EXISTS, AND NOTHING ELSE ────────────────
+//
+// The one export that writes to an identity on a caller's behalf (Andy,
+// 2026-10-13, goal/G22.5). It never makes one and never touches a key:
+// with no identity there it answers null and writes nothing. A name is
+// written under the naming rule above (over an empty name or the machine
+// default; otherwise the name it has stands), and the identity as it now
+// stands is returned.
+function nameIdentity(rootDir, name) {
+  var id = loadIdentity(rootDir);
+  if (!id) return null;
+  var given = String(name == null ? '' : name).trim();
+  var stored = typeof id.name === 'string' ? id.name.trim() : '';
+  var wanted = nameFor(id.name, given);
+  if (wanted === stored) return id;
+  var next = Object.assign({}, id, { name: wanted });
+  saveIdentity(rootDir, next);
+  return next;
+}
+
+// checkClaim STOOD HERE. Its one job left was `open` mode — "a relay
+// before its first claim takes any claim" — and its one caller was the
+// branch of relay.js claimAttempt that ran when a relay was neither keys
+// nor pending. Both went in cycle 3 (Part B); since goal/G16.8 an unowned
+// relay takes no claim at all, and claimAttempt says so itself.
+
+// checkSend, checkInboxKey AND checkInbox STOOD HERE — 66 lines, the
+// three gates on the ring, deleted with it by R8 on 2026-09-15.
+//
+// The reasoning that produced them did not go with them, and two pieces
+// of it are load-bearing elsewhere:
+//
+//   A DEVICE IS NOT A SECOND PARTY. It gets no peer row and claims no
+//   label, so the second key lived on the owner RECORD and every gate
+//   asking "is this the owner's signature" asked it of both strings.
+//   allow.json in keys mode is the owner record, so a device key there
+//   was a full copy of the owner's authority — the decision, not an
+//   oversight. Reversed on 2026-09-12: checkOwner (gone, see below) took
+//   the HOUSE KEY ONLY, and a relay holds no device key at all now (the device
+//   enrolment itself was removed by goal/G16.2).
+//
+//   A KEYLESS RELAY HAS NOTHING TO CHECK AGAINST. open and names mode
+//   had no per-peer key, so both gates waved reads through. (checkClaim
+//   outlived these because a claim outlived the reads; it went too, with
+//   open mode, in cycle 3.)
+
+// checkOwner STOOD HERE, and `statusMessage` above it. Both went with
+// `GET /api/relay/status` on 2026-09-15 (R3,
+// design/cycles/2026-09-15-labels-are-not-identities.md), which was the
+// only thing either had ever gated.
+//
+// WHAT THE OWNER CHECK IS NOW, and it is not a replacement — it is where
+// the question was already being answered better. `relay.isOwner(who)`
+// compares the POST's proven sender against the key in owner.json, per
+// verb, inside answerSelf. The post's own signature did the proving
+// before that line ran, so there is no second place to decide who the
+// owner is.
+//
+// WHAT WENT WITH IT, worth keeping because the reasoning outlived the
+// function:
+//
+//   THE HOUSE KEY ONLY, and it REVERSED a decision. checkOwner used to
+//   accept either key, on the reasoning that "being the owner from a
+//   hotel room is the whole point of the device slot" — true of a design
+//   in which a device had nowhere else to go.
+//
+//   Andy, 2026-09-12, shown what a device key actually reaches: "needs
+//   fixing."
+//
+//   What it reached was ADMIN — through the console's isOwner, `status
+//   peers search invites key version`, and `invites` lists LIVE TOKENS.
+//   A seized phone could hand out access to the relay. Not "the owner
+//   from a hotel room"; the owner's admin console in somebody else's
+//   pocket.
+//
+// That rule is unchanged and now structural: a device signature does not
+// verify against a row's key at all, so it is not narrowly refused — it
+// never matches. A device is the owner's window, not the owner's
+// credentials.
+
+
+module.exports = {
+  setDescription: setDescription,
+  DESCRIPTION_MAX: DESCRIPTION_MAX,
+  claimMessage,
+  streamMessage,
+  streamSignatureOk,
+  faceMessage,
+  faceSignatureOk,
+  postMessage,
+  postSignatureFor,
+  requestHash,
+  receiptMessage,
+  relayKeyMessage,
+  relayKeySigned,
+  receiptSignatureOk,
+  generateIdentity,
+  sign,
+  verify,
+  commandMessage,
+  commandSignatureFor,
+  commandSignatureOk,
+  loadOwner,
+  writeOwner,
+  loadIdentity,
+  saveIdentity,
+  // ensureIdentity is NOT exported (Andy, 2026-10-13, goal/G22.5): the
+  // first load below is its only caller.
+  nameIdentity,
+};
+
+// ── THE IDENTITY OF THE spirit/run THIS FILE SITS IN, ON FIRST LOAD ──
+//
+// Andy's ruling, 2026-10-13 (goal/G22.5 box): relayAuth knows where the
+// key goes from its own position in spirit/run. On its FIRST LOAD it
+// ensures the identity of the spirit/run it sits in exists, so no other
+// component ever has to make or check for one, EVER, and the node has its
+// key before it listens on its port.
+//
+// The law: no node-boot is done until the node has a key and a default
+// name.
+//
+// FROM __dirname, NEVER process.cwd(): the key belongs to the tree this
+// file is part of, whoever started the process and from wherever. Once per
+// process, because require caches the module. And it never throws out of
+// require: a disc that refuses the write is said by whatever asks for the
+// identity next, not by a module that would not load.
+try { ensureIdentity(path.resolve(__dirname, '..', '..')); }
+catch (e) { /* see above: never out of require */ }

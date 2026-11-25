@@ -15,7 +15,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 
@@ -31,10 +31,10 @@ test.after(async function () {
 
 // A caller in a child process of the scratch node: it requires spirit/fs/script.js and nothing else, and prints, every half second,
 // the rows asked about (null while there is none) and whether the tree is whole.
-const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', 'spirit/app/desk/desk.js', 'spirit/zzfsflag', 'spirit/server/node.js', 'spirit/state'];
+const ASKED = ['spirit/app/desk', 'spirit/app/job', 'spirit/fs', 'spirit/app/desk/desk.js', 'spirit/zzfsflag', 'spirit/server/node/script.js', 'spirit/state'];
 function caller() {
   const script = [
-    "require('./spirit/spirit.js');",
+    "require('./spirit/script.js');",
     "const asked = " + JSON.stringify(ASKED) + ";",
     "Promise.resolve(spirit.requireScript('spirit/fs/script.js')).then(function () {",
     "  setInterval(function () {",
@@ -117,11 +117,11 @@ test.run('the same folder losing its data.js turns api false again', 0.4, async 
 
 // ── the node's own side, and what stays out of spirit.js ──
 test.run('job.js keeps no tree of its own: no fsTree in its code', 0.4, function () {
-  const c = code('spirit/job.js');
+  const c = code('spirit/job/script.js');
   return (c !== '' && !/\bfsTree\b/.test(c)) || false;
 }, test.limit.quick);
 test.run('spirit.js knows nothing of fs streaming: it names neither followStream, spirit/fs/data.js nor spirit/fs/script.js', 0.4, function () {
-  const c = code('spirit/spirit.js');
+  const c = code('spirit/script.js');
   return (c !== '' && !/followStream|spirit\/fs\/data\.js|spirit\/fs\/script\.js/.test(c)) || false;
 }, test.limit.quick);
 
@@ -131,9 +131,9 @@ test.run('spirit.js knows nothing of fs streaming: it names neither followStream
 // the loopback client, that's really the only place where fileServable() should be used to filter the publish stream",
 // "only brosers can be efectively gated from file access", "go". A node process's spirit.required.spirit.data.fs holds the server code and
 // the node's own state folder; a page's holds neither, while it holds a file a page may be served, so it was judged.
-test.run('a node process\'s dataset holds spirit/server/node.js, which no page may be served', 0.2, async function () {
+test.run('a node process\'s dataset holds spirit/server/node/script.js, which no page may be served', 0.2, async function () {
   if (!up() || !W.kid) return false;
-  return (await until(function () { return !!row('spirit/server/node.js'); }, 10000)) || false;
+  return (await until(function () { return !!row('spirit/server/node/script.js'); }, 10000)) || false;
 }, test.limit.slow);
 test.run('a node process\'s dataset holds the node\'s own state folder, spirit/state', 0.2, async function () {
   if (!up() || !W.kid) return false;
@@ -141,7 +141,7 @@ test.run('a node process\'s dataset holds the node\'s own state folder, spirit/s
 }, test.limit.slow);
 const P = {};
 test.after(function () { try { if (P.chrome && P.chrome.kid) P.chrome.kid.kill(); } catch (e) { /* gone */ } });
-const PAGE_ROWS = "(function () { try { var V = window.spirit.required.spirit.data.viewAt(null, 'fs'); var b = V.branch('files') || {}; return JSON.stringify({ ready: V.ready('files') === true, count: Object.keys(b).length, desk: !!b['spirit/app/desk/desk.js'], server: !!b['spirit/server/node.js'], state: Object.keys(b).some(function (k) { return k === 'spirit/state' || k.indexOf('spirit/state/') === 0; }) }); } catch (e) { return 'null'; } })()";
+const PAGE_ROWS = "(function () { try { var V = window.spirit.required.spirit.data.viewAt(null, 'fs'); var b = V.branch('files') || {}; return JSON.stringify({ ready: V.ready('files') === true, count: Object.keys(b).length, desk: !!b['spirit/app/desk/desk.js'], server: !!b['spirit/server/node/script.js'], state: Object.keys(b).some(function (k) { return k === 'spirit/state' || k.indexOf('spirit/state/') === 0; }) }); } catch (e) { return 'null'; } })()";
 async function pageRows() { try { return JSON.parse(await P.chrome.evaluate(PAGE_ROWS)); } catch (e) { return null; } }
 test.run('a page on the node holds the whole servable tree in its spirit.required.spirit.data.fs', 0.4, async function () {
   if (!up()) return false;
@@ -153,7 +153,7 @@ test.run('a page on the node holds the whole servable tree in its spirit.require
   for (let i = 0; i < 100; i++) { P.rows = await pageRows(); if (P.rows && P.rows.ready && P.rows.desk) break; await H.sleep(300); }
   return (!!P.rows && P.rows.ready && P.rows.desk && P.rows.count > 100) || false;
 }, test.limit.slow);
-test.run('a page\'s dataset holds no spirit/server/node.js', 0.2, function () {
+test.run('a page\'s dataset holds no spirit/server/node/script.js', 0.2, function () {
   return (!!P.rows && P.rows.ready && P.rows.desk && P.rows.server === false) || false;
 }, test.limit.quick);
 test.run('a page\'s dataset holds nothing of spirit/state', 0.2, function () {

@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const { scratchNode, chromePage, findChrome, until, appRuns, watchRuns } = S.requireScript('spirit/test/headLessChrome.js');
 

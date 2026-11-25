@@ -26,7 +26,7 @@ It runs exactly two long-lived processes:
 | Process | Port | Role |
 |---|---|---|
 | Caddy | 80, 443 | TLS, HTTP→HTTPS redirect, proxy |
-| `node spirit/server.js --relay --port 65430` | 65430 | Mailbox only: the one door (`POST /api/relay/post`, `/reply`) and the members' stream. No brochure, no public key route, no `/api/version` (goal/G22.6) |
+| `node spirit/server/script.js --relay --port 65430` | 65430 | Mailbox only: the one door (`POST /api/relay/post`, `/reply`) and the members' stream. No brochure, no public key route, no `/api/version` (goal/G22.6) |
 
 systemd unit: `spirit-relay.service`  
 Working directory: `/root/SpiritOS/spirit/run`  
@@ -40,7 +40,7 @@ State that is **not** in git: `spirit/run/spirit/state/` (`owner.json`, `relay.d
 Do **not** run on this box:
 
 - labMaster (`http://127.0.0.1:65420`)
-- a personal spirit (`node spirit/server.js` without `--relay`)
+- a personal spirit (`node spirit/server/script.js` without `--relay`)
 - Jobs, App Builder, LM Studio, the desktop shell
 - extra Node processes “just to look”
 

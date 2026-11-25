@@ -3,24 +3,24 @@
 // spirit/run/spirit/app/publishData/test/agentReadme.js
 // The tests of spirit/app/publishData/agentReadme.js, and of no other module (spec: ./agentReadme.md; goal/G41.11). The
 // module is required as publishData requires it; write() runs on a scratch agents/<agent>/ folder of the test's own,
-// with a machine handed in, so what it writes is known. The relay's own rule (spirit/relay.js allowanceFor) is the real
+// with a machine handed in, so what it writes is known. The relay's own rule (spirit/relay/processor/script.js allowanceFor) is the real
 // one, as the module's members figure is.
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = S.requireScript('spirit/tempFolder.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/publishData/test/agentReadme/' + name + tempAsked); }
 test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/publishData/test/agentReadme'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const FILE = path.join(__dirname, '..', 'agentReadme.js');
 const TMP = ownTemp('agentReadme');
-const relay = S.requireScript('spirit/relay.js');
+const relay = S.requireScript('spirit/relay/processor/script.js');
 
 const MB = 1048576;
 

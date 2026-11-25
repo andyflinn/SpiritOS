@@ -563,9 +563,9 @@ function startNode(node) {
     return { ok: false, status: 400, error: 'type must be avatar or relay' };
   }
   const home = node.permanent ? WORK_HOME : node.home;
-  const serverJs = path.join(home, 'spirit', 'server.js');
+  const serverJs = path.join(home, 'spirit/server/script.js');
   if (!fs.existsSync(serverJs)) {
-    return { ok: false, status: 400, error: 'no spirit/server.js under home' };
+    return { ok: false, status: 400, error: 'no spirit/server/script.js under home' };
   }
   const args = [serverJs, '--port', String(node.port)];
   if (node.type === 'relay') {
@@ -684,8 +684,8 @@ function handleCreate(body) {
     const given = String(body && body.home || '').trim();
     if (!given) return { status: 400, error: 'an agent node must name its own home' };
     const runDir = given.split(String.fromCharCode(92)).join("/");
-    if (!fs.existsSync(path.join(runDir, 'spirit', 'server.js'))) {
-      return { status: 400, error: 'no spirit/server.js under ' + runDir };
+    if (!fs.existsSync(path.join(runDir, 'spirit/server/script.js'))) {
+      return { status: 400, error: 'no spirit/server/script.js under ' + runDir };
     }
     if (typeof port !== 'number' || port !== (port | 0) || port <= 0) {
       return { status: 400, error: 'port required' };
@@ -763,7 +763,7 @@ function handleStart(node) {
   // A HOME THAT IS NOT THERE IS REBUILT, and nothing else is. Start has
   // never been an update and must not become one: pressing it on a node
   // bound to a relay should start that node, not fetch anything.
-  if (!node.permanent && !fs.existsSync(path.join(node.home, 'spirit', 'server.js'))) {
+  if (!node.permanent && !fs.existsSync(path.join(node.home, 'spirit/server/script.js'))) {
     try { node.home = ensureClone(node.id, kindOf(node)).replace(/\\/g, '/'); }
     catch (err) { return { status: 500, error: String(err.message || err) }; }
     noteCommit(node);

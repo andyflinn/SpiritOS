@@ -41,7 +41,7 @@ EXIST."*
   bundles of rows, several rows a post, each post within one payload, not one post a row.
 - **The box's room**: a box write too big for one answer is refused with the room of one answer; a write to 80% of it
   lands.
-- **Every push ends with its end entry**, `{ run, n, full: true, end: true }` (spirit/server/app.js, the stream protocol
+- **Every push ends with its end entry**, `{ run, n, full: true, end: true }` (spirit/server/app/script.js, the stream protocol
   of goal/G41.12), once, after its last row (Q5: the push has landed whole). A subscribe with no since, or since 0,
   brings the current goal's facts whole and no chat line, check or box.
 - **Not required, so not checked**: a catch-up from a desk change number (a subscribe's position is the publisher's

@@ -13,7 +13,7 @@
 // What a row offers depends on what it is (goal/G30.19): a kept or blocked row open (Contact), block, unblock and
 // remove (contact.forget); a row not decided about add (peer.acquire); a relay open (Relay Details). An action asks and paints
 // nothing: the node's confirmed change on the stream repaints. The label's editor
-// checks spirit/fieldRules.js (spirit.required.spirit.fieldRules, the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
+// checks spirit/fieldRules/script.js (spirit.required.spirit.fieldRules, the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
 // once.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -24,7 +24,7 @@
     return a;
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.requireScript.
   if (window.spirit.requireScript) keepAnswer('spirit/element/row/script.js');
   // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
@@ -69,7 +69,7 @@
   }
   // The label's rule, from the one definition (goal/G4.16).
   function nameRules() {
-    var R = ANSWER['spirit/fieldRules.js'] || {};
+    var R = ANSWER['spirit/fieldRules/script.js'] || {};
     return { normalize: R.normalize, problem: R.problem, maxBytes: R.MAX_BYTES };
   }
 

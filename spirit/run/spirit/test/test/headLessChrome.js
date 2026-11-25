@@ -10,7 +10,7 @@ const os = require('os');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const LAB_NODES = path.join(REPO, 'lab', 'node');
 const HELPER = path.join(RUN, 'spirit', 'test', 'headLessChrome.js');
@@ -264,7 +264,7 @@ test.run('handed a node and a Chrome, scratchNode and chromePage start neither, 
       const rows = execFileSync('ps', ['-eo', 'pid=,ppid=,args='], { encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n');
       const kids = {}, args = {};
       rows.forEach(function (l) { const m = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(l); if (m) { (kids[m[2]] = kids[m[2]] || []).push(m[1]); args[m[1]] = m[3]; } });
-      const walk = function (p) { (kids[p] || []).forEach(function (k) { if (/spirit\/server\.js --port/.test(args[k])) own.nodes.add(k); else if (/chrome/.test(args[k]) && /--headless/.test(args[k]) && !/--type=/.test(args[k])) own.chromes.add(k); walk(k); }); };
+      const walk = function (p) { (kids[p] || []).forEach(function (k) { if (/spirit\/server\/script\.js --port/.test(args[k])) own.nodes.add(k); else if (/chrome/.test(args[k]) && /--headless/.test(args[k]) && !/--type=/.test(args[k])) own.chromes.add(k); walk(k); }); };
       walk(String(kid.pid));
     } catch (e) { /* not Linux: the counts stay empty */ }
     await sleep(200);

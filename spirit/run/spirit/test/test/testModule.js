@@ -5,30 +5,30 @@
 // judge no module: testModule.js looks for ./spirit.js."
 //
 // testsFor() of ../testModule.js, on this tree as it stands, read only: the general rule tests of spirit/test/
-// folder (spirit-<child|sibling>-<general|node|browser>.js, named after spirit.js, which is at spirit/spirit.js since goal/G43.18) are
+// folder (spirit-<child|sibling>-<general|node|browser>.js, named after spirit.js, which is at spirit/script.js since goal/G43.18) are
 // handed a module under spirit/run/spirit/ as the file they judge, on the module's blast radius and on the whole list.
 
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder.js');
+const tempFolder = require('../../tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testModule/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testModule'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const { testsFor } = SPIRIT.requireScript('spirit/test/testModule.js');
 
-// The general tests in spirit/test/, beside spirit/spirit.js (goal/G43.32), of the three kinds since goal/G47.1, box v94, 2:
+// The general tests in spirit/test/, beside spirit/script.js (goal/G43.32), of the three kinds since goal/G47.1, box v94, 2:
 // "there will be, from now on only 3 types of general tests, at any level of the tree: <file>-<child | sibling>-general.js,
 // <file>-<child | sibling>-node.js, <file>-<child | sibling>-browser.js".
-const KINDS = ['spirit/test/spirit-sibling-browser.js', 'spirit/test/spirit-sibling-general.js', 'spirit/test/spirit-sibling-node.js'];
+const KINDS = ['spirit/test/script-sibling-browser.js', 'spirit/test/script-sibling-general.js', 'spirit/test/script-sibling-node.js'];
 const GENERAL = fs.readdirSync(path.join(RUN, 'spirit', 'test')).filter(function (n) { return /^spirit-(child|sibling)-/.test(n) && /.js$/.test(n); })
   .map(function (n) { return 'spirit/test/' + n; }).sort();
 // The module judged: an opted-in product module under spirit/run/spirit/ (it has its own spirit/test/<name>.js).
-const MODULE = 'spirit/apiDoor.js';
+const MODULE = 'spirit/apiDoor/script.js';
 // What testsFor answers, asked once by the test that first needs it.
 const W = { radius: null, all: null };
 function radius() { return W.radius || (W.radius = testsFor(MODULE)); }
@@ -38,25 +38,25 @@ function all() { return W.all || (W.all = testsFor('')); }
 test.run('spirit/test/ holds the general tests of spirit.js, of the three kinds and no other', 0.2, function () {
   return GENERAL.join() === KINDS.join() || false;
 }, test.limit.quick);
-test.run('spirit.js, the module they are named after, is spirit/spirit.js, and none is at the run root', 0.2, function () {
-  return (fs.existsSync(path.join(RUN, 'spirit', 'spirit.js')) && !fs.existsSync(path.join(RUN, 'spirit.js'))) || false;
+test.run('spirit.js, the module they are named after, is spirit/script.js, and none is at the run root', 0.2, function () {
+  return (fs.existsSync(path.join(RUN, 'spirit', 'script.js')) && !fs.existsSync(path.join(RUN, 'spirit.js'))) || false;
 }, test.limit.quick);
-test.run('spirit/apiDoor.js is a product module with its own test, so it is opted in', 0.2, function () {
-  return (fs.existsSync(path.join(RUN, MODULE)) && fs.existsSync(path.join(RUN, 'spirit', 'test', 'apiDoor.js'))) || false;
+test.run('spirit/apiDoor/script.js is a product module with its own test, so it is opted in', 0.2, function () {
+  return (fs.existsSync(path.join(RUN, MODULE)) && fs.existsSync(path.join(RUN, 'spirit', 'apiDoor', 'test', 'script.js'))) || false;
 }, test.limit.quick);
 
 // a module's blast radius
-test.run('the blast radius of spirit/apiDoor.js holds its own test', 0.2, function () {
-  return radius().some(function (e) { return e.test === 'spirit/test/apiDoor.js'; }) || false;
+test.run('the blast radius of spirit/apiDoor/script.js holds its own test', 0.2, function () {
+  return radius().some(function (e) { return e.test === 'spirit/apiDoor/test/script.js'; }) || false;
 }, test.limit.quick);
 // Each general rule test written out, so that each check has a plain title of its own.
 function onRadius(g) {
   const hit = radius().filter(function (e) { return e.test === g && e.file === MODULE; });
   return hit.length === 1 || false;
 }
-test.run('spirit/test/spirit-sibling-general.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-general.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-node.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-node.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-browser.js judges spirit/apiDoor.js on its blast radius', 0.2, function () { return onRadius('spirit/test/spirit-sibling-browser.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-general.js judges spirit/apiDoor/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-general.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-node.js judges spirit/apiDoor/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-node.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-browser.js judges spirit/apiDoor/script.js on its blast radius', 0.2, function () { return onRadius('spirit/test/script-sibling-browser.js'); }, test.limit.quick);
 
 // ONE TEST FILE PER SCRIPT (goal/G45.1; spirit/run/spirit/test/TEST_SYSTEM.md; Andy: "there is ONE FUCKING test file in the
 // test folder per script file, and every fucking test that applies to that file must be inserted in the that one file"):
@@ -88,9 +88,9 @@ test.run('on the whole list a general test judges a module with its own test', 0
   const planted = ownTemp('spirit-optin-');
   try {
     const put = function (rel) { const f = path.join(planted, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, '\n'); };
-    put('spirit/spirit.js'); put('spirit/test/spirit-sibling-zzRules.js'); put('spirit/lone.js'); put('spirit/sub/deep.js'); put('spirit/owned.js'); put('spirit/test/owned.js');
-    OPT.whole = testsFor('', { root: planted }).filter(function (e) { return e.test === 'spirit/test/spirit-sibling-zzRules.js'; }).map(function (e) { return e.file; });
-    OPT.lone = testsFor('spirit/lone.js', { root: planted }).filter(function (e) { return e.test === 'spirit/test/spirit-sibling-zzRules.js'; }).map(function (e) { return e.file; });
+    put('spirit/script.js'); put('spirit/test/script-sibling-zzRules.js'); put('spirit/lone.js'); put('spirit/sub/deep.js'); put('spirit/owned.js'); put('spirit/test/owned.js');
+    OPT.whole = testsFor('', { root: planted }).filter(function (e) { return e.test === 'spirit/test/script-sibling-zzRules.js'; }).map(function (e) { return e.file; });
+    OPT.lone = testsFor('spirit/lone.js', { root: planted }).filter(function (e) { return e.test === 'spirit/test/script-sibling-zzRules.js'; }).map(function (e) { return e.file; });
   } finally { try { fs.rmSync(planted, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   return OPT.whole.indexOf('spirit/owned.js') !== -1 || false;
 }, test.limit.quick);
@@ -111,20 +111,20 @@ function onWhole(g) {
   const judged = all().filter(function (e) { return e.test === g && e.file; });
   return judged.some(function (e) { return e.file === MODULE; }) || false;
 }
-test.run('spirit/test/spirit-sibling-general.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-general.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-node.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-node.js'); }, test.limit.quick);
-test.run('spirit/test/spirit-sibling-browser.js judges modules on the whole list, spirit/apiDoor.js among them', 0.2, function () { return onWhole('spirit/test/spirit-sibling-browser.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-general.js judges modules on the whole list, spirit/apiDoor/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-general.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-node.js judges modules on the whole list, spirit/apiDoor/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-node.js'); }, test.limit.quick);
+test.run('spirit/test/script-sibling-browser.js judges modules on the whole list, spirit/apiDoor/script.js among them', 0.2, function () { return onWhole('spirit/test/script-sibling-browser.js'); }, test.limit.quick);
 
 // THE BRANCH RULES JUDGE A SCRIPT'S BRANCH FROM THE SCRIPT (goal/G47.1, box v94, 2: they are a part of
-// spirit-sibling-general.js, which is one entry per module like every general test): no entry is a branch folder.
+// script-sibling-general.js, which is one entry per module like every general test): no entry is a branch folder.
 const { branchesOf } = SPIRIT.requireScript('spirit/test/testModule.js');
 test.run('no general test is handed a branch folder, on the whole list', 0.2, function () {
   const dirs = branchesOf(RUN).map(function (b) { return b.dir; });
   const folders = all().filter(function (e) { return e.file && dirs.indexOf(e.file) !== -1; });
   return (dirs.length >= 20 && !folders.length) || false;
 }, test.limit.quick);
-test.run('on the blast radius of spirit/app/desk/desk.js, spirit-sibling-general.js judges desk.js itself', 0.2, function () {
-  const desk = testsFor('spirit/app/desk/desk.js').filter(function (e) { return e.test === 'spirit/test/spirit-sibling-general.js'; }).map(function (e) { return e.file; });
+test.run('on the blast radius of spirit/app/desk/desk.js, script-sibling-general.js judges desk.js itself', 0.2, function () {
+  const desk = testsFor('spirit/app/desk/desk.js').filter(function (e) { return e.test === 'spirit/test/script-sibling-general.js'; }).map(function (e) { return e.file; });
   return desk.join() === 'spirit/app/desk/desk.js' || false;
 }, test.limit.quick);
 // A -CHILD- TEST BESIDE A FOLDER HOLDING SCRIPT.JS (goal/G49.5, box v5: "the test system's rule widens by one case, so they

@@ -11,14 +11,14 @@
 // Its rules, Andy's: "isValid() must return true for default() value of the same field script."; "isValid(value) must
 // throw an error if the value is null or undefined". With them, the box: "a type script.js is an object containing static
 // functions ... defaultValue() ... and isValid(something)".
-require('../../spirit.js');
+require('../../script.js');
 const GIVEN = process.argv.slice(2).filter(function (a, i, all) { return a.indexOf('--') !== 0 && all[i - 1] !== '--test'; });
 function typeRules(ARGS) {
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const TYPE = path.join(RUN, 'spirit', 'type');
 

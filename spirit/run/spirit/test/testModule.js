@@ -22,7 +22,7 @@ const fs = require('fs');
 const path = require('path');
 
 const RUN = path.join(__dirname, '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 // Never walked: node state, git, and the vendored folders, the libraries we carry but did not write (fileSystem.js's
 // one list, goal/G43.25).
 const SKIP = ['state', 'app-state', '.git'];
@@ -83,9 +83,9 @@ function under(p, dir) { return dir === '' || p.indexOf(dir + '/') === 0; }
 
 // A general test's reach, or null when it is a plain test: the folder holding its test folder, the module it is named
 // after, beside the test folder, and the files it judges. The spirit-* general tests stand in spirit/test/ beside
-// spirit/spirit.js (goal/G43.32, box point 5: they "judge the same modules as today"): -sibling- judges spirit/ and
-// below; -child- of a module that is its folder's namesake, as spirit/spirit.js is, judges that folder too, so it
-// still judges spirit/spirit.js and spirit/ below.
+// spirit/script.js (goal/G43.32, box point 5: they "judge the same modules as today"): -sibling- judges spirit/ and
+// below; -child- of a module that is its folder's namesake, as spirit/script.js is, judges that folder too, so it
+// still judges spirit/script.js and spirit/ below.
 function generalOf(t, has) {
   const m = /^(.*?)-(child|sibling)-[^/]+\.js$/.exec(path.posix.basename(t));
   if (!m) return null;
@@ -148,7 +148,7 @@ function testsFor(file, opts) {
     const g = generalOf(t, has);
     if (!g) return;
     // The branch rules judge a script's branch from the script itself since goal/G47.1, box v94, 2 (their part of
-    // ./spirit-sibling-general.js): every general test is one entry per module, none per branch folder.
+    // ./script-sibling-general.js): every general test is one entry per module, none per branch folder.
     judged.filter(g.judges).forEach(function (m) { add(t, m); });
   });
   return out;

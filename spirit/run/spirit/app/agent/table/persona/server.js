@@ -1,5 +1,5 @@
 'use strict';
-require('../../../../spirit.js');
+require('../../../../script.js');
 
 // spirit/run/spirit/app/agent/table/persona/server.js
 // THE PERSONA TABLE (goal/G41.4). Andy, box v22: "a persona table. keyed by ID same as the shadow-roll (with Label and

@@ -7,8 +7,8 @@
 - `spirit/element/test/search-child-general.js`: 45 production files, 721 green, 0 red
 - `spirit/test/app-child-browser.js`: 55 production files, 123 green, 0 red
 - `spirit/test/app-child-general.js`: 82 production files, 1864 green, 0 red
-- `spirit/test/spirit-sibling-browser.js`: 216 production files, 2858 green, 0 red
-- `spirit/test/spirit-sibling-general.js`: 163 production files, 7837 green, 3 red
-- `spirit/test/spirit-sibling-node.js`: 189 production files, 391 green, 0 red
-- `spirit/test/test/spirit-sibling-general.js`: 1 production files, 19 green, 0 red
+- `spirit/test/script-sibling-browser.js`: 216 production files, 2858 green, 0 red
+- `spirit/test/script-sibling-general.js`: 163 production files, 7837 green, 3 red
+- `spirit/test/script-sibling-node.js`: 189 production files, 391 green, 0 red
+- `spirit/test/test/script-sibling-general.js`: 1 production files, 19 green, 0 red
 - `spirit/type/test/boolean-sibling-general.js`: 45 production files, 285 green, 0 red

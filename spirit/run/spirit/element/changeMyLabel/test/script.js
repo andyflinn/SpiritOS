@@ -10,7 +10,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/changeMyLabel/script.js';
@@ -86,7 +86,7 @@ function world(answer) {
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
-  const REAL = [SUBJECT, 'spirit/type/string/label.js', 'spirit/data.js'];
+  const REAL = [SUBJECT, 'spirit/type/string/label.js', 'spirit/data/script.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/(?:app\/)?[^/]+\/data\.js$/.test(p); } });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
@@ -98,7 +98,7 @@ function world(answer) {
   vm.createContext(win);
   win.spirit.requireScript('spirit/type/string/label.js');
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
-  win.spirit.requireScript('spirit/data.js');
+  win.spirit.requireScript('spirit/data/script.js');
   win.spirit.nodeFacts = { key: 'KEY+LABEL/NODE==' };
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   if (fs.existsSync(FILE)) pageRequire(SUBJECT);

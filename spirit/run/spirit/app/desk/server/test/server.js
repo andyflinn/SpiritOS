@@ -10,15 +10,15 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../../..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const REPO = path.resolve(RUN, '..', '..');
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/nodeDesk/' + name + tempAsked); }
-const appClient = SPIRIT.requireScript('spirit/appClient.js');
+const appClient = SPIRIT.requireScript('spirit/appClient/script.js');
 
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 function tracked(dir) { return execSync('git ls-files -- "' + dir + '"', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean); }
@@ -33,7 +33,7 @@ function folderGone(dir) {
 
 // WHAT WENT, NOW IN THE DESK'S OWN TEST (goal/G47.4; Andy: "you make bloody well sure that such stupid hard-coded tests move to
 // app-child-* immediately, or whatever is fucking appropriate"; cw: these "are about desk and deskClient themselves, not about
-// the app server"): moved here from spirit/server/test/app.js. Box v15, what goes: the desk keeps no bundled() of its own;
+// the app server"): moved here from spirit/server/app/test/script.js. Box v15, what goes: the desk keeps no bundled() of its own;
 // goal/G41.24, Andy: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder itself."
 function deskFiles(dir) { const out = []; (function walk(d) { fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) { const f = path.join(d, e.name); if (e.isDirectory()) { if (e.name !== 'test' && e.name !== 'node_modules') walk(f); } else if (/\.(js|json)$/.test(e.name)) out.push(f); }); }(dir)); return out; }
 test.run('the desk server has no bundled() of its own', 0.2, function () {

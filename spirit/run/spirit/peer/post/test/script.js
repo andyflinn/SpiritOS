@@ -1,0 +1,77 @@
+'use strict';
+
+// spirit/run/spirit/peer/post/test/script.js
+// PEERPOST.JS MARKS NO ADMITTED (goal/G43.23, item 6, after goal/G43.17; spec: ./script.md). Andy, G43.17: "Didn't i say remove ALL
+// code referencing "admit" and "hold". it was a hair-brained scheme, and it HAS TO GO."
+// Moved here from spirit/test/nodeStore-noAdmitHold.js (goal/G43.28; Andy: "you WILL FUCKING PLACE TESTS WHERE THEY FUCKING
+// BELONG"): beside the file whose code it reads. Each file's code is read with its comments left out. No node, no port.
+
+const fs = require('fs');
+const path = require('path');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
+const test = SPIRIT.requireScript('spirit/test/testReport.js');
+// ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
+// it asks, under its suite's path, the whole of it removed when the suite ends.
+const tempFolder = require('../../../tempFolder/script.js');
+let tempAsked = 0;
+function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/peerPost/' + name + tempAsked); }
+test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/peerPost'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
+
+// A file's code, comments blanked (line numbers kept); null when the file is not there.
+function code(file) {
+  if (!fs.existsSync(file)) return null;
+  return fs.readFileSync(file, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, function (m) { return m.replace(/[^\n]/g, ' '); })
+    .replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+}
+// The lines of a file's code matching re, by their numbers.
+function hits(file, re) {
+  const c = code(file);
+  if (c === null) return null;
+  const out = [];
+  c.split('\n').forEach(function (l, i) { if (re.test(l)) out.push(i + 1); });
+  return out;
+}
+
+// the traffic log's admitted mark: peerPost
+const f = path.join(RUN, 'spirit', 'peer', 'post', 'script.js');
+// The world: the file is there and its code, comments left out, still holds a line that is surely code.
+test.run('peerPost.js is read, and its code, comments left out, still holds a line of code', 0.2, function () {
+  const c = code(f);
+  return (c !== null && /module\.exports/.test(c)) || false;
+}, test.limit.quick);
+test.run('peerPost.js\'s code names no admitted mark', 0.2, function () {
+  const h = hits(f, /admit/i);
+  if (h === null) return false;
+  return !h.length || false;
+}, test.limit.quick);
+
+// THE ROUTE CACHING GOES (goal/G47.1, box v69; Andy: "the \"routes\" aren't read by anybody in the fucking system, node
+// saves then, and passes routes to the relay?"): "A post carries no hints: the node sends none, the hint signature goes".
+// A peerPost on a scratch identity, its request a hand that keeps the body it is given (no relay, no port), sealing off
+// so the post goes as handed (opts.sealsPosts false); post() handed hints as a caller of before would hand them.
+let posted = null;
+test.run('a post is handed hints, and the body that leaves for the relay is kept', 0.2, async function () {
+  const auth = SPIRIT.requireScript('spirit/relayAuth/script.js');
+  const home = ownTemp('spirit-peerpost-hints-');
+  try {
+    fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
+    auth.saveIdentity(home, auth.generateIdentity('sender'));
+    const bodies = [];
+    const pp = SPIRIT.requireScript('spirit/peer/post/script.js').createPeerPost({ rootDir: home, waitMs: 500, sealsPosts: false,
+      request: function (url, method, route, body) { bodies.push(body); return Promise.resolve({ status: 200, body: { ok: true } }); } });
+    await Promise.race([Promise.resolve(pp.post('https://relay.example', auth.generateIdentity('peer').publicKey, 'hello', ['https://heard.example'])),
+      new Promise(function (r) { setTimeout(r, 3000); })]);
+    posted = bodies.filter(function (b) { return b && b.text === 'hello'; })[0] || null;
+  } catch (e) { return false; } finally { try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+  return !!posted || false;
+}, test.limit.slow);
+test.run('a post carries no hints', 0.2, function () {
+  if (!posted) return false;
+  return posted.hints === undefined || false;
+}, test.limit.quick);
+test.run('a post carries no hint signature', 0.2, function () {
+  if (!posted) return false;
+  return posted.hintSig === undefined || false;
+}, test.limit.quick);

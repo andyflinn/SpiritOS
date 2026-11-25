@@ -11,8 +11,8 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 
 const DIR = path.join(__dirname, '..');
@@ -131,7 +131,7 @@ function load(w) {
   global.spirit = global.window.spirit;
   w.win = global.window;
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any app runs.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: 'KEY+AGENT/APP==' };
   global.window.spirit.required.spirit.data.homeNode(global.window.spirit.nodeFacts.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
@@ -887,7 +887,7 @@ async function tabOpens(kind, row) {
   // The real files the app and its elements load, run on the page when they are required; anything else is answered and
   // not run.
   const REAL = [
-    'spirit/data.js', 'spirit/element/workBench/script.js', 'spirit/element/tabContainer/script.js', 'spirit/app/agent/element/table/tableElement.js', 'spirit/app/agent/element/table/row.js',
+    'spirit/data/script.js', 'spirit/element/workBench/script.js', 'spirit/element/tabContainer/script.js', 'spirit/app/agent/element/table/tableElement.js', 'spirit/app/agent/element/table/row.js',
     'spirit/app/agent/element/table/provider/elementTable.js', 'spirit/app/agent/element/table/provider/elementRow.js',
     'spirit/app/agent/element/table/model/elementTable.js', 'spirit/app/agent/element/table/model/elementRow.js', 'spirit/element/busyButton/script.js',
     // The one-row form and the icon it draws with (goal/G41.27): the model table's Ask form is one.
@@ -947,7 +947,7 @@ async function tabOpens(kind, row) {
     // A page's spirit (spirit/test/headLessChrome.js pageSpirit), so each file places itself by installSpiritElement as it runs.
     SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit);
     vm.createContext(win);
-    loaded['spirit/data.js'] = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit/data.js'), win);
+    loaded['spirit/data/script.js'] = PAGE_LOAD.runAsPage(path.join(RUN, 'spirit/data/script.js'), win);
     // Its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any app runs.
     win.spirit.nodeFacts = { key: 'KEY+AGENT/BOXES==' };
     win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);

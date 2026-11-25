@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/element/table/test/row.js
 // The tests of spirit/app/agent/element/table/row.js, and of no other module (spec: ./row.md; goal/G41.4, goal/G41.28).
 // Its tables' shared element (../tableElement.js, spirit.required.spirit.app.agent.element.table.tableElement) is part of its tree and runs real beside it.
-// The browser file runs in node on a window of its own, over the real spirit.required.spirit.data (spirit/data.js). The boxes,
+// The browser file runs in node on a window of its own, over the real spirit.required.spirit.data (spirit/data/script.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
 // One test.run per test (goal/G47.2): each test does its step and judges it; what the steps make is kept below for the
@@ -14,12 +14,12 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = S.requireScript('spirit/tempFolder.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/element/table/test/row/' + name + tempAsked); }
 // THE DATABASES IT OPENS ARE CLOSED BEFORE ITS TEMP FOLDER GOES (goal/G47.1, no pollution; testicle's "it leaves no temp
@@ -115,7 +115,7 @@ test.run('the shared element runs on a window of its own, over the real spirit.r
   w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  load(path.join(RUN, 'spirit', 'data.js'));
+  load(path.join(RUN, 'spirit', 'data', 'script.js'));
   D = global.window.spirit.required.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.nodeFacts.key; the row element requires the agent branch's interface (spirit/app/agent/api.js), which brings
@@ -495,7 +495,7 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
     const win = { window: null, spirit: S.requireScript('spirit/test/headLessChrome.js').pageSpirit({ element: {} }), console: console };
     win.window = win;
     vm.createContext(win);
-    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter.js', 'spirit/element/search/script.js'].forEach(function (rel) {
+    ['spirit/search/string.js', 'spirit/search/object.js', 'spirit/listLimiter/script.js', 'spirit/element/search/script.js'].forEach(function (rel) {
       PAGE_LOAD.runAsPage(path.join(RUN, rel), win);
     });
     return ((win.spirit.required.spirit || {}).element || {}).search;
@@ -507,12 +507,12 @@ test.run('the real provider and model servers run on a scratch agent.db, with th
   const { DatabaseSync } = require('node:sqlite');
   N.scratchDb = ownTemp('spirit-tableElement');
   // The servers check their arguments through the one spirit object's rules (spirit.checkArgs), as in the agent process.
-  global.window.spirit.checkArgs = require(path.join(RUN, 'spirit', 'spirit.js')).checkArgs;
+  global.window.spirit.checkArgs = require(path.join(RUN, 'spirit', 'script.js')).checkArgs;
   N.sctx = { db: new DatabaseSync(path.join(N.scratchDb, 'agent.db')), dbFile: path.join(N.scratchDb, 'agent.db'), tables: {}, publish: function () {} };
   // goal/G43.32: a server runs in node, where spirit is spirit.js itself and spirit.requireScript answers at once (decided 3);
   // the page's stand-in is the global spirit only for the page's scripts.
   const pageSpiritObj = global.spirit;
-  global.spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
+  global.spirit = require(path.join(RUN, 'spirit', 'script.js'));
   try {
     N.sctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js')(N.sctx);
     N.sctx.tables.model = S.requireScript('spirit/app/agent/table/model/server.js')(N.sctx);
@@ -607,7 +607,7 @@ test.run('picking a persona, with the provider not picked yet, saves the job wit
   if (!N.sctx) return false;
   // In node, as above.
   const pageSpiritAgain = global.spirit;
-  global.spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
+  global.spirit = require(path.join(RUN, 'spirit', 'script.js'));
   try {
     N.sctx.tables.persona = S.requireScript('spirit/app/agent/table/persona/server.js')(N.sctx);
     N.sctx.tables.job = S.requireScript('spirit/app/agent/table/job/server.js')(N.sctx);

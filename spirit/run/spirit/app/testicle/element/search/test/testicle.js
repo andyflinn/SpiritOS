@@ -22,7 +22,7 @@ const os = require('os');
 const path = require('path');
 const { spawn, execSync, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 // Every node this test uses is one of lab's (goal/G47.3): its tree by scratchTree, its node by startNodeOn.
 const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REPO = path.resolve(RUN, '..', '..');

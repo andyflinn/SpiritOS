@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const REL = 'spirit/app/testicle/element/statusBox.js';

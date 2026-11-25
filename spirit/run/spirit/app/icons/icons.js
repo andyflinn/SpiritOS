@@ -1,5 +1,5 @@
 'use strict';
-require('../../spirit.js');
+require('../../script.js');
 
 // spirit/run/spirit/app/icons/icons.js
 // THE ICONS APP'S NODE SCRIPT (goal/G43.19, box v16, 7). Its contract and its test: ./test/icons.md and ./test/icons.js.

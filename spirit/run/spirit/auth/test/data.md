@@ -2,7 +2,7 @@
 
 What a client knows of a node's bundles, branches and grants (goal/G41.28; Andy: *"We're not done until every family of
 the API tree as a clientCacheManager"*), from the node's own job `spirit.auth` (goal/G43.20): `{ table, row, gone }`.
-Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside the real `spirit/data.js`; the test reads through `spirit.required.spirit.data.auth.data` alone, never a branch.
+Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside the real `spirit/data/script.js`; the test reads through `spirit.required.spirit.data.auth.data` alone, never a branch.
 
 - In node, requiring its interface `spirit/auth/api.js`, the one script that requires it, brings it, at `spirit.required.spirit.data.auth.data`.
 - A **bundle** row is kept by its number id as `{ id, label, owner }`, the owner as the node said it; one that names no

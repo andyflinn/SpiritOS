@@ -1,7 +1,7 @@
 'use strict';
 // spirit/run/spirit/element/changeMyLabel/script.js
 // THE NODE'S NAME, CHANGED (goal/G41.6; Andy, Q1: Info's two blocks "become shell elements of their own, each with its
-// test folder"). One field and its Save: what this node answers to anybody who asks (spirit/nodeCard.js). Info draws it.
+// test folder"). One field and its Save: what this node answers to anybody who asks (spirit/nodeCard/script.js). Info draws it.
 //
 //   changeMyLabel.create(host) -> { set(value), destroy() }
 //
@@ -40,7 +40,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // NO COUNTER OUTSIDE THE FORM (goal/G41.27's box v8, Andy: "the most fucking miserable example are those fucking character
     // counter OUTSIDE the fucking form ... they ALL have to go"): fieldInput holds the field at its limit as it is typed.
     host.innerHTML =
-      // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
+      // Its box keeps what it holds inside (script-sibling-browser.js: overflow not visible).
       '<div class="stack" style="overflow:hidden"><div data-label="form"></div>' +
       '<div data-label="said" class="job-start-error"></div></div>';
     var form = ANSWER['spirit/element/rowForm/script.js'].create(host.querySelector('[data-label="form"]'), { icon: '✏️', button: 'Save', press: function () { return save(); } });

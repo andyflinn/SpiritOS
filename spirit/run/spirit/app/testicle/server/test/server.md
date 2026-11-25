@@ -232,7 +232,7 @@ The box, in Andy's words where he gave them:
   every one of the six is still classified, nothing pressed.
 - **Every general test takes a list** (box v94, 2: *"else it will process all scripts listed in the arguments that fit"*;
   Andy: *"general tests ALL must accept a list as an argument, RIGHT?"*): two scripts that each break the rules are written;
-  `spirit-sibling-general.js`, `-node.js` and `-browser.js`, each handed both, name both in their failures (one fixed
+  `script-sibling-general.js`, `-node.js` and `-browser.js`, each handed both, name both in their failures (one fixed
   title per check, its answer naming each script that breaks it, goal/G47.2).
 - **The server hands a general test a list** (Andy: *"WSL, write the reds for the server half of passing a list to
   general tests."*): a planted folder `spirit/zzBatch/` with its own `-general`, `-node` and `-browser` tests (each logging
@@ -271,7 +271,7 @@ Andy: *"name-space pollution is 0.7"*; the box: *"Guard: after each suite, testi
 
 ## A test's temp folder is gone after it (goal/G47.1, the box, no pollution)
 
-The box: *"A temp folder is cleaned by its owner: ... a test's in its own after. Guard: after each suite, testicle finds its temp folder gone; red if not"*; Q31 (Andy): the tests take their temp folders from `spirit/tempFolder.js`. A suite's folder is the helper's for its route, the suite's path without `.js`, on this node. When a run of one script's suite has ended, after hooks and all, that folder still there turns that script's and suite's test *"it leaves no temp folder behind"* red at 0.7, else green. A general suite's run over many scripts is not judged: its one folder is the suite's, and blaming each script for it would be wrong. Its test plants stray, whose suite leaves its folder: red; lambda's suite, which leaves none: green.
+The box: *"A temp folder is cleaned by its owner: ... a test's in its own after. Guard: after each suite, testicle finds its temp folder gone; red if not"*; Q31 (Andy): the tests take their temp folders from `spirit/tempFolder/script.js`. A suite's folder is the helper's for its route, the suite's path without `.js`, on this node. When a run of one script's suite has ended, after hooks and all, that folder still there turns that script's and suite's test *"it leaves no temp folder behind"* red at 0.7, else green. A general suite's run over many scripts is not judged: its one folder is the suite's, and blaming each script for it would be wrong. Its test plants stray, whose suite leaves its folder: red; lambda's suite, which leaves none: green.
 
 ## A red that reached no verdict says so (goal/G47.6, box point 1)
 

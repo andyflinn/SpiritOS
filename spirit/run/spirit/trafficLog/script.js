@@ -1,0 +1,457 @@
+'use strict';
+// ITS NAMES STAY ITS OWN (goal/G47.1; Andy: "is there any motherfucking reason that this fucking shit cannot be fucking
+// contained in the motherfucking spirit objects"): a page loads this file through a script tag, so the whole of it runs
+// inside one function, and what it hands out goes onto the spirit object or module.exports, never the window.
+(function () {
+require('../script.js');
+
+// spirit/run/spirit/trafficLog/script.js
+// What this node sent and what it received. Personal nodes only.
+//
+// Andy: "on the lowest level we need a server log containing a history of
+// incoming and outgoing packets. the payload-agnostic log of WAN traffic,
+// akin to the payload-agnostic relaying of the public relay."
+//
+// ── PAYLOAD-AGNOSTIC MEANS SOMETHING PRECISE ─────────────────────────
+//
+// It means the system does not need to UNDERSTAND a packet in order to
+// log it — exactly as the relay carries a packet without knowing what is
+// inside. It does NOT mean the payload is withheld. The payload is kept
+// whole, byte for byte, and never interpreted.
+//
+// Nothing here parses `payload`. Not to validate it, not to measure it,
+// not to pull a field out of it. That is the single discipline this
+// module has, and it is what the suite checks hardest.
+//
+// One consequence, stated so nobody adds it back in good faith: THERE IS
+// NO `app` FIELD. A packet's envelope names the app that sent it, and
+// reading that name is a job with an owner already — the shell routes on
+// `packet.app` in deliverPackets. Three layers, each understanding
+// strictly less than the one above it:
+//
+//   relay        routes by public key   never reads the text
+//   this file    records                never reads the text
+//   the shell    routes by packet.app   reads it, because that is its job
+//
+// A log with an `app` field would be the middle layer doing the top
+// layer's reading, and the reason it must not is the reason the relay
+// must not.
+//
+// ── WHY IT EXISTS AT ALL ─────────────────────────────────────────────
+//
+// Decision 0006: a relay delivers or refuses and stores nothing on
+// anyone's behalf. The moment that is true the relay stops being a record
+// that anything happened, and this file is the only evidence left. A
+// refusal nobody wrote down is indistinguishable from nothing having been
+// tried.
+//
+// ── PRIVACY, ON PURPOSE ──────────────────────────────────────────────
+//
+// A per-day counter cannot rebuild a conversation. This file is the opposite, and by a wider margin
+// than a metadata log would have been — it holds the messages themselves,
+// in and out, across every app that uses the router.
+//
+// That is the point rather than a side effect. It is also why the rules
+// it shares with the contacts (node.db's `seen` table, once the shadow roll) and the peerfiles are absolute: local, never
+// uploaded, and NEVER ON A RELAY. A node keeping its own traffic is a
+// machine keeping its own record. A relay keeping this same file would be
+// holding everybody's messages — not metadata, the content — which is a
+// far worse thing than the ring 0006 deletes, not a softer one. The same
+// code is right on a node and the worst thing in the system on a relay,
+// and the only thing between the two is the gate in note() below.
+
+const fs = require('fs');
+
+// NO AGE LIMIT, AND A SIZE CAP (goal/G30.19).
+//
+// No row ages out here, whether it was read, refused, ignored or sent;
+// this file sets no window. What bounds the log is node.db's file cap (not
+// the owner's cache cap, which counts only `seen`): Andy,
+// 2026-10-21: "cap in to 16 MB", "learn to throw out shit, or else my box
+// is gonna grind to a hold very soon". Past nodeStore.MAX_DB_BYTES the
+// table's oldest rows are shed (nodeStore.js, shedToCap), so the log keeps
+// the newest traffic that fits.
+//
+// IT IS NEVER REWRITTEN ON EVERY PACKET. A write adds one row to node.db's
+// `traffic` table and is O(1). Nothing above this file knows where the rows
+// live (spirit/test/storeOwnership.js).
+
+// ── THE TABLE IN node.db (transport/R19.3) ────────────────────────────
+//
+//   Andy, 2026-09-28: "Moving the node log into machine-side database",
+//   and rule 1 of that plan: nothing above trafficLog.js changes.
+//
+// Every row goes into node.db's `traffic` table, which nodeStore.js owns;
+// this file still decides what a row is and is the only one that reads it.
+// THE TABLE IS THE ONLY STORE: no side file is written when node.db cannot
+// be had, and none is read (Andy, goal/G47.1: "old files or tables should not
+// be mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!", and "ALL,
+// GO" on the fallback file's going). A node with no node.db logs nothing.
+//
+// Unreadable or missing reads as no history. A log that can crash the thing
+// it is observing is worse than no log — and this is called on the path a
+// packet takes, so a throw here would break the delivery it was only
+// supposed to witness.
+//
+// `create` is false for reads: asking what the log holds must never be
+// what brings a database into existence.
+function table(rootDir, create) {
+  if (!rootDir) return null;
+  try {
+    var nodeStore = spirit.requireScript('spirit/nodeStore/script.js');
+    if (!nodeStore.available()) return null;
+    if (!create && !fs.existsSync(nodeStore.dbPath(rootDir))) return null;
+    return nodeStore.open(rootDir).traffic;
+  } catch (e) { return null; }
+}
+
+function readAll(rootDir) {
+  var t = table(rootDir, false);
+  var rows = [];
+  if (t) {
+    try { rows = t.all(); } catch (e) { rows = []; }
+  }
+  // ORDER BY `at`, ALWAYS. stamp() makes it unique and increasing, so this is
+  // the order rows were written in. The sort is stable: a batch of marks
+  // sharing one stamp keeps its order.
+  return rows.sort(function (a, b) {
+    var x = String(a && a.at || ''), y = String(b && b.at || '');
+    return x < y ? -1 : x > y ? 1 : 0;
+  });
+}
+
+// The set of hashes a live page has already been handed. Marks are rows
+// too — `mark: 'taken'` — so the log stays append-only and a delivery
+// never rewrites the packet it delivered.
+function takenSet(rows) {
+  var seen = Object.create(null);
+  rows.forEach(function (row) {
+    if (row && row.mark === 'taken' && row.hash) seen[row.hash] = row.at || true;
+  });
+  return seen;
+}
+
+// Traffic rows, with the marks folded in. What every reader below wants.
+function historyOf(rootDir) {
+  var rows = readAll(rootDir);
+  var taken = takenSet(rows);
+  return rows.filter(function (row) { return row && !row.mark; }).map(function (row) {
+    if (!taken[row.hash]) return row;
+    var out = {};
+    Object.keys(row).forEach(function (k) { out[k] = row[k]; });
+    out.takenAt = taken[row.hash];
+    return out;
+  });
+}
+
+// ONE ROW, ADDED. No read, no rewrite: the cost of writing a packet down
+// does not grow with how many are already there. With no node.db to be
+// had, nothing is written.
+function append(rootDir, row) {
+  var t = table(rootDir, true);
+  if (t) t.add(row);
+}
+
+// opts: { rootDir, relayMode, now }
+//
+// `now` is injectable, so the stamp below can be tested without waiting
+// on a real clock. (It was for a retention window; the log keeps
+// everything now.)
+function createTrafficLog(opts) {
+  opts = opts || {};
+  var rootDir = opts.rootDir;
+  var relayMode = !!opts.relayMode;
+  var clock = typeof opts.now === 'function' ? opts.now : function () { return Date.now(); };
+
+  // ── `at` IS A POSITION, SO IT HAS TO BE UNIQUE AND INCREASING ──────
+  //
+  // The reader below says it: "`since` is a POSITION, not a filter on
+  // content" (R13). It implements it as `at > since` against a
+  // millisecond timestamp — and `Date.now()` repeats. Two rows in one
+  // millisecond, and a reader who asks for everything after the first
+  // never sees the second. Nothing reports a gap, because a position
+  // cursor cannot tell "nothing happened" from "it was skipped".
+  //
+  // FOUND AS A FLAKY TEST. ownerLog.js failed roughly one run in five
+  // with `since: 1 of 3` and passed on every re-run — writes here are a
+  // synchronous append, ~3ms apart on an idle box, so ties only happen
+  // under the parallel harness. It was dismissed twice as noise before
+  // the output was kept.
+  //
+  // So the clock stays injectable and the STAMP is monotonic: never the
+  // same millisecond twice, never backwards. That is a promise about the
+  // field the readers already rely on, not a new field — the persist
+  // shape is untouched, and a row written before this still parses.
+  //
+  // The cost, stated: under a burst, `at` can run up to a millisecond or
+  // two ahead of the wall clock, and if the system clock jumps backwards
+  // it advances one millisecond per row until real time catches up. A
+  // log whose order is trustworthy is worth more than one whose
+  // millisecond is.
+  var lastMs = null;
+
+  function highestWritten() {
+    var high = 0;
+    try {
+      // The table's newest row carries its highest stamp (transport/R19.4):
+      // one indexed look, not a read of every row.
+      var tb = table(rootDir, false);
+      var last = tb ? Date.parse(tb.lastAt()) : 0;
+      if (last > high) high = last;
+    } catch (e) { /* unreadable: the clock is as good a start as any */ }
+    return high;
+  }
+
+  // ── THE READERS ASK THE TABLE THROUGH ITS INDEXES (transport/R19.4) ──
+  //
+  // Each reader that wants a few rows asks node.db for exactly those, by
+  // the partial index made for it, instead of reading every row and
+  // filtering. The answers are the same as filtering read().
+  function sinceIso(ms) { return ms ? new Date(ms).toISOString() : ''; }
+  function byTime(a, b) { return Date.parse(a.at) - Date.parse(b.at); }
+  // Folds `takenAt` onto rows from their marks, as historyOf does.
+  function foldTaken(rows, marks) {
+    return rows.map(function (row) {
+      if (!marks[row.hash]) return row;
+      var out = {};
+      Object.keys(row).forEach(function (k) { out[k] = row[k]; });
+      out.takenAt = marks[row.hash];
+      return out;
+    });
+  }
+  // Every row that carries this hash: marks included.
+  function rowsFor(hash) {
+    var tb = table(rootDir, false);
+    if (!tb) return [];
+    try { return tb.byHash(hash); } catch (e) { return []; }
+  }
+
+  function stamp() {
+    // Seeded from disk on first write, ONCE — a restart must not reuse a
+    // position the previous process already handed out, which is the
+    // same fault across a process boundary.
+    if (lastMs === null) lastMs = highestWritten();
+    var ms = clock();
+    if (!(ms > lastMs)) ms = lastMs + 1;
+    lastMs = ms;
+    return new Date(ms).toISOString();
+  }
+
+  // THE GATE. Read the comment at the top of this file before removing
+  // it: this module is correct on a personal node and is the worst thing
+  // in the system on a relay.
+  function note(entry) {
+    if (relayMode || !rootDir || !entry) return null;
+
+    var at = stamp();
+    var row = {
+      at: at,
+      dir: entry.dir === 'in' ? 'in' : 'out',
+      // `request` and `reply` are packets: two halves of one exchange,
+      // joined by a hash, each carrying a payload. There is no third kind:
+      // the owner-event rows went (goal/G47.1, Q16; Andy: "ALL OF THEM.
+      // KILL THEM. NOBODY READ THAT SHIT, THEY SHOULD NOT EXIST."), and an
+      // owner event goes on the stream and is kept nowhere.
+      kind: entry.kind === 'reply' ? 'reply' : 'request',
+      peer: String(entry.peer || ''),
+      // WHICH RELAY CARRIED IT, on both directions (Andy) — the one it
+      // went out to, or the one it came in from. A node on several
+      // relays cannot otherwise tell which road a packet travelled, and
+      // that is routing information this node holds and nobody else
+      // keeps.
+      relay: String(entry.relay || ''),
+      hash: String(entry.hash || ''),
+      outcome: String(entry.outcome || ''),
+    };
+    // HANDED UP: `outcome: 'delivered'` is a packet handed to an app; the
+    // arrival readers below take those rows and no other (goal/G43.23, the
+    // box's item 6).
+    if (entry.status != null) row.status = Number(entry.status) || 0;
+    // WHAT A FAILURE MEANT, as a spiritErrors code (R36). Optional and
+    // additive: rows written before it existed simply lack it, and a
+    // reader that does not know it ignores it. A status alone could not
+    // say which of seven things a 503 was.
+    if (entry.code) row.code = String(entry.code);
+    if (entry.ms != null) row.ms = Number(entry.ms) || 0;
+    // A POST'S QUEUE WAIT (goal/G4.32; Andy: "i like to know every step of our dear little packets."): from entering the
+    // queue to the attempt that finally left, and how many tries it took; ms - waitMs is the flight.
+    if (entry.waitMs != null) row.waitMs = Number(entry.waitMs) || 0;
+    if (entry.attempts != null) row.attempts = Number(entry.attempts) || 0;
+
+    // The payload, whole and untouched. `bytes` is measured off the
+    // string's length rather than by looking inside it — a length is not
+    // an interpretation.
+    if (typeof entry.payload === 'string') {
+      row.payload = entry.payload;
+      // ── A SIZE IN THIS SYSTEM IS BYTES ────────────────────────────────
+      //
+      //   Andy, 2026-09-26: "the payload cap is BYTES. that's the design,
+      //   and the attitude, of node and relay."
+      //
+      // It was `.length`, a count of UTF-16 units under a name that says
+      // bytes, so it undercounted every non-ASCII payload — measured on real
+      // rows at 1520 against 1522, and 2415 against 2416. Nothing was refused
+      // wrongly, because this is a reported figure rather than a limit, but
+      // `bytes` is exactly the field a later session would size or bill from.
+      //
+      // THE THIRD INDEPENDENT PLACE THE SAME MISTAKE TURNED UP IN ONE DAY:
+      // the composer refused on characters while the wire counted bytes, the
+      // sealed ceiling had to be derived in escaped bytes, and this. Andy's
+      // own reading of the pattern was "the PACKAGE_MAX suffers from a
+      // problem similar to the HTTP endpoint issue" — a quantity measured in
+      // the wrong unit under a name that claims otherwise.
+      //
+      // HISTORIC ROWS CARRY THE OLD COUNT and nothing rewrites them (they
+      // leave only by the size cap's shedding). A reader comparing a row written before
+      // 2026-09-26 against one written after will find ASCII rows agree and
+      // non-ASCII rows differ by the UTF-8 overhead, which is the honest
+      // state of a field that was wrong and was fixed.
+      row.bytes = Buffer.byteLength(entry.payload, 'utf8');
+    }
+
+    try {
+      append(rootDir, row);
+    } catch (e) {
+      // Same reason readAll swallows: this is a witness, not a
+      // participant. A disk that refuses the log must not refuse the
+      // packet.
+      return null;
+    }
+    return row;
+  }
+
+  // WHAT A CLIENT HAS NOT SEEN YET, oldest first.
+  //
+  // `since` is an ISO timestamp — a position, not a filter on content.
+  // Deliberately NOT filtered by `packet.app`:
+  //
+  //   Andy: "only an entity that knows the internal package structure
+  //   (shell) can fan out based on the internal package structure, so the
+  //   read-log-interface the node provides should be fairly contained."
+  //
+  // The node keys on public keys and hashes; routing by app is the
+  // shell's reading and filtering here would be this file doing it.
+  //
+  // Delivered inbound only. An outbound record is this node's own history
+  // and not something to hand back as an arrival, and a held or ignored
+  // packet must never reach an app at all.
+  function arrivals(opts) {
+    var o = opts || {};
+    var since = typeof o.since === 'string' ? Date.parse(o.since) : 0;
+    var limit = Number(o.limit) > 0 ? Math.min(Number(o.limit), 500) : 200;
+    var marks = Object.create(null);
+    var tb = table(rootDir, false);
+    if (!tb) return [];
+    var rows = [];
+    try { rows = tb.arrivals(sinceIso(since), limit); } catch (e) { rows = []; }
+    rows.sort(byTime);
+    rows = rows.slice(0, limit);
+    // Their marks: one look by the hash index per row handed back.
+    rows.forEach(function (row) {
+      if (!row.hash || marks[row.hash]) return;
+      try {
+        tb.byHash(row.hash).forEach(function (m) { if (m.mark === 'taken') marks[row.hash] = m.at || true; });
+      } catch (e) { /* unmarked, then */ }
+    });
+    return foldTaken(rows, marks);
+  }
+
+  // EVERY ARRIVAL NOT YET TAKEN, oldest first (goal/G4.31): delivered inbound rows with no taken mark, what a stream
+  // replays when it opens. It touches only those rows (the table's untaken query, through its indexes), never the
+  // whole log: arrivals.js once read() everything here, about a second per desk ask on a long-lived node. The table
+  // answers only the last day's (nodeStore BACKLOG_MS, goal/G30.19).
+  function untaken() {
+    var tb = table(rootDir, false);
+    if (!tb) return [];
+    var rows = [];
+    try { rows = tb.untaken(); } catch (e) { rows = []; }
+    return rows.sort(byTime);
+  }
+
+  // The row for one packet, by the hash it is keyed on. What `re` points
+  // at — "regarding that packet" is answerable here without the caller
+  // keeping its own copy.
+  function byHash(hash) {
+    var want = String(hash || '');
+    if (!want) return null;
+    var all = rowsFor(want);
+    var marks = takenSet(all);
+    // The latest by time.
+    var rows = all.filter(function (row) { return row && !row.mark; }).sort(byTime);
+    return rows.length ? foldTaken([rows[rows.length - 1]], marks)[0] : null;
+  }
+
+  // MARKED WHEN A LIVE PAGE WAS ACTUALLY HANDED IT. Andy's rule — the node
+  // keeps the mark, not the browser. A marked row is no longer replayed
+  // by untaken().
+  // A MARK IS A ROW. Appending `{mark:'taken', hash, at}` rather than
+  // editing the packet's own row is what keeps the file append-only — and
+  // it means a delivery can never corrupt the thing it delivered.
+  //
+  // Marked once. A second page opening does not re-date anything: the
+  // mark means "a live page has had this", not "the last time anybody
+  // looked".
+  function taken(hashes) {
+    var want = Object.create(null);
+    (Array.isArray(hashes) ? hashes : [hashes]).forEach(function (h) {
+      if (h) want[String(h)] = true;
+    });
+    if (!Object.keys(want).length) return 0;
+    // ONE stamp for the whole batch, deliberately — "Marked once", per
+    // the note above. Monotonic against everything already written, but
+    // the marks of a single delivery still share a position, because
+    // that is what makes them one delivery.
+    var at = stamp();
+    var marked = 0;
+    try {
+      // Only the rows carrying the wanted hashes, by the hash index
+      // (transport/R19.4), not every row the node ever logged.
+      var rows = [];
+      Object.keys(want).forEach(function (h) { rows = rows.concat(rowsFor(h)); });
+      var already = takenSet(rows);
+      var eligible = Object.create(null);
+      rows.forEach(function (row) {
+        if (!row || row.mark || row.dir !== 'in' || row.outcome !== 'delivered') return;
+        if (!want[row.hash] || already[row.hash]) return;
+        eligible[row.hash] = true;
+      });
+      Object.keys(eligible).forEach(function (hash) {
+        append(rootDir, { at: at, mark: 'taken', hash: hash });
+        marked += 1;
+      });
+    } catch (e) {
+      return 0;
+    }
+    return marked;
+  }
+
+  // What the log still holds, marks folded in. node.db sheds its oldest rows past nodeStore.MAX_DB_BYTES (goal/G30.19).
+  function read() {
+    return historyOf(rootDir);
+  }
+
+  // HOW MANY BYTES THE LOG USES (transport/R19.2). Andy, 2026-09-28: "go."
+  // on the log answering this itself. The answer is the table's pages in  // node.db (transport/R19). Callers ask the log; only the log knows where it lives.
+  function size() {
+    var t = table(rootDir, false);
+    if (!t) return 0;
+    try { return t.bytes(); } catch (e) { return 0; }
+  }
+
+  return {
+    note: note,
+    read: read,
+    size: size,
+    // The log, read as a table. Keyed by hash, ordered by arrival.
+    arrivals: arrivals,
+    // Every arrival not yet taken, without reading the whole log (goal/G4.31).
+    untaken: untaken,
+    byHash: byHash,
+    taken: taken,
+  };
+}
+
+module.exports = {
+  createTrafficLog: createTrafficLog,
+};
+}());

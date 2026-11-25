@@ -8,12 +8,12 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const { scratchNode, until } = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 // Up here, before the first result: under the verifier testReport.js loads spirit.js for its records with the global
 // put aside, and a server module required after that finds no global spirit.
-const { faceRefuses } = SPIRIT.requireScript('spirit/faceHome.js');
+const { faceRefuses } = SPIRIT.requireScript('spirit/faceHome/script.js');
 
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 async function ask(base, call, args) {
@@ -56,7 +56,7 @@ test.run('search takes one optional search string, q, and no filters', 0.2, func
 }, test.limit.quick);
 
 // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
-// That <name>.json names both is a rule of every app branch, judged in ./spirit-sibling-general.js (branchRules) (goal/G43.32).
+// That <name>.json names both is a rule of every app branch, judged in ./script-sibling-general.js (branchRules) (goal/G43.32).
 // THE APP JUDGED HERE IS THE TEXT EDITOR: the dummy server app these checks were written on is gone (25a95142, "delete dummy
 // app"); the text editor is not intrinsic (goal/G43.17), so it starts off and takes a label of the node's, and it mounts no
 // server on the node.

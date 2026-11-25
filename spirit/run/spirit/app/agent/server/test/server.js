@@ -10,16 +10,16 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../../..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/test/nodeAgent/' + name + tempAsked); }
 // Its folder is removed by the last after of this file, once its databases are closed and its servers stopped: on
 // Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
-const appClient = SPIRIT.requireScript('spirit/appClient.js');
+const appClient = SPIRIT.requireScript('spirit/appClient/script.js');
 
 const DIR = path.join(__dirname, '..', '..');
 const SERVER = path.join(DIR, 'agent.js');
@@ -194,7 +194,7 @@ test.run('the server serves each of the four verbs', 0.2, async function () {
 // add (answers the new id), set, delete, get (the row without its secrets, apiKeySet in place of the key) and search.
 // ── goal/G41.4: add makes a row with its key set; set changes it; delete removes it ──
 const API_KEY = 'sk-test-' + 'a'.repeat(24);
-// The shadow-roll's kind of ID: an ed25519 public key, SPKI DER in base64 (spirit/relayAuth.js generateIdentity).
+// The shadow-roll's kind of ID: an ed25519 public key, SPKI DER in base64 (spirit/relayAuth/script.js generateIdentity).
 const isKey = function (k) { return typeof k === 'string' && /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/.test(k); };
 const R = { added: null, pid: '', look2: null, pT: '', secrets: [API_KEY], jid: '', personaId: '' };
 const leaks = function (r) { const t = JSON.stringify(r || {}); return R.secrets.filter(function (x) { return x && t.indexOf(x) !== -1; }).length; };

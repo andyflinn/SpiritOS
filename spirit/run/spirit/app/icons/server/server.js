@@ -19,11 +19,11 @@
 // server."): a changed row goes out on the app's one job, spirit.app.icons, before the answer, so every open page hears it
 // through data.js: { icons: { row } }, or { icons: { glyph, removed: true } }.
 
-require('../../../spirit.js');
+require('../../../script.js');
 const fs = require('fs');
 const path = require('path');
-const appServer = spirit.requireScript('spirit/server/app.js');
-const limits = spirit.requireScript('spirit/limits.js');
+const appServer = spirit.requireScript('spirit/server/app/script.js');
+const limits = spirit.requireScript('spirit/limits/script.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');

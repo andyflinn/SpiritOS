@@ -23,7 +23,7 @@
 // In node it loads the spirit object first, as every module does (the spirit object is the only door); on a page spirit.js
 // is there already.
 // Node by node's own require, not by module: a page hands its scripts a module box too (goal/G49.9).
-if (typeof require === 'function' && typeof module === 'object' && module && module.exports) require('../../spirit.js');
+if (typeof require === 'function' && typeof module === 'object' && module && module.exports) require('../../script.js');
 (function (root) {
   var holders = typeof WeakSet === 'function' ? new WeakSet() : null;
   function holder() { var h = {}; if (holders) holders.add(h); return h; }

@@ -9,7 +9,7 @@ testicle's face is an element of its own"*, *"element/statusBox.js (the monitor 
 ## What it does
 
 - **It loads its own parts** (rule/26; Andy: *"the fucking status box must require the fucking api and make sure the fucking
-  data.js is installed"*): the icon element, `spirit/data.js`, testicle's `api.js` and testicle's cache manager (`data.js`,
+  data.js is installed"*): the icon element, `spirit/data/script.js`, testicle's `api.js` and testicle's cache manager (`data.js`,
   which the page's one stream feeds). Mounted alone, it gets its data by itself.
 - **Its box:** one `.testicle-status` into its container, its overflow hidden: an inline block of the status icons on the left
   (`.testicle-icons`), then an inline block of two rows on top of each other (`.testicle-rows`, two `.testicle-row`), each

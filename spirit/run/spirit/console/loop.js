@@ -10,7 +10,7 @@
 // everywhere but the root.
 //
 ///   start() -> runs until exit, or until its input ends
-require('../spirit.js');
+require('../script.js');
 const readline = require('readline');
 // The processor, through spirit.requireScript (the general rules).
 const command = spirit.requireScript('spirit/console/command.js');

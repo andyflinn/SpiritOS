@@ -14,11 +14,11 @@ const net = require('net');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const SP = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SP = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SP.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = SP.requireScript('spirit/tempFolder.js');
+const tempFolder = SP.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/publishData/test/publishData/' + name + tempAsked); }
 test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/publishData/test/publishData'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
@@ -104,7 +104,7 @@ const BARE_CLONE = path.join(TMP, 'nolog');
 // deskVerify."): the reports are named by the machine's platform, as their folder is.
 const PLATFORM = process.platform === 'win32' ? 'windows' : (function () { try { return /microsoft/i.test(fs.readFileSync('/proc/version', 'utf8')) ? 'wsl' : 'ubuntu'; } catch (e) { return 'ubuntu'; } }());
 // The spirit object it runs under, its helpers under their names (goal/G49.6).
-const SPIRIT = path.join(RUN, 'spirit', 'spirit.js');
+const SPIRIT = path.join(RUN, 'spirit', 'script.js');
 function git(cwd, args) { const r = spawnSync('git', args, { cwd: cwd, encoding: 'utf8', windowsHide: true }); return { status: r.status, out: String(r.stdout || '').trim() }; }
 
 const STUB = [
@@ -387,7 +387,7 @@ test.run('the README\'s "## Summary" comes after the machine, with seven bullets
 test.run('the first summary bullet gives how many users a relay holds live streams for in 512 MB, within the relay\'s own rule', 0.2, function () {
   if (!SUM) return false;
   const m = /^- A SpiritOS relay given 512 Megabytes of RAM can hold live streams for ([\d,]+) simultaneously\.$/.exec(SUM[0] || '');
-  const relay = SP.requireScript('spirit/relay.js');
+  const relay = SP.requireScript('spirit/relay/processor/script.js');
   const most = Math.floor(relay.allowanceFor(512, 0) / relay.SEAT_STREAMS);
   return (!!m && numberIn(m[1]) > 0 && numberIn(m[1]) <= most) || false;
 }, test.limit.quick);

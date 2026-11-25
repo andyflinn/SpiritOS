@@ -32,5 +32,5 @@ Nothing throws on the page.
 
 ## Not judged here
 
-- The core rule for `spirit/app/` (`../../../test/coreFiles.md`), and the always-on rule in the node (`../../../test/app.md`, `../../../test/appServerMount.md`).
+- The core rule for `spirit/app/` (`../../../coreFiles/test/script.md`), and the always-on rule in the node (`../../../test/app.md`, `../../../test/appServerMount.md`).
 - `spirit/state/peerStats/`, deleted by hand on each node.

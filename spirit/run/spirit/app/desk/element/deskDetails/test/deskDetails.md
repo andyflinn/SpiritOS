@@ -94,7 +94,7 @@ vertically"*.
   bottom. The chat opens pinned to the bottom and stays there after a new line: a box of the chat is scrolled to its
   end, or the lines are shown reversed (`flex-direction: column-reverse`).
 - That every box of the panel is bounded, tall and wide, is the shell's general rules' check
-  (`spirit/test/spirit-sibling-browser.md`), which mounts this app.
+  (`spirit/test/script-sibling-browser.md`), which mounts this app.
 
 ### Opened on an item, in a real browser (goal/G41.22)
 
@@ -151,7 +151,7 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 
 ## The noSharedLeftovers part: dropped
 
-The plugin leftovers once in `shell/shared` (goal/G43.23, item 10): `shell/` is gone with all it held, and a require of a file that is not there is `spirit/test/spirit-sibling-general.js`'s. Their checks are dropped (goal/G47.1).
+The plugin leftovers once in `shell/shared` (goal/G43.23, item 10): `shell/` is gone with all it held, and a require of a file that is not there is `spirit/test/script-sibling-general.js`'s. Their checks are dropped (goal/G47.1).
 
 ## Rules go out of Desk (goal/G47.4, box v36)
 

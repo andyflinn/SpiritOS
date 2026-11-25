@@ -2,7 +2,7 @@
 // spirit/run/spirit/element/changeMyDescription/script.js
 // THE NODE'S DESCRIPTION, CHANGED (goal/G41.6; Andy, Q1: Info's two blocks "become shell elements of their own, each
 // with its test folder"). One field, its Save and the bytes left: the second of the two things this node answers to
-// anybody who asks (spirit/nodeCard.js). Info draws it.
+// anybody who asks (spirit/nodeCard/script.js). Info draws it.
 //
 //   changeMyDescription.create(host) -> { set(value), destroy() }
 //
@@ -40,7 +40,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // NO COUNTER OUTSIDE THE FORM (goal/G41.27's box v8, Andy: "the most fucking miserable example are those fucking character
     // counter OUTSIDE the fucking form ... they ALL have to go"): fieldInput holds the field at its limit as it is typed.
     host.innerHTML =
-      // Its box keeps what it holds inside (spirit-sibling-browser.js: overflow not visible).
+      // Its box keeps what it holds inside (script-sibling-browser.js: overflow not visible).
       '<div class="stack" style="overflow:hidden"><div data-description="form"></div>' +
       '<div data-description="said" class="job-start-error"></div></div>';
     var form = ANSWER['spirit/element/rowForm/script.js'].create(host.querySelector('[data-description="form"]'), { icon: '✏️', button: 'Save', press: function () { return save(); } });

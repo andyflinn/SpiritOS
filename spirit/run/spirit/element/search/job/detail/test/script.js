@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const { scratchNode, chromePage, findChrome, until } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
@@ -129,7 +129,7 @@ test.run('a running job offers Cancel and no Delete', 0.2, async function () {
   await mount('spirit.app.zzSleep');
   return (await until(function () { return buttons().then(function (b) { return b.indexOf('Cancel') !== -1 && b.indexOf('Delete') === -1; }); }, 10000)) ? true : false;
 }, test.limit.long);
-// spirit/job.js: a process the owner cancels removes itself (goal/G29.16, "jobs cancelled by me are also removed").
+// spirit/job/script.js: a process the owner cancels removes itself (goal/G29.16, "jobs cancelled by me are also removed").
 test.run('Cancel ends the job on the node, which then removes it', 0.2, async function () {
   if (loaded !== 'loaded') return false;
   await press('Cancel');

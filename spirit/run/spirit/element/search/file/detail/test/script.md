@@ -6,7 +6,7 @@ row.js and detail.js"*. The file search's detail is the file's info, drawn by fs
 openers takes (Andy: *"let fstat pop up for unknows file types (❔) only"*).
 
 Its test is `./script.js`: a real Chrome on a scratch node's face page, the detail mounted by itself on
-`spirit/spirit.js`.
+`spirit/script.js`.
 
 ## Requirements
 

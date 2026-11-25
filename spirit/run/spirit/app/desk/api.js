@@ -11,7 +11,7 @@
 // ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
 // data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
 // (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
-if (typeof require === 'function') require('../../spirit.js').requireScript('spirit/app/desk/data.js'); else window.spirit.requireScript('spirit/app/desk/data.js');
+if (typeof require === 'function') require('../../script.js').requireScript('spirit/app/desk/data.js'); else window.spirit.requireScript('spirit/app/desk/data.js');
 module.exports = {
   verbs: {
     // An empty box is a box: text may be ''.
@@ -40,7 +40,7 @@ module.exports = {
     'items.search': { text: 'spirit.type.string.descriptionSelect', currentGoalOnly: 'spirit.type.boolean', goalsOnly: 'spirit.type.boolean', includeClosed: 'spirit.type.boolean' },
     // id is '' for start-design with nothing open, which starts a new goal.
     press: { id: 'spirit.type.string.deskIdSelect', what: 'spirit.type.string.deskPress' },
-    // goal/G33.8: appServer's streamPublisher (spirit/server/app.js): the caller's key subscribes to the desk's rows, sent to
+    // goal/G33.8: appServer's streamPublisher (spirit/server/app/script.js): the caller's key subscribes to the desk's rows, sent to
     // its family of that name; unsubscribe stops it. Who may is the node's grant.
     // run and since (goal/G41.12): the subscriber's position, the run of the desk and the number of the last row it took
     // in it; the desk's log hands what came after, or the desk pushes in full.

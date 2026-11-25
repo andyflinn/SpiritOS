@@ -1,5 +1,5 @@
 'use strict';
-require('../../../../spirit.js');
+require('../../../../script.js');
 
 // spirit/run/spirit/app/agent/table/job/server.js
 // THE JOB TABLE (goal/G41.4). Andy, box v22: "a job table. keyed by ID same as the shadow-roll (with Label and

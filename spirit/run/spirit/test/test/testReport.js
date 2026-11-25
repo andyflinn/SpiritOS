@@ -31,11 +31,11 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder.js');
+const tempFolder = require('../../tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/test/testReport/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/test/testReport'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
@@ -49,7 +49,7 @@ const PROBE = [
   "const test = " + REPORTER_FROM(2) + ";",
   "test.run('it passes', 0.2, function () { return true; }, 1000);",
   // goal/G47.2: once a test is reported, a module loading the spirit object later still finds it the global it makes.
-  "test.run('the spirit object stays global after a report', 0.2, function () { require(require('path').join(__dirname, '..', '..', 'spirit', 'spirit.js')); return (!!globalThis.spirit && typeof globalThis.spirit === 'object') || false; }, 1000);",
+  "test.run('the spirit object stays global after a report', 0.2, function () { require(require('path').join(__dirname, '..', '..', 'spirit', 'script.js')); return (!!globalThis.spirit && typeof globalThis.spirit === 'object') || false; }, 1000);",
   "test.run('it fails with false', 0.2, function () { return false; }, 1000);",
   "test.run('it throws', 0.2, function () { throw new Error(); }, 1000);",
   "test.run('it rejects', 0.2, async function () { await null; throw new Error(); }, 1000);",
@@ -122,9 +122,9 @@ function scratchTree(port) {
   put('probe/test/twice.js', TWICE);
   put('probe/twice.js', "'use strict';\n");
   put('probe/test/stopped.js', STOPPED);
-  // A general test is named <name>-sibling-<what>.js beside ./<name>.js: spirit/spirit.js is in the copy.
-  put('spirit/test/spirit-sibling-zzProbeRules.js', GENERAL);
-  put('spirit/test/spirit-sibling-zzProbeTwo.js', GENERAL_TWO);
+  // A general test is named <name>-sibling-<what>.js beside ./<name>.js: spirit/script.js is in the copy.
+  put('spirit/test/script-sibling-zzProbeRules.js', GENERAL);
+  put('spirit/test/script-sibling-zzProbeTwo.js', GENERAL_TWO);
   return { root: root, run: run };
 }
 
@@ -289,11 +289,11 @@ test.run('a crash and a hang are reported at 0.7', 0.2, function () {
 
 // ── A GENERAL TEST ──
 test.run('a general test runs with the file it judges', 0.2, async function () {
-  W.general = await runSuite(W.tree.run, 'spirit/test/spirit-sibling-zzProbeRules.js', ['probe/probe.js']);
+  W.general = await runSuite(W.tree.run, 'spirit/test/script-sibling-zzProbeRules.js', ['probe/probe.js']);
   return /Test completed\./.test(W.general.out) || false;
 }, test.limit.slow);
 test.run('a general test reports the file it judges as its script', 0.4, function () {
-  const g = ((W.node && W.node.sets) || []).filter(function (s) { return s && s.suite === 'spirit/test/spirit-sibling-zzProbeRules.js'; });
+  const g = ((W.node && W.node.sets) || []).filter(function (s) { return s && s.suite === 'spirit/test/script-sibling-zzProbeRules.js'; });
   return (g.length === 1 && g[0].script === 'probe/probe.js' && g[0].test === 'a general rule holds' && g[0].severity === 0.4) || false;
 }, test.limit.slow);
 
@@ -306,16 +306,16 @@ test.run('a suite reports its success or failure for its script once, through te
   return (got.length === 1 && got[0].script === 'probe/probe.js' && got[0].success === false) || false;
 }, test.limit.quick);
 test.run('a general test judging two scripts runs, handed both', 0.2, async function () {
-  W.two = await runSuite(W.tree.run, 'spirit/test/spirit-sibling-zzProbeTwo.js', ['probe/probe.js', 'probe/twice.js']);
+  W.two = await runSuite(W.tree.run, 'spirit/test/script-sibling-zzProbeTwo.js', ['probe/probe.js', 'probe/twice.js']);
   return /Test completed\./.test(W.two.out) || false;
 }, test.limit.slow);
 test.run('a general test reports success once per script: the one that held true, the one that failed false', 0.4, function () {
-  const got = successOf('spirit/test/spirit-sibling-zzProbeTwo.js');
+  const got = successOf('spirit/test/script-sibling-zzProbeTwo.js');
   const a = got.filter(function (x) { return x.script === 'probe/probe.js'; }), b = got.filter(function (x) { return x.script === 'probe/twice.js'; });
   return (a.length === 1 && a[0].success === true && b.length === 1 && b[0].success === false) || false;
 }, test.limit.quick);
 test.run('a general test reports the first script\'s success at the time it knows, before any result of the second script', 0.4, function () {
-  const o = ((W.node && W.node.order) || []).filter(function (x) { return x.args && x.args.suite === 'spirit/test/spirit-sibling-zzProbeTwo.js'; });
+  const o = ((W.node && W.node.order) || []).filter(function (x) { return x.args && x.args.suite === 'spirit/test/script-sibling-zzProbeTwo.js'; });
   const first = o.findIndex(function (x) { return x.verb === 'success' && x.args.script === 'probe/probe.js'; });
   const second = o.findIndex(function (x) { return x.verb === 'set' && x.args.script === 'probe/twice.js'; });
   return (first !== -1 && second !== -1 && first < second) || false;
@@ -349,7 +349,7 @@ test.run('a severity outside 0.0 to 1.0 fails its test', 0.2, function () {
   return markIn(W.twice.out, 'a severity out of range') === '❌';
 }, test.limit.quick);
 // A TITLE PAST THE DESCRIPTION RULE (goal/G47.4, the box: "test titles are constrained BY DESCRIPTION_MAX_BYTES, in
-// spirit/fieldRules.js"), counted in bytes; since goal/G49.6 a longer one is cut before the character that overflows (Andy: "cut
+// spirit/fieldRules/script.js"), counted in bytes; since goal/G49.6 a longer one is cut before the character that overflows (Andy: "cut
 // before the character that causes overflow"), never refused: at 128 it passes, and one byte past is cut to the same 128.
 test.run('a title of 128 bytes passes, and one of 129 bytes is cut to its first 128 and run', 0.2, function () {
   return (markIn(W.twice.out, 'é'.repeat(64)) === '✅' && ((W.node && W.node.sets) || []).some(function (s) { return s && s.test === 'é'.repeat(64); })) || false;

@@ -1,5 +1,5 @@
 'use strict';
-require('../../spirit.js');
+require('../../script.js');
 
 // spirit/run/spirit/app/pullOrigin/pullOrigin.js
 // goal/G47.1: ONE RUN THAT BRINGS THE CLONE IT LIVES IN TO THE FRONT OF master, AND PUTS ITS OWNER'S CHANGES ON ORIGIN.

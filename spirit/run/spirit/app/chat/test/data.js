@@ -4,7 +4,7 @@
 // The tests of spirit/app/chat/data.js, and of no other module (spec: ./data.md; goal/G43.31). The box: "The branch name
 // is the folder's: chat (Q1, Andy: "The BRANCH name (FUCK THE TERM "Family"!!!!!!!!!!!!) is motherfucking <name> in
 // spirit/app/<name>...."). chatClerver goes everywhere: the cache is spirit.data.chat". Written from reading data.js. The
-// translator runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data.js), which it writes into;
+// translator runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data/script.js), which it writes into;
 // the server's lines are handed in as the node's stream hands them, jobs of module spirit.app.chat.
 // One test.run per test (goal/G47.2).
 
@@ -13,11 +13,11 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
 
 // A peer's public key, base64 with a + and a / in it, as a node's key is.
 const PEER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';

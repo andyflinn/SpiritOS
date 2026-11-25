@@ -12,11 +12,11 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder.js');
+const tempFolder = require('../../tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/word/test/script/' + name + tempAsked); }
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/word/test/script'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
@@ -318,7 +318,7 @@ test.run('no word stands twice along a path', 0.2, function () {
   return (!T.notJson.length && !twice.length) || false;
 }, test.limit.quick);
 // the tree: "node-side a word 'abc' reservers any 'abc.js' or 'abc/' or 'abc.anything'": nothing below may take a word reserved above it
-// Q11, Andy: "the word is defined ONCE, at the "largest" scope", and "spirit/app/data.js is "plugin" of spirit/data.js": a file
+// Q11, Andy: "the word is defined ONCE, at the "largest" scope", and "spirit/app/data.js is "plugin" of spirit/data/script.js": a file
 // below that borrows from the word is no second definition. Only data has a way to show it: the file calls the one helper.
 const BORROWS = { data: /\.makeFamily\(/ };
 function borrows(e) { const re = BORROWS[stem(e.name)]; return !!re && !e.dir && re.test(fs.readFileSync(path.join(SPIRIT, e.rel), 'utf8')); }

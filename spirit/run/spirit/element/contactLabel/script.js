@@ -4,7 +4,7 @@
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
 //   so one file per element, each adding itself to window.spirit.required,
-//   which the shell hands to apps at mount: boot.js (spirit/shell/boot.js) as api.ui.element.
+//   which the shell hands to apps at mount: boot.js (spirit/shell/boot/script.js) as api.ui.element.
 //
 // ── WHAT IT SHOWS IS THE NODE'S, NOT ITS OWN (goal/G4.13) ─────────────
 //
@@ -74,7 +74,7 @@
     var root = document.createElement('span');
     root.className = 'contact-label' + (editable ? ' contact-label-editable' : '') +
       (options.className ? ' ' + options.className : '');
-    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    // Its box keeps what it holds inside (script-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
     if (root.style) root.style.overflow = 'hidden';
     var text = document.createElement('span');
     text.className = 'contact-label-text';

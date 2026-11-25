@@ -10,10 +10,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'api.js');
-require(path.join(RUN, 'spirit', 'spirit.js'));
+require(path.join(RUN, 'spirit', 'script.js'));
 const spirit = globalThis.spirit;
 
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };

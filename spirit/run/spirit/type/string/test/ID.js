@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/type/string/ID.js';
@@ -21,7 +21,7 @@ const throws = function (v) { try { T.isValid(v); return false; } catch (e) { re
 
 test.run('spirit/type/string/ID.js exists and loads', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;
-  try { require(path.join(RUN, 'spirit', 'spirit.js')); T = LOADER.requireScript(SUBJECT); } catch (e) { T = null; }
+  try { require(path.join(RUN, 'spirit', 'script.js')); T = LOADER.requireScript(SUBJECT); } catch (e) { T = null; }
   return (!!T && typeof T === 'object') || false;
 }, test.limit.quick);
 // A key the node knows (goal/G48.4, Q14): the own key of the node this tree holds, its default, passes; a key nobody here has
@@ -75,7 +75,7 @@ test.run('at the node, contact.label takes the node\'s own key past its argument
 let stranger = '';
 test.run('at the node, contact.label refuses a well-formed key nobody there has seen, naming publicKey', 0.4, async function () {
   if (!N.card || N.card.status !== 200) return false;
-  try { stranger = spirit.requireScript('spirit/relayAuth.js').generateIdentity('zz-stranger').publicKey; } catch (e) { return false; }
+  try { stranger = spirit.requireScript('spirit/relayAuth/script.js').generateIdentity('zz-stranger').publicKey; } catch (e) { return false; }
   const r = await call('contact.label', { publicKey: stranger, myLabel: 'zz stranger' });
   return typeRefused(r, 'publicKey') || false;
 }, test.limit.slow);

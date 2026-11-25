@@ -103,7 +103,7 @@ need_root() {
 
 on_relay_host() {
   [ "${SPIRIT_HOST:-}" = "relay" ] && return 0
-  [ -d "$RUN_DIR" ] && [ -f "$RUN_DIR/spirit/server.js" ]
+  [ -d "$RUN_DIR" ] && [ -f "$RUN_DIR/spirit/server/script.js" ]
 }
 
 have() { command -v "$1" >/dev/null 2>&1; }

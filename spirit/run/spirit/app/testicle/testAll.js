@@ -1,5 +1,5 @@
 'use strict';
-require('../../spirit.js');
+require('../../script.js');
 
 // spirit/run/spirit/app/testicle/testAll.js
 // THE PRODUCT TEST-ALL (goal/G47.6, box point 5: "npm test points at a product test-all: one command that runs every suite

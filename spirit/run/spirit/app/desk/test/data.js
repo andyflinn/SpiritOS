@@ -6,7 +6,7 @@
 // section at the end: noTeamChat.
 // The tests of spirit/app/desk/data.js, and of no other module (spec: ./data.md;
 // goal/G41.11, goal/G41.24). The translator
-// runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data.js), which it writes into;
+// runs as it does: in a window of its own beside the real spirit.required.spirit.data (spirit/data/script.js), which it writes into;
 // the desk's rows are handed in as appServer's listener hands them, jobs of module spirit/app/desk.
 
 const fs = require('fs');
@@ -14,11 +14,11 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
 
 
 function world() {

@@ -11,10 +11,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'api.js');
-require(path.join(RUN, 'spirit', 'spirit.js'));
+require(path.join(RUN, 'spirit', 'script.js'));
 const spirit = globalThis.spirit;
 
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
@@ -61,7 +61,7 @@ test.run('its verbs are search, active, label and icon', 0.2, function () {
 // "A verb added to the family is added here, in the same commit": the node mounts what this file lists, and no more.
 test.run('each verb is one the node mounts for the app BRANCH in server.js, with the same arguments', 0.2, function () {
   if (!W.api) return false;
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'script.js'), 'utf8');
   const at = src.indexOf('loopbackVerbs.mount(\'app\'');
   if (at === -1) return false;
   const block = src.slice(at, src.indexOf('}, { wire', at));

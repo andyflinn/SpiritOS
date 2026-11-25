@@ -7,7 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const H = S.requireScript('spirit/test/headLessChrome.js');
 const REL = 'spirit/app/testicle/element/scriptDetail.js';
@@ -59,10 +59,10 @@ test.run('mounted with no script, the script detail draws its empty box, an empt
 }, test.limit.slow);
 test.run('mounted with a production script, the script detail\'s title is the script\'s full path', 0.4, async function () {
   if (!W.ok) return false;
-  const m = await ev('window.zz.mount("zzSpirit", { script: "spirit/spirit.js" })');
+  const m = await ev('window.zz.mount("zzSpirit", { script: "spirit/script.js" })');
   if (m !== true) return false;
   const t = await ev('window.zz.title("zzSpirit")');
-  return t === 'spirit/spirit.js' || false;
+  return t === 'spirit/script.js' || false;
 }, test.limit.quick);
 test.run('once script.get has answered, the suite search of that script shows below the title', 0.4, async function () {
   if (!W.ok) return false;

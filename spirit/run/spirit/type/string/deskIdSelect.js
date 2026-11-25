@@ -5,7 +5,7 @@
 // check"): a Desk goal or item that may be left empty, as press's id with nothing open or item.add's blocks, "" for none, else a deskId as spirit.type.string.deskId is. The same file on the node and on a
 // page: on the node it is this module, on a page it stands at spirit.required.spirit.type.string.deskIdSelect.
 // On the node the spirit object first, as every file of the tree takes it (the general rules).
-if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../spirit.js');
+if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../script.js');
 (function (root) {
   // spirit.type.string.deskId, through spirit.requireScript: on the node its module at once, on a page what spirit.required
   // holds.

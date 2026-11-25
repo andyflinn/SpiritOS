@@ -28,7 +28,7 @@
     return a;
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules/script.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/codeMirror.js');
 if (typeof window !== 'undefined' && window.spirit && typeof window.spirit.requireScript === 'function') Promise.resolve(keepAnswer('spirit/app/desk/api.js')).catch(function () {});
@@ -683,7 +683,7 @@ function ddSay() {
 // The title and the rename are labels. What is left, or over, shows beside each as it is typed; a value the rule
 // refuses is not sent, and the reason is said. The node checks again: this spares the wire, it never replaces that.
 var DD_FIELD_ACTION = { 'dd-name': 'dd-name-save' };
-function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spirit && ANSWER['spirit/fieldRules.js']) || null; }
+function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spirit && ANSWER['spirit/fieldRules/script.js']) || null; }
 function ddFieldWhy(id) {
   var rule = ddFieldRule();
   var el = document.getElementById(id);
@@ -749,7 +749,7 @@ function ddRename() {
 // EACH PANEL ITS OWN ANSWER. Andy: "lazy load the panels when thy open". The facts first, then the box, the
 // checks and the chat, each asked on its own, so no answer carries the sum of them.
 // THE ITEM KEPT WHOLE (goal/G33.3). Andy: Desk clients keep what they learned of the current goal "like face-apps do",
-// one cache for deskClient and this page: spirit.required.spirit.data (spirit/data.js) with the desk's translator
+// one cache for deskClient and this page: spirit.required.spirit.data (spirit/data/script.js) with the desk's translator
 // (the desk family's data.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
 // Asked of the cache's manager (goal/G41.28): spirit.required.spirit.data.desk.data answers an item's parts; no branch is named here.

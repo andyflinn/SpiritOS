@@ -8,13 +8,13 @@
 // the element factory is fine where it is loaded"; "spirit.requireScript() places the loaded script at the exact same
 // location/path in the spirit object", on both sides): at spirit.required.<path-of-element-script>. Asked of the real spirit object in node, its own spirit.requireScript loading the
 // helper; on a page, every element script's factory is asked at its place by the general rules
-// (spirit/test/spirit-sibling-node.js and spirit-sibling-browser.js, everyScriptRequired).
+// (spirit/test/script-sibling-node.js and script-sibling-browser.js, everyScriptRequired).
 
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const PLACE = 'spirit/element/installSpiritElement/script.js';
 const FILE = path.join(RUN, PLACE);
@@ -28,7 +28,7 @@ test.run('the helper\'s file is there', 0.2, function () {
   return (fs.existsSync(FILE)) ? true : false;
 }, test.limit.quick);
 test.run('spirit.requireScript answers the helper at once, and it is a function', 0.2, function () {
-  s = require(path.join(RUN, 'spirit', 'spirit.js'));
+  s = require(path.join(RUN, 'spirit', 'script.js'));
   install = null;
   try { install = s.requireScript(PLACE); } catch (e) { install = e; }
   return (typeof install === 'function') ? true : false;

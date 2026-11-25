@@ -13,7 +13,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const VENDORED_FOLDERS = LOADER.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
@@ -250,7 +250,7 @@ test.run('shell.css lets CodeMirror in a fill box take the box and scroll inside
 // access to codeMirror library is through the element!". Its 15 files stand there; no
 // product file but the element names the folder; on a real page the page starts with no CodeMirror, and the element draws
 // from there with its sheet, its marks and its search keys, asking no other place. That no file names the library's old
-// place is spirit/test/spirit-sibling-general.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
+// place is spirit/test/script-sibling-general.js's (goal/G47.1); textView.js, gone since, is no longer asked after.
 const REPO = path.resolve(RUN, '../..');
 const H = LOADER.requireScript('spirit/test/headLessChrome.js');
 const L = { tracked: [], inRun: [], node: null, page: null, at: {}, cm: {}, fromHere: '' };

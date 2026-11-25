@@ -13,9 +13,9 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 
 const JS = path.join(__dirname, '..', '..', '..', '..');
@@ -104,7 +104,7 @@ test.run('the contacts list runs on a window of its own, with its row element an
   };
   // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.required.spirit.data takes it itself).
   window.spirit.eventStream = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
-  load(path.join(JS, '..', '..', 'spirit', 'data.js'));
+  load(path.join(JS, '..', '..', 'spirit', 'data', 'script.js'));
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.startPage asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   window.spirit.nodeFacts = { key: NODE_KEY };
@@ -142,7 +142,7 @@ test.run('one filter of choices holds the kinds, so only one is active at a time
   return !!kindF ? true : false;
 }, test.limit.quick);
 // Its title names the kinds in words: the family icon holds an invisible joiner, which the description rule refuses in a
-// test title (goal/G47.4, spirit/fieldRules.js).
+// test title (goal/G47.4, spirit/fieldRules/script.js).
 test.run('its choices are People, Puppets, Relays and Blocked, in that order', 0.2, function () {
   const c = choicesOf();
   return JSON.stringify(c.map(function (x) { return [x.icon, x.word]; })) === JSON.stringify([['👨‍👩‍👧‍👦', 'People'], ['⭐', 'Puppets'], ['📡', 'Relays'], ['❌', 'Blocked']]) ? true : false;

@@ -7,7 +7,7 @@
 // ITS COMPANION data.js, REQUIRED HERE AND NOWHERE ELSE (goal/G47.1; Andy's rule: "every api.js requires it's companion
 // data.js, and is the only script to require that data.js"): whoever requires this branch has its data with it, on a page
 // (spirit.js runs this file there, with no require of its own, and waits for what it asks) and in node.
-if (typeof require === 'function') require('../../spirit.js').requireScript('spirit/app/agent/data.js'); else window.spirit.requireScript('spirit/app/agent/data.js');
+if (typeof require === 'function') require('../../script.js').requireScript('spirit/app/agent/data.js'); else window.spirit.requireScript('spirit/app/agent/data.js');
 module.exports = {
   verbs: {
     // THE DATA SET OF agent.db (goal/G41.4): one flat verb per table, op one of add, set, delete, get and search
@@ -23,7 +23,7 @@ module.exports = {
     job: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.IDNew?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', loop: 'spirit.type.boolean?', job: 'spirit.type.string.fileContent?', bundle: 'spirit.type.string.word?', provider: 'spirit.type.string.IDNew?', persona: 'spirit.type.string.IDNew?', text: 'spirit.type.string.descriptionSelect?' },
     // A search may name one of the table's fields, narrowed to the rows holding it (goal/G41.21: providerId above).
     // No grant verb since goal/G41.21 (box v17: "agent.grant is removed altogether").
-    // appServer's streamPublisher (spirit/server/app.js), as desk's: the caller's key subscribes to agent's rows, sent to its
+    // appServer's streamPublisher (spirit/server/app/script.js), as desk's: the caller's key subscribes to agent's rows, sent to its
     // family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared here
     // for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js", for agent as a client or a server; "later
     // they'll move into appServer.js, as auto-verbs for appServers ... oos for now.").

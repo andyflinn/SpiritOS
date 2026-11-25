@@ -29,7 +29,7 @@
 // In node the module beside it; in a page the one at spirit.required.spirit.search.string, read when it is called (goal/G41.18): a
 // part that loads both itself may have this one run first, so nothing is read from the page as this file loads.
 var nodeStringMatch = typeof require === 'function' && typeof module !== 'undefined' && module
-  ? require('../spirit.js').requireScript('spirit/search/string.js').probabilityStringMatch
+  ? require('../script.js').requireScript('spirit/search/string.js').probabilityStringMatch
   : null;
 function probabilityStringMatch(a, b) {
   var f = nodeStringMatch || (((((window.spirit && window.spirit.required) || {}).spirit || {}).search || {}).string || {}).probabilityStringMatch;

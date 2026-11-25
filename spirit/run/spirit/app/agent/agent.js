@@ -1,5 +1,5 @@
 'use strict';
-require('../../spirit.js');
+require('../../script.js');
 
 // spirit/run/spirit/app/agent/agent.js
 // THE AGENT'S SERVER SCRIPT (goal/G43.13). Its contract and its test: ./test/agent.md and ./test/agent.js. The node starts this

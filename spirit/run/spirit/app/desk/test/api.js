@@ -9,10 +9,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'api.js');
-require(path.join(RUN, 'spirit', 'spirit.js'));
+require(path.join(RUN, 'spirit', 'script.js'));
 const spirit = globalThis.spirit;
 
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
@@ -66,7 +66,7 @@ test.run('DEBUG is appServer\'s verb and is not listed', 0.2, function () {
 // every verb it lists is one the server serves
 test.run('each verb listed is a handler of desk.js, or, for subscribe and unsubscribe, of appServer\'s streamPublisher', 0.2, function () {
   if (!W.api) return false;
-  const source = ['spirit/app/desk/server/server.js', 'spirit/server/app.js']
+  const source = ['spirit/app/desk/server/server.js', 'spirit/server/app/script.js']
     .map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   // A handler is a key of the verb table ('box.write': {, block: {), or appServer's all.<verb> = {.
   const unserved = W.names.filter(function (v) { return !new RegExp('[\'"]' + esc(v) + '[\'"]\\s*:|^\\s*' + esc(v) + '\\s*:|\\ball\\.' + esc(v) + '\\s*=', 'm').test(source); });

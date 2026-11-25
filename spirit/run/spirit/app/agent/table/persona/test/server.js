@@ -11,13 +11,13 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
-require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const S = require(path.join(RUN, 'spirit', 'script.js'));
+require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = S.requireScript('spirit/tempFolder.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/persona/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -175,11 +175,11 @@ test.run('the page files place spirit.required.spirit.app.agent.element.table.pe
   // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
+  // The page's one data set (spirit/data/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. The agent
   // family's data.js comes with its interface, spirit/app/agent/api.js, which the stand-in require answers as the real one
   // does.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   // What the page files require is what is asked from here on; the runner's own asks come before it.

@@ -12,13 +12,13 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
-require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
+require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/model/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -119,7 +119,7 @@ test.run('an added model\'s capabilities are a list', 0.2, function () {
 }, test.limit.quick);
 test.run('a model naming a provider that is not there is refused, saying so', 0.2, function () {
   if (!X.t) return false;
-  X.gone = SPIRIT.requireScript('spirit/relayAuth.js').generateIdentity('').publicKey;
+  X.gone = SPIRIT.requireScript('spirit/relayAuth/script.js').generateIdentity('').publicKey;
   const noProvider = call(X.t.verb, { op: 'add', label: 'Lost', providerId: X.gone });
   return noProvider.refusal === 'bad-request' && /no provider/.test(noProvider.why) ? true : false;
 }, test.limit.quick);
@@ -206,7 +206,7 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
     app: { agent: { element: { table: { tableElement: Object.assign({}, STAND.agentDetail, STAND.agentTable), row: STAND.agentRow } } } } } } } };
   global.spirit = global.window.spirit;
   // The page's one loader: asked for a branch's api.js, it runs that branch's real data.js once, as the real api.js
-  // requires its companion data.js; the data set (spirit/data.js) is run below.
+  // requires its companion data.js; the data set (spirit/data/script.js) is run below.
   const ANSWERS = { 'spirit/element/search/script.js': STAND.search, 'spirit/element/rowForm/script.js': STAND.rowForm, 'spirit/element/busyButton/script.js': STAND.busyButton,
     'spirit/app/agent/element/table/tableElement.js': Object.assign({}, STAND.agentDetail, STAND.agentTable), 'spirit/app/agent/element/table/row.js': STAND.agentRow };
   const ran = {};
@@ -226,10 +226,10 @@ test.run('elementTable.js and elementRow.js place the agent app\'s model list an
   // The page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it runs
   // (spirit/test/headLessChrome.js pageSpirit).
   SPIRIT.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
+  // The page's one data set (spirit/data/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js is loaded by its api.js, through the stand-in above.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { ANSWERS[path.relative(RUN, path.join(EL, f)).split(path.sep).join('/')] = PAGE_LOAD.runAsPage(path.join(EL, f)); });

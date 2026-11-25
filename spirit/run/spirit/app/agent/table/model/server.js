@@ -1,5 +1,5 @@
 'use strict';
-require('../../../../spirit.js');
+require('../../../../script.js');
 
 // spirit/run/spirit/app/agent/table/model/server.js
 // THE MODEL TABLE (goal/G41.4): one model of one provider. Andy, box v22: "a model table, keyed by ID same as the

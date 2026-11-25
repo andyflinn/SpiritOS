@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../../../../../..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'deskDetails.js');
 const KEY = /^[A-Z_]+$/;
@@ -800,4 +800,4 @@ test.run('the item detail has no chat search', 0.2, function () {
 }, test.limit.quick);
 
 // The plugin leftovers once in shell/shared (goal/G43.23, item 10): shell/ is gone, and a require of a file that is not there
-// is spirit/test/spirit-sibling-general.js's, so their checks are dropped (goal/G47.1).
+// is spirit/test/script-sibling-general.js's, so their checks are dropped (goal/G47.1).

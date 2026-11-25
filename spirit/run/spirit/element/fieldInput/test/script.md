@@ -2,10 +2,10 @@
 
 An input stops at its limit (goal/G32.2; Andy: *"the input tell you how man characters you typed in excess of the limit
 instead of simply refusing to take more characters."*). Owed since the rule *"every production script has its own test"*
-(goal/G47.1, box v72). The browser file runs in node on a window of its own, the rules the real `spirit/fieldRules.js`;
+(goal/G47.1, box v72). The browser file runs in node on a window of its own, the rules the real `spirit/fieldRules/script.js`;
 an input is a stand-in, a keystroke or a paste a `beforeinput` event that records whether it was refused.
 
-- It places `fits` and `attach` at `spirit.required.spirit.element.fieldInput`, and loads `spirit/fieldRules.js` itself
+- It places `fits` and `attach` at `spirit.required.spirit.element.fieldInput`, and loads `spirit/fieldRules/script.js` itself
   (rule/26; goal/G41.27).
 - `fits`: bytes, never characters (64 `a` and 32 `é` fit a name, 65 and 33 do not); description 128, paragraph 2048, line
   1024; the glyph type one glyph of at most 32 bytes (Andy: *"glyphs are capped at 32 bytes, one character."*).

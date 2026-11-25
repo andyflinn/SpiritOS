@@ -49,13 +49,13 @@ in a panel layer as the apps open one, its options the planted row's fields with
    `search-child-general.md`): a planted row's detail opened and closed, another's opened, the second draws in its own
    pane and the closed one's pane is left as it was.
 
-Input length is checked once, in `spirit/test/spirit-sibling-browser.js`, not here.
+Input length is checked once, in `spirit/test/script-sibling-browser.js`, not here.
 
 ## The world each search needs to draw a list at all
 
 Found when cw checked the first reds (goal/G47.1): most were the test's, not the elements'.
 
-- The scratch node runs the testicle and grants servers; suite is given a script (`spirit/spirit.js`); grant is given the
+- The scratch node runs the testicle and grants servers; suite is given a script (`spirit/script.js`); grant is given the
   node's own grants table, `grantsPanel.nodeGrants`, as the Grants app hands it.
 - api is judged by its `list` in pane face: its selector is two dropdowns side by side (Andy, G29.7).
 - The list judged is the search's own, never a filter's search in its `probsearch-N-selectors` row.

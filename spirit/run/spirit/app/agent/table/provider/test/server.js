@@ -13,13 +13,13 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
-require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const S = require(path.join(RUN, 'spirit', 'script.js'));
+require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = S.requireScript('spirit/tempFolder.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/agent/table/provider/test/server/' + name + tempAsked); }
 const { DatabaseSync } = require('node:sqlite');
@@ -195,7 +195,7 @@ test.run('ask of a row that is not there is refused no-such-row', 0.2, async fun
   A.host = 'http://127.0.0.1:' + A.server.address().port;
   if (X.added && X.added.id) call(X.t.verb, { op: 'delete', id: X.added.id });
   A.anth = call(X.t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: A.host, apiKey: SECRET });
-  return (await ask({ op: 'ask', id: S.requireScript('spirit/relayAuth.js').generateIdentity('').publicKey })).refusal === 'no-such-row' ? true : false;
+  return (await ask({ op: 'ask', id: S.requireScript('spirit/relayAuth/script.js').generateIdentity('').publicKey })).refusal === 'no-such-row' ? true : false;
 }, test.limit.quick);
 test.run('a row labelled Anthropic asks through the Anthropic plugin, with its key', 0.2, async function () {
   if (!A.anth || !A.anth.id) return false;
@@ -407,10 +407,10 @@ test.run('the provider\'s elementTable and elementRow are placed on spirit.requi
   // goal/G43.32: the page's spirit.requireScript answers the helper, so each file places itself by installSpiritElement as it
   // runs (spirit/test/headLessChrome.js pageSpirit).
   S.requireScript('spirit/test/headLessChrome.js').pageSpirit(global.window.spirit);
-  // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
+  // The page's one data set (spirit/data/script.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.nodeFacts.key. A branch's
   // data.js comes with its api.js, and the stand-in require above runs the real file for it.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data', 'script.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.nodeFacts = { key: HOME_KEY };
   global.window.spirit.required.spirit.data.homeNode(HOME_KEY);
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { ANSWERS[path.relative(RUN, path.join(EL, f)).split(path.sep).join('/')] = PAGE_LOAD.runAsPage(path.join(EL, f)); });
@@ -537,7 +537,7 @@ test.run('the page server-picker.html draws the provider\'s detail with the real
   PK.pdir = ownTemp('spirit-provider-picker');
   // The servers check their arguments through the one spirit object's rules, as in the agent process; the page section
   // above put a stand-in in its place.
-  global.spirit.checkArgs = require(path.join(RUN, 'spirit', 'spirit.js')).checkArgs;
+  global.spirit.checkArgs = require(path.join(RUN, 'spirit', 'script.js')).checkArgs;
   const pdir = PK.pdir;
   const pctx = { db: PK.db = new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
   pctx.tables.provider = S.requireScript('spirit/app/agent/table/provider/server.js')(pctx);

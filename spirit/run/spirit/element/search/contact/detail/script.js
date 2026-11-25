@@ -31,8 +31,8 @@
     }, said);
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/ownerBadge.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules/script.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/ownerBadge/script.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/icon/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/faceForm/script.js');
@@ -356,10 +356,10 @@ var cdPage = ({
       if (!event.target || event.target.id !== 'cd-label-input') return;
       var typed = event.target.value.trim();
       // Checked here before anything is asked, by the same rule the node
-      // checks again (spirit/fieldRules.js; Andy, goal/G4.16: "the shell may
+      // checks again (spirit/fieldRules/script.js; Andy, goal/G4.16: "the shell may
       // as well rule that inputs themselves implement constraints in
       // fieldRules.js"). Empty clears your name for them, and is asked.
-      var rule = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/fieldRules.js']) || null;
+      var rule = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/fieldRules/script.js']) || null;
       var bad = (typed && rule) ? rule.problem(typed) : '';
       if (bad) { cdStatus(bad); return; }
       cdPeerAction('label', { myLabel: typed });
@@ -418,7 +418,7 @@ var cdRelay = (function () {
 // What it draws with, it loads itself (rule/26): the join and face forms (goal/G41.3; Andy: "bug: "A face name" doesn't show the
 // faceForm."), the armingButton its are-you-sure buttons are (goal/G41.9), and the icon element its fold marks are
 // (goal/G41.23), each panel drawn again once they are there.
-var iconReady = Promise.all(['spirit/element/icon/script.js', 'spirit/element/joinForm/script.js', 'spirit/element/faceForm/script.js', 'spirit/element/armingButton/script.js', 'spirit/ownerBadge.js'].map(function (p) {
+var iconReady = Promise.all(['spirit/element/icon/script.js', 'spirit/element/joinForm/script.js', 'spirit/element/faceForm/script.js', 'spirit/element/armingButton/script.js', 'spirit/ownerBadge/script.js'].map(function (p) {
   return window.spirit && window.spirit.requireScript ? window.spirit.requireScript(p) : null;
 }));
 
@@ -438,7 +438,7 @@ function ndIconHtml(glyph) {
 }
 
 // WHAT A LABEL MAY BE, asked before a round trip is spent on it. The
-// rule is spirit/fieldRules.js (spirit.required.spirit.fieldRules), and the relay enforces
+// rule is spirit/fieldRules/script.js (spirit.required.spirit.fieldRules), and the relay enforces
 // the same one — this only saves the hop and says what is wrong while
 // the cursor is still in the box.
 //
@@ -476,7 +476,7 @@ function ndNoKey(out, cls) {
 }
 
 function ndLabelProblem(name) {
-  var rule = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/fieldRules.js']) || null;
+  var rule = (typeof window !== 'undefined' && window.spirit && ANSWER['spirit/fieldRules/script.js']) || null;
   return rule ? rule.problem(name) : '';
 }
 var ndLayer = {};       // the layer it is drawn in: close() and setTitle(text), the mounter's (options.layer)
@@ -782,7 +782,7 @@ function ndRefusedHtml(refused) {
 // WHETHER THIS RELAY MAY COME OFF THE LIST, asked here (goal/G30.7): the one rule the node enforces too,
 // ownerBadge.removalRefusal, over the list's rows as ndLoad holds them (owned, claimed). '' when it may.
 function ndRemoveRefusal() {
-  var badge = window.spirit && ANSWER['spirit/ownerBadge.js'];
+  var badge = window.spirit && ANSWER['spirit/ownerBadge/script.js'];
   if (!badge || typeof badge.removalRefusal !== 'function') return 'this page cannot tell whether it may be removed';
   return badge.removalRefusal(ndRows, ndUrl);
 }
@@ -1067,7 +1067,7 @@ function ndClaimHtml() {
     // (design/cycles/2026-09-15-labels-are-not-identities.md). The word
     // that travels is "Invite name" on both screens now.
     // JOIN WITH YOUR EMAIL, FIRST (goal/G30.2): the one thing a new user types. The relay mails a link to this node;
-    // opening it takes the seat (spirit/shell/boot.js joinFromLink). The invite form below stays for an invite somebody gave you.
+    // opening it takes the seat (spirit/shell/boot/script.js joinFromLink). The invite form below stays for an invite somebody gave you.
     // The form is the shell element joinForm (goal/G30.1, box v33), bound once on nd-body at mount.
     (joinByMail && ndJoinForm() ? '<div class="nd-join-form"></div>' : '') +
     '<div class="start-job-form card">' +
@@ -1355,7 +1355,7 @@ function ndSetRelayLabel(button) {
   }
 
   // Asked here first, so a space costs no round trip. Same rule object
-  // both sides (spirit/fieldRules.js), so the two cannot disagree.
+  // both sides (spirit/fieldRules/script.js), so the two cannot disagree.
   var badName = ndLabelProblem(wanted);
   if (badName) { say(badName, true); return; }
 
@@ -1741,7 +1741,7 @@ function ndClaim(button) {
   //
   // The relay still decides — it writes the ledger — but there is no
   // reason to cross an ocean to be told about a character. Same rule
-  // object both sides (spirit/fieldRules.js), so the two cannot disagree.
+  // object both sides (spirit/fieldRules/script.js), so the two cannot disagree.
   // THE PUBLIC LABEL IS OPTIONAL AND FALLS BACK TO THE INVITE NAME.
   // Being called what the person who invited you called you is the
   // obvious default, and it is what the form imposed on everybody back
@@ -2169,7 +2169,7 @@ function ndTypeFields(scope) {
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
       note.textContent = 'not configured: no contact named';
-      // A note, not a body: it keeps its words inside and scrolls nothing (spirit-sibling-browser.js: overflow not visible).
+      // A note, not a body: it keeps its words inside and scrolls nothing (script-sibling-browser.js: overflow not visible).
       if (note.style) note.style.overflow = 'hidden';
       container.appendChild(note);
       return done;

@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const SUBJECT = path.join(RUN, 'spirit', 'test', 'app-child-browser.js');
 const SUITE = 'spirit/test/app-child-browser.js';
 const test = S.requireScript('spirit/test/testReport.js');
@@ -21,8 +21,8 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const ELEMENTS = ['spirit/app/testicle/element/statusBox.js', 'spirit/app/testicle/element/settingsPanel.js', 'spirit/app/testicle/element/scriptDetail.js',
   'spirit/app/testicle/element/search/suite/list.js', 'spirit/app/testicle/element/search/suite/row.js', 'spirit/app/testicle/element/search/testicle/row.js'];
 const HANG = 'spirit/app/testicle/zzBrowserHang.js';
-// box v144: "measured before: spirit-sibling-browser.js ~10 s a script on cw's Windows ..., 3.7 s on wsl"; "the target: at
-// least 80% less test time" (the before measured on spirit-sibling-browser.js, the same shape).
+// box v144: "measured before: script-sibling-browser.js ~10 s a script on cw's Windows ..., 3.7 s on wsl"; "the target: at
+// least 80% less test time" (the before measured on script-sibling-browser.js, the same shape).
 const BEFORE_S = process.platform === 'win32' ? 10 : 3.7;
 
 // Every process descended from pid, with its command line (Linux: ps; elsewhere the counts are not judged). The run's own:
@@ -36,7 +36,7 @@ function descendants(pid) {
   const args = {};
   rows.forEach(function (l) { const m = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(l); if (!m) return; (kids[m[2]] = kids[m[2]] || []).push(m[1]); args[m[1]] = m[3]; });
   const out = [];
-  const walk = function (p) { (kids[p] || []).forEach(function (k) { out.push({ pid: k, args: args[k] }); if (!/spirit\/server\.js --port/.test(args[k])) walk(k); }); };
+  const walk = function (p) { (kids[p] || []).forEach(function (k) { out.push({ pid: k, args: args[k] }); if (!/spirit\/server\/script\.js --port/.test(args[k])) walk(k); }); };
   walk(String(pid));
   return out;
 }
@@ -61,7 +61,7 @@ test.after(function () { try { fs.rmSync(path.join(RUN, HANG), { force: true });
 
 test.run('a script that never ends is planted', 0.2, function () {
   const f = path.join(RUN, HANG);
-  fs.writeFileSync(f, '\'use strict\';\n// planted by spirit/test/test/spirit-sibling-browser.js: it never ends\nfor (;;) { /* hang */ }\n');
+  fs.writeFileSync(f, '\'use strict\';\n// planted by spirit/test/test/script-sibling-browser.js: it never ends\nfor (;;) { /* hang */ }\n');
   return fs.existsSync(f) || false;
 }, test.limit.quick);
 test.run('the general test is run on six elements, the hang among them, and watched from outside', 0.2, async function () {
@@ -76,7 +76,7 @@ test.run('the general test is run on six elements, the hang among them, and watc
   // Watched four times a second until it ends, or for four minutes: a run still going then is ended, with all it started.
   while (!ended && Date.now() - W.startAt < 240000) {
     (descendants(kid.pid) || []).forEach(function (p) {
-      if (/spirit\/server\.js --port/.test(p.args)) W.nodes.add(p.pid);
+      if (/spirit\/server\/script\.js --port/.test(p.args)) W.nodes.add(p.pid);
       // One Chrome is its browser process; its zygotes, renderers and utilities carry --type=.
       if (/chrome/.test(p.args) && /--headless/.test(p.args) && /--user-data-dir=/.test(p.args) && !/--type=/.test(p.args)) W.chromes.add(p.pid);
     });
@@ -97,7 +97,7 @@ test.run('the general test is run on six elements, the hang among them, and watc
   return true;
 }, test.limit.long);
 
-// box v144: "spirit/test/spirit-sibling-browser.js and spirit/test/app-child-browser.js run on one node and one Chrome for
+// box v144: "spirit/test/script-sibling-browser.js and spirit/test/app-child-browser.js run on one node and one Chrome for
 // the whole run"
 test.run('the run ends by itself, within four minutes', 0.4, function () {
   return (!!W.list && !W.hung) || false;

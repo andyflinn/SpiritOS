@@ -6,7 +6,7 @@
 // requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.required.spirit.data.
 // It is read by peers through the family's FS verbs like anything in this folder: rules, never secrets.
 //
-// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.required.spirit.data (spirit/data.js),
+// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.required.spirit.data (spirit/data/script.js),
 // in the page and in node alike. Andy: a desk client keeps what it learned of the current goal "like face-apps do", in
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
 // already on hand". THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM (goal/G41.28; Andy: "the FUCKING desk cache
@@ -18,7 +18,7 @@
 //               its own read (took), and the side rows the desk pushes keep it current from then on.
 //   deskState/current  the goal the stream last pushed whole;  deskState/change  the newest change number heard
 // The rows come as jobs of module spirit/app/desk: in the page as the desk's publishes, in a server that follows the
-// desk's stream (deskClient) through appServer's listener (spirit/server/app.js), which hands each row in exactly so.
+// desk's stream (deskClient) through appServer's listener (spirit/server/app/script.js), which hands each row in exactly so.
 // One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check); the
 // stream's bundles are appServer's, which hands their rows in one by one (goal/G41.12).
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.
@@ -32,12 +32,12 @@
   var DOORS = 'deskDoors';
   var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
-    ? require('../../spirit.js').requireScript('spirit/app/desk/cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
+    ? require('../../script.js').requireScript('spirit/app/desk/cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
   // THE TRANSLATOR, ONCE PER DATA SET: spirit.required.spirit.data.makeFamily runs this once, however often the file is loaded.
-  var D = typeof require === 'function' ? require('../../spirit.js').requireScript('spirit/data.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
-  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
     // SERVER-NODE-ID at it's lowest level. IE: spirit.required.spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk

@@ -20,7 +20,7 @@
 // Its contract and its test: ./test/measure.md and ./test/measure.js.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../spirit.js');
+require('../../script.js');
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
@@ -66,7 +66,7 @@ async function labNode(lab) {
   const cfgFile = path.join(got.run, 'spirit', 'state', 'config.json');
   fs.mkdirSync(path.dirname(cfgFile), { recursive: true });
   fs.writeFileSync(cfgFile, JSON.stringify({ spiritHome: path.join(got.root, '.spiritHome') }));
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: got.run, stdio: 'ignore', windowsHide: true });
+  const child = spawn(process.execPath, ['spirit/server/script.js', '--port', String(port)], { cwd: got.run, stdio: 'ignore', windowsHide: true });
   got.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return call(base, 'api', {}).then(function (r) { return r.status === 200; }); }, UP_MS);
@@ -79,10 +79,10 @@ async function labNode(lab) {
 // A LAB RELAY, its owner the node named, relayServer.js started on a free port until it answers.
 async function labRelay(lab, ownerKey) {
   const got = await lab.handOut('relay');
-  const auth = spirit.requireScript('spirit/relayAuth.js');
+  const auth = spirit.requireScript('spirit/relayAuth/script.js');
   auth.writeOwner(got.run, ownerKey);
   const port = await freePort();
-  const child = spawn(process.execPath, ['spirit/server/relay.js'], { cwd: got.run, stdio: 'ignore', windowsHide: true, env: Object.assign({}, process.env, { PORT: String(port) }) });
+  const child = spawn(process.execPath, ['spirit/server/relay/script.js'], { cwd: got.run, stdio: 'ignore', windowsHide: true, env: Object.assign({}, process.env, { PORT: String(port) }) });
   got.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return fetch(base + '/').then(function (r) { return r.status > 0; }); }, UP_MS);
@@ -103,8 +103,8 @@ async function peerAsk(node, to, app, body, packet) {
 // SEALING AND SIGNING, TIMED APART: what a card request's two hops seal and sign (the ask and the answer), each the same
 // seal and the same signature as the wire's, on packets of the same size, CRYPTO_ROUNDS times; ms per request.
 function cryptoShare(askText, answerText) {
-  const seal = spirit.requireScript('spirit/seal.js');
-  const auth = spirit.requireScript('spirit/relayAuth.js');
+  const seal = spirit.requireScript('spirit/seal/script.js');
+  const auth = spirit.requireScript('spirit/relayAuth/script.js');
   const a = auth.generateIdentity('a');
   const b = auth.generateIdentity('b');
   const t0 = process.hrtime.bigint();

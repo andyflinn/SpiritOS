@@ -20,7 +20,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // What it judges, by its run-root path, the one place it is named (goal/G49.6).
 const SUBJECT = 'spirit/element/search/grant/grantsPanel/script.js';
@@ -97,7 +97,7 @@ function config(w) {
   };
 }
 
-// A family as spirit.js binds it (spirit/spirit.js, bind): each verb a function of its args, answering the body on a 2xx or
+// A family as spirit.js binds it (spirit/script.js, bind): each verb a function of its args, answering the body on a 2xx or
 // throwing { status, body }. No FS set rides on a family (goal/G43.20).
 function family(w, name, verbs) {
   const f = {};
@@ -209,13 +209,13 @@ function world() {
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
-  const REAL = [SUBJECT, 'spirit/client/apiTreeIndex.js', 'spirit/data.js'];
+  const REAL = [SUBJECT, 'spirit/client/apiTreeIndex.js', 'spirit/data/script.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/.+\/data\.js$/.test(p); } });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
   win.spirit.requireScript('spirit/client/apiTreeIndex.js');
-  win.spirit.requireScript('spirit/data.js');
+  win.spirit.requireScript('spirit/data/script.js');
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   if (SRC) pageRequire(SUBJECT);
   w.win = win; w.page = page;
@@ -715,7 +715,7 @@ test.run('grantsPanel.js holds no warning reading and no confirm', 0.2, function
   return !/warning\.txt|window\.confirm/.test(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'grant', 'grantsPanel', 'script.js'), 'utf8').replace(/\/\/[^\n]*/g, '')) ? true : false;
 }, test.limit.quick);
 // That no <verb>.warning.txt is left in the tree, spirit/auth/grant.warning.txt among them, is the general test's,
-// spirit/test/spirit-sibling-general.js (goal/G47.1). The noWarning part once at the end of this file said the same as the
+// spirit/test/script-sibling-general.js (goal/G47.1). The noWarning part once at the end of this file said the same as the
 // two checks above, and is folded into them.
 
 // Grant waits, busy, until every grant is answered (goal/G41.23; box: "first users: Ask in the agent's Update model list, and

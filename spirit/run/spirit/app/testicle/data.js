@@ -23,10 +23,10 @@
   var MONITOR = 'monitor/now';
   // The preferences, one row of their own: what the preferences verb answered last, or the stream told since.
   var PREFERENCES = 'preferences/now';
-  var D = typeof require === 'function' ? require('../../spirit.js').requireScript('spirit/data.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
-  // data.js exactly as api.js"): on a page that has not loaded spirit/data.js yet, this file loads it and runs again.
-  if (!D) { window.spirit.requireScript('spirit/data.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
+  // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
+  if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
   D.makeFamily('testicle', function () {
     var HOME = D.viewAt(null, 'testicle');
     // A TEST ROW KEPT WITH ITS FILE NAMES, scriptName and suiteName, the last part of each path: the testicle search shows and

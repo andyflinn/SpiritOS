@@ -12,10 +12,10 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'api.js');
-require(path.join(RUN, 'spirit', 'spirit.js'));
+require(path.join(RUN, 'spirit', 'script.js'));
 const spirit = globalThis.spirit;
 
 const isPlain = function (v) { return v !== null && typeof v === 'object' && !Array.isArray(v); };
@@ -53,8 +53,8 @@ function keysAt(src, open) {
   return null;
 }
 function mounted(family) {
-  // The node's server code, spirit/server/node.js since goal/G48.5 ("the servers move into spirit/server/").
-  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node.js'), 'utf8');
+  // The node's server code, spirit/server/node/script.js since goal/G48.5 ("the servers move into spirit/server/").
+  const src = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8');
   const head = 'loopbackVerbs.mount(\'' + family + '\',';
   let at = src.indexOf(head);
   if (at === -1) return null;

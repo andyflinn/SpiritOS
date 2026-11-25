@@ -19,7 +19,7 @@ Measurements were taken on **Saturday, November 21, 2026** for repository commit
 - A card request through a relay takes 70.7 ms, the slowest 87.1 ms; sealing and signing take 0.6 ms of it.
 - The product tree, right now, has 175 outstanding issues in the test database.
 - The leading module responsible for that count is spirit/app/testicle/element.js, with 79 of them.
-- The leading test suite contributing to the error count is spirit/test/spirit-sibling-general.js, with 81 of them.
+- The leading test suite contributing to the error count is spirit/test/script-sibling-general.js, with 81 of them.
 
 ## Details
 

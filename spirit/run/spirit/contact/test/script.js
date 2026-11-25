@@ -11,11 +11,11 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder.js');
+const tempFolder = require('../../tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/contact/test/script/' + name + tempAsked); }
 // Its store closed first: on Windows a folder holding an open database cannot be removed, and the suite was red on
@@ -24,9 +24,9 @@ test.after(function () { try { if (W.store) W.store.close(); } catch (e) { /* cl
 // A file not there yet is no crash at load: each check below finds nothing and is red (goal/G49.4, the move).
 let contacts = {};
 try { contacts = LOADER.requireScript('spirit/contact/script.js'); } catch (e) { contacts = {}; }
-const nodeStore = LOADER.requireScript('spirit/nodeStore.js');
-const nodeCard = LOADER.requireScript('spirit/nodeCard.js');
-const auth = LOADER.requireScript('spirit/relayAuth.js');
+const nodeStore = LOADER.requireScript('spirit/nodeStore/script.js');
+const nodeCard = LOADER.requireScript('spirit/nodeCard/script.js');
+const auth = LOADER.requireScript('spirit/relayAuth/script.js');
 const { scratchNode } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
 

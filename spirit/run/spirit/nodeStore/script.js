@@ -1,0 +1,962 @@
+'use strict';
+// ITS NAMES STAY ITS OWN (goal/G47.1; Andy: "is there any motherfucking reason that this fucking shit cannot be fucking
+// contained in the motherfucking spirit objects"): a page loads this file through a script tag, so the whole of it runs
+// inside one function, and what it hands out goes onto the spirit object or module.exports, never the window.
+(function () {
+
+// spirit/run/spirit/nodeStore/script.js
+// THE NODE'S MACHINE STATE, ON DISC.
+//
+//   Andy: "the route cache belongs to the machine, not the human."
+//   Andy: "we need no peer review for allowing a database to be used for
+//   the shadow roll. That's a decision."
+//
+// Decision 0018. A node's human-readability rule covers what its OWNER
+// acquired — contacts, writing, media, the traffic log. It does not cover
+// what the NETWORK produced, and `server.js` is the proof the exemption
+// always existed: it sits on a node's disc, it is text, and nobody has
+// ever argued it owes anybody prose.
+//
+// So the question to ask of anything here is not "can a human read this"
+// but "did the owner acquire it, and would they care?" Everything in this
+// file answers no.
+//
+// ── WHAT LIVES HERE, AND WHAT MUST NOT ───────────────────────────────
+//
+//   spirit/state/node.db     the shadow roll (this cycle). The post queue
+//                           (R16) and the owner's cache cap (R31) join it.
+//
+// CONTACTS ARE HERE SINCE goal/G40.11 (Andy's box, v24: "contacts.json, the relays table and the peers table move
+// into it and go"): one table for every known ID, the owner's chosen ones flagged keep. NOT identity.json, owner.json or
+// config.json. 0018 is explicit that it licenses the route cache and
+// "everything else on a node's disk" stays as it is — and relayStore.js
+// gives the reason for the last three: they are "constant, tiny, and the
+// ones an owner may have to read or restore over SSH".
+//
+// A CORPUS IS THE OWNER'S; A ROUTING TABLE IS NOT. The traffic log stays
+// readable, and kept until node.db passes its cap: since goal/G30.19 its
+// oldest rows go then (shedToCap, below; Andy: "learn to throw out shit").
+//
+// ── SEPARATE FROM relay.db, AND NOT A LAYER OVER IT ──────────────────
+//
+// A relay's store answers for a box's members and invites; this
+// answers for one person's node. They are never the same process —
+// server.js hands off to relayServer.js on `--relay` and loads no node
+// code — so sharing a file would only mean two schemas in one place with
+// nothing able to open both.
+//
+// ── THE SAME DURABILITY CHOICES, FOR THE SAME REASONS ────────────────
+//
+// Rollback journal rather than WAL: after every commit the data is in
+// node.db and nowhere else, so a file copy cannot catch it half-written.
+// WAL buys concurrent readers and a node is one process.
+//
+// `secure_delete` is ON, and it matters more here than it looks. A deleted
+// row's bytes would otherwise sit in a free page until something reused
+// them — and what this file holds is not a membership list: it is WHOSE
+// BUSINESS THIS NODE HAS BEEN DOING (seenPeers.js). A row swept for space
+// has to leave the disc, not just the index.
+//
+// ── THE FLOOR THIS MOVES ─────────────────────────────────────────────
+//
+// `node:sqlite` is core from Node 22.5 and unflagged from 22.13, so an
+// indexed store on the NODE raises every user's minimum to 22.13 — on a
+// machine they own and install themselves. That follows from Andy's grant
+// rather than being a second ruling (0018), and `package.json` says so.
+//
+// The guard is at the caller, the way relayServer.js does it: a node
+// refuses to start and says why, rather than degrading to a second
+// in-memory code path that nothing exercises.
+
+// The spirit object first (goal/G43.32): every other part of the tree through spirit.requireScript.
+require('../script.js');
+const fs = require('fs');
+const path = require('path');
+
+let sqlite = null;
+
+function driver() {
+  if (!sqlite) sqlite = require('node:sqlite');
+  return sqlite;
+}
+
+// One store per node home, so every caller reads the same connection —
+// the shadow today, the queue and the settings later. Keyed by the
+// resolved path, exactly as relayStore does it.
+const open_ = new Map();
+
+function dbPath(rootDir) {
+  return path.join(rootDir, 'spirit', 'state', 'node.db');
+}
+
+// The node log's fields, in the order trafficLog.js writes them, each with
+// the type it holds:
+// text, a number, or true/false stored as 1/0. Typed, so an index on hash or
+// at holds the plain value and a lookup compares it plainly (wsl-claude,
+// before transport/R19.4). A value that does not have its column's type,
+// and any field not named here, goes to `extra` as JSON: nothing is lost
+// and nothing is reshaped.
+const TRAFFIC_TYPES = {
+  at: 'text', dir: 'text', kind: 'text', peer: 'text', relay: 'text', hash: 'text', outcome: 'text',
+  status: 'int', code: 'text', ms: 'int', payload: 'text', bytes: 'int',
+  event: 'text', label: 'text', invite: 'text', key: 'text', why: 'text', owner: 'bool',
+  revoked: 'int', invitesRevoked: 'int', expiresAt: 'text', cause: 'text', mark: 'text',
+};
+const TRAFFIC_COLUMNS = Object.keys(TRAFFIC_TYPES);
+const SQL_TYPE = { text: 'TEXT', int: 'INTEGER', bool: 'INTEGER' };
+function trafficFits(type, v) {
+  if (type === 'text') return typeof v === 'string';
+  if (type === 'int') return typeof v === 'number' && isFinite(v);
+  return typeof v === 'boolean';
+}
+
+// Whether this node can have a store at all. Asked rather than assumed, so
+// the caller can refuse with a sentence instead of a stack trace.
+function available() {
+  try { driver(); return true; }
+  catch (e) { return false; }
+}
+
+// THE WHOLE FILE'S CAP, and what goes past it (goal/G30.19; Andy: "cap in to 16 MB"): see shedToCap.
+const MAX_DB_BYTES = 16 * 1024 * 1024;
+const SHED_CHUNK = 256;
+// The backlog a page is handed when it opens: the untaken packets of the last day (Andy: "one day.").
+const BACKLOG_MS = 24 * 60 * 60 * 1000;
+
+function open(rootDir, opts) {
+  const key = path.resolve(rootDir);
+  if (open_.has(key)) return open_.get(key);
+
+  fs.mkdirSync(path.join(rootDir, 'spirit', 'state'), { recursive: true });
+  const db = new (driver().DatabaseSync)(dbPath(rootDir));
+  db.exec('PRAGMA journal_mode = DELETE');
+  db.exec('PRAGMA synchronous = FULL');
+  db.exec('PRAGMA secure_delete = ON');
+  // ── THE FILE HAS TO SHRINK, OR A BYTE CAP CANNOT BE HONOURED ────
+  //
+  // SQLite keeps a deleted row's pages on a free list and the file stays
+  // the size it reached. A cap measured in bytes would then evict for
+  // ever after one busy week, because the number it reads never comes
+  // back down.
+  //
+  // INCREMENTAL rather than FULL: FULL vacuums at every commit, and this
+  // store is written on every presence broadcast. Incremental leaves the
+  // pages until somebody asks, and the only caller that asks is the
+  // eviction that just freed them.
+  //
+  // SET BEFORE THE FIRST TABLE, because that is the only moment SQLite
+  // accepts it on a new database. A file made before this line existed
+  // would need a VACUUM to change it; none exists outside this repo's own
+  // fixtures, so no migration is written for a case that cannot happen.
+  db.exec('PRAGMA auto_vacuum = INCREMENTAL');
+
+  // ── ONE TABLE FOR ALL KNOWN IDS (goal/G40.11) ────────────────────────
+  //
+  //   Andy, 2026-10-25 and 26, box v24: seen "is the one table. contacts.json, the relays table and the peers table
+  //   move into it and go. The grants table stays its own, keyed by ID."
+  //
+  // One row per ID other than the node itself. Keyed by ID, so somebody seen a thousand times is one row and growth
+  // is bounded by distinct IDs rather than by traffic. Every row: label (with how sure, labelRank, and when, labelAt),
+  // myLabel, card, face, present, firstSeen, lastSeen, and six booleans:
+  //
+  //   keep     a chosen contact, never shed       mine     owned (puppets, owned relays), never shed
+  //   relay    the ID is a relay
+  //   ignored  politely refused, never shown      blocked  refused, a relay as well as a node
+  //   seated   that ID holds this node: a relay its seat, a node its chosen contacts
+  //
+  // A CARD IS KEPT ONLY SIGNED BY THE ROW'S ID (contacts.setCard checks it); any other is refused and nothing of it
+  // kept. TIMES ARE MILLISECONDS, unlike relay.db's ISO strings: they are compared and ordered on the shedding path.
+  // `present` is three-valued: -1 nobody has said, 0 said absent, 1 said present.
+
+  // faceable (goal/G47.4, box v33: "😏 is the row field faceable, set by the new verb contact.faceable {key, faceable}"):
+  // a relay this node holds a seat on, given full face capability by the owner. In the table as it is made; no table
+  // made before it is mended (below).
+  const SEEN_FLAGS = ['keep', 'mine', 'relay', 'ignored', 'blocked', 'seated', 'faceable'];
+  const GRANT_NAME = "COALESCE(NULLIF(s.myLabel, ''), s.label, '')";
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS seen (
+      publicKey TEXT PRIMARY KEY,
+      label     TEXT    NOT NULL DEFAULT '',
+      labelRank INTEGER NOT NULL DEFAULT 4,
+      labelAt   INTEGER NOT NULL DEFAULT 0,
+      present   INTEGER NOT NULL DEFAULT -1,
+      myLabel   TEXT    NOT NULL DEFAULT '',
+      card      TEXT    NOT NULL DEFAULT '',
+      face      TEXT    NOT NULL DEFAULT '',
+      firstSeen INTEGER NOT NULL DEFAULT 0,
+      lastSeen  INTEGER NOT NULL DEFAULT 0,
+      url       TEXT    NOT NULL DEFAULT '',
+      ${SEEN_FLAGS.map(function (f) { return f + ' INTEGER NOT NULL DEFAULT 0'; }).join(',\n      ')}
+    );
+  `);
+  // A RELAY'S OWN ADDRESS IS ON ITS ROW (goal/G47.1, the cycle "the route caching goes", box v69: "A relay's own address
+  // stays: it is the address the node connects to, kept on the relay's own row, where the relay list reads it"). url is
+  // '' for every row but a relay's; one url is one relay (relayKeys.accept), found on seen_url.
+  // NO TABLE MADE BEFORE IS MENDED, here or anywhere in this file (Andy, goal/G47.1: "old files or tables should not be
+  // mended, THE SHOULD BE FUCKING KILLED AND ELIMINATED FOREVER!"): no column is dropped or renamed.
+  // A FLAG THE TABLE LACKS IS ADDED, 0 on every row, before its index is made (Andy, goal/G47.4, after a node.db made
+  // before faceable stopped his node: "adding a fucking field is not mending!!!!!!!!!!!!!!!!").
+  const seenHas = db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; });
+  SEEN_FLAGS.forEach(function (f) { if (seenHas.indexOf(f) === -1) db.exec('ALTER TABLE seen ADD COLUMN ' + f + ' INTEGER NOT NULL DEFAULT 0'); });
+  db.exec("CREATE INDEX IF NOT EXISTS seen_url ON seen (url) WHERE url <> ''");
+  // THE FACE NAME THIS NODE HOLDS ON A RELAY, on that relay's row (Andy, 2026-10-26, goal/G40.11: "keep it, on the
+  // relay's row, as the node's own fact, like myLabel"): the node set it itself (relay.face, the relay said yes). In the
+  // table as it is made; no table made before it is mended (goal/G41.30, no rescue operations).
+  // A PARTIAL INDEX PER FLAG, holding only the rows where it is true, and one over the rows with neither keep nor mine,
+  // by lastSeen: the line shedding takes. A query uses a partial index only when it repeats its WHERE, which is why
+  // the statements below spell those conditions out again.
+  db.exec(SEEN_FLAGS.map(function (f) {
+    return 'CREATE INDEX IF NOT EXISTS seen_' + f + ' ON seen (lastSeen) WHERE ' + f + ' = 1;';
+  }).join('\n') + '\nCREATE INDEX IF NOT EXISTS seen_shed ON seen (lastSeen) WHERE keep = 0 AND mine = 0;');
+
+  // ── NO ROUTE IS KEPT (goal/G47.1, the cycle "the route caching goes") ──
+  //
+  //   Andy: "There no more \"partner\" relays, and the way SpiritOS sits now, ID's need exchanging out-of-channel, by
+  //   email or what ever. We can probably shut down the \"route-caching\" crap", and "the \"routes\" aren't read by
+  //   anybody in the fucking system". The box, v69: "The node keeps no route of a peer: the table seen_routes is dropped".
+  //
+  // A post goes to a relay that names its recipient, else to the first relay held (hub.js chooseRoute); no route ever
+  // chose it, and the relay reads no hints since partners went (goal/G22.6). This replaces the ruling "the node must
+  // implicitly learn routes at EVERY opportunity". No table of routes is made.
+
+  // ── THE POST QUEUE, SO AN INTENT OUTLIVES THE PROCESS (cycle R16) ───
+  //
+  //   Andy: patience "could be days for a text message".
+  //
+  // One row per message this node has promised to send and not yet
+  // settled, keyed by its hash. `body` is the signed wire body, text and
+  // all — and that was the gate this cycle had to clear first: it is
+  // correspondence, and correspondence belongs on the readable side
+  // (A-CORRESPONDENT-NODE).
+  //
+  // IT IS ALREADY THERE. peerPost writes the outgoing message, payload
+  // included, to the traffic log BEFORE it is queued ("written before the
+  // transport is touched"). The readable copy (kept until the cap sheds it) exists first;
+  // this is the working duplicate the machine needs in order to send it,
+  // and `secure_delete` takes it off the disc when it settles.
+  //
+  // TIMES ARE WALL-CLOCK HERE AND MONOTONIC IN THE QUEUE. A monotonic
+  // reading means nothing to the next process, so peerPost converts on
+  // the way out and back again on the way in.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS queue (
+      hash      TEXT    PRIMARY KEY,
+      seq       INTEGER NOT NULL,
+      relayUrl  TEXT    NOT NULL DEFAULT '',
+      toKey     TEXT    NOT NULL DEFAULT '',
+      kind      TEXT    NOT NULL DEFAULT '',
+      body      TEXT    NOT NULL,
+      bytes     INTEGER NOT NULL DEFAULT 0,
+      attempts  INTEGER NOT NULL DEFAULT 0,
+      atWall    INTEGER NOT NULL DEFAULT 0,
+      untilWall INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS queue_order ON queue (seq);
+    CREATE TABLE IF NOT EXISTS queue_backoff (
+      relayUrl  TEXT    NOT NULL,
+      toKey     TEXT    NOT NULL,
+      untilWall INTEGER NOT NULL DEFAULT 0,
+      lastWait  INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (relayUrl, toKey)
+    );
+  `);
+
+  // ── THE RECIPIENT'S REPLAY INDEX (cycle 10's R17 and C2) ───────────
+  //
+  // A sealed blob replayed to the same recipient THROUGH A DIFFERENT
+  // RELAY meets a registered-hash guard that has never seen it — the
+  // relay is deliberately not in the associated data (cycle 10's R4),
+  // because binding a message to a road would make store-and-forward a
+  // routing promise. The gap that leaves is closed here, by the one party
+  // who can tell: the recipient.
+  //
+  // `at` IS THE SENDER'S TIMESTAMP FROM INSIDE THE SEAL, not the hour it
+  // arrived. C2: the index is bounded by disc like every dataset here, so
+  // it WILL be trimmed — and a row leaving must not silently make an old
+  // message replayable again. Keeping the sealed timestamp means a hash
+  // can only be dropped once a message bearing it would be refused for
+  // age anyway.
+  //
+  // Not in the envelope, where it would leak and be forgeable. Inside the
+  // seal, stamped by `seal()` rather than by each caller.
+  //
+  // DERIVED, AND REBUILDABLE — FROM THE LOG IN THIS SAME FILE, SINCE
+  // transport/R19. Every hash here is also in the node log, and the log now
+  // lives in node.db's `traffic` table, so losing node.db loses both: the
+  // rebuild no longer covers that case. Andy decided it knowingly, 2026-09-28:
+  // "i'm ok with that risk, i'd rather rely on backups, and not worry about
+  // it". A rebuild still restores the index from the table if only the index
+  // is damaged.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS replay (
+      hash TEXT PRIMARY KEY,
+      at   INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS replay_at ON replay (at);
+  `);
+
+  // ── THE NODE LOG (transport/R19.3) ────────────────────────────────────
+  //
+  //   Andy, 2026-09-28: the goal is "Moving the node log into machine-side
+  //   database"; on the table, "i agree to the keys as well".
+  //
+  // trafficLog.js owns what a row MEANS and still is the only reader and
+  // writer; this file owns where it lives, as it does for every table in
+  // node.db. Decided and not to be revisited without him:
+  //   - seq INTEGER PRIMARY KEY AUTOINCREMENT: the order rows were written,
+  //     never reused, not even after the newest row is deleted;
+  //   - a column for every field a row carries, all allowed empty, and
+  //     `extra` for any field this list does not name, so nothing is lost;
+  //   - NOT in the cache cap above: cacheBytes counts only `seen`, so
+  //     this table never evicts anyone. Its own bound is
+  //     the file's (MAX_DB_BYTES, goal/G30.19): past it the oldest rows go
+  //     (shedToCap, below).
+  //
+  // EACH VALUE IN ITS OWN TYPE, NULL when absent (TRAFFIC_TYPES above), so a
+  // row reads back exactly as it was written (true stays true, 3 stays 3)
+  // and a reader cannot tell a table row from a file row.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS traffic (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      ${TRAFFIC_COLUMNS.map(function (c) { return '"' + c + '" ' + SQL_TYPE[TRAFFIC_TYPES[c]]; }).join(',\n      ')},
+      extra TEXT
+    );
+  `);
+
+  // ── ITS INDEXES (transport/R19.4) ─────────────────────────────────────
+  //
+  //   Decided with the keys (Andy: "i agree to the keys as well"): one per
+  //   reader that asks for a few rows, each PARTIAL so it holds only the rows
+  //   that reader can want. read() returns everything, so nothing helps it.
+  //   A partial index is used only by a query that repeats its WHERE, which
+  //   is why the statements below spell those conditions out again.
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS traffic_hash ON traffic (hash) WHERE hash <> '';
+    CREATE INDEX IF NOT EXISTS traffic_owner_at ON traffic (at) WHERE kind = 'owner';
+    CREATE INDEX IF NOT EXISTS traffic_delivered_at ON traffic (at) WHERE dir = 'in' AND outcome = 'delivered';
+  `);
+
+  // ── WHO MAY CALL WHICH API (apiAuth/G1.3) ───────────────────────────
+  //
+  //   Andy: "the lookup table is in node.db", "grants: peer_id and path, one row per grant; issue inserts it, revoke
+  //   deletes it.", "yes we neeed doulbe keyed for selective delete", and on the last revoke: "it disappears." Only
+  //   authorization is stored; an empty table is no access for anybody but the owner. "the peer never sees our apiAuth
+  //   data": nothing here travels to a member.
+  //
+  // THE GRANTS TABLE STAYS ITS OWN, KEYED BY ID (goal/G40.11); its peers table moved into seen, so the name a grant
+  // shows is that ID's row's.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS grants (
+      peer_id TEXT NOT NULL,
+      path    TEXT NOT NULL,
+      PRIMARY KEY (peer_id, path)
+    );
+  `);
+  // THE BUNDLES (goal/G41.14; Andy, box: "The node keeps TWO bundle tables, in node.db"). bundle: "a hidden numeric
+  // key, and a label", "a dictionary". branch: "a hidden numeric key", "an indexed numeric reference, bundle", "a
+  // mandatory family field" and "an optional verb field", '' meaning all of the family. Deleting a bundle deletes its
+  // branches (apiAuth.js does both in one transaction). The tables of goal/G41.13 are not read: "any bundle lost during
+  // these changes are LOST. OOS."
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bundle (
+      id    INTEGER PRIMARY KEY,
+      label TEXT NOT NULL,
+      owner TEXT NOT NULL DEFAULT 'node'
+    );
+    CREATE TABLE IF NOT EXISTS branch (
+      id     INTEGER PRIMARY KEY,
+      bundle INTEGER NOT NULL,
+      family TEXT NOT NULL,
+      verb   TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS branch_bundle ON branch (bundle);
+  `);
+  // A BUNDLE'S OWNER (goal/G41.25; Andy, box: "the bundle table gains 1 field: \"owner\", which can contains either
+  // \"node\" (default), or the name of an appServer"): in the table as it is made; no node.db from before is mended
+  // (goal/G41.30; Andy: "let's get rid of those \"rescue operations\"").
+
+  const q = {
+    get: db.prepare('SELECT * FROM seen WHERE publicKey = ?'),
+    // THE PIN'S ONE LOOKUP (goal/G40.11, on the row since goal/G47.1): whose address a url is, on seen_url (its WHERE
+    // repeated).
+    byUrl: db.prepare("SELECT * FROM seen WHERE url = ? AND url <> ''"),
+    qPut: db.prepare(`INSERT INTO queue
+      (hash, seq, relayUrl, toKey, kind, body, bytes, attempts, atWall, untilWall)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(hash) DO UPDATE SET attempts = excluded.attempts,
+        untilWall = excluded.untilWall`),
+    qAttempts: db.prepare('UPDATE queue SET attempts = ? WHERE hash = ?'),
+    qDel: db.prepare('DELETE FROM queue WHERE hash = ?'),
+    qAll: db.prepare('SELECT * FROM queue ORDER BY seq ASC'),
+    qMaxSeq: db.prepare('SELECT COALESCE(MAX(seq), 0) AS n FROM queue'),
+    rSeen: db.prepare('SELECT at FROM replay WHERE hash = ?'),
+    rPut: db.prepare('INSERT OR IGNORE INTO replay (hash, at) VALUES (?, ?)'),
+    rSweep: db.prepare('DELETE FROM replay WHERE at < ?'),
+    rCount: db.prepare('SELECT COUNT(*) AS n FROM replay'),
+    bPut: db.prepare(`INSERT INTO queue_backoff (relayUrl, toKey, untilWall, lastWait)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(relayUrl, toKey) DO UPDATE SET untilWall = excluded.untilWall,
+        lastWait = excluded.lastWait`),
+    bDel: db.prepare('DELETE FROM queue_backoff WHERE relayUrl = ? AND toKey = ?'),
+    bAll: db.prepare('SELECT * FROM queue_backoff'),
+    // A backoff that has run out is not worth carrying into a new process.
+    bExpired: db.prepare('DELETE FROM queue_backoff WHERE untilWall <= ?'),
+    // apiAuth/G1.3: the two exact lookups are the double key's; search walks the joined rows. The name a grant shows
+    // is its ID's row's (goal/G40.11: the peers table moved into seen): what I call them, else what they call
+    // themselves, '' when the table has no row for them.
+    aHas: db.prepare('SELECT 1 FROM grants WHERE peer_id = ? AND path = ?'),
+    aPaths: db.prepare('SELECT path FROM grants WHERE peer_id = ? ORDER BY path'),
+    aPeer: db.prepare(`SELECT g.peer_id AS key, ${GRANT_NAME} AS label, g.path AS path FROM grants g
+      LEFT JOIN seen s ON s.publicKey = g.peer_id WHERE g.peer_id = ? ORDER BY g.path`),
+    aAll: db.prepare(`SELECT g.peer_id AS key, ${GRANT_NAME} AS label, g.path AS path FROM grants g
+      LEFT JOIN seen s ON s.publicKey = g.peer_id ORDER BY label, g.path`),
+    aKnownPath: db.prepare('SELECT 1 FROM grants WHERE path = ? LIMIT 1'),
+    aGranted: db.prepare('SELECT 1 FROM grants WHERE peer_id = ? LIMIT 1'),
+    aGrantPut: db.prepare('INSERT INTO grants (peer_id, path) VALUES (?, ?)'),
+    aGrantDel: db.prepare('DELETE FROM grants WHERE peer_id = ? AND path = ?'),
+    // goal/G41.14: the bundles, by id; all of them in label order. Their branches, by id or by bundle.
+    bundleGet: db.prepare('SELECT id, label, owner FROM bundle WHERE id = ?'),
+    bundleAll: db.prepare('SELECT id, label, owner FROM bundle ORDER BY label, id'),
+    bundlePut: db.prepare('INSERT INTO bundle (label, owner) VALUES (?, ?)'),
+    bundleSet: db.prepare('UPDATE bundle SET label = ? WHERE id = ?'),
+    bundleDel: db.prepare('DELETE FROM bundle WHERE id = ?'),
+    branchGet: db.prepare('SELECT id, bundle, family, verb FROM branch WHERE id = ?'),
+    branchAll: db.prepare('SELECT id, bundle, family, verb FROM branch ORDER BY bundle, family, verb, id'),
+    branchSame: db.prepare('SELECT id FROM branch WHERE bundle = ? AND family = ? AND verb = ? AND id != ?'),
+    branchPut: db.prepare('INSERT INTO branch (bundle, family, verb) VALUES (?, ?, ?)'),
+    branchSet: db.prepare('UPDATE branch SET family = ?, verb = ? WHERE id = ?'),
+    branchDel: db.prepare('DELETE FROM branch WHERE id = ?'),
+    branchDelOf: db.prepare('DELETE FROM branch WHERE bundle = ?'),
+    // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
+    // and left alone when it does not — the callers do not all know the
+    // same things, and a search that taught a label must not have it
+    // blanked by the next packet that arrives. `excluded` is the row being
+    // inserted; `seen.label` is what is already there.
+    // GREEDY, AND NOW ALSO REFUSING A DOWNGRADE. The old statement kept a
+    // field when the caller had none; this one additionally keeps it when
+    // the caller HAS one but is less entitled to be believed.
+    //
+    // `<=` on the rank, not `<`: an equally entitled source that spoke
+    // more recently wins, which is recency doing its job underneath rank.
+    //
+    // PRESENCE IS THREE STATES, NOT TWO, and the column stores all three:
+    // -1 nobody has said, 0 said absent, 1 said present.
+    //
+    // This started as a two-state column with -1 as a "no opinion"
+    // sentinel that the CASE below would swallow. It did not survive a
+    // first INSERT — ON CONFLICT does not fire then, so -1 landed in the
+    // column and `!!(-1)` reported a stranger as present. Clamping it to 0
+    // on insert then broke the other half: `excluded.present` became 0, so
+    // a silent caller marked a present peer absent.
+    //
+    // The bug was pointing at the model. The contacts view had three marks
+    // all along — "WHITE is NOT a dimmer red. A contact we share no relay
+    // with is not offline, they are UNSEEN" — and 0019 rests on the same
+    // distinction. Two states could not hold it.
+    //
+    // firstSeen is written once, by the insert; `relay` only ever goes from 0 to 1 here (a caller that knows the ID
+    // is a relay says so; one that does not leaves it).
+    put: db.prepare(`INSERT INTO seen (publicKey, label, labelRank, labelAt, present, firstSeen, lastSeen, relay)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(publicKey) DO UPDATE SET
+        label     = CASE WHEN excluded.label <> '' AND excluded.labelRank <= seen.labelRank
+                         THEN excluded.label ELSE seen.label END,
+        labelRank = CASE WHEN excluded.label <> '' AND excluded.labelRank <= seen.labelRank
+                         THEN excluded.labelRank ELSE seen.labelRank END,
+        labelAt   = CASE WHEN excluded.label <> '' AND excluded.labelRank <= seen.labelRank
+                         THEN excluded.labelAt ELSE seen.labelAt END,
+        present   = CASE WHEN excluded.present < 0 THEN seen.present ELSE excluded.present END,
+        firstSeen = CASE WHEN seen.firstSeen = 0 THEN excluded.firstSeen ELSE seen.firstSeen END,
+        lastSeen  = excluded.lastSeen,
+        relay     = MAX(seen.relay, excluded.relay)`),
+    // A ROW THE OWNER'S OWN ACT MAKES (keep, block, a name, a card) has never been SEEN — a contact added by pasting a
+    // key — so its dates are 0 and its presence unknown, which is the truth rather than a guess. set() then writes the
+    // fields it was given on it.
+    make: db.prepare('INSERT OR IGNORE INTO seen (publicKey) VALUES (?)'),
+    del: db.prepare('DELETE FROM seen WHERE publicKey = ?'),
+    count: db.prepare('SELECT COUNT(*) AS n FROM seen'),
+    // ── ONE SHEDDING, AND THE FLAGS DECIDE WHO IS IN LINE (0021, goal/G40.11) ─
+    //
+    //   Andy: "it's the chosen-mark that gives protection from eviction,
+    //   if the memory overflows. the shedded rows will first be ignored,
+    //   [...] once the memory is full with 'added' statuses no more
+    //   can be chosen/added until eviction by blocking or ignoring...."
+    //
+    // The box (v24): "lastSeen is the staleness: it orders shedding once the cap is reached, never age alone. Shedding
+    // takes unflagged rows first, then ignored or blocked, oldest first in each; keep and mine never." A
+    // kept or owned row is not in the line at all — that is the protection, and it is a WHERE (seen_shed's own), not
+    // a weight, so no amount of pressure reaches it.
+    shedCount: db.prepare('SELECT COUNT(*) AS n FROM seen WHERE keep = 0 AND mine = 0'),
+    overflow: db.prepare(`DELETE FROM seen WHERE publicKey IN (
+      SELECT publicKey FROM seen WHERE keep = 0 AND mine = 0
+      ORDER BY CASE WHEN ignored = 1 OR blocked = 1 THEN 1 ELSE 0 END ASC, lastSeen ASC
+      LIMIT ?)`),
+    // WHO A SEARCH READS (R39, goal/G40.11): the kept and the owned, each flag through its own partial index. Nobody else
+    // is listed: a person the network search finds is streamed to the page and stored as nothing (goal/G43.17).
+    listed: db.prepare('SELECT * FROM seen WHERE keep = 1 UNION SELECT * FROM seen WHERE mine = 1'),
+    clear: db.prepare('DELETE FROM seen'),
+    pages: db.prepare('PRAGMA page_count'),
+    pageSize: db.prepare('PRAGMA page_size'),
+    // THE CACHE'S OWN PAGES, AND ONLY THOSE (cycle R16). This file holds
+    // the post queue too now, and the owner's cap is on "maximum cache
+    // size" — not on messages waiting to be sent. Measuring the whole file
+    // would let a backed-up queue evict the shadow to make room for
+    // itself, and at the 1 MB floor could empty it entirely. `dbstat`
+    // counts the b-tree pages of the named tables and their indexes.
+    cacheBytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
+      WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name = 'seen')`),
+  };
+  // Every row with one flag true, newest first, through that flag's partial index (its WHERE is the statement's).
+  const byFlag = {};
+  SEEN_FLAGS.forEach(function (f) {
+    byFlag[f] = db.prepare('SELECT * FROM seen WHERE ' + f + ' = 1 ORDER BY lastSeen DESC');
+  });
+  // The fields set() may write, beside the flags: what the owner calls them and their card.
+  // url, a relay's own address (goal/G47.1), set by relayKeys.accept alone.
+  const SET_TEXT = ['myLabel', 'card', 'face', 'url'];
+
+  // A ROW AS EVERY READER GETS IT: the flags as booleans, presence as null when nobody has said, so a caller cannot
+  // paint somebody red on the strength of never having heard.
+  function row(r) {
+    if (!r) return null;
+    const out = {
+      publicKey: r.publicKey, label: r.label, labelRank: r.labelRank, labelAt: r.labelAt,
+      present: r.present < 0 ? null : !!r.present,
+      myLabel: r.myLabel || '', card: r.card || '', face: r.face || '', firstSeen: r.firstSeen, lastSeen: r.lastSeen,
+      url: r.url || '',
+    };
+    SEEN_FLAGS.forEach(function (f) { out[f] = !!r[f]; });
+    return out;
+  }
+
+  // ── THE SHADOW STREAM'S SOURCE (goal/G40.11) ─────────────────────────
+  //
+  //   Andy, 2026-10-26: "yes." to "The stream: one job for the table, one changed row per update."
+  //
+  // Every write of a row hands the row, as it now reads, to whoever listens (server.js: the shadow job), when it
+  // reads differently from before the write. One row per call, as it changed; nothing held back or gathered. The cost,
+  // stated: one read before each write, and one job update for every row that changed — every presence word and every
+  // arrival moves lastSeen, so one update per arrival.
+  const listeners = [];
+  function changed(publicKey, before) {
+    if (!listeners.length) return;
+    const after = q.get.get(publicKey);
+    if (JSON.stringify(after || null) === JSON.stringify(before || null)) return;
+    const shown = after ? row(after) : { publicKey: publicKey, gone: true };
+    listeners.slice().forEach(function (fn) { try { fn(shown); } catch (e) { /* a listener's fault is its own */ } });
+  }
+  function writing(publicKey, fn) {
+    const before = listeners.length ? q.get.get(publicKey) : null;
+    const out = fn();
+    changed(publicKey, before);
+    return out;
+  }
+
+  const tq = {
+    add: db.prepare('INSERT INTO traffic (' + TRAFFIC_COLUMNS.map(function (c) { return '"' + c + '"'; }).join(', ') +
+      ', extra) VALUES (' + TRAFFIC_COLUMNS.map(function () { return '?'; }).join(', ') + ', ?)'),
+    all: db.prepare('SELECT * FROM traffic ORDER BY seq'),
+    count: db.prepare('SELECT COUNT(*) AS n FROM traffic'),
+    byHash: db.prepare("SELECT * FROM traffic WHERE hash = ? AND hash <> '' ORDER BY seq"),
+    arrivals: db.prepare("SELECT * FROM traffic WHERE dir = 'in' AND outcome = 'delivered' AND at > ? ORDER BY at LIMIT ?"),
+    // THE ARRIVALS NOT YET TAKEN (goal/G4.31), every one, oldest first: what a stream replays when it opens. Both
+    // partial indexes' WHEREs are repeated (traffic_delivered_at for the rows, traffic_hash for each one's mark), so it
+    // never reads the whole log, which cost about a second per desk ask on a long-lived node.
+    // THE LAST DAY'S ONLY (goal/G30.19): an untaken packet older than BACKLOG_MS is not work still waiting (Andy: "I
+    // don't go clean a room my mother tld me to clean 60 years ago"); `at > ?` keeps the read to the index's newest rows.
+    untaken: db.prepare("SELECT t.* FROM traffic t WHERE t.dir = 'in' AND t.outcome = 'delivered' AND t.at > ? AND NOT EXISTS " +
+      "(SELECT 1 FROM traffic m WHERE m.hash = t.hash AND m.hash <> '' AND m.mark = 'taken') ORDER BY t.at"),
+    // The oldest rows, a chunk at a time, for the shedding below.
+    // The oldest rows below the one just written: a packet is never shed in the moment it is written.
+    shed: db.prepare('DELETE FROM traffic WHERE seq IN (SELECT seq FROM traffic WHERE seq < ? ORDER BY seq LIMIT ?)'),
+    // The highest stamp written. Read once per process.
+    lastAt: db.prepare('SELECT MAX(at) AS at FROM traffic'),
+    bytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
+      WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name = 'traffic')`),
+  };
+
+  // A table row back into the object trafficLog.js wrote.
+  function trafficRow(r) {
+    const out = {};
+    TRAFFIC_COLUMNS.forEach(function (c) {
+      if (r[c] === null || r[c] === undefined) return;
+      out[c] = TRAFFIC_TYPES[c] === 'bool' ? r[c] === 1 : TRAFFIC_TYPES[c] === 'int' ? Number(r[c]) : r[c];
+    });
+    if (r.extra) {
+      try {
+        const x = JSON.parse(r.extra);
+        Object.keys(x).forEach(function (k) { out[k] = x[k]; });
+      } catch (e) { /* a damaged extra costs itself only */ }
+    }
+    return out;
+  }
+
+  // ── THE FILE NEVER GROWS PAST MAX_DB_BYTES (goal/G30.19) ─────────────
+  //
+  // Andy, 2026-10-21: "cap in to 16 MB", "learn to throw out shit, or else my box is gonna grind to a hold very soon",
+  // "make sure the code doesn't allow it to grow anymore". Every packet written asks the file's size (page_count, no
+  // read); past the cap the packet log's oldest rows go, a chunk at a time, and their pages are given back to the disc,
+  // until it fits or the log is empty. The log is what grows; everything else here has its own bound.
+  function fileBytes() { return q.pages.get().page_count * q.pageSize.get().page_size; }
+  // WHAT IS PAST ITS WINDOW GOES FIRST (found on Andy's node, 2026-10-22: a store whose replay memory alone was over the
+  // cap shed every packet the moment it was written, and compacted the file on each one). The replay memory older than
+  // its window, then the packet log's oldest rows below the one just written; when nothing more may go, nothing is tried.
+  function shedToCap(newest) {
+    if (fileBytes() <= MAX_DB_BYTES) return;
+    if (q.rSweep.run(Date.now() - BACKLOG_MS).changes) db.exec('PRAGMA incremental_vacuum');
+    for (let pass = 0; pass < 64 && fileBytes() > MAX_DB_BYTES; pass += 1) {
+      if (!tq.shed.run(Number(newest) || 0, SHED_CHUNK).changes) break;
+      db.exec('PRAGMA incremental_vacuum');
+    }
+  }
+
+  const store = {
+    path: dbPath(rootDir),
+    // The file's size, the number the cap is on.
+    fileBytes: fileBytes,
+
+    // THE NODE LOG'S TABLE (transport/R19.3). A row goes in as the object
+    // trafficLog.js built and comes out as the same object, in seq order.
+    traffic: {
+      add: function (row) {
+        const extra = {};
+        Object.keys(row || {}).forEach(function (k) {
+          if (!TRAFFIC_TYPES[k] || !trafficFits(TRAFFIC_TYPES[k], row[k])) extra[k] = row[k];
+        });
+        const vals = TRAFFIC_COLUMNS.map(function (c) {
+          const v = row ? row[c] : undefined;
+          if (v === undefined || !trafficFits(TRAFFIC_TYPES[c], v)) return null;
+          return TRAFFIC_TYPES[c] === 'bool' ? (v ? 1 : 0) : v;
+        });
+        vals.push(Object.keys(extra).length ? JSON.stringify(extra) : null);
+        const seq = Number(tq.add.run.apply(tq.add, vals).lastInsertRowid);
+        shedToCap(seq);
+        return seq;
+      },
+      all: function () { return tq.all.all().map(trafficRow); },
+      // The indexed reads (transport/R19.4). `since` is an ISO time, '' for all.
+      byHash: function (hash) { return tq.byHash.all(String(hash || '')).map(trafficRow); },
+      arrivals: function (since, limit) { return tq.arrivals.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
+      untaken: function () { return tq.untaken.all(new Date(Date.now() - BACKLOG_MS).toISOString()).map(trafficRow); },
+      lastAt: function () { const r = tq.lastAt.get(); return (r && r.at) || ''; },
+      count: function () { return tq.count.get().n; },
+      bytes: function () { return tq.bytes.get().n; },
+    },
+
+    // ── THE ONE TABLE, AS ITS READERS ASK IT (goal/G40.11) ────────────────
+    //
+    // seenPeers.js keeps the rules of what is learned and when a row goes, contacts.js and relayKeys.js the owner's
+    // acts on a row; this is where the rows live. A row comes out as row() above.
+    SEEN_FLAGS: SEEN_FLAGS,
+    seen: {
+      get: function (publicKey) { return row(q.get.get(String(publicKey || ''))); },
+      // `present` is three-valued in both directions: true, false, or
+      // nothing said. A search answer knows presence; an arriving route
+      // announcement does not — and a caller with nothing to say must not
+      // be able to mark somebody away by staying silent.
+      put: function (publicKey, what) {
+        const w = what || {};
+        const key = String(publicKey || '');
+        const present = w.present === true ? 1 : (w.present === false ? 0 : -1);
+        const when = Number(w.seen || 0);
+        writing(key, function () {
+          q.put.run(key, String(w.label || ''), Number(w.labelRank || 4), Number(w.labelAt || w.seen || 0),
+            present, when, when, w.relay === true ? 1 : 0);
+        });
+        return row(q.get.get(key));
+      },
+      // THE OWNER'S ACTS ON A ROW: any of the flags and myLabel or card, written as given, the row made when there is
+      // none. Fields not named are left alone. firstSeen, when given, is written only on a row that has none (a relay
+      // accepted is first known then). Answers the row as it now reads.
+      set: function (publicKey, fields) {
+        const key = String(publicKey || '').trim();
+        const f = fields || {};
+        if (!key) return null;
+        const cols = [];
+        const vals = [];
+        SEEN_FLAGS.forEach(function (k) { if (typeof f[k] === 'boolean') { cols.push(k + ' = ?'); vals.push(f[k] ? 1 : 0); } });
+        SET_TEXT.forEach(function (k) { if (typeof f[k] === 'string') { cols.push(k + ' = ?'); vals.push(f[k]); } });
+        if (typeof f.firstSeen === 'number' && f.firstSeen > 0) { cols.push('firstSeen = CASE WHEN firstSeen = 0 THEN ? ELSE firstSeen END'); vals.push(f.firstSeen); }
+        writing(key, function () {
+          q.make.run(key);
+          if (cols.length) db.prepare('UPDATE seen SET ' + cols.join(', ') + ' WHERE publicKey = ?').run(...vals, key);
+        });
+        return row(q.get.get(key));
+      },
+      // Every row with that flag, newest first (its partial index).
+      flagged: function (flag) {
+        return byFlag[flag] ? byFlag[flag].all().map(row) : [];
+      },
+      // The rows a search lists: kept and owned (see q.listed).
+      listed: function () { return q.listed.all().map(row); },
+      // Whose address a url is: the row of that relay, or null (the pin's one lookup).
+      byUrl: function (url) { return row(q.byUrl.get(String(url || ''))); },
+      forget: function (publicKey) {
+        const key = String(publicKey || '');
+        return writing(key, function () { return q.del.run(key).changes > 0; });
+      },
+      size: function () { return q.count.get().n; },
+      // Every row write, as the row now reads ({publicKey, gone: true} when it went), to fn (the shadow stream).
+      // Answers a function that stops it.
+      onChange: function (fn) {
+        if (typeof fn !== 'function') return function () {};
+        listeners.push(fn);
+        return function () { const i = listeners.indexOf(fn); if (i !== -1) listeners.splice(i, 1); };
+      },
+      // Rows the sweep may still take. Zero, with the cache over its cap,
+      // is what "full" means: only kept and owned rows are left.
+      sheddable: function () { return q.shedCount.get().n; },
+      // ── THE SPACE BOUND IS BYTES, BECAUSE THAT IS WHAT AN OWNER HAS ──
+      //
+      //   Andy: "why is the max for nodeStore not in Megabytes: it's say
+      //   20 MBytes = 10 jpeg images from a modern cell phone?"
+      //
+      // It was a row count, which is a unit nobody thinks in and which
+      // said nothing about the thing being spent. Measured at 225 bytes a
+      // row on a real file including its index, the old `MAX_ENTRIES =
+      // 500` was 110 KB — about a five-hundredth of what a person would
+      // consider reasonable, and unknowably so from the number itself.
+      //
+      // MEASURED, NOT ESTIMATED. The cache's own pages, read from `dbstat`,
+      // not an assumption about what a row costs — which matters because a
+      // label is free-form and a row is not a fixed size. (This read the
+      // whole file until the queue moved in beside it; see `cacheBytes`.)
+      // What the CACHE occupies, not the file: see `cacheBytes` above. The
+      // file's own size is still what `fileBytes` answers, and what the
+      // vacuum below keeps honest.
+      bytes: function () { return q.cacheBytes.get().n; },
+      fileBytes: function () { return q.pages.get().page_count * q.pageSize.get().page_size; },
+      sweepToBytes: function (maxBytes) {
+        const cap = Number(maxBytes);
+        if (!(cap > 0) || store.seen.bytes() <= cap) return 0;
+        let gone = 0;
+        // A CHUNK AT A TIME, oldest first, re-measuring between. One row
+        // per pass would be one vacuum per row; all-at-once would need to
+        // know the answer in advance, which is the estimate this replaced.
+        // The guard is against a cap so small that nothing empties it —
+        // an empty store still has a page.
+        for (let pass = 0; pass < 64; pass += 1) {
+          const left = q.shedCount.get().n;
+          if (!left || store.seen.bytes() <= cap) break;
+          gone += q.overflow.run(Math.max(1, Math.ceil(left / 8))).changes;
+          db.exec('PRAGMA incremental_vacuum');
+        }
+        return gone;
+      },
+      clear: function () {
+        const gone = q.clear.run().changes;
+        if (gone) db.exec('PRAGMA incremental_vacuum');
+        return gone;
+      },
+    },
+
+    // ── THE QUEUE, AS ROWS ────────────────────────────────────────
+    //
+    // Written through by peerPost as entries change, read once when a node
+    // starts. `seq` here is only an ORDER — the queue hands out its own
+    // numbers in a new process — so it is assigned from the table rather
+    // than trusted from a queue that may have restarted from 1.
+    // ── THE REPLAY INDEX, AS THE RECEIVE PATH ASKS ABOUT IT ────────
+    //
+    // Three verbs and no more: has this been heard, remember it, and drop
+    // what is too old to matter. Everything a caller needs to decide is in
+    // the answer to `seen`, so no caller has to reason about the window.
+    replay: {
+      // WINDOW: how long a hash is remembered, and therefore how old a
+      // message may be before it is refused for age. The two ARE the same
+      // number — C2 — and separating them would create the silent hole
+      // the condition exists to close.
+      //
+      // ONE DAY (goal/G30.19, Andy: "learn to throw out shit"): at a packet a second the seven days below cost 56 MB,
+      // three times the whole file's cap. A sealed packet older than a day is refused as old.
+      //
+      // It was SEVEN DAYS, and it is a figure to rule rather than a discovery.
+      // The argument for it: a relay does not queue, so a legitimate post
+      // today is seconds old and a window of minutes would do — but the
+      // seal was deliberately built without a session so a message CAN
+      // sit and still open, which is what store-and-forward will need.
+      // Sizing the window for the mechanism rather than for today's
+      // traffic means the protection does not have to be revisited when
+      // queueing arrives. It costs almost nothing: a hash and an integer
+      // is about 80 bytes, so a thousand messages a day for a week is
+      // under 600 KB.
+      //
+      // The future tolerance is for CLOCK SKEW, not for the sender's
+      // convenience: a node an hour fast would otherwise have every
+      // message refused as being from the future, which reads as a
+      // network fault and is not one.
+      WINDOW_MS: 24 * 60 * 60 * 1000,
+      SKEW_MS: 60 * 60 * 1000,
+
+      // Answers what the caller must decide, rather than a boolean it
+      // would have to interpret:
+      //   'new'   — never heard, and within the window
+      //   'again' — heard before
+      //   'old'   — outside the window, so the index cannot vouch either
+      //             way and the message must be refused for age
+      //   'ahead' — further in the future than clock skew explains
+      // ── THE TIMESTAMP ARRIVES AS AN ISO STRING, NOT A NUMBER ─────
+      //
+      // `seal()` stamps `at` with an ISO string, and this table stores
+      // milliseconds because it is compared and swept on. `Number(iso)`
+      // is NaN, which fell to 0, which read as 1970 — so EVERY sealed
+      // post would have been refused as "older than this node
+      // remembers". Caught by replayIndex.js before it shipped; the
+      // suite's end-to-end block is the only one that used a real seal.
+      //
+      // Converted HERE, at the one boundary, rather than by each caller:
+      // two callers doing it is two places to get it wrong, and this one
+      // already got it wrong once.
+      ms: function (at) {
+        if (typeof at === 'number') return at;
+        const parsed = Date.parse(String(at || ''));
+        return parsed > 0 ? parsed : 0;
+      },
+      seen: function (hash, at, now) {
+        const key = String(hash || '');
+        const when = this.ms(at);
+        const n = now == null ? Date.now() : now;
+        if (!key) return 'old';
+        if (when > n + this.SKEW_MS) return 'ahead';
+        if (when < n - this.WINDOW_MS) return 'old';
+        return q.rSeen.get(key) ? 'again' : 'new';
+      },
+      remember: function (hash, at) {
+        q.rPut.run(String(hash || ''), this.ms(at));
+      },
+      // Called on the ordinary sweep, never on the receive path: trimming
+      // inside a delivery would make one message pay for the whole index.
+      sweep: function (now) {
+        const n = now == null ? Date.now() : now;
+        return q.rSweep.run(n - this.WINDOW_MS).changes;
+      },
+      count: function () { return q.rCount.get().n; },
+      // ── REBUILT FROM THE LOG, BECAUSE IT IS DERIVED ───────────────
+      //
+      // Every hash here is also in the node log. That once meant losing
+      // node.db cost only a rebuild; since transport/R19 the log is in
+      // node.db too, so a lost node.db takes both, by Andy's decision
+      // (see the replay table above). A damaged index still rebuilds.
+      //
+      // IT TAKES ROWS RATHER THAN READING THE LOG. The log belongs to
+      // trafficLog and this file reads no file it does not own; a store
+      // that learned to parse another module's format would be a second
+      // reader to keep in step. The caller walks the log and hands over
+      // {hash, at} pairs.
+      //
+      // INSERT OR IGNORE, so a rebuild over a partly-populated index is
+      // safe to run twice — which is the state a crash leaves and the
+      // state an operator will actually be in.
+      rebuild: function (rows) {
+        // `self`, because `this` is lost inside the callback and the
+        // conversion must not be duplicated to avoid saying so.
+        const self = this;
+        let n = 0;
+        (Array.isArray(rows) ? rows : []).forEach(function (r) {
+          if (!r || !r.hash) return;
+          q.rPut.run(String(r.hash), self.ms(r.at));
+          n += 1;
+        });
+        return n;
+      },
+    },
+
+    queue: {
+      put: function (row) {
+        const seq = row.seq || (q.qMaxSeq.get().n + 1);
+        q.qPut.run(String(row.hash), seq, String(row.relayUrl || ''), String(row.toKey || ''),
+          String(row.kind || ''), String(row.body || ''), Number(row.bytes) || 0,
+          Number(row.attempts) || 0, Number(row.atWall) || 0, Number(row.untilWall) || 0);
+        return seq;
+      },
+      attempts: function (hash, n) { q.qAttempts.run(Number(n) || 0, String(hash)); },
+      del: function (hash) { return q.qDel.run(String(hash)).changes > 0; },
+      all: function () { return q.qAll.all(); },
+    },
+    backoff: {
+      put: function (relayUrl, toKey, untilWall, lastWait) {
+        q.bPut.run(String(relayUrl), String(toKey), Number(untilWall) || 0, Number(lastWait) || 0);
+      },
+      del: function (relayUrl, toKey) { q.bDel.run(String(relayUrl), String(toKey)); },
+      all: function (nowWall) {
+        if (nowWall) q.bExpired.run(Number(nowWall));
+        return q.bAll.all();
+      },
+    },
+
+    // apiAuth/G1.3's table, for apiAuth.js alone. The name a grant shows is its ID's row in seen (goal/G40.11): a
+    // grant given under a name writes it as myLabel when the row has none, and a relabel is that row's myLabel.
+    auth: {
+      has: function (key, p) { return !!q.aHas.get(String(key), String(p)); },
+      paths: function (key) { return q.aPaths.all(String(key)).map(function (r) { return r.path; }); },
+      peer: function (key) { return q.aPeer.all(String(key)).map(function (r) { return { key: r.key, label: r.label, path: r.path }; }); },
+      all: function () { return q.aAll.iterate(); },
+      knownPath: function (p) { return !!q.aKnownPath.get(String(p)); },
+      // The name for a key that holds a grant, '' when its row has none; null when it holds no grant.
+      label: function (key) {
+        if (!q.aGranted.get(String(key))) return null;
+        const r = row(q.get.get(String(key)));
+        return r ? (r.myLabel || r.label || '') : '';
+      },
+      grant: function (key, p, label) {
+        store.transaction(function () {
+          q.aGrantPut.run(String(key), String(p));
+          const was = row(q.get.get(String(key)));
+          if (label && !(was && was.myLabel)) store.seen.set(String(key), { myLabel: String(label) });
+        });
+      },
+      revoke: function (key, p) { return q.aGrantDel.run(String(key), String(p)).changes > 0; },
+      relabel: function (key, label) {
+        if (!q.aGranted.get(String(key))) return false;
+        store.seen.set(String(key), { myLabel: String(label) });
+        return true;
+      },
+    },
+
+    // goal/G41.14's two tables, for apiAuth.js alone: the bundles and their branches, each keyed by a number.
+    bundles: {
+      get: function (id) { const r = q.bundleGet.get(Number(id)); return r ? { id: Number(r.id), label: r.label, owner: r.owner } : null; },
+      all: function () { return q.bundleAll.all().map(function (r) { return { id: Number(r.id), label: r.label, owner: r.owner }; }); },
+      // The owner is set here once; nothing sets it after (goal/G41.25: "the owner field can never be changed").
+      add: function (label, owner) { return Number(q.bundlePut.run(String(label), String(owner || 'node')).lastInsertRowid); },
+      set: function (id, label) { return q.bundleSet.run(String(label), Number(id)).changes > 0; },
+      // A bundle goes with every branch that names it, in one transaction.
+      del: function (id) {
+        db.exec('BEGIN');
+        try { q.branchDelOf.run(Number(id)); const gone = q.bundleDel.run(Number(id)).changes > 0; db.exec('COMMIT'); return gone; }
+        catch (e) { db.exec('ROLLBACK'); throw e; }
+      },
+    },
+    branches: {
+      get: function (id) { const r = q.branchGet.get(Number(id)); return r ? { id: Number(r.id), bundle: Number(r.bundle), family: r.family, verb: r.verb } : null; },
+      all: function () { return q.branchAll.all().map(function (r) { return { id: Number(r.id), bundle: Number(r.bundle), family: r.family, verb: r.verb }; }); },
+      // Another branch of the same bundle naming the same family and verb (id: the branch itself, left out).
+      same: function (bundle, family, verb, id) { return !!q.branchSame.get(Number(bundle), String(family), String(verb), Number(id || 0)); },
+      add: function (bundle, family, verb) { return Number(q.branchPut.run(Number(bundle), String(family), String(verb)).lastInsertRowid); },
+      set: function (id, family, verb) { return q.branchSet.run(String(family), String(verb), Number(id)).changes > 0; },
+      del: function (id) { return q.branchDel.run(Number(id)).changes > 0; },
+    },
+
+    transaction: function (fn) {
+      db.exec('BEGIN');
+      try { const out = fn(); db.exec('COMMIT'); return out; }
+      catch (e) { db.exec('ROLLBACK'); throw e; }
+    },
+
+    close: function () {
+      try { db.close(); } catch (e) { /* already closed */ }
+      open_.delete(key);
+    },
+  };
+
+  open_.set(key, store);
+  return store;
+}
+
+module.exports = {
+  open: open,
+  MAX_DB_BYTES: MAX_DB_BYTES,
+  available: available,
+  dbPath: dbPath,
+};
+}());

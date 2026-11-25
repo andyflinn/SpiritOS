@@ -10,7 +10,7 @@ goal/G47.1, box v144, *"this cycle, first: the browser tests on one page"*. Its 
 - Every element after the hung script is judged, its results standing in testicle from this run (box: *"only a hung page is reloaded"*).
 - The hung script is judged red.
 - The first element's result stands in testicle while the run still goes (box: *"every result reaches testicle the moment the page knows it"*).
-- The run takes at least 80% less than the time measured before, 3.7 s a script on Linux, 10 s on Windows, measured on spirit-sibling-browser.js (box: *"the target: at least 80% less test time"*).
+- The run takes at least 80% less than the time measured before, 3.7 s a script on Linux, 10 s on Windows, measured on script-sibling-browser.js (box: *"the target: at least 80% less test time"*).
 - No fixed sleep in `spirit/test/app-child-browser.js` (box: *"no fixed sleeps in the checks: each wait ends the moment the page has settled"*).
 
 The processes are counted on Linux only.

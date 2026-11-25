@@ -8,7 +8,7 @@
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 // THE BRANCH AS A CLIENT HAS IT (goal/G49.6; Andy: clients load their api.js from their own node's disc): bound by
 // spirit.requireScript from the api.js on this disc, no node asked; it carries the file's own names, names() among them.
@@ -50,7 +50,7 @@ test.run('the branch has no getAnnotations among its kernel names', 0.2, functio
 // A FILE VERB NEVER CLIMBS OUT OF THE RUN FOLDER (goal/G47.6, box: "a peer asking a file verb for ../, a full path or a drive
 // letter is refused by the spirit object's path rule at the door"). The node checks every call against the verbs declared
 // here with spirit.checkArgs; each file verb's path, asked as one of these, is refused there and never reaches the disc.
-const spirit = require(path.join(RUN, 'spirit', 'spirit.js'));
+const spirit = require(path.join(RUN, 'spirit', 'script.js'));
 const CLIMBS = ['../x', 'a/../../x', '..\\x', '/etc/passwd', '\\x', 'C:/x', 'c:\\x', 'a\u0000b'];
 const FILE_VERBS = ['stat', 'load', 'save', 'delete'];
 test.run('every file verb asked for a path that climbs out, starts at the top or names a drive is refused by the path rule', 0.8, function () {
@@ -78,7 +78,7 @@ test.run('a file verb asked for a plain path inside the run folder passes the pa
 // sit in media/, which the node's write rules let a caller write; spirit/ holds core files, refused alike on both sides.
 const fsNode = require('fs');
 const { spawnSync } = require('child_process');
-const tempFolder = LOADER.requireScript('spirit/tempFolder.js');
+const tempFolder = LOADER.requireScript('spirit/tempFolder/script.js');
 test.after(function () { try { fsNode.rmSync(tempFolder.path('spirit/fs/test/api'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const LOCAL = {};
 test.run('the world: a run root with no node, and a process asking its spirit.fs', 0.2, function () {
@@ -88,7 +88,7 @@ test.run('the world: a run root with no node, and a process asking its spirit.fs
   fsNode.writeFileSync(path.join(root, 'media', 'zzLocal', 'hello.txt'), 'hello local');
   LOCAL.root = root;
   const script = `
-    const s = require(${JSON.stringify(path.join(root, 'spirit', 'spirit.js'))});
+    const s = require(${JSON.stringify(path.join(root, 'spirit', 'script.js'))});
     const out = {};
     function settle(p) { return Promise.resolve(p).then(function (v) { return { ok: v }; }, function (e) { return { no: { status: e && e.status, code: e && e.code } }; }); }
     (async function () {

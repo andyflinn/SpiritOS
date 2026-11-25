@@ -6,7 +6,7 @@
 // The same file on the node and on a page: on the node it is this module, on a page it stands at spirit.required.type.string.ID.
 // Its test: ./test/ID.js.
 // On the node the spirit object first, as every file of the tree takes it (the general rules).
-if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../spirit.js');
+if (typeof module === 'object' && module && module.exports && typeof require === 'function') require('../../script.js');
 (function (root) {
   var KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
   function no(why) { throw new Error(why); }

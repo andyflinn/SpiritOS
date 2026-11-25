@@ -10,11 +10,11 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = S.requireScript('spirit/tempFolder.js');
+const tempFolder = S.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/pushOrigin/test/pushOrigin/' + name + tempAsked); }
 test.after(function () { try { require('fs').rmSync(tempFolder.path('spirit/app/pushOrigin/test/pushOrigin'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });

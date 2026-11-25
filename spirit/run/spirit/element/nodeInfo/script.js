@@ -10,7 +10,7 @@
 //                      all of Info there. Without one, nodeInfo keeps a stack over itself (panel.js), as file does.
 //
 // Top down:
-//   - the two things this node answers to anybody who asks (spirit/nodeCard.js), its name and its description: the elements
+//   - the two things this node answers to anybody who asks (spirit/nodeCard/script.js), its name and its description: the elements
 //     changeMyLabel and changeMyDescription (goal/G41.6), each holding its field rule, its check as typed and its save. The
 //     card is read with node.card and kept in the node family's cache (goal/G41.28), from which each field draws itself.
 //   - the email form above the face form (joinForm, faceForm; goal/G30.1, G40.10), from relaysOf(): the email form always,
@@ -76,7 +76,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     container.innerHTML = '';
     var box = document.createElement('div');
     box.className = 'fill';
-    // Its box keeps what it holds inside (spirit-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
+    // Its box keeps what it holds inside (script-sibling-browser.js: the box it puts into its container declares a constraint, overflow not visible).
     box.style.overflow = 'hidden';
     var page = document.createElement('div');
     page.className = 'stack';

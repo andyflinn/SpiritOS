@@ -12,10 +12,10 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const { scratchNode, until } = S.requireScript('spirit/test/headLessChrome.js');
-const limits = S.requireScript('spirit/limits.js');
+const limits = S.requireScript('spirit/limits/script.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function read(f) { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return null; } }

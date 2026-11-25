@@ -6,7 +6,7 @@
 // What a client knows of the agent server's tables (goal/G41.28): job, model, persona and provider, each its own branch,
 // id -> the row, under the node that served it; the rows the server publishes merged in (goal/G41.16), and the reads the
 // tables' lists and editors ask. It runs as a page runs it: in a window of its own beside the real spirit.required.spirit.data
-// (spirit/data.js), which it writes into; the rows are handed in as the stream hands them, jobs of module spirit.app.agent.
+// (spirit/data/script.js), which it writes into; the rows are handed in as the stream hands them, jobs of module spirit.app.agent.
 // In node it comes with the family's api.js, spirit.requireScript('spirit/app/agent/api.js'). One test.run per test (goal/G47.2).
 
 const fs = require('fs');
@@ -14,11 +14,11 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // A page script run as the page's loader runs it, in a module box (goal/G49.9).
-const PAGE_LOAD = require(path.join(RUN, 'spirit', 'spirit.js')).requireScript('spirit/test/headLessChrome.js');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const PAGE_LOAD = require(path.join(RUN, 'spirit', 'script.js')).requireScript('spirit/test/headLessChrome.js');
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const FILE = path.join(__dirname, '..', 'data.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'data', 'script.js');
 
 // The sender's public key, base64 with a + and a / in it, as a node's key is; and another node's.
 const HOME_KEY = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
@@ -164,7 +164,7 @@ test.run('a table\'s watch with no id and no function watches nothing and answer
 
 // ── in node, brought by its api.js (goal/G47.1: "every api.js requires it's companion data.js") ──
 test.run('in node, requiring the agent interface brings its data.js, at spirit.required.spirit.data.agent.data with row and branch', 0.2, async function () {
-  require(path.join(RUN, 'spirit', 'spirit.js'));
+  require(path.join(RUN, 'spirit', 'script.js'));
   const s = globalThis.spirit;
   try { await Promise.resolve(s.requireScript('spirit/app/agent/api.js')); } catch (e) { return false; }
   const A = s.required.spirit.data && s.required.spirit.data.agent && s.required.spirit.data.agent.data;

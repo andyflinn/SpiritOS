@@ -23,7 +23,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fieldRules/script.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/rowForm/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
@@ -33,9 +33,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   var parts = Promise.all(['spirit/element/fieldInput/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
   }).concat([window.spirit.requireScript('spirit/auth/api.js')]));
-  // The label's rule, the one definition both sides use (spirit/fieldRules.js).
+  // The label's rule, the one definition both sides use (spirit/fieldRules/script.js).
   function labelOf(text) {
-    var R = ANSWER['spirit/fieldRules.js'] || {};
+    var R = ANSWER['spirit/fieldRules/script.js'] || {};
     var v = typeof R.normalize === 'function' ? R.normalize(text) : String(text == null ? '' : text).trim();
     var bad = !v ? 'a bundle needs a label' : (typeof R.problem === 'function' ? R.problem(v) : '');
     return { value: v, why: bad || '' };

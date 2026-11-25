@@ -1,7 +1,7 @@
 # spirit/job/data.js — its own test
 
 What a client knows of a node's jobs (goal/G41.28): every job the stream hands over, kept as it came, and each job's last
-events (goal/G29.14). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside the real `spirit/data.js`; a job gone is handed to its translator's
+events (goal/G29.14). Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). It runs beside the real `spirit/data/script.js`; a job gone is handed to its translator's
 `onDelete` as spirit.required.spirit.data hands it. The test reads through `spirit.required.spirit.data.job.data` alone.
 
 - In node, requiring `spirit/job/api.js`, the one script that requires it (goal/G47.1), loads it.

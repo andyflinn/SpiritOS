@@ -1,5 +1,5 @@
 'use strict';
-require('../../spirit.js');
+require('../../script.js');
 
 // spirit/run/spirit/app/testicle/testicle.js
 // THE SCRIPT THE NODE STARTS FOR TESTICLE (goal/G48.5, the box, naming: "an app's server portion MUST be named server.js, inside

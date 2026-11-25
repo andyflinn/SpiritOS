@@ -55,7 +55,7 @@ tables as they are now.
   op one of add (answers the new id), set, delete, get (the row without its secrets, `apiKeySet` in place of the key)
   and search (items and more); any other op refused.
 - **The key set at add-row** (Andy: "including the rest of the key-set stored on that table row"), the shadow-roll's
-  kind (spirit/relayAuth.js generateIdentity).
+  kind (spirit/relayAuth/script.js generateIdentity).
 - **No secret leaves the process** (Andy: API_KEY "will never reach the browser or any place outside of the agent
   process except the model providers API"; "The private halves of that set stay in the agent process"): no answer of
   add, set, get or search carries the API key or a private key.

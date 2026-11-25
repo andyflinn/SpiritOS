@@ -1,5 +1,5 @@
 'use strict';
-require('../../../spirit.js');
+require('../../../script.js');
 
 // spirit/run/spirit/app/agent/table/rowTable.js
 // ONE KEYED TABLE OF agent.db AND ITS ONE VERB (goal/G41.4), what the provider, model, persona and job tables share; each
@@ -8,7 +8,7 @@ require('../../../spirit.js');
 //
 // EVERY ROW IS KEYED AS THE SHADOW ROLL KEYS A PEER (Andy, box v22: "keyed by ID same as the shadow-roll"; "the ID-key for
 // each row of these tables is generated at \"add-row\", including the rest of the key-set stored on that table row"): its
-// id is the public key of a whole identity, the one maker of it spirit/relayAuth.js generateIdentity, and its private
+// id is the public key of a whole identity, the one maker of it spirit/relayAuth/script.js generateIdentity, and its private
 // key, seal public key and seal private key sit on the row beside it.
 //
 // THE SECRETS NEVER LEAVE THE AGENT PROCESS (Andy: an API_KEY "will never reach the browser or any place outside of the
@@ -23,10 +23,10 @@ require('../../../spirit.js');
 //   get {id}           the row without its secrets; answers the row
 //   search {text}      the rows ranked against the words, best first, cut to one answer; answers { items, more }
 // Any other op is refused. Every change is published as { agent: { table, row } } or { agent: { table, id, removed } }.
-const { generateIdentity } = spirit.requireScript('spirit/relayAuth.js');
-const { createProbabilityBucket } = spirit.requireScript('spirit/listLimiter.js');
+const { generateIdentity } = spirit.requireScript('spirit/relayAuth/script.js');
+const { createProbabilityBucket } = spirit.requireScript('spirit/listLimiter/script.js');
 const { probabilityStringObjectMatch } = spirit.requireScript('spirit/search/object.js');
-const limits = spirit.requireScript('spirit/limits.js');
+const limits = spirit.requireScript('spirit/limits/script.js');
 
 const KEYSET = ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey'];
 const PRIVATE = ['privateKey', 'sealPrivateKey'];

@@ -12,7 +12,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 // EVERY FILE OF THE TREE BY ITS PATH (goal/G49.6; Andy: "make every single test use spirit.requireScript() to load product
 // files"): spirit.js alone by node's require, being the loader; each other file through it, answered at once in node.
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 const H = S.requireScript('spirit/test/headLessChrome.js');

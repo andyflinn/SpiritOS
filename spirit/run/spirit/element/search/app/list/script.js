@@ -78,7 +78,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       empty: 'No app matches.',
     });
     list.refresh();
-    // A CONNECT FORGETS WHAT IS KEPT (spirit/data.js's forget, goal/G41.3). A face with no star hears no 'apps' job to fill it
+    // A CONNECT FORGETS WHAT IS KEPT (spirit/data/script.js's forget, goal/G41.3). A face with no star hears no 'apps' job to fill it
     // again (spirit/app/script.js), so a forgotten branch, told with no row, asks again, or its list would stay empty.
     var off = window.spirit.required.spirit.data.app.data.watch(function (key) { if (!key) list.refresh(); });
     return {

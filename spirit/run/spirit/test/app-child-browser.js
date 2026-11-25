@@ -5,7 +5,7 @@
 // spirit/test/app-child-browser.js: every element under spirit/app/, mounted alone on a scratch node with its app's server
 // on, is red unless it loaded its own app's api.js and data.js"; Andy: "i just want the fucking status box to fail a fucking
 // test if it does NOT fucking mount its own shit by itself", "agreed."). Its contract: ./app-child-browser.md. The page twin
-// of app-child-general.js; what holds for every page script is spirit-sibling-browser.js's.
+// of app-child-general.js; what holds for every page script is script-sibling-browser.js's.
 //
 //   node spirit/test/app-child-browser.js spirit/app/testicle/element/statusBox.js ...   those scripts
 //   node spirit/test/app-child-browser.js                                                every script under spirit/app/
@@ -14,12 +14,12 @@
 // (spirit/app/<name>/<name>.js), and one headless Chrome page. Each script is opened on its bare DEBUG page, spirit.js and
 // that file alone (spirit/DEBUG/headLessBrowser.js); whether it installs an element the page says, no code read. Mounted,
 // what it loaded stands in spirit.required: on a bare page nothing else loaded it.
-require('../spirit.js');
+require('../script.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
-const S = require(path.join(RUN, 'spirit', 'spirit.js'));
+const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 const H = S.requireScript('spirit/test/headLessChrome.js');
 const { until, findChrome, scratchNode, chromePage } = H;

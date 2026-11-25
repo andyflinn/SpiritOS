@@ -1,7 +1,7 @@
 # spirit/app/desk/data.js
 
 What the desk knows of its own rows at the receiving end, in the page and in a subscribing appServer alike: the desk's
-translator into spirit.required.spirit.data (`spirit/data.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
+translator into spirit.required.spirit.data (`spirit/data/script.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
 it beside the real spirit.required.spirit.data, as the module runs.
 
 **Where it lives** (goal/G41.24): in the desk's own folder, above its `family/api.js`, so it works in the browser and

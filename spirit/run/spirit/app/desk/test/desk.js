@@ -12,16 +12,16 @@ const http = require('http');
 const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const RUN = path.resolve(__dirname, '../../../..');
-const SPIRIT = require(path.join(RUN, 'spirit', 'spirit.js'));
+const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE DOOR (goal/G47.1, the box, no pollution: "One helper on the spirit object hands a process
 // its temp folder, made empty when asked; nothing else builds a temp path"): each under its suite's route, removed after.
-const tempFolder = SPIRIT.requireScript('spirit/tempFolder.js');
+const tempFolder = SPIRIT.requireScript('spirit/tempFolder/script.js');
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/app/desk/test/desk/' + name + tempAsked); }
 // Its folder is removed by the last after of this file, once its databases are closed and its servers stopped: on
 // Windows a folder holding an open database cannot be removed, and the suite was red on 'it leaves no temp folder behind'.
-const appClient = SPIRIT.requireScript('spirit/appClient.js');
+const appClient = SPIRIT.requireScript('spirit/appClient/script.js');
 const packet = SPIRIT.requireScript('spirit/client/packet.js');
 const VENDORED_FOLDERS = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
 // THE DESK RUNS FROM A COPY OF THE RUN TREE (never this checkout's own): spirit.js finds its node by the run tree's
@@ -133,7 +133,7 @@ function pretendNode() {
       if (!answer && sl) {
         let got = null; try { got = JSON.parse(sl.json); } catch (e) { got = null; }
         posts.push({ to: String(b.to), json: sl.json, got: got });
-        // A delivery is one bundle of entries (spirit/server/app.js, goal/G41.12): { run, n, row, full? }, or the end of a
+        // A delivery is one bundle of entries (spirit/server/app/script.js, goal/G41.12): { run, n, row, full? }, or the end of a
         // full push, { run, n, full: true, end: true }. sent holds each entry's row, and the end entry as it is.
         const rows = entriesOf(got).map(function (e) { return e && e.row && typeof e.row === 'object' ? Object.assign({ entry: e }, e.row) : e; });
         rows.forEach(function (row) { sent.push({ to: String(b.to), row: row }); });
@@ -307,7 +307,7 @@ test.run('an item answers no rules and no phase rules', 0.2, async function () {
   return (!!it && !('rules' in it) && !('phaseRules' in it)) || false;
 }, test.limit.quick);
 // THE LISTENER AND THE PUBLISHER'S VERBS, AUTO-VERBS OF EVERY appServer (goal/G47.5; Andy: "the streamListener must be an
-// auto-verb of spirit/server/app.js!", "they're both auto-verbs. MUST BE.", "PLEASE call the damn thing jus \"listener\", we
+// auto-verb of spirit/server/app/script.js!", "they're both auto-verbs. MUST BE.", "PLEASE call the damn thing jus \"listener\", we
 // won't start using camelCase on intrinsic verbs"): the desk, a publisher only, names listener, subscribe, unsubscribe and
 // remote in its api tree in server mode, and no streamListener.
 test.run('the desk names listener, subscribe, unsubscribe and remote in its api tree in server mode, and no streamListener', 0.2, async function () {

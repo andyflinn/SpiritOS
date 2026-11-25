@@ -8,18 +8,18 @@
 //
 // HOW: a scratch node (the tracked files) and a headless Chrome on its face page, one fresh page per search. The selector is
 // mounted in a pane of a stated size; the probabilitySearch it makes is watched (spirit.required.spirit.element.search.create,
-// as spirit/test/spirit-sibling-browser.js's WATCH does) to learn the spirit.required.spirit.data branch it is a view of, and more rows than
+// as spirit/test/script-sibling-browser.js's WATCH does) to learn the spirit.required.spirit.data branch it is a view of, and more rows than
 // fit are planted in that branch, each a copy of a row the branch holds (or the plain fields alone), its text a long value
 // with no place to break. The detail is mounted by the search's detail in a panel layer (spirit/element/panel/script.js), as
 // the apps open one. EACH CHECK ONCE PER SEARCH (goal/G47.6), reported for that search's script: a search a check has nothing
 // to judge in gets no test, never a green; a check no search could be judged by is red.
-require('../../spirit.js');
+require('../../script.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 // spirit.js, the loader, alone by node's require; every other file of the tree through it, by its path (goal/G49.6).
-const LOADER = require(path.join(RUN, 'spirit', 'spirit.js'));
+const LOADER = require(path.join(RUN, 'spirit', 'script.js'));
 const test = LOADER.requireScript('spirit/test/testReport.js');
 const { sleep, until, findChrome, scratchNode, chromePage } = LOADER.requireScript('spirit/test/headLessChrome.js');
 
@@ -55,13 +55,13 @@ const ROWS = 60;
 // suites and needs a script; mounted alone with none, it draws nothing. testicle and grant list from their servers
 // (testicle, grants), and the scratch node does not run testicle. the world should give a script and turn testicle on").
 const SERVERS = { servers: ['testicle', 'grants'] };
-const OPTIONS = { suite: { script: 'spirit/spirit.js' } };
+const OPTIONS = { suite: { script: 'spirit/script.js' } };
 // Judged by its list, its selector drawing no pane (api: two dropdowns side by side, Andy's G29.7).
 const VIA_LIST = { api: true };
 // A ROW'S SHAPE WHERE THE SCRATCH NODE HOLDS NONE TO COPY (its branches and suite rows are empty on a fresh node): the fields
 // each row element reads, every text one of them the long value when planted.
-const SHAPES = { branch: { family: 'zzfamily', verb: 'zzverb' }, suite: { script: 'spirit/spirit.js', suite: 'spirit/test/zz.js', status: '' },
-  testicle: { script: 'spirit/spirit.js', suite: 'spirit/test/zz.js', test: 'zz', current: true, verified: false, severity: 0.4 } };
+const SHAPES = { branch: { family: 'zzfamily', verb: 'zzverb' }, suite: { script: 'spirit/script.js', suite: 'spirit/test/zz.js', status: '' },
+  testicle: { script: 'spirit/script.js', suite: 'spirit/test/zz.js', test: 'zz', current: true, verified: false, severity: 0.4 } };
 // The fields a list filters its rows by, kept as they are when a row is planted (suite shows the rows of its script alone).
 const KEEP = { suite: ['script'] };
 // What a planted row must say to be shown at all: testicle's list shows current reds alone at the start (Andy: "reds only").

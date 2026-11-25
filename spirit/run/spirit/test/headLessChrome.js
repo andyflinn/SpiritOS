@@ -3,8 +3,8 @@
 // spirit/run/spirit/test/headLessChrome.js
 // WHAT A TEST NEEDS TO DRIVE A REAL BROWSER (goal/G41.22): a scratch node with its DEBUG on, and headless Chrome on a
 // scratch profile, one page of it over the debugging protocol. Taken out of the shell's general rules
-// (spirit/test/spirit-sibling-browser.js), so an element's own test can open its own pages, /DEBUG/<path>/test/<page>.html
-// (spirit/test/DEBUG.md), in the same browser on the same kind of node. Never Andy's node nor an agent's.
+// (spirit/test/script-sibling-browser.js), so an element's own test can open its own pages, /DEBUG/<path>/test/<page>.html
+// (spirit/DEBUG/test/script.md), in the same browser on the same kind of node. Never Andy's node nor an agent's.
 
 const fs = require('fs');
 const net = require('net');
@@ -12,7 +12,7 @@ const path = require('path');
 // CHROME PROFILES FROM THE ONE TEMP HELPER (goal/G47.1, the box: "nothing else builds a temp path"): each under a route of
 // this file's own, spirit/test/headLessChrome, named by a random suffix (never a process id), so a profile its watcher removes
 // after the test has ended is no suite's leftover.
-const tempFolder = require('../tempFolder.js');
+const tempFolder = require('../tempFolder/script.js');
 const PROFILES = 'spirit/test/headLessChrome';
 const { spawn, execSync } = require('child_process');
 
@@ -172,7 +172,7 @@ function homeInTree(run) {
 async function startNode(lab, port) {
   const at = port || await freePort();
   homeInTree(lab.run);
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(at)], { cwd: lab.run, stdio: 'ignore' });
+  const child = spawn(process.execPath, ['spirit/server/script.js', '--port', String(at)], { cwd: lab.run, stdio: 'ignore' });
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + at;
   const up = await until(function () {
@@ -186,7 +186,7 @@ function stopChild(child) { return new Promise(function (r) { if (!child || chil
 
 // A lab node, reset to the files under test, its node started. o.servers names app servers turned on before it starts, as
 // their owner turns one on: an app of spirit/app/<name>/ runs by active in spirit/state/<name>/node.json (goal/G43.12,
-// spirit/job.js), every server being one since goal/G43.20. o.before(run), when given, plants what the test needs in the
+// spirit/job/script.js), every server being one since goal/G43.20. o.before(run), when given, plants what the test needs in the
 // tree before the node starts; o.start false hands out the tree with no node, for start() later; o.port a port of the
 // test's own. Answers { root, run, base, port, child, up, debug, start(), stop(), restart(), release() }: stop() ends the
 // node, restart() starts it again on the same tree and port, release() frees the lab node for the next test (it is freed
@@ -246,14 +246,14 @@ function scratchTree() {
   trees.set(path.resolve(lab.run), lab);
   return { root: lab.root, run: lab.run, name: lab.name, release: function () { trees.delete(path.resolve(lab.run)); lab.release(); } };
 }
-// THE NODE ON IT: spirit/server.js on that tree's spirit/run on the port the test chose, the child answered at once, as a
+// THE NODE ON IT: spirit/server/script.js on that tree's spirit/run on the port the test chose, the child answered at once, as a
 // test's own spawn did (o.stdio as spawn's, 'ignore' unless given). Only a tree lab handed out to this process: every node
 // a test uses is one of lab's (the box: "the lab nodes are to satisfy the testing needs").
 function startNodeOn(run, port, o) {
   const lab = trees.get(path.resolve(run));
   if (!lab) throw new Error('startNodeOn: ' + run + ' is no lab node handed out by scratchTree');
   homeInTree(lab.run);
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], Object.assign({ cwd: lab.run, stdio: 'ignore' }, (o && o.stdio) ? { stdio: o.stdio } : {}, (o && o.windowsHide) ? { windowsHide: true } : {}));
+  const child = spawn(process.execPath, ['spirit/server/script.js', '--port', String(port)], Object.assign({ cwd: lab.run, stdio: 'ignore' }, (o && o.stdio) ? { stdio: o.stdio } : {}, (o && o.windowsHide) ? { windowsHide: true } : {}));
   lab.started(child.pid);
   return child;
 }
@@ -286,14 +286,14 @@ async function scratchRelay(o) {
   const lab = await LAB.handOut('relay');
   const root = lab.root;
   const run = lab.run;
-  const auth = require(path.join(run, 'spirit', 'relayAuth.js'));
+  const auth = require(path.join(run, 'spirit', 'relayAuth', 'script.js'));
   auth.nameIdentity(run, 'relay');
   const owner = opts.owner || auth.generateIdentity('owner');
   auth.writeOwner(run, owner.publicKey);
   fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
   if (opts.faceDomain) fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: opts.faceDomain }));
   const port = await freePort();
-  const code = 'require("./spirit/spirit.js").debugLog(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");';
+  const code = 'require("./spirit/script.js").debugLog(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/server/relay/script.js"); require("./spirit/server/relay/script.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
@@ -314,7 +314,7 @@ async function scratchFaceRelay(o) {
   const lab = await LAB.handOut('relay');
   const root = lab.root;
   const run = lab.run;
-  const auth = require(path.join(run, 'spirit', 'relayAuth.js'));
+  const auth = require(path.join(run, 'spirit', 'relayAuth', 'script.js'));
   auth.nameIdentity(run, 'relay');
   // Its owner: o.ownerKey, a real node's key that this relay then calls its owner, or a stranger made here.
   auth.writeOwner(run, opts.ownerKey || auth.generateIdentity('owner').publicKey);
@@ -322,10 +322,10 @@ async function scratchFaceRelay(o) {
   fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: domain }));
   const port = await freePort();
   // The child: relay.js's own createRelay, its mailer a stand-in that keeps the mail; then the real relayServer.js.
-  const code = 'const path = require("path"); const R = require(path.resolve("spirit/relay.js")); const made = R.createRelay; const mails = []; let box = null;' +
+  const code = 'const path = require("path"); const R = require(path.resolve("spirit/relay/processor/script.js")); const made = R.createRelay; const mails = []; let box = null;' +
     ' R.createRelay = function (root, deps) { box = made(root, Object.assign({}, deps, { sendMail: function (m) { mails.push(m); if (process.send) process.send({ mail: m }); return Promise.resolve({ ok: true }); } })); return box; };' +
-    ' process.argv[1] = path.resolve("spirit/server/relay.js"); require("./spirit/server/relay.js");' +
-    ' const auth = require(path.resolve("spirit/relayAuth.js")); const store = require(path.resolve("spirit/relayStore.js")).open(box.rootDir ? box.rootDir() : process.cwd());' +
+    ' process.argv[1] = path.resolve("spirit/server/relay/script.js"); require("./spirit/server/relay/script.js");' +
+    ' const auth = require(path.resolve("spirit/relayAuth/script.js")); const store = require(path.resolve("spirit/relayStore/script.js")).open(box.rootDir ? box.rootDir() : process.cwd());' +
     ' const out = { relayKey: box.relayPublicKey(), members: {} };' +
     ' ' + JSON.stringify(names) + '.forEach(function (name) { const id = auth.generateIdentity(name); const mail = name + "@example.org";' +
     '  box.join(id.publicKey, mail, "http://127.0.0.1:1/face.html", ""); const code = /[?&]join=([A-Za-z0-9_-]+)/.exec(mails[mails.length - 1].text)[1]; box.joinConfirm(id.publicKey, code, "");' +
@@ -341,7 +341,7 @@ async function scratchFaceRelay(o) {
   lab.started(child.pid);
   const base = 'http://127.0.0.1:' + port;
   const lines = [];
-  // Every mail the relay sent, for a real node joining it and a face logging in (spirit/test/faceHome.js).
+  // Every mail the relay sent, for a real node joining it and a face logging in (spirit/faceHome/test/script.js).
   const mailed = [];
   let ready = null;
   const hear = function (m) { if (m && m.ready) ready = m.ready; else if (m && m.mail) mailed.push(m.mail); else if (m && m.stream) lines.push(m); };

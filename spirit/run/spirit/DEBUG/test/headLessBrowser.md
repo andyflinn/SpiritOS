@@ -1,6 +1,6 @@
 # spirit/DEBUG/headLessBrowser.js — its own test
 
-The bare mount page of one module (goal/G41.19, `../../test/DEBUG.md`), replacing shell/mount.html. Andy: *"the response
+The bare mount page of one module (goal/G41.19, `./script.md`), replacing shell/mount.html. Andy: *"the response
 will be the most minimal web page, NO COMMENTS, NOTHING with a script tag <script src="/spirit.js"> and the most minimal
 mount"*. Owed since the rule *"every production script has its own test"* (goal/G47.1, box v72). In process: the page is
 read as text, and its one inline script is run on a window of its own with a planted spirit.
