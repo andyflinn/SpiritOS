@@ -26,7 +26,12 @@ const fs = require('fs');
 const path = require('path');
 
 const RUN = path.join(__dirname, '..', '..');
-const GENERATORS = __dirname;
+// Each generator by its run path, written out and required as it is (goal/G49.13; Andy: "Why would you fucking have that
+// resolve shit on requireScript()"): the address's word picks one of these, and no path is made from it.
+const GENERATORS = {
+  garbageArguments: function () { return spirit.requireScript('spirit/DEBUG/garbageArguments.js'); },
+  headLessBrowser: function () { return spirit.requireScript('spirit/DEBUG/headLessBrowser.js'); },
+};
 const PREFIX = '/DEBUG/';
 const PART = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
 const NAME = /^[A-Za-z0-9_]+$/;
@@ -53,8 +58,8 @@ function addressOf(req) {
   // folder's own name"): /DEBUG/spirit/element/workBench/... is spirit/element/workBench/script.js.
   const flat = path.join(RUN, module + '.js');
   const file = fs.existsSync(flat) ? flat : path.join(RUN, module, 'script.js');
-  const script = path.join(GENERATORS, generator + '.js');
-  if (NAME.test(generator) && TYPES[ext] && fs.existsSync(script) && fs.existsSync(file) && fs.statSync(file).isFile()) {
+  const script = generator;
+  if (NAME.test(generator) && Object.prototype.hasOwnProperty.call(GENERATORS, generator) && TYPES[ext] && fs.existsSync(file) && fs.statSync(file).isFile()) {
     return { module: module, file: file, ext: ext, script: script };
   }
   // NO SUCH GENERATOR: THE FILE THE ADDRESS NAMES, /DEBUG left off (Andy, box v19: "DEBUG.js will, if the generator implied
@@ -85,7 +90,7 @@ function answer(req, res, server) {
     return true;
   }
   let made = null;
-  try { made = spirit.requireScript(path.relative(RUN, at.script).split(path.sep).join('/')).make({ module: at.module, file: at.file, ext: at.ext, run: RUN, server: server || {} }); }
+  try { made = GENERATORS[at.script]().make({ module: at.module, file: at.file, ext: at.ext, run: RUN, server: server || {} }); }
   catch (e) { made = Promise.reject(e); }
   Promise.resolve(made).then(function (out) {
     if (!out) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }
