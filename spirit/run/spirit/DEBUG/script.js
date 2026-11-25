@@ -49,7 +49,10 @@ function addressOf(req) {
   const generator = dot > 0 ? last.slice(0, dot) : '';
   const ext = dot > 0 ? last.slice(dot + 1) : '';
   const module = parts.slice(0, -1).join('/');
-  const file = path.join(RUN, module + '.js');
+  // THE MODULE BY ITS PATH, A FOLDER'S script.js TOO (goal/G49.12; goal/G49.9's box: "a folder's script.js stands at its
+  // folder's own name"): /DEBUG/spirit/element/workBench/... is spirit/element/workBench/script.js.
+  const flat = path.join(RUN, module + '.js');
+  const file = fs.existsSync(flat) ? flat : path.join(RUN, module, 'script.js');
   const script = path.join(GENERATORS, generator + '.js');
   if (NAME.test(generator) && TYPES[ext] && fs.existsSync(script) && fs.existsSync(file) && fs.statSync(file).isFile()) {
     return { module: module, file: file, ext: ext, script: script };

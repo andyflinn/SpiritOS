@@ -16,7 +16,7 @@ const FILE = path.join(RUN, 'spirit', 'element', 'monitor', 'task', 'script.js')
 // zztask publishes its progress, as a run process does (goal/G29.14: {job: {state, name, done, total, text}}), and runs on
 // until cancelled; zzfail fails at once; zznorun is no run app.
 const APPS = {
-  zztask: { label: 'Zz Task', icon: '🧪', run: true, script: ["'use strict';", "require('../../spirit.js');", "spirit.eventStream.publish({ job: { state: 'progress', name: 'zz', done: 1, total: 2, text: 'halfway there' } });", 'setTimeout(function () {}, 60000);', ''] },
+  zztask: { label: 'Zz Task', icon: '🧪', run: true, script: ["'use strict';", "require('../../script.js');", "spirit.eventStream.publish({ job: { state: 'progress', name: 'zz', done: 1, total: 2, text: 'halfway there' } });", 'setTimeout(function () {}, 60000);', ''] },
   zzfail: { label: 'Zz Fail', icon: '💥', run: true, script: ["'use strict';", 'setTimeout(function () { process.exit(1); }, 300);', ''] },
   zznorun: { label: 'Zz No Run', icon: '🚫', run: false, script: ["'use strict';", ''] },
 };

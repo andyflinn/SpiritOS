@@ -21,7 +21,7 @@ test.after(function () { if (W.node) { try { if (W.node.child) W.node.child.kill
 test.run('spirit/app/testicle/testicle.js is there and takes spirit.js first', 0.2, function () {
   const c = code();
   const first = c.search(/require(?:Script)?\(|spirit\.requireScript\(/);
-  return (!!c && first !== -1 && c.slice(first).indexOf("require('../../spirit.js')") === 0) || false;
+  return (!!c && first !== -1 && c.slice(first).indexOf("require('../../script.js')") === 0) || false;
 }, test.limit.quick);
 test.run('what it loads is its server, spirit/app/testicle/server/server.js, and nothing else', 0.4, function () {
   const c = code();
