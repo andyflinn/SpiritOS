@@ -186,10 +186,10 @@ function moveOne(from, to, o) {
     }
   });
   // The dependents the table names, every one of which must have been fixed.
-  const deps = (opts.dependencies || []).filter(function (r) { return r.requires === from; }).map(function (r) { return map[r.script] || r.script; });
+  const deps = (opts.requiresRows || []).filter(function (r) { return r.requires === from; }).map(function (r) { return map[r.script] || r.script; });
   const unchanged = deps.filter(function (d) { return edited.indexOf(d) === -1 && exists(d); });
   // The copy in memory renamed, old path to new, in both columns.
-  (opts.dependencies || []).forEach(function (r) { if (map[r.script]) r.script = map[r.script]; if (map[r.requires]) r.requires = map[r.requires]; });
+  (opts.requiresRows || []).forEach(function (r) { if (map[r.script]) r.script = map[r.script]; if (map[r.requires]) r.requires = map[r.requires]; });
   return { moved: pairs, edited: edited, unchanged: unchanged };
 }
 
@@ -214,12 +214,12 @@ async function main(argv) {
   if (args[0] === '--batch' && args[1]) moves = batchOf(args[1]);
   else if (args.length === 2) moves = [[args[0], args[1]]];
   else { console.log('usage: moveScript <from.js> <to.js> [--dry] | --batch <folder> [--dry]'); return 2; }
-  const dependencies = readDependencies();
+  const requiresRows = readDependencies();
   const off = !dry && moves.length > 1 ? await testicleActive(false) : false;
   let refused = 0;
   try {
     moves.forEach(function (m) {
-      const r = moveOne(m[0], m[1], { dry: dry, dependencies: dependencies });
+      const r = moveOne(m[0], m[1], { dry: dry, requiresRows: requiresRows });
       if (r.refused) { refused += 1; console.log('refused  ' + m[0] + ': ' + r.refused); return; }
       console.log((dry ? 'would move ' : 'moved    ') + r.moved.map(function (p) { return p[0] + ' -> ' + p[1]; }).join(', ') + ' | ' + r.edited.length + ' files fixed');
       r.unchanged.forEach(function (d) { console.log('  look by hand: ' + d + ' needs ' + m[0] + ' by the table, and its text did not name it'); });
