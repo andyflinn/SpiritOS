@@ -34,7 +34,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // Its email field's limit, fieldInput's email rule (goal/G47.1, -browser: "every input it draws has a maxlength").
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
   // And the email type, which a send asks first (goal/G48.4, the box: "fieldRules.js dies").
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/type/string/email.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/type/string/email/script.js');
   // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
   // themselves"): no escape is handed to it.
   function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
@@ -91,7 +91,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     var o = opts || {};
     var key = String((typeof o.key === 'function' ? o.key() : o.key) || '');
     var email = String(o.email || '').trim();
-    // The one email rule, the email type (spirit/type/string/email.js; goal/G40.10, box v20): a malformed address is told
+    // The one email rule, the email type (spirit/type/string/email/script.js; goal/G40.10, box v20): a malformed address is told
     // what is wrong.
     var T = emailType();
     var bad = '';
@@ -114,7 +114,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }, function (e) { return { ok: false, text: String((e && e.message) || e) }; });
   }
 
-  function emailType() { return ANSWER['spirit/type/string/email.js'] || null; }
+  function emailType() { return ANSWER['spirit/type/string/email/script.js'] || null; }
   // The relays a place offers, out of relay.status' rows: 'seated' only those with a seat, else every one listed.
   function picking(rows, pick) {
     var list = Array.isArray(rows) ? rows : [];

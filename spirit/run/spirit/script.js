@@ -122,11 +122,11 @@
   // rule is spirit.type.<...>, a trailing ? making it optional, and its type file spirit/type/<...>.js is there"): the type
   // file's isValid asked, '' when it answers true, its error's words when it throws. On the node the file is required; on a
   // page it is what spirit.required holds, and a type not loaded there yet is left to the node, which checks every call again.
-  // null for a name that is not a type's.
+  // null for a name that is not a type's. The type file is spirit/type/<...>/script.js since goal/G49.13.
   function typeRule(raw) {
     if (!/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(raw)) return null;
     var T = null;
-    if (isNode()) { try { T = require(require('path').join(__dirname, raw.split('.').slice(1).join('/') + '.js')); } catch (e) { return null; } }
+    if (isNode()) { try { T = require(require('path').join(__dirname, raw.split('.').slice(1).join('/') + '/script.js')); } catch (e) { return null; } }
     else T = raw.split('.').slice(1).reduce(function (o, k) { return o && o[k]; }, (root.spirit || {}).required && root.spirit.required.spirit);
     if (!T) return isNode() ? null : function () { return ''; };
     return function (v) { try { return T.isValid(v) === true ? '' : 'a valid ' + raw; } catch (e) { return (e && e.message) || ('a valid ' + raw); } };

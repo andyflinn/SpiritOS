@@ -6,7 +6,7 @@
 //   changeMyLabel.create(host) -> { set(value), destroy() }
 //
 // The field is marked with its rule (rule/12, data-field="label") and held at the label type's byte limit by fieldInput.
-// Save asks here first and the wire is not troubled when the type already says no (spirit/type/string/label.js). Then
+// Save asks here first and the wire is not troubled when the type already says no (spirit/type/string/label/script.js). Then
 // node.setName, and the field shows what the node STORED, not what was typed (rule/19): the node normalises what it keeps.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
@@ -22,12 +22,12 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.requireScript.
   // And its type, spirit.type.string.label, which Save asks before the wire is troubled (goal/G48.4, the box: "fieldRules.js
   // dies").
-  var parts = root.spirit.requireScript ? Promise.all([keepAnswer('spirit/element/fieldInput/script.js'), keepAnswer('spirit/type/string/label.js')]) : Promise.resolve();
+  var parts = root.spirit.requireScript ? Promise.all([keepAnswer('spirit/element/fieldInput/script.js'), keepAnswer('spirit/type/string/label/script.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
   if (root.spirit.requireScript) keepAnswer('spirit/element/rowForm/script.js');
 
-  function label() { return ANSWER['spirit/type/string/label.js'] || null; }
+  function label() { return ANSWER['spirit/type/string/label/script.js'] || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
   // object's escapeHtml and the node family's setName, no api handed.
   function esc(s) { return root.spirit.escapeHtml ? root.spirit.escapeHtml(s) : String(s); }

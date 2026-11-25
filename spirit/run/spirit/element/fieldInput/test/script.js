@@ -63,10 +63,10 @@ test.run('fieldInput runs on a window of its own', 0.2, async function () {
   return (!!F && typeof F.fits === 'function' && typeof F.attach === 'function') || false;
 }, test.limit.quick);
 // rule/26; goal/G41.27: "on a bare page, without the boot's list, it held nothing"
-test.run('it loads the type it holds a field to itself: spirit/type/string/label.js for spirit.type.string.label', 0.2, function () {
+test.run('it loads the type it holds a field to itself: spirit/type/string/label/script.js for spirit.type.string.label', 0.2, function () {
   if (!F) return false;
   F.fits('a', 'spirit.type.string.label');
-  return required.indexOf('spirit/type/string/label.js') !== -1 || false;
+  return required.indexOf('spirit/type/string/label/script.js') !== -1 || false;
 }, test.limit.quick);
 
 // fits: "counted in bytes as the rule counts them, never characters"

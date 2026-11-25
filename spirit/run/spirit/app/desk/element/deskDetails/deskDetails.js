@@ -98,7 +98,7 @@ function ddArming() {
     // Your name for the item, a label (goal/G48.4, box v22).
     var myName = document.getElementById('dd-name');
     if (F && myName && !myName.getAttribute('data-held')) { F.attach(myName, 'spirit.type.string.label'); myName.setAttribute('data-held', 'label'); }
-    // The box's text, held to the type box.write takes (spirit/type/string/box.js).
+    // The box's text, held to the type box.write takes (spirit/type/string/box/script.js).
     var boxText = document.getElementById('dd-box-input');
     if (F && boxText && !boxText.getAttribute('data-held')) { F.attach(boxText, 'spirit.type.string.box'); boxText.setAttribute('data-held', 'box'); }
     var body = document.getElementById('dd-body');

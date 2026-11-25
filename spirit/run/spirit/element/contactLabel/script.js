@@ -21,7 +21,7 @@
 //   hit on the keyboard, and the string is not empty."
 //   Andy: "the label listens to changes in both modes."
 //
-// Mode 2 checks what is typed with the label type (spirit/type/string/label.js) before it asks; the
+// Mode 2 checks what is typed with the label type (spirit/type/string/label/script.js) before it asks; the
 // node checks again (contact.label, goal/G4.16). Every label hears a
 // rename from anywhere: the node writes contact.rename {key, caption} on
 // its stream and the shell says it once on document (the old shell,
@@ -38,7 +38,7 @@
   }
   // WHAT IT USES, IT LOADS ITSELF (goal/G43.27): the label type, which mode 2 checks a name with, through spirit.requireScript
   // (goal/G48.4, the box: "fieldRules.js dies").
-  if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/type/string/label.js');
+  if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/type/string/label/script.js');
   // And fieldInput, which holds the name typed in mode 2 to that type as it is typed.
   if (window.spirit && window.spirit.requireScript) keepAnswer('spirit/element/fieldInput/script.js');
   // ONE NAME PER KEY FOR THE PAGE (Andy, goal/G4.10: "the pane and dropdown seem to still initialize with keys. this
@@ -98,7 +98,7 @@
     function save(typed) {
       var name = String(typed || '').trim();
       if (!name) return;
-      var L = ANSWER['spirit/type/string/label.js'];
+      var L = ANSWER['spirit/type/string/label/script.js'];
       var bad = '';
       if (L) { try { L.isValid(name); } catch (e) { bad = (e && e.message) || 'not a label'; } }
       if (bad) { why.textContent = bad; return; }

@@ -145,7 +145,7 @@ test.run('none of the seven rule verbs is declared', 0.2, function () {
 }, test.limit.quick);
 
 // A CHAT LINE IS A PARAGRAPH (goal/G48.4, Q21; Andy, of "should a chat line take emoji joiners (U+200D) and be a paragraph,
-// 2048 bytes with line breaks, instead of a line of 1024?": "DAMN FCUKING RIGHT: spirit/type/string/paragraph.js").
+// 2048 bytes with line breaks, instead of a line of 1024?": "DAMN FCUKING RIGHT: spirit/type/string/paragraph/script.js").
 test.run('chat.add takes its text as spirit.type.string.paragraph', 0.4, function () {
   if (!W.api) return false;
   return ((W.verbs['chat.add'] || {}).text === 'spirit.type.string.paragraph') || false;

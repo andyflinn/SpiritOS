@@ -18,7 +18,7 @@ this node may.
 - **No counter outside the form** (goal/G41.27's box v8; Andy: *"those fucking character counter OUTSIDE the fucking form
   ... they ALL have to go"*): outside the rowForm it draws its message and nothing else.
 - `set(value)` puts what the node stored in the field.
-- **Save is refused while the label type says no** (`spirit/type/string/label.js`, its `isValid`, goal/G48.4: "fieldRules.js
+- **Save is refused while the label type says no** (`spirit/type/string/label/script.js`, its `isValid`, goal/G48.4: "fieldRules.js
   dies"), and the field says why; nothing goes on the wire.
 - **Save asks the node**, `node.setName` with the field as typed, through the spirit object itself, no api handed (goal/G43.24), and then shows what the node stored (rule/19), says
   saved, and keeps the stored name in the node card. Enter in the field presses Save. Its Save is handed to the rowForm as `press` (goal/G47.1, Q20; Andy: *"mark the button busy from press until the mounter's answer comes"*): the press settles only once the node has answered, so the button is busy until then.

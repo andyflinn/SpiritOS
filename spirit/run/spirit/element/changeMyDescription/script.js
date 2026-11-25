@@ -7,7 +7,7 @@
 //   changeMyDescription.create(host) -> { set(value), destroy() }
 //
 // The field is marked with its rule (rule/12, data-field="description") and held at the description type's byte limit
-// by fieldInput. Save asks here first (spirit/type/string/description.js, its isValid); then node.setDescription, and
+// by fieldInput. Save asks here first (spirit/type/string/description/script.js, its isValid); then node.setDescription, and
 // the field shows what the node STORED (rule/19).
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
@@ -22,12 +22,12 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput and its type, through spirit.requireScript (goal/G48.4, the box:
   // "fieldRules.js dies").
-  var parts = root.spirit.requireScript ? Promise.all([keepAnswer('spirit/element/fieldInput/script.js'), keepAnswer('spirit/type/string/description.js')]) : Promise.resolve();
+  var parts = root.spirit.requireScript ? Promise.all([keepAnswer('spirit/element/fieldInput/script.js'), keepAnswer('spirit/type/string/description/script.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
   if (root.spirit.requireScript) keepAnswer('spirit/element/rowForm/script.js');
 
-  function description() { return ANSWER['spirit/type/string/description.js'] || null; }
+  function description() { return ANSWER['spirit/type/string/description/script.js'] || null; }
   // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
   // object's escapeHtml and the node family's setDescription, no api handed.
   function esc(s) { return root.spirit.escapeHtml ? root.spirit.escapeHtml(s) : String(s); }
