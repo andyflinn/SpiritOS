@@ -145,16 +145,8 @@ TARGETS.forEach(function (b) {
 });
 
 // ── 1. RECOGNIZED, AND ITS INTERFACE ────────────────────────────────────────────────────────────────────────────────
-// Every api.js under a run folder by its name, where a family can live (spirit/<name>/, spirit/app/<name>/, and
-// process/js/<name>/ with its family/ folder): a second of a branch's name is a duplicate (goal/G43.27: "duplicate
-// <name>/api.js raise a red.").
-const byName = {};
-tracked.forEach(function (f) {
-  const m = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(f) || /^process\/js\/([^/]+)\/(?:family\/)?api\.js$/.exec(f);
-  if (!m) return;
-  const n = f === 'spirit/app/api.js' ? 'app' : m[1];
-  (byName[n] = byName[n] || []).push(f);
-});
+// A BRANCH IS ITS FOLDER'S PATH, NEVER A NAME TRANSLATED TO ONE (goal/G49.13; Andy: "WSL, general test: NO FUCKING translated old
+// branch names! PATHS!!!!"): no index of api.js files by a name, and no guess of where a name's api.js may stand.
 if (withApi.length) {
   // <branch>: its interface
   // Decided 7 (the box): "Verb rules live in api.js". Each verb a declaration of its arguments, each argument's rule.
@@ -162,17 +154,6 @@ if (withApi.length) {
     return overAll(withApi, function (b) {
       const odd = b.verbs ? Object.keys(b.verbs).filter(function (v) { const d = b.verbs[v]; return !d || typeof d !== 'object' || Array.isArray(d) || Object.keys(d).some(function (k) { return typeof d[k] !== 'string' && !(d[k] && typeof d[k] === 'object'); }); }) : [];
       return !!b.mod && !b.mod.threw && !!b.verbs && !odd.length;
-    });
-  }, test.limit.quick);
-  // Where it stands is where its family is found (goal/G43.27: spirit/<name>/, spirit/app/<name>/, the fewest path
-  // elements), and no other api.js has its name.
-  test.run('its api.js is where its branch is found', 0.4, function () {
-    return overAll(withApi, function (b) { return b.api === 'spirit/' + b.family + '/api.js' || b.api === 'spirit/app/' + b.family + '/api.js'; });
-  }, test.limit.quick);
-  test.run('no other api.js of its branch in the tree', 0.4, function () {
-    return overAll(withApi, function (b) {
-      const twins = (byName[b.family] || []).filter(function (f) { return f !== b.api; });
-      return !twins.length;
     });
   }, test.limit.quick);
   // ITS VERBS AND THEIR .json FILES MATCH ONE TO ONE (goal/G47.4; Andy: "api.js and <verb>.json files match precisely", "loads
