@@ -262,6 +262,14 @@ function createAppServer(verbs, opts) {
         // THE OWNER ON LOOPBACK IS EXEMPT (goal/G41.28; Andy: "let's do that. my decision, and not a bad one, since we
         // already decided that each node only reads code from it's own drive...."): his answer travels nowhere. The
         // node alone sets the mark, on its own pipe, for a call its loopback door took.
+        // AN ANSWER WITH NO STATUS IS A REFUSAL, NEVER A DEAD SERVER (goal/G49.18, wsl's find after the flag day; Andy: "fix
+        // it. you may"): a forward that reached nobody (client mode, a stale relay stream) comes back with status 0, and
+        // res.writeHead(0) throws and ended the whole app server. It goes out as target-unreached, 502, with what the
+        // forward said.
+        if (!(Number.isInteger(a.status) && a.status >= 100 && a.status <= 599)) {
+          const said = a.body && typeof a.body === 'object' ? { code: a.body.code || '', error: a.body.error || '' } : undefined;
+          a = refusal('target-unreached', said);
+        }
         let text = JSON.stringify(a.body);
         const max = limits.ANSWER_MAX;
         const bytes = Buffer.byteLength(text, 'utf8');
