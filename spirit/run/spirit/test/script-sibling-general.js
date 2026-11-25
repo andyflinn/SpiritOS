@@ -2116,6 +2116,7 @@ function inputsMade(file) {
 function typedAttaches(file) {
   const c = fieldCode(file);
   let typed = 0, untyped = 0;
+  const rules = [];
   const at = /\.attach\(/g;
   let m;
   while ((m = at.exec(c))) {
@@ -2131,9 +2132,10 @@ function typedAttaches(file) {
     if (c[i] !== ',') continue;
     const rule = /^\s*['"]([^'"]*)['"]/.exec(c.slice(i + 1));
     if (!rule) continue;
+    rules.push(rule[1]);
     if (/^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(rule[1])) typed++; else untyped++;
   }
-  return { typed: typed, untyped: untyped };
+  return { typed: typed, untyped: untyped, rules: rules };
 }
 
 function oneFile(P) {
@@ -2198,6 +2200,18 @@ function oneFile(P) {
     test.run('each input field it makes is handed to fieldInput.attach with the full path of its field\'s type file', 0.4, function () {
       const t = typedAttaches(full);
       return (t.typed >= inputsMade(full) && t.untyped === 0) || false;
+    }, test.limit.quick);
+    // THE ELEMENT KNOWS ITS FIELDS' TYPES AND REQUIRES THEM (goal/G49.13; Andy: "The UI elements need to know which spirit/type
+    // their fields are and require that type or length checks and validation of the input fields, is THAT NOT FUCKING
+    // OBVIOUS???"): every type file it hands to fieldInput.attach, it requires itself, by that full path written out.
+    test.run('it requires, by its full path, the type file of every field it hands to fieldInput.attach', 0.4, function () {
+      const t = typedAttaches(full);
+      const c = fieldCode(full);
+      if (!t.rules.length) return false;
+      return t.rules.every(function (r) {
+        const p = String(r).replace(/\?$/, '');
+        return /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(p) && (c.indexOf("requireScript('" + p + "')") !== -1 || c.indexOf('requireScript("' + p + '")') !== -1);
+      }) || false;
     }, test.limit.quick);
   }
   // The general rules of a module (moduleRules above), on any file handed, a product script or not.
@@ -2636,6 +2650,13 @@ if (!GIVEN.length) {
         /\+\s*['"]\/?script\.js['"]/.test(c) || /`[^`]*\$\{[^}]*\}\/script\.js`/.test(c) ||
         /path\.join\([^)]*,\s*['"]script\.js['"]\s*\)/.test(c);
     }) || false;
+  }, test.limit.quick);
+  // NO fieldRules (goal/G49.13; Andy: "AND WHAT THE FLYING FUCK IS fieldRules still doing in the tree????????", and "The UI
+  // elements need to know which spirit/type their fields are and require that type"): the type files replaced it.
+  test.run('spirit/fieldRules/ is gone, and no product script names it', 0.6, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return (!shFs.existsSync(shPath.join(SH.run, 'spirit', 'fieldRules')) && !files.some(function (f) { return /fieldRules/.test(rawText(f)); })) || false;
   }, test.limit.quick);
   // NO BUILD STAMP IN THE PRODUCT (goal/G49.13; Andy: "THAT KIND OF SHIT IS NOT PART OF THE PRODUCT!!!"): spirit/buildStamp/
   // is gone, and no product script names it.
