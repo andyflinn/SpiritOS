@@ -321,10 +321,11 @@ test.run('a grant made from a bundle stays when the bundle goes', 0.2, async fun
 // are the line."). Each is asked as a grant to a peer, and refused; the peer holds nothing of it afterwards.
 test.run('a grant of anything in the fs branch to a peer is refused, and the peer holds none of it', 0.8, async function () {
   if (!auth || !PEER) return false;
-  const tries = ['fs.load', 'fs.save', 'fs.delete'];
+  // The branch by its path on the wire, spirit.fs (goal/G49.15; Andy: "THE NAME ON THE MOTHERCUKING WIRE IS "spirit.fs"").
+  const tries = ['spirit.fs.load', 'spirit.fs.save', 'spirit.fs.delete'];
   const answers = [];
   for (const p of tries) answers.push(await auth.grant({ key: PEER, path: p }));
-  const held = auth.pathsOf(PEER).filter(function (p) { return p === 'fs' || p.indexOf('fs.') === 0; });
+  const held = auth.pathsOf(PEER).filter(function (p) { return p === 'spirit.fs' || p.indexOf('spirit.fs.') === 0; });
   return (answers.every(function (r) { return !!r && r.refusal === 'owner-only'; }) && held.length === 0) ? true : false;
 }, test.limit.quick);
 test.run('a grant of contact.faceable to a peer is refused, and the peer does not hold it', 0.8, async function () {

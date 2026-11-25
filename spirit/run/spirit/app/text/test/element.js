@@ -124,12 +124,12 @@ test.run('mounted with a file, it shows that file loaded', 0.2, async function (
 }, test.limit.quick);
 test.run('Save is busy in the instant after its press, while the node has not answered', 0.2, async function () {
   if (!W.loaded) return false;
-  W.busy = await W.c.evaluate('(function () { var F = window.spirit.required.spirit.fs.api; window.__real = F.saveFile; F.saveFile = function () { return new Promise(function (r) { window.__answer = function () { r({ ok: true }); }; }); }; var b = document.querySelector("#zzBox [data-text=save]"); b.click(); return b.disabled === true; }())');
+  W.busy = await W.c.evaluate('(function () { var F = window.spirit.required.spirit.fs; window.__real = F.saveFile; F.saveFile = function () { return new Promise(function (r) { window.__answer = function () { r({ ok: true }); }; }); }; var b = document.querySelector("#zzBox [data-text=save]"); b.click(); return b.disabled === true; }())');
   return W.busy === true || false;
 }, test.limit.quick);
 test.run('Save is plain again once the answer has come', 0.2, async function () {
   if (W.busy !== true) return false;
-  await W.c.evaluate('(function () { if (window.__answer) window.__answer(); window.spirit.required.spirit.fs.api.saveFile = window.__real; return true; }())');
+  await W.c.evaluate('(function () { if (window.__answer) window.__answer(); window.spirit.required.spirit.fs.saveFile = window.__real; return true; }())');
   const plain = await until(function () { return W.c.evaluate('(document.querySelector("#zzBox [data-text=save]") || {}).disabled === false'); }, 5000);
   await W.c.evaluate('(function () { if (window.__m) window.__m.destroy(); return true; }())');
   return !!plain || false;
