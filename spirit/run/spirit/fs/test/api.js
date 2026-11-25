@@ -133,3 +133,88 @@ test.run('with no node, spirit.required.spirit.fs.api.stat of a file that is not
   const o = LOCAL.o; if (!o) return false;
   return (!!o.missing && !!o.missing.no && o.missing.no.status === 404) || false;
 }, test.limit.quick);
+
+// ── THE fs BRANCH IN ITS NEW SHAPE (goal/G49.15, step 3, box v23; Andy: "go, upgrade the spirit.fs branch!") ──
+// "spirit/fs/node.js --> spirit/fs/node/script.js"; "spirit/fs/fileSystem.js --> spirit/fs/fileSystem/script.js";
+// "spirit/fs/script.js will move to spirit/fs/dataset/script.js"; "spirit/fs/client/script.js is essentially the moved
+// spirit/fs/data.js"; spirit/fs/script.js "does what spirit/fs/api.js (defunct) did before": "one validator for every verb
+// inside spirit/fs/script.js, that must correspond to a spirit/fs/<verb>.json file", "every value/arguments in this verb must
+// be checked by a spirit/type/* field validator", "the node must use this same script as require to validate incoming
+// requests"; "a folder ./ is a branch when it has ./script.js ./client/script.js".
+const fsNew = require('fs');
+const at = function (rel) { return fsNew.existsSync(path.join(RUN, rel)); };
+// The old paths are written in pieces, so a move that rewrites every path to its new place leaves these as they are.
+const OLD = function (name) { return 'spirit/fs/' + name; };
+test.run('spirit/fs/ holds no api.js and no data.js any more', 0.2, function () { return (!at(OLD('api.js')) && !at(OLD('data.js'))) || false; }, test.limit.quick);
+test.run('spirit/fs/client/script.js is there, the moved data.js', 0.2, function () { return at('spirit/fs/client/script.js') || false; }, test.limit.quick);
+test.run('the fs dataset is spirit/fs/dataset/script.js', 0.2, function () { return at('spirit/fs/dataset/script.js') || false; }, test.limit.quick);
+test.run('the node half is spirit/fs/node/script.js, and spirit/fs/node.js is gone', 0.2, function () { return (at('spirit/fs/node/script.js') && !at(OLD('node.js'))) || false; }, test.limit.quick);
+test.run('the gate is spirit/fs/fileSystem/script.js, and spirit/fs/fileSystem.js is gone', 0.2, function () { return (at('spirit/fs/fileSystem/script.js') && !at(OLD('fileSystem.js'))) || false; }, test.limit.quick);
+// The file cache's own conditions, asked of the tree as it stands.
+const hasOnDisc = function (rel) { return at(rel); };
+const flagOf = function (name) { try { const F = LOADER.requireScript('spirit/fs/filter/' + name + '/script.js'); return F[name]('spirit/fs', hasOnDisc); } catch (e) { return null; } };
+test.run('the file cache marks spirit/fs a branch, and neither the old api nor an app', 0.2, function () {
+  return (flagOf('branch') === true && flagOf('api') === false && flagOf('app') === false) || false;
+}, test.limit.quick);
+// spirit/fs/script.js: one validator per verb, each its <verb>.json's, each argument a type file.
+const VERBS = ['search', 'stat', 'load', 'save', 'delete'];
+let branchScript = null;
+test.run('spirit/fs/script.js is required as the branch, an object holding a validator for each of its verbs', 0.2, function () {
+  try { branchScript = LOADER.requireScript('spirit/fs/script.js'); } catch (e) { branchScript = null; }
+  const v = branchScript && branchScript.verbs;
+  return (!!v && typeof v === 'object' && VERBS.every(function (n) { return !!v[n] && typeof v[n] === 'object'; })) || false;
+}, test.limit.quick);
+test.run('every verb of spirit/fs/script.js has its spirit/fs/<verb>.json, and every <verb>.json its verb', 0.2, function () {
+  const v = branchScript && branchScript.verbs;
+  if (!v) return false;
+  const files = fsNew.readdirSync(path.join(RUN, 'spirit', 'fs')).filter(function (f) { return /\.json$/.test(f); }).map(function (f) { return f.replace(/\.json$/, ''); });
+  return (Object.keys(v).sort().join() === files.sort().join()) || false;
+}, test.limit.quick);
+test.run('each verb\'s arguments are its <verb>.json request, the same names and the same types', 0.2, function () {
+  const v = branchScript && branchScript.verbs;
+  if (!v) return false;
+  return VERBS.every(function (n) {
+    let req = null; try { req = JSON.parse(fsNew.readFileSync(path.join(RUN, 'spirit', 'fs', n + '.json'), 'utf8')).request; } catch (e) { req = null; }
+    return !!req && JSON.stringify(Object.keys(req).sort().map(function (k) { return [k, req[k]]; })) === JSON.stringify(Object.keys(v[n]).sort().map(function (k) { return [k, v[n][k]]; }));
+  }) || false;
+}, test.limit.quick);
+test.run('every argument of every verb names a spirit/type/<...>/script.js that is there', 0.2, function () {
+  const v = branchScript && branchScript.verbs;
+  if (!v) return false;
+  return VERBS.every(function (n) {
+    return Object.keys(v[n]).length > 0 && Object.keys(v[n]).every(function (a) { const t = String(v[n][a]).replace(/\?$/, ''); return /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(t) && at(t); });
+  }) || false;
+}, test.limit.quick);
+// The node validates an incoming fs call with that same script: it requires it, and a wrong argument is refused.
+test.run('the node requires spirit/fs/script.js', 0.2, function () {
+  let c = ''; try { c = fsNew.readFileSync(path.join(RUN, 'spirit', 'server', 'node', 'script.js'), 'utf8'); } catch (e) { c = ''; }
+  return c.indexOf("requireScript('spirit/fs/script.js')") !== -1 || false;
+}, test.limit.quick);
+const NODE = { n: null };
+const H = LOADER.requireScript('spirit/test/headLessChrome.js');
+test.after(async function () { try { if (NODE.n && NODE.n.release) await NODE.n.release(); } catch (e) { /* gone */ } });
+function askNode(call, args) {
+  return fetch(NODE.n.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
+    .then(function (r) { return r.text().then(function (t) { let b = null; try { b = JSON.parse(t); } catch (e) { b = null; } return { status: r.status, body: b }; }); }, function () { return { status: 0, body: null }; });
+}
+test.run('a scratch node comes up', 0.2, async function () { NODE.n = await H.scratchNode(); return (!!NODE.n && NODE.n.up) || false; }, test.limit.long);
+test.run('the node answers fs.stat of spirit/script.js', 0.2, async function () {
+  if (!NODE.n || !NODE.n.up) return false;
+  const r = await askNode('fs.stat', { path: 'spirit/script.js' });
+  return (r.status === 200 && !!r.body && typeof r.body.size === 'number') || false;
+}, test.limit.quick);
+test.run('the node refuses fs.stat with a path that is no file path, a number, as a bad request', 0.8, async function () {
+  if (!NODE.n || !NODE.n.up) return false;
+  const r = await askNode('fs.stat', { path: 5 });
+  return (r.status === 400 && !!r.body && r.body.code === 'bad-request') || false;
+}, test.limit.quick);
+test.run('the node refuses fs.stat with an argument its validator does not name', 0.8, async function () {
+  if (!NODE.n || !NODE.n.up) return false;
+  const r = await askNode('fs.stat', { path: 'spirit/script.js', zzExtra: 1 });
+  return (r.status === 400 && !!r.body && r.body.code === 'no-such-argument') || false;
+}, test.limit.quick);
+test.run('the node refuses fs.save with no content', 0.8, async function () {
+  if (!NODE.n || !NODE.n.up) return false;
+  const r = await askNode('fs.save', { path: 'media/zzNoContent.txt' });
+  return (r.status === 400 && !at('media/zzNoContent.txt')) || false;
+}, test.limit.quick);
