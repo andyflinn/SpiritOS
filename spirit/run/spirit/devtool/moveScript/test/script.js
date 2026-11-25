@@ -31,7 +31,7 @@ const NEW = 'spirit/element/foo/script.js';
 const PLANT = {
   'spirit/script.js': "'use strict';\n",
   // the script, with its own relative require
-  'spirit/element/foo.js': "'use strict';\n" + req('../spirit.js') + ";\nwindow.spirit.required.spirit.element.foo = { create: function () {} };\n",
+  'spirit/element/foo.js': "'use strict';\n" + req('../script.js') + ";\nwindow.spirit.required.spirit.element.foo = { create: function () {} };\n",
   // its test, its .md, a page fixture of its test
   'spirit/element/test/foo.js': "'use strict';\nconst FOO = " + req('../foo.js') + ";\nconst AT = /spirit\\/element\\/foo\\.js/;\n",
   'spirit/element/test/foo.md': "# foo\n\nThe tests of spirit/element/foo.js.\n",
@@ -41,13 +41,9 @@ const PLANT = {
   'spirit/server/where.js': "'use strict';\nconst path = " + req('path') + ";\nconst P = path.join(__dirname, '..', 'element', 'foo.js');\n",
   'spirit/element/page.html': "<!doctype html><script src=\"/spirit/element/foo.js\"></script>\n",
   'spirit/README.md': "The foo element is spirit/element/foo.js.\n",
-  // for the refusals: an existing target, and a folder that is a branch
+  // for the refusal: an existing target
   'spirit/element/taken.js': "'use strict';\n",
   'spirit/element/taken/script.js': "'use strict';\n",
-  'spirit/element/baz.js': "'use strict';\n",
-  'spirit/element/baz/api.js': "'use strict';\n",
-  'spirit/element/qux.js': "'use strict';\n",
-  'spirit/element/qux/data.js': "'use strict';\n",
 };
 
 let asked = 0;
@@ -82,7 +78,7 @@ test.run('the file itself is at its new place, and gone from its old one', 0.4, 
 }, test.limit.slow);
 test.run('the moved file\'s own relative require is one level deeper', 0.4, function () {
   const t = read(moved(), NEW) || '';
-  return (t.indexOf(req('../../spirit.js')) !== -1 && t.indexOf(req('../spirit.js')) === -1) || false;
+  return (t.indexOf(req('../../script.js')) !== -1 && t.indexOf(req('../script.js')) === -1) || false;
 }, test.limit.slow);
 test.run('its own test moves with it, test/<name>.js to <name>/test/script.js', 0.4, function () {
   const r = moved();
@@ -157,16 +153,8 @@ test.run('a target that already exists is refused, and nothing is moved', 0.4, f
   const code = move(r, 'spirit/element/taken.js', 'spirit/element/taken/script.js');
   return (code !== 0 && there(r, 'spirit/element/taken.js') && read(r, 'spirit/element/taken/script.js') === PLANT['spirit/element/taken/script.js']) || false;
 }, test.limit.slow);
-test.run('a move into a folder holding an api.js is refused, since it would make that folder a branch', 0.4, function () {
-  const r = plant();
-  const code = move(r, 'spirit/element/baz.js', 'spirit/element/baz/script.js');
-  return (code !== 0 && there(r, 'spirit/element/baz.js') && !there(r, 'spirit/element/baz/script.js')) || false;
-}, test.limit.slow);
-test.run('a move into a folder holding a data.js is refused, since it would make that folder a branch', 0.4, function () {
-  const r = plant();
-  const code = move(r, 'spirit/element/qux.js', 'spirit/element/qux/script.js');
-  return (code !== 0 && there(r, 'spirit/element/qux.js') && !there(r, 'spirit/element/qux/script.js')) || false;
-}, test.limit.slow);
+// A move beside an api.js or a data.js is not refused (goal/G49.12; Andy: "DUMB RULES! ./api.js files will disappear into
+// ./client/script.js or equivalent when we get to enforcing branch and app api standards....").
 test.run('a refused move changes no file that names the script', 0.4, function () {
   const r = plant();
   const code = move(r, 'spirit/element/taken.js', 'spirit/element/taken/script.js');

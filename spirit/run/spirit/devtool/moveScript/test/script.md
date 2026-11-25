@@ -14,12 +14,12 @@ test `test/foo-laid.html`, and the files that name it: a relative require, a `sp
 `spirit.required.spirit.element.foo`, a `path.join` of its pieces, a script tag, a doc. One move to
 `spirit/element/foo/script.js`, and then:
 
-- the file is at its new place and gone from the old; its own `require('../spirit.js')` is one level deeper
+- the file is at its new place and gone from the old; its own `require('../script.js')` is one level deeper
 - its test is at `foo/test/script.js`, its `.md` at `foo/test/script.md`, the fixture in `foo/test/`
 - every reference names the new path: the moved test's require, the regex-escaped form, the relative require, the
   `spirit.requireScript`, the `path.join`, the script tag, the doc
 - every dotted name is left as it was: a folder's `script.js` stands at its folder's name, `spirit.required.spirit.element.foo`
 - no file of the tree names the old path
 
-Refused, with nothing moved and nothing changed: a target that already exists, and a move into a folder holding an
-`api.js` or a `data.js`, which would make that folder a branch.
+Refused, with nothing moved and nothing changed: a target that already exists. A move beside an `api.js` or a `data.js` is
+not refused (goal/G49.12, Andy: "DUMB RULES!").
