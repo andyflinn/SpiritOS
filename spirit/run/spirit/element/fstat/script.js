@@ -22,11 +22,11 @@
     var f = sp().escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  // Through the spirit object (goal/G32.2): fs.stat, null where the node refuses.
-  function ask(verb, args) {
-    var name = String(verb).replace(/^fs\./, '');
+  // Through the spirit object (goal/G32.2): the spirit.fs branch, bound by its path, asked its own verb stat, no name taken
+  // apart (goal/G49.15: the branch is spirit.fs, named by its path); null where the node refuses.
+  function stat(args) {
     return (window.spirit && window.spirit.readyPromise ? window.spirit.readyPromise : Promise.reject(new Error('no spirit object')))
-      .then(function () { return window.spirit.requireScript('spirit/fs/script.js'); }).then(function (f) { return f[name](args); }).then(function (body) { return body; }, function () { return null; });
+      .then(function () { return window.spirit.requireScript('spirit/fs/script.js'); }).then(function (f) { return f.stat(args); }).then(function (body) { return body; }, function () { return null; });
   }
 
   function mimeOf(path) {
@@ -90,7 +90,7 @@
     var facts = [['MIME type', mimeOf(path)]];
     function draw() { host.innerHTML = factRow(facts); }
     draw();
-    return ask('spirit.fs.stat', { path: path }).then(function (s) {
+    return stat({ path: path }).then(function (s) {
       if (!s || typeof s.size !== 'number') return;
       var bytes = sp().formatBytes ? sp().formatBytes(s.size) : s.size + ' B';
       facts.push(['Size', bytes], ['Changed', new Date(s.mtimeMs).toLocaleString()], ['Created', new Date(s.birthtimeMs).toLocaleString()]);
