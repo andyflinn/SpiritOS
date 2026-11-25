@@ -182,15 +182,17 @@ if (withApi.length) {
   // path of a fucking type under spirit"; "a type identifier is ALWAYS spirit.type.*"; "\"text\" dies. unlimited strings are
   // forbidden in SpiritOS."; "\"flags\" must be booleans". An argument's rule is spirit.type.<...>, a trailing ? making it
   // optional, and its type file spirit/type/<...>/script.js is there (goal/G49.13: a type is its folder's script.js).
-  test.run('each argument of its api.js names its type by its full path, spirit.type.<...>, whose type file is there', 0.4, function () {
+  // BY ITS FILE'S PATH, NEVER A NAME MADE INTO ONE (goal/G49.13; Andy: "FIX THE FUCKING DYNAMICALLY CREATED spirit/type/* SHIT"):
+  // the rule is the type file's run path written out, 'spirit/type/string/label/script.js', a trailing ? making it optional.
+  test.run('each argument of its api.js names its type file by its full path, spirit/type/<...>/script.js, and that file is there', 0.4, function () {
     return overAll(withApi, function (b) {
       if (!b.verbs) return false;
       return Object.keys(b.verbs).every(function (v) {
         const args = b.verbs[v] || {};
         return Object.keys(args).every(function (a) {
           const rule = String(args[a]).replace(/\?$/, '');
-          if (!/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule)) return false;
-          return fs.existsSync(path.join(RUN, rule.split('.').join('/'), 'script.js'));
+          if (!/^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(rule)) return false;
+          return fs.existsSync(path.join(RUN, rule));
         });
       });
     });
@@ -348,15 +350,15 @@ if (withData.length) {
 }
 
 // ── 3. ON A NODE: SERVED, GATED, FOUND ──────────────────────────────────────────────────────────────────────────────
-// THE VALUES, FROM THE TYPE FILES (Andy's type system): each argument names its type by its full path, spirit.type.<...>,
-// and that file is asked. The wrong value is the first of TRIES its isValid throws for; the good one its defaultValue,
+// THE VALUES, FROM THE TYPE FILES (Andy's type system): each argument names its type file by its full path,
+// spirit/type/<...>/script.js (goal/G49.13), and that file is asked. The wrong value is the first of TRIES its isValid throws for; the good one its defaultValue,
 // or else the first of TRIES it answers true for. The old rule names (text, id, number, ...) are gone from here: their
 // good value "x" failed a real id, so every call was refused for it and the door was never judged.
 const TRIES = [true, 12345, 1.5, 'not a number', 'x', 'yes', 'http://192.0.2.1:9/', 'zz-no-such-file', 'a@b.example', {}, [], '', null];
 function typeOf(rule) {
   const r = String(rule).replace(/\?$/, '');
-  if (!/^spirit\.type\.[A-Za-z0-9.]+$/.test(r)) return null;
-  try { return require(path.join(RUN, ...r.split('.')) + '.js'); } catch (e) { return null; }
+  if (!/^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(r)) return null;
+  try { return SPIRIT.requireScript(r); } catch (e) { return null; }
 }
 function takes(T, v) { try { return T.isValid(v) === true; } catch (e) { return false; } }
 // undefined: the type takes every try, or none.
@@ -2107,7 +2109,8 @@ function inputsMade(file) {
   const marked = (c.match(/<(input|textarea)\b[^>]*/gi) || []).filter(function (m) { return !NOT_A_FIELD.test(m); }).length;
   return made + marked;
 }
-// Its fieldInput.attach calls: those naming a spirit.type.<...> as their rule, and those naming anything else.
+// Its fieldInput.attach calls: those naming a type file by its full path, spirit/type/<...>/script.js (goal/G49.13), as their
+// rule, and those naming anything else.
 // The element handed may be a call of its own (document.getElementById('x')): its second argument is found past the first
 // comma outside any bracket.
 function typedAttaches(file) {
@@ -2128,7 +2131,7 @@ function typedAttaches(file) {
     if (c[i] !== ',') continue;
     const rule = /^\s*['"]([^'"]*)['"]/.exec(c.slice(i + 1));
     if (!rule) continue;
-    if (/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule[1])) typed++; else untyped++;
+    if (/^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(rule[1])) typed++; else untyped++;
   }
   return { typed: typed, untyped: untyped };
 }
@@ -2189,10 +2192,10 @@ function oneFile(P) {
   }
   // EVERY INPUT FIELD VALIDATES BY ITS TYPE (goal/G48.4, box v22: "ever input field in every element must validate the input
   // with the new type checks."): a script that makes input fields, an <input> of any type but checkbox, radio, button,
-  // submit or hidden, or a <textarea>, hands as many to fieldInput.attach with a spirit.type.<...> as it makes, and no
-  // attach of it names anything but a spirit.type.
+  // submit or hidden, or a <textarea>, hands as many to fieldInput.attach with a type file's full path,
+  // spirit/type/<...>/script.js (goal/G49.13), as it makes, and no attach of it names anything else.
   if (/^spirit\/.+\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel) && inputsMade(full) > 0) {
-    test.run('each input field it makes is handed to fieldInput.attach with the spirit.type of its field', 0.4, function () {
+    test.run('each input field it makes is handed to fieldInput.attach with the full path of its field\'s type file', 0.4, function () {
       const t = typedAttaches(full);
       return (t.typed >= inputsMade(full) && t.untyped === 0) || false;
     }, test.limit.quick);
@@ -2593,6 +2596,46 @@ if (!GIVEN.length) {
     const files = productCode();
     if (files.length < 100) return false;
     return !files.some(function (f) { return /\.split\(\s*['"]\.['"]\s*\)(?:\.slice\([^)]*\))?\.join\(\s*['"]\/['"]\s*\)/.test(codeText(f)); }) || false;
+  }, test.limit.quick);
+  // NO TYPE PATH MADE (goal/G49.13; Andy: "FIX THE FUCKING DYNAMICALLY CREATED spirit/type/* SHIT!!!!!!!!!!!!! NOW, AND MAKE
+  // SOME GENERAL TEST THAT STOPS THIS SHIT!"): a type is named by its file's run path, written out whole, everywhere: in
+  // code, in an api.js, in a verb's .json. No dotted spirit.type.<...> name is left to be turned into one, and nothing
+  // builds a path to a type file, or any script.js, from pieces.
+  const productJson = function () {
+    const vendored = SPIRIT.requireScript('spirit/fs/fileSystem.js').VENDORED_FOLDERS;
+    return require('child_process').execFileSync('git', ['ls-files', '--', '.'], { cwd: SH.run, encoding: 'utf8' }).split('\n').filter(Boolean)
+      .filter(function (f) { return /\.json$/.test(f) && !/(^|\/)test\//.test(f) && !(vendored && vendored.holds(f)) && shFs.existsSync(shPath.join(SH.run, f)); });
+  };
+  const rawText = function (f) { try { return shFs.readFileSync(shPath.join(SH.run, f), 'utf8'); } catch (e) { return ''; } };
+  test.run('no product script or .json names a type by a dotted name, spirit.type.<...>', 0.6, function () {
+    const files = productCode().concat(productJson());
+    if (files.length < 100) return false;
+    return !files.some(function (f) { return /['"`]spirit\.type\.[A-Za-z]/.test(/\.json$/.test(f) ? rawText(f) : codeText(f)); }) || false;
+  }, test.limit.quick);
+  test.run('every argument of a verb\'s .json names its type file by its full path, spirit/type/<...>/script.js, and that file is there', 0.6, function () {
+    let verbs = 0;
+    const bad = productJson().filter(function (f) {
+      let j = null;
+      try { j = JSON.parse(rawText(f)); } catch (e) { return false; }
+      if (!j || typeof j.request !== 'object' || Array.isArray(j.request) || j.request === null) return false;
+      verbs++;
+      return !Object.keys(j.request).every(function (a) {
+        const rule = String(j.request[a]).replace(/\?$/, '');
+        return /^spirit\/type(\/[A-Za-z][A-Za-z0-9]*)+\/script\.js$/.test(rule) && shFs.existsSync(shPath.join(SH.run, rule));
+      });
+    });
+    return (verbs >= 20 && !bad.length) || false;
+  }, test.limit.quick);
+  test.run('no product script builds a path to a type file or a script.js from pieces: no spirit/type/ joined with a name, no \'script.js\' appended or joined on', 0.6, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return !files.some(function (f) {
+      const c = codeText(f);
+      return /['"`]spirit\/type\/['"`]?\s*\+/.test(c) || /`[^`]*spirit\/type\/[^`]*\$\{/.test(c) ||
+        /path\.join\([^)]*['"]type['"]\s*,/.test(c) ||
+        /\+\s*['"]\/?script\.js['"]/.test(c) || /`[^`]*\$\{[^}]*\}\/script\.js`/.test(c) ||
+        /path\.join\([^)]*,\s*['"]script\.js['"]\s*\)/.test(c);
+    }) || false;
   }, test.limit.quick);
   test.run('the face page loads the spirit object by its own path, /spirit/script.js', 0.6, function () {
     let t = '';
