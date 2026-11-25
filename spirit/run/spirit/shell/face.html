@@ -10,12 +10,28 @@
      face shell itself; the seal comes once the face links to its home node. spirit.js comes by a plain script tag, and
      this file is served as it is on disk (goal/G41.19; Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!"). NO SHEET HERE (goal/G43.18, box v29:
      "boot.js, shell.css, face.css and every other part of the shell come from the home node over that link"): boot.js
-     loads them with its parts; logged out, spirit.faceLogin draws the one field, plain. -->
+     loads them with its parts; logged out, spirit.faceLogin draws the one field, plain.
+     CODEMIRROR BY ITS OWN TAGS (goal/G49.15, box v16: "the page list goes. the vendored codeMirror will be loaded by face.html
+     with a script tag. it lives in the repo and won't change very often."): its library, add-ons, modes and sheets as they are
+     on disk, in the order they build on each other, served at home by the node and on a face by the relay. -->
 <html lang="en" data-spirit="face">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="/spirit/script.js"></script>
+  <link rel="stylesheet" href="/spirit/element/codeMirror/lib/codemirror.css" />
+  <link rel="stylesheet" href="/spirit/element/codeMirror/theme/material-darker.css" />
+  <link rel="stylesheet" href="/spirit/element/codeMirror/addon/dialog/dialog.css" />
+  <script src="/spirit/element/codeMirror/lib/codemirror.js"></script>
+  <script src="/spirit/element/codeMirror/addon/dialog/dialog.js"></script>
+  <script src="/spirit/element/codeMirror/addon/search/searchcursor.js"></script>
+  <script src="/spirit/element/codeMirror/addon/search/search.js"></script>
+  <script src="/spirit/element/codeMirror/addon/search/jump-to-line.js"></script>
+  <script src="/spirit/element/codeMirror/mode/xml/xml.js"></script>
+  <script src="/spirit/element/codeMirror/mode/javascript/javascript.js"></script>
+  <script src="/spirit/element/codeMirror/mode/css/css.js"></script>
+  <script src="/spirit/element/codeMirror/mode/markdown/markdown.js"></script>
+  <script src="/spirit/element/codeMirror/mode/htmlmixed/htmlmixed.js"></script>
   <title>Face</title>
   <link rel="icon" type="image/svg+xml" href="/spirit/shell/favicon.svg" />
 </head>

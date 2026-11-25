@@ -7,10 +7,10 @@
 //   viewer (spirit/element/textViewer.js) is gone too (faaf2b1b); the text element (spirit/app/text/element.js) edits with it,
 //   and deskDetails, introSpector, jobDetail and the agent tables' rows draw with it.
 //
-// THE ONLY DOOR TO THE LIBRARY (goal/G43.5; Andy: "only access to codeMirror library is through the element!"): no page loads it
-// beside this. IT LOADS THE LIBRARY ITSELF, once, from its local copy (spirit/element/codeMirror/), never by reading
-// any page (goal/G40.7: the face never reads one): the library, its two stylesheets and the mode files of the path's
-// syntax, each through spirit.requireScript.
+// THE ONLY DOOR TO THE LIBRARY (goal/G43.5; Andy: "only access to codeMirror library is through the element!"): no script uses it
+// beside this. THE PAGE HOLDS IT (goal/G49.15, box v16: "the vendored codeMirror will be loaded by face.html with a script tag"):
+// face.html's own tags load the library, its add-ons, its modes and its sheets from the local copy (spirit/element/codeMirror/),
+// so this element loads none of them and draws with window.CodeMirror.
 //
 // codeMirror.create(host, { mode, text, words, line, path }) -> Promise of { mode, cm, value(), mark(words) }
 //   mode    'read' (the default: the text shown, not editable) or 'edit' (editable; value() is what was typed)
@@ -24,51 +24,19 @@
     js: 'javascript', mjs: 'javascript', json: { name: 'javascript', json: true },
     css: 'css', html: 'htmlmixed', htm: 'htmlmixed', xml: 'xml', svg: 'xml', md: 'markdown',
   };
-  var FILES = {
-    javascript: ['spirit/element/codeMirror/mode/javascript/javascript.js'],
-    css: ['spirit/element/codeMirror/mode/css/css.js'],
-    xml: ['spirit/element/codeMirror/mode/xml/xml.js'],
-    markdown: ['spirit/element/codeMirror/mode/xml/xml.js', 'spirit/element/codeMirror/mode/markdown/markdown.js'],
-    htmlmixed: ['spirit/element/codeMirror/mode/xml/xml.js', 'spirit/element/codeMirror/mode/javascript/javascript.js', 'spirit/element/codeMirror/mode/css/css.js', 'spirit/element/codeMirror/mode/htmlmixed/htmlmixed.js'],
-  };
-  var SHEETS = ['spirit/element/codeMirror/lib/codemirror.css', 'spirit/element/codeMirror/theme/material-darker.css', 'spirit/element/codeMirror/addon/dialog/dialog.css'];
-  // Search and replace, CodeMirror's own add-ons (goal/G29.12): Ctrl+F, Ctrl+G, Shift+Ctrl+F, Alt+G, after the library.
-  var ADDONS = ['spirit/element/codeMirror/addon/dialog/dialog.js', 'spirit/element/codeMirror/addon/search/searchcursor.js', 'spirit/element/codeMirror/addon/search/search.js', 'spirit/element/codeMirror/addon/search/jump-to-line.js'];
-
   function modeOf(p) {
     var name = String(p || '');
     var dot = name.lastIndexOf('.');
     return dot === -1 ? null : MODES[name.slice(dot + 1).toLowerCase()] || null;
   }
-  function modeName(mode) { return !mode ? '' : typeof mode === 'string' ? mode : mode.name; }
   function sp() { return window.spirit || {}; }
-
-  // EVERY FILE THROUGH spirit.requireScript, THE ONE LOADER (Andy: "use the require interfaces that exists in spirit.js or
-  // boot.js, NOTHING HAND-ROLLED"): on a page it runs each as a plain script, a stylesheet as a style, and loads each
-  // once. The library puts CodeMirror on the page; a mode file finds it there and defines its mode on it.
-  function need(p) { return Promise.resolve(sp().requireScript(p)); }
-  function library() {
-    return Promise.all([need('spirit/element/codeMirror/lib/codemirror.js')].concat(SHEETS.map(function (p) {
-      return need(p).then(null, function () { /* a sheet missing leaves the text plain */ });
-    }))).then(function () {
-      return ADDONS.reduce(function (chain, p) {
-        return chain.then(function () { return need(p).then(null, function () { /* an add-on missing leaves no search keys */ }); });
-      }, Promise.resolve());
-    }).then(function () { return window.CodeMirror; });
-  }
-  function modeFiles(mode) {
-    return (FILES[modeName(mode)] || []).reduce(function (chain, p) {
-      return chain.then(function () { return need(p).then(null, function () { /* a mode missing leaves the text uncoloured */ }); });
-    }, Promise.resolve());
-  }
 
   function create(host, options) {
     var o = options || {};
     var editing = o.mode === 'edit';
     var mode = modeOf(o.path);
-    return library().then(function (CodeMirror) {
-      return modeFiles(mode).then(function () { return CodeMirror; });
-    }).then(function (CodeMirror) {
+    return Promise.resolve(window.CodeMirror).then(function (CodeMirror) {
+      if (typeof CodeMirror !== 'function') throw new Error('CodeMirror is not on this page');
       var cm = CodeMirror(host, {
         value: String(o.text == null ? '' : o.text),
         readOnly: !editing,

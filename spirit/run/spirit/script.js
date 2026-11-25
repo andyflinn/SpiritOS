@@ -1345,17 +1345,13 @@
       return makeLink().then(function () { return boot(FACE); });
     }, function (e) { drawLogin('The relay did not answer: ' + ((e && e.message) || e)); return null; });
   }
-  // The vendored folders, as spirit/fs/fileSystem.js's VENDORED_FOLDERS names them (a page cannot load that node file): a
-  // script inside one runs as it was written, with no module box.
-  var VENDORED_ON_PAGE = ['spirit/element/codeMirror/'];
-  function vendored(p) { return VENDORED_ON_PAGE.some(function (v) { return String(p).indexOf(v) === 0; }); }
   // What a script may expose: an object or a function, so its folder's other scripts can stand under it.
   function placeable(v) { return !!v && (typeof v === 'object' || typeof v === 'function'); }
-  // A page script run in a module box: { set, exports }, set true when it put anything into module.exports. A stylesheet,
-  // or a vendored script, is injected as it is and answers null.
+  // A page script run in a module box: { set, exports }, set true when it put anything into module.exports. A stylesheet is
+  // injected as it is and answers null. No vendored script comes this way: face.html loads codeMirror by its own tags (goal/G49.15).
   var boxes = 0;
   function injectBoxed(p, src) {
-    if (/\.css$/.test(p) || !/\.js$/.test(p) || vendored(p)) { inject(p, src); return null; }
+    if (/\.css$/.test(p) || !/\.js$/.test(p)) { inject(p, src); return null; }
     var id = 'b' + (boxes += 1);
     var start = {};
     var box = { exports: start };
