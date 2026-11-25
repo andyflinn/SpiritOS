@@ -113,7 +113,7 @@ function apiAt(p) {
 // serves them on every app server, goal/G47.5 and desk/G2.5), offered beside the api.js verbs of an app's branch when the
 // app has a server, and only then (wsl's rule 8 of app-child-general: "the auto-verbs only where the manifest says
 // node.mount"): its spirit/app/<name>/<name>.json, read through the node's fs as everything of the tree is.
-const AUTO_VERBS = { remote: { id: 'spirit.type.string.ID?' }, DEBUG: { on: 'spirit.type.boolean?' } };
+const AUTO_VERBS = { remote: { id: 'spirit/type/string/ID/script.js?' }, DEBUG: { on: 'spirit/type/boolean/script.js?' } };
 function served(p) {
   const m = /^app\.([A-Za-z0-9_-]+)$/.exec(p);
   if (!m) return Promise.resolve(false);
@@ -188,9 +188,9 @@ const ESC_SLASH = '\u0000s';
 // a string of JSON, so it goes as typed.
 function valueOf(rule, text) {
   const r = String(rule || '').replace(/\?$/, '');
-  if (r.indexOf('spirit.type.number.') === 0) return text.trim() === '' ? text : Number(text);
-  if (r === 'spirit.type.boolean') return text === 'true' ? true : text === 'false' ? false : text;
-  if (r.indexOf('spirit.type.object.') === 0) { try { return JSON.parse(text); } catch (e) { return text; } }
+  if (r.indexOf('spirit/type/number/') === 0) return text.trim() === '' ? text : Number(text);
+  if (r === 'spirit/type/boolean/script.js') return text === 'true' ? true : text === 'false' ? false : text;
+  if (r.indexOf('spirit/type/object/') === 0) { try { return JSON.parse(text); } catch (e) { return text; } }
   return text;
 }
 // EXECUTING A VERB (the box, ## executing verbs: "at a branch, a line typed as its usage shows ... executes that verb, and

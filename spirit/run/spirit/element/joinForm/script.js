@@ -84,7 +84,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       '</select>' +
       '<input type="email" class="sp-join-email" placeholder="your email" autocomplete="email" value="' + escape(w.email) + '">';
     var FI = ANSWER['spirit/element/fieldInput/script.js'];
-    if (FI) FI.attach(f.span.querySelector('.sp-join-email'), 'spirit.type.string.email');
+    if (FI) FI.attach(f.span.querySelector('.sp-join-email'), 'spirit/type/string/email/script.js');
   }
 
   function send(opts) {

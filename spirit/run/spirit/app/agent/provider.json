@@ -1,13 +1,13 @@
 {
   "description": "The agent's provider table, one verb (goal/G41.4): op add, set, delete, get or search, and ask, which fetches the provider's model list and updates the model table ({ models, updated }). A provider's apiKey goes in and never comes out.",
   "request": {
-    "op": "spirit.type.string.providerOp",
-    "id": "spirit.type.string.IDNew?",
-    "icon": "spirit.type.string.glyph?",
-    "label": "spirit.type.string.label?",
-    "url": "spirit.type.string.URL?",
-    "apiKey": "spirit.type.string.secret?",
-    "model": "spirit.type.string.IDNew?",
-    "text": "spirit.type.string.descriptionSelect?"
+    "op": "spirit/type/string/providerOp/script.js",
+    "id": "spirit/type/string/IDNew/script.js?",
+    "icon": "spirit/type/string/glyph/script.js?",
+    "label": "spirit/type/string/label/script.js?",
+    "url": "spirit/type/string/URL/script.js?",
+    "apiKey": "spirit/type/string/secret/script.js?",
+    "model": "spirit/type/string/IDNew/script.js?",
+    "text": "spirit/type/string/descriptionSelect/script.js?"
   }
 }

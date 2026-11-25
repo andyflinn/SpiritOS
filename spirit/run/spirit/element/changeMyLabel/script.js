@@ -88,7 +88,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     });
 
     parts.then(function () {
-      if (!gone && ANSWER['spirit/element/fieldInput/script.js']) ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.label');
+      if (!gone && ANSWER['spirit/element/fieldInput/script.js']) ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit/type/string/label/script.js');
     }, function () { /* the node still refuses what the rule refuses */ });
     // Return saves, as the button does: the hand that never leaves the keyboard.
     input.addEventListener('keydown', function (e) {

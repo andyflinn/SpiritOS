@@ -1,7 +1,7 @@
 {
   "description": "Rename an item by id: title is its new title. Andy's alone. Answers {change}.",
   "request": {
-    "id": "spirit.type.string.deskId",
-    "title": "spirit.type.string.label"
+    "id": "spirit/type/string/deskId/script.js",
+    "title": "spirit/type/string/label/script.js"
   }
 }

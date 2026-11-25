@@ -852,9 +852,9 @@ function withAgents(verbs, script) {
 // Andy: "aren't there more undefined args?"): appServer's own DEBUG, listener and remote, which no api.js declares, are
 // checked by the same spirit.checkArgs against AUTO_RULES; a verb neither declares goes on unchecked, as before.
 const AUTO_RULES = {
-  DEBUG: { on: 'spirit.type.boolean?' },
-  listener: { json: 'spirit.type.string.json' },
-  remote: { id: 'spirit.type.string.IDNew?' },
+  DEBUG: { on: 'spirit/type/boolean/script.js?' },
+  listener: { json: 'spirit/type/string/json/script.js' },
+  remote: { id: 'spirit/type/string/IDNew/script.js?' },
 };
 function withChecked(verbs, script) {
   const m = /(?:^|[\/\\])spirit[\/\\]app[\/\\]([^\/\\]+)[\/\\]\1\.js$/.exec(String(script || ''));

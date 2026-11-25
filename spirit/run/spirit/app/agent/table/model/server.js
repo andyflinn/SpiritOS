@@ -29,7 +29,7 @@ function listOfWords(json) {
 module.exports = function (ctx) {
   const table = rowTable(ctx.db, {
     name: 'model',
-    fields: { providerId: 'key?', capabilities: 'spirit.type.string.json?' },
+    fields: { providerId: 'key?', capabilities: 'spirit/type/string/json/script.js?' },
     check: function (a) {
       if (a.providerId !== undefined && !ctx.tables.provider.has(a.providerId)) return 'no provider ' + a.providerId;
       return a.capabilities !== undefined && !listOfWords(a.capabilities) ? 'capabilities is a list of words in JSON, such as ["text","tools"]' : '';

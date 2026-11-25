@@ -1,6 +1,6 @@
 {
   "description": "Change this node's name (name), the one name it goes by, relays included: {ok, status, name}, the name as stored. Refused 400 when it is empty, too long, or has invisible or control characters.",
   "request": {
-    "name": "spirit.type.string.label"
+    "name": "spirit/type/string/label/script.js"
   }
 }

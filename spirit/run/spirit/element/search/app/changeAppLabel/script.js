@@ -37,7 +37,7 @@
     input.type = 'text';
     form.span.appendChild(document.createTextNode('Label '));
     form.span.appendChild(input);
-    if (ANSWER['spirit/element/fieldInput/script.js']) ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.label');
+    if (ANSWER['spirit/element/fieldInput/script.js']) ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit/type/string/label/script.js');
     function paint() {
       if (gone) return;
       var r = row();

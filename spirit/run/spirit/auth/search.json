@@ -1,6 +1,6 @@
 {
   "description": "The owner's allow-table, every grant ranked by the words (text) over the grant as it is served, its name, key and path, best first; no words is every grant in the table's order: {ok, items: [{key: the key, a newline and the path, label: {name, key, path} as JSON}], more}.",
   "request": {
-    "text": "spirit.type.string.descriptionSelect?"
+    "text": "spirit/type/string/descriptionSelect/script.js?"
   }
 }

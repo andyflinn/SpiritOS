@@ -3,19 +3,20 @@
 // AN INPUT STOPS AT ITS LIMIT (goal/G32.2; Andy: "field rules is already badly applied in the UI, the input tell you how
 // man characters you typed in excess of the limit instead of simply refusing to take more characters."), ITS LIMIT ITS
 // TYPE'S (goal/G48.4, box v22: "ever input field in every element must validate the input with the new type checks."): a
-// field names its type by its path, spirit.type.string.label, and the limit is that type file's MAX_BYTES, counted in bytes
+// field names its type by its file's full path, spirit/type/string/label/script.js, and the limit is that type file's MAX_BYTES, counted in bytes
 // as the type counts them, never characters. attach(input, type) refuses a keystroke or a paste that would take the text past
 // it, before it lands; deleting always works. It never says how far past the limit the text went: it simply does not get
 // there. A glyph's field also holds to one character, as spirit.type.string.glyph's isValid does.
 //
 //   spirit.required.spirit.element.fieldInput.fits(value, type) -> true when the type's limit takes it
 //   spirit.required.spirit.element.fieldInput.attach(input, type) -> the input, its maxlength the type's bytes and the bytes
-//                                                     held as typed; type: a spirit.type.<...> path
+//                                                     held as typed; type: a spirit/type/<...>/script.js path
 (function (root) {
-  // A TYPE'S FILE, ITS PATH (goal/G48.4): spirit.type.string.label is spirit/type/string/label/script.js, loaded through
-  // spirit.requireScript (rule/26) and kept as it hands it back (goal/G49.9), by the type's name.
+  // A TYPE IS ITS FILE'S FULL PATH, spirit/type/string/label/script.js (goal/G49.13; Andy: "FIX THE FUCKING DYNAMICALLY CREATED
+  // spirit/type/* SHIT"), loaded through spirit.requireScript (rule/26) as it is and kept as it hands it back (goal/G49.9), by
+  // that path; never made from a name.
   var TYPES = {};
-  function fileOf(type) { return /^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(String(type)) ? String(type).split('.').join('/') + '/script.js' : ''; }
+  function fileOf(type) { return /^spirit\/type\/[A-Za-z0-9\/]+\/script\.js$/.test(String(type)) ? String(type) : ''; }
   function typeOf(type) {
     var at = TYPES[String(type)];
     return at && typeof at.isValid === 'function' ? at : null;
@@ -37,7 +38,7 @@
   function fits(value, type) {
     var v = String(value);
     if (bytes(v) > limitOf(type)) return false;
-    if (/\.glyph$/.test(String(type)) && v) { var T = typeOf(type); try { T && T.isValid(v); } catch (e) { return false; } }
+    if (String(type) === 'spirit/type/string/glyph/script.js' && v) { var T = typeOf(type); try { T && T.isValid(v); } catch (e) { return false; } }
     return true;
   }
 

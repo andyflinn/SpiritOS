@@ -1,8 +1,8 @@
 {
   "description": "Add an item to a goal (blocks: what it blocks, empty for the goal); answers its id. Only on Andy's word.",
   "request": {
-    "goal": "spirit.type.string.deskId",
-    "title": "spirit.type.string.label",
-    "blocks": "spirit.type.string.deskIdSelect?"
+    "goal": "spirit/type/string/deskId/script.js",
+    "title": "spirit/type/string/label/script.js",
+    "blocks": "spirit/type/string/deskIdSelect/script.js?"
   }
 }

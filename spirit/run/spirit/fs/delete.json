@@ -1,6 +1,6 @@
 {
   "description": "Delete a file by path under the run folder; a file that is not there counts as deleted, and the answer is 204 with no body. The same files are refused as for a save, each 403: a core file, a file at the run folder's top, anything under spirit/state at any depth, a sidecar's own path, and a vendored file.",
   "request": {
-    "path": "spirit.type.string.file"
+    "path": "spirit/type/string/file/script.js"
   }
 }

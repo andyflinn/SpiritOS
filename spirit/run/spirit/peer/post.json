@@ -1,10 +1,10 @@
 {
   "description": "Post a payload (text, carried as given) to a peer's key (to) through a relay that names that peer, or else the first relay this node is connected to; via names the one relay to use. Answers the post's outcome {ok, status, hash, from, text, sig, receipt}, under the relay's status when it is refused. patienceMs, at most 10 minutes, retries a busy peer until it is delivered or the time runs out; kind takes only 'background', which lowers the post's priority. Refused 503 when this node is not connected to a relay or the peer cannot be reached (also when via does not name it), and 400 for any other kind.",
   "request": {
-    "to": "spirit.type.string.ID",
-    "text": "spirit.type.string.json",
-    "via": "spirit.type.string.URL?",
-    "patienceMs": "spirit.type.number.integer?",
-    "kind": "spirit.type.string.word?"
+    "to": "spirit/type/string/ID/script.js",
+    "text": "spirit/type/string/json/script.js",
+    "via": "spirit/type/string/URL/script.js?",
+    "patienceMs": "spirit/type/number/integer/script.js?",
+    "kind": "spirit/type/string/word/script.js?"
   }
 }

@@ -2,6 +2,6 @@
   "description": "The boxes the owner's servers have reported, grouped by box, every box ranked by the words (q) over its label and fingerprint, best first (empty or '*' is every box in the listing's order), as a bounded list of {key: fingerprint, label}; an over-committed box says so in its label.",
   "parameters": "q is optional.",
   "request": {
-    "q": "spirit.type.string.descriptionSelect?"
+    "q": "spirit/type/string/descriptionSelect/script.js?"
   }
 }

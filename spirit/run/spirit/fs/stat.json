@@ -1,6 +1,6 @@
 {
   "description": "Size and timestamps of one file the node will serve, by its path under the run folder; 404 when there is no such file or it is not served.",
   "request": {
-    "path": "spirit.type.string.file"
+    "path": "spirit/type/string/file/script.js"
   }
 }

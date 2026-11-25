@@ -1,8 +1,8 @@
 {
   "description": "Sets the label this node shows for an app in its app folder, in spirit/state/<key>/node.json, over what <key>.json says. A key that is no app is refused. It answers no rows: the node publishes them on its 'apps' job.",
   "request": {
-    "key": "spirit.type.string.word",
-    "label": "spirit.type.string.label"
+    "key": "spirit/type/string/word/script.js",
+    "label": "spirit/type/string/label/script.js"
   },
   "parameters": "key is the app's folder name, label its new label; an empty label goes back to <key>.json's."
 }

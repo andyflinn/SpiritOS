@@ -1,9 +1,9 @@
 {
   "description": "Claim a seat under a name on the relay whose row this node holds under its public key (key), with an invite and its label when it takes one: the relay's own answer under its status, with mine saying whether the seat is this node's key. A seat taken, or one this node already holds (409, mine true), puts the relay on the node's list, writes the seat down and connects to it. Refused 503 when the key names no relay row or there is no router to claim with, and 502 when the claim fails on the way.",
   "request": {
-    "key": "spirit.type.string.ID",
-    "name": "spirit.type.string.label",
-    "invite": "spirit.type.string.word?",
-    "inviteLabel": "spirit.type.string.label?"
+    "key": "spirit/type/string/ID/script.js",
+    "name": "spirit/type/string/label/script.js",
+    "invite": "spirit/type/string/word/script.js?",
+    "inviteLabel": "spirit/type/string/label/script.js?"
   }
 }

@@ -814,7 +814,7 @@ module.exports = { create: function (container, opts) {
     var FI = ANSWER['spirit/element/fieldInput/script.js'];
     // Held to its type (goal/G48.4, box v22), the label a goal title is.
     var goalTitle = FI ? container.querySelector('#desk-goal-title') : null;
-    if (goalTitle) FI.attach(goalTitle, 'spirit.type.string.label');
+    if (goalTitle) FI.attach(goalTitle, 'spirit/type/string/label/script.js');
     deskHeader();
     // goal/G41.23: every icon that stands alone in the page, through the icon element (deskGlyph).
     deskWatchIcons(container);

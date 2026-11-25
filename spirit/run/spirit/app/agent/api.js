@@ -17,17 +17,17 @@ module.exports = {
     // The provider verb also takes op ask, with id (goal/G41.18; Andy, box v17: "the provider table gets a new verb:
     // \"ask\", which does the model-list fetching and model-table updating"): it answers { models, updated }. Its
     // unusable flag is the server's to set when a provider fails, so the page sends no such argument.
-    provider: { op: 'spirit.type.string.providerOp', id: 'spirit.type.string.IDNew?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', url: 'spirit.type.string.URL?', apiKey: 'spirit.type.string.secret?', model: 'spirit.type.string.IDNew?', text: 'spirit.type.string.descriptionSelect?' },
-    model: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.IDNew?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', providerId: 'spirit.type.string.IDNew?', capabilities: 'spirit.type.string.json?', text: 'spirit.type.string.descriptionSelect?' },
-    persona: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.IDNew?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', persona: 'spirit.type.string.fileContent?', bundle: 'spirit.type.string.word?', provider: 'spirit.type.string.IDNew?', text: 'spirit.type.string.descriptionSelect?' },
-    job: { op: 'spirit.type.string.tableOp', id: 'spirit.type.string.IDNew?', icon: 'spirit.type.string.glyph?', label: 'spirit.type.string.label?', loop: 'spirit.type.boolean?', job: 'spirit.type.string.fileContent?', bundle: 'spirit.type.string.word?', provider: 'spirit.type.string.IDNew?', persona: 'spirit.type.string.IDNew?', text: 'spirit.type.string.descriptionSelect?' },
+    provider: { op: 'spirit/type/string/providerOp/script.js', id: 'spirit/type/string/IDNew/script.js?', icon: 'spirit/type/string/glyph/script.js?', label: 'spirit/type/string/label/script.js?', url: 'spirit/type/string/URL/script.js?', apiKey: 'spirit/type/string/secret/script.js?', model: 'spirit/type/string/IDNew/script.js?', text: 'spirit/type/string/descriptionSelect/script.js?' },
+    model: { op: 'spirit/type/string/tableOp/script.js', id: 'spirit/type/string/IDNew/script.js?', icon: 'spirit/type/string/glyph/script.js?', label: 'spirit/type/string/label/script.js?', providerId: 'spirit/type/string/IDNew/script.js?', capabilities: 'spirit/type/string/json/script.js?', text: 'spirit/type/string/descriptionSelect/script.js?' },
+    persona: { op: 'spirit/type/string/tableOp/script.js', id: 'spirit/type/string/IDNew/script.js?', icon: 'spirit/type/string/glyph/script.js?', label: 'spirit/type/string/label/script.js?', persona: 'spirit/type/string/fileContent/script.js?', bundle: 'spirit/type/string/word/script.js?', provider: 'spirit/type/string/IDNew/script.js?', text: 'spirit/type/string/descriptionSelect/script.js?' },
+    job: { op: 'spirit/type/string/tableOp/script.js', id: 'spirit/type/string/IDNew/script.js?', icon: 'spirit/type/string/glyph/script.js?', label: 'spirit/type/string/label/script.js?', loop: 'spirit/type/boolean/script.js?', job: 'spirit/type/string/fileContent/script.js?', bundle: 'spirit/type/string/word/script.js?', provider: 'spirit/type/string/IDNew/script.js?', persona: 'spirit/type/string/IDNew/script.js?', text: 'spirit/type/string/descriptionSelect/script.js?' },
     // A search may name one of the table's fields, narrowed to the rows holding it (goal/G41.21: providerId above).
     // No grant verb since goal/G41.21 (box v17: "agent.grant is removed altogether").
     // appServer's streamPublisher (spirit/server/app/script.js), as desk's: the caller's key subscribes to agent's rows, sent to its
     // family of that name from its position (run, since); unsubscribe stops it. Who may is the node's grant. Declared here
     // for now (Andy, goal/G43.32: "for now, it needs to declare them in api.js", for agent as a client or a server; "later
     // they'll move into appServer.js, as auto-verbs for appServers ... oos for now.").
-    subscribe: { branch: 'spirit.type.string.word', run: 'spirit.type.string.word?', since: 'spirit.type.number.integer?' },
+    subscribe: { branch: 'spirit/type/string/word/script.js', run: 'spirit/type/string/word/script.js?', since: 'spirit/type/number/integer/script.js?' },
     unsubscribe: {},
   },
 };

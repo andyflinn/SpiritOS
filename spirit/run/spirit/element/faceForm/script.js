@@ -86,7 +86,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         escape(o.name != null ? o.name : ((picked && picked.face && picked.face.name) || '')) + '">';
     // A face name is one word (spirit.type.string.word).
     var FI = ANSWER['spirit/element/fieldInput/script.js'];
-    if (FI) FI.attach(f.span.querySelector('.sp-face-name'), 'spirit.type.string.word');
+    if (FI) FI.attach(f.span.querySelector('.sp-face-name'), 'spirit/type/string/word/script.js');
     if (!picked) box.querySelector('.sp-face-out').textContent = String(o.none);
   }
 

@@ -13,11 +13,11 @@ module.exports = {
   // file, on the process's own disc, and sends only what it does not answer to the node.
   node: 'spirit/fs/node.js',
   verbs: {
-    search: { q: 'spirit.type.string.descriptionSelect?', contents: 'spirit.type.boolean?' },
-    stat: { path: 'spirit.type.string.file' },
-    load: { path: 'spirit.type.string.file' },
-    save: { path: 'spirit.type.string.file', content: 'spirit.type.string.fileContent' },
-    delete: { path: 'spirit.type.string.file' },
+    search: { q: 'spirit/type/string/descriptionSelect/script.js?', contents: 'spirit/type/boolean/script.js?' },
+    stat: { path: 'spirit/type/string/file/script.js' },
+    load: { path: 'spirit/type/string/file/script.js' },
+    save: { path: 'spirit/type/string/file/script.js', content: 'spirit/type/string/fileContent/script.js' },
+    delete: { path: 'spirit/type/string/file/script.js' },
   },
   // THE KERNEL'S NAMES, async (Andy listed them): what the old shell's apps call, so an app ports by adding await.
   // loadFile and statFile answer null where the node refuses, as the kernel's did; a malformed call still refuses.
@@ -38,7 +38,7 @@ module.exports = {
       deleteFile: function (path) { return call('delete', { path: path }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
       // A data: url of the file, read as the page reads a file (on the face, in its sealed pieces); null if refused.
       loadDataUrl: function (path) {
-        var bad = tools.check('fs.loadDataUrl', { path: 'spirit.type.string.file' }, { path: path });
+        var bad = tools.check('fs.loadDataUrl', { path: 'spirit/type/string/file/script.js' }, { path: path });
         if (bad) return Promise.reject(bad);
         return tools.file(path).then(function (r) {
           if (!r || r.status !== 200) return null;

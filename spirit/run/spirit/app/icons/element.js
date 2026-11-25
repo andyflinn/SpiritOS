@@ -76,7 +76,7 @@
           '<div data-icons="said" class="job-manifest-note"></div></div>';
         var said = host.querySelector('[data-icons="said"]');
         var field = host.querySelector('[data-icons="keywords"]');
-        ANSWER['spirit/element/fieldInput/script.js'].attach(field, 'spirit.type.string.description');
+        ANSWER['spirit/element/fieldInput/script.js'].attach(field, 'spirit/type/string/description/script.js');
         var close = function () { if (layer) layer.hide(); };
         var off = S.required.spirit.data.icons.data.watch(function (g, v) {
           if (g !== glyph) return;
@@ -111,8 +111,8 @@
       form.button.setAttribute('data-icons', 'add');
       // The keywords to the description rule, the glyph to the glyph rule (goal/G41.27; Andy: "icon text follows description
       // rules.", "glyph field rule: max 1 char/glyph, 8-bytes maximum.").
-      ANSWER['spirit/element/fieldInput/script.js'].attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'spirit.type.string.description');
-      ANSWER['spirit/element/fieldInput/script.js'].attach(container.querySelector('[data-icons="new-glyph"]'), 'spirit.type.string.glyph');
+      ANSWER['spirit/element/fieldInput/script.js'].attach(part('new-keywords') || container.querySelector('[data-icons="new-keywords"]'), 'spirit/type/string/description/script.js');
+      ANSWER['spirit/element/fieldInput/script.js'].attach(container.querySelector('[data-icons="new-glyph"]'), 'spirit/type/string/glyph/script.js');
       list = ANSWER['spirit/element/search/script.js'].create(part('pane'), {
         // Its own data source: icon.search on its branch, the rows seated into the icons family's cache it is a view of.
         search: function (args) {
@@ -139,7 +139,7 @@
       var glyph = String((container.querySelector('[data-icons="new-glyph"]') || {}).value || '').trim();
       var kw = words((container.querySelector('[data-icons="new-keywords"]') || {}).value);
       if (!glyph) { say('paste an icon first'); return; }
-      if (!ANSWER['spirit/element/fieldInput/script.js'].fits(kw.join(', '), 'spirit.type.string.description')) { say('too many keywords'); return; }
+      if (!ANSWER['spirit/element/fieldInput/script.js'].fits(kw.join(', '), 'spirit/type/string/description/script.js')) { say('too many keywords'); return; }
       // Its answer is rowForm's to wait for (the button busy until then).
       return icon({ op: 'add', glyph: glyph, keywords: JSON.stringify(kw) }).then(function (r) {
         if (gone) return;

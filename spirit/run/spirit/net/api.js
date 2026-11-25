@@ -10,6 +10,6 @@
 if (typeof require === 'function') require('../script.js').requireScript('spirit/net/data.js'); else window.spirit.requireScript('spirit/net/data.js');
 module.exports = {
   verbs: {
-    fetch: { url: 'spirit.type.string.URL', method: 'spirit.type.string.httpMethod?', headers: 'spirit.type.object.payload?', body: 'spirit.type.string.fileContent?', timeoutMs: 'spirit.type.number.integer?' },
+    fetch: { url: 'spirit/type/string/URL/script.js', method: 'spirit/type/string/httpMethod/script.js?', headers: 'spirit/type/object/payload/script.js?', body: 'spirit/type/string/fileContent/script.js?', timeoutMs: 'spirit/type/number/integer/script.js?' },
   },
 };

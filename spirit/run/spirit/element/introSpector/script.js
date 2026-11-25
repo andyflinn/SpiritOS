@@ -144,7 +144,7 @@
       Array.prototype.forEach.call(form.querySelectorAll('[data-is-field]'), function (x) {
         if (x.type === 'checkbox') return;
         if (x.type === 'number') { x.maxLength = 32; return; }
-        if (FI && typeof FI.attach === 'function') FI.attach(x, 'spirit.type.string.paragraph'); else x.maxLength = 2048;
+        if (FI && typeof FI.attach === 'function') FI.attach(x, 'spirit/type/string/paragraph/script.js'); else x.maxLength = 2048;
       });
       part('call').addEventListener('click', function () {
         var texts = {};

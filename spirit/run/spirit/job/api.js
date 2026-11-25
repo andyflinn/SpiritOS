@@ -10,10 +10,10 @@
 if (typeof require === 'function') require('../script.js').requireScript('spirit/job/data.js'); else window.spirit.requireScript('spirit/job/data.js');
 module.exports = {
   verbs: {
-    search: { q: 'spirit.type.string.descriptionSelect?' },
-    get: { key: 'spirit.type.string.path' },
-    create: { command: 'spirit.type.string.description', args: 'spirit.type.string.json?', type: 'spirit.type.string.word?' },
-    cancel: { id: 'spirit.type.string.path' },
-    delete: { id: 'spirit.type.string.path' },
+    search: { q: 'spirit/type/string/descriptionSelect/script.js?' },
+    get: { key: 'spirit/type/string/path/script.js' },
+    create: { command: 'spirit/type/string/description/script.js', args: 'spirit/type/string/json/script.js?', type: 'spirit/type/string/word/script.js?' },
+    cancel: { id: 'spirit/type/string/path/script.js' },
+    delete: { id: 'spirit/type/string/path/script.js' },
   },
 };

@@ -117,7 +117,7 @@
       editing.className = 'contact-label-input';
       editing.value = caption;
       var FI = ANSWER['spirit/element/fieldInput/script.js'];
-      if (FI) FI.attach(editing, 'spirit.type.string.label');
+      if (FI) FI.attach(editing, 'spirit/type/string/label/script.js');
       editing.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
           if (event.preventDefault) event.preventDefault();

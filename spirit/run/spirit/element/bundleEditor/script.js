@@ -64,7 +64,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'label';
-      ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.label');
+      ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit/type/string/label/script.js');
       form.span.appendChild(input);
       var said = document.createElement('div');
       said.className = 'job-manifest-note';

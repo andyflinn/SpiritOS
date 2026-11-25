@@ -125,7 +125,7 @@
       input.value = test;
       named.span.appendChild(document.createTextNode('Title '));
       named.span.appendChild(input);
-      ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.description');
+      ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit/type/string/description/script.js');
       function rename() {
         var to = input.value;
         said('');

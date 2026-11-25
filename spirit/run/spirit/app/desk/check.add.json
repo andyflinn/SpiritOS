@@ -1,9 +1,9 @@
 {
   "description": "Put a check on an item: kind Q for a red question that blocks the item until andy answers or clears it (one sentence, at most 200 bytes, one open per agent per item; a question mark in chat makes none),T for a test file (test names the path), G for a grant Andy is asked for; answers {change}.",
   "request": {
-    "id": "spirit.type.string.deskId",
-    "kind": "spirit.type.string.checkKind",
-    "words": "spirit.type.string.paragraphSelect",
-    "test": "spirit.type.string.fileSelect"
+    "id": "spirit/type/string/deskId/script.js",
+    "kind": "spirit/type/string/checkKind/script.js",
+    "words": "spirit/type/string/paragraphSelect/script.js",
+    "test": "spirit/type/string/fileSelect/script.js"
   }
 }

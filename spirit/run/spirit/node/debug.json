@@ -1,6 +1,6 @@
 {
   "description": "This node's debug flag: {debug: {}} reads it and {debug: {on}} sets it; both answer {ok, debug}, the state that resulted. Kept in memory only, so it is off at every start.",
   "request": {
-    "debug": "spirit.type.object.payload"
+    "debug": "spirit/type/object/payload/script.js"
   }
 }

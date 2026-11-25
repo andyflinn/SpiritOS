@@ -10,8 +10,8 @@
 if (typeof require === 'function') require('../script.js').requireScript('spirit/owner/data.js'); else window.spirit.requireScript('spirit/owner/data.js');
 module.exports = {
   verbs: {
-    boxSearch: { q: 'spirit.type.string.descriptionSelect?' },
-    boxGet: { key: 'spirit.type.string.description' },
-    command: { to: 'spirit.type.string.ID', command: 'spirit.type.string.word', body: 'spirit.type.object.payload?' },
+    boxSearch: { q: 'spirit/type/string/descriptionSelect/script.js?' },
+    boxGet: { key: 'spirit/type/string/description/script.js' },
+    command: { to: 'spirit/type/string/ID/script.js', command: 'spirit/type/string/word/script.js', body: 'spirit/type/object/payload/script.js?' },
   },
 };

@@ -1,7 +1,7 @@
 {
   "description": "Switch 😏 on or off for one row by its key (faceable): a faceable relay opens this node's face. Answers {key, faceable}. Switching it off on a relay also forgets the face this node holds there. Refused 404 (no-such-contact) when there is no row, and, only when switching it on, 403 not-a-relay for a row that is not a relay and 403 no-seat for a relay this node holds no seat on. Owner only: never granted, never from a face or a peer.",
   "request": {
-    "key": "spirit.type.string.ID",
-    "faceable": "spirit.type.boolean"
+    "key": "spirit/type/string/ID/script.js",
+    "faceable": "spirit/type/boolean/script.js"
   }
 }

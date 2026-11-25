@@ -11,12 +11,12 @@ if (typeof require === 'function') require('../script.js').requireScript('spirit
 module.exports = {
   verbs: {
     // Andy, box: "it's minimum, no filters, just a search string."
-    search: { q: 'spirit.type.string.descriptionSelect?' },
+    search: { q: 'spirit/type/string/descriptionSelect/script.js?' },
     // goal/G43.9, peer review wsl, yes, Andy's yes on Q1: "spirit.app gains a verb: "active"."
-    active: { key: 'spirit.type.string.word', active: 'spirit.type.boolean' },
+    active: { key: 'spirit/type/string/word/script.js', active: 'spirit/type/boolean/script.js' },
     // Q4, Andy: "yes.": the node's choices, over what <name>.json says.
-    label: { key: 'spirit.type.string.word', label: 'spirit.type.string.label' },
-    icon: { key: 'spirit.type.string.word', icon: 'spirit.type.string.glyph' },
+    label: { key: 'spirit/type/string/word/script.js', label: 'spirit/type/string/label/script.js' },
+    icon: { key: 'spirit/type/string/word/script.js', icon: 'spirit/type/string/glyph/script.js' },
   },
   // THE PAGE'S FUNCTION IS NOT THE VERB (goal/G43.7; Andy: "spirit.required.spirit.app.api.searchApp() which IMPLEMENTS the verb search, but isn't the
   // verb itself."): the verb stays a word on the wire, and spirit.app holds no word of its own.

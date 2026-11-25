@@ -88,7 +88,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     });
 
     parts.then(function () {
-      if (!gone && ANSWER['spirit/element/fieldInput/script.js']) ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.description');
+      if (!gone && ANSWER['spirit/element/fieldInput/script.js']) ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit/type/string/description/script.js');
     }, function () { /* the node still refuses what the rule refuses */ });
     // Return saves, as the button does.
     input.addEventListener('keydown', function (e) {

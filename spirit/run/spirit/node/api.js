@@ -11,9 +11,9 @@ if (typeof require === 'function') require('../script.js').requireScript('spirit
 module.exports = {
   verbs: {
     card: {},
-    debug: { debug: 'spirit.type.object.payload' },
-    setName: { name: 'spirit.type.string.label' },
-    setDescription: { description: 'spirit.type.string.description' },
+    debug: { debug: 'spirit/type/object/payload/script.js' },
+    setName: { name: 'spirit/type/string/label/script.js' },
+    setDescription: { description: 'spirit/type/string/description/script.js' },
     rotateCipher: {},
   },
 };

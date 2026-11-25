@@ -1,15 +1,15 @@
 {
   "description": "The agent's job table, one verb (goal/G41.4): op add, set, delete, get or search; a job carries its text, loop, a bundle, a provider and a persona.",
   "request": {
-    "op": "spirit.type.string.tableOp",
-    "id": "spirit.type.string.IDNew?",
-    "icon": "spirit.type.string.glyph?",
-    "label": "spirit.type.string.label?",
-    "loop": "spirit.type.boolean?",
-    "job": "spirit.type.string.fileContent?",
-    "bundle": "spirit.type.string.word?",
-    "provider": "spirit.type.string.IDNew?",
-    "persona": "spirit.type.string.IDNew?",
-    "text": "spirit.type.string.descriptionSelect?"
+    "op": "spirit/type/string/tableOp/script.js",
+    "id": "spirit/type/string/IDNew/script.js?",
+    "icon": "spirit/type/string/glyph/script.js?",
+    "label": "spirit/type/string/label/script.js?",
+    "loop": "spirit/type/boolean/script.js?",
+    "job": "spirit/type/string/fileContent/script.js?",
+    "bundle": "spirit/type/string/word/script.js?",
+    "provider": "spirit/type/string/IDNew/script.js?",
+    "persona": "spirit/type/string/IDNew/script.js?",
+    "text": "spirit/type/string/descriptionSelect/script.js?"
   }
 }

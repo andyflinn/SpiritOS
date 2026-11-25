@@ -1,9 +1,9 @@
 {
   "description": "Join a relay on this node's list, by its row's public key (key), by email; add it first (contact.add). With an email it asks the relay to mail a link (link, or else this node's own join page) carrying a code: {ok, url}. With that code it takes the seat, puts the relay on the list and connects to it: {ok, url, label}, 201 for a new seat and 200 for an email change on a seat already held. Refused 400 without a relay row or with neither email nor code, 503 with no router to join with, the relay's own refusal under its status, and 502 when it does not answer.",
   "request": {
-    "key": "spirit.type.string.ID",
-    "email": "spirit.type.string.email",
-    "code": "spirit.type.string.word?",
-    "link": "spirit.type.string.URL?"
+    "key": "spirit/type/string/ID/script.js",
+    "email": "spirit/type/string/email/script.js",
+    "code": "spirit/type/string/word/script.js?",
+    "link": "spirit/type/string/URL/script.js?"
   }
 }

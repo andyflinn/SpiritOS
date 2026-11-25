@@ -1,6 +1,6 @@
 {
   "description": "One item facts by id (goal/G14.7): answers {item: the facts as json (id, title, goal, status, with, buttons, blocking, blocked, go, files, phase, checks count), version, change}; refused no-such-item when there is none.",
   "request": {
-    "id": "spirit.type.string.deskId"
+    "id": "spirit/type/string/deskId/script.js"
   }
 }

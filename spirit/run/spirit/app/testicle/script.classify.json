@@ -1,9 +1,9 @@
 {
   "description": "The classifier's verb (spirit/test/scriptClassify.js): a production script's class, set on its row in testicle.db's script table. browserOnly, the script loads in a page and not on the node; nodeOnly, on the node and not in a page; both false, it runs on both; both true says nothing and is refused (bad-request). Its reClassify is cleared, unless a classifying run under way started on other bytes of the script, so the next run takes it again. Answers the script row, {name, hash, deleted, changed, reClassify, browserOnly, nodeOnly}. A name that is no script (not a .js, outside run://, or ignored) answers \"not a production script\"; a script with no row, \"no such file\". requires (goal/G47.6): the run paths of the production scripts the script's load pulled in, which replace its rows in the dependency table; left out, its rows stay.",
   "request": {
-    "script": "spirit.type.string.file",
-    "browserOnly": "spirit.type.boolean",
-    "nodeOnly": "spirit.type.boolean",
-    "requires": "spirit.type.string.json?"
+    "script": "spirit/type/string/file/script.js",
+    "browserOnly": "spirit/type/boolean/script.js",
+    "nodeOnly": "spirit/type/boolean/script.js",
+    "requires": "spirit/type/string/json/script.js?"
   }
 }

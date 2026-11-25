@@ -482,7 +482,7 @@ function chMount(container) {
     var input = make('textarea', 'ch-input', 'ch-input', { placeholder: 'Enter sends, Shift+Enter a new line' });
     input.disabled = true;
     // ITS LIMIT, fieldInput's chat line (1024 bytes; goal/G47.1, -browser: "every input it draws has a maxlength").
-    ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit.type.string.paragraph');
+    ANSWER['spirit/element/fieldInput/script.js'].attach(input, 'spirit/type/string/paragraph/script.js');
     centre.appendChild(input);
     root.appendChild(centre);
     root.appendChild(make('div', 'ch-divider-right', 'ch-divider', { 'data-divider': 'right', title: 'drag to resize' }));

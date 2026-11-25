@@ -1,6 +1,6 @@
 {
   "description": "Take a key out of your contacts (publicKey): it is no longer kept, your name for it is cleared, and every grant it held is revoked. Answers {publicKey, forgotten, stillBlocked}: a blocked key keeps its row and stays blocked. A relay's row is first taken off the node's list and its seat record cleared, refused 409 as relay.remove was: noderoutes.net, a relay this node owns, a relay still holding this node's seat, and the node's last public relay. Refused 400 without a publicKey or for this node's own key, and 404 when nothing is kept about it.",
   "request": {
-    "publicKey": "spirit.type.string.ID"
+    "publicKey": "spirit/type/string/ID/script.js"
   }
 }

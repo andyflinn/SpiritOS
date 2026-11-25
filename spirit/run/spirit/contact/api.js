@@ -11,23 +11,23 @@ if (typeof require === 'function') require('../script.js').requireScript('spirit
 module.exports = {
   verbs: {
     // The one table, people and relays (goal/G40.11): a yes-filter per flag.
-    search: { q: 'spirit.type.string.descriptionSelect?', keep: 'spirit.type.boolean?', mine: 'spirit.type.boolean?', relay: 'spirit.type.boolean?', seated: 'spirit.type.boolean?', blocked: 'spirit.type.boolean?' },
-    get: { key: 'spirit.type.string.IDNew' },
-    block: { publicKey: 'spirit.type.string.IDNew', publicLabel: 'spirit.type.string.label?' },
-    unblock: { publicKey: 'spirit.type.string.ID' },
-    accept: { publicKey: 'spirit.type.string.ID' },
-    label: { publicKey: 'spirit.type.string.ID', myLabel: 'spirit.type.string.label' },
-    forget: { publicKey: 'spirit.type.string.ID' },
+    search: { q: 'spirit/type/string/descriptionSelect/script.js?', keep: 'spirit/type/boolean/script.js?', mine: 'spirit/type/boolean/script.js?', relay: 'spirit/type/boolean/script.js?', seated: 'spirit/type/boolean/script.js?', blocked: 'spirit/type/boolean/script.js?' },
+    get: { key: 'spirit/type/string/IDNew/script.js' },
+    block: { publicKey: 'spirit/type/string/IDNew/script.js', publicLabel: 'spirit/type/string/label/script.js?' },
+    unblock: { publicKey: 'spirit/type/string/ID/script.js' },
+    accept: { publicKey: 'spirit/type/string/ID/script.js' },
+    label: { publicKey: 'spirit/type/string/ID/script.js', myLabel: 'spirit/type/string/label/script.js' },
+    forget: { publicKey: 'spirit/type/string/ID/script.js' },
     // goal/G47.4, box v33: "😏 is the row field faceable, set by the new verb contact.faceable {key, faceable}, for a relay
     // this node holds a seat on only; it does what own did", "contact.own goes". Never from a face, never from a peer.
-    faceable: { key: 'spirit.type.string.ID', faceable: 'spirit.type.boolean' },
+    faceable: { key: 'spirit/type/string/ID/script.js', faceable: 'spirit/type/boolean/script.js' },
     // A RELAY ROW'S VERBS (goal/G49.11, box v9: the node's relay branch goes, each verb "moves to the contact branch"): each names
     // the relay by its row's public key; add alone takes the url, since the relay is no row until its card answers.
-    add: { url: 'spirit.type.string.URL', label: 'spirit.type.string.label?' },
-    claim: { key: 'spirit.type.string.ID', name: 'spirit.type.string.label', invite: 'spirit.type.string.word?', inviteLabel: 'spirit.type.string.label?' },
-    face: { key: 'spirit.type.string.ID', name: 'spirit.type.string.label' },
+    add: { url: 'spirit/type/string/URL/script.js', label: 'spirit/type/string/label/script.js?' },
+    claim: { key: 'spirit/type/string/ID/script.js', name: 'spirit/type/string/label/script.js', invite: 'spirit/type/string/word/script.js?', inviteLabel: 'spirit/type/string/label/script.js?' },
+    face: { key: 'spirit/type/string/ID/script.js', name: 'spirit/type/string/label/script.js' },
     // link: the caller's link the relay mails, its code and key added (goal/G40.10; Andy: "{email, URL, card}").
-    join: { key: 'spirit.type.string.ID', email: 'spirit.type.string.email', code: 'spirit.type.string.word?', link: 'spirit.type.string.URL?' },
-    leave: { key: 'spirit.type.string.ID' },
+    join: { key: 'spirit/type/string/ID/script.js', email: 'spirit/type/string/email/script.js', code: 'spirit/type/string/word/script.js?', link: 'spirit/type/string/URL/script.js?' },
+    leave: { key: 'spirit/type/string/ID/script.js' },
   },
 };

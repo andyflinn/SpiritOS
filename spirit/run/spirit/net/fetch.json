@@ -1,10 +1,10 @@
 {
   "description": "Fetch a url from the internet: {url, method, headers, body, timeoutMs} -> the outside answer as it comes, its status and content type kept. It never reaches this machine: a url on loopback, localhost, 0.0.0.0, :: or one of this machine's own interface addresses (or a name that resolves to one) is refused 403, code this-machine, and nothing is sent. The headers go as given: no key is filled in and no list gates them.",
   "request": {
-    "url": "spirit.type.string.URL",
-    "method": "spirit.type.string.httpMethod?",
-    "headers": "spirit.type.object.payload?",
-    "body": "spirit.type.string.fileContent?",
-    "timeoutMs": "spirit.type.number.integer?"
+    "url": "spirit/type/string/URL/script.js",
+    "method": "spirit/type/string/httpMethod/script.js?",
+    "headers": "spirit/type/object/payload/script.js?",
+    "body": "spirit/type/string/fileContent/script.js?",
+    "timeoutMs": "spirit/type/number/integer/script.js?"
   }
 }

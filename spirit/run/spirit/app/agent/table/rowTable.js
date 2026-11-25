@@ -43,7 +43,7 @@ function refuse(code, why) { const e = new Error(why); e.refusal = code; e.extra
 
 // The table's SQL type of a field from its rule: a bool is 0 or 1, a list is kept as the JSON text it comes as (goal/G48.4,
 // Q6, Andy: lists are "spirit.type.string.json").
-const JSON_RULE = 'spirit.type.string.json';
+const JSON_RULE = 'spirit/type/string/json/script.js';
 function parsed(text) { try { return JSON.parse(text || '[]'); } catch (e) { return []; } }
 function sqlType(rule) { return String(rule).replace(/\?$/, '') === 'bool' ? 'INTEGER' : 'TEXT'; }
 

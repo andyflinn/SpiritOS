@@ -1,6 +1,6 @@
 {
   "description": "One job by its id (key): {ok, key, job: {id, kind, type, status, createdAt, updatedAt, log, data, module?, app?}}; 400 without a key, 404 when there is none, 413 when it does not fit one answer.",
   "request": {
-    "key": "spirit.type.string.path"
+    "key": "spirit/type/string/path/script.js"
   }
 }

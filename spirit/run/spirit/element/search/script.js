@@ -306,7 +306,7 @@
     // ran; a search made before it is in attaches once it is, never left with its words unheld.
     function holdWords() {
       var FI = ANSWER['spirit/element/fieldInput/script.js'];
-      if (FI && live && el('text')) { FI.attach(el('text'), 'spirit.type.string.description'); return true; }
+      if (FI && live && el('text')) { FI.attach(el('text'), 'spirit/type/string/description/script.js'); return true; }
       return false;
     }
     if (!holdWords()) Promise.resolve(fieldInputIn).then(holdWords, function () {});

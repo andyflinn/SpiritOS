@@ -122,13 +122,23 @@
   // rule is spirit.type.<...>, a trailing ? making it optional, and its type file spirit/type/<...>.js is there"): the type
   // file's isValid asked, '' when it answers true, its error's words when it throws. On the node the file is required; on a
   // page it is what spirit.required holds, and a type not loaded there yet is left to the node, which checks every call again.
-  // null for a name that is not a type's. The type file is spirit/type/<...>/script.js since goal/G49.13.
+  // null for a rule that is not a type's.
+  // A TYPE IS NAMED BY ITS FILE'S FULL PATH, spirit/type/string/label/script.js (goal/G49.13; Andy: "FIX THE FUCKING
+  // DYNAMICALLY CREATED spirit/type/* SHIT!!!!!!!!!!!!!"): the rule is that path, handed to the loader as it is, never made from a
+  // dotted name. On the node it is required; on a page it is what the loader placed for that path, if it has loaded.
   function typeRule(raw) {
-    if (!/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(raw)) return null;
+    if (!/^spirit\/type\/[A-Za-z0-9\/]+\/script\.js$/.test(raw)) return null;
     var T = null;
-    if (isNode()) { try { T = require(require('path').join(__dirname, raw.split('.').slice(1).join('/') + '/script.js')); } catch (e) { return null; } }
-    else T = raw.split('.').slice(1).reduce(function (o, k) { return o && o[k]; }, (root.spirit || {}).required && root.spirit.required.spirit);
-    if (!T) return isNode() ? null : function () { return ''; };
+    if (isNode()) {
+      try { T = requireOne(raw); } catch (e) { return null; }
+      if (T && typeof T.then === 'function') { T.then(null, function () { /* not there: no rule */ }); return null; }
+    } else {
+      var keys = placeKeys(raw);
+      T = required;
+      for (var i = 0; i < keys.length && T; i += 1) T = T[keys[i]];
+      if (!T || typeof T.isValid !== 'function') return function () { return ''; };
+    }
+    if (!T) return null;
     return function (v) { try { return T.isValid(v) === true ? '' : 'a valid ' + raw; } catch (e) { return (e && e.message) || ('a valid ' + raw); } };
   }
   // Every argument checked against the verb's declaration; the first fault refuses the whole call.

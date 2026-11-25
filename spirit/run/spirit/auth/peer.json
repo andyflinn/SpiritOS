@@ -1,6 +1,6 @@
 {
   "description": "Every grant one member's key holds: {records: [{key, label, path}]}.",
   "request": {
-    "key": "spirit.type.string.IDNew"
+    "key": "spirit/type/string/IDNew/script.js"
   }
 }

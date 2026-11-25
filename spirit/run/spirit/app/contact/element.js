@@ -99,9 +99,9 @@ function contactCreate(container, options) {
     // relay peer, so the list above finds it. The rule on the address is the wire's (hub.assertRelayUrl), asked here so
     // a typo costs no round trip.
     // The private label holds to the label rule (goal/G47.1, -browser: every input has a maxlength).
-    ANSWER['spirit/element/fieldInput/script.js'].attach(document.getElementById('contacts-relay-label'), 'spirit.type.string.label');
+    ANSWER['spirit/element/fieldInput/script.js'].attach(document.getElementById('contacts-relay-label'), 'spirit/type/string/label/script.js');
     // The address too, a line (fieldRules' LINE_MAX_BYTES): its maxlength and its own listener, so it is never deaf.
-    ANSWER['spirit/element/fieldInput/script.js'].attach(document.getElementById('contacts-relay-url'), 'spirit.type.string.URL');
+    ANSWER['spirit/element/fieldInput/script.js'].attach(document.getElementById('contacts-relay-url'), 'spirit/type/string/URL/script.js');
     document.getElementById('contacts-relay-add').addEventListener('click', function () {
       var out = document.getElementById('contacts-relay-add-out');
       var label = String(document.getElementById('contacts-relay-label').value || '').trim();
