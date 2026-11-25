@@ -29,7 +29,7 @@ function reads() { return D.fs.data; }
 // requires this file, so the stream is followed on the next turn only where no watcher writes.
 setImmediate(fill);
 
-// ONE FILE ROW AS A TREE COMMAND (goal/G4.25, G29.8, G49.1): {op, path, at} with the row's size, modified, and core, api and app
+// ONE FILE ROW AS A TREE COMMAND (goal/G4.25, G29.8, G49.1, G49.15): {op, path, at} with the row's size, modified, and core, api, branch, app and live
 // when true; the watcher sends each change so, and a connect is handed the whole tree so.
 function CommandOf(op, p, at, row) {
   const c = { op: op, path: p, at: at };
@@ -37,7 +37,9 @@ function CommandOf(op, p, at, row) {
   if (row && row.modified !== undefined) c.modified = row.modified;
   if (row && row.core === true) c.core = true;
   if (row && row.api === true) c.api = true;
+  if (row && row.branch === true) c.branch = true;
   if (row && row.app === true) c.app = true;
+  if (row && row.live === true) c.live = true;
   return c;
 }
 

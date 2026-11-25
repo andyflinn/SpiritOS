@@ -125,7 +125,9 @@ const arrivals = spirit.requireScript('spirit/arrivals/script.js').createArrival
 const BOOT_ASSETS = ['spirit/shell/ghost.svg'];
 
 const jobs = spirit.requireScript('spirit/job/script.js')(port);
-jobs.startFsWatcherJob(ROOT_DIR);
+// THE FS CACHE'S WRITER, THE FILE WATCHER, IS THE fs BRANCH'S (goal/G49.15, box v16: "the watcher lands in spirit/fs/server/script.js
+// and is required by the node."), its job in this node's job table.
+spirit.requireScript('spirit/fs/server/script.js').start(ROOT_DIR, jobs);
 // WHERE THE JOIN STEPS STAND (goal/G30.1, box v40): a permanent job the shell's Join tile and the Join app hear, so
 // they draw when a seat, a contact or a face changes and never ask. Refreshed at /api/spirit after a relay, contact or
 // peer verb has answered (below), the moment the node knows.

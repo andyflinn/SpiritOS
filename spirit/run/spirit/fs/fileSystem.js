@@ -88,8 +88,9 @@ const SIDECAR_SUFFIX = '.sidecar.json';
 // path loadFile/scanFolder/the rest of the static route all share.
 // fileSystem.js, this file, joined it when it was lifted out of the old kernel (goal/G40.6).
 // DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/DEBUG/test/script.md).
+// spirit/fs/server/script.js, the file watcher, joined it when it left job's script (goal/G49.15).
 // spirit/server/script.js is the launcher since goal/G48.5; the servers it starts stand in spirit/server/, never served as a folder.
-const UNSERVABLE_FILES = ['spirit/fs/fileSystem.js', 'spirit/job/script.js', 'spirit/server/script.js', 'spirit/relayConfig/script.js', 'spirit/relay/processor/script.js', 'spirit/hub/script.js', 'spirit/relayAuth/script.js', 'spirit/DEBUG/script.js'].map(function (p) { return p.toLowerCase(); });
+const UNSERVABLE_FILES = ['spirit/fs/fileSystem.js', 'spirit/fs/server/script.js', 'spirit/job/script.js', 'spirit/server/script.js', 'spirit/relayConfig/script.js', 'spirit/relay/processor/script.js', 'spirit/hub/script.js', 'spirit/relayAuth/script.js', 'spirit/DEBUG/script.js'].map(function (p) { return p.toLowerCase(); });
 // goal/G43.9, Andy's box: "spirit/state/ is not servable, so a page cannot read other apps' state through a plain GET."
 // goal/G48.5, the box: "never served: UNSERVABLE_FOLDERS in spirit/fs/fileSystem.js names spirit/server/ and every
 // spirit/app/<name>/server/": the node's, the relay's and the server processes' code, and each app's server-only files.

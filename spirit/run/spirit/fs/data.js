@@ -40,8 +40,9 @@
         } else {
           var was = V.branch(FILES)[p] || {};
           // core: the node's word that the file is core (goal/G30.21), painted yellow by its row. api and app: the node's
-          // word that a folder holds api.js and data.js, or <name>.json and <name>.js (goal/G49.1); a file's are false.
-          V.set(FILES + '/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified, core: cmd.core === true, api: cmd.api === true, app: cmd.app === true });
+          // word that a folder holds api.js and data.js, or <name>.json and <name>.js (goal/G49.1); branch and live: a new-shape branch, and an
+          // app the owner switched on (goal/G49.15, spirit/fs/filter/); a file's are all false.
+          V.set(FILES + '/' + p, { kind: cmd.op === 'createDirectory' ? 'folder' : was.kind || 'file', size: cmd.size, modified: cmd.modified, core: cmd.core === true, api: cmd.api === true, branch: cmd.branch === true, app: cmd.app === true, live: cmd.live === true });
         }
       },
     });

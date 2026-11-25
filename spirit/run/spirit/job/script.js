@@ -4,8 +4,6 @@ require('../script.js');
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
-// The node's file system: the files of the run folder and what may be served or written (goal/G40.6).
-const fileSystem = spirit.requireScript('spirit/fs/fileSystem.js');
 const { EventEmitter } = require('events');
 const { monitorEventLoopDelay } = require('perf_hooks');
 
@@ -27,7 +25,6 @@ function formatDuration(ms) {
 // ITS OWN STATE, ON NO KERNEL (goal/G40.6). Andy, 2026-10-25: "let jobs.js take care of its own shit." The server's
 // statistics and the job functions are this module's; the node server gets the functions back from this call.
 module.exports = function installJobs(port) {
-  const scanFolder = fileSystem.scanFolder;
 
   const jobsMap = new Map();
   const events = new EventEmitter();
@@ -182,169 +179,8 @@ module.exports = function installJobs(port) {
     return true;
   }
 
-  function mapEntry(entry, rootDir) {
-    const full = path.join(entry.parentPath, entry.name);
-    return {
-      name: entry.name,
-      parentPath: entry.parentPath,
-      fullPath: full,
-      relativePath: path.relative(rootDir, full).replace(/\\/g, '/'),
-      kind: entry.isDirectory() ? 'folder' : 'file',
-    };
-  }
-
-  // ── THE FILE WATCHER ON CHOKIDAR, STREAMING TREE COMMANDS (goal/G4.25) ──
-  //
-  //   Andy, 2026-10-02: "the current design is horrid. for lazy load the stream can send createDirectory run /
-  //   createDirectory media / createFile index.html etc... just send \"commands up the stream to modify the tree.\"",
-  //   "so that s our replacement then. quick and free and maintained by others....", "forget about batching"; and
-  //   2026-10-04, "local copy it is" (chokidar, under spirit/fs/chokidar/ since goal/G49.15). His grant G1 on this file.
-  //
-  // The watcher keeps the tree (path -> {kind, size, modified}) and sends what changed, one command per job-updated:
-  // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
-  // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
-  // commands read from spirit/fs/script.js (commands(), in event/event.js and faceHome.js). THE TREE IS COMPLETE (goal/G49.2; Andy:
-  // "the shared dataset needs to be complete, period", "it is at publish-to-clients time that !fileServable be the filter"):
-  // seeded from scanFolder's whole walk and watched whole, .git alone left out, the node's state, its server code and the
-  // vendored folders in it; only what is published to a page is cut by fileServable (event/event.js, faceHome.js). chokidar
-  // reports at startup what the seed already holds, which sends nothing.
-  const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
-  const RUN_ROOT = path.join(__dirname, '..', '..');
-  // THE TREE IS spirit.required.spirit.data.fs (goal/G49.1, box v17: "chokidar --> (node: spirit.required.spirit.data.fs) --> spirit.eventStream --> browsers and
-  // node processes"; "job.js's own tree (fsTree) goes. Nothing else holds a tree on the node"): the watcher writes each
-  // command into this process's spirit.required.spirit.data, where spirit/fs/data.js files it as it does a page's stream, and reads it back
-  // from there. Its readers ask spirit/fs/script.js for it, commands() and entries() (goal/G49.2: "job.js's fsTreeCommands and
-  // fsTreeEntries go, and event.js, faceHome.js and nodeSearches.js read spirit.required.spirit.data.fs"). fsWatching is the watcher whose tree it
-  // is, null once it stopped.
-  const FS_HOME = 'local'; // the node's own name in its spirit.required.spirit.data, as a child that follows the stream names it (spirit/data/script.js)
-  let fsWatching = null;
+  // THE FS DATASET (goal/G49.1): spirit/fs/script.js, which the watcher fills (spirit/fs/server/script.js since goal/G49.15).
   function fsDataset() { return spirit.requireScript('spirit/fs/script.js'); }
-  function fsWrite(command) {
-    spirit.requireScript('spirit/data/script.js').takeJob({ id: 'spirit.fs', data: { command: command } }, FS_HOME);
-  }
-  // THE TWO FOLDER FLAGS (goal/G49.1, the box): api, a folder holding api.js and data.js; app, a folder <name> holding
-  // its manifest <name>/<name>.json (Q1, Andy: "yes. testicle already checks validity of an app.json": spirit/app/job,
-  // job.json and no job.js, is an app). Files are always false; set by this one writer on the folder's row.
-  function folderFlags(dir, has) {
-    const name = dir.slice(dir.lastIndexOf('/') + 1);
-    return { api: has(dir + '/api.js') && has(dir + '/data.js'), app: !!name && has(dir + '/' + name + '.json') };
-  }
-
-  // THE STAT RIDES WITH EVERY CREATE AND CHANGE (goal/G29.8). The item's box: "The node streams the tree to the page as
-  // it does, the watcher's updates, now each with its stat: size and modified, for every create and change; a delete
-  // carries none." A file's size in bytes; modified an ISO time; a folder carries its modified alone. A path gone
-  // before it could be read carries none.
-  function statOf(full, kind) {
-    let st = null;
-    try { st = fs.statSync(full); } catch (e) { return { kind: kind }; }
-    return kind === 'folder' ? { kind: kind, modified: st.mtime.toISOString() } : { kind: kind, size: st.size, modified: st.mtime.toISOString() };
-  }
-  // A CORE FILE SAYS SO (goal/G30.21: "the files list thing should display core files with yellow typeface"), by the one
-  // rule the commit check reads (coreFiles.js); the run folder is spirit/run of the checkout two folders up.
-  // THE FLAG IS KEPT ON THE LIST (goal/G47.1; Andy: "stick that flag on the fucking file list, then you have to check each
-  // file once with isCore()"): worked out once, when the file enters the kept list, and again for an app's files when its
-  // <name>.json changes, never as the list is sent. Asked on every send it read an app's json from disc once per file,
-  // on the node's one thread, for every page and face that connected: 17 of 45 s on Andy's node, measured.
-  function heldOf(p, full, kind) {
-    const held = statOf(full, kind);
-    if (kind === 'file' && spirit.requireScript('spirit/coreFiles/script.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'))) held.core = true;
-    return held;
-  }
-  // A file row as a tree command: spirit/fs/script.js's, where a connect's whole tree is read too (goal/G49.2).
-  function commandOf(op, p, at, held) { return fsDataset().CommandOf(op, p, at, held); }
-
-  function startFsWatcherJob(rootDir) {
-    const tree = fsDataset();
-    tree.FedHere();
-    const own = {};
-    fsWatching = own;
-    // The tree as it was, gone (a watcher started again), then the seed: each path filed as a create, the folder flags
-    // worked out from the seed itself, then the tree's end.
-    Object.keys(tree.files()).sort().reverse().forEach(function (p) { const was = tree.file(p); if (was) fsWrite({ op: was.kind === 'folder' ? 'deleteDirectory' : 'deleteFile', path: p }); });
-    const seed = new Map();
-    scanFolder(rootDir, [], true).forEach(function (entry) { const m = mapEntry(entry, rootDir); seed.set(m.relativePath, heldOf(m.relativePath, m.fullPath, m.kind)); });
-    const seedAt = new Date().toISOString();
-    Array.from(seed.keys()).sort().forEach(function (p) {
-      const held = seed.get(p);
-      if (held.kind === 'folder') Object.assign(held, folderFlags(p, function (q) { return seed.has(q); }));
-      fsWrite(commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, seedAt, held));
-    });
-    spirit.requireScript('spirit/data/script.js').takeJob({ id: 'spirit.fs', data: { treeComplete: true } }, FS_HOME);
-    const has = function (q) { return !!tree.file(q); };
-    // THE NODE'S FILES ARE spirit.fs (goal/G43.20).
-    const job = ownJob('spirit.fs');
-    // No face part is streamed: the old shell's face parts are gone (goal/G43.20; Andy: "drop the old shells face parts
-    // altogether."), so spirit.app carries the app list alone.
-    const relOf = function (full) { return path.relative(rootDir, full).split(path.sep).join('/'); };
-    const ignored = function (full) {
-      const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
-      if (!rel || rel.indexOf('..') === 0) return false;
-      return rel.split('/').some(function (part) { return part === '.git'; });
-    };
-    const watcher = spirit.requireScript('spirit/fs/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
-    watcher.on('all', function (event, full) {
-      const op = FS_OPS[event];
-      const rel = full ? relOf(full) : '';
-      if (!op || !rel || rel.indexOf('..') === 0 || fsWatching !== own) return;
-      // Each command goes into spirit.required.spirit.data.fs first, then up the stream, so what a page is handed is what the node holds.
-      const send = function (command) { fsWrite(command); updateJob(job.id, { data: { command: command } }); };
-      let held = null;
-      if (op === 'createFile' || op === 'createDirectory') {
-        const kind = op === 'createDirectory' ? 'folder' : 'file';
-        const was = tree.file(rel);
-        if (was && was.kind === kind) return; // already held: the startup report, or a repeat
-        held = heldOf(rel, full, kind);
-        if (kind === 'folder') Object.assign(held, folderFlags(rel, has));
-      } else if (op === 'deleteFile' || op === 'deleteDirectory') {
-        if (!tree.file(rel)) return;
-      } else held = heldOf(rel, full, 'file'); // a change: the new stat (a file never seen is made by it)
-      send(commandOf(op, rel, new Date().toISOString(), held));
-      // A FOLDER'S FLAGS FOLLOW ITS FILES (goal/G49.1): api.js, data.js or <name>.json made or gone inside a folder
-      // works its flags out again, and a folder whose flags turned is sent again as a createDirectory with its new row.
-      const cut = rel.lastIndexOf('/');
-      const dir = cut > 0 ? rel.slice(0, cut) : '';
-      const leaf = rel.slice(cut + 1);
-      const dirName = dir.slice(dir.lastIndexOf('/') + 1);
-      if (dir && op !== 'changeFile' && (leaf === 'api.js' || leaf === 'data.js' || leaf === dirName + '.json')) {
-        const row = tree.file(dir);
-        if (row && row.kind === 'folder') {
-          const flags = folderFlags(dir, has);
-          if (flags.api !== (row.api === true) || flags.app !== (row.app === true)) {
-            send(commandOf('createDirectory', dir, new Date().toISOString(), Object.assign({}, row, flags)));
-          }
-        }
-      }
-      // AN APP'S <name>.json CHANGED, MADE OR GONE: whether its files are core may have changed with it (coreFiles.js reads
-      // its identity.intrinsic), so its files' flags are worked out again, and each one that turned is sent as a change.
-      const app = /^spirit\/app\/([^/]+)\/([^/]+)\.json$/.exec(rel);
-      if (app && app[1] === app[2] && op !== 'createDirectory' && op !== 'deleteDirectory') {
-        const under = 'spirit/app/' + app[1] + '/';
-        const files = tree.files();
-        Object.keys(files).forEach(function (p) {
-          const h = files[p];
-          if (h.kind !== 'file' || p.indexOf(under) !== 0 || p === rel) return;
-          const core = spirit.requireScript('spirit/coreFiles/script.js').isCore('spirit/run/' + p, path.resolve(RUN_ROOT, '..', '..'));
-          if (core === (h.core === true)) return;
-          send(commandOf('changeFile', p, new Date().toISOString(), Object.assign({}, h, { core: core })));
-        });
-      }
-    });
-
-    watcher.on('error', function(err) {
-      // 'failed', not 'error': only TERMINAL_STATUSES can be deleted, and
-      // 'error' was in neither that set nor anything the UI renders — a
-      // watcher that died left a row in Jobs that deleteJob refused
-      // forever, with no way to clear it short of restarting the server.
-      updateJob(job.id, { status: 'failed', logMessage: String(err) });
-    });
-
-    job._stop = function() {
-      watcher.close();
-      if (fsWatching === own) fsWatching = null;
-    };
-
-    return job;
-  }
 
   // THE ONE LAUNCHER (desk/G2.2). Andy: "if a server is a process, it should
   // get the perks of a process, that's no stretch." and "can those not
@@ -688,7 +524,7 @@ module.exports = function installJobs(port) {
 
   // THE APPS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
   // "fix job.js"): the folders directly in spirit/app/ and the files in them, as this process's spirit.required.spirit.data.fs holds them
-  // (spirit/fs/script.js), fed by the watcher the node starts first (startFsWatcherJob). A <name>.json is still read for what it says.
+  // (spirit/fs/script.js), fed by the watcher the node starts first (spirit/fs/server/script.js). A <name>.json is still read for what it says.
   function inTree(rel) { return !!fsDataset().file(rel); }
   function appFolders() {
     const files = fsDataset().files();
@@ -823,7 +659,6 @@ module.exports = function installJobs(port) {
     listJobs: listJobs,
     cancelJob: cancelJob,
     deleteJob: deleteJob,
-    startFsWatcherJob: startFsWatcherJob,
     startProcessJob: startProcessJob,
     startServerJob: startServerJob,
     followApp: followApp,
