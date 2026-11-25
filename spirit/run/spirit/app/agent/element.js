@@ -163,9 +163,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         // instead of 🐞, and that panel will show..."): the one DEBUG switch every server has, kept by the node. Above it the app's
         // icon and label, as the appSelector's detail shows them (Q4; Andy: "both above the debug thinggie...").
         right: [{ name: 'server', icon: '⚙', title: 'The agent server', mount: function (box) {
-          var A = 'spirit/element/search/app/';
-          // Each part as spirit.requireScript hands it back (goal/G49.9), never read at its spirit.required place.
-          Promise.all([spirit.requireScript(A + 'changeAppIcon.js'), spirit.requireScript(A + 'changeAppLabel.js'), spirit.requireScript(A + 'serverDEBUG.js')]).then(function (parts) {
+          // Each part as spirit.requireScript hands it back (goal/G49.9), never read at its spirit.required place, and named
+          // by its full path written out (goal/G49.13; Andy: "YOU FUCKING FIX THE CALLERS AND REMOVE THE MOTHERFUCKING SHIM").
+          Promise.all([spirit.requireScript('spirit/element/search/app/changeAppIcon/script.js'), spirit.requireScript('spirit/element/search/app/changeAppLabel/script.js'), spirit.requireScript('spirit/element/search/app/serverDEBUG/script.js')]).then(function (parts) {
             if (gone) return;
             var hosts = [0, 1, 2].map(function () { var d = document.createElement('div'); box.appendChild(d); return d; });
             var made = parts.map(function (part, i) { return part.create(hosts[i], { key: 'agent' }); });
