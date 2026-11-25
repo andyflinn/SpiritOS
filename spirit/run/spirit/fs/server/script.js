@@ -169,7 +169,13 @@ function start(rootDir, jobs) {
     }
   });
 
+  // A FILE ALREADY GONE IS NO FAILURE (goal/G49.19; Andy: "cw, go" to "an error about a file that is already gone, EPERM,
+  // ENOENT or EBUSY on a path no longer there, is no failure; the watcher goes on, and only a real error fails the job"):
+  // on Windows a file made and deleted within moments, such as SQLite's testicle.db-journal, can answer the watch with an
+  // EPERM, and that one error had stopped the whole file cache's feed.
+  const GONE_CODES = ['EPERM', 'ENOENT', 'EBUSY'];
   watcher.on('error', function (err) {
+    if (err && GONE_CODES.indexOf(err.code) !== -1 && err.path && !fs.existsSync(err.path)) return;
     // 'failed', not 'error': only a terminal status can be deleted, and a watcher that died left a row in Jobs that
     // deleteJob refused forever, with no way to clear it short of restarting the server.
     jobs.updateJob(job.id, { status: 'failed', logMessage: String(err) });
