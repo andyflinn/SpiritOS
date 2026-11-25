@@ -5,7 +5,7 @@ The type spirit.type.string.description: a description, its limit DESCRIPTION_MA
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription) is judged by
-`../../test/boolean-sibling-general.js`.
+`spirit/test/script-sibling-general.js` (its type rules).
 
 ## What its test judges
 

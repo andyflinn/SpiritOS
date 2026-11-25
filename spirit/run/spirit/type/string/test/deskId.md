@@ -5,7 +5,7 @@ The type spirit.type.string.deskId: a Desk goal or item: goal/G<goal> or goal/G<
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription), and what
-every <type>Select.js keeps beside its sibling, is judged by `../../test/boolean-sibling-general.js`.
+every <type>Select.js keeps beside its sibling, is judged by `spirit/test/script-sibling-general.js` (its type rules).
 
 ## What its test judges
 

@@ -5,7 +5,7 @@ The type spirit.type.string.email: an email address, its limit EMAIL_MAX_BYTES, 
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription) is judged by
-`../../test/boolean-sibling-general.js`.
+`spirit/test/script-sibling-general.js` (its type rules).
 
 ## What its test judges
 

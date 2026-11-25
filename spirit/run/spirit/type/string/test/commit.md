@@ -5,7 +5,7 @@ The type spirit.type.string.commit: a commit: 7 to 40 hex characters, lower case
 ## What it is
 
 An object of static functions; what every type file holds and keeps (defaultValue, isValid, ruleDescription), and what
-every <type>Select.js keeps beside its sibling, is judged by `../../test/boolean-sibling-general.js`.
+every <type>Select.js keeps beside its sibling, is judged by `spirit/test/script-sibling-general.js` (its type rules).
 
 ## What its test judges
 
