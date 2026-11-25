@@ -200,7 +200,7 @@ if (withApi.length) {
   // EVERY ARGUMENT NAMES ITS TYPE (goal/G48.4, the box): "a verb's arguments would name types: \"type.string.label\", the full
   // path of a fucking type under spirit"; "a type identifier is ALWAYS spirit.type.*"; "\"text\" dies. unlimited strings are
   // forbidden in SpiritOS."; "\"flags\" must be booleans". An argument's rule is spirit.type.<...>, a trailing ? making it
-  // optional, and its type file spirit/type/<...>.js is there.
+  // optional, and its type file spirit/type/<...>/script.js is there (goal/G49.13: a type is its folder's script.js).
   test.run('each argument of its api.js names its type by its full path, spirit.type.<...>, whose type file is there', 0.4, function () {
     return overAll(withApi, function (b) {
       if (!b.verbs) return false;
@@ -209,7 +209,7 @@ if (withApi.length) {
         return Object.keys(args).every(function (a) {
           const rule = String(args[a]).replace(/\?$/, '');
           if (!/^spirit\.type(\.[A-Za-z][A-Za-z0-9]*)+$/.test(rule)) return false;
-          return fs.existsSync(path.join(RUN, rule.split('.').join('/') + '.js'));
+          return fs.existsSync(path.join(RUN, rule.split('.').join('/'), 'script.js'));
         });
       });
     });
