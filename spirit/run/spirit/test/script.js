@@ -30,7 +30,7 @@ function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/spirit/'
 test.after(function () { try { fs.rmSync(tempFolder.path('spirit/test/spirit'), { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ } });
 const SOURCE = fs.readFileSync(path.join(RUN, 'spirit', 'script.js'), 'utf8');
 const COMPONENT = 'spirit/relayUrl/script.js';
-const PAGE_COMPONENT = 'spirit/fieldRules/script.js';   // written for both node and a page, as the face's parts are
+const PAGE_COMPONENT = 'spirit/type/string/label/script.js';   // written for both node and a page, as the face's parts are (the label type; fieldRules goes, goal/G49.13)
 async function refusedWith(promise) { try { await promise; return null; } catch (e) { return e && e.code; } }
 
 // A family's api.js as the node hands it: two verbs, one dotted, and a name of its own.
@@ -232,8 +232,8 @@ function page() {
         const [status, out] = answer(b);
         return Promise.resolve({ status: status, text: function () { return Promise.resolve(typeof out === 'string' ? out : JSON.stringify(out)); } });
       }
-      // The node's addresses, each served from its file (goal/G43.18, Q25: serveCommon.pageFile).
-      const file = path.join(RUN, require(path.join(RUN, 'spirit', 'server', 'serveCommon', 'script.js')).pageFile(String(url).replace(/^\/+/, '')));
+      // The node's addresses, each its own run path (goal/G49.13: no page address map).
+      const file = path.join(RUN, String(url).replace(/^\/+/, ''));
       const there = fs.existsSync(file);
       return Promise.resolve({ status: there ? 200 : 404, headers: { get: function () { return ''; } }, arrayBuffer: function () { return Promise.resolve(there ? new Uint8Array(fs.readFileSync(file)).buffer : new ArrayBuffer(0)); } });
     },
@@ -626,10 +626,10 @@ test.run('isLoopback() answers true on 127.0.0.1, localhost and [::1], false on 
 // ── 6b. ON A FACE, spirit.js LOADS THE FACE ──────────────────────────
 // 6b. on a face: face.html holds spirit.js alone, and spirit.js loads the face shell
 // goal/G41.19, Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!": one tag, /spirit.js, and nothing pasted in by a server.
-test.run('face.html says it is a face (data-spirit="face") and loads spirit.js by one script tag, and no other script', 0.2, function () {
+test.run('face.html says it is a face (data-spirit="face") and loads /spirit/script.js by one script tag, and no other script', 0.2, function () {
   const faceHtml = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'), 'utf8');
   const faceScripts = faceHtml.replace(/<!--[\s\S]*?-->/g, '').match(/<script\b[^>]*>[\s\S]*?<\/script>/g) || [];
-  return (/<html[^>]*data-spirit="face"/.test(faceHtml) && faceScripts.length === 1 && /^<script src="\/spirit\.js"><\/script>$/.test(faceScripts[0])) || false;
+  return (/<html[^>]*data-spirit="face"/.test(faceHtml) && faceScripts.length === 1 && /^<script src="\/spirit\/script\.js"><\/script>$/.test(faceScripts[0])) || false;
 }, test.limit.quick);
 test.run('the node serves face.html byte for byte as it is on disk', 0.2, async function () {
   const served = await new Promise(function (resolve) {
@@ -643,12 +643,12 @@ test.run('no server pastes spirit.js into a page, and serveCommon.inlineSpirit i
   const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'server', 'serveCommon', 'script.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'spirit', 'server', 'relay', 'script.js'), 'utf8');
   return !/inlineSpirit/.test(serverSrc) || false;
 }, test.limit.quick);
-test.run('on the home node\'s page spirit.js gets shell/boot.js alone and runs it, spirit.faceBooted answering; the seal waits for a face', 0.2, async function () {
+test.run('on the home node\'s page spirit.js gets spirit/shell/boot/script.js alone and runs it, spirit.faceBooted answering; the seal waits for a face', 0.2, async function () {
   const injected = T.injected = [];
   const faceWindow = T.faceWindow = {
     fetch: function (url) {
-      // The node's addresses, each served from its file (goal/G43.18, Q25: serveCommon.pageFile).
-      const file = path.join(RUN, require(path.join(RUN, 'spirit', 'server', 'serveCommon', 'script.js')).pageFile(String(url).replace(/^\/+/, '')));
+      // The node's addresses, each its own run path (goal/G49.13: no page address map).
+      const file = path.join(RUN, String(url).replace(/^\/+/, ''));
       const there = fs.existsSync(file);
       return Promise.resolve({ status: there ? 200 : 404, headers: { get: function () { return ''; } }, arrayBuffer: function () { return Promise.resolve(there ? new Uint8Array(fs.readFileSync(file)).buffer : new ArrayBuffer(0)); } });
     },
@@ -673,7 +673,7 @@ test.run('on the home node\'s page spirit.js gets shell/boot.js alone and runs i
   const readRun = function (p) { try { return fs.readFileSync(path.join(RUN, p), 'utf8'); } catch (e) { return null; } };
   const seal = readRun('spirit/shell/seal/script.js');
   const shellSrc = readRun('spirit/shell/boot/script.js');
-  return (booted === true && !!shellSrc && !!seal && injected.length === 1 && injected[0].indexOf(shellSrc) === 0 && injected[0].indexOf(seal) === -1 && SOURCE.indexOf("requireOne('shell/seal.js')") !== -1) || false;
+  return (booted === true && !!shellSrc && !!seal && injected.length === 1 && injected[0].indexOf(shellSrc) === 0 && injected[0].indexOf(seal) === -1 && SOURCE.indexOf("requireOne('spirit/shell/seal/script.js')") !== -1) || false;
 }, test.limit.quick);
 
 // ── 7. THE ONE LOADER, THE SAME IN NODE AND ON A PAGE ────────────────
@@ -693,12 +693,12 @@ test.run('in node, a component that is not there refuses', 0.2, async function (
 // spirit.requireScript() places the loaded script at the exact same motherfucking location/path in the spirit object", "FUCKING
 // FIX THAT!!"; G43.32: "helpers with no create are no fucking elements. they live in require."): on a page a required helper
 // stands at spirit.required.<its path>, the real object as in node, and the require answers it.
-test.run('on a page, spirit/fieldRules/script.js required stands at spirit.required.spirit.fieldRules, the real one, and the require answers it', 0.2, async function () {
+test.run('on a page, spirit/type/string/label/script.js required stands at spirit.required.spirit.type.string.label, the real one, and the require answers it', 0.2, async function () {
   if (!T.wq) return false;
   const wq = T.wq;
   const onPage = await wq.spirit.requireScript(PAGE_COMPONENT);
-  const placed = wq.spirit.required && wq.spirit.required.spirit && wq.spirit.required.spirit.fieldRules;
-  return (!!placed && typeof placed.problem === 'function' && onPage === placed && !wq.scriptError) || false;
+  const placed = placeOf(wq.spirit, PAGE_COMPONENT);
+  return (!!placed && typeof placed.isValid === 'function' && onPage === placed && !wq.scriptError) || false;
 }, test.limit.quick);
 test.run('on a page, spirit/data/script.js required stands at spirit.required.spirit.data, the real one, and the require answers it', 0.2, async function () {
   if (!T.wq) return false;
@@ -745,18 +745,18 @@ test.run('on a page, a require with a key answers the peer\'s branch through the
 // already loaded". A path required twice is fetched and run once, every caller getting the same answer; a script the
 // boot already loaded counts as required.
 // 7a. spirit.requireScript de-dupes: a path is fetched and run once, a script the boot loaded counts as required
-test.run('on a page, spirit/fieldRules/script.js required three times, two at once, is fetched once, and every caller gets the same answer', 0.2, async function () {
+test.run('on a page, spirit/type/string/label/script.js required three times, two at once, is fetched once, and every caller gets the same answer', 0.2, async function () {
   const fetchesOf = function (w, p) { return w.fetched.filter(function (f) { return String(f.url).replace(/^\/+/, '') === p; }).length; };
   const dq = page();
   const twice = await Promise.all([dq.spirit.requireScript(PAGE_COMPONENT), dq.spirit.requireScript(PAGE_COMPONENT)]);
   const third = await dq.spirit.requireScript(PAGE_COMPONENT);
   return (fetchesOf(dq, PAGE_COMPONENT) === 1 && twice[0] === twice[1] && twice[1] === third && !!twice[0]) || false;
 }, test.limit.quick);
-test.run('on a face, requiring shell/boot.js after the boot loaded it runs nothing again, and answers', 0.2, async function () {
+test.run('on a face, requiring spirit/shell/boot/script.js after the boot loaded it runs nothing again, and answers', 0.2, async function () {
   if (!T.faceWindow) return false;
   let bootAgain = null;
   const beforeBoot = T.injected.length;
-  try { bootAgain = await T.faceWindow.spirit.requireScript('shell/boot.js'); } catch (e) { bootAgain = e; }
+  try { bootAgain = await T.faceWindow.spirit.requireScript('spirit/shell/boot/script.js'); } catch (e) { bootAgain = e; }
   const refusedAgain = !bootAgain || bootAgain instanceof Error || (typeof bootAgain === 'object' && (bootAgain.code || bootAgain.ok === false));
   return (T.injected.length === beforeBoot && !refusedAgain) || false;
 }, test.limit.quick);
@@ -792,7 +792,7 @@ test.run('on the node, an interface is still bound by asking a node, as a promis
   if (iface && typeof iface.then === 'function') { iface.then(null, function () {}); return true; }
   return false;
 }, test.limit.quick);
-test.run('on a page, once spirit/fieldRules/script.js is required it stands at spirit.required.spirit.fieldRules', 0.2, async function () {
+test.run('on a page, once spirit/type/string/label/script.js is required it stands at spirit.required.spirit.type.string.label', 0.2, async function () {
   const rq = T.rq = page();
   await rq.spirit.requireScript(PAGE_COMPONENT);
   return !!placeOf(rq.spirit, PAGE_COMPONENT) || false;
@@ -856,7 +856,7 @@ test.run('a scratch node comes up with a headless page on it', 0.2, async functi
 test.run('the page called verbs as it loaded', 0.2, async function () {
   if (!L.page) return false;
   // The home page as a user opens it, then a while for it to settle.
-  await L.page.send('Page.navigate', { url: L.node.base + '/face.html' });
+  await L.page.send('Page.navigate', { url: L.node.base + '/' });
   await H.until(function () { return L.page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 30000);
   await H.sleep(6000);
   L.atLoad = calls();
@@ -903,7 +903,7 @@ test.run('on a real page, no file is fetched twice as the page loads', 0.2, func
 // face.html asks for spirit.js, spirit.js for the shell's boot.js; every other script is spirit.requireScript's.
 test.run('on a real page, every script is loaded by spirit.requireScript when something requires it, and none from a list up front', 0.2, function () {
   if (!L.scripts) return false;
-  const listed = L.scripts.filter(function (g) { return g.file !== 'spirit.js' && g.file !== 'shell/boot.js' && g.by !== 'spirit.js'; });
+  const listed = L.scripts.filter(function (g) { return g.file !== 'spirit/script.js' && g.file !== 'spirit/shell/boot/script.js' && g.by !== 'spirit/script.js'; });
   return !listed.length || false;
 }, test.limit.quick);
 // A dialog's parts come when it opens: the home page opens no app's detail, so none of its files is fetched.
@@ -1005,7 +1005,7 @@ test.run('spirit.js asks FS.path nowhere', 0.2, function () {
 const RC = { before: 0 };
 test.run('a face page opens, its stream handing a subscriber the node\'s snapshot', 0.2, async function () {
   if (!L.page || !L.node || !L.node.up) return false;
-  await L.page.send('Page.navigate', { url: L.node.base + '/face.html' });
+  await L.page.send('Page.navigate', { url: L.node.base + '/' });
   await H.until(function () { return L.page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 30000);
   await L.page.evaluate('window.spirit.readyPromise.then(function () { window.zzHeard = 0; window.spirit.eventStream.subscribe({ onSnapshot: function () { window.zzHeard += 1; }, onUpdate: function () { window.zzHeard += 1; } }); return true; })');
   const ok = await H.until(function () { return L.page.evaluate('(window.zzHeard || 0) > 0'); }, 20000);
@@ -1120,8 +1120,8 @@ async function relayServes(p) {
   const g = await atFace(FL.R, 'GET', p);
   return (g.status === 200 && g.text.length > 0) || false;
 }
-test.run('the relay serves /spirit.js', 0.2, function () { return relayServes('/spirit.js'); }, test.limit.quick);
-test.run('the relay serves /shell/seal.js', 0.2, function () { return relayServes('/shell/seal.js'); }, test.limit.quick);
+test.run('the relay serves /spirit/script.js', 0.2, function () { return relayServes('/spirit/script.js'); }, test.limit.quick);
+test.run('the relay serves /spirit/shell/seal/script.js', 0.2, function () { return relayServes('/spirit/shell/seal/script.js'); }, test.limit.quick);
 // "boot.js, shell.css, face.css and every other part of the shell come from the home node over that link": logged out
 // or in, the relay itself serves none of them.
 async function relayKeeps(loggedIn, p) {
@@ -1129,12 +1129,12 @@ async function relayKeeps(loggedIn, p) {
   const g = await atFace(FL.R, 'GET', p, undefined, loggedIn ? FL.F.sid : '');
   return g.status !== 200 || false;
 }
-test.run('logged out, the relay does not serve /shell/boot.js', 0.2, function () { return relayKeeps(false, '/shell/boot.js'); }, test.limit.quick);
-test.run('logged out, the relay does not serve /shell.css', 0.2, function () { return relayKeeps(false, '/shell.css'); }, test.limit.quick);
-test.run('logged out, the relay does not serve /shell/face.css', 0.2, function () { return relayKeeps(false, '/shell/face.css'); }, test.limit.quick);
-test.run('logged in, the relay does not serve /shell/boot.js', 0.2, function () { return relayKeeps(true, '/shell/boot.js'); }, test.limit.quick);
-test.run('logged in, the relay does not serve /shell.css', 0.2, function () { return relayKeeps(true, '/shell.css'); }, test.limit.quick);
-test.run('logged in, the relay does not serve /shell/face.css', 0.2, function () { return relayKeeps(true, '/shell/face.css'); }, test.limit.quick);
+test.run('logged out, the relay does not serve /spirit/shell/boot/script.js', 0.2, function () { return relayKeeps(false, '/spirit/shell/boot/script.js'); }, test.limit.quick);
+test.run('logged out, the relay does not serve /spirit/shell/shell.css', 0.2, function () { return relayKeeps(false, '/spirit/shell/shell.css'); }, test.limit.quick);
+test.run('logged out, the relay does not serve /spirit/shell/face.css', 0.2, function () { return relayKeeps(false, '/spirit/shell/face.css'); }, test.limit.quick);
+test.run('logged in, the relay does not serve /spirit/shell/boot/script.js', 0.2, function () { return relayKeeps(true, '/spirit/shell/boot/script.js'); }, test.limit.quick);
+test.run('logged in, the relay does not serve /spirit/shell/shell.css', 0.2, function () { return relayKeeps(true, '/spirit/shell/shell.css'); }, test.limit.quick);
+test.run('logged in, the relay does not serve /spirit/shell/face.css', 0.2, function () { return relayKeeps(true, '/spirit/shell/face.css'); }, test.limit.quick);
 
 // the box: "The login is spirit.login, in spirit.js, no app ... and draws the one field when logged out"
 function faceUrl() { return 'http://' + NAME + '.' + DOMAIN + ':' + FL.R.port + '/'; }
@@ -1154,9 +1154,9 @@ test.run('logged out, the page shows one field', 0.2, async function () {
   if (!FL.out) return false;
   return FL.out.fields === 1 || false;
 }, test.limit.quick);
-test.run('logged out, it loads nothing but spirit.js and seal.js', 0.2, function () {
+test.run('logged out, it loads nothing but spirit/script.js and the seal, spirit/shell/seal/script.js', 0.2, function () {
   if (!FL.out) return false;
-  const notThree = (FL.out.loaded || []).filter(function (n) { return !/^\/(spirit\.js|shell\/seal\.js|favicon\.ico|shell\/favicon\.svg)(\?|$)/.test(n) && !/^\/face\/api/.test(n); });
+  const notThree = (FL.out.loaded || []).filter(function (n) { return !/^\/(spirit\/script\.js|spirit\/shell\/seal\/script\.js|favicon\.ico|spirit\/shell\/favicon\.svg)(\?|$)/.test(n) && !/^\/face\/api/.test(n); });
   return (Array.isArray(FL.out.loaded) && !notThree.length) || false;
 }, test.limit.quick);
 
@@ -1333,7 +1333,7 @@ test.run('a page on a scratch node has its stream open', 0.2, async function () 
   SIL.gate = await goBetween(Number(new URL(SIL.node.base).port));
   SIL.page = await H.chromePage(H.findChrome());
   if (!SIL.page || SIL.page.error) return false;
-  await SIL.page.send('Page.navigate', { url: SIL.gate.base + '/face.html' });
+  await SIL.page.send('Page.navigate', { url: SIL.gate.base + '/' });
   if (!(await H.until(function () { return SIL.page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 30000))) return false;
   await SIL.page.evaluate('window.zzConn = []; window.spirit.eventStream.subscribe({ onConnection: function (u) { window.zzConn.push(u); } }); true');
   return true;
@@ -1413,7 +1413,7 @@ test.run('a scratch node with the loader\'s planted scripts comes up, with a pag
   if (!LD.node.up) return false;
   LD.page = await H.chromePage(H.findChrome());
   if (!LD.page || LD.page.error) return false;
-  await LD.page.send('Page.navigate', { url: LD.node.base + '/face.html' });
+  await LD.page.send('Page.navigate', { url: LD.node.base + '/' });
   return !!(await H.until(function () { return LD.page.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 30000)) || false;
 }, test.limit.slow);
 test.after(async function () {
