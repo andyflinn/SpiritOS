@@ -11,7 +11,7 @@
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
 // already on hand". THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM (goal/G41.28; Andy: "the FUCKING desk cache
 // is NOT to be found in spirit.required.spirit.data.data.desk", and "doesn't the fucking ... clientCacheManager.js take care of that"):
-// every reader, the page, deskDetails and deskClient, asks spirit.required.spirit.data.desk.data (below), never a branch by its name.
+// every reader, the page, deskDetails and deskClient, asks spirit.required.spirit.data['spirit.app.desk'].data (below), never a branch by its name.
 //   desk        id -> the item's facts, as items.search labels them and the List draws them (the trunk)
 //   deskItem    id -> the parts of an item read so far, each on its own: { box, version }, { chat, chatMore },
 //               { checks } (a branch). goal/G33.4 (box v46): a part comes when it is needed, by
@@ -38,12 +38,12 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
-  D.makeFamily('desk', function () {
+  D.makeFamily('spirit.app.desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
     // SERVER-NODE-ID at it's lowest level. IE: spirit.required.spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk
     // family's view of one node. A row from the stream is filed under its job's node (fromNode); every read is of the
     // home node (spirit.required.spirit.data's home(): a page's own node, a process's sender).
-    var HOME = D.viewAt(null, 'desk');
+    var HOME = D.viewAt(null, 'spirit.app.desk');
     var V = HOME;
 
     function facts(x) {
@@ -152,7 +152,7 @@
     D.addTranslator({
       onJob: function (job) {
         if (!(job && job.module === 'spirit.app.desk' && job.app && typeof job.app === 'object')) return;
-        V = D.viewAt(job.fromNode || null, 'desk');
+        V = D.viewAt(job.fromNode || null, 'spirit.app.desk');
         try { published(job.app); } finally { V = HOME; }
       },
     });

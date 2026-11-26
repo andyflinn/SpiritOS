@@ -54,7 +54,7 @@ function shown(p) { return p ? 'spirit.' + p : 'spirit'; }
 
 // Whether spirit/<the path's folders> is there, as the node's fs stat answers.
 function there(p) {
-  return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: 'spirit/' + p.split('.').join('/') }); })
+  return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.stat({ path: spirit.slashedPath('spirit.' + p) }); })
     .then(function () { return true; }, function () { return false; });
 }
 
@@ -97,7 +97,7 @@ function pathCommand(s, arg) {
 // spirit.requireScript; its verbs are its own verbs table. One verb is its <verb>.json as the node's fs load serves it, with usage
 /// added last: the line a person types, each argument a placeholder named by its rule in the branch's own verbs table, an
 // optional one in brackets.
-function apiFile(p) { return 'spirit/' + p.split('.').join('/') + '/api.js'; }
+function apiFile(p) { return spirit.slashedPath('spirit.' + p) + '/api.js'; }
 // THE BRANCH'S api.js AT A PATH, or null: its verbs, and the functions it may name for them (spirit.js, def.functions).
 function apiAt(p) {
   if (!p) return Promise.resolve(null);
@@ -117,7 +117,8 @@ const AUTO_VERBS = { remote: { id: 'spirit/type/string/ID/script.js?' }, DEBUG: 
 function served(p) {
   const m = /^app\.([A-Za-z0-9_-]+)$/.exec(p);
   if (!m) return Promise.resolve(false);
-  const file = 'spirit/app/' + m[1] + '/' + m[1] + '.json';
+  // Its folder by spirit.slashedPath of the whole path (goal/G49.19), its manifest its own name's .json.
+  const file = spirit.slashedPath('spirit.' + p) + '/' + m[1] + '.json';
   return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.load({ path: file }); }).then(function (r) {
     let manifest = null;
     try { manifest = JSON.parse(String((r && r.text) || '')); } catch (e) { manifest = null; }
@@ -142,7 +143,7 @@ function apiCommand(s, verb, line) {
     if (!verbs) return refused(s, 'no-branch', 'no branch here: ' + shown(s.path) + ' has no api.js');
     if (!verb) { logged(s, line); return { ok: true, out: JSON.stringify(Object.keys(verbs).sort(), null, 2), path: s.path }; }
     if (!Object.prototype.hasOwnProperty.call(verbs, verb)) return refused(s, 'no-such-verb', 'no such verb at ' + shown(s.path) + ': ' + verb);
-    const file = 'spirit/' + s.path.split('.').join('/') + '/' + verb + '.json';
+    const file = spirit.slashedPath('spirit.' + s.path) + '/' + verb + '.json';
     return spirit.requireScript('spirit/fs/script.js').then(function (f) { return f.load({ path: file }); }).then(function (r) {
       const j = JSON.parse(String((r && r.text) || ''));
       const out = Object.assign({}, j, { usage: usageOf(verb, verbs[verb]) });

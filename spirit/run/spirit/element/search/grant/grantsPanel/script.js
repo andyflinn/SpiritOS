@@ -140,11 +140,11 @@
           var family = filterFamily ? filterFamily.family : '';
           var verb = filterFamily ? filterFamily.verb : '';
           if (!family) return 1;
+          // The branch is the chosen one when the path is it or starts with it and a dot (goal/G49.19: an app's id holds dots,
+          // spirit.app.desk), never the path cut at its first dot.
           var p = String((row && row.path) || '');
-          var dot = p.indexOf('.');
-          var app = dot === -1 ? p : p.slice(0, dot);
-          if (app !== family) return 0;
-          return !verb || p === app + '.' + verb ? 1 : 0;
+          if (p !== family && p.indexOf(family + '.') !== 0) return 0;
+          return !verb || p === family + '.' + verb ? 1 : 0;
         } }];
     }
 
@@ -174,9 +174,8 @@
     function isChosen(c, row) {
       if (!row || String(row[g.key]) !== c.id) return false;
       var p = String(row.path || '');
-      var dot = p.indexOf('.');
-      var branch = dot === -1 ? p : p.slice(0, dot);
-      if (c.branch && branch !== c.branch) return false;
+      // The chosen branch whole or as the path's start and a dot (goal/G49.19), never the path cut at its first dot.
+      if (c.branch && p !== c.branch && p.indexOf(c.branch + '.') !== 0) return false;
       return !c.verb || p === c.branch + '.' + c.verb;
     }
     function rowsOf(got) {

@@ -456,13 +456,14 @@ function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '
 // The sender's cache rules on this node, or null: none there, no cache. They are its family folder's
 // data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
-  if (!family || !/^[A-Za-z]\w*$/.test(String(family))) return null;
-  // Beside the app's api.js, in spirit/app/<name>/ (appApiPath), or a node branch's own, spirit/<name>/data.js (wsl's red,
-  // goal/G49.12: a sender of a core branch, contact or job, has its data.js in the trunk).
+  if (!family || !/^[A-Za-z]\w*(\.[A-Za-z]\w*)*$/.test(String(family))) return null;
+  // An app's id, spirit.app.desk, names its folder by spirit.slashedPath (goal/G49.19; Andy: "it just a formatting of a whole
+  // path"): its data.js beside its api.js. A trunk branch of the old shape still names itself by its word (contact), its
+  // data.js in spirit/<word>/ (wsl's red, goal/G49.12), until its own turn.
   // Run paths, required as they are (goal/G49.13; Andy: "Why would you fucking have that resolve shit on requireScript()").
-  const inApp = 'spirit/app/' + String(family) + '/data.js';
+  const inApp = spirit.slashedPath(String(family)) + '/data.js';
   const inTrunk = 'spirit/' + String(family) + '/data.js';
-  const file = fs.existsSync(path.join(RUN_ROOT, inApp)) ? inApp : inTrunk;
+  const file = String(family).indexOf('spirit.') === 0 ? inApp : inTrunk;
   if (!fs.existsSync(path.join(RUN_ROOT, file))) return null;
   try { return spirit.requireScript(file); } catch (e) { return null; }
 }
@@ -693,7 +694,8 @@ const log = [];                  // { run, n, row }, oldest first, bounded by pu
 // AN APP SERVER'S api.js, BY ITS PATH (goal/G49.6; Andy: "ASKING FOR THE API BY FUCKING NAME MUST BE FUCKING FORBIDDEN",
 // "spirit.branchPath() must die."): every server this file runs is an app's, its api.js at spirit/app/<name>/api.js; the name
 // is what the wire carries (a subscriber's, a remote's), and the server is asked by that path.
-function appApiPath(name) { return 'spirit/app/' + String(name) + '/api.js'; }
+// AN APP'S api.js BY ITS ID (goal/G49.19): spirit.app.desk's is spirit/app/desk/api.js, its folder by spirit.slashedPath.
+function appApiPath(id) { return spirit.slashedPath(String(id)) + '/api.js'; }
 function deliver(key, q, bundle) {
   // The subscriber's family, bound by the one spirit object under its key (goal/G40.6), with the publisher's own wait.
   return spirit.requireScript(appApiPath(q.family), key, { waitMs: publisher.waitMs }).then(function (branch) {
@@ -793,7 +795,8 @@ function withPublisher(verbs, opts) {
     },
     handler: function (a, caller) {
       if (!caller || !caller.key) throw refusedNoKey();
-      if (!/^[A-Za-z]\w*$/.test(String(a.branch || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its listener\'s' } });
+      // The subscriber's own app by its id, its folder's path in dots (goal/G49.19): spirit.app.desk.
+      if (!/^[A-Za-z]\w*(\.[A-Za-z]\w*)*$/.test(String(a.branch || ''))) throw Object.assign(new Error('bad-request'), { refusal: 'bad-request', extra: { why: 'family names the subscriber\'s family, its listener\'s' } });
       if (isLoopbackSubscribe(caller, a)) { pushToPages(); return { subscribed: true }; }
       subscribe(caller.key, String(a.branch), a.run, a.since);
       if (listeners[String(caller.key)] !== String(a.branch)) { listeners[String(caller.key)] = String(a.branch); saveListeners(); }
@@ -869,14 +872,15 @@ const AUTO_RULES = {
   remote: { id: 'spirit/type/string/IDNew/script.js?' },
 };
 function withChecked(verbs, script) {
-  const m = /(?:^|[\/\\])spirit[\/\\]app[\/\\]([^\/\\]+)[\/\\]\1\.js$/.exec(String(script || ''));
-  if (!m) return verbs;
-  const branch = m[1];
-  const apiPath = 'spirit/app/' + branch + '/api.js';
+  // The app's folder is its script's, by its run path: <dir>/<the folder's own name>.js (goal/G49.19, any app folder).
+  const rel = path.relative(RUN_ROOT, path.resolve(String(script || ''))).split(path.sep).join('/');
+  const dir = rel.slice(0, rel.lastIndexOf('/'));
+  if (!dir || rel.indexOf('..') === 0 || rel !== dir + '/' + dir.slice(dir.lastIndexOf('/') + 1) + '.js') return verbs;
+  const apiPath = dir + '/api.js';
   if (!fs.existsSync(path.join(RUN_ROOT, apiPath))) return verbs;
   // spirit.requireScript places the file at once; its binding asks a node, which this check needs nothing of.
   try { Promise.resolve(spirit.requireScript(apiPath)).then(null, function () { /* the binding; the check reads the file */ }); } catch (e) { return verbs; }
-  const api = ['spirit', 'app', branch, 'api'].reduce(function (o, k) { return o == null ? undefined : o[k]; }, spirit.required);
+  const api = (dir + '/api').split('/').reduce(function (o, k) { return o == null ? undefined : o[k]; }, spirit.required);
   const declaredVerbs = api && api.verbs && typeof api.verbs === 'object' ? api.verbs : null;
   if (!declaredVerbs) return verbs;
   const out = Object.assign({}, verbs);
@@ -1108,9 +1112,10 @@ function switchRemote(id) {
 // streamed rows", "node:remote is a new manifest entry"; wsl reviewed it): its manifest spirit/app/<name>/<name>.json saying
 // node.remote false makes remote refuse every call, "no remote support", and this server never runs in client mode, whatever
 // its remote.json held. Left out, client mode is allowed as before.
-function remoteRefused(name) {
+function remoteRefused(id) {
+  const dir = spirit.slashedPath(String(id));
   let own = null;
-  try { own = JSON.parse(fs.readFileSync(path.join(RUN_ROOT, 'spirit', 'app', String(name), String(name) + '.json'), 'utf8')); } catch (e) { return false; }
+  try { own = JSON.parse(fs.readFileSync(path.join(RUN_ROOT, ...dir.split('/'), dir.slice(dir.lastIndexOf('/') + 1) + '.json'), 'utf8')); } catch (e) { return false; }
   return !!(own && own.node && own.node.remote === false);
 }
 function withRemote(verbs, name) {
@@ -1167,7 +1172,9 @@ function serve(verbs, opts) {
   const followed = new Set();
   // THE NAME FIRST, because this server's own codes wear it (goal/G16.11), and its cache folder is named by it
   // (goal/G41.12); the declaration lands before anything listens so a malformed one stops the start.
-  const name = path.basename(String(argv[1] || 'server'), '.js');
+  // ITS ID IS ITS FOLDER'S PATH IN DOTS (goal/G49.19; box: "ALL aspects of jobs/processes identify them by the full path of
+  // their branch"): the folder of its script, spirit/app/desk/desk.js's, is spirit.app.desk, by spirit.dottedPath.
+  const name = spirit.dottedPath(path.relative(RUN_ROOT, path.dirname(path.resolve(String(argv[1] || '')))).split(path.sep).join('/'));
   // ITS STATE FOLDER, FROM THE NODE (goal/G49.17): the one above the --state data/ folder; with none, no start.
   const stateAt = argv.indexOf('--state');
   if (stateAt === -1 || !argv[stateAt + 1]) {

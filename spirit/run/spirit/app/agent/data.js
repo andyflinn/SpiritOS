@@ -6,7 +6,7 @@
 // node that served the rows.
 //
 // THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the agent tables' lists and editors) asks
-// spirit.required.spirit.data.agent.data (below), never a branch by name.
+// spirit.required.spirit.data['spirit.app.agent'].data (below), never a branch by name.
 //   job, model, persona, provider   id -> the row, one branch per table of the agent server
 // The agent server publishes each row as it changes, its job's app { agent: { table, row } }, or { agent: { table, id,
 // removed } } for one gone (./table/rowTable.js), moved here from the four tables' row elements (goal/G41.16): the row is
@@ -18,13 +18,13 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
-  D.makeFamily('agent', function () {
-    var HOME = D.viewAt(null, 'agent');
+  D.makeFamily('spirit.app.agent', function () {
+    var HOME = D.viewAt(null, 'spirit.app.agent');
     D.addTranslator({
       onJob: function (job) {
         var a = job && job.module === 'spirit.app.agent' && job.app && job.app.agent;
         if (!a || TABLES.indexOf(a.table) === -1) return;
-        var V = D.viewAt(job.fromNode || null, 'agent');
+        var V = D.viewAt(job.fromNode || null, 'spirit.app.agent');
         if (a.removed) { if (a.id) V.del(a.table + '/' + String(a.id)); return; }
         if (a.row && typeof a.row === 'object' && a.row.id) V.merge(a.table + '/' + String(a.row.id), a.row);
       },

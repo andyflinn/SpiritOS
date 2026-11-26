@@ -26,8 +26,11 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 // (identity:intrinsic:true|false)", and Q2: "anything in spirit/app/ is core unless spirit/app/<name>/<name>.json says it's not
 // intrinsic."): what its <name>.json says of identity.intrinsic, read on disc ("no dependency on git"), undefined when it
 // says nothing or there is none.
-function appIntrinsic(root, name) {
-  try { return JSON.parse(require('fs').readFileSync(path.join(root, 'spirit', 'run', 'spirit', 'app', name, name + '.json'), 'utf8')).identity.intrinsic; } catch (e) { return undefined; }
+// dir: the app's folder by its run path, spirit/app/desk (goal/G49.19: an app is known by its folder's path, never by a name).
+function appIntrinsic(root, dir) {
+  const d = String(dir || '');
+  const base = d.slice(d.lastIndexOf('/') + 1);
+  try { return JSON.parse(require('fs').readFileSync(path.join(root, 'spirit', 'run', ...d.split('/'), base + '.json'), 'utf8')).identity.intrinsic; } catch (e) { return undefined; }
 }
 // The shell's frame: every app is loaded and drawn by these (goal/G6.7).
 // spirit.js at the run root is the one spirit object (goal/G40.1): core.
@@ -60,8 +63,8 @@ function isCore(repoPath, repoRoot) {
   // A FILE OF AN APP IN spirit/app/<name>/ (goal/G43.14): its <name>.json is always core, whatever it says, so turning intrinsic
   // off needs his grant; the rest of its folder is core unless that json says intrinsic false. Every json says intrinsic since
   // goal/G43.32 (rule 2), so a missing value is no case left; the one folder with no json, the app branch's own test/, stays core.
-  const own = /^spirit\/run\/spirit\/app\/([^/]+)\/(.+)$/.exec(String(repoPath || '').replace(/\\/g, '/').replace(/^\.\//, ''));
-  if (own) return own[2].toLowerCase() === own[1].toLowerCase() + '.json' || appIntrinsic(repoRoot || DEFAULT_ROOT, own[1]) !== false;
+  const own = /^spirit\/run\/(spirit\/app\/([^/]+))\/(.+)$/.exec(String(repoPath || '').replace(/\\/g, '/').replace(/^\.\//, ''));
+  if (own) return own[3].toLowerCase() === own[2].toLowerCase() + '.json' || appIntrinsic(repoRoot || DEFAULT_ROOT, own[1]) !== false;
   if (p.indexOf('spirit/run/spirit/') === 0) return true;
   // WHAT THE PAGE LOADS ON EVERY BOOT IS CORE TOO (goal/G41.30; the review, H5): CodeMirror lives in spirit/element/codeMirror/
   // since goal/G43.5, so the line above holds it, and so with the progress bar.

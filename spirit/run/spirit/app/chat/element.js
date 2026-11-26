@@ -8,7 +8,7 @@
 //
 // The chat server is faceless and knows keys only; this element is everything a person sees. It asks its server through
 // the chat branch spirit.requireScript binds (spirit.chat.<verb>), and hears every kept line through the chat branch's cache
-// (spirit.required.spirit.data.chat.data); nothing is handed to it (goal/G43.24). It builds with the shell's elements: the peer pane is the contact
+// (spirit.required.spirit.data['spirit.app.chat'].data); nothing is handed to it (goal/G43.24). It builds with the shell's elements: the peer pane is the contact
 // search (spirit/element/search/contact/script.js) in pane face, every name a contactLabel.
 //
 // THREE PANES (the objects pane on the right is empty until file transfer, goal/G4.12):
@@ -72,7 +72,7 @@ var chInterfaces = window.spirit && typeof window.spirit.requireScript === 'func
 
 // THE LINES ARE THE chat BRANCH'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
 // buddies clientCacheManager.js must do so in this item. no exceptions."): every line a read, a search or a send brings is
-// kept by the family's cache manager (spirit.required.spirit.data.chat.data.keep), and every line the server publishes too; the window places
+// kept by the family's cache manager (spirit.required.spirit.data['spirit.app.chat'].data.keep), and every line the server publishes too; the window places
 // a line of the open chat from there (its watch), and an arrival (its published) is read, made current and scrolled to.
 // chLines holds the window's own elements, each with the line it paints.
 function chData() { return (window.spirit && ((window.spirit.required.spirit.data || {}).chat || {}).data) || null; }
@@ -346,7 +346,7 @@ function chSend() {
   });
 }
 
-// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.required.spirit.data.chat.data.published): every kept line, written or
+// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.required.spirit.data['spirit.app.chat'].data.published): every kept line, written or
 // received. The window has placed it already (its watch); another chat's line marks the peer list again only, and a new
 // line of the open chat is read, made current and scrolled to.
 function chArrived(peer, l, fresh) {
@@ -573,7 +573,7 @@ function chMount(container) {
     // well, so a line of another chat held from an earlier search never stands for this one; a press puts the line
     // in view when the window holds it.
     // A VIEW OF THE CHATS' LINES IN spirit.required.spirit.data (goal/G41.28): the probability search over the lines the chat
-    // branch's cache keeps (spirit.required.spirit.data.chat.data.branch), each line the shared row element; the open chat's alone, by the
+    // branch's cache keeps (spirit.required.spirit.data['spirit.app.chat'].data.branch), each line the shared row element; the open chat's alone, by the
     // who filter. Asked of the chat server's chat.search once words are typed; every line found is seated in the branch and
     // so joins the history (Andy, 2026-10-18: "all found lines are added to the chat, if they're missing, that won't
     // hurt"), each by its time.

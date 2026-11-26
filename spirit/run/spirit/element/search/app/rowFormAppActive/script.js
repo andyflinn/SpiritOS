@@ -57,7 +57,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // WHAT IT MOUNTS, read from <name>.json, again each time the row changes: a closed panel is kept, not made anew (goal/G43.17,
     // the box: "A closed layer is hidden, not destroyed"), so a read made once would show an old file when it is shown again.
     function readParts() {
-      S.readyPromise.then(function () { return keepAnswer('spirit/fs/script.js'); }).then(function (s) { return s.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/fs/script.js'); }).then(function (s) { return s.loadFile(S.slashedPath(key) + '/' + S.slashedPath(key).split('/').pop() + '.json'); }).then(function (text) {
         var j = JSON.parse(String(text));
         parts = (j.shell && j.shell.mount === true ? ['face'] : []).concat(j.node && j.node.mount === true ? ['server'] : []);
         paint();

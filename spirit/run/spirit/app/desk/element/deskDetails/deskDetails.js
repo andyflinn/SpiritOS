@@ -757,8 +757,8 @@ function ddRename() {
 // one cache for deskClient and this page: spirit.required.spirit.data (spirit/data/script.js) with the desk's translator
 // (the desk family's data.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
-// Asked of the cache's manager (goal/G41.28): spirit.required.spirit.data.desk.data answers an item's parts; no branch is named here.
-function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && ((s.required.spirit.data || {}).desk || {}).data && typeof s.required.spirit.data.desk.data.part === 'function' ? ((s.required.spirit.data || {}).desk || {}).data : null; }
+// Asked of the cache's manager (goal/G41.28): spirit.required.spirit.data['spirit.app.desk'].data answers an item's parts; no branch is named here.
+function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && ((s.required.spirit.data || {})['spirit.app.desk'] || {}).data && typeof s.required.spirit.data['spirit.app.desk'].data.part === 'function' ? ((s.required.spirit.data || {})['spirit.app.desk'] || {}).data : null; }
 function ddForget(id) { var K = ddKept(); if (K && id) K.forget(id); }
 // How many items of a goal are still open (neither done nor closed), as the page holds their facts.
 function ddOpenItems(goalId) {

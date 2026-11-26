@@ -291,24 +291,35 @@ const loopbackVerbs = (function nodeBranches() {
     // THE DOOR'S OWN FRONT (goal/G30.5): the loopback door (/spirit) asks this for a verb's handler. A node branch's
     // verb keeps its own (req, res) handler; 'api' answers the flat table; 'branch.verb' goes through ask, args the call's
     // own (goal/G41.15). The caller is the owner, on loopback, so its answer is bound by no ANSWER_MAX (goal/G41.28).
+    // AN APP'S CALL, BY THE APP'S ID (goal/G49.19, box: "ALL aspects of jobs/processes identify them by the full path of their
+    // branch"; "no 'desk' on the wire when it MUST be spirit.app.desk"): an app is served under its folder's path in dots,
+    // spirit.app.desk, and a call names the app and then its verb, spirit.app.desk.chat.add. The app is the longest served id
+    // the call starts with, followed by a dot; '' when none serves it.
+    function servedApp(name) {
+      const ids = apps && typeof apps.apps === 'function' ? apps.apps() : [];
+      let best = '';
+      ids.forEach(function (id) { if (id.length > best.length && name.length > id.length + 1 && name.indexOf(id + '.') === 0) best = id; });
+      return best;
+    }
+    function askOf(name, app, args) {
+      const asked = {};
+      asked[app] = {};
+      asked[app][name.slice(app.length + 1)] = args;
+      return asked;
+    }
     d.handlerFor = function (verb) {
       const name = String(verb || '');
       const own = handlerFor(name);
       if (own) return own;
-      const dot = name.indexOf('.');
-      if (name !== 'api' && (dot < 1 || dot === name.length - 1)) return null;
       // A branch nobody serves is no verb at all: the door refuses it.
-      if (name !== 'api' && apps && typeof apps.apps === 'function' && apps.apps().indexOf(name.slice(0, dot)) === -1) return null;
+      const app = name === 'api' ? '' : servedApp(name);
+      if (name !== 'api' && !app) return null;
       return function (rq, rs) {
         return readBody(rq).then(function (body) {
           const args = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
           let asked = name;
           if (name === 'api' && typeof args.branch === 'string') asked = { api: { branch: args.branch } };
-          else if (name !== 'api') {
-            asked = {};
-            asked[name.slice(0, dot)] = {};
-            asked[name.slice(0, dot)][name.slice(dot + 1)] = args;
-          }
+          else if (name !== 'api') asked = askOf(name, app, args);
           const own2 = ownerOf();
           own2.loopback = true;
           return d.ask(asked, own2);
@@ -323,16 +334,10 @@ const loopbackVerbs = (function nodeBranches() {
     d.call = function (verb, args) {
       const name = String(verb || '');
       if (handlerFor(name)) return call(name, args);
-      const dot = name.indexOf('.');
       if (name !== 'api' && !d.handlerFor(name)) return Promise.resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: name });
       let asked = name;
       if (name === 'api' && args && typeof args.branch === 'string') asked = { api: { branch: args.branch } };
-      else if (name !== 'api') {
-        const given = args && typeof args === 'object' && !Array.isArray(args) ? args : {};
-        asked = {};
-        asked[name.slice(0, dot)] = {};
-        asked[name.slice(0, dot)][name.slice(dot + 1)] = given;
-      }
+      else if (name !== 'api') asked = askOf(name, servedApp(name), args && typeof args === 'object' && !Array.isArray(args) ? args : {});
       return Promise.resolve(d.ask(asked, ownerOf())).then(function (a) {
         const status = (a && a.status) || 500;
         return { ok: status < 400, status: status, body: a ? a.body : null };
@@ -1392,14 +1397,13 @@ catch (e) {
       if (me.name) own.label = String(me.name);
       return own;
     },
-    // A served app's folder, where its api.js is (goal/G32.3).
-    // An app of spirit/app/ has it at its top, beside <name>.js, as spirit/<family>/ has it (goal/G43.27); the node finds the
-    // folder, so a page binds by the name alone.
-    // FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2; Andy: "go on node.js"): whether spirit/app/<name>/api.js is
-    // there is asked of spirit/fs/dataset/script.js, whole in this, the node's main process, since its watcher started at boot.
-    branchDir: function (name) {
-      const app = path.join(ROOT_DIR, 'spirit', 'app', String(name));
-      return spirit.requireScript('spirit/fs/dataset/script.js').file('spirit/app/' + String(name) + '/api.js') ? app : path.join(ROOT_DIR, 'spirit', String(name));
+    // A served app's folder, where its api.js is (goal/G32.3), at its top, beside its own <name>.js (goal/G43.27).
+    // BY ITS ID, NEVER BY A NAME (goal/G49.19): the app folder of the tree whose path in dots is the id, spirit.app.desk for
+    // spirit/app/desk, found among the folders the fs dataset flags app (goal/G49.2: never from the disc); '' for none.
+    branchDir: function (id) {
+      const files = spirit.requireScript('spirit/fs/dataset/script.js').files();
+      const dir = Object.keys(files).filter(function (p) { return files[p].kind === 'folder' && files[p].app === true && spirit.dottedPath(p) === String(id); })[0];
+      return dir ? path.join(ROOT_DIR, ...dir.split('/')) : '';
     },
   });
   jobs.startNodeServers(ROOT_DIR, appClient);

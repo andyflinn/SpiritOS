@@ -6,7 +6,7 @@
 // served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (Chatter's window and its search) asks
-// spirit.required.spirit.data.chat.data (below), never a branch by name.
+// spirit.required.spirit.data['spirit.app.chat'].data (below), never a branch by name.
 //   lines   peer + newline + sent + ':' + seq -> the line { peer, sent, seq, at, text, receivedAt, re, refused }
 //   chats   peer -> that chat's row as chats.search answers it { at, sent, seq, unanswered }
 // Every line the server publishes ({ line }, goal/G4.2: each kept line, written or received, and each change of a
@@ -23,8 +23,8 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
-  D.makeFamily('chat', function () {
-    var HOME = D.viewAt(null, 'chat');
+  D.makeFamily('spirit.app.chat', function () {
+    var HOME = D.viewAt(null, 'spirit.app.chat');
     function put(V, peer, l) {
       if (!peer || !l || l.seq === undefined || l.sent === undefined) return;
       V.set(LINES + '/' + keyOf(peer, l.sent, l.seq), lineOf(peer, l));
@@ -34,7 +34,7 @@
       onJob: function (job) {
         var l = job && job.module === 'spirit.app.chat' && job.app && job.app.line;
         if (!l || !l.peer) return;
-        var V = D.viewAt(job.fromNode || null, 'chat');
+        var V = D.viewAt(job.fromNode || null, 'spirit.app.chat');
         var fresh = !V.get(LINES + '/' + keyOf(l.peer, l.sent, l.seq));
         put(V, l.peer, l);
         var kept = lineOf(l.peer, l);

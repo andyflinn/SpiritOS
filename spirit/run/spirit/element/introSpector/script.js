@@ -86,7 +86,11 @@
   }
   function call(party, fam, verb, args) {
     // Self: the answer's body, a refusal's own body when the node sent one.
-    if (party.kind === 'self') return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/' + fam + '/api.js').then(null, function () { return S.requireScript('spirit/app/' + fam + '/api.js'); }); }).then(function (f) { return f[verb](args); })).then(function (o) {
+    // A branch named by its path in dots (spirit.fs, spirit.app.desk) is its folder by spirit.slashedPath (goal/G49.19), its
+    // interface that folder's script.js (the new shape) or its api.js; a trunk branch of the old shape still names itself by
+    // its word (contact), its api.js in spirit/<word>/, until its own turn.
+    var where = fam.indexOf('spirit.') === 0 ? S.slashedPath(fam) : 'spirit/' + fam;
+    if (party.kind === 'self') return S.callOutcome(Promise.resolve(S.readyPromise).then(function () { return S.requireScript(where + '/api.js').then(null, function () { return S.requireScript(where + '/script.js'); }); }).then(function (f) { return f[verb](args); })).then(function (o) {
       return o.body !== undefined && o.body !== null ? o.body : o;
     });
     var body = {};

@@ -81,12 +81,15 @@ function createApiAuth(opts) {
   }
 
   // A path the live tree serves: its app answered a tree, and the verb, if one is named, is in it.
+  // THE APP IS THE LONGEST BRANCH THE PATH STARTS WITH (goal/G49.19): an app is named by its folder's path in dots,
+  // spirit.app.desk, so its name holds dots of its own; a path is the app alone (the whole app granted) or the app, a dot and
+  // a verb. Never split at the first dot.
   function served(tree, p) {
-    const dot = p.indexOf('.');
-    const app = dot === -1 ? p : p.slice(0, dot);
-    const branch = tree && tree[app];
+    let app = '';
+    Object.keys(tree || {}).forEach(function (b) { if (b.length > app.length && (p === b || p.indexOf(b + '.') === 0)) app = b; });
+    const branch = app ? tree[app] : null;
     if (!branch || typeof branch !== 'object' || branch.ok === false) return false;
-    return dot === -1 || Object.prototype.hasOwnProperty.call(branch, p.slice(dot + 1));
+    return p === app || Object.prototype.hasOwnProperty.call(branch, p.slice(app.length + 1));
   }
   // The label at grant time: his contacts' name for the key, else none. No key's tail stands in for a name (Andy,
   // 2026-10-24, goal/G40.1: "we don't show the fucking tail anywhere anymore.").

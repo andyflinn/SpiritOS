@@ -6,7 +6,7 @@ git (desk/G1 D5: *"any appServer state is none of git's business"*). The
 page reaches it by the server's verbs, `desk.<verb>`, on the flat apiDoor,
 and hears every change as the server's publish, which the desk family's
 cache manager (`spirit/run/spirit/app/desk/data.js`) keeps in
-`spirit.required.spirit.data.desk.data`. Andy, 2026-09-28: *"this IS the official project
+`spirit.required.spirit.data['spirit.app.desk'].data`. Andy, 2026-09-28: *"this IS the official project
 governance. NOW."*
 
 ## Where it lives

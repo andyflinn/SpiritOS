@@ -81,6 +81,12 @@
     if (typeof str !== 'string') return '';
     return (str.normalize ? str.normalize('NFC') : str).replace(/\r\n/g, '\n');
   }
+  // A WHOLE PATH IN ITS TWO WRITINGS (goal/G49.19; Andy: "put functions spirit.dottedPath(slashedPath), spirit.slashedPath(
+  // dottedPath) next to excapeHtml()", "That's ok, it just a formatting of a whole path, to fit fs,js,or http-server. it's not
+  // an alteration of the path itself."): spirit/app/desk is spirit.app.desk on the wire, and back. The one way either is
+  // written from the other; nothing else in the product turns one into the other by hand.
+  function dottedPath(slashedPath) { return String(slashedPath == null ? '' : slashedPath).split('/').join('.'); }
+  function slashedPath(dotted) { return String(dotted == null ? '' : dotted).split('.').join('/'); }
   // A BRANCH'S STATE FOLDER, BY ONE FORMULA (goal/G49.17, box v5; Andy: "agreed spirit.statePath(productPath) beside
   // normalizeString() and escapeHtml()", "the state of spirit/<path>/ is always spirit/state/<path-without-leading-spirit>"):
   // the product path loses its leading spirit and goes under spirit/state/. spirit/app/desk is spirit/state/app/desk,
@@ -461,16 +467,18 @@
   // A PEER'S BRANCH (goal/G33.4, box v38), held under its key. Its calls are packed as the far node's apiDoor takes them
   // ('api', {api: {branch}}, {branch: {verb: args}}) and sent by spirit.peerPost; the apiDoor answers the body alone: ok
   // false is a refusal, 409, or 0 when the post never reached the peer or nothing answered.
-  function peerAsk(key, how) {
+  // fam: the branch these calls are of, its name as the wire has it (spirit.app.desk), so a call splits after it, never at
+  // its first dot (goal/G49.19: an app named by its path holds dots of its own).
+  function peerAsk(key, how, fam) {
     return function (verb, args) {
       var n = String(verb || '');
       var body;
       if (n === 'api') body = args && args.branch ? { api: { branch: String(args.branch) } } : 'api';
       else {
-        var dot = n.indexOf('.');
+        var at = fam && n.indexOf(fam + '.') === 0 ? fam.length : n.indexOf('.');
         body = {};
-        body[n.slice(0, dot)] = {};
-        body[n.slice(0, dot)][n.slice(dot + 1)] = args || {};
+        body[n.slice(0, at)] = {};
+        body[n.slice(0, at)][n.slice(at + 1)] = args || {};
       }
       return Promise.resolve(self.peerPost(key, 'api', body, how)).then(function (got) {
         var refused = !!got && typeof got === 'object' && got.ok === false;
@@ -485,7 +493,7 @@
     var k = String(key);
     var held = (peers[k] = peers[k] || {});
     if (held[fam]) return held[fam];
-    held[fam] = bindOn(peerAsk(k, how), noFile, fam).then(null, function (e) { delete held[fam]; throw e; });
+    held[fam] = bindOn(peerAsk(k, how, fam), noFile, fam).then(null, function (e) { delete held[fam]; throw e; });
     return held[fam];
   }
 
@@ -522,8 +530,11 @@
   // The fs branch's node processor, the one place in node that reads the disc for spirit.fs (goal/G49.2).
   function nodeFiles() { return require(require('path').join(RUN_ROOT, 'spirit', 'fs', 'fileSystem', 'script.js')); }
   function interfaceName(p) {
-    // An app's branch sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27).
-    var m = /^spirit\/app\/([^/]+)\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
+    // An app's branch sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27), and is named by that folder's path
+    // in dots, spirit.app.desk (goal/G49.19; Andy: "no 'desk' on the wire when it MUST be spirit.app.desk"). A trunk branch of the
+    // old shape keeps its word until its own turn.
+    if (/^spirit\/app\/[^/]+\/api\.js$/.test(p)) return dottedPath(p.slice(0, -'/api.js'.length));
+    var m = /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
   }
   // A COMPONENT IS REQUIRED ONCE, AND ITS TREE WITH IT (goal/G41.3). Andy: "spirit.js require() require implementation
@@ -610,7 +621,7 @@
   // holding verbs. On the node that is known before it is bound; on a page, once the file has run.
   function branchNameOf(p) {
     var m = /^spirit\/(.+)\/script\.js$/.exec(p);
-    return m ? 'spirit.' + m[1].split('/').join('.') : '';
+    return m ? dottedPath('spirit/' + m[1]) : '';
   }
   function isInterface(v) { return !!v && typeof v === 'object' && !!v.verbs && typeof v.verbs === 'object'; }
   function nodeBranchName(p) {
@@ -742,6 +753,8 @@
   self.normalizeString = normalizeString;
   self.normalizeParagraph = normalizeParagraph;
   self.statePath = statePath;
+  self.dottedPath = dottedPath;
+  self.slashedPath = slashedPath;
   self.checkArgs = check;
   self.ruleNames = Object.keys(RULES);
   self.callOutcome = outcome;

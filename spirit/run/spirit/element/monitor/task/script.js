@@ -33,11 +33,13 @@
   // job row element that holds the Cancel or Delete rule.
   var parts = Promise.all(['spirit/element/rowForm/script.js', 'spirit/job/script.js', 'spirit/element/search/job/row/script.js'].map(function (p) { return S.requireScript(p); }));
   var WORD = { run: 'Run', cancel: 'Cancel', 'delete': 'Delete' };
-  var PREFIX = 'spirit.app.';
 
   function create(container, options) {
     var id = String((options && options.id) || '');
-    var name = id.indexOf(PREFIX) === 0 ? id.slice(PREFIX.length) : '';
+    // The app's folder is its job id written with slashes (goal/G49.19; Andy: spirit.slashedPath, "just a formatting of a whole
+    // path"), its own files the folder's own name's .js and .json; never the id cut to a word.
+    var dir = id ? S.slashedPath(id) : '';
+    var name = dir ? dir.slice(dir.lastIndexOf('/') + 1) : '';
     var box = document.createElement('div');
     // It keeps what it holds inside (the general rules: overflow not visible), as the row form does.
     box.style.overflow = 'clip';
@@ -77,7 +79,7 @@
       var a = actionOf(job());
       said.textContent = '';
       return S.readyPromise.then(function () { return S.requireScript('spirit/job/script.js'); }).then(function (j) {
-        if (a === 'run') return j.create({ command: 'node', args: JSON.stringify(['spirit/app/' + name + '/' + name + '.js']) });
+        if (a === 'run') return j.create({ command: 'node', args: JSON.stringify([dir + '/' + name + '.js']) });
         if (a === 'cancel') return j.cancel({ id: id });
         if (a === 'delete') return j['delete']({ id: id });
         return null;
@@ -85,7 +87,7 @@
     }
 
     if (name) {
-      Promise.all([parts, S.readyPromise.then(function () { return S.requireScript('spirit/fs/script.js'); }).then(function (s) { return s.loadFile('spirit/app/' + name + '/' + name + '.json'); })]).then(function (r) {
+      Promise.all([parts, S.readyPromise.then(function () { return S.requireScript('spirit/fs/script.js'); }).then(function (s) { return s.loadFile(dir + '/' + name + '.json'); })]).then(function (r) {
         var j = JSON.parse(String(r[1]));
         if (gone || !(j.node && j.node.run === true)) return;
         var identity = j.identity || {};

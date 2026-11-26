@@ -33,7 +33,7 @@
 // EVERY ELEMENT LISTENS BY ITSELF, THROUGH THE ONE FRAMEWORK (Andy, on G41.4: "make sure that all element LISTEN to what
 // needs listening to, by themselves, automatically. This should also be a general implementation. if those table
 // searches and list were make properly from a probability framework, this should not have happened"): a table is its
-// branch of spirit.required.spirit.data, the agent family's cache manager's (spirit.required.spirit.data.agent.data.branch(table), goal/G41.28), which the
+// branch of spirit.required.spirit.data, the agent family's cache manager's (spirit.required.spirit.data['spirit.app.agent'].data.branch(table), goal/G41.28), which the
 // stream keeps current. A list is probabilitySearch
 // with that branch as its data, so a search's answer is seated there and any write redraws it; an editor watches its
 // row's path there. Nothing here hears the stream by hand.
@@ -71,13 +71,13 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   }
   function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.requireScript(p); })); }
   // A TABLE'S BRANCH IS THE agent FAMILY'S CACHE (goal/G41.28): its whole path in spirit.required.spirit.data, as the family's own
-  // data.js keeps it (spirit.required.spirit.data.agent.data), loaded with this element, as part of its tree. A page where it could
+  // data.js keeps it (spirit.required.spirit.data['spirit.app.agent'].data), loaded with this element, as part of its tree. A page where it could
   // not be loaded (the agent server not running on its node, so the family is not there) is refused, never drawn
   // without its branch.
   spirit.requireScript('spirit/app/agent/api.js');
   function branchOf(table) {
     if (!((window.spirit.required.spirit.data || {}).agent || {}).data) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
-    return window.spirit.required.spirit.data.agent.data.branch(table);
+    return window.spirit.required.spirit.data['spirit.app.agent'].data.branch(table);
   }
   function D() { return window.spirit.required.spirit.data; }
 

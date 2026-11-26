@@ -145,8 +145,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
     // THE ID TABLE'S BRANCH BY ITS api.js PATH (goal/G49.6: never by a name): the address names the branch, so it is asked at
     // the one of its two places that holds it, a node branch's spirit/<name>/api.js, else an app's spirit/app/<name>/api.js.
+    // A branch named by its path in dots (spirit.app.desk) is its folder by spirit.slashedPath (goal/G49.19); a trunk branch of
+    // the old shape still names itself by its word (contact), in spirit/<word>/, until its own turn.
     function tableApi(t) {
-      return spirit.requireScript('spirit/' + t.name + '/api.js').then(null, function () { return spirit.requireScript('spirit/app/' + t.name + '/api.js'); });
+      var where = String(t.name).indexOf('spirit.') === 0 ? spirit.slashedPath(t.name) : 'spirit/' + t.name;
+      return spirit.requireScript(where + '/api.js').then(null, function () { return spirit.requireScript(where + '/script.js'); });
     }
     // THE SOURCE: the one table (contact.search, goal/G40.11), people and relays alike; or the ID table it was handed.
     function search(args) {

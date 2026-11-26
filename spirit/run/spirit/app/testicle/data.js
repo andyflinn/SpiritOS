@@ -5,7 +5,7 @@
 // the rows.
 //
 // THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the suite search, testicle's face) asks
-// spirit.required.spirit.data.testicle.data (below), never a branch by name.
+// spirit.required.spirit.data['spirit.app.testicle'].data (below), never a branch by name.
 //   script         name -> the script row { name, hash, deleted, changed }
 //   suite          script|suite -> the suite row { key, script, suite, test, status, deleted, outcome, changed }
 //   testicle       script|suite|test|id -> each test row the server published, the replaced one and the
@@ -27,8 +27,8 @@
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
-  D.makeFamily('testicle', function () {
-    var HOME = D.viewAt(null, 'testicle');
+  D.makeFamily('spirit.app.testicle', function () {
+    var HOME = D.viewAt(null, 'spirit.app.testicle');
     // A TEST ROW KEPT WITH ITS FILE NAMES, scriptName and suiteName, the last part of each path: the testicle search shows and
     // sorts its script and suite columns by them (goal/G47.1, the search cycle, the box: "The script column and the suite
     // column show the file name only, no path", "The list is sortable by all its columns").
@@ -62,7 +62,7 @@
     D.addTranslator({
       onJob: function (job) {
         if (!job || job.module !== 'spirit.app.testicle') return;
-        var V = D.viewAt(job.fromNode || null, 'testicle');
+        var V = D.viewAt(job.fromNode || null, 'spirit.app.testicle');
         // WHAT IS OWED, ON CONNECT (goal/G47.4, box v55: "a page that connects to testicle's stream is sent the current
         // suites-owed and classifications-owed numbers once"): the server keeps the last in its job's data, which the
         // snapshot a page connects with carries; after that the owed message of its own moves them.

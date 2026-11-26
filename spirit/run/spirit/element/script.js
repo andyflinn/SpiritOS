@@ -94,16 +94,18 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     }
     function launch(row) {
       var S = window.spirit;
+      // The row's key is the app's id, its folder's path in dots (goal/G49.19); its folder by spirit.slashedPath.
       var name = String(row.key);
+      var dir = S.slashedPath(name);
       var look = {};
       function title(t) { look.file = t && t.file; look.icon = t && t.icon; if (look.set) look.set(); }
       open('app', row, function (pane, closed) {
-        return S.requireScript('spirit/app/' + name + '/element.js').then(function (got) {
+        return S.requireScript(dir + '/element.js').then(function (got) {
           if (closed()) return null;
           // What the app opens goes in this same stack, over all of it (panel.js: one stack, each ✕ one step back).
           var over = function (k, spec) { return stack ? stack.open('app/' + name + '/' + k, spec) : Promise.resolve(null); };
           var made = got && typeof got.create === 'function' ? got : null;
-          if (!made) throw new Error('spirit/app/' + name + '/element.js places no element with a create');
+          if (!made) throw new Error(dir + '/element.js places no element with a create');
           return made.create(pane, { title: title, open: over });
         });
       }, look);

@@ -9,7 +9,7 @@
 //
 // The face of the desk server (spirit/run/spirit/app/desk): the List tab. Every read and every press is a desk.<verb> ask on the flat
 // apiDoor (deskAsk); what changes arrives as the desk server's publish, kept by the desk family's cache manager in
-// spirit.required.spirit.data.desk.data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
+// spirit.required.spirit.data['spirit.app.desk'].data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
 // id (goal/G<n> or goal/G<n>.<m>) and opens the item's dialog (spirit/app/desk/element/deskDetails).
 
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9; goal/G43.27, requirement 23): the page is an element of the new
@@ -127,7 +127,7 @@ var deskVia = {
 // content to be drawn." "no pulling". ITS ROWS ARE spirit.data's (goal/G41.28; Andy: "the FUCKING desk cache is NOT to
 // be found in spirit.required.spirit.data.data.desk... something keeps throwing out that shit", and "doesn't the fucking ...
 // clientCacheManager.js take care of that"): the desk's rows the cache manager keeps, every goal pushed and every
-// search answer seated there, read through spirit.required.spirit.data.desk.data. The page keeps no rows of its own, so a search that answers
+// search answer seated there, read through spirit.required.spirit.data['spirit.app.desk'].data. The page keeps no rows of its own, so a search that answers
 // few rows drops none; what the toggles leave out is decided here, in the order goal, then its members.
 function deskKept() { return (typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {}).desk || {}).data) || null; }
 function deskIdOrder(a, b) {
@@ -711,7 +711,7 @@ function deskLoad() {
 //   Andy: "how can i trust the copy mechanist when i cant see it working".
 // The backup server's status.get: its last check and last copy, marked red
 // when something was closed after the last check. Kept by the backup family's
-// cache manager (goal/G41.28), spirit.required.spirit.data.backup.data; the line follows its watch.
+// cache manager (goal/G41.28), spirit.required.spirit.data['spirit.app.backup'].data; the line follows its watch.
 // THROUGH ITS INTERFACE (goal/G47.1; Andy: "every api.js requires it's companion data.js, and is the only script to require
 // that data.js"): the backup family's api.js, which brings its data.js. A node with no backup server serves no interface
 // for it: then nothing is asked and no line is drawn.

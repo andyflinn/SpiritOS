@@ -41,9 +41,9 @@ const relayRequest = spirit.requireScript('spirit/relayRequest/script.js');
 const limits = spirit.requireScript('spirit/limits/script.js');
 const errors = spirit.requireScript('spirit/error/script.js');
 
-// A process's folder name: nothing that could climb out of a folder or
-// name a pipe path.
-const APP_RE = /^[A-Za-z0-9_-]{1,64}$/;
+// An app's id, its folder's path in dots (goal/G49.19: spirit.app.desk): words of letters, digits, _ and - joined by single
+// dots, nothing that could climb out of a folder or name a pipe path.
+const APP_RE = /^[A-Za-z0-9_-]{1,64}(\.[A-Za-z0-9_-]{1,64}){0,7}$/;
 
 // Meant to sit under every wait a caller has, so each wait gives its own
 // named answer.
@@ -68,14 +68,16 @@ const STATUS = {
 // checkout: a short hash of its root, or both nodes' desk would collide.
 // EVERY SERVER IS AN APP OF spirit/app/ (goal/G43.12, goal/G43.20). Andy: "their new door.sock will live in
 // run://spirit/state/<name>/, owned by the node.", and "put those in spirit/state/<name>/ since they belong to the node."
-// kind is no longer told apart: every server's socket is spirit/state/app/<name>/door.sock, its Windows pipe 'app-<name>'.
-function pipePathFor(rootDir, appName, platform) {
+// kind is no longer told apart: every server's socket is door.sock in its app's state folder, its Windows pipe 'app-<its id>'.
+// dir: the app's folder by its run path, spirit/app/desk (goal/G49.19: an app is known by its folder, never by a name); the
+// socket in spirit.statePath of it (goal/G49.17), the pipe named by the folder's path in dots.
+function pipePathFor(rootDir, dir, platform) {
+  const d = String(dir || '');
   if ((platform || process.platform) === 'win32') {
     const tag = crypto.createHash('sha256').update(path.resolve(String(rootDir))).digest('hex').slice(0, 12);
-    return '\\\\.\\pipe\\spirit-' + tag + '-app-' + appName;
+    return '\\\\.\\pipe\\spirit-' + tag + '-app-' + spirit.dottedPath(d);
   }
-  // In the app's state folder by spirit.statePath (goal/G49.17), the app path built from its name until the job's turn.
-  return path.join(rootDir, ...spirit.statePath('spirit/app/' + appName).split('/'), 'door.sock');
+  return path.join(rootDir, ...spirit.statePath(d).split('/'), 'door.sock');
 }
 
 // opts: { rootDir, log, request }

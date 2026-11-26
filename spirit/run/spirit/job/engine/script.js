@@ -218,9 +218,10 @@ function installJobs(port) {
 
   function startProcessJob(command, args, options) {
     options = options || {};
-    // Its id is its app's route, spirit.app.<name> (goal/G43.20): a second start while it runs is refused here.
+    // Its id is its app's id, its folder's path in dots, spirit.app.desk (goal/G43.20, goal/G49.19): a second start while it
+    // runs is refused here.
     const p = appOf(appScriptOf(args, options.cwd), options.cwd);
-    const route = 'spirit.app.' + (p ? p.name : '');
+    const route = p ? idOf(p.dir) : '';
     const job = createJob('process', route, {
       command: command,
       args: args || [],
@@ -277,9 +278,9 @@ function installJobs(port) {
     // a restart method", so it does not come back by itself.
     const operated = options.operated === 'user' ? 'user' : 'node';
     const restart = operated === 'node';
-    // Its id is its app's route, spirit.app.<name>, read off its script's path (goal/G43.20).
+    // Its id is its app's id, its folder's path in dots, read off its script's path (goal/G43.20, goal/G49.19).
     const p = appOf(appScriptOf(args, options.cwd), options.cwd);
-    const route = 'spirit.app.' + (p ? p.name : '');
+    const route = p ? idOf(p.dir) : '';
     const job = createJob('server', route, {
       command: command,
       args: args || [],
@@ -350,23 +351,27 @@ function installJobs(port) {
   // AN APP'S STATE FOLDER, BY spirit.statePath (goal/G49.17, box v5: spirit/state/app/<name>/): its node.json, its data/ handed
   // over as --state. The app path is built from the name here, as all of the job's app paths are until the job's turn (Andy,
   // goal/G49.17: "we'll fix all of job when it's turn after fs finally starts").
-  function appState(root, name) { return path.join(root, ...spirit.statePath('spirit/app/' + name).split('/')); }
-  function appActive(root, name) {
+  function appState(root, dir) { return path.join(root, ...spirit.statePath(dir).split('/')); }
+  // AN APP IS KNOWN BY ITS FOLDER (goal/G49.19, box: "ALL aspects of jobs/processes identify them by the full path of their
+  // branch, whereever they may be mounted"; "all translation from name to path or back is NOT PERMITTED"): dir is its folder's
+  // run path, spirit/app/desk; its id the same path in dots, spirit.app.desk, its job's id and its name on the wire; its own
+  // files are <dir>/<the folder's own name>.json and .js.
+  function idOf(dir) { return spirit.dottedPath(dir); }
+  function baseOf(dir) { const d = String(dir); return d.slice(d.lastIndexOf('/') + 1); }
+  function manifestOf(root, dir) { try { return JSON.parse(fs.readFileSync(path.join(root, ...dir.split('/'), baseOf(dir) + '.json'), 'utf8')); } catch (e) { return null; } }
+  function scriptOf(dir) { return dir + '/' + baseOf(dir) + '.js'; }
+  function appActive(root, dir) {
     // An intrinsic app is always active (goal/G43.14): its <name>.json says so, and node.json is not asked.
-    if (spirit.requireScript('spirit/coreFiles/script.js').appIntrinsic(path.resolve(root, '..', '..'), name) === true) return true;
-    try { return JSON.parse(fs.readFileSync(path.join(appState(root, name), 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
+    if (spirit.requireScript('spirit/coreFiles/script.js').appIntrinsic(path.resolve(root, '..', '..'), dir) === true) return true;
+    try { return JSON.parse(fs.readFileSync(path.join(appState(root, dir), 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
   }
   // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21): node.run in its <name>.json.
-  function appRuns(root, name) {
-    try { const own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); return !!(own && own.node && own.node.run === true); } catch (e) { return false; }
+  function appRuns(root, dir) { const own = manifestOf(root, dir); return !!(own && own.node && own.node.run === true); }
+  function appServes(root, dir) {
+    const own = manifestOf(root, dir);
+    return !!(own && own.node && own.node.mount === true) && appActive(root, dir);
   }
-  function appServes(root, name) {
-    let own = null;
-    try { own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { return false; }
-    return !!(own && own.node && own.node.mount === true) && appActive(root, name);
-  }
-  // An app's own script, <root>/spirit/app/<name>/<name>.js, read as {root, name}; null for anything else, a helper beside
-  // it included. The one reading of a script's path, for whether it may run and for the route its job is.
+  // The one reading of a script's path, for whether it may run and for the route its job is: appOf, below.
   // THE APP'S SCRIPT OF A START (goal/G43.32; goal/G48.5, the box: "the node starts every server process as \"node
   // spirit/server/script.js --app <script>\""): every server process runs as the launcher, then --app, then the app's script, so the
   // script is the argument after --app when the launcher comes first.
@@ -389,11 +394,17 @@ function installJobs(port) {
   // decided 9), through the launcher since goal/G48.5: spirit/server/app/script.js requires the app's script and checks each call by
   // its api.js, in the app's own process.
   function appServerArgs(rootDir, script) { return [LAUNCHER, '--app', script]; }
+  // An app's own script, read as {root, dir}: <root>/<dir>/<base>.js where dir is an app folder of this node's tree and base
+  // its own last name; null for anything else, a helper beside it included (goal/G49.19: any app folder, not only spirit/app/).
   function appOf(script, cwd) {
     if (typeof script !== 'string' || !/\.js$/.test(script)) return null;
     const abs = path.resolve(cwd || process.cwd(), script);
-    const a = /^(.*)[\/\\]spirit[\/\\]app[\/\\]([^\/\\]+)[\/\\]([^\/\\]+)\.js$/.exec(abs);
-    return a && a[2] === a[3] ? { root: a[1], name: a[2] } : null;
+    const root = path.resolve(__dirname, '..', '..', '..');
+    const rel = path.relative(root, abs).split(path.sep).join('/');
+    if (!rel || rel.indexOf('..') === 0 || path.isAbsolute(rel)) return null;
+    const dir = rel.slice(0, rel.lastIndexOf('/'));
+    if (!dir || rel !== scriptOf(dir) || !((fsDataset().file(dir) || {}).app === true)) return null;
+    return { root: root, dir: dir };
   }
   function refused(code, text, name) {
     const e = new Error(text);
@@ -406,7 +417,7 @@ function installJobs(port) {
     const p = appOf(appScriptOf(args, options.cwd), options.cwd);
     const own = (command === process.execPath || command === 'node') && !!p && path.relative(path.resolve(__dirname, '..', '..', '..'), p.root) === '';
     if (!own) throw refused('not-a-process', 'only an app\'s own script of this node starts');
-    if (!appRuns(p.root, p.name)) throw refused('process-not-included', 'process not included on this node: ' + p.name, p.name);
+    if (!appRuns(p.root, p.dir)) throw refused('process-not-included', 'process not included on this node: ' + idOf(p.dir), idOf(p.dir));
     return startProcessJob(process.execPath, args, options);
   }
 
@@ -416,31 +427,30 @@ function installJobs(port) {
   // running. THE NODE NAMES ITS PIPE (desk/G1.6, appPair D15): each server starts with --pipe <the name the node chose>, and
   // is registered with `client` (appClient) so 'api' and calls reach it. ITS JOB KEPT BY NAME: at boot, and again whenever
   // its active is written (followApp, below). The node it runs on is the one startNodeServers was handed.
-  const nodeServers = new Map();   // name -> its server job
+  const nodeServers = new Map();   // an app's folder -> its server job
   let serverHost = null;            // { rootDir, client }, from startNodeServers
   // ONE APP'S SERVER: spirit/app/<name>/<name>.js. ITS ARGUMENTS ARE ITS <name>.json's DEFAULTS; none without.
-  function startAppServer(rootDir, client, name) {
+  function startAppServer(rootDir, client, dir) {
     // The app's script by its run path, as the app server requires it, as it is (goal/G49.13: no resolve).
-    const script = 'spirit/app/' + name + '/' + name + '.js';
-    if (!inTree('spirit/app/' + name + '/' + name + '.js')) return null;
-    let own = null;
-    try { own = JSON.parse(fs.readFileSync(path.join(rootDir, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { own = null; }
+    const script = scriptOf(dir);
+    if (!inTree(script)) return null;
+    const own = manifestOf(rootDir, dir);
     const values = {};
     ((own && Array.isArray(own.args)) ? own.args : []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
-    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, name, process.platform);
+    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, dir, process.platform);
     // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/app/<name>/data/ (goal/G43.10), handed over as --state, so a
     // process never works out its own folder. Its folder, spirit/state/app/<name>/, holds node.json, cache/, data/ and on Linux
     // door.sock (goal/G43.20).
-    const state = path.join(appState(rootDir, name), 'data');
+    const state = path.join(appState(rootDir, dir), 'data');
     try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the server says why */ }
     const args = appServerArgs(rootDir, script).concat([JSON.stringify(values), '--pipe', pipe, '--state', state], nodeArgOf(rootDir));
     // AN APP'S DEBUG, KEPT BY THE NODE (goal/G43.15, Q2, Q3: "only the new ones."): handed over at every start, a restart after a
     // crash included, since the job starts again from this same list.
-    args.push('--debug', String(appDebug(rootDir, name)));
-    appArgs.set(name, args);
+    args.push('--debug', String(appDebug(rootDir, dir)));
+    appArgs.set(dir, args);
     const job = startServerJob('node', args, { operated: 'node' });
-    nodeServers.set(name, job);
-    if (client && typeof client.register === 'function') client.register(name, pipe);
+    nodeServers.set(dir, job);
+    if (client && typeof client.register === 'function') client.register(idOf(dir), pipe);
     return job;
   }
   // THE NODE'S PUBLIC FACTS, HANDED OVER (desk/G1.7): a server that needs
@@ -481,102 +491,103 @@ function installJobs(port) {
   // to fucking remember the icons app, because it will find it when it scans for appServers."): a call to it answers
   // app-not-served, and the scan at boot remembers one that is off too. 10: the node keeps one job for it,
   // spirit.app.<name>, open while it is on, and hands that id to every run, so a run publishes on it before it ends.
-  const oneShots = new Map();   // name -> its job
+  const oneShots = new Map();   // an app's folder -> its job
   // Whether the app is a one-shot app, by its folder and its <name>.json; switched on as well unless anyState.
-  function appOneShot(root, name, anyState) {
-    let own = null;
-    try { own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { return false; }
-    if (own && own.node && own.node.mount === true) return false;
-    const dir = 'spirit/app/' + name + '/';
-    if (!inTree(dir + name + '.js') || !inTree(dir + 'api.js') || !inTree(dir + 'data.js')) return false;
-    return anyState === true || appActive(root, name);
+  function appOneShot(root, dir, anyState) {
+    const own = manifestOf(root, dir);
+    if (!own) return false;
+    if (own.node && own.node.mount === true) return false;
+    if (!inTree(scriptOf(dir)) || !inTree(dir + '/api.js') || !inTree(dir + '/data.js')) return false;
+    return anyState === true || appActive(root, dir);
   }
-  function startOneShot(rootDir, client, name) {
+  function startOneShot(rootDir, client, dir) {
     if (!client || typeof client.registerOneShot !== 'function') return null;
     // The app's script by its run path, as the app server requires it, as it is (goal/G49.13: no resolve).
-    const script = 'spirit/app/' + name + '/' + name + '.js';
-    const route = 'spirit.app.' + name;
+    const script = scriptOf(dir);
+    const route = idOf(dir);
     const old = getJob(route);
     const job = old && !TERMINAL_STATUSES.has(old.status) ? old : createJob('server', route, { oneShot: true, command: process.execPath, args: appServerArgs(rootDir, script) }, route);
     updateJob(job.id, { status: 'running' });
-    const state = path.join(appState(rootDir, name), 'data');
+    const state = path.join(appState(rootDir, dir), 'data');
     try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the run says why */ }
-    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, name, process.platform);
+    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, dir, process.platform);
     // One run of the script, handed what a permanent server is handed: its pipe, its state folder, the node's facts and its
     // DEBUG; launch() gives it its job's id. A socket left by the run before is cleared first (off Windows a pipe is a file).
     const start = function () {
       if (process.platform !== 'win32') { try { fs.rmSync(pipe, { force: true }); } catch (e) { /* none */ } }
-      const args = appServerArgs(rootDir, script).concat(['{}', '--pipe', pipe, '--state', state], nodeArgOf(rootDir), ['--debug', String(appDebug(rootDir, name))]);
+      const args = appServerArgs(rootDir, script).concat(['{}', '--pipe', pipe, '--state', state], nodeArgOf(rootDir), ['--debug', String(appDebug(rootDir, dir))]);
       return launch(job, process.execPath, args, rootDir);
     };
-    if (!client.registerOneShot(name, pipe, start)) { cancelJob(job.id); return null; }
-    oneShots.set(name, job);
+    if (!client.registerOneShot(idOf(dir), pipe, start)) { cancelJob(job.id); return null; }
+    oneShots.set(dir, job);
     return job;
   }
-  function stopOneShot(client, name) {
-    const job = oneShots.get(name);
-    oneShots.delete(name);
-    if (client && typeof client.serve === 'function') client.serve(name, false);
+  function stopOneShot(client, dir) {
+    const job = oneShots.get(dir);
+    oneShots.delete(dir);
+    if (client && typeof client.serve === 'function') client.serve(idOf(dir), false);
     if (job) cancelJob(job.id);
   }
   // An app found off at boot: remembered, its row marked not served, no job.
-  function rememberOneShot(rootDir, client, name) {
+  function rememberOneShot(rootDir, client, dir) {
     if (!client || typeof client.registerOneShot !== 'function') return;
-    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, name, process.platform);
-    if (client.registerOneShot(name, pipe, function () { return null; }, path.join(rootDir, 'spirit', 'app', name, 'api.js'))) client.serve(name, false);
+    const pipe = spirit.requireScript('spirit/appClient/script.js').pipePathFor(rootDir, dir, process.platform);
+    if (client.registerOneShot(idOf(dir), pipe, function () { return null; }, path.join(rootDir, ...dir.split('/'), 'api.js'))) client.serve(idOf(dir), false);
   }
 
   // THE APPS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
   // "fix job.js"): the folders directly in spirit/app/ and the files in them, as this process's spirit.required.spirit.data.fs holds them
   // (spirit/fs/dataset/script.js), fed by the watcher the node starts first (spirit/fs/server/script.js). A <name>.json is still read for what it says.
   function inTree(rel) { return !!fsDataset().file(rel); }
+  // EVERY APP FOLDER OF THE TREE (goal/G49.19): the folders the dataset flags app, wherever they stand, by their run paths.
   function appFolders() {
     const files = fsDataset().files();
-    return Object.keys(files).filter(function (p) { return p.indexOf('spirit/app/') === 0 && files[p].kind === 'folder' && p.slice(11).indexOf('/') === -1; })
-      .map(function (p) { return p.slice(11); }).sort();
+    return Object.keys(files).filter(function (p) { return files[p].kind === 'folder' && files[p].app === true; }).sort();
   }
   function startNodeServers(rootDir, client) {
     serverHost = { rootDir: rootDir, client: client };
     const apps = appFolders();
-    apps.filter(function (name) { return appOneShot(rootDir, name, true); }).forEach(function (name) {
-      if (appActive(rootDir, name)) startOneShot(rootDir, client, name); else rememberOneShot(rootDir, client, name);
+    apps.filter(function (dir) { return appOneShot(rootDir, dir, true); }).forEach(function (dir) {
+      if (appActive(rootDir, dir)) startOneShot(rootDir, client, dir); else rememberOneShot(rootDir, client, dir);
     });
-    return apps.filter(function (name) { return appServes(rootDir, name); })
-      .map(function (name) { return startAppServer(rootDir, client, name); })
+    return apps.filter(function (dir) { return appServes(rootDir, dir); })
+      .map(function (dir) { return startAppServer(rootDir, client, dir); })
       .filter(Boolean);
   }
   // active WRITTEN STARTS OR STOPS ITS SERVER (goal/G43.12, Q4: "exactly."): told by the app family as it writes node.json.
   // DEBUG KEPT FOR AN APP (goal/G43.15): what its server reports on its job is written into its node.json, and handed back at
   // its next start. The server never writes the node's file.
-  const appArgs = new Map();     // name -> the argument list its server job starts from
-  function appDebug(root, name) {
-    try { return JSON.parse(fs.readFileSync(path.join(appState(root, name), 'node.json'), 'utf8')).debug === true; } catch (e) { return false; }
+  const appArgs = new Map();     // an app's folder -> the argument list its server job starts from
+  function appDebug(root, dir) {
+    try { return JSON.parse(fs.readFileSync(path.join(appState(root, dir), 'node.json'), 'utf8')).debug === true; } catch (e) { return false; }
   }
   function keepDebug(job, on) {
-    const m = /^spirit\.app\.([^/]+)$/.exec(String(job.module || ''));
-    if (!m || job.kind !== 'server' || !serverHost) return;
-    const file = path.join(appState(serverHost.rootDir, m[1]), 'node.json');
+    if (job.kind !== 'server' || !serverHost) return;
+    const dir = appFolders().filter(function (d) { return idOf(d) === String(job.module || ''); })[0];
+    if (!dir) return;
+    const file = path.join(appState(serverHost.rootDir, dir), 'node.json');
     let state = {};
     try { state = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch (e) { state = {}; }
     if (state.debug === on) return;
     state.debug = on;
     try { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(state, null, 2) + '\n'); } catch (e) { /* kept next time */ }
-    const args = appArgs.get(m[1]);
+    const args = appArgs.get(dir);
     const at = args ? args.indexOf('--debug') : -1;
     if (at !== -1) args[at + 1] = String(on);
   }
-  function followApp(rootDir, name) {
+  // dir: the app's folder, as the app branch hands it (goal/G49.19).
+  function followApp(rootDir, dir) {
     if (!serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;
     // A ONE-SHOT APP SWITCHED ON OR OFF (goal/G43.19, box v16, 4): registered or its row gone, no restart of the node.
-    const oneShot = appOneShot(rootDir, name);
-    if (oneShot && !oneShots.has(name)) startOneShot(rootDir, serverHost.client, name);
-    else if (!oneShot && oneShots.has(name)) stopOneShot(serverHost.client, name);
-    const job = nodeServers.get(name);
+    const oneShot = appOneShot(rootDir, dir);
+    if (oneShot && !oneShots.has(dir)) startOneShot(rootDir, serverHost.client, dir);
+    else if (!oneShot && oneShots.has(dir)) stopOneShot(serverHost.client, dir);
+    const job = nodeServers.get(dir);
     const now = job && getJob(job.id);
     const live = !!now && !TERMINAL_STATUSES.has(now.status);
-    const want = appServes(rootDir, name);
-    if (want && !live) startAppServer(rootDir, serverHost.client, name);
-    else if (!want && live) { cancelJob(job.id); nodeServers.delete(name); }
+    const want = appServes(rootDir, dir);
+    if (want && !live) startAppServer(rootDir, serverHost.client, dir);
+    else if (!want && live) { cancelJob(job.id); nodeServers.delete(dir); }
   }
 
   function startStatsJob(options) {

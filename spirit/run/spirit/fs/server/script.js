@@ -155,9 +155,10 @@ function start(rootDir, jobs) {
     }
     // AN APP'S <name>.json CHANGED, MADE OR GONE: whether its files are core may have changed with it (coreFiles.js reads
     // its identity.intrinsic), so its files' flags are worked out again, and each one that turned is sent as a change.
-    const app = /^spirit\/app\/([^/]+)\/([^/]+)\.json$/.exec(rel);
-    if (app && app[1] === app[2] && op !== 'createDirectory' && op !== 'deleteDirectory') {
-      const under = 'spirit/app/' + app[1] + '/';
+    // The manifest is <dir>/<the folder's own name>.json, for any app folder (goal/G49.19); its folder read off its own path.
+    const app = /^(.+\/([^/]+))\/([^/]+)\.json$/.exec(rel);
+    if (app && app[2] === app[3] && op !== 'createDirectory' && op !== 'deleteDirectory') {
+      const under = app[1] + '/';
       const files = tree.files();
       Object.keys(files).forEach(function (p) {
         const h = files[p];

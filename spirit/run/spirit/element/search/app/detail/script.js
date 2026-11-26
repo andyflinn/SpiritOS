@@ -81,7 +81,9 @@
     var button = document.createElement('span');
     button.style.marginLeft = '0.5em';
     box.appendChild(button);
-    var installer = ANSWER['spirit/element/appInstaller/script.js'].create(button, { path: 'spirit/app/' + key + '/' + key + '.js' });
+    // The row's key is the app's id; its folder by spirit.slashedPath, its script the folder's own name's .js (goal/G49.19).
+    var dir = window.spirit.slashedPath(key);
+    var installer = ANSWER['spirit/element/appInstaller/script.js'].create(button, { path: dir + '/' + dir.slice(dir.lastIndexOf('/') + 1) + '.js' });
     host.appendChild(box);
     return {
       destroy: function () { installer.destroy(); row.destroy(); host.innerHTML = ''; },

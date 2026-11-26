@@ -333,7 +333,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     // agent family's cache, which alone names its addresses: its table's branch, watch(id, fn) (spirit/app/agent/data.js).
     var unwatch = function () {};
     function attach() {
-    var B = window.spirit.required.spirit.data.agent.data[o.table];
+    var B = window.spirit.required.spirit.data['spirit.app.agent'].data[o.table];
     unwatch = !B ? function () {} : B.watch(o.id, function (value) {
       if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
       row = value;

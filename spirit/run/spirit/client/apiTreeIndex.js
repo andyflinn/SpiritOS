@@ -50,12 +50,14 @@ function apiTreeVerbs(tree, server) {
 // says is gone is REPORTED, never pruned: Andy, "so we defer pruning to
 // be triggered by the owners auth app, who can report deprecated
 // branches".
+// The branch is the longest served one the path starts with (goal/G49.19): an app is named by its folder's path in dots,
+// spirit.app.desk, so it holds dots of its own; never split at the first dot.
 function apiTreeServes(tree, p) {
   var path = String(p == null ? '' : p);
-  var dot = path.indexOf('.');
-  var app = dot === -1 ? path : path.slice(0, dot);
-  if (apiTreeServers(tree).indexOf(app) === -1) return false;
-  return dot === -1 || apiTreeVerbs(tree, app).indexOf(path.slice(dot + 1)) !== -1;
+  var app = '';
+  apiTreeServers(tree).forEach(function (b) { if (b.length > app.length && (path === b || path.indexOf(b + '.') === 0)) app = b; });
+  if (!app) return false;
+  return path === app || apiTreeVerbs(tree, app).indexOf(path.slice(app.length + 1)) !== -1;
 }
 
 var apiTreeIndexApi = {

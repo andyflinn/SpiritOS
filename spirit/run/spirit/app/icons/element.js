@@ -71,7 +71,7 @@
     function openIcon(glyph) {
       var layer = null;
       Promise.resolve(openOver('icon/' + glyph, { icon: glyph, label: 'Icon', fill: function (host) {
-        var row = S.required.spirit.data.icons.data.row(glyph) || { glyph: glyph, keywords: [] };
+        var row = S.required.spirit.data['spirit.app.icons'].data.row(glyph) || { glyph: glyph, keywords: [] };
         host.innerHTML =
           '<div class="stat-tile wide"><div class="panel-heading" data-icons="glyph" style="font-size:2em">' + esc(glyph) + '</div>' +
           '<label class="field-label">Keywords <input type="text" data-icons="keywords" value="' + esc((row.keywords || []).join(', ')) + '"></label>' +
@@ -81,7 +81,7 @@
         var field = host.querySelector('[data-icons="keywords"]');
         ANSWER['spirit/element/fieldInput/script.js'].attach(field, 'spirit/type/string/description/script.js');
         var close = function () { if (layer) layer.hide(); };
-        var off = S.required.spirit.data.icons.data.watch(function (g, v) {
+        var off = S.required.spirit.data['spirit.app.icons'].data.watch(function (g, v) {
           if (g !== glyph) return;
           if (!v) { close(); return; }
           if (document.activeElement !== field) field.value = (v.keywords || []).join(', ');
@@ -123,7 +123,7 @@
             return { status: 200, body: { ok: true, items: (b && b.items) || [], more: !!(b && b.more) } };
           }, function (e) { return { status: (e && e.status) || 500, body: { ok: false, error: String((e && e.message) || e) } }; });
         },
-        data: S.required.spirit.data.icons.data.branch,
+        data: S.required.spirit.data['spirit.app.icons'].data.branch,
         api: 'spirit/app/icons/api.js',
         verb: 'icon',
         face: 'pane',

@@ -7,9 +7,10 @@ require('../script.js');
 // "plugin" modules". Its contract and its test: ./test/app.md and ./test/app.js.
 //
 //   createApp({ rootDir, jobs }) -> { search(body), active(body), label(body), icon(body) }
-//     search({ q })   the plugins the words fit, best first, as { key: the folder's name, label: the row as JSON }; no
-//                     words is every plugin. "it's minimum, no filters, just a search string."
-//     active({ key, active })  sets a plugin's active in spirit/state/app/<key>/node.json, publishes the rows, and the node starts or
+//     search({ q })   the plugins the words fit, best first, as { key: the folder's path in dots (spirit.app.desk), label: the
+//                     row as JSON }; no words is every plugin. "it's minimum, no filters, just a search string."
+//     active({ key, active })  sets a plugin's active in node.json in its state folder (spirit.statePath of its folder),
+//                     publishes the rows, and the node starts or
 //                     stops its server, if it has one (goal/G43.12).
 //                     A key that is no plugin is refused, so no path can be written through it (goal/G43.9).
 //     label({ key, label }), icon({ key, icon })  the same, for its label and its icon. <name>.json gives the default,
@@ -31,8 +32,9 @@ const probabilityStringObjectMatch = spirit.requireScript('spirit/search/object.
 const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
 
 const ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
-// A plugin's own file, or its folder: what changes the table.
-const PLUGIN_PATH = /^spirit\/app\/([^/]+)(\/\1\.json)?$/;
+// A plugin's own manifest, or its folder: what changes the table. A folder is a plugin by the fs cache's app flag
+// (spirit/fs/filter/app/script.js: dir/<its own name>.json), anywhere in the tree (goal/G49.19).
+function isManifest(p) { const parts = String(p).split('/'); return parts.length > 1 && parts[parts.length - 1] === parts[parts.length - 2] + '.json'; }
 
 // goal/G43.6, Andy, box: "spirit.app also holds the family's verb, search, so no app may take the name of a verb."
 // The branch's api.js through spirit.requireScript (goal/G43.32): placed at once at spirit.required.spirit.app.api, the verbs read
@@ -40,20 +42,20 @@ const PLUGIN_PATH = /^spirit\/app\/([^/]+)(\/\1\.json)?$/;
 Promise.resolve(spirit.requireScript('spirit/app/api.js')).then(null, function () { /* the binding; the verbs are read below */ });
 const VERBS = spirit.required.spirit.app.api.verbs;
 
-// The tree's paths are the run folder's, so the app folders stand under spirit/app/.
-const APP_ROOT = 'spirit/app/';
 function tree() { return spirit.requireScript('spirit/fs/dataset/script.js'); }
+// AN APP IS KNOWN BY ITS FOLDER'S PATH (goal/G49.19, box: "ALL aspects of jobs/processes identify them by the full path of
+// their branch, whereever they may be mounted"; "all translation from name to path or back is NOT PERMITTED"): its key is
+// that path in dots, spirit.app.desk, the name it has on the wire; its folder, its manifest and its state follow from the path.
+function idOf(dir) { return spirit.dottedPath(dir); }
+function baseOf(dir) { const d = String(dir); return d.slice(d.lastIndexOf('/') + 1); }
 
 function createApp(opts) {
   const o = opts || {};
-  const folder = path.join(o.rootDir, 'spirit', 'app');
-  // goal/G43's box: "the file "repo://spirit/run/spirit/state/<name>/node.json" belongs to the node". No file is not active:
-  // "must be set to true by the user".
-  // Its folder by spirit.statePath (goal/G49.17): spirit/state/app/<name>/node.json. The app path is still built from the name here,
-  // as every app path is until the job's turn (Andy, goal/G49.17: "we'll fix all of job when it's turn after fs finally starts").
-  function stateFile(name) { return path.join(o.rootDir, ...spirit.statePath('spirit/app/' + name).split('/'), 'node.json'); }
-  function stateOf(name) {
-    try { const s = JSON.parse(fs.readFileSync(stateFile(name), 'utf8')); return s && typeof s === 'object' ? s : {}; } catch (e) { return {}; }
+  // goal/G43's box: "the file ... node.json belongs to the node". No file is not active: "must be set to true by the user".
+  // In its state folder by spirit.statePath (goal/G49.17): spirit/state/app/desk/node.json for spirit/app/desk.
+  function stateFile(dir) { return path.join(o.rootDir, ...spirit.statePath(dir).split('/'), 'node.json'); }
+  function stateOf(dir) {
+    try { const s = JSON.parse(fs.readFileSync(stateFile(dir), 'utf8')); return s && typeof s === 'object' ? s : {}; } catch (e) { return {}; }
   }
 
   // node.run, and neither node.mount nor shell.mount: an app that is started by Run and ends, with no face and no server to switch on.
@@ -61,13 +63,13 @@ function createApp(opts) {
     return !!(own && own.node && own.node.run === true && own.node.mount !== true && !(own.shell && own.shell.mount === true));
   }
   // A plugin's row, or null when the folder has no file of its own, or one that says nothing readable.
-  function rowOf(name) {
+  function rowOf(dir) {
     let own = null;
-    try { own = JSON.parse(fs.readFileSync(path.join(folder, name, name + '.json'), 'utf8')); } catch (e) { return null; }
+    try { own = JSON.parse(fs.readFileSync(path.join(o.rootDir, ...dir.split('/'), baseOf(dir) + '.json'), 'utf8')); } catch (e) { return null; }
     const i = own && own.identity && typeof own.identity === 'object' ? own.identity : {};
-    const s = stateOf(name);
+    const s = stateOf(dir);
     // AN INTRINSIC APP IS ALWAYS ACTIVE (goal/G43.14; Andy, Q1: "intrinsic apps will be always on."), whatever node.json says.
-    return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, intrinsic: i.intrinsic === true,
+    return { key: idOf(dir), label: String(s.label || i.label || baseOf(dir)), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, intrinsic: i.intrinsic === true,
       // WHETHER IT RUNS ON THE NODE (goal/G43.18, Q6, Andy: "yes."): its <name>.json's node.mount, for the app search's server filter.
       nodeMount: !!(own && own.node && own.node.mount === true),
       // WHETHER IT TAKES CLIENT MODE (goal/G49.8, box v3; Andy: "node:remote is a new manifest entry"): false only where its
@@ -82,29 +84,27 @@ function createApp(opts) {
       // A FACE ON THE SHELL (goal/G43.20; Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"): its <name>.json's shell.mount, the one thing
       // that gives it a tile.
       shellMount: !!(own && own.shell && own.shell.mount === true),
-      // A FAMILY OF ITS OWN (goal/G43.27; Andy: "an app must have an api.js"): spirit/app/<name>/api.js is there, so a page
-      // finds its data.js beside it; an app without one leaves the name to the system's spirit/<name>/.
-      // goal/G49.2, Q1 ("may an app row's api become the cache's flag (api.js AND data.js)?"; Andy: "sure, retrofit that"):
-      // the folder's own api flag in the dataset.
-      api: ((tree().file(APP_ROOT + name) || {}).api) === true };
+      // A FAMILY OF ITS OWN (goal/G43.27; Andy: "an app must have an api.js"): its folder's api.js is there, so a page finds its
+      // data.js beside it. goal/G49.2, Q1 (Andy: "sure, retrofit that"): the folder's own api flag in the dataset.
+      api: ((tree().file(dir) || {}).api) === true };
   }
-  // THE FOLDERS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2, "No more scanning folders outside new system"; Andy:
-  // "fix spirit/app/script.js, NOW"): the plugins are the folders directly in spirit/app/ as spirit/fs/dataset/script.js holds them, fed in this,
-  // the node's main process, by its file watcher (goal/G49.1). A plugin's own <name>.json is still read for its content.
-  function names() {
+  // THE APP FOLDERS FROM THE ONE FS DATASET, NEVER FROM THE DISC (goal/G49.2; goal/G49.19): every folder the dataset flags app,
+  // wherever it stands. One directly in spirit/app/ may not take a verb's name (goal/G43.6).
+  function dirs() {
     const files = tree().files();
     return Object.keys(files).filter(function (p) {
-      if (p.indexOf(APP_ROOT) !== 0 || files[p].kind !== 'folder') return false;
-      const name = p.slice(APP_ROOT.length);
-      return name.indexOf('/') === -1 && !VERBS[name];
-    }).map(function (p) { return p.slice(APP_ROOT.length); }).sort();
+      if (files[p].kind !== 'folder' || files[p].app !== true) return false;
+      return !(p.indexOf('spirit/app/') === 0 && p.split('/').length === 3 && VERBS[baseOf(p)]);
+    }).sort();
   }
+  // The folder of an app by its key: the one app folder whose path in dots is the key; '' for none.
+  function dirOf(key) { const k = String(key || ''); return dirs().filter(function (d) { return idOf(d) === k; })[0] || ''; }
 
   function search(body) {
     const q = String((body && body.q) || '').trim();
     const bucket = createProbabilityBucket(Infinity);
-    names().forEach(function (name) {
-      const row = rowOf(name);
+    dirs().forEach(function (dir) {
+      const row = rowOf(dir);
       if (!row) return;
       const p = q ? probabilityStringObjectMatch(q, row) : 0;
       if (q && !(p > 0)) return;
@@ -116,19 +116,20 @@ function createApp(opts) {
 
   function table() {
     const all = {};
-    names().forEach(function (name) { const row = rowOf(name); if (row) all[name] = row; });
+    dirs().forEach(function (dir) { const row = rowOf(dir); if (row) all[row.key] = row; });
     return all;
   }
   let publish = function () {};
   function write(body, change) {
     const key = String((body && body.key) || '');
-    if (names().indexOf(key) === -1 || !rowOf(key)) return { ok: false, status: 404, code: 'not-found', error: 'no app ' + key };
-    const state = Object.assign(stateOf(key), change);
-    fs.mkdirSync(path.dirname(stateFile(key)), { recursive: true });
-    fs.writeFileSync(stateFile(key), JSON.stringify(state, null, 2) + '\n');
+    const dir = dirOf(key);
+    if (!dir || !rowOf(dir)) return { ok: false, status: 404, code: 'not-found', error: 'no app ' + key };
+    const state = Object.assign(stateOf(dir), change);
+    fs.mkdirSync(path.dirname(stateFile(dir)), { recursive: true });
+    fs.writeFileSync(stateFile(dir), JSON.stringify(state, null, 2) + '\n');
     publish();
     // active starts and stops its server (goal/G43.12).
-    if (o.jobs && typeof o.jobs.followApp === 'function') o.jobs.followApp(o.rootDir, key);
+    if (o.jobs && typeof o.jobs.followApp === 'function') o.jobs.followApp(o.rootDir, dir);
     return { ok: true, status: 200 };
   }
   // Andy: "on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json",
@@ -139,15 +140,16 @@ function createApp(opts) {
     const key = String((body && body.key) || '');
     // Its development team made it intrinsic, so no press switches it, and nothing is written for it (goal/G43.14). Refused by
     // name (goal/G43.15; Andy: "And what's even worse, the server allows it!!!!").
-    if (spirit.requireScript('spirit/coreFiles/script.js').appIntrinsic(path.resolve(o.rootDir, '..', '..'), key) === true && names().indexOf(key) !== -1) {
+    const dir = dirOf(key);
+    if (dir && spirit.requireScript('spirit/coreFiles/script.js').appIntrinsic(path.resolve(o.rootDir, '..', '..'), dir) === true) {
       return { ok: false, status: 409, code: 'app-intrinsic', error: 'app ' + key + ' is intrinsic: it is always active' };
     }
     // ONE THAT IS ONLY RUN HAS NOTHING TO ACTIVATE (goal/G43.21; Andy: "and the node should know it, too."): refused by name, and
     // nothing is written, the page's hidden row notwithstanding.
-    if (names().indexOf(key) !== -1 && (rowOf(key) || {}).runOnly === true) {
+    if (dir && (rowOf(dir) || {}).runOnly === true) {
       return { ok: false, status: 409, code: 'app-run-only', error: 'app ' + key + ' is only run: it has nothing to activate' };
     }
-    const row = on && names().indexOf(key) !== -1 ? rowOf(key) : null;
+    const row = on && dir ? rowOf(dir) : null;
     return write(body, row ? { active: true, label: row.label, icon: row.icon } : { active: on });
   }
   function label(body) { return write(body, { label: String((body && body.label) || '') }); }
@@ -158,7 +160,9 @@ function createApp(opts) {
     publish();
     o.jobs.events.on('job-updated', function (j) {
       const command = j && j.id === 'spirit.fs' && j.data ? j.data.command : null;
-      if (!command || !command.path || !PLUGIN_PATH.test(String(command.path).replace(/\\/g, '/'))) return;
+      if (!command || !command.path) return;
+      const p = String(command.path).replace(/\\/g, '/');
+      if (!isManifest(p) && !(tree().file(p) || {}).app) return;
       try { publish(); } catch (e) { /* the next change publishes again */ }
     });
   }

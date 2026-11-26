@@ -23,7 +23,8 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all([keepAnswer('spirit/element/search/file/script.js'), keepAnswer('spirit/element/search/file/detail/script.js'), keepAnswer('spirit/element/fstat/script.js'), keepAnswer('spirit/element/panel/script.js'), keepAnswer('spirit/app/api.js')]);
-  var OPENERS = { code: 'text', image: 'media', audio: 'media', video: 'media' };
+  // Each opener by its app's folder (goal/G49.19: an app is known by its path, never by a name).
+  var OPENERS = { code: 'spirit/app/text', image: 'spirit/app/media', audio: 'spirit/app/media', video: 'spirit/app/media' };
 
   function create(container, opts) {
     var o = opts || {};
@@ -45,7 +46,7 @@
     // opener app's icon, its label, a colon and the file's name, from what the node says of that app; a ❔ file, which only
     // fstat shows, its icon and its name.
     function barOf(opener, name, t) {
-      var app = (S.required.spirit.data && S.required.spirit.data.app && S.required.spirit.data.app.data ? S.required.spirit.data.app.data.rows()[opener] : null) || {};
+      var app = (S.required.spirit.data && S.required.spirit.data.app && S.required.spirit.data.app.data ? S.required.spirit.data.app.data.rows()[S.dottedPath(opener)] : null) || {};
       return { icon: (t && t.icon) || app.icon || '', label: (app.label ? app.label + ': ' : '') + name };
     }
     function open(key, words, line) {
@@ -61,7 +62,7 @@
         // fstat only for a file neither opener takes (Andy: "let fstat pop up for unknows file types (❔) only"), through the
         // file search's detail, which draws it (goal/G43.32).
         if (!opener) return ANSWER['spirit/element/search/file/detail/script.js'].create(pane, { path: key });
-        return S.requireScript('spirit/app/' + opener + '/element.js').then(function (made) {
+        return S.requireScript(opener + '/element.js').then(function (made) {
           if (closed()) return null;
           // The opener's main element at the place of the file just loaded (goal/G43.32, rule 4).
           return made.create(pane, { path: key, words: words, line: line, title: title });
