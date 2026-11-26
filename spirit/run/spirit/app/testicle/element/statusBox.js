@@ -97,7 +97,7 @@
     }
     function draw() {
       if (gone) return;
-      var m = ANSWER['spirit/data/script.js'].testicle.data.monitor.get();
+      var m = ANSWER['spirit/data/script.js']['spirit.app.testicle'].data.monitor.get();
       var busy = !!(m && m.busy);
       var glyph = busy ? '🚶‍➡️' : '🛌';
       if (glyph !== shown && paint(icon, glyph)) shown = glyph;
@@ -126,7 +126,7 @@
     }
     parts.then(function () {
       if (gone) return;
-      var D = ANSWER['spirit/data/script.js'].testicle.data;
+      var D = ANSWER['spirit/data/script.js']['spirit.app.testicle'].data;
       // The mode it stands at, asked once; the stream keeps it after.
       Promise.resolve(ANSWER['spirit/app/testicle/api.js'].preferences({})).then(function (p) { if (!gone) D.preferences.keep(p); }, function () {});
       draw();
