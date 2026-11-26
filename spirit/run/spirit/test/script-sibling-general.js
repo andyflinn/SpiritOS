@@ -2811,6 +2811,29 @@ if (!GIVEN.length) {
   ['spirit/app/api.js', 'spirit/app/data.js'].forEach(function (rel) {
     test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
   });
+  // SOME TRUNK MOVES, AND THE AUTH TABLES AS BRANCHES (goal/G49.21, box v24): "spirit/client/packet.js -->
+  // spirit/peer/packet/script.js", apiTreeIndex and boxes into spirit/fuckingGarbage/, "delete the directory spirit/client/";
+  // "spirit/apiAuth/ --> spirit/grant/auth/"; the grant, bundle and branch tables each a branch, spirit/<table>/script.js and
+  // spirit/<table>/client/script.js; "spirit/authTableInterface/ --> spirit/grant/tables/ (only used to pillage for parts, then
+  // deleted)"; "the spirit/auth/ is finally deleted"; "the peer and relabel verbs go. die. perish."
+  ['spirit/peer/packet/script.js', 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/fuckingGarbage/boxes.js', 'spirit/grant/auth/script.js',
+    'spirit/grant/script.js', 'spirit/grant/client/script.js', 'spirit/bundle/script.js', 'spirit/bundle/client/script.js',
+    'spirit/branch/script.js', 'spirit/branch/client/script.js'].forEach(function (rel) {
+    test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
+  });
+  ['spirit/client', 'spirit/boxes', 'spirit/apiAuth', 'spirit/authTableInterface', 'spirit/grant/tables', 'spirit/auth'].forEach(function (rel) {
+    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+  });
+  test.run('no product script requires spirit/client/packet.js; the spirit object requires spirit/peer/packet/script.js', 0.2, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return (!files.some(function (f) { return codeText(f).indexOf('spirit/client/packet.js') !== -1; }) && /require(Script|One)\(\s*['"]spirit\/peer\/packet\/script\.js['"]\s*\)/.test(codeText('spirit/script.js'))) || false;
+  }, test.limit.quick);
+  test.run('no product script names the relabel verb or the auth peer verb', 0.2, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return !files.some(function (f) { const c = codeText(f); return /\brelabel\b/.test(c) || /['"]peer['"]\s*:\s*\{\s*request/.test(c); }) || false;
+  }, test.limit.quick);
   test.run('spirit/app/manager/script.js is the manager: it holds createApp', 0.2, function () {
     return /\bfunction createApp\s*\(/.test(codeText('spirit/app/manager/script.js')) || false;
   }, test.limit.quick);
