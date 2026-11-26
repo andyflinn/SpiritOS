@@ -97,8 +97,8 @@ test.run('a scratch node comes up', 0.2, async function () {
 test.run('once its app is activated, the server answers', 0.2, async function () {
   if (!nodeUp()) return false;
   // The job asks the fs cache, never the disc (goal/G49.19): the planted folder is an app once app.search lists it.
-  await until(function () { return call(N.base, 'app.search', { q: '' }).then(function (r) { return ((r.body && r.body.items) || []).some(function (i) { return i.key === ID; }); }); }, 30000);
-  await call(N.base, 'app.active', { key: ID, active: true });
+  await until(function () { return call(N.base, 'spirit.app.search', { q: '' }).then(function (r) { return ((r.body && r.body.items) || []).some(function (i) { return i.key === ID; }); }); }, 30000);
+  await call(N.base, 'spirit.app.active', { key: ID, active: true });
   const up = await until(function () { return call(N.base, ID + '.pid').then(function (r) { return r.status === 200 && r.body && r.body.pid > 0; }); }, 30000);
   return up ? true : false;
 }, test.limit.quick);
@@ -181,7 +181,7 @@ test.run('for Contacts, which has no server, the DEBUG row shows nothing and tak
 // the box: "hides while its server is not running"
 test.run('for Zz Debug with its server switched off, the DEBUG row shows nothing', 0.2, async function () {
   if (loaded !== true) return false;
-  await call(N.base, 'app.active', { key: ID, active: false });
+  await call(N.base, 'spirit.app.active', { key: ID, active: false });
   await until(function () { return jobOf(N.base, ID).then(function (j) { return !j; }); }, 15000);
   await make(ID);
   await sleep(2000);
@@ -189,7 +189,7 @@ test.run('for Zz Debug with its server switched off, the DEBUG row shows nothing
 }, test.limit.slow);
 test.run('once its app is activated again, the server answers', 0.2, async function () {
   if (!nodeUp()) return false;
-  await call(N.base, 'app.active', { key: ID, active: true });
+  await call(N.base, 'spirit.app.active', { key: ID, active: true });
   return (await until(function () { return call(N.base, ID + '.pid').then(function (r) { return r.status === 200; }); }, 30000)) ? true : false;
 }, test.limit.quick);
 // the box: "when the app is a server (node.mount==true), configured text: "turn on|off DEBUG <app-label>""

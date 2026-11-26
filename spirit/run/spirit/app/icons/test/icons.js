@@ -256,7 +256,7 @@ test.run('a page writing spirit/state/app/icons/data/iconSet.json itself is refu
 // the box, 4: "Switched off, its row goes, and a call to it answers app-not-served"
 test.run('Icons is switched off', 0.2, async function () {
   if (!W.ready) return false;
-  const off = await ask('app.active', { key: ID, active: false });
+  const off = await ask('spirit.app.active', { key: ID, active: false });
   W.off = off.status === 200;
   return W.off || false;
 }, test.limit.quick);
@@ -283,7 +283,7 @@ test.run('switched off, nothing runs icons.js', 0.2, function () {
 }, test.limit.quick);
 test.run('Icons is switched on again', 0.2, async function () {
   if (!W.ready) return false;
-  const on = await ask('app.active', { key: ID, active: true });
+  const on = await ask('spirit.app.active', { key: ID, active: true });
   return on.status === 200 || false;
 }, test.limit.quick);
 test.run('switched on again, the icons branch is back with no restart of the node', 0.2, async function () {

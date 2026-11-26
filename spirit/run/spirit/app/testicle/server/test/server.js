@@ -2025,7 +2025,7 @@ test.run('zzdA, zzdC and their own tests run while testicle is on', 0.2, async f
 }, test.limit.long);
 test.run('testicle is turned off, the node staying up, and the tree changes under it', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'app.active', { key: 'spirit.app.testicle', active: false });
+  const r = await call(N.base, 'spirit.app.active', { key: 'spirit.app.testicle', active: false });
   const gone = await until(function () { return askedUp().then(function (a) { return !a; }); }, 30000);
   if (!gone) return false;
   off = { aSuite: (suiteRow(tables(DB), DA, DAS) || {}).hash };
@@ -2036,7 +2036,7 @@ test.run('testicle is turned off, the node staying up, and the tree changes unde
 }, test.limit.slow);
 test.run('turned on again, testicle answers', 0.2, async function () {
   if (!off) return false;
-  await call(N.base, 'app.active', { key: 'spirit.app.testicle', active: true });
+  await call(N.base, 'spirit.app.active', { key: 'spirit.app.testicle', active: true });
   return !!(await until(askedUp, 60000)) || false;
 }, test.limit.slow);
 test.run('the script table follows: zzdB written while off has its row, zzdC removed while off is deleted', 0.2, async function () {

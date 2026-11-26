@@ -165,7 +165,7 @@ async function handedScratch() {
     return !!(manifest && manifest.node && manifest.node.mount === true);
   }).map(function (d) { return d.name; });
   await Promise.all(apps.map(async function (name) {
-    await post('app.active', { key: name, active: true });
+    await post('spirit.app.active', { key: name, active: true });
     await until(function () { return post('api', { branch: name }).then(function (r) { return !!(r.body && r.body.interface); }); }, 15000);
   }));
   return { root: path.dirname(path.dirname(run)), base: base, child: null, up: true, handed: true };

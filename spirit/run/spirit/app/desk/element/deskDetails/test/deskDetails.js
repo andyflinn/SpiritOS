@@ -739,7 +739,7 @@ test.run('there is an item done, and an item in design mode offering Delete', 0.
   if (!page || page.error) return false;
   await page.send('Page.navigate', { url: scratch.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
-  await call('app.active', { key: DESK_ID, active: true });
+  await call('spirit.app.active', { key: DESK_ID, active: true });
   await H.until(function () { return call(DESK_ID + '.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
   const g = await call(DESK_ID + '.goal.add', { title: 'Pressing goal' });
   await call(DESK_ID + '.press', { id: g.id, what: 'make-current' });

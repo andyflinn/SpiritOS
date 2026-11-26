@@ -498,7 +498,7 @@ test.run('with no workBench on the page it loads spirit/element/workBench/script
       return { status: r.status, text: text, body: parsed(text) };
     };
     // active is its one switch (goal/G43.13); the app is known and called by its id, spirit.app.agent (goal/G49.19).
-    await home('app.active', { key: 'spirit.app.agent', active: true });
+    await home('spirit.app.active', { key: 'spirit.app.agent', active: true });
     P = null;
     await until(function () { return home('spirit.app.agent.provider', { op: 'add', icon: ICON.provider, label: 'zzProvider', url: 'http://192.0.2.1:9/' }).then(function (a) { P = a; return a.status === 200 && !!(a.body && a.body.id); }); }, 20000);
     return (!!(P && P.body && P.body.id)) ? true : false;

@@ -18,7 +18,7 @@ const ROW = { key: 'zzapp', label: 'Zz App Label', icon: '🧩' };
 // One test.run per test (goal/G47.2). What the world and the tests make, for the tests after them.
 let node, chrome, loaded, text, identity, own, mounted, MOUNT, drawnIn, press, plainNow, want;
 const ask = async function (verb, args) { const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); try { return JSON.parse(await r.text()); } catch (e) { return null; } };
-const activeOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; let v = null; try { v = JSON.parse(r.label); } catch (e) { /* none */ } return v ? v.active : undefined; };
+const activeOf = async function (k) { const got = await ask('spirit.app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; let v = null; try { v = JSON.parse(r.label); } catch (e) { /* none */ } return v ? v.active : undefined; };
 // Which of the apps are active, as the node answers; the filter's set is that and node.mount, from the tree.
 const wantOn = async function () { const out = []; for (const a of mounted) { if ((await activeOf(a.key)) === true) out.push(a.label); } return out.sort(); };
 
@@ -43,9 +43,10 @@ test.run('it loads through spirit.requireScript', 0.2, async function () {
   loaded = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/app/script.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; document.body.appendChild(c); return "loaded"; }, function () { return false; })');
   return loaded === 'loaded' ? true : false;
 }, test.limit.slow);
+// The app branch is asked of the loader, as the list asks it (goal/G49.20: its interface is spirit/app/script.js).
 test.run('its create makes a list in the host it is given', 0.2, async function () {
   if (!text) return false;
-  const made = await chrome.evaluate('(function () { window.asked = []; var real = spirit.required.spirit.app.api.searchApp; spirit.required.spirit.app.api.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; window.list = spirit.required.spirit.element.search.app.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; }())');
+  const made = await chrome.evaluate('spirit.requireScript("spirit/app/script.js").then(function (b) { window.asked = []; var real = b.searchApp; b.searchApp = function (a) { window.asked.push(a); return real.call(b, a); }; window.picks = []; window.list = spirit.required.spirit.element.search.app.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; })');
   return made === true ? true : false;
 }, test.limit.slow);
 test.run('it draws what app.search finds', 0.2, async function () {
@@ -117,7 +118,7 @@ test.run('with the servers option set to true it shows the one filter', 0.2, fun
 // goal/G43.18: pressed, only the active apps with node.mount true stay
 test.run('the app that runs on the node is switched on', 0.2, async function () {
   if (!press) return false;
-  await ask('app.active', { key: MOUNT.key, active: true });
+  await ask('spirit.app.active', { key: MOUNT.key, active: true });
   const on = await until(function () { return activeOf(MOUNT.key).then(function (a) { return a === true; }); }, 10000);
   await chrome.evaluate('window.servers.refresh(); true');
   return on ? true : false;
@@ -140,7 +141,7 @@ test.run('the list without the filter still draws every app', 0.2, async functio
 // "and active": switched off, it leaves the filter's list.
 test.run('once switched off, the app leaves the filtered list', 0.2, async function () {
   if (!press) return false;
-  await ask('app.active', { key: MOUNT.key, active: false });
+  await ask('spirit.app.active', { key: MOUNT.key, active: false });
   await until(function () { return activeOf(MOUNT.key).then(function (a) { return a === false; }); }, 10000);
   await chrome.evaluate('window.servers.refresh(); true');
   want = await wantOn();

@@ -482,7 +482,7 @@ test.run('a goal and two items are put on the scratch desk', 0.2, async function
   await page.send('Page.navigate', { url: F2.node.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   const call = caller(page);
-  await call('app.active', { key: ID, active: true });
+  await call('spirit.app.active', { key: ID, active: true });
   await H.until(function () { return call(ID + '.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
   const g = await call(ID + '.goal.add', { title: 'Opening goal' });
   await call(ID + '.press', { id: g.id, what: 'make-current' });
@@ -554,7 +554,7 @@ test.run('a goal and its item, pressed done, are put on the scratch desk', 0.2, 
   await page.send('Page.navigate', { url: F3.node.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
   const call = F3.call = caller(page);
-  await call('app.active', { key: ID, active: true });
+  await call('spirit.app.active', { key: ID, active: true });
   await H.until(function () { return call(ID + '.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
   const g = await call(ID + '.goal.add', { title: 'Closing goal' });
   await call(ID + '.press', { id: g.id, what: 'make-current' });

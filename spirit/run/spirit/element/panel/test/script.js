@@ -310,7 +310,7 @@ test.run('the Agent, made active, has its tile', 0.2, async function () {
   if (!where) return false;
   if (!c || c.error) return false;
   // the box: "A deactivated app's layer only leaves the view; it stays loaded until the shell boots again, and is not loaded then (Q11)"
-  await call(N.base, 'app.active', { key: 'spirit.app.agent', active: true });
+  await call(N.base, 'spirit.app.active', { key: 'spirit.app.agent', active: true });
   await selector('tiles');
   return (await waitFor('tiles().indexOf("spirit.app.agent") !== -1', 15000)) ? true : false;
 }, test.limit.quick);
@@ -330,7 +330,7 @@ test.run('app.active switches the Agent off', 0.2, async function () {
   agent = await T('markLayer("agent")');
   // What threw is judged up to here: after the switch-off the Agent's kept layer is the Agent's own (Q11: it stays loaded).
   heardBefore = c.heard.length;
-  off = await call(N.base, 'app.active', { key: 'spirit.app.agent', active: false });
+  off = await call(N.base, 'spirit.app.active', { key: 'spirit.app.agent', active: false });
   return (off.status === 200) ? true : false;
 }, test.limit.slow);
 test.run('the Agent\'s open layer leaves the view', 0.2, async function () {

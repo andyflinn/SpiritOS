@@ -202,7 +202,7 @@ test.run('its detail shows no Activate and no Deactivate', 0.2, async function (
 // the box: "app.active does not switch it off"
 test.run('after app.active switches it off, its tile is still there', 0.2, async function () {
   if (!W.page) return false;
-  await call(W.N.base, 'app.active', { key: 'contact', active: false });
+  await call(W.N.base, 'spirit.app.active', { key: 'contact', active: false });
   await selector('tiles');
   await sleep(1500);
   return (await shown()).indexOf('Contacts') !== -1 || false;

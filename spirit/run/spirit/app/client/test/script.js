@@ -127,7 +127,7 @@ test.run('a new app.label for agent is taken', 0.2, async function () {
   W.fresh = W.plain.label + ' ' + process.pid;
   // The observer looks for the new label too, so a tile that paints it is seen.
   await W.chrome.evaluate('window.want.push(' + JSON.stringify(W.fresh) + '), true');
-  const wrote = await ask('app.label', { key: W.plain.key, label: W.fresh });
+  const wrote = await ask('spirit.app.label', { key: W.plain.key, label: W.fresh });
   return wrote.status === 200 ? true : false;
 }, test.limit.quick);
 test.run('the apps job reached the page, and agent\'s held row now says its new label', 0.2, async function () {
@@ -181,7 +181,7 @@ test.run('with no list on the page, a second apps job reached it', 0.2, async fu
   await W.chrome.evaluate('(function () { window.tiles.destroy(); var c = document.getElementById("tiles"); if (c) c.remove(); return true; }())');
   // A second apps job with no list on the page, so nothing asks app.search again: the cache as the job leaves it.
   const fresher = W.fresher = W.fresh + ' again';
-  const wrote2 = await ask('app.label', { key: plain.key, label: fresher });
+  const wrote2 = await ask('spirit.app.label', { key: plain.key, label: fresher });
   const replaced2 = await until(function () { return held().then(function (r) { return !!r[plain.key] && r[plain.key].label === fresher; }); }, 10000);
   await sleep(800);
   W.after = await held();

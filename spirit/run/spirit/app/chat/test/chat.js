@@ -72,7 +72,7 @@ test.run('its server answers spirit.app.chat.chats.search', 0.2, async function 
     const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
     return { status: r.status, body: b, text: t };
   };
-  await X.call('app.active', { key: 'spirit.app.chat', active: true });
+  await X.call('spirit.app.active', { key: 'spirit.app.chat', active: true });
   const up = await H.until(function () { return X.call('spirit.app.chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
   return up ? true : false;
 }, test.limit.slow);

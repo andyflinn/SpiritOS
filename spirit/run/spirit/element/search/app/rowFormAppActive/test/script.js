@@ -36,7 +36,7 @@ test.run('it loads through spirit.requireScript and is placed on spirit.required
   return loaded === true ? true : false;
 }, test.limit.quick);
 const ask = async function (verb, args) { const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
-const activeOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).active : undefined; };
+const activeOf = async function (k) { const got = await ask('spirit.app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).active : undefined; };
 // An app's key is its id, its folder's path in dots, spirit.app.agent (goal/G49.19); its host is named by the id's last word.
 const tag = function (key) { return key.slice(key.lastIndexOf('.') + 1); };
 const make = function (key) { return chrome.evaluate('(function () { var b = document.createElement("div"); b.id = "a-' + tag(key) + '"; document.body.appendChild(b); window["a_' + tag(key) + '"] = spirit.required.spirit.element.search.app.rowFormAppActive.create(b, { key: ' + JSON.stringify(key) + ' }); return !!window["a_' + tag(key) + '"] && typeof window["a_' + tag(key) + '"].destroy === "function"; }())'); };

@@ -19,7 +19,7 @@ let node, chrome, loaded, made, v0, glyph, key, busyAt;
 // The Agent's key is its id, its folder's path in dots (goal/G49.19).
 const AGENT = 'spirit.app.agent';
 const ask = async function (verb, args) { const r = await fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) }); return parsed(await r.text()); };
-const iconOf = async function (k) { const got = await ask('app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).icon : undefined; };
+const iconOf = async function (k) { const got = await ask('spirit.app.search', { q: '' }); const r = ((got && got.items) || []).filter(function (i) { return i.key === k; })[0]; return r ? (parsed(r.label) || {}).icon : undefined; };
 const seen = function () { return chrome.evaluate('(function () { var b = document.getElementById("i"); var bs = b.querySelectorAll("button"); return { forms: b.querySelectorAll(".shell-row-form").length, text: String(b.innerText || "").replace(/\\s+/g, " ").trim(), last: bs.length ? String(bs[bs.length - 1].textContent || "").trim() : null }; }())'); };
 
 test.after(function () {
@@ -90,7 +90,7 @@ test.run('pressed with a glyph picked, Change stays busy while the node is asked
 // an icon changed elsewhere shows, with no reload
 test.run('it shows the new icon', 0.2, async function () {
   if (made !== true) return false;
-  await ask('app.icon', { key: AGENT, icon: '🧩' });
+  await ask('spirit.app.icon', { key: AGENT, icon: '🧩' });
   return (await until(function () { return seen().then(function (v) { return v.text.indexOf('🧩') !== -1; }); }, 10000)) ? true : false;
 }, test.limit.quick);
 test.run('destroy empties its host', 0.2, async function () {

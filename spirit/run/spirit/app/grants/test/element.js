@@ -673,7 +673,7 @@ const wwaitFor = function (expr, ms) { return H.until(function () { return R.c.e
   // the box, 2: intrinsic "as spirit/app apps say it": the node says so
   test.run('the node lists Files as intrinsic', 0.2, async function () {
     if (!R.N || !R.N.up) return false;
-    const listed = await wcall(R.N.base, 'app.search', { q: '' });
+    const listed = await wcall(R.N.base, 'spirit.app.search', { q: '' });
     R.rows = {};
     ((listed.body && listed.body.items) || []).forEach(function (i) { R.rows[i.key] = parsed(i.label) || {}; });
     return !!R.rows[FILE_KEY] && R.rows[FILE_KEY].intrinsic === true ? true : false;

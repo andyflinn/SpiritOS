@@ -921,7 +921,7 @@ test.run('a real node has a real face, logged in', 0.2, async function () {
   // TEXT EDITOR AND MEDIA VIEWER SWITCHED ON AT HOME, as an owner would: since goal/G43.17 they are apps of their own, not
   // intrinsic, so a fresh node shows them only once they are active.
   const on = async function (key) {
-    const r = await fetch(A.N.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: key, active: true } }) }).then(function (x) { return x.status; }, function () { return 0; });
+    const r = await fetch(A.N.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'spirit.app.active', args: { key: key, active: true } }) }).then(function (x) { return x.status; }, function () { return 0; });
     return r === 200;
   };
   if (!(await on('text')) || !(await on('media'))) return false;

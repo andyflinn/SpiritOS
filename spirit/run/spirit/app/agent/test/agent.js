@@ -302,7 +302,7 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
   test.run('a restarted node starts the active agent\'s server', 0.2, async function () {
     if (STOP) return false;
 
-    await call(N.base, 'app.active', { key: MODULE, active: true });
+    await call(N.base, 'spirit.app.active', { key: MODULE, active: true });
     await serverUp(N.base);
     if (N) await stop(N.child);
     N = await boot(s.run); live.push(N.child);

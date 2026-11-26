@@ -66,7 +66,7 @@ test.run('a scratch node of its own comes up for this suite', 0.2, async functio
 // ── switched on, it serves the branch chat ──
 test.run('switched on, the server answers spirit.app.chat.chats.search', 0.2, async function () {
   if (!X.call) return false;
-  await X.call('app.active', { key: ID, active: true });
+  await X.call('spirit.app.active', { key: ID, active: true });
   X.up = await H.until(function () { return X.call(ID + '.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
   return X.up ? true : false;
 }, test.limit.quick);
