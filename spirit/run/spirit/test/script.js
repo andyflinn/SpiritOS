@@ -54,6 +54,8 @@ function answer(b) {
   // An app's branch, zapp, its api.js at spirit/app/zapp/api.js (goal/G49.6, the one place).
   if (c === 'api' && a.branch === 'zapp') return [200, { interface: DEMO }];
   if (c === 'zapp.hello') return [200, { ok: true, said: 'zapp ' + a.name }];
+  // The event branch, which processJob reports through (goal/G49.19): this tree's own spirit/event/api.js, as a node answers it.
+  if (c === 'api' && a.branch === 'event') return [200, { interface: fs.readFileSync(path.join(RUN, 'spirit', 'event', 'api.js'), 'utf8') }];
   if (c === 'api' && a.branch) return [404, { ok: false, code: 'no-branch', error: 'no branch ' + a.branch }];
   if (c === 'api') return [200, { demo: { hello: {} }, gone: {} }];
   if (c === 'demo.hello' && a.name === 'held') return [409, { ok: false, code: 'held', error: 'held by bert' }];
@@ -199,7 +201,7 @@ function observe(root, mode, port) {
   fs.writeFileSync(file, OBSERVE);
   return new Promise(function (resolve) {
     const kid = spawn(process.execPath, [file, root, mode || '', String(port || ''), '--node', JSON.stringify({ name: 'nodey', publicKey: 'K1', ownerKey: 'O1' })],
-      { cwd: root, env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'job_7' }) });
+      { cwd: root, env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'spirit.app.zzjob' }) });
     let said = '';
     let errs = false;
     kid.stdout.on('data', function (c) { said += c; });
@@ -458,7 +460,7 @@ test.run('spirit.eventStream.publish goes out by event.publish with the job\'s i
   const node = T.node;
   const updates = node.asked.filter(function (b) { return b.call === 'event.publish'; }).map(function (b) { return b.args; });
   const dropped = updates.filter(function (u) { return u.app && u.app.dropped; });
-  return (o.publish === true && o.tooBig === false && updates.length > 0 && updates.every(function (u) { return u.id === 'job_7'; }) && updates.some(function (u) { return u.app && u.app.x === 1; })
+  return (o.publish === true && o.tooBig === false && updates.length > 0 && updates.every(function (u) { return u.id === 'spirit.app.zzjob'; }) && updates.some(function (u) { return u.app && u.app.x === 1; })
       && dropped.length === 1 && dropped[0].app.dropped.max > 0 && o.noProcessJob === true && !node.asked.some(function (b) { return b.call === 'job.update'; })) || false;
 }, test.limit.quick);
 test.run('spirit.eventStream.subscribe hears the node\'s events as a stream: up, then the snapshot, then each update, until unsubscribed', 0.2, function () {
