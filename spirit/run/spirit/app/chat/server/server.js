@@ -129,8 +129,12 @@ function answered(peer, re) {
 // spirit.type.number.UTC"); this table keeps it as the text it always kept, turned at this door both ways.
 function utcOf(at) { const t = Date.parse(String(at || '')); return isFinite(t) ? t : 0; }
 function keptAt(utc) { return new Date(utc).toISOString(); }
+// The chat app on the peer's node by its id, its folder in dots (goal/G49.19, box v13: no app on the wire by a word).
+const APP_ID = 'spirit.app.chat';
 function bodyOf(l) {
-  return { chat: { 'line.receive': { seq: l.seq, at: utcOf(l.at), text: l.text, re: { writer: l.reWriter, seq: l.reSeq } } } };
+  const body = {};
+  body[APP_ID] = { 'line.receive': { seq: l.seq, at: utcOf(l.at), text: l.text, re: { writer: l.reWriter, seq: l.reSeq } } };
+  return body;
 }
 // One post of one line, and what came back: kept, or the peer's refusal (its door's, sealed) kept as proof that
 // contact was attempted (goal/G4.6, Andy: "the writers keeps refusals, they are proof that contact was attempted.").
@@ -255,7 +259,7 @@ appServer.serve({
         if (person.blocked === true) throw refused('peer-blocked');
         return null;
       }).then(function () {
-        return onNode(spirit.requireScript('spirit/auth/api.js'), function (auth) { return auth.grant({ key: to, path: 'chat.line.receive' }); });
+        return onNode(spirit.requireScript('spirit/auth/api.js'), function (auth) { return auth.grant({ key: to, path: APP_ID + '.line.receive' }); });
       }).then(function (g) {
         const already = g.status === 409 && g.body && g.body.code === 'already-granted';
         if (g.status !== 200 && !already) throw refused('store-unavailable');
