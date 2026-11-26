@@ -25,6 +25,7 @@ const { freePort, until, sleep, chromePage, findChrome } = S.requireScript('spir
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 
+// The app is known by its id, its folder's path in dots (goal/G49.19): its job's module, its key, its calls and its data family.
 const MODULE = 'spirit.app.agent';
 const ROWS = { provider: 'zzProvider', model: 'zzModel', persona: 'zzPersona', job: 'zzJob' };
 
@@ -54,7 +55,7 @@ async function liveJob(base) {
 }
 function answers(r) { return r.status === 200 && !!r.body && typeof r.body.debug === 'boolean'; }
 // The server is up when appServer's DEBUG answers (its own debug verb went in goal/G43.15).
-function serverUp(base) { return until(function () { return call(base, 'agent.DEBUG', {}).then(answers); }, 30000); }
+function serverUp(base) { return until(function () { return call(base, MODULE + '.DEBUG', {}).then(answers); }, 30000); }
 // Every file under a folder.
 function filesUnder(dir) {
   const out = [];
@@ -118,7 +119,7 @@ function filesUnder(dir) {
   }, test.limit.quick);
   test.run('before the agent is activated, its verbs are not answered', 0.2, async function () {
     if (STOP) return false;
-    return (!answers(await call(N.base, 'agent.DEBUG', {}))) ? true : false;
+    return (!answers(await call(N.base, MODULE + '.DEBUG', {}))) ? true : false;
   }, test.limit.quick);
   test.run('the agent\'s row is in the appSelector\'s pane', 0.2, async function () {
     if (STOP) return false;
@@ -146,7 +147,7 @@ function filesUnder(dir) {
   }, test.limit.quick);
   test.run('its server runs as a live job under the agent app\'s id', 0.2, async function () {
     if (STOP) return false;
-    if (!answers(await call(N.base, 'agent.DEBUG', {}))) { STOP = true; return false; }
+    if (!answers(await call(N.base, MODULE + '.DEBUG', {}))) { STOP = true; return false; }
     return (!!(await liveJob(N.base))) ? true : false;
   }, test.limit.quick);
   test.run('its rows are kept in spirit/state/app/agent/data/', 0.2, async function () {
@@ -158,10 +159,10 @@ function filesUnder(dir) {
     if (STOP) return false;
 
     // Rows for the tables to show, made by the server's verbs as they ever were.
-    P = await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: ROWS.provider, url: 'http://192.0.2.1:9/' });
-    M = await call(N.base, 'agent.model', { op: 'add', icon: '🧬', label: ROWS.model, providerId: P.body && P.body.id });
-    Pe = await call(N.base, 'agent.persona', { op: 'add', icon: '🧙', label: ROWS.persona, persona: 'zz', bundle: 'zz', provider: P.body && P.body.id });
-    J = await call(N.base, 'agent.job', { op: 'add', icon: '🧰', label: ROWS.job, job: 'zz', bundle: 'zz', provider: P.body && P.body.id, persona: Pe.body && Pe.body.id });
+    P = await call(N.base, MODULE + '.provider', { op: 'add', icon: '🧪', label: ROWS.provider, url: 'http://192.0.2.1:9/' });
+    M = await call(N.base, MODULE + '.model', { op: 'add', icon: '🧬', label: ROWS.model, providerId: P.body && P.body.id });
+    Pe = await call(N.base, MODULE + '.persona', { op: 'add', icon: '🧙', label: ROWS.persona, persona: 'zz', bundle: 'zz', provider: P.body && P.body.id });
+    J = await call(N.base, MODULE + '.job', { op: 'add', icon: '🧰', label: ROWS.job, job: 'zz', bundle: 'zz', provider: P.body && P.body.id, persona: Pe.body && Pe.body.id });
     return ([P, M, Pe, J].every(function (r) { return r.status === 200 && r.body && r.body.id; })) ? true : false;
   }, test.limit.quick);
   // ── the box: "The Agent's tile opens, its tables work, and its rows are there" ──
@@ -203,13 +204,13 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
     if (STOP) return false;
 
     // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into spirit.required.spirit.data.
-    added = await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.2:9/' });
+    added = await call(N.base, MODULE + '.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.2:9/' });
     liveId = added.body && added.body.id;
     return (!!liveId) ? true : false;
   }, test.limit.quick);
-  test.run('it reaches the page\'s spirit.required.spirit.data.agent with no reload', 0.2, async function () {
+  test.run('it reaches the page\'s spirit.required.spirit.data["spirit.app.agent"] with no reload', 0.2, async function () {
     if (STOP) return false;
-    onPage = function () { return c.evaluate('(function () { var r = spirit.required.spirit.data.agent && spirit.required.spirit.data.agent.data && spirit.required.spirit.data.agent.data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
+    onPage = function () { return c.evaluate('(function () { var r = spirit.required.spirit.data[\"spirit.app.agent\"] && spirit.required.spirit.data[\"spirit.app.agent\"].data && spirit.required.spirit.data[\"spirit.app.agent\"].data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
     return (!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000)) ? true : false;
   }, test.limit.quick);
   // ── goal/G43.15, the box: "On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG" ──
@@ -235,7 +236,7 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
   test.run('pressing the DEBUG row turns the agent\'s DEBUG on', 0.2, async function () {
     if (STOP) return false;
     await c.evaluate('(function () { var rows = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")).filter(function (r) { return /DEBUG/.test(String(r.innerText || "")); }); if (rows[0]) rows[0].querySelector("button").click(); return 1; }())');
-    return (await until(function () { return call(N.base, 'agent.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : false;
+    return (await until(function () { return call(N.base, MODULE + '.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000)) ? true : false;
   }, test.limit.quick);
   test.run('the node keeps the agent\'s DEBUG in spirit/state/app/agent/node.json', 0.2, async function () {
     if (STOP) return false;
@@ -285,7 +286,7 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
   }, test.limit.quick);
   test.run('once the agent is deactivated, its verbs are not answered', 0.2, async function () {
     if (STOP) return false;
-    return (!answers(await call(N.base, 'agent.DEBUG', {}))) ? true : false;
+    return (!answers(await call(N.base, MODULE + '.DEBUG', {}))) ? true : false;
   }, test.limit.quick);
   test.run('the deactivated agent\'s row stays in the pane', 0.2, async function () {
     if (STOP) return false;
@@ -301,7 +302,7 @@ async function rowShows(name) { const hit = await tool(name); return !!(hit && a
   test.run('a restarted node starts the active agent\'s server', 0.2, async function () {
     if (STOP) return false;
 
-    await call(N.base, 'app.active', { key: 'agent', active: true });
+    await call(N.base, 'app.active', { key: MODULE, active: true });
     await serverUp(N.base);
     if (N) await stop(N.child);
     N = await boot(s.run); live.push(N.child);

@@ -706,11 +706,13 @@ test.run('the qs panel fills the pane\'s height when first opened, and its list 
 // ── goal/G43.30: ON THE REAL PAGE, A DELETE OR A CLOSE PRESSED ONCE DOES NOTHING ─────────────────────────────────
 // The box: "A test presses each one once on the real page and finds that nothing happened". A scratch node with desk on, a goal and two items: one pressed done, whose detail
 // offers Close; one in design mode, whose detail offers Delete (goal/G9.7). Each detail opened from Desk's List.
+// The app is known by its id, its folder's path in dots (goal/G49.19): its key and its calls.
+const DESK_ID = 'spirit.app.desk';
 const call = function (verb, args) {
   return S.page2.evaluate("fetch('/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
     .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
 };
-const state = async function (id) { const r = await call('desk.item.get', { id: id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
+const state = async function (id) { const r = await call(DESK_ID + '.item.get', { id: id }); let i = r.item; if (typeof i === 'string') { try { i = JSON.parse(i); } catch (e) { i = null; } } return i || {}; };
 const openRow = function (title) { return S.page2.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.tagName === 'TD' && x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
 const btn = function (id) { return "Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container #" + id + "'), function (b) { return b.getClientRects().length; })[0]"; };
 const shut = function () { return S.page2.evaluate("(function () { var c = Array.prototype.filter.call(document.querySelectorAll('#zzDesk .app-container-close'), function (x) { return x.getClientRects().length; }).pop(); if (c) c.click(); return !!c; })()"); };
@@ -737,14 +739,14 @@ test.run('there is an item done, and an item in design mode offering Delete', 0.
   if (!page || page.error) return false;
   await page.send('Page.navigate', { url: scratch.base + '/' });
   await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.requireScript)').then(Boolean); }, H.WAIT);
-  await call('app.active', { key: 'desk', active: true });
-  await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
-  const g = await call('desk.goal.add', { title: 'Pressing goal' });
-  await call('desk.press', { id: g.id, what: 'make-current' });
-  const done = S.done = await call('desk.item.add', { goal: g.id, title: 'A done item to close' });
-  await call('desk.press', { id: done.id, what: 'done' });
-  const design = S.design = await call('desk.item.add', { goal: g.id, title: 'A design item to delete' });
-  await call('desk.press', { id: design.id, what: 'start-design' });
+  await call('app.active', { key: DESK_ID, active: true });
+  await H.until(function () { return call(DESK_ID + '.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+  const g = await call(DESK_ID + '.goal.add', { title: 'Pressing goal' });
+  await call(DESK_ID + '.press', { id: g.id, what: 'make-current' });
+  const done = S.done = await call(DESK_ID + '.item.add', { goal: g.id, title: 'A done item to close' });
+  await call(DESK_ID + '.press', { id: done.id, what: 'done' });
+  const design = S.design = await call(DESK_ID + '.item.add', { goal: g.id, title: 'A design item to delete' });
+  await call(DESK_ID + '.press', { id: design.id, what: 'start-design' });
   const before = S.beforePress = { done: await state(done.id), design: await state(design.id) };
   await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.requireScript('spirit/app/desk/element.js')).then(function () { window.spirit.required.spirit.app.desk.element.create(d, {}); return true; }); })()");
   S.readyPromise = true;

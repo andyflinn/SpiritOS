@@ -106,7 +106,7 @@ function plantApps(run) {
 test.run('a scratch node comes up with its planted server and one-shot app switched on at boot', 0.2, async function () {
   J.marks = ownTemp('spirit-jobs-marks-');
   // Its one-shot app switched on at boot beside its server, both planted in the scratch tree before the node starts.
-  J.node = await scratchNode({ servers: ['zzserve', 'zzshot'], before: plantApps });
+  J.node = await scratchNode({ servers: ['spirit.app.zzserve', 'spirit.app.zzshot'], before: plantApps });
   if (!J.node.up) return false;
   J.run = path.join(J.node.root, 'spirit', 'run');
   return true;
@@ -899,7 +899,8 @@ function mountPart() {
       "if (typeof window === 'undefined') {",
       "  require('../script.js');",
       "  require('../server/app/script.js').serve({ ping: { request: {}, reply: {}, handler: function () { return { pid: process.pid }; } } }, {});",
-      "  setTimeout(function () { spirit.eventStream.publish({ fake: 'streamed' }); }, 500);",
+      // Published again and again: a job keeps its last payload, and the server's own announce replaces an earlier one.
+      "  setInterval(function () { spirit.eventStream.publish({ fake: 'streamed' }); }, 300);",
       '}',
     ].join('\n') + '\n');
     fs.writeFileSync(path.join(dir, 'api.js'), "if (typeof window !== 'undefined') window.spirit.requireScript('spirit/fake/data.js'); else require('../script.js').requireScript('spirit/fake/data.js');\nmodule.exports = { verbs: { ping: {} } };\n");
@@ -1339,11 +1340,13 @@ function mountPart() {
   }, test.limit.slow);
   test.run('its verb is answered as spirit.fake.ping', 0.2, async function () {
     if (noNode()) return false;
-    return answers(await call(N.base, FAKE + '.ping', {})) || false;
+    // A server that just started answers once it listens, as the probe's checks wait for theirs (upAgain).
+    return (await until(function () { return call(N.base, FAKE + '.ping', {}).then(answers); }, 30000)) || false;
   }, test.limit.quick);
   test.run('what it publishes streams under the job id spirit.fake', 0.2, async function () {
     if (!fakeJob) return false;
-    const heard = await until(function () { return call(N.base, 'spirit.job.get', { key: fakeJob.id }).then(function (r) { const j = r.body && r.body.job; return !!(j && j.id === FAKE && j.app && j.app.fake === 'streamed'); }); }, 15000);
+    // Read from the node's job list, as liveJob reads it, until the payload it publishes again and again is the job's.
+    const heard = await until(function () { return jobsOf(N.base).then(function (all) { return all.some(function (j) { return j.id === FAKE && !!j.app && j.app.fake === 'streamed'; }); }); }, 15000);
     return !!heard || false;
   }, test.limit.slow);
   test.run('nothing of it goes by a name: no job spirit.app.fake, and spirit.job.get of fake finds none', 0.2, async function () {

@@ -24,6 +24,8 @@ const limits = SPIRIT.requireScript('spirit/limits/script.js');
 const runsOf = H.appRuns;
 
 const NAME = 'zzbig';
+// The app on the wire is its id, its folder in dots (goal/G49.19).
+const ID = 'spirit.app.' + NAME;
 const SIZE = limits.ANSWER_MAX + 4000;
 
 // The scratch copy: the tracked files of spirit/run, and the throwaway app, turned on as its owner turns one on.
@@ -70,7 +72,7 @@ test.run('the scratch node and its zzbig server come up', 0.2, async function ()
   const port = await H.freePort();
   W.child = LABH.startNodeOn(W.s.run, port);
   W.base = 'http://127.0.0.1:' + port;
-  W.up = await H.until(function () { return post(NAME + '.big', {}).then(function (r) { return r.status === 200; }); }, 60000);
+  W.up = await H.until(function () { return post(ID + '.big', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return W.up || false;
 }, test.limit.slow);
 test.after(async function () {
@@ -80,7 +82,7 @@ test.after(async function () {
 });
 test.run('the owner\'s big answer, larger than one answer may be, comes back whole on loopback', 0.2, async function () {
   if (noNode()) return false;
-  const got = await post(NAME + '.big', {});
+  const got = await post(ID + '.big', {});
   const back = got.body && got.body.text;
   return (got.status === 200 && typeof back === 'string' && back.length === SIZE) || false;
 }, test.limit.quick);
@@ -108,12 +110,12 @@ test.run('icons is switched on and no permanent process runs icons.js', 0.2, fun
 test.run('the api tree holds icons, its branch asked of its one-shot row', 0.2, async function () {
   if (noNode()) return false;
   const tree = W.tree = await post('api', {});
-  return (tree.status === 200 && !!(tree.body && tree.body.icons)) || false;
+  return (tree.status === 200 && !!(tree.body && tree.body['spirit.app.icons'])) || false;
 }, test.limit.quick);
 test.run('the api tree holds the permanent row, zzbig, beside icons, as today', 0.2, function () {
   if (!W.tree) return false;
   const tree = W.tree;
-  return !!(tree.body && tree.body[NAME]) || false;
+  return !!(tree.body && tree.body[ID]) || false;
 }, test.limit.quick);
 test.run('the run that answered the tree has ended', 0.2, async function () {
   if (noNode()) return false;
@@ -127,7 +129,7 @@ test.run('of six trees asked at once, each holds the icons branch', 0.2, async f
   const many = await Promise.all([0, 1, 2, 3, 4, 5].map(function () { return post('api', {}); }));
   await H.sleep(300);
   W.watched = await watch.stop();
-  return many.every(function (r) { return r.status === 200 && !!(r.body && r.body.icons); }) || false;
+  return many.every(function (r) { return r.status === 200 && !!(r.body && r.body['spirit.app.icons']); }) || false;
 }, test.limit.slow);
 test.run('runs of icons.js were seen while the trees were answered', 0.2, function () {
   if (!W.watched) return false;
@@ -180,7 +182,7 @@ if (process.platform === 'linux') {
         await H.sleep(5);
       }
     }());
-    const bad = await post('icons.icon', { op: 42 });
+    const bad = await post('spirit.app.icons.icon', { op: 42 });
     await H.sleep(300);
     looking = false;
     await sampler;

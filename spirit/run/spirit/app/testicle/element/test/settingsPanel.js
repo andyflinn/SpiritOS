@@ -65,14 +65,14 @@ test.run('its switch shows the node\'s preference, interactive at the start', 0.
 test.run('a press sends the other mode, so the node is auto and the switch follows the stream', 0.4, async function () {
   if (!W.ok) return false;
   if (!(await ev('window.zz.press()'))) return false;
-  const node = await H.until(function () { return ask('testicle.preferences', {}).then(function (r) { return interactive(r) === false; }); }, H.WAIT);
+  const node = await H.until(function () { return ask('spirit.app.testicle.preferences', {}).then(function (r) { return interactive(r) === false; }); }, H.WAIT);
   const shown = await H.until(function () { return ev('window.zz.text()').then(function (t) { return /auto/.test(String(t)); }); }, H.WAIT);
   return (!!node && !!shown) || false;
 }, test.limit.slow);
 test.run('a second press sends interactive back', 0.4, async function () {
   if (!W.ok) return false;
   if (!(await ev('window.zz.press()'))) return false;
-  const node = await H.until(function () { return ask('testicle.preferences', {}).then(function (r) { return interactive(r) === true; }); }, H.WAIT);
+  const node = await H.until(function () { return ask('spirit.app.testicle.preferences', {}).then(function (r) { return interactive(r) === true; }); }, H.WAIT);
   return !!node || false;
 }, test.limit.slow);
 test.run('its box keeps what it holds inside, its overflow not visible', 0.2, async function () {

@@ -171,7 +171,7 @@ async function boot(run) {
   // testicle was not mounted yet on a busy machine, the world's one ask for auto mode was refused, and aOk.js never ran).
   // Asked without arguments, testicle.preferences only reads.
   const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000) &&
-    await until(function () { return call(base, 'testicle.preferences', {}).then(function (r) { return r.status === 200; }); }, 60000);
+    await until(function () { return call(base, 'spirit.app.testicle.preferences', {}).then(function (r) { return r.status === 200; }); }, 60000);
   return { child: child, base: base, up: !!up };
 }
 function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null || c.signalCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
@@ -233,7 +233,7 @@ const put = function (rel, text) { fs.mkdirSync(path.dirname(path.join(s.run, re
 const append = function (rel, text) { fs.appendFileSync(path.join(s.run, rel), text); };
 // IDLE: busy false twice, two seconds apart, so a gap between two of the runner's jobs is not taken for idle.
 async function idle(ms) {
-  const no = function () { return call(N.base, 'testicle.busy', {}).then(function (r) { return r.status === 200 && (r.body === false || (r.body && r.body.busy === false)); }); };
+  const no = function () { return call(N.base, 'spirit.app.testicle.busy', {}).then(function (r) { return r.status === 200 && (r.body === false || (r.body && r.body.busy === false)); }); };
   return until(function () { return no().then(function (a) { return a ? sleep(2000).then(no) : false; }); }, ms);
 }
 // EXACTLY ONE SECOND after a change (the box), then the tables as they stand.
@@ -330,7 +330,7 @@ test.run('testicle.db is made in its state folder, spirit/state/app/testicle/dat
 // work, false if it is idle."
 test.run('the node lists the verb testicle.busy', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { branch: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'spirit.app.testicle' });
   // api {branch} answers { branch, interface }, the interface the text of its api.js.
   const iface = String((api.body && api.body.interface) || '');
   return (api.status === 200 && /\bverbs\s*:/.test(iface) && /['"]?busy['"]?\s*:/.test(iface)) || false;
@@ -339,7 +339,7 @@ test.run('with nothing changing, busy answers false', 0.2, async function () {
   if (!up()) return false;
   // Nothing changes once the start is worked off; idle is busy false twice, two seconds apart (idle(), above).
   const quiet = await idle(50000);
-  const r = await call(N.base, 'testicle.busy', {});
+  const r = await call(N.base, 'spirit.app.testicle.busy', {});
   return (!!quiet && r.status === 200 && (r.body === false || (r.body && r.body.busy === false))) || false;
 }, test.limit.slow);
 
@@ -367,7 +367,7 @@ test.run('the index over the current rows is on the table testicle', 0.2, functi
 }, test.limit.quick);
 test.run('the node lists the verbs testicle.set and testicle.search', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { branch: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'spirit.app.testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return (/['"]testicle\.set['"]\s*:/.test(iface) && /['"]testicle\.search['"]\s*:/.test(iface)) || false;
 }, test.limit.quick);
@@ -411,25 +411,25 @@ const prefsOf = function (r) { const b = r && r.body; return (b && typeof b.pref
 let p0 = null;
 test.run('the node lists the verb testicle.preferences', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { branch: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'spirit.app.testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return /['"]?preferences['"]?\s*:/.test(iface) || false;
 }, test.limit.quick);
 test.run('preferences asked with nothing answers them all: interactive, true by default', 0.2, async function () {
   if (!up()) return false;
-  p0 = await call(N.base, 'testicle.preferences', {});
+  p0 = await call(N.base, 'spirit.app.testicle.preferences', {});
   return (p0.status === 200 && prefsOf(p0).interactive === true) || false;
 }, test.limit.quick);
 test.run('a preference testicle does not know is refused, and sets nothing', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.preferences', { zzNoSuchPreference: true });
-  const after1 = await call(N.base, 'testicle.preferences', {});
+  const r = await call(N.base, 'spirit.app.testicle.preferences', { zzNoSuchPreference: true });
+  const after1 = await call(N.base, 'spirit.app.testicle.preferences', {});
   return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).zzNoSuchPreference === undefined && prefsOf(after1).interactive === true) || false;
 }, test.limit.quick);
 test.run('interactive given a wrong type is refused, and sets nothing', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.preferences', { interactive: 'no' });
-  const after1 = await call(N.base, 'testicle.preferences', {});
+  const r = await call(N.base, 'spirit.app.testicle.preferences', { interactive: 'no' });
+  const after1 = await call(N.base, 'spirit.app.testicle.preferences', {});
   return ((r.status !== 200 || (r.body && r.body.ok === false)) && prefsOf(after1).interactive === true) || false;
 }, test.limit.quick);
 
@@ -447,7 +447,7 @@ test.run('at a start, interactive and nothing pressed, every live script is clas
 // now"); interactive is judged at the end of this file, on chi and psi.
 test.run('auto is set for the checks that follow, by preferences with interactive false', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.preferences', { interactive: false });
+  const r = await call(N.base, 'spirit.app.testicle.preferences', { interactive: false });
   return (r.status === 200 && prefsOf(r).interactive === false) || false;
 }, test.limit.quick);
 
@@ -568,17 +568,17 @@ test.run('a suite added makes its row, and its file\'s row', 0.2, async function
 // flagged \"needs testing\"", "The server then returns the file row." Its argument is the file row's key, name.
 test.run('script.get of a file that is no script answers the error "not a production script"', 0.2, async function () {
   if (!up()) return false;
-  const md = await call(N.base, 'testicle.script.get', { name: Z + 'notes.md' });
+  const md = await call(N.base, 'spirit.app.testicle.script.get', { name: Z + 'notes.md' });
   return failed(md, 'not a production script') || false;
 }, test.limit.quick);
 test.run('script.get of a script in a test folder answers the error "not a production script"', 0.2, async function () {
   if (!up()) return false;
-  const asTest = await call(N.base, 'testicle.script.get', { name: Z + 'test/zeta.js' });
+  const asTest = await call(N.base, 'spirit.app.testicle.script.get', { name: Z + 'test/zeta.js' });
   return failed(asTest, 'not a production script') || false;
 }, test.limit.quick);
 test.run('script.get of a production script that is not there answers the error "no such file"', 0.2, async function () {
   if (!up()) return false;
-  const nowhere = await call(N.base, 'testicle.script.get', { name: Z + 'nowhere.js' });
+  const nowhere = await call(N.base, 'spirit.app.testicle.script.get', { name: Z + 'nowhere.js' });
   return failed(nowhere, 'no such file') || false;
 }, test.limit.quick);
 // THE RUNNER HELD OFF FOR THE CHECKS OF ROWS AS THEY ARE MADE (goal/G49.8, Andy's 8 search reds): this file sets auto above, so
@@ -588,7 +588,7 @@ test.run('script.get of a production script that is not there answers the error 
 const ZF = Z + 'zetaFresh.js', ZFS = Z + 'test/zetaFresh.js', GF = Z + 'gammaFresh.js', GFS = Z + 'test/gammaFresh.js';
 test.run('interactive is set, and zetaFresh, gammaFresh and theta are planted, so the runner runs nothing under the checks that follow', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.preferences', { interactive: true });
+  const r = await call(N.base, 'spirit.app.testicle.preferences', { interactive: true });
   if (!(r.status === 200 && prefsOf(r).interactive === true)) return false;
   await idle(240000);
   put(ZF, '\'use strict\';\n// zetaFresh, asked for, never changed\n');
@@ -604,7 +604,7 @@ test.run('interactive is set, and zetaFresh, gammaFresh and theta are planted, s
 test.run('script.get of a production script never changed answers with its file row there', 0.2, async function () {
   if (!up()) return false;
   tz = Date.now();
-  zeta = await call(N.base, 'testicle.script.get', { name: ZF });
+  zeta = await call(N.base, 'spirit.app.testicle.script.get', { name: ZF });
   zt = tables(DB);
   zrow = scriptRow(zt, ZF);
   return (zeta.status === 200 && !!zrow) || false;
@@ -625,7 +625,7 @@ test.run('every suite row script.get makes is flagged needs testing', 0.2, funct
 }, test.limit.quick);
 test.run('script.get of a file with rows answers its row as it stands', 0.2, async function () {
   if (!up()) return false;
-  const known = await call(N.base, 'testicle.script.get', { name: Z + 'gamma.js' });
+  const known = await call(N.base, 'spirit.app.testicle.script.get', { name: Z + 'gamma.js' });
   const grow = scriptRow(tables(DB), Z + 'gamma.js');
   return (known.status === 200 && !!grow && !!known.body && known.body.name === grow.name && known.body.hash === grow.hash) || false;
 }, test.limit.quick);
@@ -637,7 +637,7 @@ test.run('script.get of a file with rows answers its row as it stands', 0.2, asy
 // \"needs running\"". The standard answer: {items: [{key, label}], more}, each label the row as JSON.
 test.run('suite.search answers a standard table search: items and more', 0.2, async function () {
   if (!up()) return false;
-  all = await call(N.base, 'testicle.suite.search', { script: ZF, text: '' });
+  all = await call(N.base, 'spirit.app.testicle.suite.search', { script: ZF, text: '' });
   got = items(all);
   return (all.status === 200 && !!all.body && Array.isArray(all.body.items) && typeof all.body.more === 'boolean') || false;
 }, test.limit.quick);
@@ -656,12 +656,12 @@ test.run('every suite that suite.search answers carries its status: needs runnin
 }, test.limit.quick);
 test.run('the words narrow among the file\'s suites', 0.2, async function () {
   if (!up()) return false;
-  const narrow = items(await call(N.base, 'testicle.suite.search', { script: ZF, text: 'sibling' })).map(suiteOf);
+  const narrow = items(await call(N.base, 'spirit.app.testicle.suite.search', { script: ZF, text: 'sibling' })).map(suiteOf);
   return (narrow.indexOf(GENERAL) !== -1 && narrow.indexOf(ZFS) === -1) || false;
 }, test.limit.quick);
 test.run('another file\'s search answers that file\'s rows, none of the first', 0.2, async function () {
   if (!up()) return false;
-  const other = items(await call(N.base, 'testicle.suite.search', { script: Z + 'gamma.js', text: '' }));
+  const other = items(await call(N.base, 'spirit.app.testicle.suite.search', { script: Z + 'gamma.js', text: '' }));
   return (other.length > 0 && other.every(function (i) { return i.row.script === Z + 'gamma.js'; }) && other.map(suiteOf).indexOf(ZFS) === -1) || false;
 }, test.limit.quick);
 // goal/G47.1, the box: "with the script selector blank (all scripts), the suite selector lists every suite, each once, and
@@ -670,19 +670,19 @@ test.run('another file\'s search answers that file\'s rows, none of the first', 
 // zeta and gamma, so it is one suite of two scripts.
 test.run('given no script, suite.search answers the suites of every script', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.suite.search', { text: 'zzTesticle' });
+  const r = await call(N.base, 'spirit.app.testicle.suite.search', { text: 'zzTesticle' });
   const names = items(r).map(suiteOf);
   return (r.status === 200 && names.indexOf(Z + 'test/zeta.js') !== -1 && names.indexOf(Z + 'test/gamma.js') !== -1) || false;
 }, test.limit.quick);
 test.run('given no script, suite.search answers each suite once', 0.2, async function () {
   if (!up()) return false;
-  const names = items(await call(N.base, 'testicle.suite.search', { text: '' })).map(suiteOf);
+  const names = items(await call(N.base, 'spirit.app.testicle.suite.search', { text: '' })).map(suiteOf);
   const twice = names.filter(function (n, i) { return names.indexOf(n) !== i; });
   return (names.length > 0 && twice.length === 0) || false;
 }, test.limit.quick);
 test.run('given no script, a suite of two scripts is answered once', 0.2, async function () {
   if (!up()) return false;
-  const names = items(await call(N.base, 'testicle.suite.search', { text: 'sibling' })).map(suiteOf);
+  const names = items(await call(N.base, 'spirit.app.testicle.suite.search', { text: 'sibling' })).map(suiteOf);
   return names.filter(function (n) { return n === GENERAL; }).length === 1 || false;
 }, test.limit.quick);
 
@@ -702,7 +702,7 @@ test.run('given no script, a suite of two scripts is answered once', 0.2, async 
 test.run('testicle.set is served, and testicle.db holds the table testicle', 0.2, async function () {
   if (!up()) return false;
   ts0 = Date.now();
-  set1 = await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.2 });
+  set1 = await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.2 });
   k1 = tables(DB);
   return (set1.status === 200 && Array.isArray(k1.test)) || false;
 }, test.limit.quick);
@@ -736,7 +736,7 @@ test.run('the same result again makes no new row', 0.2, async function () {
   if (!up()) return false;
   await sleep(20);
   ts1 = Date.now();
-  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.1 });
+  await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.1 });
   k2 = tables(DB);
   tr2 = currentOf(k2, TH, THS, 'theta answers its first question')[0];
   return (testRows(k2, TH, THS, 'theta answers its first question').length === 1 && !!tr2) || false;
@@ -751,7 +751,7 @@ test.run('with the script changed, the row is judged at its new hash', 0.2, asyn
   if (!up()) return false;
   fs.appendFileSync(path.join(s.run, TH), '// theta changed\n');
   await sleep(1000);
-  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.5 });
+  await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.5 });
   k3 = tables(DB);
   tr3 = currentOf(k3, TH, THS, 'theta answers its first question')[0];
   return (!!tr3 && !!tr1 && tr3.judged === (scriptRow(k3, TH) || {}).hash && tr3.judged !== tr1.judged) || false;
@@ -764,7 +764,7 @@ test.run('a higher severity is applied to the row', 0.2, function () {
 test.run('a flip makes a second row, and one row alone is current', 0.2, async function () {
   if (!up()) return false;
   ts2 = Date.now();
-  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: false, severity: 0.6 });
+  await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: false, severity: 0.6 });
   k4 = tables(DB);
   all4 = testRows(k4, TH, THS, 'theta answers its first question');
   cur4 = currentOf(k4, TH, THS, 'theta answers its first question');
@@ -781,17 +781,17 @@ test.run('the row it replaces is kept, current no longer: the history', 0.2, fun
 // needs-testing flag stays, went with the struck line "This cycle does not clear a suite's needs-testing flag".)
 test.run('theta\'s first question passes again', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.6 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its first question', verified: true, severity: 0.6 });
   return r.status === 200 || false;
 }, test.limit.quick);
 
 // the box: "test.search will only return current test rows"
 test.run('testicle.search answers a standard table search: items and more', 0.2, async function () {
   if (!up()) return false;
-  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its second question', verified: false, severity: 0.9 });
-  await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its third question', verified: false, severity: 0.3 });
-  await call(N.base, 'testicle.testicle.set', { script: GF, suite: GFS, test: 'gamma answers', verified: false, severity: 0.7 });
-  sr = await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, text: '' });
+  await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its second question', verified: false, severity: 0.9 });
+  await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: 'theta answers its third question', verified: false, severity: 0.3 });
+  await call(N.base, 'spirit.app.testicle.testicle.set', { script: GF, suite: GFS, test: 'gamma answers', verified: false, severity: 0.7 });
+  sr = await call(N.base, 'spirit.app.testicle.testicle.search', { script: TH, suite: THS, text: '' });
   srRows = found(sr);
   return (sr.status === 200 && !!sr.body && Array.isArray(sr.body.items) && typeof sr.body.more === 'boolean') || false;
 }, test.limit.quick);
@@ -807,17 +807,17 @@ test.run('testicle.search answers the failed tests first, then the most severe f
 // the box: "Red, green, the script and the suite go to the server with the words, so the server narrows before it cuts".
 test.run('result red answers the failed tests alone', 0.2, async function () {
   if (!up()) return false;
-  const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, result: 'red', text: '' }));
+  const r = found(await call(N.base, 'spirit.app.testicle.testicle.search', { script: TH, suite: THS, result: 'red', text: '' }));
   return (r.length === 2 && r.every(function (x) { return no(x.verified); })) || false;
 }, test.limit.quick);
 test.run('result green answers the passed tests alone', 0.2, async function () {
   if (!up()) return false;
-  const r = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, result: 'green', text: '' }));
+  const r = found(await call(N.base, 'spirit.app.testicle.testicle.search', { script: TH, suite: THS, result: 'green', text: '' }));
   return (r.length === 1 && yes(r[0].verified)) || false;
 }, test.limit.quick);
 test.run('a result neither red nor green is refused', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.testicle.search', { result: 'blue', text: '' });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.search', { result: 'blue', text: '' });
   return r.status === 400 || false;
 }, test.limit.quick);
 // goal/G47.1, Andy: "MAKE SURE THE MOTHERFUCKING TESTING ASSERTS NO FUCKING PAGING, AND THAT THAT SHIT IS GOOD AND GONE!":
@@ -830,23 +830,23 @@ test.run('testicle.search declares no from, in its interface or its verb file: i
 }, test.limit.quick);
 test.run('testicle.search asked with a from is refused', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, from: 1, text: '' });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.search', { script: TH, suite: THS, from: 1, text: '' });
   return r.status === 400 || false;
 }, test.limit.quick);
 test.run('with no script, testicle.search searches that suite\'s tests for any script', 0.2, async function () {
   if (!up()) return false;
-  const anyScript = found(await call(N.base, 'testicle.testicle.search', { suite: THS, text: '' }));
+  const anyScript = found(await call(N.base, 'spirit.app.testicle.testicle.search', { suite: THS, text: '' }));
   return (anyScript.length === 3 && anyScript.every(function (r) { return r.suite === THS && yes(r.current); })) || false;
 }, test.limit.quick);
 test.run('with no suite, testicle.search searches that script\'s tests in any suite', 0.2, async function () {
   if (!up()) return false;
-  const anySuite = found(await call(N.base, 'testicle.testicle.search', { script: GF, text: '' }));
+  const anySuite = found(await call(N.base, 'spirit.app.testicle.testicle.search', { script: GF, text: '' }));
   // gamma's tests in any suite: its own test's, and the classifier's classifyable row beside it (box v94, 1).
   return (anySuite.length >= 1 && anySuite.every(function (r) { return r.script === GF; }) && anySuite.some(function (r) { return r.test === 'gamma answers'; }) && anySuite.every(function (r) { return r.test === 'gamma answers' || r.suite === 'spirit/test/scriptClassify.js'; })) || false;
 }, test.limit.quick);
 test.run('with neither, testicle.search searches every current test', 0.2, async function () {
   if (!up()) return false;
-  const ans = await call(N.base, 'testicle.testicle.search', { text: '' });
+  const ans = await call(N.base, 'spirit.app.testicle.testicle.search', { text: '' });
   const everyOne = found(ans);
   // The runner adds rows of its own runs (goal/G47.1, the queue cycle): the four set here are among them, and every one is current.
   const mine = everyOne.filter(function (r) { return ['theta answers its first question', 'theta answers its second question', 'theta answers its third question', 'gamma answers'].indexOf(r.test) !== -1; });
@@ -867,7 +867,7 @@ test.run('with neither, testicle.search searches every current test', 0.2, async
 let hist = [];
 test.run('given a test title, testicle.search answers every row of that test, current or not', 0.2, async function () {
   if (!up()) return false;
-  hist = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, test: 'theta answers its first question', text: '' }));
+  hist = found(await call(N.base, 'spirit.app.testicle.testicle.search', { script: TH, suite: THS, test: 'theta answers its first question', text: '' }));
   const all = testRows(tables(DB), TH, THS, 'theta answers its first question');
   return (all.length === 3 && hist.length === 3 && hist.filter(function (r) { return yes(r.current); }).length === 1) || false;
 }, test.limit.quick);
@@ -883,7 +883,7 @@ test.run('given a test title, testicle.search answers only rows of that script, 
 }, test.limit.quick);
 test.run('without a test title it still answers the current rows alone', 0.2, async function () {
   if (!up()) return false;
-  const cur = found(await call(N.base, 'testicle.testicle.search', { script: TH, suite: THS, text: '' }));
+  const cur = found(await call(N.base, 'spirit.app.testicle.testicle.search', { script: TH, suite: THS, text: '' }));
   const mine = cur.filter(function (r) { return r.test === 'theta answers its first question'; });
   return (mine.length === 1 && yes(mine[0].current)) || false;
 }, test.limit.quick);
@@ -899,14 +899,14 @@ const LOUD = function (i) { return 'gamma passes loudly, number ' + i + ', with 
 const QUOKKA = 'theta passes quietly, the quokka';
 const WOMBAT = 'theta fails quietly, the wombat';
 const has = function (rows, title) { return rows.some(function (r) { return r.test === title; }); };
-const ask = function (args) { return call(N.base, 'testicle.testicle.search', Object.assign({ text: '' }, args)); };
+const ask = function (args) { return call(N.base, 'spirit.app.testicle.testicle.search', Object.assign({ text: '' }, args)); };
 let loud = false;
 test.run('there are 40 passing tests of gamma at severity 1, and theta\'s quiet pass and quiet failure at severity 0', 0.2, async function () {
   if (!up()) return false;
   const out = [];
-  for (let i = 0; i < 40; i++) out.push(await call(N.base, 'testicle.testicle.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: LOUD(i), verified: true, severity: 1 }));
-  out.push(await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: QUOKKA, verified: true, severity: 0 }));
-  out.push(await call(N.base, 'testicle.testicle.set', { script: TH, suite: THS, test: WOMBAT, verified: false, severity: 0 }));
+  for (let i = 0; i < 40; i++) out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: Z + 'gamma.js', suite: Z + 'test/gamma.js', test: LOUD(i), verified: true, severity: 1 }));
+  out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: QUOKKA, verified: true, severity: 0 }));
+  out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: TH, suite: THS, test: WOMBAT, verified: false, severity: 0 }));
   loud = out.every(function (r) { return r.status === 200; });
   return loud || false;
 }, test.limit.slow);
@@ -1071,13 +1071,13 @@ test.run('testicle.search, in each of its variations, answers every matching tes
   if (!loud) return false;
   return eachOf(VARIATIONS, async function (v) {
     const a = Object.assign({ text: '' }, v[1]);
-    const r = await call(N.base, 'testicle.testicle.search', a);
+    const r = await call(N.base, 'spirit.app.testicle.testicle.search', a);
     return judged(r, matchingTests(a), tkey, matchingTests(Object.assign({}, a, { text: '' })), null);
   });
 }, test.limit.slow);
 test.run('testicle.red answers every failed current test, or a full answer of them', 0.2, async function () {
   if (!loud) return false;
-  return judged(await call(N.base, 'testicle.red', {}), matchingTests({ result: 'red' }), tkey);
+  return judged(await call(N.base, 'spirit.app.testicle.red', {}), matchingTests({ result: 'red' }), tkey);
 }, test.limit.quick);
 // suite.search: a script's suite rows, or every suite once with no script; the words in the suite's or the script's name.
 const matchingSuites = function (script, text) {
@@ -1095,7 +1095,7 @@ test.run('suite.search, with and without a script and words, answers every match
   if (!loud) return false;
   return eachOf(SUITE_ASKS, async function (v) {
     const a = v[1] ? { script: v[1], text: v[2] } : { text: v[2] };
-    const r = await call(N.base, 'testicle.suite.search', a);
+    const r = await call(N.base, 'spirit.app.testicle.suite.search', a);
     return judged(r, matchingSuites(v[1], v[2]), function (x) { return v[1] ? x.script + '|' + x.suite : x.suite; }, matchingSuites(v[1], ''));
   });
 }, test.limit.slow);
@@ -1103,7 +1103,7 @@ test.run('suite.search, with and without a script and words, answers every match
 // Auto again for the checks that follow, as above (goal/G49.8).
 test.run('auto is set again for the checks that follow, by preferences with interactive false', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.preferences', { interactive: false });
+  const r = await call(N.base, 'spirit.app.testicle.preferences', { interactive: false });
   return (r.status === 200 && prefsOf(r).interactive === false) || false;
 }, test.limit.quick);
 // the box: "The verb red is testicle.red"
@@ -1111,7 +1111,7 @@ test.run('testicle.red answers every failed current test, and no other', 0.2, as
   if (!up()) return false;
   // The runner's own runs write while it works: red is asked once it is idle, so the table it is compared with holds still.
   await idle(240000);
-  const redAns = await call(N.base, 'testicle.red', {});
+  const redAns = await call(N.base, 'spirit.app.testicle.red', {});
   red = found(redAns);
   // The runner adds failures of its own runs (goal/G47.1, the queue cycle): every failed current row of the table, no other.
   const want = (tables(DB).test || []).filter(function (r) { return yes(r.current) && no(r.verified); }).length;
@@ -1149,7 +1149,7 @@ test.run('while testicle works on a changed general test, busy answers true', 0.
   // While it does that work, busy answers true; asked over and over in that second, it says so at least once.
   seen = [];
   const stopAt = Date.now() + 1000;
-  while (Date.now() < stopAt) { const b = await call(N.base, 'testicle.busy', {}); seen.push(b.body === true || (b.body && b.body.busy === true)); }
+  while (Date.now() < stopAt) { const b = await call(N.base, 'spirit.app.testicle.busy', {}); seen.push(b.body === true || (b.body && b.body.busy === true)); }
   r1 = tables(DB);
   return seen.indexOf(true) !== -1 || false;
 }, test.limit.slow);
@@ -1157,7 +1157,7 @@ test.run('once that work is done, busy answers false again', 0.2, async function
   if (!up()) return false;
   // The runner works off what the changes flagged before it is idle (goal/G47.1, the queue cycle).
   let done = null;
-  const ok = await until(function () { return call(N.base, 'testicle.busy', {}).then(function (r) { done = r; return r.status === 200 && (r.body === false || (r.body && r.body.busy === false)); }); }, 240000);
+  const ok = await until(function () { return call(N.base, 'spirit.app.testicle.busy', {}).then(function (r) { done = r; return r.status === 200 && (r.body === false || (r.body && r.body.busy === false)); }); }, 240000);
   return !!ok || false;
 }, test.limit.long);
 test.run('one second after a general test changes, every file it judges has its suite row for it', 0.2, function () {
@@ -1190,7 +1190,7 @@ test.run('a removed product file\'s suite rows are marked deleted', 0.2, functio
 let late = null;
 test.run('a result reported for a removed file is refused "no such file"', 0.2, async function () {
   if (!x1) return false;
-  late = await call(N.base, 'testicle.testicle.set', { script: Z + 'alpha.js', suite: 'spirit/test/scriptClassify.js', test: 'it loads, so it can be classified', verified: false, severity: 0.8 });
+  late = await call(N.base, 'spirit.app.testicle.testicle.set', { script: Z + 'alpha.js', suite: 'spirit/test/scriptClassify.js', test: 'it loads, so it can be classified', verified: false, severity: 0.8 });
   return (late.status !== 200 && /no such file/.test(late.text)) || false;
 }, test.limit.quick);
 test.run('every suite row of the removed file stays deleted', 0.2, async function () {
@@ -1210,14 +1210,14 @@ const rowOf = function (script, suite, name) { return currentOf(tables(DB), scri
 let run1 = null;
 test.run('the node lists the verb testicle.run', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { branch: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'spirit.app.testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return /['"]?\brun['"]?\s*:/.test(iface) || false;
 }, test.limit.quick);
 test.run('run answers at once, before its suite has ended', 0.2, async function () {
   if (!up()) return false;
   const t0 = Date.now();
-  run1 = await call(N.base, 'testicle.run', { script: KA, suite: KAS });
+  run1 = await call(N.base, 'spirit.app.testicle.run', { script: KA, suite: KAS });
   const took = Date.now() - t0;
   // A row of THIS run, tested after the press (as the lambda check tells them): planted at the start, kappa's own suite has
   // already run once by itself in auto, and that earlier row is no sign the answer waited for this run.
@@ -1249,11 +1249,11 @@ test.run('with testicle given, the suite runs up to that test and no test after 
   // by when each row was tested: its second and its first after the press, its third not.
   // script.get makes lambda's rows, flagged, and the flag wakes the runner, which runs lambda's suites, its own whole. (A whole
   // run asked before the rows are there makes them during that run, so they stay flagged and it comes round again.)
-  const g = await call(N.base, 'testicle.script.get', { name: LA });
+  const g = await call(N.base, 'spirit.app.testicle.script.get', { name: LA });
   if (g.status !== 200) return false;
   // Its rows there, its whole run is put at the head of the queue, ahead of every general suite still flagged.
   const tw = Date.now();
-  const w = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
+  const w = await call(N.base, 'spirit.app.testicle.run', { script: LA, suite: LAS });
   if (w.status !== 200) return false;
   // Other suites may run meanwhile; what matters is that lambda's own suite is no longer flagged, so no whole run of it follows.
   // THIS whole run's third (goal/G47.1): planted at the start, lambda's suite has already run once by itself in auto, so a
@@ -1261,7 +1261,7 @@ test.run('with testicle given, the suite runs up to that test and no test after 
   const settled = await until(function () { const u = suiteRow(tables(DB), LA, LAS); const third = rowOf(LA, LAS, 'lambda answers its third'); return Promise.resolve(!!third && Number(third.tested) >= tw && !!u && !yes(u.test)); }, 150000);
   if (!settled) return false;
   const t0 = Date.now();
-  const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS, testicle: 'lambda answers its second' });
+  const r = await call(N.base, 'spirit.app.testicle.run', { script: LA, suite: LAS, testicle: 'lambda answers its second' });
   if (r.status !== 200) return false;
   const since = function (name) { const x = rowOf(LA, LAS, name); return !!x && Number(x.tested) >= t0; };
   const ok = await until(function () { return Promise.resolve(since('lambda answers its second')); }, 90000);
@@ -1271,7 +1271,7 @@ test.run('with testicle given, the suite runs up to that test and no test after 
 }, test.limit.long);
 test.run('a general test is started with the script as its argument, and reports for that script', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.run', { script: MU, suite: MUS });
+  const r = await call(N.base, 'spirit.app.testicle.run', { script: MU, suite: MUS });
   if (r.status !== 200) return false;
   await until(function () { return Promise.resolve(!!rowOf(MU, MUS, 'mu holds its rule')); }, 240000);
   const m = rowOf(MU, MUS, 'mu holds its rule');
@@ -1287,7 +1287,7 @@ const LI = Z + 'litter.js';
 const LIS = Z + 'test/litter.js';
 test.run('a suite that leaves a folder in the run folder is red on "it leaves nothing new in the run folder", at 0.7', 0.4, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.run', { script: LI, suite: LIS });
+  const r = await call(N.base, 'spirit.app.testicle.run', { script: LI, suite: LIS });
   if (r.status !== 200) return false;
   await until(function () { return Promise.resolve(!!rowOf(LI, LIS, LITTER)); }, 150000);
   const x = rowOf(LI, LIS, LITTER);
@@ -1306,7 +1306,7 @@ const ST = Z + 'stray.js';
 const STS = Z + 'test/stray.js';
 test.run('a suite that leaves its temp folder behind is red on "it leaves no temp folder behind", at 0.7', 0.4, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.run', { script: ST, suite: STS });
+  const r = await call(N.base, 'spirit.app.testicle.run', { script: ST, suite: STS });
   if (r.status !== 200) return false;
   await until(function () { return Promise.resolve(!!rowOf(ST, STS, STRAY_TEST)); }, 150000);
   const x = rowOf(ST, STS, STRAY_TEST);
@@ -1324,7 +1324,7 @@ test.run('a suite that leaves no temp folder is green on it', 0.4, function () {
 // running" again, and the flag on the row is changed"); no suite touches the flag (Andy: "the suites have NO business changing
 // the "needs running" flag on the suite rows!"). Read as suite.search serves the row.
 async function statusOf(script, suite) {
-  const all = items(await call(N.base, 'testicle.suite.search', { script: script, text: '' }));
+  const all = items(await call(N.base, 'spirit.app.testicle.suite.search', { script: script, text: '' }));
   const r = all.filter(function (i) { return suiteOf(i) === suite; })[0];
   return r ? String(r.row.status) : '';
 }
@@ -1534,7 +1534,7 @@ test.run('omicron.js changes, and tau\'s own suite is asked by testicle.run', 0.
   if (!up()) return false;
   append(OM, '// omicron, changed\n');
   await sleep(1500);
-  const r = await call(N.base, 'testicle.run', { script: TAU, suite: TAUS });
+  const r = await call(N.base, 'spirit.app.testicle.run', { script: TAU, suite: TAUS });
   return r.status === 200 || false;
 }, test.limit.slow);
 test.run('a suite asked by testicle.run goes to the head of the queue: tau runs before omicron\'s own suite', 0.2, async function () {
@@ -1612,7 +1612,7 @@ test.run('after the start, a suite removed while it was down is marked deleted, 
 }, test.limit.quick);
 test.run('after the start, the search shows the removed suite\'s results no more', 0.2, async function () {
   if (!down) return false;
-  const r = await call(N.base, 'testicle.testicle.search', { script: KA, suite: KAS, text: '' });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.search', { script: KA, suite: KAS, text: '' });
   const rows = found(r);
   return (r.status === 200 && rows.length === 0) || false;
 }, test.limit.quick);
@@ -1661,7 +1661,7 @@ let i1 = null;
 test.run('interactive is set again, by preferences with interactive true', 0.2, async function () {
   if (!up()) return false;
   await idle(280000);
-  const r = await call(N.base, 'testicle.preferences', { interactive: true });
+  const r = await call(N.base, 'spirit.app.testicle.preferences', { interactive: true });
   return (r.status === 200 && prefsOf(r).interactive === true) || false;
 }, test.limit.long);
 // goal/G47.1, box v94, 1: the server classifies a second after the last change, interactive or not; so reClassify true is
@@ -1707,7 +1707,7 @@ test.run('in interactive mode, classification never sets both browserOnly and no
 test.run('in interactive mode, nothing runs by itself: five seconds on, the server is idle and no suite of chi or psi was run', 0.2, async function () {
   if (!i1) return false;
   await sleep(5000);
-  const busy = await call(N.base, 'testicle.busy', {});
+  const busy = await call(N.base, 'spirit.app.testicle.busy', {});
   const t = tables(DB);
   // The classifier runs by itself in both modes (box v94, 1); its own rows are not a run of chi's or psi's suites.
   const ran = (t.test || []).filter(function (r) { return (r.script === CHI || r.script === PSI) && r.suite !== SC; });
@@ -1716,7 +1716,7 @@ test.run('in interactive mode, nothing runs by itself: five seconds on, the serv
 }, test.limit.slow);
 test.run('in interactive mode, a press of testicle.run runs that suite, and only it', 0.2, async function () {
   if (!i1) return false;
-  const r = await call(N.base, 'testicle.run', { script: CHI, suite: CHIS });
+  const r = await call(N.base, 'spirit.app.testicle.run', { script: CHI, suite: CHIS });
   const done = await until(function () { return Promise.resolve(currentOf(tables(DB), CHI, CHIS, 'chi answers').length === 1); }, 60000);
   const psiRan = (tables(DB).test || []).filter(function (x) { return x.script === PSI && x.suite !== SC; }).length;
   return (r.status === 200 && !!done && psiRan === 0) || false;
@@ -1746,7 +1746,7 @@ test.run('in interactive mode, with suites still waiting, the node stops, and ch
 test.run('after the start, interactive still, a script changed while down is classified with no press', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
   if (!up()) return false;
-  const p = prefsOf(await call(N.base, 'testicle.preferences', {}));
+  const p = prefsOf(await call(N.base, 'spirit.app.testicle.preferences', {}));
   if (p.interactive !== true) return false;
   const ok = await until(function () { const r = scriptRow(tables(DB), CHI); return Promise.resolve(!!r && no(r.reClassify)); }, 280000);
   return !!ok || false;
@@ -1763,7 +1763,7 @@ test.run('a script changed after the start is also classified with no press, wit
 let pAuto = null;
 test.run('preferences with interactive false sets it, and answers them all', 0.2, async function () {
   if (!up()) return false;
-  pAuto = await call(N.base, 'testicle.preferences', { interactive: false });
+  pAuto = await call(N.base, 'spirit.app.testicle.preferences', { interactive: false });
   return (pAuto.status === 200 && prefsOf(pAuto).interactive === false) || false;
 }, test.limit.quick);
 test.run('the interactive preference is kept in spirit/state/app/testicle/data/preferences.json', 0.2, function () {
@@ -1773,7 +1773,7 @@ test.run('the interactive preference is kept in spirit/state/app/testicle/data/p
 }, test.limit.quick);
 test.run('preferences asked with nothing now answers interactive false', 0.2, async function () {
   if (!pAuto) return false;
-  const r = await call(N.base, 'testicle.preferences', {});
+  const r = await call(N.base, 'spirit.app.testicle.preferences', {});
   return prefsOf(r).interactive === false || false;
 }, test.limit.quick);
 test.run('in auto mode, the server processes everything by itself: psi\'s flagged suite is run', 0.2, async function () {
@@ -1822,21 +1822,21 @@ let zc = null, zcCleared = {};
 
 test.run('the node lists the verb testicle.script.classify', 0.2, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { branch: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'spirit.app.testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return /['"]script\.classify['"]\s*:/.test(iface) || false;
 }, test.limit.quick);
 test.run('testicle.script.classify sets a script\'s browserOnly and nodeOnly', 0.2, async function () {
   if (!up()) return false;
   // kappa.js: on disc, its row made long before, unchanged since (alpha.js was deleted by an earlier check).
-  const r = await call(N.base, 'testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false });
+  const r = await call(N.base, 'spirit.app.testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false });
   const row = scriptRow(tables(DB), KA);
   return (r.status === 200 && !!row && yes(row.browserOnly) && no(row.nodeOnly)) || false;
 }, test.limit.quick);
 // goal/G48.4, Q6, Andy: lists are "spirit/type/string/json/script.js": what a load pulled in comes as a list in JSON, and is taken.
 test.run('testicle.script.classify takes what the load pulled in as a list in JSON', 0.4, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false, requires: JSON.stringify(['spirit/limits/script.js']) });
+  const r = await call(N.base, 'spirit.app.testicle.script.classify', { script: KA, browserOnly: true, nodeOnly: false, requires: JSON.stringify(['spirit/limits/script.js']) });
   return r.status === 200 || false;
 }, test.limit.quick);
 test.run('six scripts are written, each with its own test: node, page, both, broken, hang and exit', 0.2, async function () {
@@ -1900,7 +1900,7 @@ test.run('each of the six scripts has a suite row of spirit/test/scriptClassify.
 // SHOWN ONLY WHERE THEY APPLY (Andy: "WSL, MAKE SURE SUITES DON'T SHOW UP WHEN THEY'RE NO APPLICATBLE TO A SCRIPT. NOW!!!!"):
 // read as the script tab reads them, suite.search for the script, at once after it is classified, not after a run or a
 // change. A -node general test applies to no browser-only script, a -browser one to no node-only script.
-const shownKinds = async function (name) { return items(await call(N.base, 'testicle.suite.search', { script: name, text: '' })).map(function (i) { return (/-(general|node|browser)\.js$/.exec(suiteOf(i)) || [])[1]; }).filter(Boolean); };
+const shownKinds = async function (name) { return items(await call(N.base, 'spirit.app.testicle.suite.search', { script: name, text: '' })).map(function (i) { return (/-(general|node|browser)\.js$/.exec(suiteOf(i)) || [])[1]; }).filter(Boolean); };
 test.run('at once after it is classified, a browser-only script\'s suite search shows no -node suite', 0.2, async function () {
   if (!zc) return false;
   const k = await shownKinds(ZC.page);
@@ -1927,7 +1927,7 @@ test.run('after a restart, a classified script still shows only the suites that 
 test.run('a -browser result for a node-only script is refused, and no current row of it stands', 0.4, async function () {
   if (!zc) return false;
   const browserSuite = 'spirit/app/testicle/test/testicle-sibling-browser.js';
-  const r = await call(N.base, 'testicle.testicle.set', { script: ZC.node, suite: browserSuite, test: 'zzc not applicable', verified: false, severity: 0.8 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: ZC.node, suite: browserSuite, test: 'zzc not applicable', verified: false, severity: 0.8 });
   await sleep(1000);
   const t = tables(DB);
   const rows = currentOf(t, ZC.node, browserSuite, 'zzc not applicable');
@@ -1972,7 +1972,7 @@ test.run('when the classifier changes, a script that failed is tried again, thou
 // ITERACTIVE MODE!!!!!!!!!!!!!!!!!!!"): it goes on, and ends, interactive.
 test.run('testicle is switched to interactive while the classifying goes on', 0.2, async function () {
   if (!reTold) return false;
-  const r = await call(N.base, 'testicle.preferences', { interactive: true });
+  const r = await call(N.base, 'spirit.app.testicle.preferences', { interactive: true });
   return (r.status === 200 && prefsOf(r).interactive === true) || false;
 }, test.limit.quick);
 test.run('each one is classified again in interactive mode with nothing pressed: reClassify is false on every one of the six', 0.2, async function () {
@@ -1983,7 +1983,7 @@ test.run('each one is classified again in interactive mode with nothing pressed:
 }, test.limit.long);
 test.run('auto is set again for the checks after', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.preferences', { interactive: false });
+  const r = await call(N.base, 'spirit.app.testicle.preferences', { interactive: false });
   return (r.status === 200 && prefsOf(r).interactive === false) || false;
 }, test.limit.quick);
 
@@ -2013,7 +2013,7 @@ test.run('a script neither browser-only nor node-only is tested by all three kin
 // removed with its suite. Turned on again: script, suite and testicle tables each follow the tree.
 const DA = Z + 'zzdA.js', DAS = Z + 'test/zzdA.js', DB_ = Z + 'zzdB.js', DBS = Z + 'test/zzdB.js', DC = Z + 'zzdC.js', DCS = Z + 'test/zzdC.js';
 const twoTests = SUITE_HEAD + "test.run('zzdA answers one', 0.2, function () { return true; }, test.limit.quick);\ntest.run('zzdA answers two', 0.2, function () { return true; }, test.limit.quick);\n";
-const askedUp = async function () { const r = await call(N.base, 'testicle.busy', {}); return r.status === 200; };
+const askedUp = async function () { const r = await call(N.base, 'spirit.app.testicle.busy', {}); return r.status === 200; };
 let off = null;
 test.run('zzdA, zzdC and their own tests run while testicle is on', 0.2, async function () {
   if (!up()) return false;
@@ -2024,7 +2024,7 @@ test.run('zzdA, zzdC and their own tests run while testicle is on', 0.2, async f
 }, test.limit.long);
 test.run('testicle is turned off, the node staying up, and the tree changes under it', 0.2, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'app.active', { key: 'testicle', active: false });
+  const r = await call(N.base, 'app.active', { key: 'spirit.app.testicle', active: false });
   const gone = await until(function () { return askedUp().then(function (a) { return !a; }); }, 30000);
   if (!gone) return false;
   off = { aSuite: (suiteRow(tables(DB), DA, DAS) || {}).hash };
@@ -2035,7 +2035,7 @@ test.run('testicle is turned off, the node staying up, and the tree changes unde
 }, test.limit.slow);
 test.run('turned on again, testicle answers', 0.2, async function () {
   if (!off) return false;
-  await call(N.base, 'app.active', { key: 'testicle', active: true });
+  await call(N.base, 'app.active', { key: 'spirit.app.testicle', active: true });
   return !!(await until(askedUp, 60000)) || false;
 }, test.limit.slow);
 test.run('the script table follows: zzdB written while off has its row, zzdC removed while off is deleted', 0.2, async function () {
@@ -2151,7 +2151,7 @@ test.run('with one script changed later, the -general test runs once, handed tha
 test.run('a press in a script tab still runs a general test for that one script', 0.4, async function () {
   if (!batched) return false;
   const from = runlog().length;
-  const press = await call(N.base, 'testicle.run', { script: BB, suite: BZ + 'test/zzBatch-sibling-general.js' });
+  const press = await call(N.base, 'spirit.app.testicle.run', { script: BB, suite: BZ + 'test/zzBatch-sibling-general.js' });
   await until(function () { return Promise.resolve(runlog().slice(from).some(function (l) { return l.suite === 'zzBatch-general'; })); }, 120000);
   const runs = runlog().slice(from).filter(function (l) { return l.suite === 'zzBatch-general' && l.ev === 'start'; });
   return (press.status === 200 && runs.length === 1 && sameSet(runs[0].given, [BB])) || false;
@@ -2269,7 +2269,7 @@ test.run('spirit/app/testicle/temp/zzStale/ is planted, its own suite reporting 
 test.run('a run with a title retires nothing: after testicle.run of "stale one" alone, "stale two" is still current', 0.4, async function () {
   if (!staleWorld) return false;
   const before = currentOf(tables(DB), SZ, SZS, 'stale one')[0];
-  const r = await call(N.base, 'testicle.run', { script: SZ, suite: SZS, testicle: 'stale one' });
+  const r = await call(N.base, 'spirit.app.testicle.run', { script: SZ, suite: SZS, testicle: 'stale one' });
   await until(function () { const now = currentOf(tables(DB), SZ, SZS, 'stale one')[0]; return Promise.resolve(!!now && !!before && Number(now.tested) > Number(before.tested)); }, 120000);
   await idle(120000);
   return (r.status === 200 && currentOf(tables(DB), SZ, SZS, 'stale two').length > 0) || false;
@@ -2318,7 +2318,7 @@ const SUC = 'spirit/app/testicle/temp/zzSucc/zzSucc.js', SUCS = 'spirit/app/test
 let succWorld = false;
 test.run('the node lists the verb testicle.suite.success', 0.4, async function () {
   if (!up()) return false;
-  const api = await call(N.base, 'api', { branch: 'testicle' });
+  const api = await call(N.base, 'api', { branch: 'spirit.app.testicle' });
   const iface = String((api.body && api.body.interface) || '');
   return /['"]suite\.success['"]\s*:/.test(iface) || false;
 }, test.limit.quick);
@@ -2335,20 +2335,20 @@ test.run('testicle.suite.success with success false sets that suite row at once:
   if (!succWorld) return false;
   append(SUCS, '// changed, so flagged\n');
   await until(function () { return Promise.resolve(yes((suiteRow(tables(DB), SUC, SUCS) || {}).test)); }, 900);
-  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: false });
+  const r = await call(N.base, 'spirit.app.testicle.suite.success', { script: SUC, suite: SUCS, success: false });
   const row = suiteRow(tables(DB), SUC, SUCS);
   return (r.status === 200 && !!row && row.outcome === 'red' && no(row.test)) || false;
 }, test.limit.quick);
 test.run('testicle.suite.success with success true sets it green, at once, whatever its test rows say', 0.4, async function () {
   if (!succWorld) return false;
-  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: true });
+  const r = await call(N.base, 'spirit.app.testicle.suite.success', { script: SUC, suite: SUCS, success: true });
   const row = suiteRow(tables(DB), SUC, SUCS);
   return (r.status === 200 && !!row && row.outcome === 'green' && no(row.test)) || false;
 }, test.limit.quick);
 // goal/G48.4, Q6: what the suite pulled in comes as a list in JSON, and is taken.
 test.run('testicle.suite.success takes what the suite pulled in as a list in JSON', 0.4, async function () {
   if (!succWorld) return false;
-  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: true, requires: JSON.stringify(['spirit/limits/script.js']) });
+  const r = await call(N.base, 'spirit.app.testicle.suite.success', { script: SUC, suite: SUCS, success: true, requires: JSON.stringify(['spirit/limits/script.js']) });
   return r.status === 200 || false;
 }, test.limit.quick);
 
@@ -2381,7 +2381,7 @@ test.run('zzReA, zzReB and zzReC change, and while the batch waits on zzReB, ano
   [RA, RB, RC].forEach(function (f) { append(f, '// changed together\n'); });
   const ok = await until(function () { return Promise.resolve(reRuns().length > reFrom); }, 280000);
   await sleep(5000);
-  const r = await call(N.base, 'testicle.run', { script: LA, suite: LAS });
+  const r = await call(N.base, 'spirit.app.testicle.run', { script: LA, suite: LAS });
   return (!!ok && r.status === 200) || false;
 }, test.limit.long);
 test.run('a run stopped is re-assembled fresh from the flags: the next run is handed zzReB and zzReC, not zzReA', 0.4, async function () {
@@ -2401,15 +2401,15 @@ test.run('zzReA, which reported before the stop, is done: its suite row green, i
 // a failing test row and a passing one by testicle.set alone: its outcome stays as the verb left it.
 test.run('a failing test row sent alone leaves the suite row\'s outcome as testicle.suite.success left it: zzSucc stays green', 0.4, async function () {
   if (!succWorld) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: SUC, suite: SUCS, test: 'zzSucc answers', verified: false, severity: 0.2 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: SUC, suite: SUCS, test: 'zzSucc answers', verified: false, severity: 0.2 });
   await sleep(1500);
   const row = suiteRow(tables(DB), SUC, SUCS);
   return (r.status === 200 && !!row && row.outcome === 'green') || false;
 }, test.limit.slow);
 test.run('testicle.suite.success with success false is what turns zzSucc red', 0.4, async function () {
   if (!succWorld) return false;
-  await call(N.base, 'testicle.testicle.set', { script: SUC, suite: SUCS, test: 'zzSucc answers', verified: true, severity: 0.2 });
-  const r = await call(N.base, 'testicle.suite.success', { script: SUC, suite: SUCS, success: false });
+  await call(N.base, 'spirit.app.testicle.testicle.set', { script: SUC, suite: SUCS, test: 'zzSucc answers', verified: true, severity: 0.2 });
+  const r = await call(N.base, 'spirit.app.testicle.suite.success', { script: SUC, suite: SUCS, success: false });
   await sleep(1500);
   const row = suiteRow(tables(DB), SUC, SUCS);
   return (r.status === 200 && !!row && row.outcome === 'red') || false;
@@ -2435,9 +2435,9 @@ test.run('two planted UI suites, each pressed, write down what testicle handed t
   put(ENVA, '\'use strict\';\n// zzEnvA\n'); put(ENVAS, envSuite('zzEnvA'));
   put(ENVB, '\'use strict\';\n// zzEnvB\n'); put(ENVBS, envSuite('zzEnvB'));
   await until(function () { const t = tables(DB); return Promise.resolve(!!suiteRow(t, ENVA, ENVAS) && !!suiteRow(t, ENVB, ENVBS)); }, 30000);
-  await call(N.base, 'testicle.run', { script: ENVA, suite: ENVAS });
+  await call(N.base, 'spirit.app.testicle.run', { script: ENVA, suite: ENVAS });
   await until(function () { return Promise.resolve(!!envOf('zzEnvA')); }, 60000);
-  await call(N.base, 'testicle.run', { script: ENVB, suite: ENVBS });
+  await call(N.base, 'spirit.app.testicle.run', { script: ENVB, suite: ENVBS });
   await until(function () { return Promise.resolve(!!envOf('zzEnvB')); }, 60000);
   handed = { a: envOf('zzEnvA'), b: envOf('zzEnvB') };
   return (!!handed.a && !!handed.b) || false;
@@ -2462,7 +2462,7 @@ test.run('testicle hands the same node and the same Chrome to the next suite it 
 const OWN_TEST = function (suite) { return /^spirit\/app\/testicle\//.test(suite) && !/^spirit\/app\/testicle\/temp\//.test(suite) && /(^|\/)test\//.test(suite) && DEBUG_GENERALS.indexOf(suite) === -1; };
 test.run('in debug mode, set to auto, it never runs testicle\'s own tests, only the dummies: none reports, and it comes to rest', 0.8, async function () {
   if (!up()) return false;
-  await call(N.base, 'testicle.preferences', { interactive: false });
+  await call(N.base, 'spirit.app.testicle.preferences', { interactive: false });
   const rest = await idle(280000);
   const own = (tables(DB).test || []).filter(function (r) { return OWN_TEST(r.suite) && r.suite !== 'spirit/test/scriptClassify.js'; });
   const suites = Array.from(new Set(own.map(function (r) { return r.suite; })));
@@ -2529,7 +2529,7 @@ function MICRO_GENERAL(body) {
     L.DB = path.join(on, 'data', 'testicle.db');
     L.N = await boot(run);
     if (!L.N.up) return false;
-    const auto = await call(L.N.base, 'testicle.preferences', { interactive: false });
+    const auto = await call(L.N.base, 'spirit.app.testicle.preferences', { interactive: false });
     return auto.status === 200 || false;
   }, test.limit.long);
   test.run('aOk.js reports its success in the run before the limit', 0.2, async function () {
@@ -2630,7 +2630,7 @@ function MICRO_GENERAL(body) {
     R.N = await boot(run);
     if (!R.N.up) return false;
     // Asked again until testicle takes it: it may come up a moment after the node answers.
-    const auto = await until(function () { return call(R.N.base, 'testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
+    const auto = await until(function () { return call(R.N.base, 'spirit.app.testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
     return !!auto || false;
   }, test.limit.long);
   test.run('the run judges the three planted scripts\' general suite: each suite row ends red', 0.2, async function () {
@@ -2715,7 +2715,7 @@ function MICRO_GENERAL(body) {
     C.N = await boot(run);
     if (!C.N.up) return false;
     // Asked again until testicle takes it: it may come up a moment after the node answers.
-    const auto = await until(function () { return call(C.N.base, 'testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
+    const auto = await until(function () { return call(C.N.base, 'spirit.app.testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
     return !!auto || false;
   }, test.limit.long);
   test.run('with no scratch node to be had, the classifier judges the script that does not compile', 0.2, async function () {
@@ -2795,7 +2795,7 @@ function MICRO_GENERAL(body) {
     DP.N = await boot(run);
     if (!DP.N.up) return false;
     // Asked again until testicle takes it: it may come up a moment after the node answers.
-    const auto = await until(function () { return call(DP.N.base, 'testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
+    const auto = await until(function () { return call(DP.N.base, 'spirit.app.testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
     return !!auto || false;
   }, test.limit.long);
   test.run('the four are classified and their own suites run green', 0.2, async function () {
@@ -2879,8 +2879,8 @@ function MICRO_GENERAL(body) {
   }, test.limit.long);
   test.run('aLeft.js\'s own suite is pressed, runs, and its suite row ends', 0.2, async function () {
     if (!leakUp()) return false;
-    await until(function () { return call(LK.N.base, 'testicle.suite.search', { script: LEFT, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
-    const r = await until(function () { return call(LK.N.base, 'testicle.run', { script: LEFT, suite: ownOfLeak(LEFT) }).then(function (x) { return !!(x.body && x.body.started === true); }); }, 120000);
+    await until(function () { return call(LK.N.base, 'spirit.app.testicle.suite.search', { script: LEFT, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
+    const r = await until(function () { return call(LK.N.base, 'spirit.app.testicle.run', { script: LEFT, suite: ownOfLeak(LEFT) }).then(function (x) { return !!(x.body && x.body.started === true); }); }, 120000);
     if (!r) return false;
     LK.ran = !!(await until(function () { const row = suiteRow(tables(LK.DB), LEFT, ownOfLeak(LEFT)); return Promise.resolve(!!row && no(row.test) && (row.outcome === 'green' || row.outcome === 'red') && !!pidOf('left')); }, 120000));
     return LK.ran || false;
@@ -2900,15 +2900,15 @@ function MICRO_GENERAL(body) {
   test.run('a suite stopped while it runs takes the process it started with it', 0.8, async function () {
     try {
       if (!leakUp()) return false;
-      await until(function () { return call(LK.N.base, 'testicle.suite.search', { script: KILLED, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
-      const r = await call(LK.N.base, 'testicle.run', { script: KILLED, suite: ownOfLeak(KILLED) });
+      await until(function () { return call(LK.N.base, 'spirit.app.testicle.suite.search', { script: KILLED, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
+      const r = await call(LK.N.base, 'spirit.app.testicle.run', { script: KILLED, suite: ownOfLeak(KILLED) });
       if (!(r.body && r.body.started === true)) return false;
       const started = await until(function () { return Promise.resolve(alive(pidOf('killed'))); }, 60000);
       if (!started) return false;
       // The process this run started, held by its id: the stopped run is queued again and its next run writes a new one.
       const pid = pidOf('killed');
       // A press of another suite stops the running one.
-      await call(LK.N.base, 'testicle.run', { script: LEFT, suite: ownOfLeak(LEFT) });
+      await call(LK.N.base, 'spirit.app.testicle.run', { script: LEFT, suite: ownOfLeak(LEFT) });
       return (await until(function () { return Promise.resolve(!alive(pid)); }, 30000)) || false;
     } finally { await letGoLK(); }
   }, test.limit.long);
@@ -2960,7 +2960,7 @@ function MICRO_GENERAL(body) {
     RR.DB = path.join(on, 'data', 'testicle.db');
     RR.N = await boot(run);
     if (!RR.N.up) return false;
-    const auto = await until(function () { return call(RR.N.base, 'testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
+    const auto = await until(function () { return call(RR.N.base, 'spirit.app.testicle.preferences', { interactive: false }).then(function (r) { return r.status === 200; }); }, 30000);
     return !!auto || false;
   }, test.limit.long);
   test.run('the three are classified, their own suites run green, and the table links aR.js and cR.js to bR.js', 0.2, async function () {
@@ -3051,8 +3051,8 @@ function MICRO_GENERAL(body) {
   }, test.limit.long);
   test.run('a press of a suite ends a process left running on a lab node before the run goes on', 0.8, async function () {
     if (!strayUp() || !ST.stray) return false;
-    await until(function () { return call(ST.N.base, 'testicle.suite.search', { script: SA, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
-    const r = await until(function () { return call(ST.N.base, 'testicle.run', { script: SA, suite: ownOfS(SA) }).then(function (x) { return !!(x.body && x.body.started === true); }); }, 120000);
+    await until(function () { return call(ST.N.base, 'spirit.app.testicle.suite.search', { script: SA, text: '' }).then(function (r) { return r.status === 200 && !!(r.body && (r.body.items || []).length); }); }, 120000);
+    const r = await until(function () { return call(ST.N.base, 'spirit.app.testicle.run', { script: SA, suite: ownOfS(SA) }).then(function (x) { return !!(x.body && x.body.started === true); }); }, 120000);
     ST.pressed = !!r;
     if (!ST.pressed) return false;
     return !!(await until(function () { return Promise.resolve(!aliveS(ST.stray)); }, 60000)) || false;
@@ -3078,7 +3078,7 @@ function MICRO_GENERAL(body) {
   test.run('while the runner stays busy, a stray left on a lab node during one suite is ended before the next suite runs', 0.8, async function () {
     try {
       if (!strayUp()) return false;
-      const set = await call(ST.N.base, 'testicle.preferences', { interactive: false });
+      const set = await call(ST.N.base, 'spirit.app.testicle.preferences', { interactive: false });
       if (set.status !== 200) return false;
       dropMarks();
       [SB, SC].forEach(function (rel) {
@@ -3195,23 +3195,23 @@ const refusedByHold = function (r) { return r.status >= 400 && !(r.body && /no-s
 const heldAnswer = function (r) { return r.body === '' || (!!r.body && typeof r.body === 'object' && r.body.holder === '') || r.text === '""'; };
 test.run('testicle.hold without a test is refused', 0.4, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.hold', { script: REDS_, suite: REDSS });
+  const r = await call(N.base, 'spirit.app.testicle.hold', { script: REDS_, suite: REDSS });
   return refusedByHold(r);
 }, test.limit.quick);
 test.run('testicle.hold of a green test is refused: no current red row for that key', 0.4, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.hold', { script: TCALM, suite: TCALMS, test: 'zzCalm answers' });
+  const r = await call(N.base, 'spirit.app.testicle.hold', { script: TCALM, suite: TCALMS, test: 'zzCalm answers' });
   return refusedByHold(r);
 }, test.limit.quick);
 test.run('testicle.hold of a red nobody holds, asked without holder, answers ""', 0.6, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.hold', HOLD_RED);
+  const r = await call(N.base, 'spirit.app.testicle.hold', HOLD_RED);
   return r.status === 200 && heldAnswer(r);
 }, test.limit.quick);
 test.run('testicle.hold with a holder that is not the asker is refused, and the red stays unheld', 0.6, async function () {
   if (!up()) return false;
-  const r = await call(N.base, 'testicle.hold', Object.assign({ holder: 'MCowBQYDK2VwAyEAnotTheAsker' }, HOLD_RED));
-  const after = await call(N.base, 'testicle.hold', HOLD_RED);
+  const r = await call(N.base, 'spirit.app.testicle.hold', Object.assign({ holder: 'MCowBQYDK2VwAyEAnotTheAsker' }, HOLD_RED));
+  const after = await call(N.base, 'spirit.app.testicle.hold', HOLD_RED);
   return refusedByHold(r) && after.status === 200 && heldAnswer(after);
 }, test.limit.quick);
 // The asker on the node's loopback door is the node itself (cw: "node.js builds the owner caller as {owner: true, key: <its
@@ -3233,19 +3233,19 @@ test.run('testicle.hold with the asker\'s own key holds the red: it answers that
   HOLD.me = card.body && card.body.publicKey;
   if (!HOLD.me) return false;
   const before = Date.now();
-  const r = await call(N.base, 'testicle.hold', Object.assign({ holder: HOLD.me }, HOLD_RED));
+  const r = await call(N.base, 'spirit.app.testicle.hold', Object.assign({ holder: HOLD.me }, HOLD_RED));
   const row = heldBy();
   return r.status === 200 && answers(r, HOLD.me) && !!row && row.heldBy === HOLD.me && Number(row.heldSince) >= before - 1000;
 }, test.limit.quick);
 test.run('holding it again while the hold stands is refused, the asker too', 0.6, async function () {
   if (!up() || !HOLD.me) return false;
-  const r = await call(N.base, 'testicle.hold', Object.assign({ holder: HOLD.me }, HOLD_RED));
+  const r = await call(N.base, 'spirit.app.testicle.hold', Object.assign({ holder: HOLD.me }, HOLD_RED));
   const row = heldBy();
   return refusedByHold(r) && !!row && row.heldBy === HOLD.me;
 }, test.limit.quick);
 test.run('its holder asking without holder releases it: "" answered, heldBy and heldSince cleared', 0.6, async function () {
   if (!up() || !HOLD.me) return false;
-  const r = await call(N.base, 'testicle.hold', HOLD_RED);
+  const r = await call(N.base, 'spirit.app.testicle.hold', HOLD_RED);
   const row = heldBy();
   return r.status === 200 && answers(r, '') && !!row && !row.heldBy && !Number(row.heldSince);
 }, test.limit.quick);
@@ -3253,16 +3253,16 @@ test.run('its holder asking without holder releases it: "" answered, heldBy and 
 // (above), an expired one is taken afresh.
 test.run('a hold older than an hour has expired: holding it again succeeds, with a new time', 0.6, async function () {
   if (!up() || !HOLD.me) return false;
-  const held = await call(N.base, 'testicle.hold', Object.assign({ holder: HOLD.me }, HOLD_RED));
+  const held = await call(N.base, 'spirit.app.testicle.hold', Object.assign({ holder: HOLD.me }, HOLD_RED));
   if (held.status !== 200) return false;
   // The scratch node's own database, its hold made an hour and a minute old.
   const { DatabaseSync } = require('node:sqlite');
   const db = new DatabaseSync(DB, { timeout: 5000 });
   try { db.prepare('UPDATE testicle SET heldSince = ? WHERE current = 1 AND script = ? AND suite = ? AND test = ?').run(Date.now() - 61 * 60000, HOLD_RED.script, HOLD_RED.suite, HOLD_RED.test); } finally { db.close(); }
   const before = Date.now();
-  const r = await call(N.base, 'testicle.hold', Object.assign({ holder: HOLD.me }, HOLD_RED));
+  const r = await call(N.base, 'spirit.app.testicle.hold', Object.assign({ holder: HOLD.me }, HOLD_RED));
   const row = heldBy();
-  await call(N.base, 'testicle.hold', HOLD_RED);
+  await call(N.base, 'spirit.app.testicle.hold', HOLD_RED);
   return r.status === 200 && answers(r, HOLD.me) && !!row && row.heldBy === HOLD.me && Number(row.heldSince) >= before - 1000;
 }, test.limit.quick);
 
@@ -3277,8 +3277,8 @@ test.run('testicle\'s manifest sets node.remote false', 0.4, function () {
 }, test.limit.quick);
 test.run('testicle\'s remote refuses every call with "no remote support", asked empty or with an id', 0.6, async function () {
   if (!up()) return false;
-  const empty = await call(N.base, 'testicle.remote', {});
-  const picked = await call(N.base, 'testicle.remote', { id: 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=' });
+  const empty = await call(N.base, 'spirit.app.testicle.remote', {});
+  const picked = await call(N.base, 'spirit.app.testicle.remote', { id: 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=' });
   const says = function (r) { return r.status >= 400 && /no remote support/.test(r.text); };
   return says(empty) && says(picked);
 }, test.limit.quick);

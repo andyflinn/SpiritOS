@@ -128,7 +128,7 @@ test.run('a scratch node comes up for this suite with testicle on', 0.2, async f
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
   // Its testicle answers once its app server runs, a moment after the node.
-  N.up = !!(await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
+  N.up = !!(await until(function () { return call(N.base, 'spirit.app.testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
 }, test.limit.long);
 test.run('tests of the planted scripts are set on the node, alpha\'s flipping test set twice', 0.2, async function () {
@@ -142,7 +142,7 @@ test.run('tests of the planted scripts are set on the node, alpha\'s flipping te
     { script: A, suite: GEN, test: FLIPS, verified: false, severity: 0.2 },
   ];
   const out = [];
-  for (const a of sets) { out.push(await call(N.base, 'testicle.testicle.set', a)); await sleep(20); }
+  for (const a of sets) { out.push(await call(N.base, 'spirit.app.testicle.testicle.set', a)); await sleep(20); }
   planted = out.every(function (r) { return r.status === 200; });
   [PASSES, FAILS, 'replaced', FLIPS].forEach(function (t, i) { if (out[i].body && out[i].body.key) current[t] = out[i].body; });
   return planted || false;
@@ -277,7 +277,7 @@ test.run('with the script unselected again, every script\'s tests show', 0.2, as
 // selector lists every suite, each once"; beta's test in GEN makes it a suite of two scripts.
 test.run('with no script chosen, a suite chosen shows that suite\'s tests of every script', 0.2, async function () {
   if (!mounted()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: GEN, test: 'beta holds the general rule', verified: true, severity: 0.2 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: B, suite: GEN, test: 'beta holds the general rule', verified: true, severity: 0.2 });
   if (r.status !== 200) return false;
   await T('openSel(1)');
   await T('typeSel(1, ' + JSON.stringify(path.posix.basename(GEN, '.js')) + ')');
@@ -312,7 +312,7 @@ test.run('a row pressed is handed to pick, by its key', 0.2, async function () {
 // "The server publishes every row it writes, so a test set anywhere shows by itself."
 test.run('a test set on the node shows in the list with no press', 0.2, async function () {
   if (!mounted()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: 'beta answers later', verified: true, severity: 0.4 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: B, suite: BS, test: 'beta answers later', verified: true, severity: 0.4 });
   if (r.status !== 200) return false;
   const ok = await until(function () { return column(2).then(function (l) { return l.indexOf('beta answers later') !== -1; }); }, 10000);
   return !!ok || false;
@@ -321,7 +321,7 @@ test.run('a test set on the node shows in the list with no press', 0.2, async fu
 // "the branch keeps a flipped test's replaced row beside its current one": a flip streamed in while the list is open.
 test.run('a test flipped on the node while the list is open shows once, by its new current row', 0.2, async function () {
   if (!mounted()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: FAILS, verified: true, severity: 1 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: B, suite: BS, test: FAILS, verified: true, severity: 1 });
   if (r.status !== 200 || !r.body || !r.body.key) return false;
   const ok = await until(function () { return T('keys()').then(function (k) { return (k || []).indexOf(r.body.key) !== -1; }); }, 10000);
   await sleep(500);
@@ -334,7 +334,7 @@ test.run('150 more passing tests of beta are set on the node', 0.2, async functi
   if (!mounted()) return false;
   const bad = [];
   for (let i = 1; i <= GREENS; i++) {
-    const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: 'beta passes, number ' + i, verified: true, severity: 0.5 });
+    const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: B, suite: BS, test: 'beta passes, number ' + i, verified: true, severity: 0.5 });
     if (r.status !== 200) bad.push(true);
   }
   return !bad.length || false;

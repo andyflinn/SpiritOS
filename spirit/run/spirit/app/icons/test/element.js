@@ -122,9 +122,9 @@ test.run('an Add writes the new glyph with its keywords, split at the commas', 0
   W.p1 = await posts();
   return wrote ? true : false;
 }, test.limit.quick);
-test.run('the Add asked icons.icon, the app\'s own branch', 0.2, function () {
+test.run('the Add asked spirit.app.icons.icon, the app\'s own branch', 0.2, function () {
   if (!W.p1) return false;
-  return W.p1.some(function (p) { return (/"call"\s*:\s*"icons\.icon"/).test(p); }) || false;
+  return W.p1.some(function (p) { return (/"call"\s*:\s*"spirit\.app\.icons\.icon"/).test(p); }) || false;
 }, test.limit.quick);
 test.run('the Add asked nothing of the fs branch', 0.2, function () {
   if (!W.p1) return false;
@@ -246,7 +246,7 @@ test.run('destroy empties its container', 0.2, async function () {
   return empty === true || false;
 }, test.limit.quick);
 
-// A delete asked of the node directly, as another page or peer would.
+// A delete asked of the node directly, as another page or peer would, by the app's id (goal/G49.19).
 function icondelete(node, glyph) {
-  return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'icons.icon', args: { op: 'delete', glyph: glyph } }) }).then(function (r) { return r.text(); }, function () { return ''; });
+  return fetch(node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'spirit.app.icons.icon', args: { op: 'delete', glyph: glyph } }) }).then(function (r) { return r.text(); }, function () { return ''; });
 }

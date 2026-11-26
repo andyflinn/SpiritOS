@@ -105,14 +105,14 @@ test.run('a scratch node comes up with testicle on', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
   // Its testicle answers once its app server runs, a moment after the node.
-  N.up = !!(await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
+  N.up = !!(await until(function () { return call(N.base, 'spirit.app.testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
 }, test.limit.long);
 test.run('tests of alpha and beta are set, each in its own suite', 0.2, async function () {
   if (!N || !N.up) return false;
   const out = [];
   for (const a of [{ script: A, suite: AS }, { script: B, suite: BS }]) {
-    out.push(await call(N.base, 'testicle.testicle.set', Object.assign({ test: 'a test of ' + a.script, verified: true, severity: 0.2 }, a)));
+    out.push(await call(N.base, 'spirit.app.testicle.testicle.set', Object.assign({ test: 'a test of ' + a.script, verified: true, severity: 0.2 }, a)));
   }
   planted = out.every(function (r) { return r.status === 200; });
   return planted || false;
@@ -188,7 +188,7 @@ test.run('destroy takes its root out of the container', 0.2, async function () {
 test.run('destroy lets its list go: a suite row written after draws nothing', 0.2, async function () {
   if (notMounted()) return false;
   const before = await c.evaluate('(function () { var r = window.zzBox; return r.innerHTML; }())');
-  const r = await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: 'alpha later', verified: false, severity: 0.2 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: AS, test: 'alpha later', verified: false, severity: 0.2 });
   if (r.status !== 200) return false;
   await sleep(1500);
   const after = await c.evaluate('(function () { var r = window.zzBox; return r.innerHTML; }())');

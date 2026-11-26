@@ -18,6 +18,8 @@ const H = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 const auth = SPIRIT.requireScript('spirit/relayAuth/script.js');
 const limits = SPIRIT.requireScript('spirit/limits/script.js');
 const FILE = path.join(__dirname, '..', 'server.js');
+// The app is known by its id, its folder's path in dots (goal/G49.19): its key, its calls and the grant to answer.
+const ID = 'spirit.app.chat';
 
 // A file's code, comments blanked; '' when it is not there.
 function code(f) {
@@ -62,10 +64,10 @@ test.run('a scratch node of its own comes up for this suite', 0.2, async functio
 }, test.limit.slow);
 
 // ── switched on, it serves the branch chat ──
-test.run('switched on, the server answers chat.chats.search', 0.2, async function () {
+test.run('switched on, the server answers spirit.app.chat.chats.search', 0.2, async function () {
   if (!X.call) return false;
-  await X.call('app.active', { key: 'chat', active: true });
-  X.up = await H.until(function () { return X.call('chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
+  await X.call('app.active', { key: ID, active: true });
+  X.up = await H.until(function () { return X.call(ID + '.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
   return X.up ? true : false;
 }, test.limit.quick);
 test.run('its job spirit.app.chat is running', 0.2, async function () {
@@ -86,7 +88,7 @@ test.run('chat.db is in the node\'s state, in spirit/state/app/chat/data/', 0.2,
 }, test.limit.quick);
 test.run('chats.search answers no chat at the start', 0.2, async function () {
   if (!X.up) return false;
-  const empty = await X.call('chat.chats.search', {});
+  const empty = await X.call(ID + '.chats.search', {});
   return empty.status === 200 && labels(empty.body).length === 0 ? true : false;
 }, test.limit.quick);
 
@@ -94,28 +96,28 @@ test.run('chats.search answers no chat at the start', 0.2, async function () {
 test.run('line.write answers seq 1, refused or pending, because nobody took it', 0.2, async function () {
   if (!X.up) return false;
   X.K = auth.generateIdentity('quiet').publicKey;
-  const w1 = await X.call('chat.line.write', { to: X.K, text: 'zz hello there', re: { writer: '', seq: 0 } });
+  const w1 = await X.call(ID + '.line.write', { to: X.K, text: 'zz hello there', re: { writer: '', seq: 0 } });
   return w1.status === 200 && !!w1.body && w1.body.seq === 1 && /^(refused|pending)$/.test(String(w1.body.outcome)) ? true : false;
 }, test.limit.quick);
 test.run('chat.read holds the line as written here, with seq 1 and its text, marked unsent', 0.2, async function () {
   if (!X.K) return false;
-  const read = await X.call('chat.chat.read', { peer: X.K, before: 0, after: 0 });
+  const read = await X.call(ID + '.chat.read', { peer: X.K, before: 0, after: 0 });
   const lines = labels(read.body);
   return lines.length === 1 && lines[0].sent === 1 && lines[0].seq === 1 && lines[0].text === 'zz hello there' && !!lines[0].refused ? true : false;
 }, test.limit.quick);
 test.run('chats.search now has that chat, and its newest line is the one written', 0.2, async function () {
   if (!X.K) return false;
-  const rows = labels((await X.call('chat.chats.search', {})).body);
+  const rows = labels((await X.call(ID + '.chats.search', {})).body);
   return rows.length === 1 && rows[0].peer === X.K && rows[0].sent === 1 && rows[0].seq === 1 ? true : false;
 }, test.limit.quick);
 test.run('the next line is seq 2', 0.2, async function () {
   if (!X.K) return false;
-  const w2 = await X.call('chat.line.write', { to: X.K, text: 'zz a second one', re: { writer: '', seq: 0 } });
+  const w2 = await X.call(ID + '.line.write', { to: X.K, text: 'zz a second one', re: { writer: '', seq: 0 } });
   return w2.status === 200 && !!w2.body && w2.body.seq === 2 ? true : false;
 }, test.limit.quick);
-test.run('the line is also the grant to answer, so K may call chat.line.receive', 0.2, async function () {
+test.run('the line is also the grant to answer, so K may call spirit.app.chat.line.receive', 0.2, async function () {
   if (!X.K) return false;
-  const grant = await X.call('auth.query', { key: X.K, path: 'chat.line.receive' });
+  const grant = await X.call('auth.query', { key: X.K, path: ID + '.line.receive' });
   return grant.status === 200 && !!grant.body && grant.body.allowed === true ? true : false;
 }, test.limit.quick);
 // A grant under the old name would let K reach what nobody granted it.
@@ -128,40 +130,40 @@ test.run('K may never call chatClerver.line.receive', 0.8, async function () {
 // ── chat.search, by text and by who ──
 test.run('a search for hello by me finds the line written', 0.2, async function () {
   if (!X.K) return false;
-  const me = labels((await X.call('chat.chat.search', { peer: X.K, text: 'hello', who: 'me' })).body);
+  const me = labels((await X.call(ID + '.chat.search', { peer: X.K, text: 'hello', who: 'me' })).body);
   return me.length >= 1 && me[0].text === 'zz hello there' ? true : false;
 }, test.limit.quick);
 test.run('a search by them finds nothing, because nothing was received', 0.2, async function () {
   if (!X.K) return false;
-  const them = labels((await X.call('chat.chat.search', { peer: X.K, text: 'hello', who: 'them' })).body);
+  const them = labels((await X.call(ID + '.chat.search', { peer: X.K, text: 'hello', who: 'them' })).body);
   return them.length === 0 ? true : false;
 }, test.limit.quick);
 
 // ── the attacker: a line with no to, a line too large to travel ──
 test.run('a line with no to is refused, as the caller\'s error', 0.2, async function () {
   if (!X.up) return false;
-  const noTo = await X.call('chat.line.write', { to: '', text: 'zz to nobody', re: { writer: '', seq: 0 } });
+  const noTo = await X.call(ID + '.line.write', { to: '', text: 'zz to nobody', re: { writer: '', seq: 0 } });
   return noTo.status >= 400 && noTo.status < 500 ? true : false;
 }, test.limit.quick);
 // Since goal/G48.4 a line's text is a spirit.type.string.paragraph, at most 2048 bytes: a line too large is refused at the door,
 // by its type, before the server's own line-too-large check could see it.
 test.run('a line too large to travel is refused at the door, by its type, with a code', 0.2, async function () {
   if (!X.K) return false;
-  const big = await X.call('chat.line.write', { to: X.K, text: 'x'.repeat(limits.PAYLOAD_MAX), re: { writer: '', seq: 0 } });
+  const big = await X.call(ID + '.line.write', { to: X.K, text: 'x'.repeat(limits.PAYLOAD_MAX), re: { writer: '', seq: 0 } });
   return (big.status >= 400 && big.status < 500 && !!big.body && typeof big.body.code === 'string' && big.body.code !== 'handler-failed') ? true : false;
 }, test.limit.quick);
 test.run('neither refused line was kept, and the chat holds its two lines', 0.2, async function () {
   if (!X.K) return false;
-  const after = labels((await X.call('chat.chat.read', { peer: X.K, before: 0, after: 0 })).body);
+  const after = labels((await X.call(ID + '.chat.read', { peer: X.K, before: 0, after: 0 })).body);
   return after.length === 2 ? true : false;
 }, test.limit.quick);
 // before and after are UTC times, milliseconds since 1970, 0 for none (goal/G48.4, Q5, Andy: "times are fucking numbers").
 test.run('chat.read before a line\'s UTC time answers the line before it, and after the first line\'s time the one after', 0.2, async function () {
   if (!X.K) return false;
-  const two = labels((await X.call('chat.chat.read', { peer: X.K, before: 0, after: 0 })).body);
+  const two = labels((await X.call(ID + '.chat.read', { peer: X.K, before: 0, after: 0 })).body);
   if (two.length !== 2) return false;
   const newer = two[0].seq === 2 ? two[0] : two[1], older = two[0].seq === 2 ? two[1] : two[0];
-  const before = labels((await X.call('chat.chat.read', { peer: X.K, before: Date.parse(newer.at), after: 0 })).body);
-  const after = labels((await X.call('chat.chat.read', { peer: X.K, before: 0, after: Date.parse(older.at) })).body);
+  const before = labels((await X.call(ID + '.chat.read', { peer: X.K, before: Date.parse(newer.at), after: 0 })).body);
+  const after = labels((await X.call(ID + '.chat.read', { peer: X.K, before: 0, after: Date.parse(older.at) })).body);
   return (before.length === 1 && before[0].seq === 1 && after.length === 1 && after[0].seq === 2) || false;
 }, test.limit.quick);

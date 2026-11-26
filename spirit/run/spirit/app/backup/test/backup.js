@@ -31,8 +31,9 @@ test.run('what it loads is its server, spirit/app/backup/server/server.js, and n
 test.run('on a node with backup switched on, the server it loads answers its DEBUG verb', 0.4, async function () {
   W.node = await H.scratchNode({ servers: ['spirit.app.backup'] });
   if (!W.node || !W.node.up) return false;
+  // Its verb by the app's id, its folder's path in dots (goal/G49.19).
   const ok = await H.until(function () {
-    return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'backup.DEBUG', args: {} }) })
+    return fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'spirit.app.backup.DEBUG', args: {} }) })
       .then(function (r) { return r.status === 200; }, function () { return false; });
   }, 60000);
   return !!ok || false;

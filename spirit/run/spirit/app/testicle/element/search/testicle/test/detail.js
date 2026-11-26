@@ -98,14 +98,14 @@ test.run('a scratch node comes up with testicle on', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
   // Its testicle answers once its app server runs, a moment after the node.
-  N.up = !!(await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
+  N.up = !!(await until(function () { return call(N.base, 'spirit.app.testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
 }, test.limit.long);
 test.run('the test flips three times, passing, failing and passing, and another test of its suite is set', 0.2, async function () {
   if (!N || !N.up) return false;
   const out = [];
-  for (const v of [true, false, true]) { out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: v, severity: 0.3 })); await sleep(1100); }
-  out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: OTHER, verified: false, severity: 0.5 }));
+  for (const v of [true, false, true]) { out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: v, severity: 0.3 })); await sleep(1100); }
+  out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: AS, test: OTHER, verified: false, severity: 0.5 }));
   planted = out.every(function (r) { return r.status === 200; });
   out.slice(0, 3).forEach(function (r) { if (r.body && r.body.key) keys.push(r.body.key); });
   return (planted && keys.length === 3 && new Set(keys).size === 3) || false;
@@ -192,7 +192,7 @@ test.run('each row is drawn by the test row, with its result as an icon and its 
 test.run('each row shows the date it last ran', 0.2, async function () {
   if (mounted()) return false;
   const v = await view('zzBox');
-  const got = await call(N.base, 'testicle.testicle.search', { script: A, suite: AS, test: FLIPS, text: '' });
+  const got = await call(N.base, 'spirit.app.testicle.testicle.search', { script: A, suite: AS, test: FLIPS, text: '' });
   const ran = {};
   ((got.body && got.body.items) || []).forEach(function (it) { let row = null; try { row = JSON.parse(it.label); } catch (e) { row = null; } if (row && row.tested) ran[it.key] = Number(row.tested); });
   const bad = (v && v.rows || []).filter(function (r) { return !ran[r.key] || r.cells[0] !== new Date(ran[r.key]).toISOString().replace('T', ' ').slice(0, 19); });
@@ -201,7 +201,7 @@ test.run('each row shows the date it last ran', 0.2, async function () {
 // "It asks again whenever testicle publishes a row of this test."
 test.run('a flip set on the node shows at the top with no press', 0.2, async function () {
   if (mounted()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: false, severity: 0.3 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: false, severity: 0.3 });
   if (r.status !== 200 || !r.body || !r.body.key) return false;
   const ok = await until(function () { return view('zzBox').then(function (v) { return !!v && v.rows.length === 4 && v.rows[0].key === r.body.key && v.rows[0].cells[1] === '❌'; }); }, 10000);
   return !!ok || false;
@@ -233,12 +233,13 @@ test.run('the detail has a 🏃 run form with a run button for its script and su
   const n = await c.evaluate('Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll(".shell-row-form"), function (f) { var b = f.querySelector("button"); return /🏃/.test(f.textContent || "") && !!b && b.textContent === "run"; }).length');
   return n === 1 || false;
 }, test.limit.quick);
-test.run('a press of the detail\'s run button asks testicle.run for its script and suite', 0.4, async function () {
+// The call on the wire names the app by its id (goal/G49.19): spirit.app.testicle.run, spirit.app.testicle.testicle.title.
+test.run('a press of the detail\'s run button asks spirit.app.testicle.run for its script and suite', 0.4, async function () {
   if (mounted()) return false;
   await c.evaluate('(function () { window.zzAsked = []; var f = window.fetch; window.fetch = function (u, o) { try { window.zzAsked.push(String(o && o.body || "")); } catch (e) {} return f.apply(this, arguments); };' +
     ' var s = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function (b) { try { window.zzAsked.push(String(b || "")); } catch (e) {} return s.apply(this, arguments); };' +
     ' var b = Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (x) { return (x.textContent || "") === "run"; })[0]; if (b) b.click(); }())');
-  const ok = await until(function () { return c.evaluate('window.zzAsked.some(function (x) { return /"testicle\\.run"/.test(x); })'); }, 5000);
+  const ok = await until(function () { return c.evaluate('window.zzAsked.some(function (x) { return /"spirit\\.app\\.testicle\\.run"/.test(x); })'); }, 5000);
   const asked = await c.evaluate('JSON.stringify(window.zzAsked.filter(function (x) { return /testicle\\.run/.test(x); }))');
   let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
   return (!!ok && !!body && body.args && body.args.script === A && body.args.suite === AS) || false;
@@ -267,11 +268,11 @@ test.run('the title input holds the test\'s title and takes no more than 128 byt
   let o = null; try { o = JSON.parse(v); } catch (e) { o = null; }
   return (!!o && o.value === FLIPS && o.max === '128') || false;
 }, test.limit.quick);
-test.run('a press of Change asks testicle.title with the script, the suite, the old title and the typed one', 0.4, async function () {
+test.run('a press of Change asks spirit.app.testicle.testicle.title with the script, the suite, the old title and the typed one', 0.4, async function () {
   if (mounted()) return false;
   await c.evaluate('(function () { window.zzAsked = []; var i = document.querySelector("#zzBox input[data-history=newTitle]"); if (i) i.value = "alpha has a new name";' +
     ' var b = Array.prototype.filter.call(document.getElementById("zzBox").querySelectorAll("button"), function (x) { return (x.textContent || "") === "Change"; })[0]; if (b) b.click(); }())');
-  const ok = await until(function () { return c.evaluate('window.zzAsked.some(function (x) { return /"testicle\\.testicle\\.title"|"testicle\\.title"/.test(x); })'); }, 5000);
+  const ok = await until(function () { return c.evaluate('window.zzAsked.some(function (x) { return /"spirit\\.app\\.testicle\\.testicle\\.title"|"spirit\\.app\\.testicle\\.title"/.test(x); })'); }, 5000);
   const asked = await c.evaluate('JSON.stringify(window.zzAsked.filter(function (x) { return /testicle\\.title/.test(x); }))');
   let body = null; try { body = JSON.parse(JSON.parse(asked)[0]); } catch (e) { body = null; }
   const a = (body && body.args) || {};
@@ -298,7 +299,7 @@ test.run('destroy leaves its container empty', 0.2, async function () {
 }, test.limit.quick);
 test.run('once the detail is destroyed, a flip set on the node draws nothing in its container', 0.2, async function () {
   if (mounted()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: true, severity: 0.3 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: AS, test: FLIPS, verified: true, severity: 0.3 });
   if (r.status !== 200) return false;
   await sleep(2000);
   const after = await c.evaluate('(function () { var b = document.getElementById("zzBox"); return b ? b.innerHTML : null; }())');

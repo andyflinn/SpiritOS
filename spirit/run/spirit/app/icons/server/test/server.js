@@ -30,8 +30,9 @@ test.after(function () {
   try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
   try { if (node.root) S.requireScript('spirit/test/headLessChrome.js').freeTree(node); } catch (e) { /* scratch */ }
 });
+// Its one verb, asked by the app's id, its folder's path in dots (goal/G49.19).
 const icon = async function (args) {
-  const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'icons.icon', args: args }) });
+  const r = await fetch(W.node.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'spirit.app.icons.icon', args: args }) });
   const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
   return { status: r.status, body: b, text: t };
 };
@@ -58,7 +59,7 @@ test.run('the system set is read, and twelve glyphs it does not hold are found',
   W.glyphs = fresh.length >= 12 && !!W.sys;
   return W.glyphs || false;
 }, test.limit.quick);
-test.run('icons.icon answers', 0.2, async function () {
+test.run('spirit.app.icons.icon answers', 0.2, async function () {
   if (!W.glyphs) return false;
   W.ready = !!(await until(function () { return icon({ op: 'search', text: '' }).then(function (r) { return r.status === 200; }); }, 20000));
   return W.ready || false;

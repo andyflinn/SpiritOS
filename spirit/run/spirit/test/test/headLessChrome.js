@@ -248,7 +248,7 @@ test.after(async function () { try { if (HANDED.chrome && HANDED.chrome.close) H
 // testicle's branch on the wire is its id, spirit.app.testicle (goal/G49.19).
 test.run('handed a node and a Chrome, scratchNode and chromePage start neither, and answer the handed ones with the tree and servers', 0.4, async function () {
   if (!HANDED.node || !HANDED.node.up || !HANDED.chrome || HANDED.chrome.error) return false;
-  const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const n = await H.scratchNode({ shared: true, servers: ["testicle"] });' +
+  const code = 'const H = require(' + JSON.stringify(HELPER) + ');(async function () { const n = await H.scratchNode({ shared: true, servers: ["spirit.app.testicle"] });' +
     ' const p = await H.chromePage(H.findChrome());' +
     ' let served = false; for (let i = 0; i < 120 && !served; i++) { served = await fetch(n.base + "/spirit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "api", args: { branch: "spirit.app.testicle" } }) }).then(function (r) { return r.json(); }).then(function (b) { return !!(b && b.interface); }, function () { return false; }); if (!served) await H.sleep(250); }' +
     ' const title = p && p.evaluate ? await p.evaluate("1 + 1") : null;' +

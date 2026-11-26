@@ -178,8 +178,8 @@ test.run('tests of the planted scripts are set on the node', 0.2, async function
     { script: A, suite: GEN, test: FLIPS, verified: true, severity: 0 },
   ];
   const out = [];
-  for (const a of sets) { out.push(await call(N.base, 'testicle.testicle.set', a)); await sleep(20); }
-  out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: GEN, test: FLIPS, verified: false, severity: 0 }));
+  for (const a of sets) { out.push(await call(N.base, 'spirit.app.testicle.testicle.set', a)); await sleep(20); }
+  out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: GEN, test: FLIPS, verified: false, severity: 0 }));
   planted = out.every(function (r) { return r.status === 200; });
   out.forEach(function (r, i) { const b = r.body || {}; if (r.status === 200 && b.key) current[i === 3 ? FLIPS : i === 0 ? LONG : i === 1 ? FAILS : 'replaced'] = b; });
   return planted || false;
@@ -189,7 +189,7 @@ test.run('gamma\'s 2 failed tests are set on the node before the page opens', 0.
   if (!N || !N.up) return false;
   let bad = 0;
   for (let i = 1; i <= GAMMA_REDS; i++) {
-    const r = await call(N.base, 'testicle.testicle.set', { script: G, suite: GS, test: 'gamma fails its question ' + i, verified: false, severity: 0.5 });
+    const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: G, suite: GS, test: 'gamma fails its question ' + i, verified: false, severity: 0.5 });
     if (r.status !== 200) bad += 1;
   }
   gammaPlanted = !bad;
@@ -511,7 +511,7 @@ test.run('with no script chosen, a suite of two scripts is listed once', 0.2, as
 }, test.limit.slow);
 test.run('a suite chosen with no script shows that suite\'s tests of every script', 0.2, async function () {
   if (mounted()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: GEN, test: 'beta holds the general rule', verified: true, severity: 0.2 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: B, suite: GEN, test: 'beta holds the general rule', verified: true, severity: 0.2 });
   if (r.status !== 200) return false;
   const k = suiteKeysOf((await T('selRows(1)')) || [], GEN)[0];
   if (!k || !(await T('pickSel(1, ' + JSON.stringify(k) + ')'))) return false;
@@ -534,7 +534,7 @@ test.run('with the suite unselected and no script chosen, every script\'s tests 
 test.run('a test set on the node shows in the list with no press', 0.2, async function () {
   if (mounted()) return false;
   // A pass, so at 1, above the classifier's passes (see THE TESTS SET).
-  const r = await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: 'beta answers later', verified: true, severity: 1 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: B, suite: BS, test: 'beta answers later', verified: true, severity: 1 });
   if (r.status !== 200) return false;
   const ok = await until(function () { return T('cells()').then(function (rows) { return (rows || []).some(function (x) { return titleOf(x) === 'beta answers later'; }); }); }, 10000);
   return !!ok || false;
@@ -574,9 +574,9 @@ const reopened = function () { return !N || !N.up || !many || opened !== 'made';
 test.run('the node holds 110 passing tests of beta at severity 1, 25 failing tests of alpha at 0.3, and alpha\'s quiet pass at 0', 0.2, async function () {
   if (!N || !N.up) return false;
   const out = [];
-  for (let i = 0; i < 110; i++) out.push(await call(N.base, 'testicle.testicle.set', { script: B, suite: BS, test: LOUDB(i), verified: true, severity: 1 }));
-  for (let i = 0; i < 25; i++) out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: REDA(i), verified: false, severity: 0.3 }));
-  out.push(await call(N.base, 'testicle.testicle.set', { script: A, suite: AS, test: QUOKKA, verified: true, severity: 0 }));
+  for (let i = 0; i < 110; i++) out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: B, suite: BS, test: LOUDB(i), verified: true, severity: 1 }));
+  for (let i = 0; i < 25; i++) out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: AS, test: REDA(i), verified: false, severity: 0.3 }));
+  out.push(await call(N.base, 'spirit.app.testicle.testicle.set', { script: A, suite: AS, test: QUOKKA, verified: true, severity: 0 }));
   many = out.every(function (r) { return r.status === 200; });
   return many || false;
 }, test.limit.long);

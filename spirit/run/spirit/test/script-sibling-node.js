@@ -78,7 +78,7 @@ const { scratchNode } = S.requireScript('spirit/test/headLessChrome.js');
 test.run('a copy of the tree with a node of its own is made to require the scripts in', 0.2, async function () {
   const apps = (GIVEN.length ? GIVEN : execFileSync('git', ['ls-files', '--', 'spirit/app'], { cwd: RUN, encoding: 'utf8' }).split('\n'))
     .map(function (f) { return (/^spirit\/app\/([^/]+)\//.exec(f) || [])[1]; }).filter(function (a, i, all) { return a && all.indexOf(a) === i; });
-  E.node = await scratchNode({ servers: apps });
+  E.node = await scratchNode({ servers: apps.map(function (n) { return S.dottedPath('spirit/app/' + n); }) });
   if (!E.node || !E.node.up) return false;
   if (!E.node.root) return false;
   E.root = E.node.root;

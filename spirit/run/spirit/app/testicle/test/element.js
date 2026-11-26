@@ -404,7 +404,7 @@ test.run('it lists no other suite, and each suite only once', 0.2, function () {
 // shown.js was never changed: its rows exist only if the click's script.get made them. Asked by suite.search, which makes none.
 test.run('the click made the script\'s rows, so script.get ran for it', 0.2, async function () {
   if (!N || !N.up) return false;
-  const rowsMade = await call(N.base, 'testicle.suite.search', { script: F1, text: '' });
+  const rowsMade = await call(N.base, 'spirit.app.testicle.suite.search', { script: F1, text: '' });
   return (rowsMade.status === 200 && rowsMade.body && Array.isArray(rowsMade.body.items) && rowsMade.body.items.length === want1.length) || false;
 }, test.limit.quick);
 test.run('the suite search is spirit/app/testicle/element/search/suite.js, which the face loads', 0.2, function () {
@@ -536,16 +536,16 @@ test.run('a tab\'s close button takes it away', 0.2, async function () {
 // spirit/app/testicle/data.js names; nothing is asked of the node for it.
 const ETA_TEST = 'eta answers its question';
 const pageTests = function () {
-  return c.evaluate('(function () { var R = window.spirit.required.spirit.data.testicle && window.spirit.required.spirit.data.testicle.data; if (!R) return null; ' +
+  return c.evaluate('(function () { var R = window.spirit.required.spirit.data["spirit.app.testicle"] && window.spirit.required.spirit.data["spirit.app.testicle"].data; if (!R) return null; ' +
     'var b = window.spirit.required.spirit.data.getPath(R.branch("testicle")) || {}; return Object.keys(b).map(function (k) { return { key: k, row: b[k] }; }); }())');
 };
 const etaRows = function (all) { return (all || []).filter(function (e) { return e.row && e.row.script === F3 && e.row.suite === etaOwn && e.row.test === ETA_TEST; }); };
 let flipSet = null, kept = null;
 test.run('a test of eta.js is set passing, then failing, which is a flip', 0.2, async function () {
   if (!face()) return false;
-  const one = await call(N.base, 'testicle.testicle.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: true, severity: 0.2 });
+  const one = await call(N.base, 'spirit.app.testicle.testicle.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: true, severity: 0.2 });
   await sleep(20);
-  flipSet = await call(N.base, 'testicle.testicle.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: false, severity: 0.2 });
+  flipSet = await call(N.base, 'spirit.app.testicle.testicle.set', { script: F3, suite: etaOwn, test: ETA_TEST, verified: false, severity: 0.2 });
   return (one.status === 200 && flipSet.status === 200) || false;
 }, test.limit.quick);
 test.run('on a flip the replaced row reaches the page too, current false, beside the new current row', 0.2, async function () {
@@ -637,7 +637,7 @@ test.run('the monitor\'s icons are recorded from here on', 0.2, async function (
 // waits for that, so the world waits for testicle to go idle first.
 test.run('testicle has brought its tables up to date, classified the tree and is idle', 0.2, async function () {
   if (!face()) return false;
-  const idle = await until(function () { return call(N.base, 'testicle.busy', {}).then(function (r) { return r.status === 200 && r.body === false; }); }, 280000);
+  const idle = await until(function () { return call(N.base, 'spirit.app.testicle.busy', {}).then(function (r) { return r.status === 200 && r.body === false; }); }, 280000);
   return !!idle || false;
 }, test.limit.long);
 let iotaRows = [], iotaKey = '', searchBefore = 0;
@@ -645,7 +645,7 @@ let iotaRows = [], iotaKey = '', searchBefore = 0;
 const searchRows = function () { return T('shown()').then(function (d) { return ((d && d.rows) || []).map(function (r) { return r.key; }); }); };
 test.run('iota.js\'s tab is opened and lists its suites', 0.2, async function () {
   if (!face()) return false;
-  const had = await call(N.base, 'testicle.testicle.search', { script: F5, text: '' });
+  const had = await call(N.base, 'spirit.app.testicle.testicle.search', { script: F5, text: '' });
   // iota's own suite's tests alone: its classifier row (spirit/test/scriptClassify.js, classifyable) is there from the start
   // (goal/G47.1, box v94, 1).
   searchBefore = ((had.body && had.body.items) || []).filter(function (i) { return String(i.key).indexOf(F5 + '|' + iotaOwn + '|') === 0; }).length;
@@ -749,7 +749,7 @@ const TOGGLE = '(function () { var l = window.__t.left(); if (!l) return { none:
   ' var rest = all.replace(bt, ""); var state = /🟢/.test(rest) ? "🟢" : /🔴/.test(rest) ? "🔴" : null;' +
   ' return { toggles: tb.length, state: state, button: bt, save: buttons.some(function (x) { return /^save$/i.test(txt(x)); }), selects: l.querySelectorAll("select").length, words: rest.replace("⚙ Configuration", "").replace(/🟢|🔴/g, "").trim().toLowerCase() }; }())';
 const PRESS = '(function () { var l = window.__t.left(); var b = l ? Array.prototype.slice.call(l.querySelectorAll("button")).filter(function (x) { return /🟢|🔴/.test(String(x.innerText || x.textContent || "")); })[0] : null; if (!b) return false; b.click(); return true; }())';
-const prefsNow = async function () { const r = await call(N.base, 'testicle.preferences', {}); const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
+const prefsNow = async function () { const r = await call(N.base, 'spirit.app.testicle.preferences', {}); const b = r && r.body; return (b && typeof b.preferences === 'object' && b.preferences) || b || {}; };
 let gear = false;
 test.run('⚙ on the left strip is pressed', 0.2, async function () {
   if (!face()) return false;
@@ -795,7 +795,7 @@ test.run('the monitor row\'s first icon follows the switch to 🤖 auto', 0.2, a
 }, test.limit.slow);
 test.run('a set by the verb elsewhere is followed: interactive true shows the toggle on, 🟢, and the monitor 🖖', 0.2, async function () {
   if (!gear) return false;
-  await call(N.base, 'testicle.preferences', { interactive: true });
+  await call(N.base, 'spirit.app.testicle.preferences', { interactive: true });
   const ok = await until(function () { return c.evaluate(TOGGLE).then(function (t) { return !!t && t.state === '🟢'; }); }, 10000);
   const m = await waitFor('monitor() && monitor().mode === "🖖"', 10000);
   return (!!ok && !!m) || false;
@@ -824,8 +824,8 @@ test.run('while it runs a suite, the status bar says "running <suite> for <scrip
   fs.mkdirSync(path.join(s.run, 'spirit', 'zzTesticle', 'test'), { recursive: true });
   fs.writeFileSync(path.join(s.run, ZMS), "'use strict';\nconst path = require('path');\nconst test = require(path.join(__dirname, '..', '..', 'test', 'testReport.js'));\ntest.run('zzMonitorRun waits a moment', 0.2, function () { return new Promise(function (r) { setTimeout(function () { r(true); }, 3000); }); }, test.limit.quick);\n");
   fs.writeFileSync(path.join(s.run, ZM), "'use strict';\n// zzMonitorRun\n");
-  await until(function () { return call(N.base, 'testicle.suite.search', { script: ZM, text: '' }).then(function (r) { return !!(r.body && (r.body.items || []).length); }); }, 240000);
-  await call(N.base, 'testicle.run', { script: ZM, suite: ZMS });
+  await until(function () { return call(N.base, 'spirit.app.testicle.suite.search', { script: ZM, text: '' }).then(function (r) { return !!(r.body && (r.body.items || []).length); }); }, 240000);
+  await call(N.base, 'spirit.app.testicle.run', { script: ZM, suite: ZMS });
   // Its own test is run: the suite named (cw's build names it by its file name; a general suite adds " for <script>").
   const ok = await waitFor('messages_seen().some(function (m) { return /^running (spirit\\/zzTesticle\\/test\\/)?zzMonitorRun\\.js( for |$)/.test(m); })', 240000);
   return !!ok || false;

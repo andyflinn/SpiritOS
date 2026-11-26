@@ -110,7 +110,7 @@ test.run('a scratch node comes up with testicle on', 0.2, async function () {
   N = await boot(s.run); live.push(N.child);
   if (!N.up) return false;
   // Its testicle answers once its app server runs, a moment after the node.
-  N.up = !!(await until(function () { return call(N.base, 'testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
+  N.up = !!(await until(function () { return call(N.base, 'spirit.app.testicle.busy').then(function (r) { return r.status === 200; }); }, 30000));
   return N.up || false;
 }, test.limit.long);
 test.run('tests of alpha and beta are set, each in its own suite and in one general suite', 0.2, async function () {
@@ -119,7 +119,7 @@ test.run('tests of alpha and beta are set, each in its own suite and in one gene
   if (!GEN) return false;
   const out = [];
   for (const a of [{ script: A, suite: AS }, { script: A, suite: GEN }, { script: B, suite: BS }, { script: B, suite: GEN }]) {
-    out.push(await call(N.base, 'testicle.testicle.set', Object.assign({ test: 'a test of ' + a.script, verified: true, severity: 0.2 }, a)));
+    out.push(await call(N.base, 'spirit.app.testicle.testicle.set', Object.assign({ test: 'a test of ' + a.script, verified: true, severity: 0.2 }, a)));
   }
   planted = out.every(function (r) { return r.status === 200; });
   return planted || false;
@@ -218,7 +218,7 @@ test.run('a script with no suite row yet says no suite concerns it', 0.2, async 
 }, test.limit.slow);
 test.run('a suite row written for the script shows by itself', 0.2, async function () {
   if (notMounted()) return false;
-  const r = await call(N.base, 'testicle.testicle.set', { script: C, suite: CS, test: 'gamma runs', verified: true, severity: 0.2 });
+  const r = await call(N.base, 'spirit.app.testicle.testicle.set', { script: C, suite: CS, test: 'gamma runs', verified: true, severity: 0.2 });
   if (r.status !== 200) return false;
   const ok = await until(function () { return view('zzGamma').then(function (v) { return keysOf(v).indexOf(C + '|' + CS) !== -1; }); }, 10000);
   return !!ok || false;
@@ -228,14 +228,14 @@ test.run('a suite row written for the script shows by itself', 0.2, async functi
 const statusIn = function (id, key) { return view(id).then(function (v) { const r = ((v && v.rows) || []).filter(function (x) { return x.key === key; })[0]; return r ? r.cells[2] : null; }); };
 test.run('a drawn row follows its suite row: when a success is reported for it, the row shows "green" by itself', 0.4, async function () {
   if (notMounted()) return false;
-  const r = await call(N.base, 'testicle.suite.success', { script: C, suite: CS, success: true });
+  const r = await call(N.base, 'spirit.app.testicle.suite.success', { script: C, suite: CS, success: true });
   if (r.status !== 200) return false;
   const ok = await until(function () { return statusIn('zzGamma', C + '|' + CS).then(function (t) { return t === 'green'; }); }, 10000);
   return !!ok || false;
 }, test.limit.slow);
 test.run('when a failure is reported after that success, the same row shows "still red" by itself', 0.4, async function () {
   if (notMounted()) return false;
-  const r = await call(N.base, 'testicle.suite.success', { script: C, suite: CS, success: false });
+  const r = await call(N.base, 'spirit.app.testicle.suite.success', { script: C, suite: CS, success: false });
   if (r.status !== 200) return false;
   const ok = await until(function () { return statusIn('zzGamma', C + '|' + CS).then(function (t) { return t === 'still red'; }); }, 10000);
   const k = keysOf(await view('zzGamma')).filter(function (x) { return x === C + '|' + CS; });

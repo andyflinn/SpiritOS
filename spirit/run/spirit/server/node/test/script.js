@@ -271,7 +271,7 @@ function broke(r) {
 
 // A scratch node up, its app servers named in its api: answers { node, base, plain } or null.
 async function upNode() {
-  const node = await scratchNode({ servers: SERVERS });
+  const node = await scratchNode({ servers: SERVERS.map(function (n) { return LOADER.dottedPath('spirit/app/' + n); }) });
   if (!node.up) return { node: node, base: '', plain: null };
   const base = node.base;
   const host = new URL(base).host;
@@ -291,7 +291,7 @@ const G = { node: null, base: '', plain: null, tree: null, asks: [], RAWS: [], r
 test.run('the scratch node for the garbage comes up, with every app server it turned on named in its api', 0.2, async function () {
   // The node and the page of "/" are let go first.
   letGo(W.node, W.page); W.node = null; W.page = null;
-  const node = G.node = await scratchNode({ servers: SERVERS });
+  const node = G.node = await scratchNode({ servers: SERVERS.map(function (n) { return LOADER.dottedPath('spirit/app/' + n); }) });
   if (!node.up) return false;
   const base = G.base = node.base;
   HOST = new URL(base).host;

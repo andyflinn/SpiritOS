@@ -70,7 +70,7 @@ async function world() {
   const apps = Array.from(new Set(TARGETS.map(appOf))).filter(hasServer);
   // ITS CHROME STARTED WHILE THE NODE BOOTS: the two wait on nothing of each other.
   const chromeStarted = process.env.SPIRIT_CHROME_PORT ? Promise.resolve(null) : H.sharedChrome(chrome);
-  W.node = await scratchNode({ servers: apps });
+  W.node = await scratchNode({ servers: apps.map(function (n) { return S.dottedPath('spirit/app/' + n); }) });
   W.chrome = await chromeStarted;
   if (!W.node.up || !W.node.debug) { W.fail = true; return; }
   // Every app server judged answers its interface before any page is opened (Andy: "a server MUST be mounted if a
