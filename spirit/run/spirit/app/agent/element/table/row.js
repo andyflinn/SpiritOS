@@ -74,7 +74,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
     // holds no model of this provider.").
     var narrowCount = {};
     // A BUNDLE GONE (Andy, box v17: "A bundle deleted while a job names it leaves that job with no grant, and the job says
-    // so in its detail panel, never silently."): the bundle named is asked of the node once (auth.bundle get); false while
+    // so in its detail panel, never silently."): the bundle named is asked of the node once (spirit.bundle.get); false while
     // the node has no such bundle. Both are kept by the bundle's id, so a bundle the stream sets is asked for in its turn
     // (Andy: "the bundle picker doesn not let me change values! (actually it does let me change it, i just doesn't seem to
     // hear the change from the server)").
@@ -239,7 +239,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
             bundleHeld[row[f.field]] = true;
             var named = row[f.field];
-            Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'get', id: Number(named) }); }).then(function (got) {
+            Promise.resolve(spirit.readyPromise).then(function () { return keepAnswer('spirit/bundle/script.js'); }).then(function (s) { return s.get({ id: Number(named) }); }).then(function (got) {
               if (gone || String(row[f.field]) !== String(named)) return;
               bundleLabel[named] = String((got && got.label) || named);
               paint();

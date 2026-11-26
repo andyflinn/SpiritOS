@@ -7,7 +7,7 @@
 //
 // A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/bundle/list/script.js, WHICH IT LOADS ITSELF (rule/26: "every
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
-// the node's bundles (auth.bundle search) and each row (bundle/row.js).
+// the node's bundles (spirit.bundle.search) and each row (bundle/row.js).
 //
 //   spirit.required.spirit.element.search.bundle.create(container, options) -> root
 //     root.value   the chosen bundle's id, a number, '' while none is

@@ -124,7 +124,7 @@ async function measure(say) {
   const held = [];
   try {
     const a = await labNode(lab); held.push(a);
-    const packet = spirit.requireScript('spirit/client/packet.js');
+    const packet = spirit.requireScript('spirit/peer/packet/script.js');
     // 1. A NODE AT REST: its memory 30 s after it started.
     tell('a lab node at rest, ' + AT_REST_MS / 1000 + ' s');
     await sleep(AT_REST_MS);

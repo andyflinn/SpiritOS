@@ -1,0 +1,7 @@
+{
+  "description": "Whether a member's key is granted one api path (a branch, or a branch and its verb): {allowed}.",
+  "request": {
+    "key": "spirit/type/string/IDNew/script.js",
+    "path": "spirit/type/string/word/script.js"
+  }
+}

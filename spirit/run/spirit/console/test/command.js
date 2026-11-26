@@ -305,7 +305,7 @@ test.run('the command history rolls at 256: after 300 more lines it holds 256, t
 // "wait list shows the configured wait-rows", "wait timeout <seconds> sets the timeout".
 // What arrives is written into the scratch node's log by the log's own writer (trafficLog's note), each payload an envelope
 // made by the node's packet encoder, as a peer's call lands; no app of the tree is named, the branch is a made-up zzwait.
-const packetCodec = LOADER.requireScript('spirit/client/packet.js');
+const packetCodec = LOADER.requireScript('spirit/peer/packet/script.js');
 let nodeLog = null;
 const arrive = function (body, dir) {
   if (!nodeLog) nodeLog = LOADER.requireScript('spirit/trafficLog/script.js').createTrafficLog({ rootDir: W.node.run });

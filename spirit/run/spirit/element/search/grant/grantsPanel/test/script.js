@@ -209,12 +209,12 @@ function world() {
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
-  const REAL = [SUBJECT, 'spirit/client/apiTreeIndex.js', 'spirit/data/script.js'];
+  const REAL = [SUBJECT, 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/data/script.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: function (p) { return REAL.indexOf(p) !== -1 || /^spirit\/.+\/data\.js$/.test(p); } });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
-  win.spirit.requireScript('spirit/client/apiTreeIndex.js');
+  win.spirit.requireScript('spirit/fuckingGarbage/apiTreeIndex.js');
   win.spirit.requireScript('spirit/data/script.js');
   win.spirit.required.spirit.data.homeNode(win.spirit.nodeFacts.key);
   if (SRC) pageRequire(SUBJECT);

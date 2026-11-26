@@ -49,8 +49,8 @@ test.run('the contacts list runs on a window of its own, with its row element an
         return Promise.resolve(b.to === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } });
       } },
   });
-  // The packet envelope, the real one (spirit/client/packet.js), as the list requires it.
-  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); (window.spirit.required.spirit.client = window.spirit.required.spirit.client || {}); window.spirit.required.spirit.client.packet = LOADER.requireScript('spirit/client/packet.js');
+  // The packet envelope, the real one (spirit/peer/packet/script.js), as the list requires it.
+  ((window.spirit.required = window.spirit.required || {}).spirit = window.spirit.required.spirit || {}); (window.spirit.required.spirit.client = window.spirit.required.spirit.client || {}); window.spirit.required.spirit.client.packet = LOADER.requireScript('spirit/peer/packet/script.js');
   Object.assign(window.spirit, {
     // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
     // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.

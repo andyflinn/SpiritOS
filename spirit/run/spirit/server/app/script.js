@@ -415,7 +415,7 @@ const RUN_ROOT = path.resolve(__dirname, '..', '..', '..');
 // goes straight into the server's spirit.required.spirit.data (spirit/data/script.js) through the translator, exactly as a face app
 // keeps it in the page, and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror of its
 // own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
-// follow(key) also grants that key the verb on this server's own node (auth.grant <server>.listener, through the
+// follow(key) also grants that key the verb on this server's own node (spirit.grant.add <server>.listener, through the
 // one spirit object), so the sender's peerPost passes the node's gate; a grant the node holds already is no fault.
 //
 // THE CACHE (box v15). "Only a client caches. Auto-cache is one switch on the client's serve(), with a limit the client
@@ -665,7 +665,7 @@ function withStreamListener(verbs, stream, followed, name) {
 // subscriber list is kept beyond the grants", which sent every restored key to one hard-coded branch, deskClient):
 // clientListeners.json holds { <key>: <branch> }, written at each subscribe and unsubscribe, and at a switch to client
 // mode, which drops the peers. A subscriber dropped as away keeps its line: it is where it asked to be sent. At start the
-// server's subscribers are the keys the node still grants it to (auth.search) that the file names, each sent to its own
+// server's subscribers are the keys the node still grants it to (spirit.grant.search) that the file names, each sent to its own
 // branch; a granted key the file does not name is sent nothing until it subscribes itself.
 let publisher = null;
 const subscribers = new Map();   // key -> { family, busy, rows: [entry] }
@@ -820,8 +820,8 @@ function withPublisher(verbs, opts) {
 function subscribersFromGrants(name) {
   if (!publisher) return Promise.resolve(0);
   readListeners();
-  return spirit.callOutcome(spirit.requireScript('spirit/auth/api.js').then(function (auth) { return auth.search({ text: name }); })).then(function (r) {
-    // auth.search answers the new search (goal/G29.7): items {key, label}, each label {name, key, path} as JSON. Read as
+  return spirit.callOutcome(spirit.requireScript('spirit/grant/script.js').then(function (grant) { return grant.search({ text: name }); })).then(function (r) {
+    // spirit.grant.search answers the new search (goal/G29.7): items {key, label}, each label {name, key, path} as JSON. Read as
     // records, as it once answered, it restored nobody, and after every restart the desk sent its clients nothing
     // (found 2026-10-27, goal/G41.11: his "all:" lines woke nobody once the clients no longer subscribed again on a
     // silence).
@@ -1088,7 +1088,7 @@ function listenToSibling() {
     asked = typeof s.subscribe === 'function' ? s.subscribe(key, remote.name).catch(function () { return false; }) : Promise.resolve(false);
   } else {
     const position = sibling.run ? { branch: remote.name, run: sibling.run, since: sibling.n } : { branch: remote.name };
-    asked = spirit.callOutcome(Promise.resolve(spirit.requireScript('spirit/auth/api.js')).then(function (auth) { return auth.grant({ key: key, path: remote.name + '.listener' }); })).then(function () {
+    asked = spirit.callOutcome(Promise.resolve(spirit.requireScript('spirit/grant/script.js')).then(function (grant) { return grant.add({ key: key, path: remote.name + '.listener' }); })).then(function () {
       return spirit.callOutcome(Promise.resolve(spirit.requireScript(appApiPath(remote.name), key, { waitMs: 10000 })).then(function (p) {
         if (!p || typeof p.subscribe !== 'function') throw Object.assign(new Error('the sibling takes no subscribe'), { status: 0 });
         return p.subscribe(position);
@@ -1257,7 +1257,7 @@ function serve(verbs, opts) {
     const k = String(key || '');
     if (!k || !verbs.listener) return Promise.resolve(false);
     followed.add(k);
-    return spirit.callOutcome(spirit.requireScript('spirit/auth/api.js').then(function (auth) { return auth.grant({ key: k, path: name + '.listener' }); })).then(function (r) {
+    return spirit.callOutcome(spirit.requireScript('spirit/grant/script.js').then(function (grant) { return grant.add({ key: k, path: name + '.listener' }); })).then(function (r) {
       return r.status === 200 || (r.body && r.body.code === 'already-granted');
     });
   };

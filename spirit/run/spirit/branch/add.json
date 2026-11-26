@@ -1,0 +1,8 @@
+{
+  "description": "A branch of the node's API, and one verb of it or '' for all of it, into a bundle: {id}. The bundle must exist and be node-owned (not-node-owned), the branch and verb must be served by this node, no spirit.fs verb is taken (owner-only), and a bundle holds a branch and verb once (already-in-bundle).",
+  "request": {
+    "bundle": "spirit/type/number/integer/script.js",
+    "family": "spirit/type/string/word/script.js",
+    "verb": "spirit/type/string/wordSelect/script.js?"
+  }
+}

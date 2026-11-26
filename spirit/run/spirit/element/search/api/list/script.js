@@ -7,7 +7,7 @@
 //
 //   Andy: "the appServer selector (a subComponent of the api-path selector)", and the tree it reads: "the shell's api tree is
 //   a straight copy of the node's owner-api-tree ?" — "yes". So it fills itself from the verb api on the flat apiDoor
-//   (goal/G30.6), and lists spirit.requireScript('spirit/client/apiTreeIndex.js')'s answer.servers(tree): sorted, a server that did not answer left out
+//   (goal/G30.6), and lists spirit.requireScript('spirit/fuckingGarbage/apiTreeIndex.js')'s answer.servers(tree): sorted, a server that did not answer left out
 //   (apiTreeIndex.js decides; this paints). SINCE goal/G30.4 that answer is the whole flat table, the node's own families
 //   (fs, job, relay ...) beside the apps', so the list holds every family the grant system sees (Andy, 2026-10-20: "the grant
 //   system looks at apiDoors whole damn table of families and verbs").
@@ -35,7 +35,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): the list, its row and its detail,
   // the reader of the api tree, and the node family's cache manager, the keeper of the api tree (goal/G41.28).
   var parts = Promise.all([keepAnswer('spirit/element/search/script.js'), keepAnswer('spirit/element/search/api/row/script.js'),
-    keepAnswer('spirit/element/search/api/detail/script.js'), keepAnswer('spirit/client/apiTreeIndex.js'),
+    keepAnswer('spirit/element/search/api/detail/script.js'), keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js'),
     keepAnswer('spirit/node/api.js')]);
 
   // THE NODE'S API TREE IN spirit.requireScript('spirit/data/script.js')'s answer (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
@@ -45,7 +45,7 @@
   // job changing on the stream reads it again: one translator for every list. Another party's tree (options.tree:
   // introSpector's peer or relay) is that party's, and stays out of it.
   function keepTree(tree) {
-    ANSWER['spirit/data/script.js'].node.data.keepTree(tree, ANSWER['spirit/client/apiTreeIndex.js']);
+    ANSWER['spirit/data/script.js'].node.data.keepTree(tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js']);
   }
   var reading = null;
   function readOwnTree() {
@@ -135,7 +135,7 @@
       return Promise.all([got, made]).then(function (both) {
         var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
-        if (party) ANSWER['spirit/data/script.js'].node.data.keepTree(root.tree, ANSWER['spirit/client/apiTreeIndex.js'], party);
+        if (party) ANSWER['spirit/data/script.js'].node.data.keepTree(root.tree, ANSWER['spirit/fuckingGarbage/apiTreeIndex.js'], party);
         list.redraw();
         root.dispatchEvent(new Event('tree', { bubbles: false }));
       }, function () { /* the list stays empty; the node says why elsewhere */ });

@@ -6,7 +6,7 @@
 //
 // A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/branch/list/script.js, WHICH IT LOADS ITSELF (rule/26: "every
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
-// the family selector as its filter, the bundle's branches (auth.branch search) and each row
+// the family selector as its filter, the bundle's branches (spirit.branch.search) and each row
 // (branch/row.js).
 //
 //   spirit.required.spirit.element.search.branch.create(container, options) -> root

@@ -1,0 +1,6 @@
+{
+  "description": "One row by its number: {id, bundle, family, verb}; no-such-branch when the table does not hold it.",
+  "request": {
+    "id": "spirit/type/number/integer/script.js"
+  }
+}

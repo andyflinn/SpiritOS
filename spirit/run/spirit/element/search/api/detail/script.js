@@ -3,7 +3,7 @@
 // ONE FAMILY'S VERBS, THE API SEARCH'S DETAIL (goal/G43.32; Andy: "uniformity, in the search elements and their folders,
 // contain list, row an detail elements."): what a family is, read from the api tree its list was painted from: each verb it
 // serves and the fields its request takes. It shows; it asks nothing and changes nothing. The owner's DEBUG is no verb
-// offered (spirit/client/apiTreeIndex.js verbs), so it is not shown. Its contract and its test: ./test/script.md
+// offered (spirit/fuckingGarbage/apiTreeIndex.js verbs), so it is not shown. Its contract and its test: ./test/script.md
 // and ./test/detail.js.
 //
 //   spirit.required.spirit.element.search.api.detail.create(host, { family, tree }) -> { destroy() }
@@ -19,7 +19,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the reader of the api tree.
-  var parts = Promise.resolve(keepAnswer('spirit/client/apiTreeIndex.js'));
+  var parts = Promise.resolve(keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js'));
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -37,7 +37,7 @@
     host.appendChild(box);
     parts.then(function () {
       if (gone) return;
-      var verbs = tree ? ANSWER['spirit/client/apiTreeIndex.js'].verbs(tree, family) : [];
+      var verbs = tree ? ANSWER['spirit/fuckingGarbage/apiTreeIndex.js'].verbs(tree, family) : [];
       box.innerHTML = '<div class="api-family-detail-name">' + esc(family) + '</div>' + (verbs.length ? verbs.map(function (v) {
         var spec = tree[family][v];
         var req = spec && spec.request && typeof spec.request === 'object' ? Object.keys(spec.request) : [];

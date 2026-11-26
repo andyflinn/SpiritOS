@@ -1,0 +1,7 @@
+{
+  "description": "A new bundle, a named subset of the API: {id}. Owned by node (an owner naming an app server is refused not-node-owned, an invalid one is read as node); its label is never empty, unique among node's bundles (label-taken), and never changes after.",
+  "request": {
+    "label": "spirit/type/string/label/script.js",
+    "owner": "spirit/type/string/word/script.js?"
+  }
+}

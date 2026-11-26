@@ -31,7 +31,7 @@ const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = spirit.requireScript('spirit/server/app/script.js');
-const packet = spirit.requireScript('spirit/client/packet.js');
+const packet = spirit.requireScript('spirit/peer/packet/script.js');
 const limits = spirit.requireScript('spirit/limits/script.js');
 // The probability modules (goal/G29.18).
 const createProbabilityBucket = spirit.requireScript('spirit/listLimiter/script.js').createProbabilityBucket;
@@ -259,7 +259,7 @@ appServer.serve({
         if (person.blocked === true) throw refused('peer-blocked');
         return null;
       }).then(function () {
-        return onNode(spirit.requireScript('spirit/auth/api.js'), function (auth) { return auth.grant({ key: to, path: APP_ID + '.line.receive' }); });
+        return onNode(spirit.requireScript('spirit/grant/script.js'), function (grant) { return grant.add({ key: to, path: APP_ID + '.line.receive' }); });
       }).then(function (g) {
         const already = g.status === 409 && g.body && g.body.code === 'already-granted';
         if (g.status !== 200 && !already) throw refused('store-unavailable');

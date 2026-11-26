@@ -1,0 +1,6 @@
+{
+  "description": "A node-owned bundle and every branch row that names it, in one step: {id}; no-such-bundle, or not-node-owned for an app server's.",
+  "request": {
+    "id": "spirit/type/number/integer/script.js"
+  }
+}

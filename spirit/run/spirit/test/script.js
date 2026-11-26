@@ -68,7 +68,7 @@ function answer(b) {
 // It also serves the node's events family: event.subscribe is a stream, as the real node's (a snapshot and then a job
 // update, for a page and for a server, which says X-Spirit-Reader: server and takes no packets); a peer.post is answered with its
 // hash, and the peer's answer arrives on the stream as a packet carrying re, as a real node hands it.
-const packet = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
+const packet = require(path.join(RUN, 'spirit', 'peer', 'packet', 'script.js'));
 function fakeNode() {
   const asked = [];
   const streams = [];
@@ -222,7 +222,7 @@ function page() {
         // peer.post as the node answers it: the packet read out of its envelope, the peer's reply in one (goal/G43.24: a
         // page's spirit.peerPost sends its body in the packet envelope, as a process's does).
         if (isCall(b) && b.call === 'peer.post') {
-          const P = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
+          const P = require(path.join(RUN, 'spirit', 'peer', 'packet', 'script.js'));
           const inner = P.decode(String(b.args.text || '')).body;
           const reply = inner && inner.api ? { interface: DEMO } : { said: 'hello page peer' };
           const said = { ok: true, text: P.encode('api', reply).text, from: String(b.args.to || '') };

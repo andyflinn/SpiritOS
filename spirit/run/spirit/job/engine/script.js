@@ -65,7 +65,7 @@ function installJobs(port) {
     return job;
   }
   // THE NODE'S OWN JOBS, ONE PER FAMILY (goal/G43.20, Q1, Q2): spirit (its stats and join steps), spirit.fs, spirit.app (the
-  // app list), spirit.contact (contacts, peer search hits, presence), spirit.auth. Whoever publishes on one asks
+  // app list), spirit.contact (contacts, peer search hits, presence), spirit.grant, spirit.bundle, spirit.branch. Whoever publishes on one asks
   // for it by its id; the first ask makes it.
   function ownJob(id) {
     const job = jobsMap.get(id);

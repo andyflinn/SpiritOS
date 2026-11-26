@@ -1418,7 +1418,7 @@ catch (e) {
   // app's. It is handed no decoder since goal/G16.5: arrivals.js reads the
   // envelope once and every witness is given what it read.
   {
-    const wire = spirit.requireScript('spirit/client/packet.js');
+    const wire = spirit.requireScript('spirit/peer/packet/script.js');
     arrivals.witness(spirit.requireScript('spirit/puppetMode/script.js').puppetDoor({
       rootDir: ROOT_DIR,
       call: function (verb, args) { return nodeDoor.call(verb, args); },
@@ -1486,7 +1486,7 @@ catch (e) {
       isKnown: function (key) { return spirit.requireScript('spirit/hub/script.js').frontDoor(ROOT_DIR, key) === 'known'; },
       // THE GATE'S GRANTS (apiAuth/G1.2, G1.3): a member's paths from node.db, read through apiAuth.js;
       // a store that cannot be read throws, and the gate fails closed.
-      auth: spirit.requireScript('spirit/apiAuth/script.js').createApiAuth({ rootDir: ROOT_DIR }),
+      auth: spirit.requireScript('spirit/grant/auth/script.js').createApiAuth({ rootDir: ROOT_DIR }),
       log: function (line) { console.log(line); },
     }));
 
@@ -1507,7 +1507,7 @@ catch (e) {
     arrivals.witness(ownerPost.onArrival);
 
     // HIS SERVERS' BOX REPORTS, kept in memory and summed per box (G10).
-    boxes = spirit.requireScript('spirit/boxes/script.js').createBoxes({ rootDir: ROOT_DIR });
+    boxes = spirit.requireScript('spirit/fuckingGarbage/boxes.js').createBoxes({ rootDir: ROOT_DIR });
     arrivals.witness(boxes.onArrival);
     peerOwnerPost = function (puppetKey, verb, body) { return ownerPost.send(puppetKey, verb, body); };
   }
@@ -1691,7 +1691,7 @@ catch (e) {
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
   const nodeSearches = spirit.requireScript('spirit/nodeSearches/script.js').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.MIME_TYPES });
   // auth (apiAuth/G1.4, its own family since goal/G30.6): the owner's allow-table, loopback only. An answer is the verb's object as is; a refusal is the catalogue's, by name.
-  const apiAuth = spirit.requireScript('spirit/apiAuth/script.js').createApiAuth({
+  const apiAuth = spirit.requireScript('spirit/grant/auth/script.js').createApiAuth({
     rootDir: ROOT_DIR,
     tree: function () { return nodeDoor.ask('api').then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); },
   });
@@ -1704,18 +1704,23 @@ catch (e) {
   // SHIT NOW"): each grant row given or revoked, { table: 'grant', row }, gone when revoked; the job carries the auth
   // tables' rows, the table names which.
   try {
-    // THE AUTH TABLES' ROWS ARE NEWS OF spirit.auth (goal/G43.20): { table, row, gone }.
-    jobs.ownJob('spirit.auth');
+    // EACH AUTH TABLE'S ROWS ARE NEWS OF ITS OWN BRANCH (goal/G49.21, box v24: the grant, bundle and branch tables each "a new
+    // branch"): a change of the grant table on the job spirit.grant, of the bundle table on spirit.bundle, of the branch table on
+    // spirit.branch, { table, row, gone }, as each branch's client reads it.
+    const TABLE_JOBS = { grant: 'spirit.grant', bundle: 'spirit.bundle', branch: 'spirit.branch' };
+    Object.keys(TABLE_JOBS).forEach(function (t) { jobs.ownJob(TABLE_JOBS[t]); });
     apiAuth.onChange(function (change) {
       // EVERY FIELD, EVERY TIME: a job's update merges into what the job holds (jobs.updateJob), so a field left out
       // keeps its last value. Found on cw's face: after one revoke, gone stayed true, and every later grant was taken out.
       const c = change || {};
-      const data = { table: String(c.table || ''), row: c.row || {}, gone: c.gone === true };
-      try { jobs.ownNews('spirit.auth', 'row', data); } catch (e) { /* the next change publishes again */ }
+      const job = TABLE_JOBS[String(c.table || '')];
+      if (!job) return;
+      const data = { table: String(c.table), row: c.row || {}, gone: c.gone === true };
+      try { jobs.ownNews(job, 'row', data); } catch (e) { /* the next change publishes again */ }
     });
     // A CONTACT FORGOTTEN TAKES ITS GRANTS (goal/G47.4, Q3): each the hub revoked is news here as a revoke is.
     hub.grantsRevoked.subscribe(function (g) {
-      try { jobs.ownNews('spirit.auth', 'row', { table: 'grant', row: { key: String(g.key), path: String(g.path) }, gone: true }); } catch (e) { /* the next change publishes again */ }
+      try { jobs.ownNews('spirit.grant', 'row', { table: 'grant', row: { key: String(g.key), path: String(g.path) }, gone: true }); } catch (e) { /* the next change publishes again */ }
     });
   } catch (e) { /* no job, no stream: the lists still search */ }
   function authVerb(work) {
@@ -1742,20 +1747,39 @@ catch (e) {
   }
   const JOB = { id: '', kind: '', type: '', status: '' };
   const GRANT = { key: '', label: '', path: '' };
-  // AUTH, ITS OWN NODE FAMILY (goal/G30.6; Andy, 2026-10-20: "move auth stuff into its own node family."): the owner's
-  // allow-table for members, beside node, fs, jobs, peer and relay. It sat in jobs while jobs held the way to the
-  // servers it gates; with that gone, jobs is jobs alone. Local (wire: false).
-  loopbackVerbs.mount('auth', path.join(__dirname, '..', '..', 'auth'), {
-    'query': { request: { key: '', path: '' }, reply: { allowed: false }, handler: authVerb(apiAuth.query) },
-    'search': { request: { text: '' }, reply: LIST, handler: authVerb(apiAuth.search) },
-    'peer': { request: { key: '' }, reply: { records: [GRANT] }, handler: authVerb(apiAuth.peer) },
-    'grant': { request: { key: '', path: '' }, reply: GRANT, handler: authVerb(apiAuth.grant) },
-    'revoke': { request: { key: '', path: '' }, reply: { revoked: true }, handler: authVerb(apiAuth.revoke) },
-    'relabel': { request: { key: '', label: '' }, reply: { key: '', label: '' }, handler: authVerb(apiAuth.relabel) },
-    // goal/G41.14: the bundles and their branches (Andy, box: "TWO verbs under the auth family, auth.bundle and
-    // auth.branch ... Granted, no review.").
-    'bundle': { request: { op: '', id: 0, label: '', text: '', owner: '' }, reply: {}, handler: authVerb(apiAuth.bundle) },
-    'branch': { request: { op: '', id: 0, bundle: 0, family: '', verb: '', text: '' }, reply: {}, handler: authVerb(apiAuth.branch) },
+  // THE AUTH TABLES, A BRANCH EACH (goal/G49.21, box v24; Andy: "the table verbs imply move to the tables and become
+  // spirit.<table>.<verb>"; "i would hope that your table interfaces show some orthogonality"): spirit.grant, spirit.bundle and
+  // spirit.branch, each with search, get, add and delete, every call checked by its branch's own script before its handler, as
+  // spirit.job's are. The handlers are spirit/grant/auth/script.js's; the bundle and branch tables take one operation per verb.
+  // "the peer and relabel verbs go. die. perish." Local (wire: false).
+  const withOp = function (op, work) { return function (b) { return work(Object.assign({}, b, { op: op })); }; };
+  const tableBranches = [
+    ['spirit.grant', 'spirit/grant/script.js', 'grant', {
+      search: { reply: LIST, work: apiAuth.search },
+      get: { reply: { allowed: false }, work: apiAuth.query },
+      add: { reply: GRANT, work: apiAuth.grant },
+      delete: { reply: { revoked: true }, work: apiAuth.revoke },
+    }],
+    ['spirit.bundle', 'spirit/bundle/script.js', 'bundle', {
+      search: { reply: LIST, work: withOp('search', apiAuth.bundle) },
+      get: { reply: {}, work: withOp('get', apiAuth.bundle) },
+      add: { reply: {}, work: withOp('add', apiAuth.bundle) },
+      delete: { reply: {}, work: withOp('delete', apiAuth.bundle) },
+    }],
+    ['spirit.branch', 'spirit/branch/script.js', 'branch', {
+      search: { reply: LIST, work: withOp('search', apiAuth.branch) },
+      get: { reply: {}, work: withOp('get', apiAuth.branch) },
+      add: { reply: {}, work: withOp('add', apiAuth.branch) },
+      delete: { reply: {}, work: withOp('delete', apiAuth.branch) },
+    }],
+  ];
+  tableBranches.forEach(function (t) {
+    Promise.resolve(spirit.requireScript(t[1])).then(function (BRANCH) {
+      const checkedBy = checkedByBranch(t[0], BRANCH);
+      const verbs = {};
+      Object.keys(t[3]).forEach(function (v) { verbs[v] = { request: BRANCH.verbs[v], reply: t[3][v].reply, handler: checkedBy(v, authVerb(t[3][v].work)) }; });
+      loopbackVerbs.mount(t[0], path.join(__dirname, '..', '..', t[2]), verbs);
+    }, function (e) { console.error('the ' + t[0] + ' branch could not be bound: ' + ((e && e.message) || e)); });
   });
   // A NEW-SHAPE BRANCH'S CALLS, CHECKED BY ITS OWN SCRIPT (goal/G49.15, box v23: "the node must use this same script as
   // require to validate incoming requests."): checkedByBranch(name, branch)(verb, handler) checks a call's arguments with

@@ -8,12 +8,12 @@
 // probabilitySearch's selectorRow, so that the user-can see, which elements belong to the search."); the verb half's hiding until a family is chosen is the family selector's own.
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
-//     opts.bundle    the bundle whose branches it lists (auth.branch's bundle filter); none: every bundle's
+//     opts.bundle    the bundle whose branches it lists (spirit.branch.search's bundle filter); none: every bundle's
 //     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's
 //     opts.columns   the row's fields it shows, in order, of family, verb and delete; family and verb by default
 //     opts.empty     the words when nothing matches
-// A VIEW OF THE auth FAMILY'S BRANCHES (goal/G41.14, G41.28): auth.branch's search seats its rows there, and the node's
-// stream keeps them current through the auth family's cache manager (spirit/auth/data.js), so a branch added or deleted
+// A VIEW OF THE NODE'S BUNDLE ROWS (goal/G41.14, G41.28): spirit.branch.search seats its rows there, and the node's
+// stream keeps them current through the branch branch's cache manager (spirit/branch/client/script.js), so a branch added or deleted
 // anywhere shows in every list.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -32,7 +32,7 @@
   // (goal/G43.18, the box: "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too").
   var parts = Promise.all(['spirit/element/search/script.js', 'spirit/element/search/branch/row/script.js', 'spirit/element/search/api/script.js', 'spirit/element/search/api/verb/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
-  }).concat([window.spirit.requireScript('spirit/auth/api.js')]));
+  }).concat([window.spirit.requireScript('spirit/branch/script.js')]));
   var COLUMNS = {
     family: { field: 'family', label: 'Family', sort: 'text' },
     verb: { field: 'verb', label: 'Verb', sort: 'text' },
@@ -50,13 +50,13 @@
     box.style.overflow = 'hidden';
     host.appendChild(box);
 
-    // THE SOURCE: auth.branch's search, the text trimmed, narrowed by the bundle and by the filter's family and verb.
+    // THE SOURCE: spirit.branch.search, the text trimmed, narrowed by the bundle and by the filter's family and verb.
     function search(args) {
-      var ask = { op: 'search', text: String((args && args.text) || '').trim() };
+      var ask = { text: String((args && args.text) || '').trim() };
       if (o.bundle) ask.bundle = Number(o.bundle);
       if (family.family) ask.family = family.family;
       if (family.family && family.verb) ask.verb = family.verb;
-      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.branch(ask); }).then(function (got) {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/branch/script.js'); }).then(function (s) { return s.search(ask); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
@@ -64,9 +64,9 @@
     list = ANSWER['spirit/element/search/script.js'].create(box, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
-      // A view of the node's branches, the branch the auth family's manager keeps (spirit.required.spirit.data.auth.data.branches.branch).
-      data: window.spirit.required.spirit.data.auth.data.branches.branch,
-      api: 'spirit/auth/api.js',
+      // A view of the node's branches, the rows the branch branch's manager keeps (spirit.required.spirit.data.branch.data.branch).
+      data: window.spirit.required.spirit.data.branch.data.branch,
+      api: 'spirit/branch/script.js',
       verb: 'branch',
       face: o.face,
       placeholder: o.placeholder || 'choose a branch…',

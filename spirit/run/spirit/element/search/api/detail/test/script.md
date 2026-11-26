@@ -3,7 +3,7 @@
 The api search's detail (goal/G43.32; Andy: *"uniformity, in the search elements and their folders, contain list, row an
 detail elements."*): what a family is, read from the api tree its list was painted from. The family list opens it under
 itself in a pane when a row is pressed. Its test is `./script.js`: the browser file run in node on a bare window,
-the real api tree reader (`spirit/client/apiTreeIndex.js`) beside it.
+the real api tree reader (`spirit/fuckingGarbage/apiTreeIndex.js`) beside it.
 
 `spirit.required.spirit.element.search.api.detail.create(host, { family, tree })` -> `{ destroy() }`.
 

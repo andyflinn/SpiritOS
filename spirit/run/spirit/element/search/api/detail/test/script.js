@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/element/search/api/detail/test/script.js
 // The tests of spirit/element/search/api/detail/script.js, and of no other module (spec: ./script.md; goal/G43.32).
-// The browser file runs in node on a bare window, the real api tree reader (spirit/client/apiTreeIndex.js) beside it.
+// The browser file runs in node on a bare window, the real api tree reader (spirit/fuckingGarbage/apiTreeIndex.js) beside it.
 
 const fs = require('fs');
 const path = require('path');
@@ -41,7 +41,7 @@ test.run('the detail runs on a bare window, the real api tree reader beside it',
   // ITS ONE PART IS requireScript's ANSWER (goal/G49.9, box v5: "a test hands its stand-ins as requireScript's answers ... never by
   // writing them into spirit.required"; Andy: "spirit.requireScript must allways return either an object or a function... or
   // fail/throw"): apiTreeIndex.js, the real module, as the page's loader answers it.
-  const STANDS = { 'spirit/client/apiTreeIndex.js': LOADER.requireScript('spirit/client/apiTreeIndex.js') };
+  const STANDS = { 'spirit/fuckingGarbage/apiTreeIndex.js': LOADER.requireScript('spirit/fuckingGarbage/apiTreeIndex.js') };
   global.window.spirit.requireScript = function (p) {
     required.push(String(p));
     return Object.prototype.hasOwnProperty.call(STANDS, p) ? Promise.resolve(STANDS[p]) : Promise.reject(new Error('no stand-in for ' + p));
@@ -58,7 +58,7 @@ test.run('it places itself at spirit.required.spirit.element.search.api.detail, 
 }, test.limit.quick);
 test.run('it loads the api tree reader itself', 0.2, function () {
   if (!required) return false;
-  return required.indexOf('spirit/client/apiTreeIndex.js') !== -1 ? true : false;
+  return required.indexOf('spirit/fuckingGarbage/apiTreeIndex.js') !== -1 ? true : false;
 }, test.limit.quick);
 
 // a family's verbs, read from the tree it is handed

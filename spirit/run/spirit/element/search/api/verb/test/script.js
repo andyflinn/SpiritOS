@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/search/api/verb/test/script.js
 // The tests of spirit/element/search/api/verb/script.js, and of no other module (spec: ./script.md; goal/G41.5). The browser
 // file runs in node on a window of its own: probabilitySearch is a stub that keeps every list it was asked to make; the
-// tree index is the real one (spirit/client/apiTreeIndex.js).
+// tree index is the real one (spirit/fuckingGarbage/apiTreeIndex.js).
 
 const fs = require('fs');
 const path = require('path');
@@ -75,12 +75,12 @@ test.run('it adds apiVerbSelector with a create to window.spirit.required, and c
   // (spirit/test/headLessChrome.js pageSpirit).
   const recorder = win.spirit.requireScript;
   // The files of the tree it loads as they are, by their paths, through the page's requireScript (goal/G49.6).
-  const REAL = [SUBJECT, 'spirit/node/data.js', 'spirit/client/apiTreeIndex.js', 'spirit/data/script.js'];
+  const REAL = [SUBJECT, 'spirit/node/data.js', 'spirit/fuckingGarbage/apiTreeIndex.js', 'spirit/data/script.js'];
   LOADER.requireScript('spirit/test/headLessChrome.js').pageSpirit(win.spirit, null, { window: win, real: REAL });
   const pageRequire = win.spirit.requireScript;
   win.spirit.requireScript = function (p) { return /installSpiritElement\.js$/.test(p) || REAL.indexOf(String(p)) !== -1 ? pageRequire(p) : recorder(p); };
   vm.createContext(win);
-  win.spirit.requireScript('spirit/client/apiTreeIndex.js');
+  win.spirit.requireScript('spirit/fuckingGarbage/apiTreeIndex.js');
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.startPage leaves it before any element runs.
   win.spirit.requireScript('spirit/data/script.js');
   win.spirit.nodeFacts = { key: 'KEY+VERB/SELECTOR==' };

@@ -24,7 +24,7 @@
 // mark, no reading of the api tree for it (goal/G47.4; Andy: "get rid of that deprecated filter ... what the hell is it
 // even for?").
 // A BUNDLE IS NOT GRANTED BY REFERENCE (G41.13, box v7): the node's bundles are the one dictionary both kinds of grant are
-// made from, so the bundle's branches (auth.branch) are read here, and each becomes one grant through the grants table,
+// made from, so the bundle's branches (spirit.branch) are read here, and each becomes one grant through the grants table,
 // family.verb or the family alone for (ALL), a path already granted counted done.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -42,10 +42,10 @@
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/armingButton/script.js');
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/grant/script.js');
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.requireScript, each element bringing its own.
-  // And the auth family's cache manager, which nodeGrants (below) reads.
+  // And the grant branch's cache manager, which nodeGrants (below) reads, and the branch branch, which a bundle's paths come from.
   var parts = Promise.all(['spirit/element/search/contact/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/search/api/script.js',
     'spirit/element/search/grant/script.js', 'spirit/element/rowForm/script.js', 'spirit/element/armingButton/script.js'].map(function (p) { return window.spirit.requireScript ? window.spirit.requireScript(p) : null; })
-    .concat([window.spirit.requireScript('spirit/auth/api.js')]));
+    .concat([window.spirit.requireScript('spirit/grant/script.js'), window.spirit.requireScript('spirit/branch/script.js')]));
 
   // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): verb called on the branch at its api.js path (goal/G49.6: never
   // by a name), once the page is ready, answering { status, body } as a list reads it.
@@ -60,9 +60,9 @@
     }));
   }
 
-  // THE NODE'S GRANTS, AS A GRANTS TABLE (goal/G43.24, moved here from the Grants app): kept by the auth family's cache
-  // manager (spirit.required.spirit.data.auth.data.grants, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
-  // row arrives on the auth tables' job (table grant, gone when revoked, goal/G41.14). WHO ASKS FOR A CHANGE LISTENS FOR IT
+  // THE NODE'S GRANTS, AS A GRANTS TABLE (goal/G43.24, moved here from the Grants app): kept by the grant branch's cache
+  // manager (spirit.required.spirit.data.grant.data, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
+  // row arrives on the job spirit.grant (gone when taken back, goal/G41.14, G49.21). WHO ASKS FOR A CHANGE LISTENS FOR IT
   // (goal/G41.27): what grant and revoke send comes back through watch. The panel still knows no table of its own (Andy,
   // G41.16: "the callers ... should boody well know how to configure the damn grantsPanel element"): a caller picks this
   // one by name, grants: grantsPanel.nodeGrants, as the agent app hands its own.
@@ -72,15 +72,15 @@
     return { ok: false, code: String(b.code || ''), error: String(b.error || b.code || 'refused') };
   }
   var nodeGrants = {
-    get branch() { return window.spirit.required.spirit.data.auth.data.grants.branch; },
+    get branch() { return window.spirit.required.spirit.data.grant.data.branch; },
     // watch(fn): fn(id + newline + path, row) on every grant kept or let go; answers its release.
-    watch: function (fn) { return window.spirit.required.spirit.data.auth.data.grants.watch(fn); },
+    watch: function (fn) { return window.spirit.required.spirit.data.grant.data.watch(fn); },
     key: 'key',
     label: 'label',
-    // auth.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
+    // spirit.grant.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
     // panel reads one field.
     search: function (text) {
-      return ask('spirit/auth/api.js', 'search', { text: String(text || '') }).then(function (a) {
+      return ask('spirit/grant/script.js', 'search', { text: String(text || '') }).then(function (a) {
         var b = (a && a.body) || {};
         var items = (b.items || []).map(function (i) {
           var r = null;
@@ -90,8 +90,8 @@
         return { items: items, more: !!b.more };
       });
     },
-    grant: function (id, path) { return ask('spirit/auth/api.js', 'grant', { key: id, path: path }).then(answered); },
-    revoke: function (id, path) { return ask('spirit/auth/api.js', 'revoke', { key: id, path: path }).then(answered); },
+    grant: function (id, path) { return ask('spirit/grant/script.js', 'add', { key: id, path: path }).then(answered); },
+    revoke: function (id, path) { return ask('spirit/grant/script.js', 'delete', { key: id, path: path }).then(answered); },
   };
 
   function create(host, config) {
@@ -208,10 +208,10 @@
     // NO WARNING BEFORE A GRANT (goal/G43.27; Andy: "compare that to giving a linux user root authority, he then can fuck
     // up the whole system, not our problem."): the <verb>.warning.txt files and their reading went.
 
-    // A BUNDLE'S PATHS, from its branches (goal/G41.14): auth.branch's search on that bundle, each branch family.verb, or
+    // A BUNDLE'S PATHS, from its branches (goal/G41.14): spirit.branch.search on that bundle, each branch family.verb, or
     // the family alone for the empty verb.
     function bundlePaths(bundle) {
-      return ask('spirit/auth/api.js', 'branch', { op: 'search', text: '', bundle: Number(bundle.id) }).then(function (a) {
+      return ask('spirit/branch/script.js', 'search', { text: '', bundle: Number(bundle.id) }).then(function (a) {
         if (a.status !== 200) throw new Error(refusal(a.body));
         if (a.body && a.body.more) say('more branches than fit one answer: only the first are granted');
         return ((a.body && a.body.items) || []).map(function (i) {

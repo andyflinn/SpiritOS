@@ -123,7 +123,7 @@ function labelRefusal(text) {
 //
 // The rule is assertable and wsl-claude holds it: `hub.js` may call
 // `packet.encode` and never `packet.decode`.
-const packet = require('../script.js').requireScript('spirit/client/packet.js');
+const packet = require('../script.js').requireScript('spirit/peer/packet/script.js');
 
 // isLoopbackHost, assertRelayUrl and relayRequest MOVED to
 // spirit/relayRequest/script.js on 2026-09-16 (assertRelayUrl on to relayUrl.js, below). They were the node's outbound socket

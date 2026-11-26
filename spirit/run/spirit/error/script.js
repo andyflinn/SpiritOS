@@ -781,7 +781,7 @@ define('owner-only', { status: 403, texts: ['the owner\'s alone'] });
 define('client-mode', { status: 409, texts: ['this server is in client mode: it serves its own node alone'] });
 define('unknown-path', { status: 404, texts: ['no server serves that path, and no grant names it'] });
 define('not-a-path', { status: 400, texts: ['not an app or app.verb path'] });
-// goal/G41.14: auth.bundle's and auth.branch's. A bundle or branch id its table does not hold; a branch's family the
+// goal/G41.14: spirit.bundle's and spirit.branch's (once auth.bundle's and auth.branch's). A bundle or branch id its table does not hold; a branch's family the
 // node's api tree does not serve (a verb the family does not serve is no-such-verb); a family and verb the bundle holds.
 define('no-such-bundle', { status: 404, texts: ['no such bundle'] });
 define('no-such-branch', { status: 404, texts: ['no such branch'] });

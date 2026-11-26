@@ -100,7 +100,7 @@ require('../script.js');
 //
 // Andy's ruling on the three hand-rolled parses, 2026-10-10: "yes. we fix
 // redundant code now."
-var packet = spirit.requireScript('spirit/client/packet.js');
+var packet = spirit.requireScript('spirit/peer/packet/script.js');
 
 // THE ENVELOPE, READ ONCE. For a packet: { app, re, body }, with `app` ''
 // when it carries none — '' rather than null so a reader never has to

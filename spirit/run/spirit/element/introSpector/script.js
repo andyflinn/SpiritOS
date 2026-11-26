@@ -25,7 +25,7 @@
     if (a && typeof a.then === 'function') a.then(function (m) { ANSWER[p] = m; }, function () { /* not loaded: no answer */ }); else ANSWER[p] = a;
     return a;
   }
-  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/client/apiTreeIndex.js');
+  if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js');
   // What it reads, it asks for itself, as it runs (goal/G49.9; rule/26).
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/fieldInput/script.js');
   // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
@@ -197,7 +197,7 @@
       // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.
       branch.addEventListener('tree', function () {
         var tree = branch.tree;
-        var families = tree && tree.ok !== false ? ANSWER['spirit/client/apiTreeIndex.js'].servers(tree) : [];
+        var families = tree && tree.ok !== false ? ANSWER['spirit/fuckingGarbage/apiTreeIndex.js'].servers(tree) : [];
         branch.hidden = !families.length;
         if (!families.length) {
           say('no verbs available' + (tree && tree.ok === false ? ': ' + (tree.error || tree.code || 'refused') : ''));

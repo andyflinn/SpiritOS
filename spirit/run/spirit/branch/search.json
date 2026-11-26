@@ -1,0 +1,9 @@
+{
+  "description": "What the bundles hold, one row per branch and verb ('' for the whole branch): {items, more}, ranked by the words (text) and narrowed by each filter given, bundle, family and verb.",
+  "request": {
+    "text": "spirit/type/string/descriptionSelect/script.js?",
+    "bundle": "spirit/type/number/integer/script.js?",
+    "family": "spirit/type/string/word/script.js?",
+    "verb": "spirit/type/string/wordSelect/script.js?"
+  }
+}

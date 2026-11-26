@@ -13,7 +13,7 @@
 //     tabLabel(row) what names those tabs, its mounter's (the agent app's browserAgent.js), handed on to ../search/bundle/script.js
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/bundle/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -31,11 +31,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // their fields are and require that type"): the types fieldInput holds its fields to.
   if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); }
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/bundle/script.js');
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript; and the auth family's cache manager, whose
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript; and the bundle branch's cache manager, whose
   // bundles it adds to (goal/G41.28).
   var parts = Promise.all(['spirit/element/fieldInput/script.js', 'spirit/element/search/bundle/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
-  }).concat([window.spirit.requireScript('spirit/auth/api.js')]));
+  }).concat([window.spirit.requireScript('spirit/bundle/script.js')]));
   // The label's type, required here by its full path (goal/G49.13), and the text tidied as it is stored.
   function labelOf(text) {
     var T = ANSWER['spirit/type/string/label/script.js'];
@@ -79,11 +79,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }
-      // WHAT IT ADDS, IT LISTENS FOR (goal/G41.27, G41.28): the bundle arrives in the auth family's cache
-      // (spirit.required.spirit.data.auth.data.bundles), which the pane is a view of, so it shows there by itself; once it is there, Add's
+      // WHAT IT ADDS, IT LISTENS FOR (goal/G41.27, G41.28): the bundle arrives in the bundle branch's cache
+      // (spirit.required.spirit.data.bundle.data), which the pane is a view of, so it shows there by itself; once it is there, Add's
       // label is cleared and the add is said.
       var waitingFor = '';
-      stop = window.spirit.required.spirit.data.auth.data.bundles.watch(function (key, v) {
+      stop = window.spirit.required.spirit.data.bundle.data.watch(function (key, v) {
         if (!waitingFor || !v || String(v.label || '') !== waitingFor) return;
         waitingFor = '';
         input.value = '';
@@ -94,7 +94,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
         if (got.why) { say(got.why); return null; }
         say('');
         waitingFor = got.value;
-        return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'add', label: got.value }); }).then(null, function (e) {
+        return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/bundle/script.js'); }).then(function (s) { return s.add({ label: got.value }); }).then(null, function (e) {
           waitingFor = '';
           say((e && (e.message || e.refusal)) || 'not added');
         });

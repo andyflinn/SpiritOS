@@ -72,7 +72,8 @@ function readDependencies() {
 async function testicleActive(on) {
   try {
     const app = await spirit.requireScript('spirit/app/script.js');
-    await spirit.callOutcome(app['spirit.app.active']({ key: 'spirit.app.testicle', active: on }));
+    // The branch's own name for the verb active (its script's functions: activeApp); a bound branch keys no call by its wire name.
+    await spirit.callOutcome(app.activeApp({ key: 'spirit.app.testicle', active: on }));
     return true;
   } catch (e) { return false; }
 }

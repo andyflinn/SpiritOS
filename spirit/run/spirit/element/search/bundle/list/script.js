@@ -11,12 +11,12 @@
 //     opts.columns   the row's fields it shows, in order, of label and owner; both by default
 //     opts.family    an app server's name: it lists the bundles that server owns alone (goal/G41.25)
 //     opts.empty     the words when nothing matches
-// A VIEW OF THE auth FAMILY'S BUNDLES (goal/G41.14, G41.28; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their
-// data set"): auth.bundle's search seats its rows there, and the node's stream keeps them current through the auth
-// family's cache manager (spirit/auth/data.js), so a bundle added, renamed or deleted anywhere shows in every list.
+// A VIEW OF THE NODE'S BUNDLES (goal/G41.14, G41.28; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their
+// data set"): spirit.bundle.search seats its rows there, and the node's stream keeps them current through the bundle
+// branch's cache manager (spirit/bundle/client/script.js), so a bundle added, renamed or deleted anywhere shows in every list.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/bundle/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -31,7 +31,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   if (window.spirit.requireScript) ['spirit/element/search/script.js', 'spirit/element/search/bundle/row/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
   // And the auth family's cache manager, whose bundles branch the list is a view of (goal/G41.28).
-  window.spirit.requireScript('spirit/auth/api.js');
+  window.spirit.requireScript('spirit/bundle/script.js');
   var COLUMNS = {
     label: { field: 'label', label: 'Bundle', sort: 'text' },
     owner: { field: 'owner', label: 'Owner', sort: 'text' },
@@ -45,11 +45,11 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // configured for an appServer, then it will only list bundles \"owned\" by that Appserver"): the node is asked for
     // them, and of the bundles the page holds only that owner's are offered.
     var family = typeof o.family === 'string' && o.family ? o.family : '';
-    // THE SOURCE: auth.bundle's search, the text trimmed, answered as a reply.
+    // THE SOURCE: spirit.bundle.search, the text trimmed, answered as a reply.
     function search(args) {
       var text = String((args && args.text) || '').trim();
-      var ask = family ? { op: 'search', text: text, owner: family } : { op: 'search', text: text };
-      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/auth/api.js'); }).then(function (s) { return s.bundle(ask); }).then(function (got) {
+      var ask = family ? { text: text, owner: family } : { text: text };
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/bundle/script.js'); }).then(function (s) { return s.search(ask); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
@@ -57,9 +57,9 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     list = ANSWER['spirit/element/search/script.js'].create(host, {
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
-      // A view of the node's bundles, the branch the auth family's manager keeps (spirit.required.spirit.data.auth.data.bundles.branch).
-      data: window.spirit.required.spirit.data.auth.data.bundles.branch,
-      api: 'spirit/auth/api.js',
+      // A view of the node's bundles, the rows the bundle branch's manager keeps (spirit.required.spirit.data.bundle.data.branch).
+      data: window.spirit.required.spirit.data.bundle.data.branch,
+      api: 'spirit/bundle/script.js',
       verb: 'bundle',
       face: o.face,
       placeholder: o.placeholder || 'choose a bundle…',

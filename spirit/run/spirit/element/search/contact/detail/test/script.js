@@ -233,7 +233,7 @@ function relayWorld(rows, relayStatus) {
   const w = { required: [], calls: [], posts: [], armings: [], closed: 0, document: document };
   // THE NODE BEHIND THE SPIRIT OBJECT (goal/G43.24): every family.verb the panel asks is recorded (w.calls), and each
   // packet it posts to a relay through peer.post is read out of its envelope (w.posts), the relay's answer put in one.
-  const P = LOADER.requireScript('spirit/client/packet.js');
+  const P = LOADER.requireScript('spirit/peer/packet/script.js');
   const relayAnswer = function (body) {
     if (body && body.config && !Object.keys(body.config).length) return ALLOC;
     if (body && body.config && body.config.restart) return { ok: true, restarting: true };

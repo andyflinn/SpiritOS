@@ -1,0 +1,7 @@
+{
+  "description": "The node's bundles ranked by the words (text) over their labels, an owner narrowing it to that owner's bundles: {items, more}.",
+  "request": {
+    "text": "spirit/type/string/descriptionSelect/script.js?",
+    "owner": "spirit/type/string/word/script.js?"
+  }
+}

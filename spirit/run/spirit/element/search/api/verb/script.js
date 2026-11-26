@@ -24,7 +24,7 @@
   // this file), and with it the node family's cache manager, the keeper of the verbs it draws from (goal/G41.28).
   var parts = Promise.all([window.spirit.requireScript ? keepAnswer('spirit/element/search/script.js') : null,
     window.spirit.requireScript ? keepAnswer('spirit/element/search/api/list/script.js') : null,
-    window.spirit.requireScript ? keepAnswer('spirit/client/apiTreeIndex.js') : null,
+    window.spirit.requireScript ? keepAnswer('spirit/fuckingGarbage/apiTreeIndex.js') : null,
     keepAnswer('spirit/node/api.js')]);
 
   function createApiVerbSelector(options) {

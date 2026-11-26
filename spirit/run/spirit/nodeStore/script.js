@@ -406,8 +406,6 @@ function open(rootDir, opts) {
     // themselves, '' when the table has no row for them.
     aHas: db.prepare('SELECT 1 FROM grants WHERE peer_id = ? AND path = ?'),
     aPaths: db.prepare('SELECT path FROM grants WHERE peer_id = ? ORDER BY path'),
-    aPeer: db.prepare(`SELECT g.peer_id AS key, ${GRANT_NAME} AS label, g.path AS path FROM grants g
-      LEFT JOIN seen s ON s.publicKey = g.peer_id WHERE g.peer_id = ? ORDER BY g.path`),
     aAll: db.prepare(`SELECT g.peer_id AS key, ${GRANT_NAME} AS label, g.path AS path FROM grants g
       LEFT JOIN seen s ON s.publicKey = g.peer_id ORDER BY label, g.path`),
     aKnownPath: db.prepare('SELECT 1 FROM grants WHERE path = ? LIMIT 1'),
@@ -885,11 +883,10 @@ function open(rootDir, opts) {
     },
 
     // apiAuth/G1.3's table, for apiAuth.js alone. The name a grant shows is its ID's row in seen (goal/G40.11): a
-    // grant given under a name writes it as myLabel when the row has none, and a relabel is that row's myLabel.
+    // grant given under a name writes it as myLabel when the row has none (goal/G49.21: the verb that renamed it is gone).
     auth: {
       has: function (key, p) { return !!q.aHas.get(String(key), String(p)); },
       paths: function (key) { return q.aPaths.all(String(key)).map(function (r) { return r.path; }); },
-      peer: function (key) { return q.aPeer.all(String(key)).map(function (r) { return { key: r.key, label: r.label, path: r.path }; }); },
       all: function () { return q.aAll.iterate(); },
       knownPath: function (p) { return !!q.aKnownPath.get(String(p)); },
       // The name for a key that holds a grant, '' when its row has none; null when it holds no grant.
@@ -906,11 +903,6 @@ function open(rootDir, opts) {
         });
       },
       revoke: function (key, p) { return q.aGrantDel.run(String(key), String(p)).changes > 0; },
-      relabel: function (key, label) {
-        if (!q.aGranted.get(String(key))) return false;
-        store.seen.set(String(key), { myLabel: String(label) });
-        return true;
-      },
     },
 
     // goal/G41.14's two tables, for apiAuth.js alone: the bundles and their branches, each keyed by a number.

@@ -19,7 +19,7 @@
 // tree and refuses a family and verb the bundle holds already; a refusal is said in the page in the node's words.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/auth/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/bundle/script.js', 'spirit/branch/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -35,13 +35,14 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   var parts = Promise.all(['spirit/element/search/api/script.js', 'spirit/element/search/branch/script.js', 'spirit/element/rowForm/script.js'].map(function (p) {
     return window.spirit.requireScript ? window.spirit.requireScript(p) : null;
-  }).concat([window.spirit.requireScript ? keepAnswer('spirit/element/armingButton/script.js') : null, keepAnswer('spirit/auth/api.js')]));
+  }).concat([window.spirit.requireScript ? keepAnswer('spirit/element/armingButton/script.js') : null, keepAnswer('spirit/bundle/script.js'), keepAnswer('spirit/branch/script.js')]));
 
   function mount(box, o) {
     box.innerHTML = '';
-    var A = ((window.spirit.required.spirit.data || {}).auth || {}).data;
+    var BUNDLES = ((window.spirit.required.spirit.data || {}).bundle || {}).data;
+    var BRANCHES = ((window.spirit.required.spirit.data || {}).branch || {}).data;
     // ITS DELETION HEARD, FROM THIS SCREEN OR ANY OTHER: the mounter closes it.
-    var offBundle = A && typeof o.gone === 'function' ? A.bundles.watch(function (key, v) {
+    var offBundle = BUNDLES && typeof o.gone === 'function' ? BUNDLES.watch(function (key, v) {
       if (String(key) === String(o.bundle) && !v) o.gone();
     }) : null;
     if ((o.owner || 'node') !== 'node') {
@@ -68,19 +69,19 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
 
     function say(text) { said.textContent = String(text || ''); }
     // WHAT IT ADDS, IT FOLLOWS IN spirit.required.spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
-    // changes shit it listens to fucking update via the spirit object"): the branches the auth family's cache keeps
-    // (spirit.required.spirit.data.auth.data.branches). The branch asked for, once there, is said added.
+    // changes shit it listens to fucking update via the spirit object"): the rows the branch branch's cache keeps
+    // (spirit.required.spirit.data.branch.data). The branch asked for, once there, is said added.
     var waiting = null;
-    var off = A ? A.branches.watch(function (id, v) {
+    var off = BRANCHES ? BRANCHES.watch(function (id, v) {
       if (!waiting || !v) return;
       if (Number(v.bundle) === waiting.bundle && String(v.family) === waiting.family && String(v.verb || '') === waiting.verb) { waiting = null; say('added'); }
     }) : null;
     function addBranch() {
       if (!family.family) { say('choose a family first'); return null; }
       say('');
-      var ask = { op: 'add', bundle: Number(o.bundle), family: family.family, verb: family.verb || '' };
+      var ask = { bundle: Number(o.bundle), family: family.family, verb: family.verb || '' };
       waiting = { bundle: ask.bundle, family: ask.family, verb: ask.verb };
-      return spirit.readyPromise.then(function () { return keepAnswer('spirit/auth/api.js'); }).then(function (s) { return s.branch(ask); }).then(function () {
+      return spirit.readyPromise.then(function () { return keepAnswer('spirit/branch/script.js'); }).then(function (s) { return s.add(ask); }).then(function () {
         branches.refresh();
       }, function (e) { waiting = null; say((e && (e.message || e.refusal)) || 'not added'); });
     }
@@ -96,7 +97,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     box.appendChild(delSaid);
     ANSWER['spirit/element/armingButton/script.js'].attach(del.button, { label: 'Delete', run: function () {
       delSaid.textContent = '';
-      return spirit.readyPromise.then(function () { return keepAnswer('spirit/auth/api.js'); }).then(function (s) { return s.bundle({ op: 'delete', id: Number(o.bundle) }); }).then(null, function (e) {
+      return spirit.readyPromise.then(function () { return keepAnswer('spirit/bundle/script.js'); }).then(function (s) { return s.delete({ id: Number(o.bundle) }); }).then(null, function (e) {
         delSaid.textContent = (e && (e.message || e.refusal)) || 'not deleted';
       });
     } });

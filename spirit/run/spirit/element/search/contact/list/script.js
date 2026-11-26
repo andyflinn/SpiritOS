@@ -37,7 +37,7 @@
 // shadow roll : key:ID (ID-field-rules, label (label-field rules)", "table:\"loopback://api/contact/search\"", and "if
 // neccessary: key field name ... label field name"): opts.table names any ID table of the shadow roll's shape as
 // loopback://api/<family>/<verb>, searched through the spirit object at that family and verb with the words typed: a search
-// verb takes { text }, a table's one verb (the agent tables', auth.bundle) { op: 'search', text }. opts.key and opts.label
+// verb takes { text }, a table's one verb (the agent tables') { op: 'search', text }. opts.key and opts.label
 // name the fields of a row's label json its ID and its label are in; without them the item's key is the ID and the row's
 // label (or name) its label. opts.data the branch its caller keeps them in. No table, or the contacts' own, is the contacts.
 // A table's rows are no contacts: each is a plain row of its label, with no contact filters and nothing to open.

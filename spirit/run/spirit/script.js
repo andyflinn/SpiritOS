@@ -1035,7 +1035,7 @@
       var o = how && typeof how === 'object' ? how : {};
       var waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : 30000;
       if (!port()) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: spirit/state/environment.json names no port' });
-      if (!packet) packet = requireOne('spirit/client/packet.js');
+      if (!packet) packet = requireOne('spirit/peer/packet/script.js');
       var made = packet.encode(app, body);
       if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
       return post('event.subscribe', {}, { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {
@@ -1099,7 +1099,7 @@
     return;
   }
 
-  // ON A PAGE: spirit.peerPost is the home node's peer.post, the body in its packet envelope (spirit/client/packet.js),
+  // ON A PAGE: spirit.peerPost is the home node's peer.post, the body in its packet envelope (spirit/peer/packet/script.js),
   // as the node's own peerPost sends it (goal/G43.24: it sent {app, body} unwrapped, so elements wrapped it themselves).
   // It resolves what a process's peerPost resolves, the answer's body decoded, {ok: false, code, error} for a post that did
   // not get through; never rejects. how.answer true resolves the node's whole answer read as a page needs it instead,
@@ -1111,7 +1111,7 @@
   self.peerPost = function (peer, app, body, how) {
     var whole = !!(how && how.answer === true);
     // What it needs, it requires itself: packet.js on a page wants the limits before it (spirit/limits/script.js).
-    return Promise.resolve(requireOne('spirit/limits/script.js')).then(function () { return requireOne('spirit/client/packet.js'); }).then(function () {
+    return Promise.resolve(requireOne('spirit/limits/script.js')).then(function () { return requireOne('spirit/peer/packet/script.js'); }).then(function () {
       var made = self.required.spirit.client.packet.encode(app, body);
       if (!made || !made.ok) return whole ? { ok: false, body: null, card: null, from: '', error: (made && made.error) || 'the ask could not be encoded' }
         : { ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' };

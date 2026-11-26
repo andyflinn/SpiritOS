@@ -19,7 +19,7 @@ list.js and a row.js script to fit within the probabilitySearch framework."*
 - **The label is shown only** (goal/G41.26, Andy: *"bundleSelector:pane mode the Label should now just be an output,
   field: A bundles label is determined when it's added, and cannot be modified. This will protect family owned bundles
   from having their label mutilated."*): mounted, with the old `editable` option or without it, the label cell shows the
-  label, escaped, and holds no input; the row asks the node no set, ever (there is none, `../../../../../apiAuth/test/script.md`).
+  label, escaped, and holds no input; the row asks the node no set, ever (there is none, `../../../../../grant/auth/test/script.md`).
 - It repaints from the data set (goal/G41.14, Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that
   changes their data set"*): when its row in the auth family's bundles (`spirit.required.spirit.data.auth.data.bundles.row(<its id>)`;
   goal/G41.28, `<node>/auth/bundles/<id>` in `spirit.required.spirit.data`) changes, as the node's stream sets it, its label
