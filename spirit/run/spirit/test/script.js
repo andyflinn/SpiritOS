@@ -287,7 +287,7 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'statePath'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
@@ -339,6 +339,17 @@ function statesOf(o) {
 }
 test.run('in node, spirit.statePath answers spirit/state/ and the path without its leading spirit: spirit/app/desk is spirit/state/app/desk', 0.2, function () { return statesOf(s) || false; }, test.limit.quick);
 test.run('on a page, spirit.statePath answers the same', 0.2, function () { return T.w && T.w.spirit ? statesOf(T.w.spirit) || false : false; }, test.limit.quick);
+// dottedPath and slashedPath (goal/G49.19; Andy: "put functions spirit.dottedPath(slashedPath), spirit.slashedPath(dottedPath)
+// next to excapeHtml()", "it just a formatting of a whole path, to fit fs,js,or http-server. it's not an alteration of the
+// path itself"): the same whole path, in dots or in slashes, each way and back.
+function pathsOf(o) {
+  if (!o || typeof o.dottedPath !== 'function' || typeof o.slashedPath !== 'function') return false;
+  return o.dottedPath('spirit/app/desk') === 'spirit.app.desk' && o.slashedPath('spirit.app.desk') === 'spirit/app/desk' &&
+    o.dottedPath('spirit/fake') === 'spirit.fake' && o.slashedPath('spirit.fake') === 'spirit/fake' &&
+    o.slashedPath(o.dottedPath('spirit/job/processJob')) === 'spirit/job/processJob';
+}
+test.run('in node, spirit.dottedPath answers a slashed path in dots, spirit/app/desk is spirit.app.desk, and spirit.slashedPath answers it back', 0.2, function () { return pathsOf(s) || false; }, test.limit.quick);
+test.run('on a page, spirit.dottedPath and spirit.slashedPath answer the same', 0.2, function () { return T.w && T.w.spirit ? pathsOf(T.w.spirit) || false : false; }, test.limit.quick);
 // normalizeString (goal/G49.13; Andy: "place additional string utilities ... or put inside of spirit/script.js beside
 // spirit.escapeHtml() normalizeString(str)"): fieldRules' normalize moved into the spirit object, as it does today: one Unicode
 // form (NFC), every run of white space one space, the ends trimmed; anything but a string is ''.
