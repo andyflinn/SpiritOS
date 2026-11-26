@@ -367,3 +367,67 @@ test.run('a folder holding script.js alone carries neither api nor branch', 0.2,
 test.run('an app folder carries app, and is not live with no node.json', 0.2, function () { return (!!rows && !!rows.app && rows.app.app === true && rows.app.live === false) || false; }, test.limit.quick);
 test.run('its node.json written active true makes it live', 0.2, function () { return (!!rows && rows.on === true) || false; }, test.limit.quick);
 test.run('its node.json changed to active false makes it not live again', 0.2, function () { return (!!rows && rows.off === false) || false; }, test.limit.quick);
+
+// ── A NEW-STYLE APP (goal/G49.20, box v31, "WHAT IS AN APP?") ──
+// "a new-style app MUST have a valid <name>/manifest.json and no <name>/<name>.json"; the fs cache sets the app flag on the
+// folder's row by it: valid by spirit/type/object/manifest/script.js; "node:mount:true, then [it] MUST have a <name>/script.js
+// AND a <name>/server/script.js AND a <name>/client/script.js, and only then is it also a branch"; "node:run:true the app MUST
+// have a <name>/server/script.js and a <name>/script.js, but NO <name>/client/script.js"; "shell:mount:true, the app must have
+// a <name>/element/script.js". Each folder sits outside spirit/app/ (an app may be mounted anywhere) and holds no json named
+// after itself, so the old rule never flags it: what flags it is the new one.
+let newApps = null;
+const NEW_APPS = {
+  zzMount: { manifest: { node: { mount: true } }, files: ['script.js', 'server/script.js', 'client/script.js'] },
+  zzMountNoServer: { manifest: { node: { mount: true } }, files: ['script.js', 'client/script.js'] },
+  zzRun: { manifest: { node: { run: true } }, files: ['script.js', 'server/script.js'] },
+  zzRunClient: { manifest: { node: { run: true } }, files: ['script.js', 'server/script.js', 'client/script.js'] },
+  zzShell: { manifest: { shell: { mount: true } }, files: ['element/script.js'] },
+  zzShellNoElement: { manifest: { shell: { mount: true } }, files: [] },
+  zzBoth: { manifest: { node: { mount: true, run: true } }, files: ['script.js', 'server/script.js', 'client/script.js'] },
+  zzNone: { manifest: { shell: { mount: false }, node: { mount: false, run: false } }, files: ['element/script.js'] },
+  zzBroken: { manifest: '{ "shell": { "mount": tr', files: ['element/script.js'] },
+};
+test.run('the watcher runs on a scratch folder holding new-style apps, each with its manifest.json, and their rows are read', 0.2, function () {
+  const dir = path.join(RUN, 'fsServer-newApps-test');
+  fs.rmSync(dir, { recursive: true, force: true });
+  const put = function (rel, text) { const f = path.join(dir, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
+  Object.keys(NEW_APPS).forEach(function (n) {
+    const a = NEW_APPS[n];
+    put('spirit/zzApps/' + n + '/manifest.json', typeof a.manifest === 'string' ? a.manifest : JSON.stringify(a.manifest));
+    a.files.forEach(function (f) { put('spirit/zzApps/' + n + '/' + f, '// x\n'); });
+  });
+  try {
+    const src = [
+      "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
+      "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
+      "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
+      "const job = W.start(dir, jobs);",
+      "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'dataset', 'script.js')) + ");",
+      "const names = " + JSON.stringify(Object.keys(NEW_APPS)) + ";",
+      "const end = Date.now() + 40000;",
+      "(function tick() {",
+      "  if (!F.ready() && Date.now() < end) return setTimeout(tick, 200);",
+      "  setTimeout(function () {",
+      "    const out = {};",
+      "    names.forEach(function (n) { const r = F.file('spirit/zzApps/' + n); out[n] = r ? { app: r.app === true, branch: r.branch === true } : null; });",
+      "    console.log(JSON.stringify(out));",
+      "    try { job._stop(); } catch (e) {}",
+      "    process.exit(0);",
+      "  }, 1500);",
+      "})();",
+    ].join('\n');
+    const r = spawnSync(process.execPath, ['-e', src, dir], { cwd: RUN, encoding: 'utf8', timeout: 90000 });
+    try { newApps = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { newApps = null; }
+    return (!!newApps && Object.keys(NEW_APPS).every(function (n) { return !!newApps[n]; })) || false;
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}, test.limit.long);
+const flagOf = function (n) { return newApps && newApps[n] ? newApps[n] : null; };
+test.run('node mount true with script.js, server/script.js and client/script.js: an app, and a branch', 0.2, function () { const r = flagOf('zzMount'); return (!!r && r.app === true && r.branch === true) || false; }, test.limit.quick);
+test.run('node mount true with no server/script.js: no app', 0.2, function () { const r = flagOf('zzMountNoServer'); return (!!r && r.app === false) || false; }, test.limit.quick);
+test.run('node run true with server/script.js and script.js, no client/script.js: an app, and no branch', 0.2, function () { const r = flagOf('zzRun'); return (!!r && r.app === true && r.branch === false) || false; }, test.limit.quick);
+test.run('node run true with a client/script.js: no app', 0.2, function () { const r = flagOf('zzRunClient'); return (!!r && r.app === false) || false; }, test.limit.quick);
+test.run('shell mount true with element/script.js: an app', 0.2, function () { const r = flagOf('zzShell'); return (!!r && r.app === true) || false; }, test.limit.quick);
+test.run('shell mount true with no element/script.js: no app', 0.2, function () { const r = flagOf('zzShellNoElement'); return (!!r && r.app === false) || false; }, test.limit.quick);
+test.run('a manifest with node mount true and node run true: no app', 0.2, function () { const r = flagOf('zzBoth'); return (!!r && r.app === false) || false; }, test.limit.quick);
+test.run('a manifest where none of shell mount, node mount and node run is true: no app', 0.2, function () { const r = flagOf('zzNone'); return (!!r && r.app === false) || false; }, test.limit.quick);
+test.run('a manifest.json that is no JSON: no app', 0.2, function () { const r = flagOf('zzBroken'); return (!!r && r.app === false) || false; }, test.limit.quick);

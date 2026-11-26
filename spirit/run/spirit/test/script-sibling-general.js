@@ -2802,6 +2802,21 @@ if (!GIVEN.length) {
   ['spirit/job/api.js', 'spirit/job/data.js', 'spirit/joinStepsJob'].forEach(function (rel) {
     test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
   });
+  // THE APP BRANCH IN THE NEW SHAPE (goal/G49.20, box v31): "spirit/app/script.js --> spirit/app/manager/script.js",
+  // "spirit/app/api.js --> spirit/app/script.js", "spirit/app/data.js --> spirit/app/client/script.js".
+  ['spirit/app/manager/script.js', 'spirit/app/client/script.js'].forEach(function (rel) {
+    test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
+  });
+  ['spirit/app/api.js', 'spirit/app/data.js'].forEach(function (rel) {
+    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+  });
+  test.run('spirit/app/manager/script.js is the manager: it holds createApp', 0.2, function () {
+    return /\bfunction createApp\s*\(/.test(codeText('spirit/app/manager/script.js')) || false;
+  }, test.limit.quick);
+  test.run('spirit/app/script.js is the interface: it names the verbs search, active, label and icon, and holds no createApp', 0.2, function () {
+    const c = codeText('spirit/app/script.js');
+    return (['search', 'active', 'label', 'icon'].every(function (v) { return new RegExp('\\b' + v + '\\s*:\\s*\\{').test(c); }) && !/createApp/.test(c)) || false;
+  }, test.limit.quick);
   test.run('spirit/job/engine/script.js is the engine: it holds installJobs', 0.2, function () {
     return /\bfunction installJobs\s*\(/.test(codeText('spirit/job/engine/script.js')) || false;
   }, test.limit.quick);

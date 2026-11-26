@@ -288,7 +288,7 @@ test.run('nothing in spirit.js but isNode() and isBrowser() asks where it runs',
 }, test.limit.quick);
 // data: the cache, spirit.required.spirit.data (goal/G41.3); readStream: the one reader of every stream a page has (goal/G47.1, the box, "Reload
 // Problems with the face": "one place only manages the stream ... spirit.js").
-const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'callOutcome', 'checkArgs', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
+const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'apiTree', 'appPath', 'callOutcome', 'checkArgs', 'debugLog', 'dottedPath', 'escapeHtml', 'eventStream', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'logError', 'nodeFacts', 'normalizeParagraph', 'normalizeString', 'peerPost', 'readStream', 'requireScript', 'ruleNames', 'slashedPath', 'statePath'];
 test.run('in node the instance holds exactly its members, and the branches it binds', 0.2, function () {
   return JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'eventStream', 'nodeFacts'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS) || false;
 }, test.limit.quick);
@@ -351,6 +351,49 @@ function pathsOf(o) {
 }
 test.run('in node, spirit.dottedPath answers a slashed path in dots, spirit/app/desk is spirit.app.desk, and spirit.slashedPath answers it back', 0.2, function () { return pathsOf(s) || false; }, test.limit.quick);
 test.run('on a page, spirit.dottedPath and spirit.slashedPath answer the same', 0.2, function () { return T.w && T.w.spirit ? pathsOf(T.w.spirit) || false : false; }, test.limit.quick);
+// spirit.appPath (goal/G49.20, box v31: "a new function spirit.appPath(elementPath) allows an app element to discover it's
+// app-ID"; it "first calls spirit.requireScript('spirit/fs/script.js') and waits for the file-cache to be ready", and "finds the
+// app path by moving in the elementPath toward the trunk, catching the app-mark on the fs-cache row"). In a process of its own
+// whose watcher fills the file cache from a scratch folder inside the run root: a new-style app at spirit/zzApps/zzShell/ and
+// an old-style one at spirit/app/zzOld/, each element asked for its app's id.
+const AP = { out: null };
+test.run('spirit.appPath is run in a process whose file cache holds a new-style and an old-style app', 0.2, function () {
+  const dir = path.join(RUN, 'spirit-appPath-test');
+  fs.rmSync(dir, { recursive: true, force: true });
+  const put = function (rel, text) { const f = path.join(dir, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
+  put('spirit/zzApps/zzShell/manifest.json', JSON.stringify({ shell: { mount: true } }));
+  put('spirit/zzApps/zzShell/element/script.js', '// x\n');
+  put('spirit/zzApps/zzShell/element/part/deeper/script.js', '// x\n');
+  put('spirit/app/zzOld/zzOld.json', '{}');
+  put('spirit/app/zzOld/element.js', '// x\n');
+  try {
+    const src = [
+      "const s = require(" + JSON.stringify(path.join(RUN, 'spirit', 'script.js')) + ");",
+      "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
+      "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
+      "const job = W.start(process.argv[1], jobs);",
+      "(async function () {",
+      "  const out = {};",
+      "  if (typeof s.appPath !== 'function') { console.log(JSON.stringify({ none: true })); process.exit(0); }",
+      "  const p = s.appPath('spirit/zzApps/zzShell/element/script.js');",
+      "  out.promise = !!p && typeof p.then === 'function';",
+      "  out.shell = await p;",
+      "  out.deeper = await s.appPath('spirit/zzApps/zzShell/element/part/deeper/script.js');",
+      "  out.old = await s.appPath('spirit/app/zzOld/element.js');",
+      "  console.log(JSON.stringify(out));",
+      "  try { job._stop(); } catch (e) {}",
+      "  process.exit(0);",
+      "})().catch(function (e) { console.log(JSON.stringify({ threw: String(e) })); process.exit(0); });",
+    ].join('\n');
+    const r = spawnSync(process.execPath, ['-e', src, dir], { cwd: RUN, encoding: 'utf8', timeout: 90000 });
+    try { AP.out = JSON.parse(String(r.stdout || '').trim().split('\n').pop()); } catch (e) { AP.out = null; }
+    return (!!AP.out && !AP.out.none && !AP.out.threw) || false;
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}, test.limit.long);
+test.run('spirit.appPath answers a promise', 0.2, function () { return (!!AP.out && AP.out.promise === true) || false; }, test.limit.quick);
+test.run('spirit.appPath of a new-style app\'s element/script.js is the app\'s id, spirit.zzApps.zzShell', 0.2, function () { return (!!AP.out && AP.out.shell === 'spirit.zzApps.zzShell') || false; }, test.limit.quick);
+test.run('spirit.appPath of an element deeper in that app is the same id', 0.2, function () { return (!!AP.out && AP.out.deeper === 'spirit.zzApps.zzShell') || false; }, test.limit.quick);
+test.run('spirit.appPath of an old-style app\'s element.js is that app\'s id, spirit.app.zzOld', 0.2, function () { return (!!AP.out && AP.out.old === 'spirit.app.zzOld') || false; }, test.limit.quick);
 // normalizeString (goal/G49.13; Andy: "place additional string utilities ... or put inside of spirit/script.js beside
 // spirit.escapeHtml() normalizeString(str)"): fieldRules' normalize moved into the spirit object, as it does today: one Unicode
 // form (NFC), every run of white space one space, the ends trimmed; anything but a string is ''.
@@ -747,6 +790,18 @@ test.run('on a page, spirit/type/string/label/script.js required stands at spiri
   const onPage = await wq.spirit.requireScript(PAGE_COMPONENT);
   const placed = placeOf(wq.spirit, PAGE_COMPONENT);
   return (!!placed && typeof placed.isValid === 'function' && onPage === placed && !wq.scriptError) || false;
+}, test.limit.quick);
+// EACH LOADED SCRIPT TOLD ITS PATH (goal/G49.20, box v31: "for isBrowser() the loader puts the script's path on its module box
+// before it runs, and on its handed-out object after; for isNode(), the module's own file name gives it, and the loader will
+// reduce it the the spirit path"): the object the loader hands out carries _spiritPath, its run path.
+test.run('in node, the object the loader hands out carries _spiritPath, its run path spirit/relayUrl/script.js', 0.2, async function () {
+  const got = await s.requireScript(COMPONENT);
+  return (!!got && got._spiritPath === COMPONENT) || false;
+}, test.limit.quick);
+test.run('on a page, the object the loader hands out carries _spiritPath, its run path spirit/type/string/label/script.js', 0.2, async function () {
+  if (!T.wq) return false;
+  const got = await T.wq.spirit.requireScript(PAGE_COMPONENT);
+  return (!!got && got._spiritPath === PAGE_COMPONENT) || false;
 }, test.limit.quick);
 test.run('on a page, spirit/data/script.js required stands at spirit.required.spirit.data, the real one, and the require answers it', 0.2, async function () {
   if (!T.wq) return false;
