@@ -434,7 +434,8 @@ if (served.length) {
       if (!up()) return false;
       let ok = true;
       for (const b of switched) {
-        const on = await raw('app.active', { key: b.family, active: true });
+        // The app branch's verbs by its id since goal/G49.20: spirit.app.active.
+        const on = await raw('spirit.app.active', { key: b.family, active: true });
         if (on.status !== 200) ok = false;
       }
       return ok;

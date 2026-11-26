@@ -875,11 +875,11 @@ test.run('on the node, spirit/relayUrl/script.js stands at spirit.required.spiri
   return placeOf(s, COMPONENT) === real || false;
 }, test.limit.quick);
 // A FOLDER'S SCRIPT.JS AND THE FOLDER ARE ONE PLACE (goal/G49.9, box v5: "a folder's script.js stands at its folder's own
-// name ... and what the folder holds stands under it"; it was goal/G43.32's spirit.required.spirit.app.script): spirit/app/manager/script.js
-// takes spirit.required.spirit.app, a first level spirit.js makes ahead, and keeps spirit/app/script.js placed under it.
-test.run('on the node, spirit/app/manager/script.js stands at spirit.required.spirit.app, and spirit/app/script.js under it', 0.2, function () {
-  const appJs = s.requireScript('spirit/app/manager/script.js');
-  return (s.required.spirit.app === appJs && s.required.spirit.app.api === require(path.join(RUN, 'spirit/app/script.js'))) || false;
+// name ... and what the folder holds stands under it"): since goal/G49.20 the app manager is spirit/app/manager/script.js, so
+// it stands at its own folder's name, spirit.required.spirit.app.manager.
+test.run('on the node, spirit/app/manager/script.js stands at spirit.required.spirit.app.manager', 0.2, function () {
+  const manager = s.requireScript('spirit/app/manager/script.js');
+  return (!!manager && !!s.required.spirit.app && s.required.spirit.app.manager === manager) || false;
 }, test.limit.quick);
 test.run('on the node, an interface is still bound by asking a node, as a promise', 0.2, function () {
   const iface = s.requireScript('spirit/demo/api.js');
