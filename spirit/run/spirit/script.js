@@ -630,7 +630,7 @@
     if (!Object.prototype.hasOwnProperty.call(nodeOnce, p)) {
       var mod = require(require('path').join(RUN_ROOT, p));
       if (!placeable(mod)) return '';
-      nodeOnce[p] = mod;
+      nodeOnce[p] = markPath(mod, p);
       placeAt(required, p, mod);
     }
     return isInterface(nodeOnce[p]) ? name : '';
@@ -643,7 +643,7 @@
     // placed at once, before the branch is bound, so an app server checks its calls by it without asking a node.
     if (fam && isNode() && !Object.prototype.hasOwnProperty.call(nodeOnce, p)) {
       var apiFile = require('path').join(RUN_ROOT, p);
-      if (nodeFiles().statFile(p)) { nodeOnce[p] = require(apiFile); placeAt(required, p, nodeOnce[p]); }
+      if (nodeFiles().statFile(p)) { nodeOnce[p] = markPath(require(apiFile), p); placeAt(required, p, nodeOnce[p]); }
     }
     if (fam && key) { pathOf[fam] = pathOf[fam] || p; return bindPeer(key, fam, how); }
     // On a page the api.js the node handed over stands at its place once its branch is bound.
@@ -667,6 +667,7 @@
       // A SCRIPT ANSWERS AN OBJECT OR A FUNCTION, OR FAILS (goal/G49.9; Andy: "of course spirit.requireScript must allways
       // return either an object or a function... or fail/throw."), so its folder's other scripts can stand under it.
       if (!placeable(mod)) return Promise.reject(refusal('not-placeable', p + ' exposes ' + typeof mod + ': a script exposes an object'));
+      markPath(mod, p);
       nodeOnce[p] = mod;
       placeAt(required, p, mod);
       return mod;
@@ -690,6 +691,7 @@
       try { box = injectBoxed(p, text(r.bytes)); } finally { collecting = outer; }
       if (box && box.set) {
         if (!placeable(box.exports)) throw refusal('not-placeable', p + ' exposes ' + typeof box.exports + ': a script exposes an object');
+        markPath(box.exports, p);
         placeAt(required, p, box.exports);
       }
       // A NEW-SHAPE BRANCH'S script.js (goal/G49.15), once it has run: bound by its path's name, as an api.js is.
@@ -701,13 +703,62 @@
           return bindOwn(named).then(function (m) { if (m && required !== m) standAt(required, p, m); return m; });
         });
       }
-      return Promise.all(tree).then(function () { return keptAt(p); });
+      return Promise.all(tree).then(function () { return markPath(keptAt(p), p); });
     });
     requiredOnce[p] = answer;
     // A refused require is not kept: it may be asked again.
     answer.then(null, function () { if (requiredOnce[p] === answer) delete requiredOnce[p]; });
     if (collecting) collecting.push(answer);
     return answer;
+  }
+
+  // EACH LOADED SCRIPT TOLD ITS PATH (goal/G49.20, box v31: "the loader puts the script's path on its module box before it runs,
+  // and on its handed-out object after; for isNode(), the module's own file name gives it, and the loader will reduce it the the
+  // spirit path"): _spiritPath, its run path, on the object the loader hands out. Not enumerable, so a script's own members are
+  // listed as they were; an object that takes no property is handed out as it is.
+  function markPath(obj, p) {
+    if (obj && (typeof obj === 'object' || typeof obj === 'function') && obj._spiritPath !== p) {
+      try { Object.defineProperty(obj, '_spiritPath', { value: p, enumerable: false, configurable: true, writable: true }); } catch (e) { /* frozen: as it is */ }
+    }
+    return obj;
+  }
+  // A path as the spirit tree knows it: run-root relative, '/' between parts. In node a module's own file name (module.filename,
+  // the whole disc path) is reduced to it.
+  function runPathOf(p) {
+    var s = String(p == null ? '' : p);
+    if (isNode()) {
+      var nodePath = require('path');
+      if (nodePath.isAbsolute(s)) s = nodePath.relative(RUN_ROOT, s);
+    }
+    return s.split('\\').join('/').replace(/^\/+/, '');
+  }
+  // AN APP ELEMENT'S APP (goal/G49.20, box v31, "how an app's elements know it's app's ID"; Andy: "apps may be "installed" via git
+  // repo cloning. so they can be "mounted" at a user-defined spot in the spirit tree, and its scripts won't know their own spirit
+  // path nor the apps spirit path"): spirit.appPath(elementPath) "first calls spirit.requireScript('spirit/fs/script.js') and
+  // waits for the file-cache to be ready", then "finds the app path by moving in the elementPath toward the trunk, catching the
+  // app-mark on the fs-cache row". It answers a promise: the app's id, its folder in dots (spirit.app.desk), or '' when no
+  // folder on the way up is an app. In node the file cache is spirit/fs/dataset/script.js, which requires spirit/fs/script.js
+  // and, in a process no watcher feeds, follows the node's stream; on a page spirit/fs/script.js brings its client.
+  function appPath(elementPath) {
+    var p = runPathOf(elementPath);
+    var loaded = isNode() ? Promise.resolve(requireOne('spirit/fs/dataset/script.js')) : Promise.resolve(requireOne('spirit/fs/script.js'));
+    return loaded.then(function () {
+      var fsData = required.spirit && required.spirit.data && required.spirit.data.fs && required.spirit.data.fs.data;
+      if (!fsData) return '';
+      return new Promise(function (resolve) {
+        if (fsData.ready()) { resolve(); return; }
+        var release = fsData.watch(function () { if (fsData.ready()) { if (typeof release === 'function') release(); resolve(); } });
+        if (fsData.ready()) { if (typeof release === 'function') release(); resolve(); }
+      }).then(function () {
+        var parts = p.split('/');
+        for (var n = parts.length - 1; n > 0; n -= 1) {
+          var dir = parts.slice(0, n).join('/');
+          var row = fsData.file(dir);
+          if (row && row.app === true) return dottedPath(dir);
+        }
+        return '';
+      });
+    });
   }
 
   // THE MIME TYPES (goal/G40.1), the spirit object's own table. Andy: "MIME types can easily be added to spirit.js", and
@@ -760,6 +811,7 @@
   self.callOutcome = outcome;
   self.apiTree = tree;
   self.requireScript = requireOne;
+  self.appPath = appPath;
 
   self.MIME_TYPES = MIME_TYPES;
   self.VERSION = VERSION;
@@ -1365,7 +1417,10 @@
     if (/\.css$/.test(p) || !/\.js$/.test(p)) { inject(p, src); return null; }
     var id = 'b' + (boxes += 1);
     var start = {};
-    var box = { exports: start };
+    // THE SCRIPT'S OWN PATH, IN ITS BOX BEFORE IT RUNS (goal/G49.20, box v31: "for isBrowser() the loader puts the script's path
+    // on its module box before it runs, and on its handed-out object after"): a script that needs it while it loads (a client
+    // script registering its data under its app's id) reads module._spiritPath.
+    var box = { exports: start, _spiritPath: p };
     var slot = self.moduleBoxes = self.moduleBoxes || {};
     slot[id] = box;
     try {

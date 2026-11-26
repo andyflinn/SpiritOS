@@ -52,7 +52,7 @@ function readRun(rootDir) {
   return function (rel) { try { return fs.readFileSync(path.join(rootDir, rel), 'utf8'); } catch (e) { return null; } };
 }
 function folderFlags(dir, has, read) {
-  return { api: FLAG_API(dir, has), branch: FLAG_BRANCH(dir, has), app: FLAG_APP(dir, has), live: FLAG_LIVE(dir, read) };
+  return { api: FLAG_API(dir, has), branch: FLAG_BRANCH(dir, has), app: FLAG_APP(dir, has, read), live: FLAG_LIVE(dir, read) };
 }
 function sameFlags(a, row) {
   return a.api === (row.api === true) && a.branch === (row.branch === true) && a.app === (row.app === true) && a.live === (row.live === true);
@@ -145,6 +145,9 @@ function start(rootDir, jobs) {
       const up = dir.lastIndexOf('/');
       if (up > 0) reflag(dir.slice(0, up));
     }
+    // A NEW-STYLE APP'S manifest.json CHANGED (goal/G49.20, box v31): its validity is the app mark, so a change to its text
+    // works its folder's flags out again, as a file made or gone does.
+    if (dir && op === 'changeFile' && /\/manifest\.json$/.test(rel)) reflag(dir);
     // AN APP SWITCHED ON OR OFF (goal/G49.15): its node.json in its state folder made, changed or gone turns that app's
     // live. Which app: the app folder whose spirit.statePath is that folder (goal/G49.17), found among the tree's apps.
     if (/^spirit\/state\/app\/[^/]+\/node\.json$/.test(rel) && op !== 'createDirectory' && op !== 'deleteDirectory') {
