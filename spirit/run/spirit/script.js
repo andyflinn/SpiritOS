@@ -193,13 +193,17 @@
   // THE RUN ROOT, the folder every run path starts at: one up from this file, since it moved into spirit/ (goal/G43.18; Andy:
   // "we need to move run://spirit.js to run://spirit/script.js"). In node only.
   var RUN_ROOT = isNode() ? require('path').join(__dirname, '..') : '';
-  var PORT = 0;
-  if (isNode()) {
-    try { PORT = Number(JSON.parse(require('fs').readFileSync(require('path').join(RUN_ROOT, 'spirit', 'state', 'environment.json'), 'utf8')).PORT) || 0; } catch (e) { PORT = 0; }
+  // THE PORT, READ WHEN IT IS NEEDED (goal/G49.19; Andy: "anytime a node.js process requires(spirit) spirit itself fetches the
+  // port from environment.json", and "agreed to the spirit object reading spirit/state/environment.json"): read from the
+  // file at each use, never once at load. The node itself loads this file a moment before it writes that file, so a port
+  // read at load was none on a fresh tree, and a stale one where an earlier run had left the file. 0 when there is none.
+  function port() {
+    if (!isNode()) return 0;
+    try { return Number(JSON.parse(require('fs').readFileSync(require('path').join(RUN_ROOT, 'spirit', 'state', 'environment.json'), 'utf8')).PORT) || 0; } catch (e) { return 0; }
   }
   function parse(text) { try { return JSON.parse(text); } catch (e) { return null; } }
   function noNode() { return refusal('no-node', 'this VM has no node: spirit/state/environment.json names no port'); }
-  function door() { return isNode() ? 'http://127.0.0.1:' + PORT : ''; }
+  function door() { return isNode() ? 'http://127.0.0.1:' + port() : ''; }
   // The face's link to its home node (window.spirit.transport), on a page only.
   function link() { return isBrowser() && self.transport && typeof self.transport === 'object' ? self.transport : null; }
   // post(verb, args) -> {status, text, body}: { call: verb, args } to the node's /spirit, the name and the arguments
@@ -209,7 +213,7 @@
   function post(verb, args, how) {
     var l = link();
     if (l && typeof l.ask === 'function') return Promise.resolve(l.ask(verb, args || {}));
-    if (isNode() && !PORT) return Promise.reject(noNode());
+    if (isNode() && !port()) return Promise.reject(noNode());
     var payload = { call: String(verb), args: args || {} };
     var headers = { 'Content-Type': 'application/json' };
     Object.keys((how && how.headers) || {}).forEach(function (k) { headers[k] = how.headers[k]; });
@@ -222,7 +226,7 @@
     var p = String(path || '').replace(/^\/+/, '');
     var l = link();
     if (l && typeof l.file === 'function') return Promise.resolve(l.file(p, function () {})).then(function (r) { return { status: r.status, type: r.type || '', bytes: r.bytes }; });
-    if (isNode() && !PORT) return Promise.reject(noNode());
+    if (isNode() && !port()) return Promise.reject(noNode());
     return fetch(door() + '/' + p).then(function (r) {
       return r.arrayBuffer().then(function (b) { return { status: r.status, type: (r.headers && r.headers.get('Content-Type')) || '', bytes: new Uint8Array(b) }; });
     });
@@ -396,11 +400,11 @@
       var half = own ? nodeHalf(def) : null;
       // Bound calls go to a node: in node with no port there is none to send them to, so a branch with no node half is not
       // bound (no default port).
-      if (isNode() && !PORT && !half) throw noNode();
+      if (isNode() && !port() && !half) throw noNode();
       var through = !half ? ask : function (name, args) {
         var a = half.answer(name.slice(fam.length + 1), args || {});
         if (a !== undefined) return Promise.resolve(a);
-        if (!PORT) return Promise.reject(noNode());
+        if (!port()) return Promise.reject(noNode());
         return ask(name, args);
       };
       return member(through, getFile, fam, def);
@@ -943,63 +947,12 @@
     var facts = {};
     try { var at = process.argv.indexOf('--node'); facts = at !== -1 ? (JSON.parse(String(process.argv[at + 1] || '')) || {}) : {}; } catch (e) { facts = {}; }
     var str = function (v) { return typeof v === 'string' ? v : ''; };
-    self.nodeFacts = { port: PORT, name: str(facts.name), key: str(facts.publicKey), ownerKey: str(facts.ownerKey) };
+    self.nodeFacts = { port: port(), name: str(facts.name), key: str(facts.publicKey), ownerKey: str(facts.ownerKey) };
 
-    // THIS PROCESS'S JOB (goal/G29.15), REPORTED BY THE ONE PATH TO PUBLISH (goal/G40.6; Andy, 2026-10-25: "ONE path for
-    // everybody to publish events"): a process the node started as a job publishes on it by event.publish with its own id
-    // (SPIRIT_JOB_ID), one post; the node changes the job and every subscriber hears it.
-    //   spirit.eventStream.publish(obj)   the object as the job's app, every page hears it; over PAYLOAD_MAX it is not sent,
-    //                  and the pages hear that one was dropped, with its size (fileTransfer goal/G1.4)
-    //   spirit.processJob.start(name), progress(done, total, text), end(result)   one job at a time: a start while one is open
-    //                  refuses job-open; each resolves once the node has it, so awaited calls arrive in order
-    //   spirit.processJob.report(patch), log(text), complete(data), fail(error)   the job's own state, and its three common forms
-    var JOB = String(process.env.SPIRIT_JOB_ID || '');
-    var PAYLOAD_MAX = require('./limits/script.js').PAYLOAD_MAX;
-    var openJob = null;
-    var jobs = self.processJob = self.processJob && typeof self.processJob === 'object' ? self.processJob : {};
-    var bytesOf = function (o) { try { return new TextEncoder().encode(JSON.stringify(o)).length; } catch (e) { return -1; } };
-    jobs.report = function (patch) {
-      if (!JOB) return Promise.reject(refusal('no-job', 'this process was not started by a node as a job (SPIRIT_JOB_ID is unset)'));
-      return post('event.publish', Object.assign({ id: JOB }, patch)).then(function (r) { return r && r.body; });
-    };
-    jobs.log = function (message) { return jobs.report({ logMessage: message }); };
-    jobs.complete = function (data) { return jobs.report({ status: 'completed', data: data }); };
-    jobs.fail = function (e) { return jobs.report({ status: 'failed', data: { error: String(e) } }); };
-    self.eventStream.publish = function (obj) {
-      if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return false;
-      var size = bytesOf(obj);
-      if (size < 0) return false;
-      var send = function (o) { Promise.resolve(jobs.report({ app: o })).catch(function () { /* not started by a node */ }); };
-      if (size > PAYLOAD_MAX) {
-        process.stderr.write('publish-too-large: ' + size + ' bytes, the limit is ' + PAYLOAD_MAX + '\n');
-        send({ dropped: { bytes: size, max: PAYLOAD_MAX } });
-        return false;
-      }
-      send(obj);
-      return true;
-    };
-    jobs.cycle = function (job) {
-      var one = { job: job };
-      var size = bytesOf(one);
-      if (size < 0) return Promise.resolve(false);
-      if (size > PAYLOAD_MAX) return Promise.resolve(self.eventStream.publish(one));
-      return jobs.report({ app: one }).then(function () { return true; }, function () { return false; });
-    };
-    jobs.start = function (name) {
-      if (openJob !== null) return Promise.reject(refusal('job-open', 'a job is open: ' + openJob + '; end it before starting ' + String(name || '')));
-      openJob = String(name || '');
-      return jobs.cycle({ state: 'start', name: openJob });
-    };
-    jobs.progress = function (done, total, text) {
-      return jobs.cycle({ state: 'progress', name: openJob === null ? '' : openJob, done: Number(done) || 0, total: Number(total) || 0, text: String(text || '') });
-    };
-    jobs.end = function (result) {
-      var one = { state: 'end', name: openJob === null ? '' : openJob };
-      openJob = null;
-      if (result instanceof Error) one.logError = String(result.message || result);
-      else if (result !== undefined) one.result = result;
-      return jobs.cycle(one);
-    };
+    // THIS PROCESS'S JOB IS spirit/job/processJob/script.js (goal/G49.19; Andy: "anything that can move out of spirit/script.js
+    // should move out. so put processJob into spirit/job/processJob/script.js"): its callers require it by its path. The
+    // spirit object keeps no copy; its eventStream.publish, a process's one way to publish, asks that script.
+    self.eventStream.publish = function (obj) { return self.requireScript('spirit/job/processJob/script.js').publish(obj); };
 
     // ASK A PEER AND AWAIT THE ANSWER (fileTransfer goal/G1.3), as it has always worked (Andy: "peer post will work the way
     // they ALWAY WORKED"), moved here from the old kernel unchanged in what it does: the node's events subscribed as a server
@@ -1014,7 +967,7 @@
     self.peerPost = function (peer, app, body, how) {
       var o = how && typeof how === 'object' ? how : {};
       var waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : 30000;
-      if (!PORT) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: spirit/state/environment.json names no port' });
+      if (!port()) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: spirit/state/environment.json names no port' });
       if (!packet) packet = requireOne('spirit/client/packet.js');
       var made = packet.encode(app, body);
       if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });

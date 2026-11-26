@@ -4,7 +4,7 @@
 // The tests of spirit/nodeSearches/script.js, and of no other module (spec: ./script.md). Its own test, owed since the
 // rule "every production script has its own test" (goal/G47.1, box v72).
 //
-// The node's jobs and files, searched rather than listed (puppets/G2): job.search, job.get and fs.search. The jobs
+// The node's jobs and files, searched rather than listed (puppets/G2): spirit.job.search, spirit.job.get and fs.search. The jobs
 // table is planted (listJobs, getJob, fsTreeEntries), and the files a contents search reads are in a scratch folder.
 
 const fs = require('fs');
@@ -54,17 +54,17 @@ function searches(jobs, tree) {
 }
 const N = searches(JOBS, TREE);
 
-// ── job.search ──
-test.run('job.search with no words, or *, is every job in the listing\'s order, key and label', 0.2, function () {
+// ── spirit.job.search ──
+test.run('spirit.job.search with no words, or *, is every job in the listing\'s order, key and label', 0.2, function () {
   const a = N.jobsSearch({ q: '' }), b = N.jobsSearch({ q: '*' });
   const want = [{ key: 'spirit.fs', label: 'spirit.fs (running)' }, { key: 'natter.relay', label: 'natter.relay (idle)' }, { key: 'desk.loop', label: 'desk.loop (running)' }];
   return (a.ok && short(a.items) === short(want) && short(b.items) === short(want) && a.more === false) || false;
 }, test.limit.quick);
-test.run('job.search ranks the words over the whole job as it is served, the match first', 0.2, function () {
+test.run('spirit.job.search ranks the words over the whole job as it is served, the match first', 0.2, function () {
   const got = keys(N.jobsSearch({ q: 'zanzibar' }));
   return got[0] === 'natter.relay' || false;
 }, test.limit.quick);
-test.run('job.search is cut by bytes, never by rows: what does not fit says more', 0.2, function () {
+test.run('spirit.job.search is cut by bytes, never by rows: what does not fit says more', 0.2, function () {
   const many = [];
   for (let i = 0; i < 2000; i += 1) many.push({ id: 'job.' + i, status: 'idle' });
   const r = searches(many, []).jobsSearch({ q: '' });
@@ -72,8 +72,8 @@ test.run('job.search is cut by bytes, never by rows: what does not fit says more
   return (r.more === true && r.items.length > 0 && r.items.length < 2000 && bytes <= limits.PLAINTEXT_MAX) || false;
 }, test.limit.quick);
 
-// ── job.get ──
-test.run('job.get answers one job, without its internals whose names start with an underscore', 0.2, function () {
+// ── spirit.job.get ──
+test.run('spirit.job.get answers one job, without its internals whose names start with an underscore', 0.2, function () {
   const r = N.jobsGet({ key: 'natter.relay' }), fsJob = N.jobsGet({ key: 'spirit.fs' });
   return (r.ok && r.key === 'natter.relay' && r.job.data.note === 'zanzibar' && fsJob.ok && !('_timer' in fsJob.job)) || false;
 }, test.limit.quick);
@@ -81,11 +81,11 @@ test.run('the file watcher carries no file list, but says how many entries it wa
   const j = N.jobsGet({ key: 'spirit.fs' }).job || {};
   return (j.data && j.data.fileCount === TREE.length && j.data.roots === 1 && !('files' in j.data)) || false;
 }, test.limit.quick);
-test.run('job.get with no key answers 400 key required, and with an unknown key 404 job not found', 0.2, function () {
+test.run('spirit.job.get with no key answers 400 key required, and with an unknown key 404 job not found', 0.2, function () {
   const a = N.jobsGet({}), b = N.jobsGet({ key: 'no.such' });
   return (a.status === 400 && a.error === 'key required' && b.status === 404 && b.error === 'job not found') || false;
 }, test.limit.quick);
-test.run('job.get of a job too big for a packet is refused, never cut', 0.2, function () {
+test.run('spirit.job.get of a job too big for a packet is refused, never cut', 0.2, function () {
   const r = searches([{ id: 'huge', status: 'idle', data: { blob: 'x'.repeat(limits.PLAINTEXT_MAX + 10) } }], []).jobsGet({ key: 'huge' });
   return (r.ok === false && r.status === 413) || false;
 }, test.limit.quick);

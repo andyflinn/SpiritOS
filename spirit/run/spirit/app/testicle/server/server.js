@@ -1184,7 +1184,7 @@ function toldOwed() {
   // BUSY AND RUNNING RIDE IT TOO (goal/G49.6; Andy: "cw, change that message."): a page that connects is handed the last
   // message only, and in a run that is this one, sent after each test; without them it drew idle while a run went on.
   const say = function () { if (owedTold === s) appServer.publish({ testicle: { owed: o, reds: reds, leaders: top, busy: busyNow(), running: runningNow() } }); };
-  Promise.resolve(spirit.processJob.report({ data: { owed: o, reds: reds, leaders: top } })).then(say, say);
+  Promise.resolve(spirit.requireScript('spirit/job/processJob/script.js').report({ data: { owed: o, reds: reds, leaders: top } })).then(say, say);
 }
 let busyTold = false;
 let runningTold = '';

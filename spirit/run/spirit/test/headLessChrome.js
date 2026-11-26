@@ -63,7 +63,7 @@ function watchRuns(root, name, opts) {
   const asked = (async function () {
     while (asking) {
       try {
-        const r = await fetch(opts.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'job.get', args: { key: 'spirit.app.' + name } }) });
+        const r = await fetch(opts.base + '/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'spirit.job.get', args: { key: 'spirit.app.' + name } }) });
         const b = await r.json();
         const pid = b && b.job && b.job.data && b.job.data.pid;
         if (pid) pids.add(String(pid));
@@ -186,7 +186,7 @@ function stopChild(child) { return new Promise(function (r) { if (!child || chil
 
 // A lab node, reset to the files under test, its node started. o.servers names app servers turned on before it starts, as
 // their owner turns one on: an app of spirit/app/<name>/ runs by active in spirit/state/<name>/node.json (goal/G43.12,
-// spirit/job/script.js), every server being one since goal/G43.20. o.before(run), when given, plants what the test needs in the
+// spirit/job/engine/script.js), every server being one since goal/G43.20. o.before(run), when given, plants what the test needs in the
 // tree before the node starts; o.start false hands out the tree with no node, for start() later; o.port a port of the
 // test's own. Answers { root, run, base, port, child, up, debug, start(), stop(), restart(), release() }: stop() ends the
 // node, restart() starts it again on the same tree and port, release() frees the lab node for the next test (it is freed

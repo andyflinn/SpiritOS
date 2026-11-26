@@ -42,7 +42,7 @@
     stopped: '🟠',
     error: '⚠️',
   };
-  // The canonical set lives in spirit/run/spirit/job/script.js (TERMINAL_STATUSES), node-side; its copy here is the only one on a page.
+  // The canonical set lives in spirit/run/spirit/job/engine/script.js (TERMINAL_STATUSES), node-side; its copy here is the only one on a page.
   var TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
 
   // CANCEL OR DELETE, ONE RULE (goal/G47.1; wsl: "the Jobs detail already decides Cancel against Delete from a job's state, so
@@ -59,7 +59,7 @@
   function nameOf(job) { return String(job.module || job.id); }
 
   // THE KIND (goal/G29.14; Andy: "server-stats, relay-presence and fs-watcher are neither appServers nor transient"): the
-  // node's own jobs (kind permanent in spirit/run/spirit/job/script.js) are node; appServers are servers; a process started for one
+  // node's own jobs (kind permanent in spirit/run/spirit/job/engine/script.js) are node; appServers are servers; a process started for one
   // run is transient.
   function kindOf(job) { return job.kind === 'permanent' ? 'node' : job.kind === 'server' ? 'server' : 'transient'; }
 

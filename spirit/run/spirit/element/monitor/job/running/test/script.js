@@ -52,7 +52,7 @@ test.run('it loads through spirit.requireScript, at spirit.required.spirit.eleme
 test.run('it requires the jobs branch\'s interface and the value tile itself', 0.2, async function () {
   if (!W.loaded) return false;
   const asked = JSON.parse((await js('JSON.stringify(window.__asked || [])')) || '[]');
-  return asked.indexOf('spirit/job/api.js') !== -1 && asked.indexOf('spirit/element/monitor/value/script.js') !== -1 ? true : false;
+  return asked.indexOf('spirit/job/script.js') !== -1 && asked.indexOf('spirit/element/monitor/value/script.js') !== -1 ? true : false;
 }, test.limit.quick);
 test.run('mounted, it is a value tile: its icon 🏃 drawn by the icon element, and its label Jobs running', 0.4, async function () {
   if (!W.loaded) return false;

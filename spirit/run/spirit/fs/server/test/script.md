@@ -1,6 +1,6 @@
 # spirit/fs/server/script.js
 
-The file watcher, the fs cache's one writer (goal/G49.15, box v16: *"The watcher leaves spirit/job/script.js for the fs branch,
+The file watcher, the fs cache's one writer (goal/G49.15, box v16: *"The watcher leaves spirit/job/engine/script.js for the fs branch,
 with the flags. job/script.js keeps the jobs and the app starts."*; *"the watcher lands in spirit/fs/server/script.js and is
 required by the node"*). `start(rootDir, jobs)` answers its job.
 

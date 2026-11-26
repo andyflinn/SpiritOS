@@ -162,7 +162,7 @@ test.run('once the tree is answered, no icons.js runs', 0.2, async function () {
 // the box, 10: "The node keeps one job for the app, module spirit.app.icons, open while the app is switched on"
 test.run('spirit.app.icons is an open job', 0.2, async function () {
   if (!W.ready) return false;
-  const job = await ask('job.get', { key: 'spirit.app.icons' });
+  const job = await ask('spirit.job.get', { key: 'spirit.app.icons' });
   const j0 = (job.body && job.body.job) || null;
   return !!j0 && !/end|exit|stop|cancel|fail/i.test(String(j0.status || '')) ? true : false;
 }, test.limit.quick);
@@ -211,7 +211,7 @@ test.run('after the runs it is the same job, spirit.app.icons, still open', 0.2,
   if (!W.drew) return false;
   await add(W.chrome, W.G2, 'giraffe');
   await until(function () { return Promise.resolve(W.G2 in (json(W.SET) || {})); }, 10000);
-  const job2 = await ask('job.get', { key: 'spirit.app.icons' });
+  const job2 = await ask('spirit.job.get', { key: 'spirit.app.icons' });
   const j2 = (job2.body && job2.body.job) || null;
   return !!j2 && !/end|exit|stop|cancel|fail/i.test(String(j2.status || '')) ? true : false;
 }, test.limit.quick);
@@ -271,7 +271,7 @@ test.run('switched off, the api tree holds no icons branch', 0.2, async function
 }, test.limit.quick);
 test.run('switched off, the spirit.app.icons job is no longer open', 0.2, async function () {
   if (!W.ready) return false;
-  const jOff = await ask('job.get', { key: 'spirit.app.icons' });
+  const jOff = await ask('spirit.job.get', { key: 'spirit.app.icons' });
   const jo = (jOff.body && jOff.body.job) || null;
   return !jo || /end|exit|stop|cancel|off/i.test(String(jo.status || '')) ? true : false;
 }, test.limit.quick);

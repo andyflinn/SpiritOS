@@ -70,7 +70,7 @@ test.run('switched on, the server answers chat.chats.search', 0.2, async functio
 }, test.limit.quick);
 test.run('its job spirit.app.chat is running', 0.2, async function () {
   if (!X.up) return false;
-  const job = await X.call('job.get', { key: 'spirit.app.chat' });
+  const job = await X.call('spirit.job.get', { key: 'spirit.app.chat' });
   return !!job.body && !!job.body.job && job.body.job.status === 'running' ? true : false;
 }, test.limit.quick);
 test.run('no chatClerver verb is a verb of this node, because the branch is chat', 0.2, async function () {

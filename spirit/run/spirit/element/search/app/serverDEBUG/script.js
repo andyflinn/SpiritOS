@@ -10,7 +10,7 @@
 // the jobs family's cache; a press asks the server's DEBUG {on}, and the job's next change redraws it.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/app/api.js','spirit/job/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/app/api.js','spirit/job/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -21,7 +21,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   }
   keepAnswer('spirit/element/search/app/rowFormToggle/script.js');
   keepAnswer('spirit/app/api.js');
-  keepAnswer('spirit/job/api.js');
+  keepAnswer('spirit/job/script.js');
 
   var LIVE = { running: true, pending: true };
 
@@ -58,7 +58,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       t.set(now, 'turn ' + (now ? 'off' : 'on') + ' DEBUG ' + label());
       shown(true);
     }
-    Promise.resolve(keepAnswer('spirit/job/api.js')).then(function () {
+    Promise.resolve(keepAnswer('spirit/job/script.js')).then(function () {
       if (gone) return;
       offJobs = S.required.spirit.data.job.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
       paint();

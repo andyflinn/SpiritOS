@@ -116,7 +116,7 @@ const arrivals = spirit.requireScript('spirit/arrivals/script.js').createArrival
 // before this file listens (goal/G22.5, Andy 2026-10-13).
 
 
-const jobs = spirit.requireScript('spirit/job/script.js').installJobs(port);
+const jobs = spirit.requireScript('spirit/job/engine/script.js').installJobs(port);
 // THE FS CACHE'S WRITER, THE FILE WATCHER, IS THE fs BRANCH'S (goal/G49.15, box v16: "the watcher lands in spirit/fs/server/script.js
 // and is required by the node."), its job in this node's job table.
 spirit.requireScript('spirit/fs/server/script.js').start(ROOT_DIR, jobs);
@@ -124,7 +124,7 @@ spirit.requireScript('spirit/fs/server/script.js').start(ROOT_DIR, jobs);
 // they draw when a seat, a contact or a face changes and never ask. Refreshed at /spirit after a relay, contact or
 // peer verb has answered (below), the moment the node knows.
 let joinStepsJob = null;
-try { joinStepsJob = spirit.requireScript('spirit/joinStepsJob/script.js').create(ROOT_DIR, jobs); } catch (e) { joinStepsJob = null; }
+try { joinStepsJob = spirit.requireScript('spirit/job/joinStepsJob/script.js').create(ROOT_DIR, jobs); } catch (e) { joinStepsJob = null; }
 // THE ONE TABLE ON THE STREAM (goal/G40.11; Andy, 2026-10-26: "yes." to "one job for the table, one changed row per
 // update"): the permanent job 'shadow', published with each row of seen as it changed ({row}; {row: {publicKey, gone}}
 // when it went). It replaced the relays-whole job of goal/G40.10: a screen holds its rows and takes
@@ -1077,7 +1077,7 @@ const server = http.createServer((req, res) => {
     //
     // `POST /api/proxy` is `net.fetch`. `POST /api/jobs`,
     // `POST /api/job/<id>` and `POST /api/job/<id>/cancel` are
-    // `job.create`, `job.update` and `job.cancel`, claimed by the
+    // `spirit.job.create`, `job.update` and `spirit.job.cancel`, claimed by the
     // jobs module at the foot of this file (job.update is event.publish
     // since goal/G40.6).
     //
@@ -1098,7 +1098,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // `DELETE /api/job/<id>` STOOD HERE and is `job.delete` under the one
+  // `DELETE /api/job/<id>` STOOD HERE and is `spirit.job.delete` under the one
   // door. It was the last method this server answered besides GET and
   // POST, so DELETE goes out of the Allow header with it.
 
@@ -1753,18 +1753,43 @@ catch (e) {
     'bundle': { request: { op: '', id: 0, label: '', text: '', owner: '' }, reply: {}, handler: authVerb(apiAuth.bundle) },
     'branch': { request: { op: '', id: 0, bundle: 0, family: '', verb: '', text: '' }, reply: {}, handler: authVerb(apiAuth.branch) },
   });
-  loopbackVerbs.mount('job', path.join(__dirname, '..', '..', 'job'), {
-    'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }) },
-    'get': { request: { key: '' }, reply: { ok: true, key: '', job: JOB }, handler: proxyVerb(function (b) { return nodeSearches.jobsGet(b); }) },
-    'create': { request: { command: '', args: '', type: '' }, reply: JOB, handler: handleCreateJob },
-    'cancel': { request: { id: '' }, reply: JOB, handler: handleCancelJob },
+  // A NEW-SHAPE BRANCH'S CALLS, CHECKED BY ITS OWN SCRIPT (goal/G49.15, box v23: "the node must use this same script as
+  // require to validate incoming requests."): checkedByBranch(name, branch)(verb, handler) checks a call's arguments with
+  // spirit.checkArgs against branch.verbs[verb] before the handler runs, and refuses 400 with the check's code. spirit.fs's
+  // and spirit.job's alike.
+  function checkedByBranch(name, branch) {
+    return function (verb, handler) {
+      return function (req, res) {
+        return readJsonBody(req).then(function (body) {
+          const bad = spirit.checkArgs(name + '.' + verb, branch.verbs[verb], body && typeof body === 'object' && !Array.isArray(body) ? body : {});
+          if (bad) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ ok: false, code: bad.code, error: bad.message, argument: bad.argument }));
+            return null;
+          }
+          return handler(req, res);
+        }, function () { return handler(req, res); });
+      };
+    };
+  }
+  // THE spirit.job BRANCH, BY ITS OWN SCRIPT (goal/G49.19, box: "move spirit/job to the new format"; the shape spirit.fs took
+  // in goal/G49.15): mounted under its path's name, spirit.job, each verb's arguments from spirit/job/script.js and every call
+  // checked against them before its handler.
+  Promise.resolve(spirit.requireScript('spirit/job/script.js')).then(function (JOB_BRANCH) {
+  const checkedBy = checkedByBranch('spirit.job', JOB_BRANCH);
+  loopbackVerbs.mount('spirit.job', path.join(__dirname, '..', '..', 'job'), {
+    'search': { request: JOB_BRANCH.verbs.search, reply: LIST, handler: checkedBy('search', proxyVerb(function (b) { return nodeSearches.jobsSearch(b); })) },
+    'get': { request: JOB_BRANCH.verbs.get, reply: { ok: true, key: '', job: JOB }, handler: checkedBy('get', proxyVerb(function (b) { return nodeSearches.jobsGet(b); })) },
+    'create': { request: JOB_BRANCH.verbs.create, reply: JOB, handler: checkedBy('create', handleCreateJob) },
+    'cancel': { request: JOB_BRANCH.verbs.cancel, reply: JOB, handler: checkedBy('cancel', handleCancelJob) },
     // 204, no body.
-    'delete': { request: { id: '' }, reply: {}, handler: handleDeleteJob },
+    'delete': { request: JOB_BRANCH.verbs.delete, reply: {}, handler: checkedBy('delete', handleDeleteJob) },
     // THE LOCAL WAY TO A SERVER PROCESS (the jobs api verb) STOOD HERE until goal/G30.6. Andy, 2026-10-20: "jobs is
     // for launching and tracking appServer processes and other local (transient) processes, it is NOT meant to be
     // some kind of api-hub." A server process is called on /spirit by its verb, through the flat apiDoor.
     // LOCAL: a job is this machine's, whether or not anything is reachable.
   });
+  }, function (e) { console.error('the spirit.job branch could not be bound: ' + ((e && e.message) || e)); });
 
   // THE EVENTS FAMILY (goal/G40.6): the node's one dispatcher, owner only like fs. subscribe is a stream (its handler
   // keeps the response open); publish is a process's state or object on its own job, where job.update stood.
@@ -1802,19 +1827,7 @@ catch (e) {
   // before its handler runs, refused 400 with the check's code. The handlers are the node's own (fs needs no server part).
   // Bound by spirit.requireScript, which answers the branch once it is bound; the mount waits for it.
   Promise.resolve(spirit.requireScript('spirit/fs/script.js')).then(function (FS_BRANCH) {
-  const checkedBy = function (verb, handler) {
-    return function (req, res) {
-      return readJsonBody(req).then(function (body) {
-        const bad = spirit.checkArgs('spirit.fs.' + verb, FS_BRANCH.verbs[verb], body && typeof body === 'object' && !Array.isArray(body) ? body : {});
-        if (bad) {
-          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ ok: false, code: bad.code, error: bad.message, argument: bad.argument }));
-          return null;
-        }
-        return handler(req, res);
-      }, function () { return handler(req, res); });
-    };
-  };
+  const checkedBy = checkedByBranch('spirit.fs', FS_BRANCH);
   loopbackVerbs.mount('spirit.fs', path.join(__dirname, '..', '..', 'fs'), {
     // The node's files by path (puppets/G2). spirit.fs.stat stays the "get".
     'search': { request: FS_BRANCH.verbs.search, reply: LIST, handler: checkedBy('search', proxyVerb(function (b) { return nodeSearches.fsSearch(b); })) },

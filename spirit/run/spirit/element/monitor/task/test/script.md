@@ -1,6 +1,6 @@
 # spirit/element/monitor/task/script.js
 
-goal/G47.1. Andy: *"new element spirit/element/monitor/task/script.js (to replace the run-job rowForm in app:detail) rowForm: <app-icon> "<app-name> + <status-message-while-running>" [run|cancel|delete]"*; *"yes make it an improvement on the current run-rowForm in app and isolate it as spirit/element/monitor/task/script.js"*; *"run-apps usually self-delete if they're successful, if they fail, they stay and offer "delete""* (spirit/job/script.js removes a run that ends well or is cancelled, and keeps a failed one).
+goal/G47.1. Andy: *"new element spirit/element/monitor/task/script.js (to replace the run-job rowForm in app:detail) rowForm: <app-icon> "<app-name> + <status-message-while-running>" [run|cancel|delete]"*; *"yes make it an improvement on the current run-rowForm in app and isolate it as spirit/element/monitor/task/script.js"*; *"run-apps usually self-delete if they're successful, if they fail, they stay and offer "delete""* (spirit/job/engine/script.js removes a run that ends well or is cancelled, and keeps a failed one).
 
 `spirit.required.spirit.element.monitor.task.create(container, { id })`, `id` the app's job id, `spirit.app.<name>`; answers `{ destroy() }`.
 

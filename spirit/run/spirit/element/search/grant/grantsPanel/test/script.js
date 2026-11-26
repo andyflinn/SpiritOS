@@ -285,7 +285,7 @@ test.run('it asks its verbs through the spirit object, with no api.verb and no a
 // Since goal/G47.4 (no deprecated) it follows no server jobs, so the job branch's interface is not its to load (cw).
 test.run('it requires the auth branch\'s interface, spirit/auth/api.js, with its parts, and not the job branch\'s', 0.2, function () {
   if (!w) return false;
-  return w.required.indexOf('spirit/auth/api.js') !== -1 && w.required.indexOf('spirit/job/api.js') === -1 ? true : false;
+  return w.required.indexOf('spirit/auth/api.js') !== -1 && w.required.indexOf('spirit/job/script.js') === -1 ? true : false;
 }, test.limit.quick);
 test.run('it registers spirit.required.spirit.element.search.grant.grantsPanel.create', 0.2, function () {
   if (!w) return false;

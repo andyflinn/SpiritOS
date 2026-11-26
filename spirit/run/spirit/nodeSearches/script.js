@@ -11,8 +11,8 @@ require('../script.js');
 // carried the node's entire file list: 42,570 bytes on a fresh node, too
 // big for a puppet to answer its owner with. So:
 //
-//   job.search { q }    key/label pairs, one per job
-//   job.get    { key }  one job, WITHOUT the watcher's file list, which is
+//   spirit.job.search { q }    key/label pairs, one per job
+//   spirit.job.get    { key }  one job, WITHOUT the watcher's file list, which is
 //                        a collection of its own and searched as one
 //   fs.search   { q }    the files the node will serve, by path
 //

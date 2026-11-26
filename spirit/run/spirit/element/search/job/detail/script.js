@@ -24,7 +24,7 @@
 // log and the Extract box scroll inside themselves.
 //
 // LIVE THROUGH spirit.required.spirit.data (goal/G41.28): the job and its last events are the jobs family's cache manager's
-// (spirit.required.spirit.data.job.data, spirit/job/data.js), which keeps every job's events whatever is on screen, so a reopen shows what
+// (spirit.required.spirit.data.job.data, spirit/job/client/script.js), which keeps every job's events whatever is on screen, so a reopen shows what
 // came meanwhile. It repaints when its job changes there.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -36,10 +36,10 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the Extract box's codeMirror, the job row element whose actionOf picks its
-  // button, and the jobs family's interface, spirit/job/api.js (it loads the cache manager), whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
+  // button, and the jobs family's interface, spirit/job/script.js (it loads the cache manager), whose cancel and delete its buttons call (Andy, goal/G47.1: "JUST BECAUSE api
   // branches are intrinsic doesn't fucking mean the browser has interfaces for them already loaded, EVERY FUCKING ELEMENT
   // REQUIRES THE FUCKING INTERFACES IT FUCKING NEEDS").
-  var parts = Promise.all([keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/job/api.js'), keepAnswer('spirit/element/search/job/row/script.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/codeMirror.js'), keepAnswer('spirit/job/script.js'), keepAnswer('spirit/element/search/job/row/script.js')]);
 
   function esc(s) { return S.escapeHtml(String(s == null ? '' : s)); }
 
@@ -152,12 +152,12 @@
       function failed(word) { return function (e) { console.error(word + ' failed', e); }; }
       if (what === 'cancel') {
         // It stays open: the next event shows the job stop.
-        Promise.all([S.readyPromise, parts]).then(function () { return keepAnswer('spirit/job/api.js'); }).then(function (j) { return j.cancel({ id: id }); }).then(null, failed('cancel'));
+        Promise.all([S.readyPromise, parts]).then(function () { return keepAnswer('spirit/job/script.js'); }).then(function (j) { return j.cancel({ id: id }); }).then(null, failed('cancel'));
         return;
       }
       if (what === 'delete') {
         // IT GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the list.
-        Promise.all([S.readyPromise, parts]).then(function () { return keepAnswer('spirit/job/api.js'); }).then(function (j) { return j.delete({ id: id }); }).then(function () {
+        Promise.all([S.readyPromise, parts]).then(function () { return keepAnswer('spirit/job/script.js'); }).then(function (j) { return j.delete({ id: id }); }).then(function () {
           if (typeof o.close === 'function') o.close();
         }, failed('delete'));
       }

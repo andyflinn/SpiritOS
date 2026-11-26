@@ -48,7 +48,7 @@ function mountScript(file) {
     '    report.state = "mounted";\n' +
     '    return;\n' +
     '  }\n' +
-    // AN INTERFACE IS NO ELEMENT (goal/G49.7; Andy's red on spirit/job/api.js): a branch's api.js stands at its place bound, its
+    // AN INTERFACE IS NO ELEMENT (goal/G49.7; Andy's red on spirit/job/script.js): a branch's api.js stands at its place bound, its
     // verbs table beside its functions, and a verb named create (job's) is no element's factory; it is judged as no element.
     '  var el = placed();\n' +
     '  if (!el || typeof el.create !== "function" || (el.verbs && typeof el.verbs === "object")) throw new Error(file + " places no element with a create at spirit.required." + file.replace(/\\.js$/, "").split("/").join("."));\n' +

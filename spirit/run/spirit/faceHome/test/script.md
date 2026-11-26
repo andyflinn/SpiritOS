@@ -67,10 +67,10 @@ goal/G43.18, box v29, *A face is whole, or there is none* (Andy: *"we remove ALL
 
 ### Requirements
 
-- **No star, no face.** `node.card`, `fs.stat`, `contact.search`, `job.create`, `fs.save` and `owner.command` from
+- **No star, no face.** `node.card`, `fs.stat`, `contact.search`, `spirit.job.create`, `fs.save` and `owner.command` from
   the face are all refused; no job ran, no file was written.
 - **The star on, pressed at home: everything is back** (Andy: *"your face on a relay you own gets everything back"*).
-  `contact.faceable` true at the loopback door; `owner.command` reaches the door; `fs.save` writes the file; `job.create` of
+  `contact.faceable` true at the loopback door; `owner.command` reaches the door; `fs.save` writes the file; `spirit.job.create` of
   an included process runs it; `/bin/sh` is still refused; `contact.faceable` from the face is refused and the star stays.
 - **The star off takes the face away.** The node held a face on the relay; `contact.faceable` false at home; the node holds
   none there any more (`relay.get`'s `face.name` empty); `node.card` and the rest through it are refused; nothing ran or
@@ -78,7 +78,7 @@ goal/G43.18, box v29, *A face is whole, or there is none* (Andy: *"we remove ALL
 - **A relay's claim changes nothing.** A relay whose owner mark is this node's key has sent its owner's report; no star
   appears, and `owner.command` from its face is refused.
 - **A relay where this node set no face gets nothing.** A dishonest relay makes the member a face the node never asked
-  for and logs in to it: `node.card` and `job.create` are refused 403 `no-face-here`, and a star does not open it.
+  for and logs in to it: `node.card` and `spirit.job.create` are refused 403 `no-face-here`, and a star does not open it.
 
 The face on the owned relay is set before the owner mark goes in (the relay restarted on its folder, as over ssh):
 `relay.face` on a relay that already owns the node answers no text today, a fault of its own.

@@ -76,7 +76,7 @@ test.run('its server answers chat.chats.search', 0.2, async function () {
   const up = await H.until(function () { return X.call('chat.chats.search', {}).then(function (r) { return r.status === 200; }); }, 40000);
   return up ? true : false;
 }, test.limit.slow);
-const jobOf = async function () { return ((await X.call('job.get', { key: 'spirit.app.chat' })).body || {}).job || {}; };
+const jobOf = async function () { return ((await X.call('spirit.job.get', { key: 'spirit.app.chat' })).body || {}).job || {}; };
 if (process.platform === 'linux') {
   test.run('the process the node runs for it is spirit/app/chat/chat.js', 0.2, async function () {
     if (!X.call) return false;

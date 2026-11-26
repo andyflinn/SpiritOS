@@ -1,6 +1,6 @@
 'use strict';
 // spirit/run/spirit/fs/server/script.js
-// THE FS CACHE'S ONE WRITER, THE FILE WATCHER (goal/G49.15, box v16: "The watcher leaves spirit/job/script.js for the fs
+// THE FS CACHE'S ONE WRITER, THE FILE WATCHER (goal/G49.15, box v16: "The watcher leaves spirit/job/engine/script.js for the fs
 // branch, with the flags. job/script.js keeps the jobs and the app starts."; "the watcher lands in spirit/fs/server/script.js
 // and is required by the node."). Moved whole from job's script, where it was goal/G4.25's watcher:
 //
@@ -22,7 +22,7 @@
 // folder, the answer kept on the folder's row: api (an old-shape branch), branch (a new-shape branch), app (an app's
 // folder), live (an app the owner switched on, from spirit/state/<app>/node.json). Files carry none.
 //
-//   start(rootDir, jobs) -> the watcher's job, spirit.fs, in the node's job table (spirit/job/script.js's installJobs);
+//   start(rootDir, jobs) -> the watcher's job, spirit.fs, in the node's job table (spirit/job/engine/script.js's installJobs);
 //                           its updates carry each command, which is how pages get the tree
 require('../../script.js');
 

@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/joinStepsJob/test/script.js
-// The tests of spirit/joinStepsJob/script.js, and of no other module (spec: ./script.md). Its own test, owed since the
+// spirit/run/spirit/job/joinStepsJob/test/script.js
+// The tests of spirit/job/joinStepsJob/script.js, and of no other module (spec: ./script.md). Its own test, owed since the
 // rule "every production script has its own test" (goal/G47.1, box v72).
 //
 // Where the join steps stand, as a stream (goal/G30.1, goal/G43.20): facts(rootDir) read from the node's own records,
@@ -10,12 +10,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const S = require(path.join(RUN, 'spirit', 'script.js'));
 const test = S.requireScript('spirit/test/testReport.js');
 // ITS TEMP FOLDERS FROM THE ONE HELPER (goal/G47.1, the box: "nothing else builds a temp path"): one of its own for each
 // it asks, under its suite's path, the whole of it removed when the suite ends.
-const tempFolder = require('../../tempFolder/script.js').tempFolder;
+const tempFolder = require('../../../tempFolder/script.js').tempFolder;
 let tempAsked = 0;
 function ownTemp(name) { tempAsked += 1; return tempFolder('spirit/test/joinStepsJob/' + name + tempAsked); }
 // ITS STORES CLOSED BEFORE ITS FOLDER GOES (goal/G48.4; Andy, of the 0.7s: "it leaves no temp folder behind"): on Windows a
@@ -37,7 +37,7 @@ test.after(function () {
   try { fs.rmSync(top, { recursive: true, force: true }); } catch (e) { /* the OS clears temp */ }
 });
 require(path.join(RUN, 'spirit', 'script.js'));
-const J = S.requireScript('spirit/joinStepsJob/script.js');
+const J = S.requireScript('spirit/job/joinStepsJob/script.js');
 const relayKeys = spirit.requireScript('spirit/relayKeys/script.js');
 const ownerBadge = spirit.requireScript('spirit/ownerBadge/script.js');
 const contacts = spirit.requireScript('spirit/contact/script.js');

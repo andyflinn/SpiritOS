@@ -6,7 +6,7 @@
 // its test: ./test/script.md and ./test/task.js.
 //
 //   spirit.required.spirit.element.monitor.task.create(container, { id }) -> { destroy() }
-//     id   the app's job id, spirit.app.<name>: a run's job id is its app's route (spirit/job/script.js, goal/G43.20)
+//     id   the app's job id, spirit.app.<name>: a run's job id is its app's route (spirit/job/engine/script.js, goal/G43.20)
 //
 // IT SHOWS ONLY FOR A RUN APP: an app whose spirit/app/<name>/<name>.json says node.run; for any other it draws nothing, as
 // the app detail's other rows hide themselves. The icon and the name are that manifest's identity.
@@ -16,7 +16,7 @@
 // THE BUTTON: Run while the app has no job; else Cancel or Delete, decided by the jobs detail's rule, the job row element's
 // actionOf (wsl: "the Jobs detail already decides Cancel against Delete from a job's state, so task.js should take that rule
 // from there, not write a second one"). A press is the rowForm's, so the button is busy until the node answers; a refusal is
-// said below the bubble, the mounter's line. It follows its one job through the jobs family's cache (spirit/job/data.js).
+// said below the bubble, the mounter's line. It follows its one job through the jobs family's cache (spirit/job/client/script.js).
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -31,7 +31,7 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the row form, the jobs family's interface (which loads its cache), and the
   // job row element that holds the Cancel or Delete rule.
-  var parts = Promise.all(['spirit/element/rowForm/script.js', 'spirit/job/api.js', 'spirit/element/search/job/row/script.js'].map(function (p) { return S.requireScript(p); }));
+  var parts = Promise.all(['spirit/element/rowForm/script.js', 'spirit/job/script.js', 'spirit/element/search/job/row/script.js'].map(function (p) { return S.requireScript(p); }));
   var WORD = { run: 'Run', cancel: 'Cancel', 'delete': 'Delete' };
   var PREFIX = 'spirit.app.';
 
@@ -76,7 +76,7 @@
     function press() {
       var a = actionOf(job());
       said.textContent = '';
-      return S.readyPromise.then(function () { return S.requireScript('spirit/job/api.js'); }).then(function (j) {
+      return S.readyPromise.then(function () { return S.requireScript('spirit/job/script.js'); }).then(function (j) {
         if (a === 'run') return j.create({ command: 'node', args: JSON.stringify(['spirit/app/' + name + '/' + name + '.js']) });
         if (a === 'cancel') return j.cancel({ id: id });
         if (a === 'delete') return j['delete']({ id: id });

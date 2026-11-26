@@ -16,7 +16,7 @@
 // detail and icon detail do (goal/G43.29, Q1: "a job row opens detail panel overtop of jobs."), and that is all a row does.
 //
 // A VIEW OF THE NODE'S JOBS IN spirit.required.spirit.data (goal/G41.28): the probability search over the jobs branch the job family's cache
-// manager keeps (spirit.required.spirit.data.job.data, spirit/job/data.js), each row a job row element. Words match the whole job; the
+// manager keeps (spirit.required.spirit.data.job.data, spirit/job/client/script.js), each row a job row element. Words match the whole job; the
 // kind filter is one choice (all, node, servers, transient, and failed last: goal/G29.16). Columns: the green dot, status,
 // name (module, else type), kind, progress, updated.
 //
@@ -40,7 +40,7 @@
   // cache manager.
   var parts = Promise.all(['spirit/element/search/script.js', 'spirit/element/search/job/row/script.js', 'spirit/element/panel/script.js',
     'spirit/element/search/job/detail/script.js']
-    .map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/job/api.js')]));
+    .map(function (p) { return S.requireScript(p); }).concat([S.requireScript('spirit/job/script.js')]));
 
   function J() { return ANSWER['spirit/element/search/job/script.js']; }
 

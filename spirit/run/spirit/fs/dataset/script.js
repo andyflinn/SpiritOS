@@ -5,7 +5,7 @@
 // caller never knows how the dataset is created or updated"). It answers spirit.required.spirit.data.fs's reads: file(path), files(),
 // ready(), watch(fn) / watch(path, fn), branch.
 //
-// WHO FEEDS IT: in the node's main process the file watcher (spirit/job/script.js) writes every change into spirit.required.spirit.data.fs and
+// WHO FEEDS IT: in the node's main process the file watcher (spirit/job/engine/script.js) writes every change into spirit.required.spirit.data.fs and
 // says so with FedHere(); in any other process nothing does, so spirit.required.spirit.data follows the node's stream, which hands the
 // whole tree and then each change into the same fs/data.js translator a page uses.
 //

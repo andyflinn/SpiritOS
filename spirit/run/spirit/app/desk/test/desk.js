@@ -106,7 +106,7 @@ function entriesOf(got) { return Array.isArray(got) ? got : got && Array.isArray
 // (event.publish, the row as app) into pages; the event stream peerPost reads its answers on (event.subscribe); a
 // family's interface (api {family}); each post to a subscriber's desk listener (peer.post) into posts as {to, json},
 // every row of it into sent as {to, row}.
-// A job (job.create {command, args}) is started for real, as a node starts it, and kept in jobs with its exit.
+// A job (spirit.job.create {command, args}) is started for real, as a node starts it, and kept in jobs with its exit.
 function pretendNode() {
   const pages = []; const posts = []; const sent = []; const streams = []; const deaf = new Set();
   const server = http.createServer(function (req, res) {

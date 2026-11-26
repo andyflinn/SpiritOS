@@ -45,7 +45,7 @@ const LIST_TRIES = 3;
 
 const argv = process.argv.slice(2);
 // THE PORT OF THE NODE THAT STARTS IT (goal/G43.21): Run in the app detail hands no argument, and the node hands every job it
-// starts its own address, SPIRIT_CALLBACK_URL (spirit/job/script.js). A port given first still wins.
+// starts its own address, SPIRIT_CALLBACK_URL (spirit/job/engine/script.js). A port given first still wins.
 const fromNode = (/:(\d+)\//.exec(String(process.env.SPIRIT_CALLBACK_URL || '')) || [])[1];
 const port = /^\d+$/.test(String(argv[0] || '')) ? Number(argv[0]) : Number(fromNode);
 function flag(name) { const i = argv.indexOf(name); return i === -1 ? '' : String(argv[i + 1] || ''); }
@@ -57,13 +57,13 @@ const outArg = flag('--out');
 function end(code, text) { (code ? console.error : console.log)(text); process.exit(code); }
 function say(text) { console.log('publishData: ' + text); }
 // ITS STEPS ARE ITS JOB'S PROGRESS (goal/G47.1; Andy: "if \"one-shot-script-apps\" (node:run:true) actually publish what
-// they're doing, like publishData should"): each step published as spirit.processJob.progress(done, STEPS, text), the text the
+// they're doing, like publishData should"): each step published as spirit/job/processJob/script.js's progress(done, STEPS, text), the text the
 // app detail's task row (spirit/element/monitor/task/script.js) shows while it runs. Started by hand, with no job, the node
 // refuses it, and the run goes on: a progress never stops a step.
 const STEPS = 4;
 function step(done, text) {
   say(text);
-  const J = spirit.processJob;
+  const J = spirit.requireScript('spirit/job/processJob/script.js');
   if (!J || typeof J.progress !== 'function') return Promise.resolve();
   return Promise.resolve(J.progress(done, STEPS, text)).catch(function () { /* not started as a job */ });
 }

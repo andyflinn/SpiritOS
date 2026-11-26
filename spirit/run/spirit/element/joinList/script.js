@@ -8,7 +8,7 @@
 //   spirit.required.spirit.element.joinList.create(container, {}) -> { destroy() }
 //
 // The steps are the Join app's manifest's (spirit/app/join/join.json, steps), each with its name, icon and the fact that
-// ends it. Where the user stands is the join news on the node's spirit job (spirit/joinStepsJob/script.js), heard in the jobs family's cache
+// ends it. Where the user stands is the join news on the node's spirit job (spirit/job/joinStepsJob/script.js), heard in the jobs family's cache
 // and worked out with joinSteps.js: nothing is asked for it, and the list draws again only when the job changes. Done steps
 // are ticked; every open step up to the open one is expanded with its form, so the optional Find someone never stands in
 // the way of the step after it. The forms are the shell elements: joinForm and the contact list. Handed something new
@@ -17,7 +17,7 @@
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9): the spirit object's families, no api handed.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/job/api.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/job/script.js','spirit/contact/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -166,7 +166,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     Promise.resolve(S.readyPromise).then(function () { return S.requireScript('spirit/fs/script.js'); }).then(function (s) { return s.loadFile(STEPS); }).then(function (text) {
       try { steps = (JSON.parse(text) || {}).steps || []; } catch (e) { steps = []; }
     }, function () { steps = []; }).then(function () { return parts; }).then(function () {
-      return S.requireScript('spirit/job/api.js');
+      return S.requireScript('spirit/job/script.js');
     }).then(function () {
       if (gone) return;
       var J = ((S.required.spirit.data || {}).job || {}).data;

@@ -34,7 +34,7 @@ const call = async function (name, args) {
   const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
   return { status: r.status, body: b, text: t };
 };
-const lastRun = async function () { const j = await call('job.get', { key: 'spirit.app.icons' }); return j.body && j.body.job && j.body.job.data ? String(j.body.job.data.pid || '') : ''; };
+const lastRun = async function () { const j = await call('spirit.job.get', { key: 'spirit.app.icons' }); return j.body && j.body.job && j.body.job.data ? String(j.body.job.data.pid || '') : ''; };
 
 test.run('the icons api.js names its verbs', 0.2, function () {
   if (!fs.existsSync(FILE)) return false;

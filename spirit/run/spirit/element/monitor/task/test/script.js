@@ -91,7 +91,7 @@ test.run('while its job runs, the line shows the name and the text the app publi
   running = await waitFor('zztask', function (l) { return l.button === 'Cancel' && l.line === 'Zz Task: halfway there'; }, 15000);
   return running ? true : false;
 }, test.limit.long);
-// spirit/job/script.js: a cancelled run is removed, so Run comes back.
+// spirit/job/engine/script.js: a cancelled run is removed, so Run comes back.
 test.run('Cancel ends its job, and the row offers Run again with the name alone', 0.4, async function () {
   if (!running) return false;
   await press('zztask');

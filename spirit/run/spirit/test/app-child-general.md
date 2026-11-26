@@ -15,7 +15,7 @@ app-child-general.js works that is my decision."*
 same will happen for \"events\", which will be renamed \"event\""*.
 - No file or folder is named `jobs` or `events` (`jobs/`, `jobs.js`, `jobs-<what>.js` and the like).
 - `spirit/job/` and `spirit/event/` are branches, with `api.js` and `data.js`; `spirit/app/job/` is the face.
-- `spirit/job/api.js` declares search, get, create, cancel and delete; `spirit/event/api.js` subscribe and publish:
+- `spirit/job/script.js` declares search, get, create, cancel and delete; `spirit/event/api.js` subscribe and publish:
   the words unchanged. Andy: *"all, the verb changes are approved."*
 - No product file calls a verb by its old name (`'jobs.get'`, `'events.publish'` ...), nor `spirit.jobs` or
   `spirit.events`.

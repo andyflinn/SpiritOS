@@ -123,7 +123,7 @@ test.run('the same folder losing its data.js turns api false again', 0.4, async 
 
 // ── the node's own side, and what stays out of spirit.js ──
 test.run('job.js keeps no tree of its own: no fsTree in its code', 0.4, function () {
-  const c = code('spirit/job/script.js');
+  const c = code('spirit/job/engine/script.js');
   return (c !== '' && !/\bfsTree\b/.test(c)) || false;
 }, test.limit.quick);
 test.run('spirit.js knows nothing of fs streaming: it names neither followStream, spirit/fs/client/script.js nor spirit/fs/dataset/script.js', 0.4, function () {

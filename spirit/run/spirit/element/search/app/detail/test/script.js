@@ -100,7 +100,7 @@ test.run('once the node answers, the button is a plain button again', 0.2, async
   const plain = await until(function () { return chrome.evaluate('(function () { var b = document.querySelector("#under-run button"); return !!b && !b.disabled && !b.querySelector(".shell-busy"); }())'); }, 10000);
   return plain === true ? true : false;
 }, test.limit.quick);
-// A job's id is its route (spirit/job/script.js, goal/G43.20): an app's run is spirit.app.<name>.
+// A job's id is its route (spirit/job/engine/script.js, goal/G43.20): an app's run is spirit.app.<name>.
 test.run('the press started the app on the node: its job, spirit.app.zzrun, running its script', 0.2, async function () {
   if (!pressed) return false;
   const job = await until(function () { return chrome.evaluate('(function () { var j = window.spirit.required.spirit.data.job.data.job("spirit.app.zzrun"); return !!(j && j.data && (j.data.args || []).indexOf("spirit/app/zzrun/zzrun.js") !== -1); }())'); }, 10000);

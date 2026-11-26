@@ -350,7 +350,7 @@ That every element loads on a page and stands at `spirit.required.<its path>` is
 Rules that read every file, once in one script's test, so their red landed on that script. Each is said over the tree, and on a file handed.
 
 - **Every `spirit.requireScript` of a written path names a file that exists.** Andy: *"every spirit.requireScript of a written path names a file that exists"*, in place of search.js's list of old paths: read from the code, so a require that runs only on a click is judged too. `spirit.requireScript('<path>')`, and a list of written paths a require is mapped over.
-- **No tracked file of the repository names `spirit/run/node_modules`, and `.gitignore` keeps no exception for it** (goal/G43.25, from `../job/test/script.js`). The suites that compare the libraries with the commit before their move name it on purpose.
+- **No tracked file of the repository names `spirit/run/node_modules`, and `.gitignore` keeps no exception for it** (goal/G43.25, from `../job/engine/test/script.js`). The suites that compare the libraries with the commit before their move name it on purpose.
 - **No `<verb>.warning.txt` is left** (goal/G43.27, from `spirit/element/search/grant/grantsPanel/test/script.js`). Andy: *"compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."*
 - **Under `spirit/element/search/` every name is a word, and every folder sits beside its `<name>.js`** (goal/G43.18, from `spirit/element/search/test/script.js`). Andy: *"all "probabilitySearch" elements follow the EXACT SAME PATTERN."*
 - `spirit.elements` is judged in code only, string insides left out: a test may name it to say it is gone.

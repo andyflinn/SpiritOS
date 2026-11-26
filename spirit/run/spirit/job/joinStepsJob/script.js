@@ -1,7 +1,7 @@
 'use strict';
-require('../script.js');
+require('../../script.js');
 
-// spirit/run/spirit/joinStepsJob/script.js
+// spirit/run/spirit/job/joinStepsJob/script.js
 // WHERE THE JOIN STEPS STAND, AS A STREAM (goal/G30.1, box v40). Andy, 2026-10-20: "does the fucking new element even
 // carry its own listener, that keeps the screen untouched until a streamed event actually affects it?", then "FIX IT
 // RIGHT". So the node publishes its join news on its own job, spirit, as data.join (goal/G43.20), the way presenceNode

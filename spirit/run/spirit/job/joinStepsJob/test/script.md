@@ -1,4 +1,4 @@
-# spirit/joinStepsJob/script.js — its own test
+# spirit/job/joinStepsJob/script.js — its own test
 
 Where the join steps stand, as a stream (goal/G30.1; Andy: *"keeps the screen untouched until a streamed event
 actually affects it"*). The node publishes its join facts as news of its own job `spirit`, kind `join`

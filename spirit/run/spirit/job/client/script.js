@@ -1,8 +1,8 @@
 'use strict';
-// spirit/run/spirit/job/data.js
+// spirit/run/spirit/job/client/script.js
 // WHAT A CLIENT KNOWS OF A NODE'S JOBS, IN THE jobs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the new
 // spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it through
-// its api.js (spirit/job/api.js), the one file that requires it; it keeps the node's jobs in that page's spirit.required.spirit.data, under the node that served them.
+// its api.js (spirit/job/script.js), the one file that requires it; it keeps the node's jobs in that page's spirit.required.spirit.data, under the node that served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the Jobs app and its details dialog, Stats, the
 // face's boot) asks spirit.required.spirit.data.job.data (below), never a branch by name.
@@ -22,7 +22,7 @@
     if (!obj || typeof obj !== 'object') return '';
     try { return JSON.stringify(obj); } catch (e) { return ''; }
   }
-  var D = typeof require === 'function' ? require('../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }

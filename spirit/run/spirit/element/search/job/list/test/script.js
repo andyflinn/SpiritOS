@@ -53,12 +53,12 @@ test.run('a scratch node of its own comes up with two planted apps, and Chrome o
 }, test.limit.slow);
 test.run('zzFail is started', 0.2, async function () {
   if (!call) return false;
-  const failed = await call('job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzFail/zzFail.js']) });
+  const failed = await call('spirit.job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzFail/zzFail.js']) });
   return failed.status >= 200 && failed.status < 300 ? true : false;
 }, test.limit.slow);
 test.run('it loads through requireScript and mounts with spirit.required.spirit.element.search.job.list.create, given container and open', 0.2, async function () {
   if (!call) return false;
-  await until(function () { return call('job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
+  await until(function () { return call('spirit.job.get', { key: 'spirit.app.zzFail' }).then(function (j) { return !!(j.body && j.body.job && j.body.job.status === 'failed'); }); }, 15000);
   await chrome.send('Page.navigate', { url: node.base + '/' });
   await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.readyPromise)'); }, 20000);
   made = await chrome.evaluate('window.spirit.readyPromise.then(function () { return spirit.requireScript("spirit/element/search/job/list/script.js"); }).then(function () { window.pageErrors = []; window.addEventListener("error", function () { window.pageErrors.push(1); }); var c = document.createElement("div"); c.id = "box"; c.style.cssText = "position:fixed;left:0;top:0;width:1100px;height:700px;display:flex;flex-direction:column;background:#111;z-index:9"; document.body.appendChild(c); window.opened = []; var J = spirit.required.spirit.element.search.job.list; if (!J || typeof J.create !== "function") return ""; window.made = J.create(c, { open: function (k, spec) { window.opened.push({ key: String(k), spec: spec ? Object.keys(spec) : [], fill: !!(spec && typeof spec.fill === "function") }); return Promise.resolve(null); } }); return "made"; }, function () { return ""; })');
@@ -135,7 +135,7 @@ test.run('all lists them all again', 0.2, async function () {
 // "one green dot hops between rows, always showing the most recent update"
 test.run('zzSleep is started', 0.2, async function () {
   if (!call) return false;
-  const started = await call('job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzSleep/zzSleep.js']) });
+  const started = await call('spirit.job.create', { command: 'node', args: JSON.stringify(['spirit/app/zzSleep/zzSleep.js']) });
   return started.status >= 200 && started.status < 300 ? true : false;
 }, test.limit.slow);
 test.run('the one dot is on zzSleep, the job that changed last', 0.2, async function () {
@@ -145,7 +145,7 @@ test.run('the one dot is on zzSleep, the job that changed last', 0.2, async func
 }, test.limit.slow);
 test.run('a job cancelled on the node repaints its row, no reload', 0.2, async function () {
   if (made !== 'made') return false;
-  await call('job.cancel', { id: 'spirit.app.zzSleep' });
+  await call('spirit.job.cancel', { id: 'spirit.app.zzSleep' });
   return (await until(function () { return rowOf('zzSleep').then(function (r) { return /cancelled|stopped/.test(r) || r === ''; }); }, 10000)) ? true : false;
 }, test.limit.slow);
 

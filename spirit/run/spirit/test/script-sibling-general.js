@@ -1279,7 +1279,7 @@ function kindOf(file) {
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
-// as they are used, not refused: scratchNode turns it on by active in spirit/state/app/agent/node.json (spirit/job/script.js).
+// as they are used, not refused: scratchNode turns it on by active in spirit/state/app/agent/node.json (spirit/job/engine/script.js).
 const SERVERS = { servers: ['agent'] };
 // A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
 // bare mount never has; its own test's check, by its words, stands for it here.
@@ -1942,7 +1942,7 @@ function every() {
     const hits = [].concat.apply([], all.map(function (f) { return codeLinesMatching(f, OLD_ELEMENT_HOME, true); }));
     return (all.length > 100 && !hits.length) || false;
   }, test.limit.quick);
-  // no run://node_modules (goal/G43.25; moved here from spirit/job/test/script.js, goal/G47.1). Andy: "can we hide those suckers in
+  // no run://node_modules (goal/G43.25; moved here from spirit/job/engine/test/script.js, goal/G47.1). Andy: "can we hide those suckers in
   // spirit/jobs/ for now? without the damn node_modules container?". Over the whole repository, install/ too.
   test.run('no tracked file of the repository names spirit/run/node_modules', 0.4, function () {
     const naming = gitIn(REPO, ['ls-files']).filter(function (f) { return !NODE_MODULES_ON_PURPOSE.test(f) && SELF.indexOf(path.basename(f)) === -1 && f.indexOf('spirit/run/brains/') !== 0 && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f) && fs.existsSync(path.join(REPO, f)); })

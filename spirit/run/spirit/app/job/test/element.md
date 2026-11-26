@@ -8,5 +8,5 @@ Its test is `./job.js`. The box (goal/G43.29, v3): *"spirit/app/jobs/ holds the 
 - `element.js` brings the job search, `spirit/element/search/job/script.js` (goal/G43.32), and draws nothing itself: no innerHTML, no old shell helper (activateApp, callDialog, factRow).
 - It registers `spirit.required.spirit.app.job.element.create(container, { open })`, which draws its element and answers `{ destroy }`; destroy empties its container.
 - Its tile is there, intrinsic and on, and opens it.
-- The page finds the jobs cache at `spirit/job/data.js`, never `spirit/app/job/data.js`.
+- The page finds the jobs cache at `spirit/job/client/script.js`, never `spirit/app/job/data.js`.
 - Q1: a job row pressed in the tile's layer opens its detail as a layer over Jobs, in the app selector's stack; its ✕ goes one step back, to Jobs.

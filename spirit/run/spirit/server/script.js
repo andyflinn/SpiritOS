@@ -10,7 +10,7 @@
 //
 // THE START COMMANDS IN USE STAY VALID (the box, implications: "no Flag Day"): a node starts with "node spirit/server/script.js", a
 // relay with "node spirit/server/script.js --relay" (bash/systemd/spirit-relay.service), and --relay may stand anywhere among the
-// arguments, as it could before. --app stands first, so the node's start check reads it in a fixed place (spirit/job/script.js, RH1).
+// arguments, as it could before. --app stands first, so the node's start check reads it in a fixed place (spirit/job/engine/script.js, RH1).
 // ONE MODE, AN UNKNOWN ONE REFUSED; every argument after the mode reaches the module unchanged (--port, --email, --help).
 // A relay that refuses to start exits 78 by itself (spirit/server/relay/script.js STARTUP_REFUSED); nothing here catches it.
 require('../script.js');

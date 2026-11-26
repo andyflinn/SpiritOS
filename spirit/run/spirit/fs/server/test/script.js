@@ -2,12 +2,12 @@
 
 // spirit/run/spirit/fs/server/test/script.js
 // THE TESTS OF spirit/fs/server/script.js, THE FILE WATCHER, and of no other script (spec: ./script.md). goal/G49.15, box v16:
-// "The watcher leaves spirit/job/script.js for the fs branch, with the flags. job/script.js keeps the jobs and the app
+// "The watcher leaves spirit/job/engine/script.js for the fs branch, with the flags. job/script.js keeps the jobs and the app
 // starts."; "the watcher lands in spirit/fs/server/script.js and is required by the node"; "spirit/job/chokidar/ and
 // spirit/job/readdirp/ move to spirit/fs/chokidar/ and spirit/fs/readdirp/"; "the flag conditions live in
 // spirit/fs/filter/<flagName>/script.js and will be required by the fs portion of the node process"; "A third flag, live, on
 // an app folder's row, set from spirit/state/<app>/node.json when that file changes". Its start(rootDir, jobs) answers its
-// job (cw, goal/G49.15). The watcher's checks once in spirit/job/test/script.js moved here with it.
+// job (cw, goal/G49.15). The watcher's checks once in spirit/job/engine/test/script.js moved here with it.
 
 const fs = require('fs');
 const path = require('path');
@@ -26,7 +26,7 @@ test.run('spirit/fs/server/script.js is there, and answers start', 0.2, function
   return (!!W && typeof W.start === 'function') || false;
 }, test.limit.quick);
 test.run('job/script.js keeps no watcher: it names no chokidar, no folderFlags and no startFsWatcherJob', 0.2, function () {
-  const c = codeOf('spirit/job/script.js');
+  const c = codeOf('spirit/job/engine/script.js');
   return (c.length > 0 && !/chokidar|folderFlags|startFsWatcherJob/.test(c)) || false;
 }, test.limit.quick);
 test.run('the node requires the watcher by its path, spirit/fs/server/script.js', 0.2, function () {
@@ -151,7 +151,7 @@ function child(src, dir) {
 test.run('the fs-watcher job hears a file made.txt created in its folder', 0.2, function () {
   const jobsOut = child([
     "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
-    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
+    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
     "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
     "let job = null; jobs.events.on('job-updated', function (u) {",
     "  if (job && u.id === job.id && u.data && u.data.command && u.data.command.op === 'createFile' && u.data.command.path === 'made.txt') { console.log('HEARD'); process.exit(0); } });",
@@ -174,7 +174,7 @@ function statusAfter(code, gone) {
     "const C = spirit.requireScript('spirit/fs/chokidar/index.js');",
     "let watcher = null; const on = C.FSWatcher.prototype.on;",
     "C.FSWatcher.prototype.on = function (ev) { if (ev === 'error') watcher = this; return on.apply(this, arguments); };",
-    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
+    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
     "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
     "fs.writeFileSync(path.join(dir, 'there.db'), 'x');",
     "const job = W.start(dir, jobs);",
@@ -217,7 +217,7 @@ test.run('the fs-watcher job watches the run folder, the tree is asked twice, an
   const run = function (src) { const r = spawnSync(process.execPath, ['-e', src, RUN], { cwd: RUN, encoding: 'utf8', timeout: 60000 }); return r.stderr ? '' : String(r.stdout || '').trim(); };
   const out = run([
     "const fs = require('fs'), dir = process.argv[1];",
-    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
+    "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
     "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
     "const job = W.start(dir, jobs);",
     // goal/G49.2: the tree is spirit.required.spirit.data.fs, through spirit/fs/dataset/script.js, which this process's watcher fills; read once it is whole.
@@ -276,7 +276,7 @@ test.run('a scratch tree holds an app zzKept whose json turns intrinsic true and
     const src = [
       "const fs = require('fs'), path = require('path');",
       "const run = process.argv[1];",
-      "const jobs = require(path.join(run, 'spirit', 'job', 'script.js')).installJobs(1);",
+      "const jobs = require(path.join(run, 'spirit', 'job', 'engine', 'script.js')).installJobs(1);",
       "const W = require(path.join(run, 'spirit', 'fs', 'server', 'script.js'));",
       "const job = W.start(run, jobs);",
       "const json = path.join(run, 'spirit', 'app', 'zzKept', 'zzKept.json');",
@@ -332,7 +332,7 @@ test.run('the watcher runs on a scratch folder holding an old branch, a new bran
   try {
     const src = [
       "const fs = require('fs'), path = require('path'), dir = process.argv[1];",
-      "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'script.js')) + ").installJobs(1);",
+      "const jobs = require(" + JSON.stringify(path.join(RUN, 'spirit', 'job', 'engine', 'script.js')) + ").installJobs(1);",
       "const W = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'server', 'script.js')) + ");",
       "const job = W.start(dir, jobs);",
       "const F = require(" + JSON.stringify(path.join(RUN, 'spirit', 'fs', 'dataset', 'script.js')) + ");",

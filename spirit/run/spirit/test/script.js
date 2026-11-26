@@ -1523,11 +1523,11 @@ test.run('no script stands at spirit/<name>.js any more: every one is spirit/<na
 test.run('the three general tests beside the spirit object are spirit/test/script-sibling-general.js, -node.js and -browser.js', 0.4, function () {
   return (['general', 'node', 'browser'].every(function (k) { return isFile('spirit/test/script-sibling-' + k + '.js'); }) && !['general', 'node', 'browser'].some(function (k) { return isFile(J('spirit/test/', 'spirit', '-sibling-', k, '.js')); })) || false;
 }, test.limit.quick);
-// box v17, "fallout": "spirit/job.js (new spirit/job/script.js) will have to be fixed to ... start server processes fully knowing that
+// box v17, "fallout": "spirit/job.js (new spirit/job/engine/script.js) will have to be fixed to ... start server processes fully knowing that
 // the server is at ./spirit/server/script.js, relative to the current directory of all spirit processes"
 test.run('the job branch starts each app server with spirit/server/script.js named in one string, no path joined from pieces', 0.4, function () {
   let src = '';
-  try { src = fs.readFileSync(path.join(RUN, 'spirit', 'job', 'script.js'), 'utf8'); } catch (e) { return false; }
+  try { src = fs.readFileSync(path.join(RUN, 'spirit', 'job', 'engine', 'script.js'), 'utf8'); } catch (e) { return false; }
   return (src.indexOf("'spirit/server/script.js'") !== -1 && !/'spirit',\s*'server'/.test(src) && !/'server\.js'/.test(src)) || false;
 }, test.limit.quick);
 // box v17, "fallout": "npm start will have to be updated, README.md", "the start command of every node and relay", "repo://bash/ will need fixes"

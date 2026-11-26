@@ -10,7 +10,7 @@
 // Its value: how long the node has run (stats.uptimeSeconds): days and hours, hours and minutes, or minutes and seconds. Until the first reading, a dash. It watches the one row it reads, the spirit job of the
 // page's node in the jobs family's cache, and writes its value on every change of that row.
 // THE INTERFACE IT READS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1): a require made while this file runs is part of its tree.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/job/api.js', 'spirit/element/monitor/value/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/job/script.js', 'spirit/element/monitor/value/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -20,7 +20,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   var S = window.spirit = window.spirit || {};
-  var parts = Promise.all([keepAnswer('spirit/job/api.js'), keepAnswer('spirit/element/monitor/value/script.js')]);
+  var parts = Promise.all([keepAnswer('spirit/job/script.js'), keepAnswer('spirit/element/monitor/value/script.js')]);
   function uptime(seconds) {
     var total = Math.floor(Number(seconds) || 0);
     var d = Math.floor(total / 86400), h = Math.floor((total % 86400) / 3600), m = Math.floor((total % 3600) / 60);

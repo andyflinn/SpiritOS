@@ -337,7 +337,7 @@ function shape(v) {
   return typeof v === 'string' ? "'" + v + "'" : String(v);
 }
 // PUBLISHING (desk/G2.3) is not here. It is shared by every spawned process, server or transient, so it lives in
-// spirit.js (spirit.eventStream.publish, spirit.processJob) with its size check, beside the job cycle (goal/G40.6); this file
+// spirit.js (spirit.eventStream.publish) and spirit/job/processJob/script.js with their size check (goal/G40.6, goal/G49.19); this file
 // keeps only what serving needs.
 
 // ── AGENTS: AN APP'S RULES FOR AGENTS, FROM A FILE (slim/G1.8) ────────
@@ -374,12 +374,11 @@ function withDebug(verbs) {
 }
 // DEBUG STREAMS (goal/G43.15; Andy: "the appServers API MUST STREAM changes, too for debug"): its state on this server's own job,
 // in the job's data, which the node merges, so the server's next publish leaves it; every page hears it, no peer does. The node
-// keeps it from there for an app of spirit/app/ (spirit/job/script.js, Q2, Q3).
+// keeps it from there for an app of spirit/app/ (spirit/job/engine/script.js, Q2, Q3).
 function reportDebug() {
-  // Quietly, when this process has no job to report on (a suite's stand-in, a server started by hand).
-  if (!spirit.processJob || typeof spirit.processJob.report !== 'function') return;
+  // Quietly, when this process has no job to report on (a suite's stand-in, a server started by hand): report refuses no-job.
   try {
-    Promise.resolve(spirit.processJob.report({ data: { debug: spirit.debugLog() === true } })).catch(function () { /* not started by a node */ });
+    Promise.resolve(spirit.requireScript('spirit/job/processJob/script.js').report({ data: { debug: spirit.debugLog() === true } })).catch(function () { /* not started by a node */ });
   } catch (e) { /* not started by a node */ }
 }
 

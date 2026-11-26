@@ -66,7 +66,7 @@ test.run('the reply is a CodeMirror view', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   return (await until(function () { return reply().then(function (r) { return r !== null; }); }, 10000)) ? true : false;
 }, test.limit.quick);
-test.run('self\'s tree is this node\'s, with job.search in it', 0.2, async function () {
+test.run('self\'s tree is this node\'s, with spirit.job.search in it', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   tree = JSON.parse(await chrome.evaluate('(function () { var s = ' + SEL + '; return JSON.stringify((s && (s.tree || (s.families && s.families.tree))) || null); }())') || 'null');
   return (!!tree && !!tree.job && !!tree.job.search) ? true : false;
@@ -80,19 +80,19 @@ test.run('once a branch is chosen, the form says choose a verb', 0.2, async func
   await pick('job');
   return (await until(function () { return text().then(function (t) { return /choose a verb/.test(t); }); }, 5000)) ? true : false;
 }, test.limit.quick);
-test.run('once job.search is chosen, the form shows a call button', 0.2, async function () {
+test.run('once spirit.job.search is chosen, the form shows a call button', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   await pick('job', 'search');
   keys = Object.keys(tree.job.search.request || {});
   return (await until(function () { return chrome.evaluate('Array.prototype.some.call(document.querySelectorAll("#box button"), function (b) { return String(b.textContent).trim() === "call"; })'); }, 5000)) ? true : false;
 }, test.limit.quick);
-test.run('the form shows a field for job.search\'s key q', 0.2, async function () {
+test.run('the form shows a field for spirit.job.search\'s key q', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   labels = await text();
-  // job.search's one request key, q, written out so that its check has a plain title.
+  // spirit.job.search's one request key, q, written out so that its check has a plain title.
   return (labels.indexOf('q') !== -1) ? true : false;
 }, test.limit.quick);
-test.run('call asks job.search of self and shows its reply, the jobs\' items', 0.2, async function () {
+test.run('call asks spirit.job.search of self and shows its reply, the jobs\' items', 0.2, async function () {
   if (!node || !node.up || !chrome || chrome.error) return false;
   await chrome.evaluate('(function () { var b = Array.prototype.filter.call(document.querySelectorAll("#box button"), function (x) { return String(x.textContent).trim() === "call"; })[0]; b.click(); return true; }())');
   return (await until(function () { return reply().then(function (r) { return /"items"/.test(String(r)); }); }, 10000)) ? true : false;

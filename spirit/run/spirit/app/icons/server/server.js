@@ -129,9 +129,9 @@ function handle(a) {
 }
 // THE PUBLISH IS ON THE NODE BEFORE THE ANSWER: a one-shot run is ended once it has answered, and spirit.eventStream.publish
 // posts without waiting, so its post would die with the run. The same post, event.publish with this job's id and the row
-// as its app (spirit.js), awaited: spirit.processJob.report({ app }). One that cannot reach the node leaves the answer standing:
+// as its app (spirit.js), awaited: spirit/job/processJob/script.js's report({ app }). One that cannot reach the node leaves the answer standing:
 // the file is written, the next search reads it.
-function publish(row) { return Promise.resolve(spirit.processJob.report({ app: row })).then(function () {}, function () {}); }
+function publish(row) { return Promise.resolve(spirit.requireScript('spirit/job/processJob/script.js').report({ app: row })).then(function () {}, function () {}); }
 
 appServer.serve({
   icon: {

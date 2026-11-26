@@ -73,14 +73,14 @@ function rule0() {
     return !plural.length ? true : false;
   }, test.limit.quick);
   test.run('the job branch, spirit/job/, holds api.js and data.js', 0.4, function () {
-    return (isFile('spirit/job/api.js') && isFile('spirit/job/data.js')) ? true : false;
+    return (isFile('spirit/job/script.js') && isFile('spirit/job/client/script.js')) ? true : false;
   }, test.limit.quick);
   test.run('the event branch, spirit/event/, holds api.js and data.js', 0.4, function () {
     return (isFile('spirit/event/api.js') && isFile('spirit/event/data.js')) ? true : false;
   }, test.limit.quick);
   test.run('the job branch\'s face is spirit/app/job/', 0.4, function () { return isFile('spirit/app/job/job.json') ? true : false; }, test.limit.quick);
-  test.run('spirit/job/api.js holds the verbs search, get, create, cancel and delete, their words unchanged', 0.4, function () {
-    return verbsOf('spirit/job/api.js', ['search', 'get', 'create', 'cancel', 'delete']);
+  test.run('spirit/job/script.js holds the verbs search, get, create, cancel and delete, their words unchanged', 0.4, function () {
+    return verbsOf('spirit/job/script.js', ['search', 'get', 'create', 'cancel', 'delete']);
   }, test.limit.quick);
   test.run('spirit/event/api.js holds the verbs subscribe and publish, their words unchanged', 0.4, function () {
     return verbsOf('spirit/event/api.js', ['subscribe', 'publish']);

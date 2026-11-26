@@ -96,10 +96,10 @@ test.run('destroy empties its container', 0.2, async function () {
   if (!W.made) return false;
   return await W.chrome.evaluate('(function () { window.alone.destroy(); var c = document.getElementById("alone"); var n = c.children.length; c.remove(); return n === 0; }())') ? true : false;
 }, test.limit.quick);
-test.run('the page finds the jobs cache at spirit/job/data.js, never spirit/app/job/data.js', 0.2, async function () {
+test.run('the page finds the jobs cache at spirit/job/client/script.js, never spirit/app/job/data.js', 0.2, async function () {
   if (!W.page) return false;
   const asked = JSON.parse(await W.chrome.evaluate('JSON.stringify(performance.getEntriesByType("resource").map(function (e) { return e.name; }).filter(function (n) { return /\\/data\\.js/.test(n); }))'));
-  return W.made && asked.some(function (n) { return (/spirit\/job\/data\.js/).test(n); }) && !asked.some(function (n) { return (/spirit\/app\/job\/data\.js/).test(n); }) ? true : false;
+  return W.made && asked.some(function (n) { return (/spirit\/job\/client\/script\.js/).test(n); }) && !asked.some(function (n) { return (/spirit\/app\/job\/data\.js/).test(n); }) ? true : false;
 }, test.limit.quick);
 
 // its tile, and Q1: "a job row opens detail panel overtop of jobs", in the same stack
