@@ -41,7 +41,7 @@ node -e "fetch('http://127.0.0.1:<port>/spirit',{method:'POST',headers:{'content
 7. **Read Desk's rules for agents**: [`spirit/run/spirit/app/desk/AGENTS.md`](spirit/run/spirit/app/desk/AGENTS.md). Andy wrote
    them, and they win over anything else, this page included.
 8. **Set up your wait** (once; it is kept in your console's state): one wait-row for each word Andy addresses you by,
-   your nick and `all`: `wait add api=desk.listener table=chat to=<your nick> row.by=andy`, the same with `to=all`, and
+   your nick and `all`: `wait add api=spirit.app.desk.listener table=chat to=<your nick> row.by=andy`, the same with `to=all`, and
    `wait timeout 1800`. A chat line's `to` is its first word, lowercased (goal/G48.8); `row.by=andy` keeps your own
    lines, which start with your nick, from waking you.
 9. **Say hello in Desk** under the item Andy names (`chat.add`, below).
