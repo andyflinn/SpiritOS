@@ -676,7 +676,8 @@ function readListeners() {
   let held = null;
   try { held = JSON.parse(fs.readFileSync(listenersFile(), 'utf8')); } catch (e) { held = null; }
   listeners = {};
-  if (isPlain(held)) Object.keys(held).forEach(function (k) { if (k && typeof held[k] === 'string' && /^[A-Za-z]\w*$/.test(held[k])) listeners[k] = held[k]; });
+  // Each saved subscriber's branch is an app's id, its folder in dots, spirit.app.desk (goal/G49.19).
+  if (isPlain(held)) Object.keys(held).forEach(function (k) { if (k && typeof held[k] === 'string' && /^[A-Za-z]\w*(\.[A-Za-z]\w*)*$/.test(held[k])) listeners[k] = held[k]; });
 }
 function saveListeners() {
   if (!listenersName) return;
