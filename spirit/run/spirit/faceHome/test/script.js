@@ -986,3 +986,10 @@ test.run('with the star off again, the face draws none of the apps of the home d
   if (!browsing()) return false;
   return noApp(await desktop(A.chrome, A.FACE)) || false;
 }, test.limit.slow);
+
+// FACEABLE IS NEVER ASKED FROM A FACE, UNDER ITS NEW NAME (goal/G49.22, box v16: the contact branch in the new shape, "all
+// verbs do the fucking same shit they did before"): the face's door refuses spirit.contact.faceable as it refused contact.faceable.
+test.run('the face refuses spirit.contact.faceable', 0.2, function () {
+  const { faceRefuses } = SPIRIT.requireScript('spirit/faceHome/script.js');
+  return faceRefuses({ call: 'spirit.contact.faceable', args: { key: 'k', faceable: true } }) !== '' || false;
+}, test.limit.quick);

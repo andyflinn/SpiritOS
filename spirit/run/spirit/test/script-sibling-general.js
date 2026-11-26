@@ -2829,6 +2829,33 @@ if (!GIVEN.length) {
     if (files.length < 100) return false;
     return (!files.some(function (f) { return codeText(f).indexOf('spirit/client/packet.js') !== -1; }) && /require(Script|One)\(\s*['"]spirit\/peer\/packet\/script\.js['"]\s*\)/.test(codeText('spirit/script.js'))) || false;
   }, test.limit.quick);
+  // CLEANUP A - C, AND THE CONTACT BRANCH IN THE NEW SHAPE (goal/G49.22, box v16): answerRelay to spirit/peer/relay/key/seal/,
+  // apiDoor to spirit/peer/door/, relayKeys to spirit/peer/relay/key/, appClient to spirit/app/adapter/, arrivals to
+  // spirit/peer/arrivals/, coreFiles to spirit/fs/coreFiles/, the console's loop.js and command.js each to a folder of its own;
+  // "spirit/contact/script.js --> spirit/contact/engine/script.js", "spirit/contact/data.js --> spirit/contact/client/script.js",
+  // "spirit/contact/api.js --> spirit/contact/script.js"; "all verbs do the fucking same shit they did before".
+  ['spirit/peer/relay/key/seal/script.js', 'spirit/peer/door/script.js', 'spirit/peer/relay/key/script.js', 'spirit/app/adapter/script.js',
+    'spirit/peer/arrivals/script.js', 'spirit/fs/coreFiles/script.js', 'spirit/console/loop/script.js', 'spirit/console/command/script.js',
+    'spirit/contact/engine/script.js', 'spirit/contact/client/script.js'].forEach(function (rel) {
+    test.run(rel + ' is there', 0.2, function () { return inTree(rel) || false; }, test.limit.quick);
+  });
+  ['spirit/answerRelay', 'spirit/apiDoor', 'spirit/relayKeys', 'spirit/appClient', 'spirit/arrivals', 'spirit/coreFiles',
+    'spirit/console/loop.js', 'spirit/console/command.js', 'spirit/contact/api.js', 'spirit/contact/data.js'].forEach(function (rel) {
+    test.run(rel + ' is gone', 0.2, function () { return !inTree(rel) || false; }, test.limit.quick);
+  });
+  test.run('spirit/contact/script.js is the contact branch\'s interface: the same thirteen verbs as before', 0.2, function () {
+    let m = null;
+    try { m = require(shPath.join(SH.run, 'spirit', 'contact', 'script.js')); } catch (e) { m = null; }
+    const verbs = m && m.verbs;
+    const want = ['accept', 'add', 'block', 'claim', 'face', 'faceable', 'forget', 'get', 'join', 'label', 'leave', 'search', 'unblock'];
+    return (!!verbs && Object.keys(verbs).sort().join() === want.join()) || false;
+  }, test.limit.quick);
+  // faceable keeps its owner-only checks under its new name: none names the old contact.faceable any more.
+  test.run('no product script names faceable by its old name, contact.faceable, only spirit.contact.faceable', 0.2, function () {
+    const files = productCode();
+    if (files.length < 100) return false;
+    return !files.some(function (f) { return /['"]contact\.faceable['"]/.test(codeText(f)); }) || false;
+  }, test.limit.quick);
   // EVERY ARGUMENT OF A BRANCH IS A TYPE (goal/G49.21, box v25; Andy: "as always, and a permanent rule: a branche's script.js
   // file must use spirit.type.* for ALL argument validation"): each verb of every new-shape branch's script.js (a folder holding
   // script.js and client/script.js) names, for each argument, a type script by its path, spirit/type/... or an app's own

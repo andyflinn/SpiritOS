@@ -81,3 +81,16 @@ test.run('the old auth.grant is no verb of the node any more', 0.2, async functi
   const r = await ask(W.node.base, 'auth.grant', { key: KEY, path: PATH });
   return (r.status >= 400 && r.status < 500) || false;
 }, test.limit.quick);
+
+// FACEABLE STAYS THE OWNER'S UNDER ITS NEW NAME (goal/G49.22, box v16: the contact branch in the new shape, "all verbs do the
+// fucking same shit they did before"): a scratch node serves spirit.contact with faceable, no branch named contact, and
+// refuses to grant spirit.contact.faceable to any key, as it refused contact.faceable.
+test.run('the node serves spirit.contact with faceable, and no branch named contact', 0.2, function () {
+  const b = W.tree && W.tree['spirit.contact'];
+  return (!!b && !!b.faceable && !W.tree.contact) || false;
+}, test.limit.quick);
+test.run('spirit.grant.add refuses spirit.contact.faceable to a key: it stays the owner\'s', 0.2, async function () {
+  if (!W.node || !W.node.up) return false;
+  const r = await ask(W.node.base, 'spirit.grant.add', { key: KEY, path: 'spirit.contact.faceable' });
+  return (r.status >= 400 && r.status < 500 && !!r.body && r.body.code === 'owner-only') || false;
+}, test.limit.quick);
