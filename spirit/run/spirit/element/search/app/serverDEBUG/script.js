@@ -28,7 +28,8 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   function create(host, options) {
     var S = window.spirit;
     var key = String((options && options.key) || '');
-    var module = 'spirit.app.' + key;
+    // The key is the app's id, its job's module itself (goal/G49.19).
+    var module = key;
     var gone = false;
     var serves = false;
     var offJobs = function () {};

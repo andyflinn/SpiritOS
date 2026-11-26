@@ -323,15 +323,16 @@
   // Every job is handed over, data or none: each translator reads what it needs (the jobs family keeps them whole).
   // EVERY SERVER'S remote ROW, FILED HERE ONCE (goal/G47.5; Andy: "all, agreed. spirit/data/script.js", not a server's own data.js,
   // which "would have to be duplicated for all servers"): a server publishes { remote: { current, items, more } } as a job of
-  // its module, spirit.app.<name>; it is kept as spirit.required.spirit.data.<name>.remote, a later row replacing it, and told to whoever
-  // watches remote/<name> (the title bar's Remote dropdown, spirit/element/panel/script.js).
+  // its module, its id spirit.app.<name>; it is kept as spirit.required.spirit.data['spirit.app.<name>'].remote, a later row
+  // replacing it, and told to whoever watches remote/<that id> (the title bar's Remote dropdown, spirit/element/panel/script.js).
   function remoteOf(job) {
     var r = job && job.app && job.app.remote;
     if (!r || typeof r !== 'object' || Array.isArray(r)) return;
-    var m = /^spirit\.app\.([A-Za-z][A-Za-z0-9_]*)$/.exec(String(job.module || ''));
-    if (!m) return;
-    familyOf(m[1]).remote = r;
-    heard('remote/' + m[1]).forEach(function (fn) { try { fn('remote/' + m[1], r); } catch (e) { /* one reader's fault */ } });
+    // Kept under the app's id, its job's module whole, spirit.app.chat (goal/G49.19), where the panel listens: remote/<id>.
+    var id = String(job.module || '');
+    if (!/^[A-Za-z]\w*(\.[A-Za-z]\w*)+$/.test(id)) return;
+    familyOf(id).remote = r;
+    heard('remote/' + id).forEach(function (fn) { try { fn('remote/' + id, r); } catch (e) { /* one reader's fault */ } });
   }
   function onJob(job, from) {
     if (!job || typeof job !== 'object') return;
