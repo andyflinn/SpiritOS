@@ -877,6 +877,8 @@ function withChecked(verbs, script) {
   const dir = rel.slice(0, rel.lastIndexOf('/'));
   if (!dir || rel.indexOf('..') === 0 || rel !== dir + '/' + dir.slice(dir.lastIndexOf('/') + 1) + '.js') return verbs;
   const apiPath = dir + '/api.js';
+  // The branch a refusal names: the app's id, its folder in dots (goal/G49.19).
+  const branch = spirit.dottedPath(dir);
   if (!fs.existsSync(path.join(RUN_ROOT, apiPath))) return verbs;
   // spirit.requireScript places the file at once; its binding asks a node, which this check needs nothing of.
   try { Promise.resolve(spirit.requireScript(apiPath)).then(null, function () { /* the binding; the check reads the file */ }); } catch (e) { return verbs; }

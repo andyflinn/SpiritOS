@@ -75,7 +75,7 @@ var chInterfaces = window.spirit && typeof window.spirit.requireScript === 'func
 // kept by the family's cache manager (spirit.required.spirit.data['spirit.app.chat'].data.keep), and every line the server publishes too; the window places
 // a line of the open chat from there (its watch), and an arrival (its published) is read, made current and scrolled to.
 // chLines holds the window's own elements, each with the line it paints.
-function chData() { return (window.spirit && ((window.spirit.required.spirit.data || {}).chat || {}).data) || null; }
+function chData() { return (window.spirit && ((window.spirit.required.spirit.data || {})['spirit.app.chat'] || {}).data) || null; }
 function chKeep(peer, lines) { var C = chData(); if (C && peer) C.keep(peer, lines); }
 
 // ITS SERVER THROUGH THE SPIRIT OBJECT (goal/G43.24): the chat branch, bound by the one loader; a refusal throws its code.

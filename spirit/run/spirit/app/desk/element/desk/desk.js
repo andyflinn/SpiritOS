@@ -129,7 +129,7 @@ var deskVia = {
 // clientCacheManager.js take care of that"): the desk's rows the cache manager keeps, every goal pushed and every
 // search answer seated there, read through spirit.required.spirit.data['spirit.app.desk'].data. The page keeps no rows of its own, so a search that answers
 // few rows drops none; what the toggles leave out is decided here, in the order goal, then its members.
-function deskKept() { return (typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {}).desk || {}).data) || null; }
+function deskKept() { return (typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {})['spirit.app.desk'] || {}).data) || null; }
 function deskIdOrder(a, b) {
   var x = String(a.id).match(/\d+/g) || [];
   var y = String(b.id).match(/\d+/g) || [];
@@ -390,13 +390,13 @@ function deskWatchIcons(root) {
   if (typeof MutationObserver === 'function' && root) new MutationObserver(function () { deskPaintIcons(root); }).observe(root, { childList: true, subtree: true });
 }
 function deskLoadData() {
-  if (typeof window === 'undefined' || (window.spirit && ((window.spirit.required.spirit.data || {}).desk || {}).data)) return;
+  if (typeof window === 'undefined' || (window.spirit && ((window.spirit.required.spirit.data || {})['spirit.app.desk'] || {}).data)) return;
   deskNeed(DESK_DATA);
 }
 // Everything kept of whole items is forgotten after a gap: what was published while the stream was down was never heard.
 function deskForgetKept() {
   // Asked of the cache's manager (goal/G41.28): it names its branches, this page does not.
-  var K = typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {}).desk || {}).data;
+  var K = typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {})['spirit.app.desk'] || {}).data;
   if (K && typeof K.forgetAll === 'function') K.forgetAll();
 }
 // The ids a publish changes rows of.
@@ -724,7 +724,7 @@ function deskBackupPaint() {
 }
 function deskAskBackup() {
   return deskNeed(DESK_BACKUP_API).then(function () {
-    var B = ((window.spirit.required.spirit.data || {}).backup || {}).data;
+    var B = ((window.spirit.required.spirit.data || {})['spirit.app.backup'] || {}).data;
     if (!B) return;
     if (!deskBackupWatched) deskBackupWatched = B.watch(deskBackupPaint);
     return Promise.resolve(deskVia.verb('spirit/app/backup/api.js', 'status.get', {})).then(function (r) {
@@ -733,7 +733,7 @@ function deskAskBackup() {
   }, function () { /* no backup server on this node: no line */ });
 }
 function deskBackupHtml() {
-  var B = typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {}).backup || {}).data;
+  var B = typeof window !== 'undefined' && window.spirit && ((window.spirit.required.spirit.data || {})['spirit.app.backup'] || {}).data;
   var deskBackup = B ? B.status() : null;
   if (!deskBackup) return '';
   var stale = false;

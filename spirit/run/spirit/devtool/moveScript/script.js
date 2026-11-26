@@ -72,7 +72,7 @@ function readDependencies() {
 async function testicleActive(on) {
   try {
     const app = await spirit.requireScript('spirit/app/api.js');
-    await spirit.callOutcome(app['app.active']({ key: 'testicle', active: on }));
+    await spirit.callOutcome(app['app.active']({ key: 'spirit.app.testicle', active: on }));
     return true;
   } catch (e) { return false; }
 }

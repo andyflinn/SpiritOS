@@ -87,7 +87,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       function follow(spec, name) {
         // Asked of the agent family's cache, which alone names its addresses: its table's branch, watch(id, fn)
         // (spirit/app/agent/data.js).
-        var B = (((window.spirit.required.spirit.data || {}).agent || {}).data || {})[spec.table];
+        var B = (((window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data || {})[spec.table];
         if (!B) return function () {};
         return B.watch(spec.id, function (value) {
           if (value === undefined) { tabs.close(name); return; }
@@ -169,7 +169,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
           Promise.all([spirit.requireScript('spirit/element/search/app/changeAppIcon/script.js'), spirit.requireScript('spirit/element/search/app/changeAppLabel/script.js'), spirit.requireScript('spirit/element/search/app/serverDEBUG/script.js')]).then(function (parts) {
             if (gone) return;
             var hosts = [0, 1, 2].map(function () { var d = document.createElement('div'); box.appendChild(d); return d; });
-            var made = parts.map(function (part, i) { return part.create(hosts[i], { key: 'agent' }); });
+            var made = parts.map(function (part, i) { return part.create(hosts[i], { key: 'spirit.app.agent' }); });
             serverPanel = { destroy: function () { made.forEach(function (m) { m.destroy(); }); } };
           }, function () { box.textContent = 'The server panel could not be loaded.'; });
         } }, { name: 'bundles', icon: '📦', title: 'Bundles', mount: function (box) {

@@ -76,7 +76,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') Promise.
   // without its branch.
   spirit.requireScript('spirit/app/agent/api.js');
   function branchOf(table) {
-    if (!((window.spirit.required.spirit.data || {}).agent || {}).data) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
+    if (!((window.spirit.required.spirit.data || {})['spirit.app.agent'] || {}).data) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
     return window.spirit.required.spirit.data['spirit.app.agent'].data.branch(table);
   }
   function D() { return window.spirit.required.spirit.data; }
