@@ -77,14 +77,14 @@ node, the reads moved.
 - `spirit/data/script.js` stands.
 - Each family's own `data.js` (there, made with the one helper under its folder's name, rolling nothing by hand, the old file gone) is judged on each branch folder by `../../test/script-sibling-general.js`, its branch rules. That no code reads a `spirit.<name>Data`, or names the old cache manager or the old module, is that file's rule of every file (goal/G47.1). Andy's words in a comment are not judged.
 - On a page, each family's data comes with its interface (goal/G47.1: *"every api.js requires it's companion data.js,
-  and is the only script to require that data.js"*): the page requires `spirit/app/api.js` for `app`,
+  and is the only script to require that data.js"*): the page requires `spirit/app/script.js` for `app`,
   `spirit/<name>/api.js` for a node family, `spirit/app/<name>/api.js` for an app's, and each `spirit.required.spirit.data.<name>` stands.
 - On a page, the first level of `spirit` holds no `<name>Data`.
 - *"spirit.required.spirit.data.<name>.data"* and *"spirit.required.spirit.data.<name>.cache"* stand for each family, under its own name (Q1), so `spirit.required.spirit.data.chat` and `spirit.required.spirit.data.desk`. Every family the tree holds is judged in node, read from its folders, none named in the test (goal/G47.4): a node family is a folder `spirit/<name>/` with an `api.js`, an app's family a folder `spirit/app/<name>/` with one; and on a page all but `agent`, `chat` and `deskClient`, which a scratch node does not offer to a page.
 - *"this object has only helper functions and object <name> for every application"*: nothing else is on `spirit.required.spirit.data`, so the shared tree `spirit.required.spirit.data.data` is gone.
 - Every helper on `spirit.required.spirit.data` has a capital in its name, Andy: *"all the helperFunctions in objects like spirit.required.spirit.data should potential \"words\" the should have a capital in it"*, and on Q10: *"it belongs to \"Fix 'data'\", THIS item."* A word is a to z, so no family can land on a helper.
 - Q5, *"Does spirit.required.spirit.data.<name>.cache hold a level per node, as the tree does today?"*, Andy: *"yes."* The app rows stand at `spirit.required.spirit.data.app.cache[<node>].apps`, and a row of another node stands under that node and not under this page's.
-- `spirit.app`'s own rules (no `createApp`, no helper a word) are the app branch's, in `spirit/app/test/data.md` (goal/G47.1).
+- `spirit.app`'s own rules (no `createApp`, no helper a word) are the app branch's, in `spirit/app/client/test/script.md` (goal/G47.1).
 - The reads moved: `spirit.required.spirit.data.app.data` answers `rows` and `watch`, and `spirit.required.spirit.data.fs.data.watch` stands, which `word.js` follows.
 
 ### Assumed by this test

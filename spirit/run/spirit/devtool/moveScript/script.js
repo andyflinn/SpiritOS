@@ -71,8 +71,8 @@ function readDependencies() {
 // TESTICLE OFF AND ON, by the node's own verb, as its owner turns an app off and on. No node: nothing to turn.
 async function testicleActive(on) {
   try {
-    const app = await spirit.requireScript('spirit/app/api.js');
-    await spirit.callOutcome(app['app.active']({ key: 'spirit.app.testicle', active: on }));
+    const app = await spirit.requireScript('spirit/app/script.js');
+    await spirit.callOutcome(app['spirit.app.active']({ key: 'spirit.app.testicle', active: on }));
     return true;
   } catch (e) { return false; }
 }

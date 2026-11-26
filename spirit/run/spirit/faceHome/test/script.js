@@ -207,7 +207,7 @@ test.run('a quiet face stream carries a beat each second: no gap of more than 1.
 
 // Every verb the families declare, from their own declarations.
 const allFamilies = function () {
-  // A test folder is no family: spirit/app/test/api.js is the app family's own test, not a branch.
+  // A test folder is no family: spirit/app/test/script.js is the app family's own test, not a branch.
   const dirs = function (d) { return fs.readdirSync(path.join(RUN, d), { withFileTypes: true }).filter(function (e) { return e.isDirectory() && e.name !== 'test'; }).map(function (e) { return e.name; }); };
   return dirs('spirit').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); })
     .concat(dirs('spirit/app').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'app', n, 'api.js')) && !fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); }));

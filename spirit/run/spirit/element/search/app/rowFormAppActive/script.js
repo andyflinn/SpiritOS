@@ -6,11 +6,11 @@
 //
 //   spirit.required.spirit.element.search.app.rowFormAppActive.create(host, { key }) -> { destroy() }
 //
-// It follows the app's row in spirit.required.spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.requireScript('spirit/app/api.js')'s answer.activeApp, and
+// It follows the app's row in spirit.required.spirit.data.app (the row's active and intrinsic); a press asks the node, spirit.requireScript('spirit/app/script.js')'s answer.activeApp, and
 // the row the stream then brings redraws it. Its words name what the app mounts, from its <name>.json: face, server, or both.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/fs/script.js','spirit/app/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -20,7 +20,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     return a;
   }
   keepAnswer('spirit/element/search/app/rowFormToggle/script.js');
-  keepAnswer('spirit/app/api.js');
+  keepAnswer('spirit/app/script.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -32,7 +32,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       var r = row();
       if (!r) return null;
       // Its answer is the toggle's to wait on, busy (goal/G47.1, Q20).
-      return S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
+      return S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.activeApp({ key: key, active: r.active !== true }); }).then(null, function () { /* the row stays */ });
     }
     var t = ANSWER['spirit/element/search/app/rowFormToggle/script.js'].create(host, { on: false, words: '', press: press });
     t.root.hidden = true;
@@ -50,7 +50,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       shown(true);
     }
     function ask() {
-      S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }

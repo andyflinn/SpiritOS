@@ -692,7 +692,7 @@ const VENDORED_FOLDERS = S.requireScript('spirit/fs/fileSystem/script.js').VENDO
 
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
 // EVERY FAMILY OF THE TREE, READ FROM ITS FOLDERS (goal/G47.4; Andy: "you make bloody well sure that such stupid hard-coded
-// tests move"): a node family is a folder spirit/<name>/ holding api.js, the app family spirit/app/api.js, an app's family a
+// tests move"): a node family is a folder spirit/<name>/ holding api.js, the app family spirit/app/script.js, an app's family a
 // folder spirit/app/<name>/ holding api.js. No family is named here, so one added or gone is judged the day it changes.
 // A BRANCH OF THE NEW SHAPE COUNTS TOO (goal/G49.15, step 3: "a folder ./ is a branch when it has ./script.js ./client/script.js"):
 // spirit/fs is the first; its interface is its script.js.
@@ -702,9 +702,9 @@ const NODE_FAMILIES = ['app'].concat(fs.readdirSync(path.join(RUN, 'spirit')).fi
 const SERVER_FAMILIES = fs.readdirSync(path.join(RUN, 'spirit', 'app')).filter(function (n) { return n !== 'test' && fs.existsSync(path.join(RUN, 'spirit', 'app', n, 'api.js')); }).map(function (n) { return 'spirit.app.' + n; });
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
 // Each family's interface, as a page requires it; its api.js brings its data.js (goal/G47.1: "every api.js requires it's
-// companion data.js, and is the only script to require that data.js"): the app family's spirit/app/api.js, a node
+// companion data.js, and is the only script to require that data.js"): the app family's spirit/app/script.js, a node
 // family's spirit/<name>/api.js, an app's spirit/app/<name>/api.js.
-const API_PATHS = FAMILIES.map(function (n) { return n === 'app' ? 'spirit/app/api.js' : NODE_FAMILIES.indexOf(n) !== -1 ? (newShape(path.join(RUN, 'spirit', n)) ? 'spirit/' + n + '/script.js' : 'spirit/' + n + '/api.js') : S.slashedPath(n) + '/api.js'; });
+const API_PATHS = FAMILIES.map(function (n) { return n === 'app' ? 'spirit/app/script.js' : NODE_FAMILIES.indexOf(n) !== -1 ? (newShape(path.join(RUN, 'spirit', n)) ? 'spirit/' + n + '/script.js' : 'spirit/' + n + '/api.js') : S.slashedPath(n) + '/api.js'; });
 const F = {};
 
 // data-families: spirit.required.spirit.data: every family at spirit.required.spirit.data.<name>, through spirit/data/script.js (goal/G43.7)
@@ -770,7 +770,7 @@ test.run('every helper has a capital, so none is a word', 0.2, function () {
   return !asWords.length ? true : false;
 }, test.limit.quick);
 
-// spirit.app's own rules (no createApp; no helper a word) are the app branch's, in spirit/app/test/data.js (goal/G47.1).
+// spirit.app's own rules (no createApp; no helper a word) are the app branch's, in spirit/app/client/test/script.js (goal/G47.1).
 
 // Q5, "Does spirit.data.<name>.cache hold a level per node, as the tree does today?", Andy: "yes."
 test.run('the app rows stand under this page\'s node', 0.2, async function () {

@@ -6,7 +6,7 @@
 //
 //   spirit.required.spirit.element.search.app.changeAppIcon.create(host, { key }) -> { destroy() }
 //
-// It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, spirit.requireScript('spirit/app/api.js')'s answer.iconApp,
+// It shows the row's icon in spirit.required.spirit.data.app and follows it; a pick is held until Change, which asks the node, spirit.requireScript('spirit/app/script.js')'s answer.iconApp,
 // and the row the stream then brings redraws it.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
@@ -19,7 +19,7 @@
   keepAnswer('spirit/element/rowForm/script.js');
   keepAnswer('spirit/element/icon/script.js');
   keepAnswer('spirit/element/search/icon/list/script.js');
-  keepAnswer('spirit/app/api.js');
+  keepAnswer('spirit/app/script.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -34,7 +34,7 @@
     // comes"): handed as press, so Change is busy until the node answers.
     var form = ANSWER['spirit/element/rowForm/script.js'].create(host, { icon: '✏️', button: 'Change', press: function () {
       if (!picked) return null;
-      return S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
+      return S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });
     } });
     form.span.appendChild(document.createTextNode('Icon '));
     var shown = document.createElement('span');
@@ -49,7 +49,7 @@
       if (r) ANSWER['spirit/element/icon/script.js'].create(shown, { glyph: r.icon });
     }
     function ask() {
-      S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }

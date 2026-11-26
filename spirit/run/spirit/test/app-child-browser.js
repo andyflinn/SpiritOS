@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/test/app-child-browser.js [<script> ...]
-// THE -browser GENERAL TEST BESIDE spirit/app/script.js (goal/G47.1, box v140-142: "a new general test,
+// THE -browser GENERAL TEST BESIDE spirit/app/manager/script.js (goal/G47.1, box v140-142: "a new general test,
 // spirit/test/app-child-browser.js: every element under spirit/app/, mounted alone on a scratch node with its app's server
 // on, is red unless it loaded its own app's api.js and data.js"; Andy: "i just want the fucking status box to fail a fucking
 // test if it does NOT fucking mount its own shit by itself", "agreed."). Its contract: ./app-child-browser.md. The page twin

@@ -508,7 +508,7 @@
         // The part paints its own tile; the shared search draws only the relevance, into the part's tile-bar, when it changed
         // (goal/G43.6: "The relevance is a centered, horizontal bar, between the tile image and the tile label").
         var tileWas = entry.painted;
-        // A ROW THAT CHANGED GETS ITS TILE MADE AGAIN (wsl's red on spirit/app/data.js, "once the apps job has reached the
+        // A ROW THAT CHANGED GETS ITS TILE MADE AGAIN (wsl's red on spirit/app/client/script.js, "once the apps job has reached the
         // page, agent's tile shows its new label"): the part draws a tile from its row once, so a renamed app kept its old
         // label; the fresh tile takes the old one's place. Compared by content: a branch's rows are fresh objects on every read.
         var json = JSON.stringify(rowNow || null);

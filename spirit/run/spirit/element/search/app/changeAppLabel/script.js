@@ -6,7 +6,7 @@
 //   spirit.required.spirit.element.search.app.changeAppLabel.create(host, { key }) -> { destroy() }
 //
 // Its input holds the row's label in spirit.required.spirit.data.app and follows it while it is not being typed in; Change asks the node,
-// spirit.requireScript('spirit/app/api.js')'s answer.labelApp, and the row the stream then brings redraws it.
+// spirit.requireScript('spirit/app/script.js')'s answer.labelApp, and the row the stream then brings redraws it.
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -20,7 +20,7 @@
   // ITS FIELDS' TYPES, REQUIRED HERE BY THEIR FULL PATHS (goal/G49.13; Andy: "The UI elements need to know which spirit/type
   // their fields are and require that type"): the types fieldInput holds its fields to.
   if (window.spirit && typeof window.spirit.requireScript === 'function') { window.spirit.requireScript('spirit/type/string/label/script.js'); }
-  keepAnswer('spirit/app/api.js');
+  keepAnswer('spirit/app/script.js');
 
   function create(host, options) {
     var S = window.spirit;
@@ -34,7 +34,7 @@
     // comes"): handed as press, so Change is busy until the node answers.
     var input = null;
     var form = ANSWER['spirit/element/rowForm/script.js'].create(host, { icon: '✏️', button: 'Change', press: function () {
-      return S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
+      return S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
     } });
     input = document.createElement('input');
     input.type = 'text';
@@ -47,7 +47,7 @@
       if (r && document.activeElement !== input) input.value = String(r.label || '');
     }
     function ask() {
-      S.readyPromise.then(function () { return keepAnswer('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
+      S.readyPromise.then(function () { return keepAnswer('spirit/app/script.js'); }).then(function (s) { return s.searchApp({ q: '' }); }).then(function (got) {
         if (!gone) S.required.spirit.data.seatRows(S.required.spirit.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }

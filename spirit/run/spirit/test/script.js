@@ -875,11 +875,11 @@ test.run('on the node, spirit/relayUrl/script.js stands at spirit.required.spiri
   return placeOf(s, COMPONENT) === real || false;
 }, test.limit.quick);
 // A FOLDER'S SCRIPT.JS AND THE FOLDER ARE ONE PLACE (goal/G49.9, box v5: "a folder's script.js stands at its folder's own
-// name ... and what the folder holds stands under it"; it was goal/G43.32's spirit.required.spirit.app.script): spirit/app/script.js
-// takes spirit.required.spirit.app, a first level spirit.js makes ahead, and keeps spirit/app/api.js placed under it.
-test.run('on the node, spirit/app/script.js stands at spirit.required.spirit.app, and spirit/app/api.js under it', 0.2, function () {
-  const appJs = s.requireScript('spirit/app/script.js');
-  return (s.required.spirit.app === appJs && s.required.spirit.app.api === require(path.join(RUN, 'spirit/app/api.js'))) || false;
+// name ... and what the folder holds stands under it"; it was goal/G43.32's spirit.required.spirit.app.script): spirit/app/manager/script.js
+// takes spirit.required.spirit.app, a first level spirit.js makes ahead, and keeps spirit/app/script.js placed under it.
+test.run('on the node, spirit/app/manager/script.js stands at spirit.required.spirit.app, and spirit/app/script.js under it', 0.2, function () {
+  const appJs = s.requireScript('spirit/app/manager/script.js');
+  return (s.required.spirit.app === appJs && s.required.spirit.app.api === require(path.join(RUN, 'spirit/app/script.js'))) || false;
 }, test.limit.quick);
 test.run('on the node, an interface is still bound by asking a node, as a promise', 0.2, function () {
   const iface = s.requireScript('spirit/demo/api.js');
@@ -1044,7 +1044,7 @@ test.run('on a real page, using the branch the page has not used yet for the fir
 test.run('desk, off at load, is switched on from the page with app.active', 0.2, async function () {
   if (!L.atLoad) return false;
   // desk by its id, spirit.app.desk, and its verbs under it (goal/G49.19: desk.items.search is no verb).
-  L.on = await L.page.evaluate("window.spirit.readyPromise.then(function (s) { return Promise.resolve(s.requireScript('spirit/app/api.js')).then(function (app) { return app.activeApp({ key: 'spirit.app.desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
+  L.on = await L.page.evaluate("window.spirit.readyPromise.then(function (s) { return Promise.resolve(s.requireScript('spirit/app/script.js')).then(function (app) { return app.activeApp({ key: 'spirit.app.desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function () { return false; })");
   return L.on === true || false;
 }, test.limit.quick);
 test.run('the desk server answers the page once switched on', 0.2, async function () {
@@ -1298,7 +1298,7 @@ function interfaces(run, files) {
   const by = {};
   files.forEach(function (f) {
     const m = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(f) || /^process\/js\/([^/]+)\/(?:family\/)?api\.js$/.exec(f);
-    if (!m || m[1] === 'app' && f === 'spirit/app/api.js') { if (f === 'spirit/app/api.js') (by.app = by.app || []).push(f); return; }
+    if (!m || m[1] === 'app' && f === 'spirit/app/script.js') { if (f === 'spirit/app/script.js') (by.app = by.app || []).push(f); return; }
     (by[m[1]] = by[m[1]] || []).push(f);
   });
   return by;

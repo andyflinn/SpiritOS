@@ -9,7 +9,7 @@
 // of that key. A row asks nothing of its own; what it shows is what the stream said.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -24,7 +24,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   // On spirit.required since goal/G43.18, as its file is in spirit/element/search/app/.
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   ['spirit/element/row/script.js', 'spirit/element/icon/script.js', 'spirit/element/search/app/rowFormAppActive/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
-  var appReady = Promise.resolve(keepAnswer('spirit/app/api.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
+  var appReady = Promise.resolve(keepAnswer('spirit/app/script.js')).then(function () { return ((window.spirit.required.spirit.data || {}).app || {}).data; });
 
   var apps = null;
   function dispatch(idx) {

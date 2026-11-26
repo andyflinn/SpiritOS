@@ -73,7 +73,7 @@ gone. From `./app.js`: that an app's description names its icon and label. A scr
 - **Required on the node it is placed and binds** (decided 8: *"A branch's api.js is placed at
   spirit.required.spirit.<branch-path>.api and also binds the branch."*): in a process of its own, `spirit.requireScript` of it
   leaves the `api.js` at `spirit.required.<its path>`, and binds every verb it declares on `spirit.<name>`, under the name
-  its `functions` gives it if any (`spirit/app/api.js`: `search` is `searchApp`).
+  its `functions` gives it if any (`spirit/app/script.js`: `search` is `searchApp`).
 
 #### An app branch's description
 

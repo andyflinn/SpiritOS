@@ -91,7 +91,7 @@ install every script required, at the following point: spirit.required.<path.of.
 easily checkable if script is already loaded."*): every script required stands at `spirit.required`, its run-root path
 one key per folder and its name without `.js` the last (`spirit/relayUrl/script.js` at `spirit.required.spirit.relayUrl`), on
 the node and on a page. A script never required has no place there. A file and the folder of its name both stand:
-`spirit/app/script.js` at `spirit.required.spirit.app`, with `spirit/app/api.js` under it, though `spirit.js` makes that
+`spirit/app/manager/script.js` at `spirit.required.spirit.app`, with `spirit/app/script.js` under it, though `spirit.js` makes that
 first level ahead.
 
 **A peer's branch is made from the caller's own copy** (goal/G43.32; Andy: *"clients don't run code from afar, they

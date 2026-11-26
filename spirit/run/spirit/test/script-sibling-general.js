@@ -92,7 +92,7 @@ TARGETS.forEach(function (b) {
   b.data = has(b.dir + '/data.js') ? b.dir + '/data.js' : '';
   try { b.mod = b.api ? require(path.join(RUN, b.api)) : null; } catch (e) { b.mod = { threw: true }; }
   b.verbs = b.mod && b.mod.verbs && typeof b.mod.verbs === 'object' && !Array.isArray(b.mod.verbs) ? b.mod.verbs : null;
-  // Its name, as a client asks it: the folder's name (spirit/app/api.js is the branch app); an app's is its id, its folder's
+  // Its name, as a client asks it: the folder's name (spirit/app/script.js is the branch app); an app's is its id, its folder's
   // path in dots, spirit.app.desk (goal/G49.19; Andy: "no 'desk' on the wire when it MUST be spirit.app.desk").
   b.family = b.kind === 'app' ? SPIRIT.dottedPath(b.dir) : b.name;
 });
@@ -225,7 +225,7 @@ if (apps.length) {
   }, test.limit.quick);
   test.run('its name is no verb of the app branch', 0.4, function () {
     let familyVerbs = [];
-    try { familyVerbs = Object.keys(require(path.join(RUN, 'spirit', 'app', 'api.js')).verbs || {}); } catch (e) { familyVerbs = []; }
+    try { familyVerbs = Object.keys(require(path.join(RUN, 'spirit', 'app', 'script.js')).verbs || {}); } catch (e) { familyVerbs = []; }
     return overAll(apps, function (b) {
       return familyVerbs.length > 0 && familyVerbs.indexOf(b.name) === -1;
     });

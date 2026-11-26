@@ -22,7 +22,7 @@
   }
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([keepAnswer('spirit/element/search/file/script.js'), keepAnswer('spirit/element/search/file/detail/script.js'), keepAnswer('spirit/element/fstat/script.js'), keepAnswer('spirit/element/panel/script.js'), keepAnswer('spirit/app/api.js')]);
+  var parts = Promise.all([keepAnswer('spirit/element/search/file/script.js'), keepAnswer('spirit/element/search/file/detail/script.js'), keepAnswer('spirit/element/fstat/script.js'), keepAnswer('spirit/element/panel/script.js'), keepAnswer('spirit/app/script.js')]);
   // Each opener by its app's folder (goal/G49.19: an app is known by its path, never by a name).
   var OPENERS = { code: 'spirit/app/text', image: 'spirit/app/media', audio: 'spirit/app/media', video: 'spirit/app/media' };
 

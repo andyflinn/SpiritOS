@@ -6,7 +6,7 @@
 //
 //   create(host, { path }) -> { destroy() }; path is the app's script, spirit/app/<name>/<name>.js.
 //
-//   An app in spirit/app is on while its row says active: true; a press asks the node, spirit.requireScript('spirit/app/api.js')'s answer.activeApp, and the
+//   An app in spirit/app is on while its row says active: true; a press asks the node, spirit.requireScript('spirit/app/script.js')'s answer.activeApp, and the
 //   button draws what the stream then brings (goal/G43.9). An intrinsic app gets no button: intrinsic is the
 //   development team's, by hand. Any other path gets nothing: the old shell's face parts, which switched a shell app,
 //   are gone (goal/G43.20; Andy: "drop the old shells face parts altogether.").
@@ -28,7 +28,7 @@
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       var want = !isOn();
       // The app branch by its api.js path, once the page is ready (goal/G49.6: never by a name).
-      Promise.resolve(sp().readyPromise).then(function () { return sp().requireScript('spirit/app/api.js'); }).then(function (a) { return a.activeApp({ key: key, active: want }); }).then(null, function () { /* not written: the button stays as the node last said */ });
+      Promise.resolve(sp().readyPromise).then(function () { return sp().requireScript('spirit/app/script.js'); }).then(function (a) { return a.activeApp({ key: key, active: want }); }).then(null, function () { /* not written: the button stays as the node last said */ });
     }
     function render() {
       if (gone || !host) return;
@@ -40,7 +40,7 @@
       var b = host.querySelector('button');
       if (b) b.addEventListener('click', press);
     }
-    Promise.resolve(sp().requireScript('spirit/app/api.js')).then(function () {
+    Promise.resolve(sp().requireScript('spirit/app/script.js')).then(function () {
       if (gone) return;
       render();
       var A = reads();

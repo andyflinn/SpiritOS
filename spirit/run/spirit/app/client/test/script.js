@@ -1,14 +1,14 @@
 'use strict';
 
-// spirit/run/spirit/app/test/data.js
-// THE APP CACHE KEEPS run AND runOnly (goal/G43.23, item 9; spec: ./data.md). The box: "a node:run app shows as a tile
+// spirit/run/spirit/app/client/test/script.js
+// THE APP CACHE KEEPS run AND runOnly (goal/G43.23, item 9; spec: ./script.md). The box: "a node:run app shows as a tile
 // with Activate: app/data.js drops run and runOnly (G43.21)." A real Chrome on a scratch node's face page: the app list is drawn,
 // then the node's 'apps' job replaces the rows (a label written through app.label), and the run apps of the tree, pushOrigin and
 // publishData, are looked at again. Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..', '..', '..');
+const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const SPIRIT = require(path.join(RUN, 'spirit', 'script.js'));
 const test = SPIRIT.requireScript('spirit/test/testReport.js');
 const { scratchNode, chromePage, findChrome, until, sleep } = SPIRIT.requireScript('spirit/test/headLessChrome.js');

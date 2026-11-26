@@ -12,7 +12,7 @@ those files"*), so a branch's files are written through `spirit.fs` alone, behin
 
 - No branch of the node's tree holds an `FS.` verb.
 - `<family>.FS.saveFile` and `<family>.FS.deleteFile` on a core file of its folder (`spirit/contact/api.js`,
-  `spirit/app/api.js`, `spirit/app/desk/desk.json`, an app's own json being core whatever it says) are refused, and the
+  `spirit/app/script.js`, `spirit/app/desk/desk.json`, an app's own json being core whatever it says) are refused, and the
   file is left as it was.
 
 ## What its test must try to break

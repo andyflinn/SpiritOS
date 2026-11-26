@@ -1,16 +1,16 @@
 'use strict';
-// spirit/run/spirit/app/data.js
+// spirit/run/spirit/app/client/script.js
 // WHAT A CLIENT KNOWS OF A NODE'S APPS, IN THE app FAMILY'S OWN FOLDER (goal/G43.2). A page loads it through
-// its api.js (spirit/app/api.js), the one file that requires it; it runs the translator into that page's spirit.required.spirit.data, under the node that served the rows.
+// its api.js (spirit/app/script.js), the one file that requires it; it runs the translator into that page's spirit.required.spirit.data, under the node that served the rows.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the app row and list) asks spirit.required.spirit.data.app.data
 // (below), never a branch by name.
 //   apps   key -> { key, label, icon, active, shell, intrinsic, nodeMount, nodeRemote }, what app.search answered (seated by the list that is a view of it), and the
-//          whole table the apps news of the node's own job spirit.app holds (spirit/app/script.js): a key it no longer names is gone.
+//          whole table the apps news of the node's own job spirit.app holds (spirit/app/manager/script.js): a key it no longer names is gone.
 // Every event ends in set or del; it asks nothing.
 (function family() {
   var APPS = 'apps';
-  var D = typeof require === 'function' ? require('../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
+  var D = typeof require === 'function' ? require('../../script.js').requireScript('spirit/data/script.js') : window.spirit.required.spirit.data;
   // THE DATA SET IT FILES INTO, REQUIRED BY ITSELF (goal/G47.1, box v182: "It is loaded by that path with spirit.requireScript,
   // data.js exactly as api.js"): on a page that has not loaded spirit/data/script.js yet, this file loads it and runs again.
   if (!D) { window.spirit.requireScript('spirit/data/script.js').then(function () { if (window.spirit.required.spirit.data) family(); }); return; }
@@ -23,7 +23,7 @@
         if (!all || typeof all !== 'object') return;
         var V = D.viewAt(job.fromNode || null, 'app');
         Object.keys(V.branch(APPS)).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(all, k)) V.del(APPS + '/' + k); });
-        // Every field the node's row carries (spirit/app/script.js rowOf), run and runOnly among them (goal/G43.21: a node:run app
+        // Every field the node's row carries (spirit/app/manager/script.js rowOf), run and runOnly among them (goal/G43.21: a node:run app
         // is listed in pane mode only, and shows Run, not Activate).
         Object.keys(all).forEach(function (k) {
           var r = all[k] || {};

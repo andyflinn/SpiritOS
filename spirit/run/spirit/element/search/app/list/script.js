@@ -10,7 +10,7 @@
 // current through the family's manager and the row element.
 // THE INTERFACES IT CALLS, IT REQUIRES ITSELF, AS IT RUNS (goal/G47.1; Andy: "EVERY FUCKING ELEMENT REQUIRES THE FUCKING
 // INTERFACES IT FUCKING NEEDS"): a require made while this file runs is part of its tree, so whoever requires it waits for them.
-if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/api.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
+if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit/app/script.js'].forEach(function (p) { Promise.resolve(window.spirit.requireScript(p)).catch(function () {}); });
 (function () {
   // WHAT IT ASKS FOR, KEPT AS spirit.requireScript HANDS IT BACK (goal/G49.9: never read at its spirit.required place).
   var ANSWER = {};
@@ -25,7 +25,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
   if (window.spirit && typeof window.spirit.requireScript === 'function') keepAnswer('spirit/element/search/app/row/script.js');
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.requireScript.
   ['spirit/element/search/script.js', 'spirit/element/search/app/row/script.js', 'spirit/element/search/app/tile/script.js'].forEach(function (p) { window.spirit.requireScript(p); });
-  window.spirit.requireScript('spirit/app/api.js');
+  window.spirit.requireScript('spirit/app/script.js');
 
   function create(host, opts) {
     var o = opts || {};
@@ -34,7 +34,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     // THE SOURCE: app.search, with a search string and nothing more (Andy, box: "no filters, just a search string").
     function search(args) {
       var q = String((args && args.text) || '').trim();
-      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/app/api.js'); }).then(function (s) { return s.searchApp({ q: q }); }).then(function (got) {
+      return spirit.readyPromise.then(function () { return spirit.requireScript('spirit/app/script.js'); }).then(function (s) { return s.searchApp({ q: q }); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
@@ -42,7 +42,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
       // Its own data source (goal/G43.24): the search asks it, and is handed no api.
       search: search,
       data: window.spirit.required.spirit.data.app.data.branch,
-      api: 'spirit/app/api.js',
+      api: 'spirit/app/script.js',
       verb: 'search',
       face: o.face,
       // ITS TILE PART (goal/G47.4): an app's tile, ../tile/script.js; a press on it picks the app, as a press on its row does. With it
@@ -79,7 +79,7 @@ if (window.spirit && typeof window.spirit.requireScript === 'function') ['spirit
     });
     list.refresh();
     // A CONNECT FORGETS WHAT IS KEPT (spirit/data/script.js's forget, goal/G41.3). A face with no star hears no 'apps' job to fill it
-    // again (spirit/app/script.js), so a forgotten branch, told with no row, asks again, or its list would stay empty.
+    // again (spirit/app/manager/script.js), so a forgotten branch, told with no row, asks again, or its list would stay empty.
     var off = window.spirit.required.spirit.data.app.data.watch(function (key) { if (!key) list.refresh(); });
     return {
       list: list,

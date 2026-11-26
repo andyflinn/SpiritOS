@@ -273,7 +273,7 @@ test.run('a scratch node comes up with its DEBUG on, and Chrome opens the words 
   // The families these rows are coloured by are on the page the normal way: spirit.app and spirit.contact, each by
   // requiring its api.js (which brings its data.js). This page requires nothing else, and a family no file required is
   // not on the spirit object.
-  await page.evaluate('Promise.all([window.spirit.requireScript("spirit/app/api.js"), window.spirit.requireScript("spirit/contact/api.js")]).then(function () { return true; }, function () { return false; })');
+  await page.evaluate('Promise.all([window.spirit.requireScript("spirit/app/script.js"), window.spirit.requireScript("spirit/contact/api.js")]).then(function () { return true; }, function () { return false; })');
   row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return {}; } };
   return true;
 }, test.limit.slow);
@@ -300,7 +300,7 @@ test.run('spirit/contact, a word by its word.js that the page holds as spirit.co
 }, test.limit.slow);
 test.run('a file inside carries the colours on its path elements too, and the file api.js, a word with no spirit.app.api, is light purple', 0.2, async function () {
   if (!row) return false;
-  const inside = await row('spirit/app/api.js', 'file');
+  const inside = await row('spirit/app/script.js', 'file');
   return inside.app === 'lightblue' && inside.spirit === 'lightblue' && inside['api.js'] === 'lightpurple' ? true : false;
 }, test.limit.slow);
 // A folder no word names stays plain (goal/G43.32: spirit/jobs, plain before, is spirit/job, one of word.js's words, below).

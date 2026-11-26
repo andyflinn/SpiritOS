@@ -1809,15 +1809,22 @@ catch (e) {
   loopbackVerbs.mount('config', path.join(__dirname, '..', '..', 'config'), {});
 
   // THE app FAMILY (goal/G43.2; Andy, box: "the "app" api-family will sit nicely beside all other families"): its verbs,
-  // "just a search string", over the plugins in its folder (spirit/app/script.js). A face with no star may call it (Andy, box).
-  const appFamily = spirit.requireScript('spirit/app/script.js').createApp({ rootDir: ROOT_DIR, jobs: jobs });
-  loopbackVerbs.mount('app', path.join(__dirname, '..', '..', 'app'), {
-    'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return appFamily.search(b); }) },
+  // "just a search string", over the plugins in its folder (spirit/app/manager/script.js). A face with no star may call it (Andy, box).
+  // THE spirit.app BRANCH, BY ITS OWN SCRIPT (goal/G49.20, box v31: "spirit/app/api.js --> spirit/app/script.js"; Andy, of the
+  // verbs' names on the wire, app.search to spirit.app.search and its three siblings: "yes, and this applies to ALL migrated/
+  // migrating branches"): mounted under its path's name, spirit.app, each verb's arguments from spirit/app/script.js and every
+  // call checked against them before its handler, as spirit.job's are.
+  const appFamily = spirit.requireScript('spirit/app/manager/script.js').createApp({ rootDir: ROOT_DIR, jobs: jobs });
+  Promise.resolve(spirit.requireScript('spirit/app/script.js')).then(function (APP_BRANCH) {
+  const checkedBy = checkedByBranch('spirit.app', APP_BRANCH);
+  loopbackVerbs.mount('spirit.app', path.join(__dirname, '..', '..', 'app'), {
+    'search': { request: APP_BRANCH.verbs.search, reply: LIST, handler: checkedBy('search', proxyVerb(function (b) { return appFamily.search(b); })) },
     // goal/G43.9, peer review wsl, Andy's yes on Q1. Off the face with no star: spirit/faceHome/script.js.
-    'active': { request: { key: '', active: false }, reply: {}, handler: proxyVerb(function (b) { return appFamily.active(b); }) },
-    'label': { request: { key: '', label: '' }, reply: {}, handler: proxyVerb(function (b) { return appFamily.label(b); }) },
-    'icon': { request: { key: '', icon: '' }, reply: {}, handler: proxyVerb(function (b) { return appFamily.icon(b); }) },
+    'active': { request: APP_BRANCH.verbs.active, reply: {}, handler: checkedBy('active', proxyVerb(function (b) { return appFamily.active(b); })) },
+    'label': { request: APP_BRANCH.verbs.label, reply: {}, handler: checkedBy('label', proxyVerb(function (b) { return appFamily.label(b); })) },
+    'icon': { request: APP_BRANCH.verbs.icon, reply: {}, handler: checkedBy('icon', proxyVerb(function (b) { return appFamily.icon(b); })) },
   });
+  }, function (e) { console.error('the spirit.app branch could not be bound: ' + ((e && e.message) || e)); });
 
   // THE GATE IS NOT IN HERE, and that is the point of this namespace.
   // Every one of these goes through fileSystem.js, which asks

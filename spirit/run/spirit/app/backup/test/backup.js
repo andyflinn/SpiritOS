@@ -21,11 +21,11 @@ test.after(function () { if (W.node) { try { if (W.node.child) W.node.child.kill
 test.run('spirit/app/backup/backup.js is there and takes spirit.js first', 0.2, function () {
   const c = code();
   const first = c.search(/require(?:Script)?\(|spirit\.requireScript\(/);
-  return (!!c && first !== -1 && c.slice(first).indexOf("require('../../script.js')") === 0) || false;
+  return (!!c && first !== -1 && c.slice(first).indexOf("require('../../manager/script.js')") === 0) || false;
 }, test.limit.quick);
 test.run('what it loads is its server, spirit/app/backup/server/server.js, and nothing else', 0.4, function () {
   const c = code();
-  const loads = (c.match(/(?:spirit\.)?require(?:Script)?\(\s*['"][^'"]+['"]\s*\)/g) || []).filter(function (r) { return r.indexOf('spirit.js') === -1 && r.indexOf("'../../script.js'") === -1; }); // the spirit object, spirit/script.js since goal/G49.12, is no second load
+  const loads = (c.match(/(?:spirit\.)?require(?:Script)?\(\s*['"][^'"]+['"]\s*\)/g) || []).filter(function (r) { return r.indexOf('spirit.js') === -1 && r.indexOf("'../../manager/script.js'") === -1; }); // the spirit object, spirit/script.js since goal/G49.12, is no second load
   return (loads.length === 1 && loads[0].indexOf(SERVER) !== -1) || false;
 }, test.limit.quick);
 test.run('on a node with backup switched on, the server it loads answers its DEBUG verb', 0.4, async function () {

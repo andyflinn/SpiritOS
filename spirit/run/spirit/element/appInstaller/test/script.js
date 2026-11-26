@@ -48,7 +48,7 @@ function world(rows) {
     annotate: function () { w.fsAsked += 1; return Promise.resolve({ ok: true }); },
   };
   const BRANCHES = { 'spirit/fs/script.js': fsApi,
-    'spirit/app/api.js': { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } };
+    'spirit/app/script.js': { activeApp: function (a) { w.asked.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); } } };
   const win = { spirit: {
     // What readyPromise answers holds no branch (goal/G49.6); a branch is answered by its api.js path.
     readyPromise: Promise.resolve({}),
@@ -77,14 +77,14 @@ test.run('it registers spirit.required.spirit.element.appInstaller.create', 0.2,
   w0 = world({});
   return (w0.E.appInstaller && typeof w0.E.appInstaller.create === 'function') ? true : false;
 }, test.limit.quick);
-test.run('it requires the app branch\'s interface, spirit/app/api.js, and no data script', 0.2, async function () {
+test.run('it requires the app branch\'s interface, spirit/app/script.js, and no data script', 0.2, async function () {
   // an app in spirit/app: on while its row says active, by the app family's cache (goal/G43.9)
   PATH = 'spirit/app/zz/zz.js';
   w = world({ zz: { key: 'zz', active: false } });
   h = host();
   inst = w.E.appInstaller.create(h, { path: PATH });
   await settle();
-  return (w.required.indexOf('spirit/app/api.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); })) ? true : false;
+  return (w.required.indexOf('spirit/app/script.js') !== -1 && !w.required.some(function (p) { return /data\.js$/.test(p); })) ? true : false;
 }, test.limit.quick);
 test.run('with its app\'s row inactive, the button says Activate and is off', 0.2, function () {
   return (h.button && h.button.text === 'Activate' && !onOf(h)) ? true : false;

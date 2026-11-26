@@ -16,7 +16,7 @@ const { scratchNode, sleep } = S.requireScript('spirit/test/headLessChrome.js');
 // A node family's api.js, and an app's own <name>.json, core whatever it says (goal/G43.14). The desk app is turned on.
 const CORE = [
   { family: 'contact', path: 'api.js', run: 'spirit/contact/api.js' },
-  { family: 'app', path: 'api.js', run: 'spirit/app/api.js' },
+  { family: 'app', path: 'api.js', run: 'spirit/app/script.js' },
   { family: 'desk', path: 'desk.json', run: 'spirit/app/desk/desk.json' },
 ];
 
