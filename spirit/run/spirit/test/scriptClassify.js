@@ -30,7 +30,8 @@ const LABH = SPIRIT.requireScript('spirit/test/headLessChrome.js');
 // "a load that is not complete in 3 seconds counts as crash/hang".
 const LOAD_MS = 3000;
 // "classify hard-codes server.js and relayServer.js as node-only": never loaded.
-const NODE_ONLY = ['spirit/server/script.js', 'spirit/server/relay/script.js'];
+// The node's own script too: loaded, it starts a node (" is already running"), as the relay's and the server's do.
+const NODE_ONLY = ['spirit/server/script.js', 'spirit/server/relay/script.js', 'spirit/server/node/script.js'];
 // A FILE IN A TEST FOLDER IS NEVER LOADED (a tool of the test system with a test of its own, testReport.js, testModule.js,
 // or a test itself): loading a test runs it. Tests and their tools run on the node: node-only, as server.js is.
 function neverLoaded(rel) { return NODE_ONLY.indexOf(rel) !== -1 || /(^|\/)test\//.test(rel); }
@@ -225,7 +226,8 @@ async function loadOnPage(rel) {
 // THE CLASS FROM THE TWO ANSWERS, or why there is none.
 // THE NODE REFUSING, NOT THE SCRIPT CRASHING: a page that ran the script and was refused a family's interface because that
 // family's server is off on the scratch node (testicle's own, which must stay off there) has loaded it.
-const REFUSED_BY_NODE = /^(?:Uncaught \(in promise\) )?(?:Error: )?no interface for the branch \w+$/;
+// A branch is named by its path in dots since goal/G49.19 (spirit.app.testicle), so the name takes dots.
+const REFUSED_BY_NODE = /^(?:Uncaught \(in promise\) )?(?:Error: )?no interface for the branch [\w.]+$/;
 function classOf(node, page) {
   if (page.err && REFUSED_BY_NODE.test(String(page.err).trim())) page = { err: '' };
   if (!node.err && !page.err) return { browserOnly: false, nodeOnly: false };
